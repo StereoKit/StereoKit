@@ -24,3 +24,4 @@ void mesh_destroy   (mesh_t &mesh);
 void mesh_set_verts (mesh_t &mesh, vert_t   *verts, int vert_count);
 void mesh_set_inds  (mesh_t &mesh, uint16_t *inds,  int ind_count);
 void mesh_set_active(mesh_t &mesh);
+void mesh_draw      (mesh_t &mesh);

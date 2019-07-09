@@ -183,6 +183,10 @@ void d3d_init() {
 ///////////////////////////////////////////
 
 void d3d_shutdown() {
+	mesh_destroy(app_cube);
+	shader_destroy(app_shader);
+	shaderargs_destroy(app_shader_transforms);
+
 	if (d3d_rendertarget) { d3d_rendertarget->Release(); d3d_rendertarget = nullptr; }
 	if (d3d_context) { d3d_context->Release(); d3d_context = nullptr; }
 	if (d3d_device ) { d3d_device->Release();  d3d_device  = nullptr; }
@@ -272,6 +276,22 @@ void app_draw() {
 		XMLoadFloat4((XMFLOAT4*)&DirectX::g_XMIdentityR3),
 		XMLoadFloat3((XMFLOAT3*)&DirectX::g_XMOne)));
 
+	mesh_set_active(app_cube);
+	shader_set_active(app_shader);
+
+	app_transform_buffer_t transform_buffer;
+	XMStoreFloat4x4(&transform_buffer.viewproj, XMMatrixTranspose(mat_view * mat_projection));
+	XMMATRIX mat_model = XMMatrixAffineTransformation(
+		DirectX::g_XMOne * 0.05f, DirectX::g_XMZero,
+		XMLoadFloat4((XMFLOAT4*)&DirectX::g_XMIdentityR3),
+		XMLoadFloat3((XMFLOAT3*)&DirectX::g_XMOne));
+	XMStoreFloat4x4(&transform_buffer.world, XMMatrixTranspose(mat_model));
+
+	shaderargs_set_data(app_shader_transforms, &transform_buffer);
+	shaderargs_set_active(app_shader_transforms);
+	
+	mesh_draw(app_cube);
+
 	// Set the active shaders and constant buffers.
 	d3d_context->VSSetConstantBuffers(0, 1, &app_constant_buffer);
 	d3d_context->VSSetShader(app_vshader, nullptr, 0);
@@ -286,7 +306,7 @@ void app_draw() {
 	d3d_context->IASetInputLayout      (app_shader_layout);
 
 	// Put camera matrices into the shader's constant buffer
-	app_transform_buffer_t transform_buffer;
+	//app_transform_buffer_t transform_buffer;
 	XMStoreFloat4x4(&transform_buffer.viewproj, XMMatrixTranspose(mat_view * mat_projection));
 
 	// Draw all the cubes we have in our list!

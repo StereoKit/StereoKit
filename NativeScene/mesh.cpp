@@ -61,3 +61,7 @@ void mesh_set_active(mesh_t &mesh) {
 	d3d_context->IASetIndexBuffer      (mesh.ind_buffer, DXGI_FORMAT_R16_UINT, 0);
 	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
+
+void mesh_draw(mesh_t &mesh) {
+	d3d_context->DrawIndexed(mesh.ind_count, 0, 0);
+}
