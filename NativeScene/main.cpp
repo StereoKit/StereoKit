@@ -142,8 +142,10 @@ void app_init() {
 ///////////////////////////////////////////
 
 void app_shutdown() {
-	mesh_destroy(app_cube);
-	shader_destroy(app_shader);
+	tex2d_destroy(app_tex);
+	mesh_destroy (app_cube);
+
+	shader_destroy    (app_shader);
 	shaderargs_destroy(app_shader_transforms);
 }
 

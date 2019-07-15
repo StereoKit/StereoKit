@@ -20,6 +20,11 @@ bool tex2d_create_file(tex2d_t &tex, const char *file) {
 	tex2d_set_colors(tex, width, height, data);
 	return true;
 }
+void tex2d_destroy(tex2d_t &tex) {
+	if (tex.resource != nullptr) tex.resource->Release();
+	if (tex.texture  != nullptr) tex.texture ->Release();
+	tex = {};
+}
 
 void tex2d_set_colors(tex2d_t &tex, int width, int height, uint8_t *data_rgba32) {
 	if (tex.width != width || tex.height != height) {
