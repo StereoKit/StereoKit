@@ -106,7 +106,7 @@ void mesh_draw(mesh_t &mesh) {
 using namespace std;
 
 inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
-	return i1 + vSize * (i2 + nSize * i3);
+	return i1 + (vSize+1) * (i2 + (nSize+1) * i3);
 }
 int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, uint16_t> indmap, vector<vert_t> &mesh) {
 	int  id = meshfmt_obj_idx(iV, iN, iT, verts.size(), norms.size());
@@ -133,6 +133,7 @@ void meshfmt_obj(mesh_t &mesh, const char *file) {
 
 	vec3 in;
 	int inds[12];
+	int count = 0;
 	while ((size_t)(line-file)+1 < len) {
 		if        (sscanf_s(line, "v %f %f %f\n%n",  &in.x, &in.y, &in.z, &read) > 0) {
 			poss.push_back(in);
@@ -141,18 +142,15 @@ void meshfmt_obj(mesh_t &mesh, const char *file) {
 		} else if (sscanf_s(line, "vt %f %f\n%n",    &in.x, &in.y,     &read) > 0) {
 			vec2 uv = { in.x, in.y };
 			uvs.push_back(uv);
-		} else if (sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read) > 0) {
-			int id1 = indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
-			int id2 = indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
-			int id3 = indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
-			int id4 = indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
-			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
-			faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
-		} else if (sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],  &read) > 0) {
+		} else if ((count = sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read)) > 0) {
 			int id1 = indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
 			int id2 = indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
 			int id3 = indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
 			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
+			if (count > 9) {
+				int id4 = indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
+				faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
+			}
 		} else {
 			char str[512];
 			sscanf_s(line, "%[^\n]\n%n", str, 512, &read);

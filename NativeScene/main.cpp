@@ -71,7 +71,7 @@ psIn vs(vsIn input) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
-	return float4(col, 1); // input.color * 
+	return float4(input.color * col, 1); 
 })_";
 
 vert_t app_verts[] = {
