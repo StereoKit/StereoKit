@@ -50,8 +50,35 @@ void mesh_set_inds (mesh_t &mesh, uint16_t *inds,  int ind_count) {
 void mesh_create(mesh_t &mesh) {
 	mesh = {};
 }
+bool mesh_create_file(mesh_t &mesh, const char *file) {
+	// Open file
+	FILE *fp;
+	if (!fopen_s(&fp, file, "rb") || fp == nullptr)
+		return false;
+
+	// Get length of file
+	fseek(fp, 0L, SEEK_END);
+	uint64_t length = ftell(fp);
+	rewind(fp);
+
+	// Read the data
+	uint8_t *data = (uint8_t *)malloc(sizeof(uint8_t) *length+1);
+	if (data == nullptr) { fclose(fp); return false; }
+	fread(data, 1, length, fp);
+	fclose(fp);
+
+	// Make the mesh
+	bool result = mesh_create_filemem(mesh, data, length);
+	free(data);
+
+	return result;
+}
+bool mesh_create_filemem(mesh_t &mesh, uint8_t *file_data, uint64_t file_size) {
+	mesh_create(mesh);
+	return true;
+}
 void mesh_destroy(mesh_t &mesh) {
-	if (mesh.ind_buffer  != nullptr) mesh.ind_buffer->Release();
+	if (mesh.ind_buffer  != nullptr) mesh.ind_buffer ->Release();
 	if (mesh.vert_buffer != nullptr) mesh.vert_buffer->Release();
 	//if (mesh.inds        != nullptr) free(mesh.inds);
 	//if (mesh.verts       != nullptr) free(mesh.verts);
@@ -68,4 +95,7 @@ void mesh_set_active(mesh_t &mesh) {
 
 void mesh_draw(mesh_t &mesh) {
 	d3d_context->DrawIndexed(mesh.ind_count, 0, 0);
+}
+
+void meshfmt_obj() {
 }

@@ -4,11 +4,11 @@
 
 #include "mesh.h"
 #include "shader.h"
+#include "texture.h"
 
 #include <windows.h>
 
 #include <directxmath.h> // Matrix math functions and objects
-#include <d3dcompiler.h> // For compiling shaders! D3DCompile
 
 #include <thread> // sleep_for
 #include <vector>
@@ -26,6 +26,7 @@ struct app_transform_buffer_t {
 shader_t     app_shader;
 shaderargs_t app_shader_transforms;
 mesh_t       app_cube;
+tex2d_t      app_tex;
 
 HWND app_hwnd = nullptr;
 bool app_run  = true;
@@ -45,11 +46,16 @@ cbuffer TransformBuffer : register(b0) {
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
 	float3 color : COLOR0;
+	float2 uv    : TEXCOORD0;
 };
+
+Texture2D tex;
+SamplerState tex_sampler;
 
 psIn vs(vsIn input) {
 	psIn output;
@@ -59,27 +65,37 @@ psIn vs(vsIn input) {
 
 	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
 
+	output.uv    = input.uv;
 	output.color = lerp(float3(0,0,0.1), float3(1,1,1), saturate(dot(normal, float3(0,1,0))));
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
-	return float4(input.color, 1);
+	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
+	return float4(col, 1); // input.color * 
 })_";
 
 vert_t app_verts[] = {
+	{ { -1, 0, -1 }, { 0, 1, 0 }, { 0, 0 }, { 255,255,255,255 } }, // Bottom verts
+	{ {  1, 0, -1 }, { 0, 1, 0 }, { 1, 0 }, { 255,255,255,255 } },
+	{ {  1, 0,  1 }, { 0, 1, 0 }, { 1, 1 }, { 255,255,255,255 } },
+	{ { -1, 0,  1 }, { 0, 1, 0 }, { 0, 1 }, { 255,255,255,255 } },};
+
+uint16_t app_inds[] = { 2,1,0, 3,2,0, };
+
+/*vert_t app_verts[] = {
 	{ { -1,-1,-1 }, { -1,-1,-1 }, { 0, 0 }, { 255,255,255,255 } }, // Bottom verts
-	{ {  1,-1,-1 }, {  1,-1,-1 }, { 0, 0 }, { 255,255,255,255 } },
-	{ {  1, 1,-1 }, {  1, 1,-1 }, { 0, 0 }, { 255,255,255,255 } },
-	{ { -1, 1,-1 }, { -1, 1,-1 }, { 0, 0 }, { 255,255,255,255 } },
+	{ {  1,-1,-1 }, {  1,-1,-1 }, { 1, 0 }, { 255,255,255,255 } },
+	{ {  1, 1,-1 }, {  1, 1,-1 }, { 1, 1 }, { 255,255,255,255 } },
+	{ { -1, 1,-1 }, { -1, 1,-1 }, { 0, 1 }, { 255,255,255,255 } },
 	{ { -1,-1, 1 }, { -1,-1, 1 }, { 0, 0 }, { 255,255,255,255 } }, // Top verts
-	{ {  1,-1, 1 }, {  1,-1, 1 }, { 0, 0 }, { 255,255,255,255 } },
-	{ {  1, 1, 1 }, {  1, 1, 1 }, { 0, 0 }, { 255,255,255,255 } },
-	{ { -1, 1, 1 }, { -1, 1, 1 }, { 0, 0 }, { 255,255,255,255 } }, };
+	{ {  1,-1, 1 }, {  1,-1, 1 }, { 1, 0 }, { 255,255,255,255 } },
+	{ {  1, 1, 1 }, {  1, 1, 1 }, { 1, 1 }, { 255,255,255,255 } },
+	{ { -1, 1, 1 }, { -1, 1, 1 }, { 0, 1 }, { 255,255,255,255 } }, };
 
 uint16_t app_inds[] = {
-	1,2,0, 2,3,0, 4,6,5, 7,6,4,
-	6,2,1, 5,6,1, 3,7,4, 0,3,4,
-	4,5,1, 0,4,1, 2,7,3, 2,6,7, };
+	0,2,1, 0,3,1, 5,6,4, 4,6,7,
+	1,2,6, 1,6,5, 4,7,3, 4,3,0,
+	1,5,4, 1,4,0, 3,7,2, 7,6,2, };*/
 
 ///////////////////////////////////////////
 // Main                                  //
@@ -138,6 +154,8 @@ void app_init() {
 
 	shader_create    (app_shader, app_shader_code);
 	shaderargs_create(app_shader_transforms, sizeof(app_transform_buffer_t), 0);
+
+	tex2d_create_file(app_tex, "hook.jpg");
 }
 
 ///////////////////////////////////////////
@@ -164,14 +182,15 @@ void app_draw() {
 	app_transform_buffer_t transform_buffer;
 	XMStoreFloat4x4(&transform_buffer.viewproj, XMMatrixTranspose(mat_view * mat_projection));
 	XMMATRIX mat_model = XMMatrixAffineTransformation(
-		DirectX::g_XMOne * 0.5f, DirectX::g_XMZero,
+		DirectX::g_XMOne*2, DirectX::g_XMZero,
 		XMLoadFloat4((XMFLOAT4*)&DirectX::g_XMIdentityR3),
 		XMLoadFloat3((XMFLOAT3*)&DirectX::g_XMZero));
 	XMStoreFloat4x4(&transform_buffer.world, mat_model);
 
 	shaderargs_set_data(app_shader_transforms, &transform_buffer);
 	shaderargs_set_active(app_shader_transforms);
-	
+	tex2d_set_active(app_tex, 0);
+
 	mesh_draw(app_cube);
 }
 
