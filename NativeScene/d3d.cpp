@@ -1,11 +1,21 @@
 #include "d3d.h"
 
+#include <thread> // sleep_for
+
+using namespace std;
+
 ID3D11Device             *d3d_device        = nullptr;
 ID3D11DeviceContext      *d3d_context       = nullptr;
 IDXGISwapChain           *d3d_swapchain     = nullptr;
 ID3D11RenderTargetView   *d3d_rendertarget  = nullptr;
 ID3D11DepthStencilView   *d3d_depthtarget   = nullptr;
 ID3D11DepthStencilState  *d3d_depthstate    = nullptr;
+
+float  d3d_timef = 0;
+double d3d_time  = 0;
+double d3d_time_start    = 0;
+double d3d_time_elapsed  = 0;
+float  d3d_time_elapsedf = 0;
 
 void d3d_init(HWND hwnd) {
 	DXGI_SWAP_CHAIN_DESC sd = { 0 };
@@ -95,4 +105,22 @@ void d3d_render_begin() {
 }
 void d3d_render_end() {
 	d3d_swapchain->Present( 1, 0 );
+}
+
+void d3d_frame_begin() {
+	FILETIME time;
+	GetSystemTimePreciseAsFileTime(&time);
+	LONGLONG ll_now = (LONGLONG)time.dwLowDateTime + ((LONGLONG)(time.dwHighDateTime) << 32LL);
+	double time_curr = ll_now / 10000000.0;
+
+	if (d3d_time_start == 0)
+		d3d_time_start = time_curr;
+	double new_time = time_curr - d3d_time_start;
+	d3d_time_elapsed  = new_time - d3d_time;
+	d3d_time          = new_time;
+	d3d_time_elapsedf = (float)d3d_time_elapsed;
+	d3d_timef         = (float)d3d_time;
+}
+void d3d_frame_end() {
+	this_thread::sleep_for(chrono::milliseconds(1));
 }

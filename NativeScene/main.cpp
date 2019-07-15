@@ -10,7 +10,6 @@
 
 #include <directxmath.h> // Matrix math functions and objects
 
-#include <thread> // sleep_for
 #include <vector>
 
 using namespace std;
@@ -85,7 +84,6 @@ uint16_t app_inds[] = { 2,1,0, 3,2,0, };
 // Main                                  //
 ///////////////////////////////////////////
 
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
 	case WM_CLOSE: app_run = false; PostQuitMessage(0); break;
@@ -114,12 +112,14 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 			DispatchMessage (&msg);
 			continue;
 		}
+		d3d_frame_begin();
 
 		app_update();
 		d3d_render_begin();
 		app_draw();
 		d3d_render_end();
-		this_thread::sleep_for(chrono::milliseconds(1));
+
+		d3d_frame_end();
 	}
 
 	app_shutdown();
@@ -151,13 +151,10 @@ void app_shutdown() {
 
 ///////////////////////////////////////////
 
-float app_time = 0;
 void app_draw() {
-	app_time += 0.016f;
-
 	// Set up camera matrices based on OpenXR's predicted viewpoint information
 	XMMATRIX mat_projection = XMMatrixPerspectiveFovLH(1, 640.f/480.f, 0.1f, 50);
-	XMMATRIX mat_view       = XMMatrixLookAtLH(XMVectorSet(cosf(app_time)*4, 4, sinf(app_time)*4, 0), DirectX::g_XMZero, XMVectorSet(0, 1, 0, 0));
+	XMMATRIX mat_view       = XMMatrixLookAtLH(XMVectorSet(cosf(d3d_timef)*4, 4, sinf(d3d_timef)*4, 0), DirectX::g_XMZero, XMVectorSet(0, 1, 0, 0));
 
 	shader_set_active(app_shader);
 	mesh_set_active(app_cube);
