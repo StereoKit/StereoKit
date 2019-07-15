@@ -19,6 +19,30 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 	return compiled;
 }
 
+bool shader_create_file(shader_t &shader, const char *filename) {
+	// Open file
+	FILE *fp;
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr)
+		return false;
+
+	// Get length of file
+	fseek(fp, 0L, SEEK_END);
+	size_t length = ftell(fp);
+	rewind(fp);
+
+	// Read the data
+	unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) *length+1);
+	if (data == nullptr) { fclose(fp); return false; }
+	fread(data, 1, length, fp);
+	data[length] = '\0';
+	fclose(fp);
+
+	// Compile the shader
+	shader_create(shader, (const char *)data);
+	free(data);
+
+	return true;
+}
 void shader_create(shader_t &shader, const char *hlsl) {
 	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
 	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");

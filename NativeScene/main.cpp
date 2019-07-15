@@ -37,42 +37,6 @@ void app_shutdown();
 
 ///////////////////////////////////////////
 
-constexpr char app_shader_code[] = R"_(
-cbuffer TransformBuffer : register(b0) {
-	float4x4 world;
-	float4x4 viewproj;
-};
-struct vsIn {
-	float4 pos  : SV_POSITION;
-	float3 norm : NORMAL;
-	float2 uv   : TEXCOORD0;
-};
-struct psIn {
-	float4 pos   : SV_POSITION;
-	float3 color : COLOR0;
-	float2 uv    : TEXCOORD0;
-};
-
-Texture2D tex;
-SamplerState tex_sampler;
-
-psIn vs(vsIn input) {
-	psIn output;
-	output.pos = input.pos;
-	output.pos = mul(float4(input.pos.xyz, 1), world);
-	output.pos = mul(output.pos, viewproj);
-
-	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
-
-	output.uv    = input.uv;
-	output.color = lerp(float3(0,0,0.1), float3(1,1,1), saturate(dot(normal, float3(0,1,0))));
-	return output;
-}
-float4 ps(psIn input) : SV_TARGET {
-	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
-	return float4(input.color * col, 1); 
-})_";
-
 vert_t app_verts[] = {
 	{ { -1, 0, -1 }, { 0, 1, 0 }, { 0, 0 }, { 255,255,255,255 } }, // Bottom verts
 	{ {  1, 0, -1 }, { 0, 1, 0 }, { 1, 0 }, { 255,255,255,255 } },
@@ -132,10 +96,9 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 ///////////////////////////////////////////
 
 void app_init() {
-	mesh_create_file (app_cube, "monkey.obj");
-	tex2d_create_file(app_tex,  "hook.jpg");
-
-	shader_create    (app_shader, app_shader_code);
+	mesh_create_file  (app_cube,   "monkey.obj");
+	tex2d_create_file (app_tex,    "hook.jpg");
+	shader_create_file(app_shader, "shader.hlsl");
 	shaderargs_create(app_shader_transforms, sizeof(app_transform_buffer_t), 0);
 }
 
@@ -156,9 +119,6 @@ void app_draw() {
 	XMMATRIX mat_projection = XMMatrixPerspectiveFovLH(1, 640.f/480.f, 0.1f, 50);
 	XMMATRIX mat_view       = XMMatrixLookAtLH(XMVectorSet(cosf(d3d_timef)*4, 4, sinf(d3d_timef)*4, 0), DirectX::g_XMZero, XMVectorSet(0, 1, 0, 0));
 
-	shader_set_active(app_shader);
-	mesh_set_active(app_cube);
-
 	app_transform_buffer_t transform_buffer;
 	XMStoreFloat4x4(&transform_buffer.viewproj, XMMatrixTranspose(mat_view * mat_projection));
 	XMMATRIX mat_model = XMMatrixAffineTransformation(
@@ -167,10 +127,12 @@ void app_draw() {
 		XMLoadFloat3((XMFLOAT3*)&DirectX::g_XMZero));
 	XMStoreFloat4x4(&transform_buffer.world, mat_model);
 
+	shader_set_active(app_shader);
 	shaderargs_set_data(app_shader_transforms, &transform_buffer);
 	shaderargs_set_active(app_shader_transforms);
 	tex2d_set_active(app_tex, 0);
 
+	mesh_set_active(app_cube);
 	mesh_draw(app_cube);
 }
 

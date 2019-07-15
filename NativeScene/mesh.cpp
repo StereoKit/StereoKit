@@ -139,7 +139,7 @@ void meshfmt_obj(mesh_t &mesh, const char *file) {
 			poss.push_back(in);
 		} else if (sscanf_s(line, "vn %f %f %f\n%n", &in.x, &in.y, &in.z, &read) > 0) {
 			norms.push_back(in);
-		} else if (sscanf_s(line, "vt %f %f\n%n",    &in.x, &in.y,     &read) > 0) {
+		} else if (sscanf_s(line, "vt %f %f\n%n",    &in.x, &in.y,        &read) > 0) {
 			vec2 uv = { in.x, in.y };
 			uvs.push_back(uv);
 		} else if ((count = sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read)) > 0) {
