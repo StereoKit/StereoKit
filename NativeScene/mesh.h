@@ -3,11 +3,18 @@
 #include <stdint.h>
 #include <d3d11.h>
 
+struct vec2 {
+	float x, y;
+};
+struct vec3 {
+	float x, y, z;
+};
+
 struct vert_t {
-	float   pos [3];
-	float   norm[3];
-	float   uv  [2];
-	uint8_t col [4];
+	vec3    pos;
+	vec3    norm;
+	vec2    uv;
+	uint8_t col[4];
 };
 
 struct mesh_t {

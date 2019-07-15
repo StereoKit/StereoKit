@@ -79,23 +79,7 @@ vert_t app_verts[] = {
 	{ {  1, 0, -1 }, { 0, 1, 0 }, { 1, 0 }, { 255,255,255,255 } },
 	{ {  1, 0,  1 }, { 0, 1, 0 }, { 1, 1 }, { 255,255,255,255 } },
 	{ { -1, 0,  1 }, { 0, 1, 0 }, { 0, 1 }, { 255,255,255,255 } },};
-
 uint16_t app_inds[] = { 2,1,0, 3,2,0, };
-
-/*vert_t app_verts[] = {
-	{ { -1,-1,-1 }, { -1,-1,-1 }, { 0, 0 }, { 255,255,255,255 } }, // Bottom verts
-	{ {  1,-1,-1 }, {  1,-1,-1 }, { 1, 0 }, { 255,255,255,255 } },
-	{ {  1, 1,-1 }, {  1, 1,-1 }, { 1, 1 }, { 255,255,255,255 } },
-	{ { -1, 1,-1 }, { -1, 1,-1 }, { 0, 1 }, { 255,255,255,255 } },
-	{ { -1,-1, 1 }, { -1,-1, 1 }, { 0, 0 }, { 255,255,255,255 } }, // Top verts
-	{ {  1,-1, 1 }, {  1,-1, 1 }, { 1, 0 }, { 255,255,255,255 } },
-	{ {  1, 1, 1 }, {  1, 1, 1 }, { 1, 1 }, { 255,255,255,255 } },
-	{ { -1, 1, 1 }, { -1, 1, 1 }, { 0, 1 }, { 255,255,255,255 } }, };
-
-uint16_t app_inds[] = {
-	0,2,1, 0,3,1, 5,6,4, 4,6,7,
-	1,2,6, 1,6,5, 4,7,3, 4,3,0,
-	1,5,4, 1,4,0, 3,7,2, 7,6,2, };*/
 
 ///////////////////////////////////////////
 // Main                                  //
@@ -148,14 +132,11 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 ///////////////////////////////////////////
 
 void app_init() {
-	mesh_create   (app_cube);
-	mesh_set_verts(app_cube, app_verts, _countof(app_verts));
-	mesh_set_inds (app_cube, app_inds,       _countof(app_inds));
+	mesh_create_file (app_cube, "monkey.obj");
+	tex2d_create_file(app_tex,  "hook.jpg");
 
 	shader_create    (app_shader, app_shader_code);
 	shaderargs_create(app_shader_transforms, sizeof(app_transform_buffer_t), 0);
-
-	tex2d_create_file(app_tex, "hook.jpg");
 }
 
 ///////////////////////////////////////////

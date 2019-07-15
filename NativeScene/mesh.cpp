@@ -6,6 +6,8 @@
 
 ID3D11InputLayout *vert_t_layout = nullptr;
 
+void meshfmt_obj(mesh_t &mesh, const char *file);
+
 void mesh_set_verts(mesh_t &mesh, vert_t *verts, int vert_count) {
 	if (mesh.verts       != nullptr) free(mesh.verts);
 	if (mesh.vert_buffer != nullptr) { 
@@ -53,7 +55,7 @@ void mesh_create(mesh_t &mesh) {
 bool mesh_create_file(mesh_t &mesh, const char *file) {
 	// Open file
 	FILE *fp;
-	if (!fopen_s(&fp, file, "rb") || fp == nullptr)
+	if (fopen_s(&fp, file, "r") != 0 || fp == nullptr)
 		return false;
 
 	// Get length of file
@@ -67,7 +69,7 @@ bool mesh_create_file(mesh_t &mesh, const char *file) {
 	fread(data, 1, length, fp);
 	fclose(fp);
 
-	// Make the mesh
+	// Make the verts
 	bool result = mesh_create_filemem(mesh, data, length);
 	free(data);
 
@@ -75,13 +77,15 @@ bool mesh_create_file(mesh_t &mesh, const char *file) {
 }
 bool mesh_create_filemem(mesh_t &mesh, uint8_t *file_data, uint64_t file_size) {
 	mesh_create(mesh);
+	file_data[file_size] = '\0';
+	meshfmt_obj(mesh, (const char *)file_data);
 	return true;
 }
 void mesh_destroy(mesh_t &mesh) {
 	if (mesh.ind_buffer  != nullptr) mesh.ind_buffer ->Release();
 	if (mesh.vert_buffer != nullptr) mesh.vert_buffer->Release();
-	//if (mesh.inds        != nullptr) free(mesh.inds);
-	//if (mesh.verts       != nullptr) free(mesh.verts);
+	//if (verts.inds        != nullptr) free(verts.inds);
+	//if (verts.poss       != nullptr) free(verts.poss);
 	mesh = {};
 }
 
@@ -97,5 +101,65 @@ void mesh_draw(mesh_t &mesh) {
 	d3d_context->DrawIndexed(mesh.ind_count, 0, 0);
 }
 
-void meshfmt_obj() {
+#include <vector>
+#include <map>
+using namespace std;
+
+inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
+	return i1 + vSize * (i2 + nSize * i3);
+}
+int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, uint16_t> indmap, vector<vert_t> &mesh) {
+	int  id = meshfmt_obj_idx(iV, iN, iT, verts.size(), norms.size());
+	map<int, uint16_t>::iterator item = indmap.find(id);
+	if (item == indmap.end()) {
+		mesh.push_back({ verts[iV - 1], norms[iN - 1], uvs[iT - 1], {255,255,255,255} });
+		indmap[id] = mesh.size() - 1;
+		return mesh.size() - 1;
+	}
+	return item->second;
+}
+void meshfmt_obj(mesh_t &mesh, const char *file) {
+	size_t len = strlen(file);
+	const char *line = file;
+	int         read = 0;
+
+	vector<vec3> poss;
+	vector<vec3> norms;
+	vector<vec2> uvs;
+
+	map<int, uint16_t> indmap;
+	vector<vert_t>   verts;
+	vector<uint16_t> faces;
+
+	vec3 in;
+	int inds[12];
+	while ((size_t)(line-file)+1 < len) {
+		if        (sscanf_s(line, "v %f %f %f\n%n",  &in.x, &in.y, &in.z, &read) > 0) {
+			poss.push_back(in);
+		} else if (sscanf_s(line, "vn %f %f %f\n%n", &in.x, &in.y, &in.z, &read) > 0) {
+			norms.push_back(in);
+		} else if (sscanf_s(line, "vt %f %f\n%n",    &in.x, &in.y,     &read) > 0) {
+			vec2 uv = { in.x, in.y };
+			uvs.push_back(uv);
+		} else if (sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read) > 0) {
+			int id1 = indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
+			int id2 = indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
+			int id3 = indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
+			int id4 = indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
+			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
+			faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
+		} else if (sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],  &read) > 0) {
+			int id1 = indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
+			int id2 = indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
+			int id3 = indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
+			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
+		} else {
+			char str[512];
+			sscanf_s(line, "%[^\n]\n%n", str, 512, &read);
+		}
+		line += read;
+	}
+
+	mesh_set_verts(mesh, &verts[0], verts.size());
+	mesh_set_inds (mesh, &faces[0], faces.size());
 }
