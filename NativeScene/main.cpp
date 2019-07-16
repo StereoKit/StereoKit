@@ -48,19 +48,18 @@ uint16_t app_inds[] = { 2,1,0, 3,2,0, };
 // Main                                  //
 ///////////////////////////////////////////
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	switch(message) {
-	case WM_CLOSE: app_run = false; PostQuitMessage(0); break;
-	default: return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
-}
-
 int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmdShow) {
 	MSG      msg     = {0};
 	WNDCLASS wc      = {0}; 
-	wc.lpfnWndProc   = WndProc;
-	wc.hInstance     = GetModuleHandle(NULL);//hInst;
+	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+		switch(message) {
+		case WM_CLOSE: app_run = false; PostQuitMessage(0); break;
+		case WM_SIZE: if (wParam != SIZE_MINIMIZED) d3d_resize_screen((UINT)LOWORD(lParam), (UINT)HIWORD(lParam));
+		default: return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		return (LRESULT)0;
+	};
+	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = "Min DX";
 	if( !RegisterClass(&wc) ) return 1;
@@ -96,8 +95,8 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 ///////////////////////////////////////////
 
 void app_init() {
-	mesh_create_file  (app_cube,   "monkey.obj");
-	tex2d_create_file (app_tex,    "hook.jpg");
+	mesh_create_file  (app_cube,   "cube.obj");
+	tex2d_create_file (app_tex,    "test.png");
 	shader_create_file(app_shader, "shader.hlsl");
 	shaderargs_create(app_shader_transforms, sizeof(app_transform_buffer_t), 0);
 }
@@ -116,7 +115,7 @@ void app_shutdown() {
 
 void app_draw() {
 	// Set up camera matrices based on OpenXR's predicted viewpoint information
-	XMMATRIX mat_projection = XMMatrixPerspectiveFovLH(1, 640.f/480.f, 0.1f, 50);
+	XMMATRIX mat_projection = XMMatrixPerspectiveFovLH(1, (float)d3d_screen_width/d3d_screen_height, 0.1f, 50);
 	XMMATRIX mat_view       = XMMatrixLookAtLH(XMVectorSet(cosf(d3d_timef)*4, 4, sinf(d3d_timef)*4, 0), DirectX::g_XMZero, XMVectorSet(0, 1, 0, 0));
 
 	app_transform_buffer_t transform_buffer;

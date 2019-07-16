@@ -25,7 +25,7 @@ psIn vs(vsIn input) {
 	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
 
 	output.uv    = input.uv;
-	output.color = lerp(float3(0,0,0.1), float3(1,1,1), saturate(dot(normal, float3(0,1,0))));
+	output.color = lerp(float3(0.1,0.1,0.2), float3(1,1,1), saturate(dot(normal, normalize(float3(1,2,1)))));
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
