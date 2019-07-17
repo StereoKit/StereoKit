@@ -62,7 +62,7 @@ void sk_update_timer() {
 	sk_timef         = (float)sk_time;
 }
 
-bool sk_step(void (*app_update)(void), void (*app_draw)(void)) {
+bool sk_step(void (*app_update)(void)) {
 	MSG msg = {0};
 	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -73,7 +73,6 @@ bool sk_step(void (*app_update)(void), void (*app_draw)(void)) {
 
 	app_update();
 	d3d_render_begin();
-	app_draw();
 	render_draw();
 	d3d_render_end();
 	render_clear();

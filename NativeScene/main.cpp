@@ -4,16 +4,13 @@
 
 camera_t     app_camera;
 transform_t  app_camera_transform;
-
 shader_t     app_shader;
 tex2d_t      app_tex;
-
 mesh_t       app_cube;
 transform_t  app_cube_transform;
 material_t   app_cube_material;
 
 void app_init    ();
-void app_draw    ();
 void app_update  ();
 void app_shutdown();
 
@@ -23,7 +20,7 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 	sk_init("Stereo Kit");
 	app_init();
 
-	while (sk_step(app_update, app_draw));
+	while (sk_step(app_update));
 
 	app_shutdown();
 	sk_shutdown();
@@ -57,14 +54,9 @@ void app_shutdown() {
 
 ///////////////////////////////////////////
 
-void app_draw() {
+void app_update() {
 	transform_set_pos(app_camera_transform, { cosf(sk_timef) * 4, 4, sinf(sk_timef) * 4 });
 	transform_lookat (app_camera_transform, { 0,0,0 });
 
 	render_add(app_cube, app_cube_material, app_cube_transform);
-}
-
-///////////////////////////////////////////
-
-void app_update() {
 }
