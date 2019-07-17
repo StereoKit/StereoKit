@@ -18,5 +18,6 @@ void transform_set       (transform_t &transform, const vec3 &position, const ve
 void transform_set_pos   (transform_t &transform, const vec3 &position);
 void transform_set_scale (transform_t &transform, const vec3 &scale);
 void transform_set_rot   (transform_t &transform, const quat &rotation);
+void transform_lookat    (transform_t &transform, const vec3 &at);
 
-void transform_matrix(transform_t &transform, DirectX::XMFLOAT4X4 &result);
+void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
