@@ -50,8 +50,6 @@ void d3d_init(HWND hwnd) {
 	desc_depthstate.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
 	desc_depthstate.BackFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
 	desc_depthstate.BackFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
-
-	ID3D11DepthStencilState * pDSState;
 	d3d_device->CreateDepthStencilState(&desc_depthstate, &d3d_depthstate);
 }
 

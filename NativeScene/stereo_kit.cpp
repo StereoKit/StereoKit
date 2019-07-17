@@ -22,7 +22,7 @@ bool sk_init(const char *app_name) {
 	WNDCLASS wc      = {0}; 
 	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		switch(message) {
-		case WM_CLOSE: sk_run = false; PostQuitMessage(0); break;
+		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
 		case WM_KILLFOCUS: sk_focused = false; break;
 		case WM_SIZE:       if (wParam != SIZE_MINIMIZED) d3d_resize_screen((UINT)LOWORD(lParam), (UINT)HIWORD(lParam)); break;
