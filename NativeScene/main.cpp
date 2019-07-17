@@ -4,6 +4,7 @@
 #include "mesh.h"
 #include "shader.h"
 #include "texture.h"
+#include "transform.h"
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -50,8 +51,6 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 }
 
 ///////////////////////////////////////////
-// App                                   //
-///////////////////////////////////////////
 
 void app_init() {
 	mesh_create_file  (app_cube,   "cube.obj");
@@ -73,17 +72,16 @@ void app_shutdown() {
 ///////////////////////////////////////////
 
 void app_draw() {
+	transform_t transform;
+	transform_set(transform, { 0,0,0 }, { 2,2,2 }, { 0,0,0,1 });
+
 	// Set up camera matrices based on OpenXR's predicted viewpoint information
 	XMMATRIX mat_projection = XMMatrixPerspectiveFovLH(1, (float)d3d_screen_width/d3d_screen_height, 0.1f, 50);
 	XMMATRIX mat_view       = XMMatrixLookAtLH(XMVectorSet(cosf(sk_timef)*4, 4, sinf(sk_timef)*4, 0), DirectX::g_XMZero, XMVectorSet(0, 1, 0, 0));
 
 	app_transform_buffer_t transform_buffer;
 	XMStoreFloat4x4(&transform_buffer.viewproj, XMMatrixTranspose(mat_view * mat_projection));
-	XMMATRIX mat_model = XMMatrixAffineTransformation(
-		DirectX::g_XMOne*2, DirectX::g_XMZero,
-		XMLoadFloat4((XMFLOAT4*)&DirectX::g_XMIdentityR3),
-		XMLoadFloat3((XMFLOAT3*)&DirectX::g_XMZero));
-	XMStoreFloat4x4(&transform_buffer.world, mat_model);
+	transform_matrix(transform, transform_buffer.world);
 
 	shader_set_active(app_shader);
 	shaderargs_set_data(app_shader_transforms, &transform_buffer);

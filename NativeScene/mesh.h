@@ -3,12 +3,7 @@
 #include <stdint.h>
 #include <d3d11.h>
 
-struct vec2 {
-	float x, y;
-};
-struct vec3 {
-	float x, y, z;
-};
+#include "math.h"
 
 struct vert_t {
 	vec3    pos;
