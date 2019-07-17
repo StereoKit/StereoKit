@@ -2,13 +2,13 @@
 
 ///////////////////////////////////////////
 
-camera_t     app_camera;
-transform_t  app_camera_transform;
-shader_t     app_shader;
-tex2d_t      app_tex;
-mesh_t       app_cube;
-transform_t  app_cube_transform;
-material_t   app_cube_material;
+camera_t    app_camera;
+transform_t app_camera_transform;
+shader_t    app_shader;
+tex2d_t     app_tex;
+mesh_t      app_cube;
+transform_t app_cube_transform;
+material_t  app_cube_material;
 
 void app_init    ();
 void app_update  ();
@@ -37,10 +37,7 @@ void app_init() {
 	transform_set(app_cube_transform, { 0,0,0 }, { 2,2,2 }, { 0,0,0,1 });
 
 	transform_initialize(app_camera_transform);
-	app_camera = {};
-	app_camera.fov       = 90;
-	app_camera.clip_near = 0.1f;
-	app_camera.clip_far  = 50;
+	camera_initialize(app_camera, 90, 0.1f, 50);
 	render_set_camera(app_camera, app_camera_transform);
 }
 
