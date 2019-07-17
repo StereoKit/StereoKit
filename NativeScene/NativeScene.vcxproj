@@ -126,7 +126,9 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="material.cpp" />
     <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="render.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="stereo_kit.cpp" />
     <ClCompile Include="texture.cpp" />
@@ -135,8 +137,10 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="render.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stereo_kit.h" />

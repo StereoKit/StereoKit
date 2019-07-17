@@ -1,6 +1,7 @@
 #include "stereo_kit.h"
 
 #include "d3d.h"
+#include "render.h"
 
 #include <thread> // sleep_for
 
@@ -12,7 +13,7 @@ HWND sk_window  = nullptr;
 
 float  sk_timef = 0;
 double sk_time  = 0;
-double d3d_time_start    = 0;
+double sk_time_start    = 0;
 double sk_time_elapsed  = 0;
 float  sk_time_elapsedf = 0;
 
@@ -38,9 +39,11 @@ bool sk_init(const char *app_name) {
 	if( !sk_window ) return false;
 
 	d3d_init(sk_window);
+	render_initialize();
 }
 
 void sk_shutdown() {
+	render_shutdown();
 	d3d_shutdown();
 }
 
@@ -50,9 +53,9 @@ void sk_update_timer() {
 	LONGLONG ll_now = (LONGLONG)time.dwLowDateTime + ((LONGLONG)(time.dwHighDateTime) << 32LL);
 	double time_curr = ll_now / 10000000.0;
 
-	if (d3d_time_start == 0)
-		d3d_time_start = time_curr;
-	double new_time = time_curr - d3d_time_start;
+	if (sk_time_start == 0)
+		sk_time_start = time_curr;
+	double new_time = time_curr - sk_time_start;
 	sk_time_elapsed  = new_time - sk_time;
 	sk_time          = new_time;
 	sk_time_elapsedf = (float)sk_time_elapsed;
@@ -71,7 +74,9 @@ bool sk_step(void (*app_update)(void), void (*app_draw)(void)) {
 	app_update();
 	d3d_render_begin();
 	app_draw();
+	render_draw();
 	d3d_render_end();
+	render_clear();
 
 	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
 
