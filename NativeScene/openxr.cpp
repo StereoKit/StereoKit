@@ -1,6 +1,9 @@
 #include "openxr.h"
 
 #include "d3d.h"
+#include "rendertarget.h"
+#include "render.h"
+#include "stereo_kit.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>
@@ -21,7 +24,7 @@ struct swapchain_t {
 	int32_t     width;
 	int32_t     height;
 	vector<XrSwapchainImageD3D11KHR> surface_images;
-	vector<swapchain_surfdata_t>     surface_data;
+	vector<rendertarget_t>           surface_data;
 };
 
 XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
@@ -41,7 +44,7 @@ vector<swapchain_t>             xr_swapchains;
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 
 bool openxr_init(const char *app_name) {
-	const char          *extensions[] = { "XR_KHR_D3D11_ENABLE_EXTENSION_NAME" };
+	const char          *extensions[] = { XR_KHR_D3D11_ENABLE_EXTENSION_NAME };
 	XrInstanceCreateInfo createInfo   = { XR_TYPE_INSTANCE_CREATE_INFO };
 	createInfo.enabledExtensionCount      = _countof(extensions);
 	createInfo.enabledExtensionNames      = extensions;
@@ -128,10 +131,11 @@ bool openxr_init(const char *app_name) {
 		swapchain.height = swapchain_info.height;
 		swapchain.handle = handle;
 		swapchain.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
-		swapchain.surface_data  .resize(surface_count);
+		swapchain.surface_data  .resize(surface_count, {});
 		xrEnumerateSwapchainImages(swapchain.handle, surface_count, nullptr, (XrSwapchainImageBaseHeader*)swapchain.surface_images.data());
 		for (uint32_t i = 0; i < surface_count; i++) {
-			swapchain.surface_data[i] = d3d_make_surface_data((XrBaseInStructure&)swapchain.surface_images[i]);
+			rendertarget_set_surface     (swapchain.surface_data[i], swapchain.surface_images[i].texture, DXGI_FORMAT_R8G8B8A8_UNORM);
+			rendertarget_make_depthbuffer(swapchain.surface_data[i]);
 		}
 		xr_swapchains.push_back(swapchain);
 	}
@@ -142,15 +146,25 @@ bool openxr_init(const char *app_name) {
 void openxr_shutdown() {
 	// We used a graphics API to initialize the swapchain data, so we'll
 	// give it a chance to release anythig here!
-	for (int32_t i = 0; i < xr_swapchains.size(); i++) {
-		d3d_swapchain_destroy(xr_swapchains[i]);
-	}
+	for (size_t i = 0; i < xr_swapchains.size(); i++) {
+	for (size_t s = 0; s < xr_swapchains[i].surface_data.size(); s++) {
+		rendertarget_release(xr_swapchains[i].surface_data[s]);
+	} }
 	xr_swapchains.clear();
 }
 
-void openxr_poll_events(bool &exit, bool &has_focus) {
-	exit = false;
+void openxr_step_begin() {
+	openxr_poll_events();
+	if (sk_focused)
+		openxr_poll_actions();
+}
 
+void openxr_step_end() {
+	if (sk_focused)
+		openxr_render_frame();
+}
+
+void openxr_poll_events() {
 	// This object is pretty large, making it static so we only need to create it once
 	static XrEventDataBuffer event_buffer;
 	// Only the data header needs cleared out each time
@@ -162,7 +176,7 @@ void openxr_poll_events(bool &exit, bool &has_focus) {
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
 			xr_session_state = changed->state;
-			has_focus = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED || xr_session_state == XR_SESSION_STATE_RUNNING;
+			sk_focused = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED || xr_session_state == XR_SESSION_STATE_RUNNING;
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
@@ -172,11 +186,11 @@ void openxr_poll_events(bool &exit, bool &has_focus) {
 				xrBeginSession(xr_session, &begin_info);
 			} break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); break;
-			case XR_SESSION_STATE_EXITING:      exit = true;              break;
-			case XR_SESSION_STATE_LOSS_PENDING: exit = true;              break;
+			case XR_SESSION_STATE_EXITING:      sk_run = false;              break;
+			case XR_SESSION_STATE_LOSS_PENDING: sk_run = false;              break;
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: exit = true; return;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
 		}
 	}
 }
@@ -194,8 +208,7 @@ void openxr_render_frame() {
 
 	// Execute any code that's dependant on the predicted time, such as updating the location of
 	// controller models.
-	openxr_poll_predicted(frame_state.predictedDisplayTime);
-	app_update_predicted();
+	//openxr_poll_predicted(frame_state.predictedDisplayTime);
 
 	// If the session is active, lets render our layer in the compositor!
 	XrCompositionLayerBaseHeader            *layer      = nullptr;
@@ -213,6 +226,31 @@ void openxr_render_frame() {
 	end_info.layerCount           = layer == nullptr ? 0 : 1;
 	end_info.layers               = &layer;
 	xrEndFrame(xr_session, &end_info);
+
+	render_clear();
+}
+
+///////////////////////////////////////////
+
+void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *result) {
+	// Mix of XMMatrixPerspectiveFovRH from DirectXMath and XrMatrix4x4f_CreateProjectionFov from xr_linear.h
+	const float tanLeft        = tanf(fov.angleLeft);
+	const float tanRight       = tanf(fov.angleRight);
+	const float tanDown        = tanf(fov.angleDown);
+	const float tanUp          = tanf(fov.angleUp);
+	const float tanAngleWidth  = tanRight - tanLeft;
+	const float tanAngleHeight = tanUp - tanDown;
+	const float range          = clip_far / (clip_near - clip_far);
+
+	// [row][column]
+	memset(result, 0, sizeof(float) * 16);
+	result[0]  = 2 / tanAngleWidth;                    // [0][0] Different, DX uses: Width (Height / AspectRatio);
+	result[5]  = 2 / tanAngleHeight;                   // [1][1] Same as DX's: Height (CosFov / SinFov)
+	result[8]  = (tanRight + tanLeft) / tanAngleWidth; // [2][0] Only present in xr's
+	result[9]  = (tanUp + tanDown) / tanAngleHeight;   // [2][1] Only present in xr's
+	result[10] = range;                               // [2][2] Same as xr's: -(farZ + offsetZ) / (farZ - nearZ)
+	result[11] = -1;                                  // [2][3] Same
+	result[14] = range * clip_near;                   // [3][2] Same as xr's: -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
 }
 
 ///////////////////////////////////////////
@@ -252,7 +290,18 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		views[i].subImage.imageRect.extent = { xr_swapchains[i].width, xr_swapchains[i].height };
 
 		// Call the rendering callback with our view and swapchain info
-		d3d_render_layer(views[i], xr_swapchains[i].surface_data[img_id]);
+		rendertarget_t &target = xr_swapchains[i].surface_data[img_id];
+		float clear[] = { 0, 0, 0, 1 };
+		rendertarget_clear(target, clear);
+		rendertarget_set_active(target);
+		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(views[i].subImage.imageRect.offset.x, views[i].subImage.imageRect.offset.y, views[i].subImage.imageRect.extent.width, views[i].subImage.imageRect.extent.height);
+		d3d_context->RSSetViewports(1, &viewport);
+
+		float xr_projection[16];
+		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
+		transform_t cam_transform;
+		transform_set(cam_transform, (vec3&)views[i].pose.position, { 1,1,1 }, (quat&)views[i].pose.orientation);
+		render_draw_matrix(xr_projection, cam_transform);
 
 		// And tell OpenXR we're done with rendering to this one!
 		XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
@@ -264,3 +313,6 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	layer.views     = views.data();
 	return true;
 }
+
+void openxr_make_actions() {}
+void openxr_poll_actions() {}

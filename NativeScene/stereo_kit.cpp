@@ -3,13 +3,16 @@
 #include "d3d.h"
 #include "render.h"
 
+#include "win32.h"
+#include "openxr.h"
+
 #include <thread> // sleep_for
 
 using namespace std;
 
+sk_runtime_ sk_runtime = sk_runtime_win32;
 bool sk_focused = true;
 bool sk_run     = true;
-HWND sk_window  = nullptr;
 
 float  sk_timef = 0;
 double sk_time  = 0;
@@ -17,33 +20,29 @@ double sk_time_start    = 0;
 double sk_time_elapsed  = 0;
 float  sk_time_elapsedf = 0;
 
-bool sk_init(const char *app_name) {
-	MSG      msg     = {0};
-	WNDCLASS wc      = {0}; 
-	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-		switch(message) {
-		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
-		case WM_SETFOCUS:  sk_focused = true;  break;
-		case WM_KILLFOCUS: sk_focused = false; break;
-		case WM_SIZE:       if (wParam != SIZE_MINIMIZED) d3d_resize_screen((UINT)LOWORD(lParam), (UINT)HIWORD(lParam)); break;
-		case WM_SYSCOMMAND: if ((wParam & 0xfff0) == SC_KEYMENU) return (LRESULT)0; // Disable alt menu
-		default: return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-		return (LRESULT)0;
-	};
-	wc.hInstance     = GetModuleHandle(NULL);
-	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = app_name;
-	if( !RegisterClass(&wc) ) return false;
-	sk_window = CreateWindow(wc.lpszClassName, app_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 20, 20, 640, 480, 0, 0, wc.hInstance, nullptr);
-	if( !sk_window ) return false;
+bool sk_init(const char *app_name, sk_runtime_ runtime) {
+	sk_runtime = runtime;
 
-	d3d_init(sk_window);
+	d3d_init();
+	
+	bool result = true;
+	switch (sk_runtime) {
+	case sk_runtime_win32:  result = win32_init (app_name); break;
+	case sk_runtime_openxr: result = openxr_init(app_name); break;
+	}
+	if (!result)
+		return false;
+
 	render_initialize();
+	return true;
 }
 
 void sk_shutdown() {
 	render_shutdown();
+	switch (sk_runtime) {
+	case sk_runtime_win32:  win32_shutdown (); break;
+	case sk_runtime_openxr: openxr_shutdown(); break;
+	}
 	d3d_shutdown();
 }
 
@@ -63,19 +62,20 @@ void sk_update_timer() {
 }
 
 bool sk_step(void (*app_update)(void)) {
-	MSG msg = {0};
-	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage (&msg);
-		return sk_run;
+	switch (sk_runtime) {
+	case sk_runtime_win32:  win32_step_begin (); break;
+	case sk_runtime_openxr: openxr_step_begin(); break;
 	}
+	
 	sk_update_timer();
-
 	app_update();
+
 	d3d_render_begin();
-	render_draw();
+	switch (sk_runtime) {
+	case sk_runtime_win32:  win32_step_end (); break;
+	case sk_runtime_openxr: openxr_step_end(); break;
+	}
 	d3d_render_end();
-	render_clear();
 
 	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
 

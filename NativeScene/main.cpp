@@ -17,7 +17,8 @@ void app_shutdown();
 ///////////////////////////////////////////
 
 int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmdShow) {
-	sk_init("Stereo Kit");
+	if (!sk_init("Stereo Kit", sk_runtime_win32))
+		return 1;
 	app_init();
 
 	while (sk_step(app_update));
@@ -34,7 +35,7 @@ void app_init() {
 	tex2d_create_file (app_tex,    "test.png");
 	shader_create_file(app_shader, "shader.hlsl");
 	app_cube_material = { &app_shader, &app_tex };
-	transform_set(app_cube_transform, { 0,0,0 }, { 2,2,2 }, { 0,0,0,1 });
+	transform_set(app_cube_transform, { 0,0,.5f }, { .2f,.2f,.2f }, { 0,0,0,1 });
 
 	transform_initialize(app_camera_transform);
 	camera_initialize(app_camera, 90, 0.1f, 50);

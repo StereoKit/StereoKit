@@ -30,16 +30,8 @@ void render_add(mesh_t &mesh, material_t &material, transform_t &transform) {
 	render_queue.push_back({ transform, mesh, material });
 }
 
-void render_draw() {
-	if (render_camera != nullptr && render_camera_transform != nullptr)
-		render_draw_from(*render_camera, *render_camera_transform);
-}
-
-void render_draw_from(camera_t &cam, transform_t &cam_transform) {
-	render_transform_buffer_t transform_buffer;
-	camera_viewproj (cam, cam_transform, transform_buffer.viewproj);
+void render_draw_queue(render_transform_buffer_t &transform_buffer) {
 	shaderargs_set_active(render_shader_transforms);
-	
 	for (size_t i = 0; i < render_queue.size(); i++) {
 		render_item_t &item = render_queue[i];
 
@@ -52,6 +44,28 @@ void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 		mesh_set_active(item.mesh);
 		mesh_draw      (item.mesh);
 	}
+}
+
+void render_draw() {
+	if (render_camera != nullptr && render_camera_transform != nullptr)
+		render_draw_from(*render_camera, *render_camera_transform);
+}
+void render_draw_from(camera_t &cam, transform_t &cam_transform) {
+	render_transform_buffer_t transform_buffer;
+	camera_viewproj (cam, cam_transform, transform_buffer.viewproj);
+	
+	render_draw_queue(transform_buffer);
+}
+void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
+	render_transform_buffer_t transform_buffer;
+	XMMATRIX mat_projection = XMLoadFloat4x4((XMFLOAT4X4 *)cam_matrix);
+	XMMATRIX mat_view;
+	transform_matrix(cam_transform, mat_view);
+	mat_view = XMMatrixInverse(nullptr, mat_view);
+
+	transform_buffer.viewproj = XMMatrixTranspose(mat_view * mat_projection);
+
+	render_draw_queue(transform_buffer);
 }
 
 void render_clear() {

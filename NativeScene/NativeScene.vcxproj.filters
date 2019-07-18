@@ -41,6 +41,9 @@
     <ClCompile Include="rendertarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="win32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -79,6 +82,11 @@
     <ClInclude Include="transform.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="rendertarget.h" />
+    <ClInclude Include="win32.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rendertarget.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

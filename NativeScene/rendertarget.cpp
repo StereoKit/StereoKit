@@ -14,7 +14,10 @@ void rendertarget_resize(rendertarget_t &target, int width, int height) {
 	else return;
 }
 void rendertarget_make_views(rendertarget_t &target) {
-	d3d_device->CreateRenderTargetView(target.texture, nullptr, &target.target_view);
+	D3D11_RENDER_TARGET_VIEW_DESC target_desc = {};
+	target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	target_desc.Format        = target.format;
+	d3d_device->CreateRenderTargetView(target.texture, &target_desc, &target.target_view);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
 	shaderResourceViewDesc.Format                    = target.format;
@@ -23,7 +26,7 @@ void rendertarget_make_views(rendertarget_t &target) {
 	shaderResourceViewDesc.Texture2D.MipLevels       = 1;
 	d3d_device->CreateShaderResourceView(target.texture, &shaderResourceViewDesc, &target.shader_view);
 }
-void rendertarget_set_surface(rendertarget_t &target, ID3D11Texture2D *surface) {
+void rendertarget_set_surface(rendertarget_t &target, ID3D11Texture2D *surface, DXGI_FORMAT format) {
 	if (target.texture == surface)
 		return;
 	if (target.texture     != nullptr) target.texture    ->Release();
@@ -38,7 +41,7 @@ void rendertarget_set_surface(rendertarget_t &target, ID3D11Texture2D *surface) 
 	target.texture->GetDesc(&color_desc);
 	target.width  = color_desc.Width;
 	target.height = color_desc.Height;
-	target.format = color_desc.Format;
+	target.format = format == DXGI_FORMAT_UNKNOWN ? color_desc.Format : format;
 
 	rendertarget_make_views(target);
 	if (target.depth_view != nullptr && (old_width != target.width || old_height != target.height)) {
@@ -46,6 +49,7 @@ void rendertarget_set_surface(rendertarget_t &target, ID3D11Texture2D *surface) 
 		rendertarget_make_depthbuffer(target);
 	}
 }
+
 void rendertarget_make_depthbuffer(rendertarget_t &target) {
 	if (target.depth_view != nullptr)
 		return;
@@ -57,7 +61,7 @@ void rendertarget_make_depthbuffer(rendertarget_t &target) {
 	depth_desc.Height           = target.height;
 	depth_desc.ArraySize        = 1;
 	depth_desc.Format           = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depth_desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+	depth_desc.BindFlags        = D3D11_BIND_DEPTH_STENCIL;
 	d3d_device->CreateTexture2D(&depth_desc, nullptr, &depth_texture);
 
 	// And create a view resource for the depth buffer, so we can set that up for rendering to as well!
@@ -68,4 +72,12 @@ void rendertarget_make_depthbuffer(rendertarget_t &target) {
 
 	// We don't need direct access to the ID3D11Texture2D object anymore, we only need the view
 	depth_texture->Release();
+}
+
+void rendertarget_clear(rendertarget_t &target, const float *color) {
+	if (target.target_view != nullptr) d3d_context->ClearRenderTargetView (target.target_view, color);
+	if (target.depth_view  != nullptr) d3d_context->ClearDepthStencilView (target.depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+void rendertarget_set_active(rendertarget_t &target) {
+	d3d_context->OMSetRenderTargets(1, &target.target_view, target.depth_view);
 }
