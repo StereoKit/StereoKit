@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKit", "StereoKit\StereoKit.vcxproj", "{95B47C8E-3A66-483C-ABEE-950E6C2F621A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitTest", "StereoKitTest\StereoKitTest.vcxproj", "{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{95B47C8E-3A66-483C-ABEE-950E6C2F621A}.Release|x64.Build.0 = Release|x64
 		{95B47C8E-3A66-483C-ABEE-950E6C2F621A}.Release|x86.ActiveCfg = Release|Win32
 		{95B47C8E-3A66-483C-ABEE-950E6C2F621A}.Release|x86.Build.0 = Release|Win32
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Debug|x64.ActiveCfg = Debug|x64
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Debug|x64.Build.0 = Debug|x64
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Debug|x86.ActiveCfg = Debug|Win32
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Debug|x86.Build.0 = Debug|Win32
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Release|x64.ActiveCfg = Release|x64
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Release|x64.Build.0 = Release|x64
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Release|x86.ActiveCfg = Release|Win32
+		{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

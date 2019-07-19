@@ -1,5 +1,11 @@
 #pragma once
 
+#if defined(_DLL)
+#define SK_EXPORT __declspec(dllexport)
+#else
+#define SK_EXPORT __declspec(dllimport)
+#endif
+
 #include "mesh.h"
 #include "shader.h"
 #include "texture.h"
@@ -22,6 +28,6 @@ extern sk_runtime_ sk_runtime;
 extern bool sk_focused;
 extern bool sk_run;
 
-bool sk_init      (const char *app_name, sk_runtime_ runtime);
-void sk_shutdown  ();
-bool sk_step      (void (*app_update)(void));
+SK_EXPORT bool sk_init      (const char *app_name, sk_runtime_ runtime);
+SK_EXPORT void sk_shutdown  ();
+SK_EXPORT bool sk_step      (void (*app_update)(void));
