@@ -7,6 +7,7 @@ void rendertarget_release(rendertarget_t &target) {
 	if (target.target_view != nullptr) target.target_view->Release();
 	if (target.texture     != nullptr) target.texture    ->Release();
 	if (target.depth_view  != nullptr) target.depth_view ->Release();
+	target = {};
 }
 void rendertarget_resize(rendertarget_t &target, int width, int height) {
 	if (target.width != width || target.height != height)

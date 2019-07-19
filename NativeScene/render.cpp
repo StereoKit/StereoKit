@@ -36,6 +36,7 @@ void render_draw_queue(render_transform_buffer_t &transform_buffer) {
 		render_item_t &item = render_queue[i];
 
 		transform_matrix(item.transform, transform_buffer.world);
+		transform_buffer.world = XMMatrixTranspose(transform_buffer.world);
 
 		shader_set_active(*item.material.shader);
 		shaderargs_set_data(render_shader_transforms, &transform_buffer);
