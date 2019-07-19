@@ -1,7 +1,6 @@
-#include "camera.h"
+#include "stereo_kit.h"
 
 #include "d3d.h"
-#include "stereo_kit.h"
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;

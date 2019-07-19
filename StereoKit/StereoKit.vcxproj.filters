@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="camera.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="material.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="render.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="rendertarget.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="shader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="transform.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="stereo_kit.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="d3d.cpp">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="win32.cpp">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="openxr.cpp">
+      <Filter>internal</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stereo_kit.h" />
+    <ClInclude Include="sk_math.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="rendertarget.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="win32.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="openxr.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{3f36752b-4566-4f15-8a31-664ff4b893d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="internal">
+      <UniqueIdentifier>{cfb83ef1-ab77-402c-9941-23c48f8e553a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

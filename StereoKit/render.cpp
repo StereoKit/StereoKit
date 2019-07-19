@@ -1,4 +1,4 @@
-#include "render.h"
+#include "stereo_kit.h"
 
 #include <vector>
 using namespace std;

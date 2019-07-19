@@ -1,4 +1,6 @@
-#include "shader.h"
+#include "stereo_kit.h"
+
+#include "d3d.h"
 
 #include <d3dcompiler.h>
 #include <stdio.h>

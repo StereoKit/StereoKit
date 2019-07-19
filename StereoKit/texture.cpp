@@ -1,4 +1,6 @@
-#include "texture.h"
+#include "stereo_kit.h"
+
+#include "d3d.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

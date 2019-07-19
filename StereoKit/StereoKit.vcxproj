@@ -164,7 +164,6 @@
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="openxr.cpp" />
@@ -177,19 +176,12 @@
     <ClCompile Include="win32.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="camera.h" />
     <ClInclude Include="d3d.h" />
-    <ClInclude Include="material.h" />
     <ClInclude Include="sk_math.h" />
-    <ClInclude Include="mesh.h" />
     <ClInclude Include="openxr.h" />
-    <ClInclude Include="render.h" />
     <ClInclude Include="rendertarget.h" />
-    <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stereo_kit.h" />
-    <ClInclude Include="texture.h" />
-    <ClInclude Include="transform.h" />
     <ClInclude Include="win32.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

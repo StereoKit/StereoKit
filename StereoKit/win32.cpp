@@ -3,8 +3,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dxgi1_2.h>
-#include "rendertarget.h"
+
 #include "stereo_kit.h"
+
+#include "rendertarget.h"
+#include "d3d.h"
 
 HWND             win32_window = nullptr;
 rendertarget_t   win32_target = {};
