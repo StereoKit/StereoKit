@@ -31,9 +31,9 @@ int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmd
 ///////////////////////////////////////////
 
 void app_init() {
-	mesh_create_file  (app_cube,   "cube.obj");
-	tex2d_create_file (app_tex,    "test.png");
-	shader_create_file(app_shader, "shader.hlsl");
+	mesh_create_file  (app_cube,   "Assets/cube.obj");
+	tex2d_create_file (app_tex,    "Assets/test.png");
+	shader_create_file(app_shader, "Assets/shader.hlsl");
 	app_cube_material = { &app_shader, &app_tex };
 	transform_set(app_cube_transform, { 0,0,.5f }, { .2f,.2f,.2f }, { 0,0,0,1 });
 
