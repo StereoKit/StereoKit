@@ -1,4 +1,4 @@
-#include "stereo_kit.h"
+#include "stereokit.h"
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;

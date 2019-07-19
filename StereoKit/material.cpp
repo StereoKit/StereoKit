@@ -1,1 +1,1 @@
-#include "stereo_kit.h"
+#include "stereokit.h"

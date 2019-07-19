@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <dxgi1_2.h>
 
-#include "stereo_kit.h"
+#include "stereokit.h"
 
 #include "rendertarget.h"
 #include "d3d.h"

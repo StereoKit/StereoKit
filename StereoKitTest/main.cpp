@@ -1,4 +1,4 @@
-#include "../StereoKit/stereo_kit.h"
+#include "../StereoKit/stereokit.h"
 
 ///////////////////////////////////////////
 

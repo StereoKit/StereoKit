@@ -1,4 +1,4 @@
-#include "stereo_kit.h"
+#include "stereokit.h"
 
 #include "d3d.h"
 #include "win32.h"

@@ -170,7 +170,7 @@
     <ClCompile Include="render.cpp" />
     <ClCompile Include="rendertarget.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="stereo_kit.cpp" />
+    <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="transform.cpp" />
     <ClCompile Include="win32.cpp" />
@@ -181,7 +181,7 @@
     <ClInclude Include="openxr.h" />
     <ClInclude Include="rendertarget.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="stereo_kit.h" />
+    <ClInclude Include="stereokit.h" />
     <ClInclude Include="win32.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

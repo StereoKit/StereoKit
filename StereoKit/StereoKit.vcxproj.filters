@@ -25,9 +25,6 @@
     <ClCompile Include="transform.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="stereo_kit.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="d3d.cpp">
       <Filter>internal</Filter>
     </ClCompile>
@@ -37,9 +34,11 @@
     <ClCompile Include="openxr.cpp">
       <Filter>internal</Filter>
     </ClCompile>
+    <ClCompile Include="stereokit.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stereo_kit.h" />
     <ClInclude Include="sk_math.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -58,6 +57,7 @@
     <ClInclude Include="openxr.h">
       <Filter>internal</Filter>
     </ClInclude>
+    <ClInclude Include="stereokit.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
