@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.h"
+#include "sk_math.h"
 #include "transform.h"
 
 struct camera_t {

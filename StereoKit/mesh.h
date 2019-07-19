@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <d3d11.h>
 
-#include "math.h"
+#include "sk_math.h"
 
 struct vert_t {
 	vec3    pos;

@@ -8,8 +8,8 @@
 #include "render.h"
 
 enum sk_runtime_ {
-	sk_runtime_win32  = 0,
-	sk_runtime_openxr = 1
+	sk_runtime_flatscreen   = 0,
+	sk_runtime_mixedreality = 1
 };
 
 extern float  sk_timef;

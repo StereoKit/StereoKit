@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma comment(lib,"openxr_loader-0_90.lib")
-
 bool openxr_init          (const char *app_name);
 void openxr_shutdown      ();
 void openxr_step_begin    ();

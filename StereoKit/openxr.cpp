@@ -1,3 +1,5 @@
+#pragma comment(lib,"openxr_loader-0_90.lib")
+
 #include "openxr.h"
 
 #include "d3d.h"

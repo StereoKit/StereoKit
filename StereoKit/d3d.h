@@ -1,9 +1,5 @@
 #pragma once
 
-#pragma comment(lib,"D3D11.lib")
-#pragma comment(lib,"Dxgi.lib") // CreateSwapChainForHwnd
-#pragma comment(lib,"D3dcompiler.lib") // for shader compile
-
 #include <d3d11.h>
 
 extern ID3D11Device           *d3d_device;

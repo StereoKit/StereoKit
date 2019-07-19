@@ -17,7 +17,7 @@ void app_shutdown();
 ///////////////////////////////////////////
 
 int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmdShow) {
-	if (!sk_init("Stereo Kit", sk_runtime_win32))
+	if (!sk_init("Stereo Kit", sk_runtime_flatscreen))
 		return 1;
 	app_init();
 

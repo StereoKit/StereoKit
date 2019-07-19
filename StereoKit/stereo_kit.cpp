@@ -10,7 +10,7 @@
 
 using namespace std;
 
-sk_runtime_ sk_runtime = sk_runtime_win32;
+sk_runtime_ sk_runtime = sk_runtime_flatscreen;
 bool sk_focused = true;
 bool sk_run     = true;
 
@@ -28,8 +28,8 @@ bool sk_init(const char *app_name, sk_runtime_ runtime) {
 	
 	bool result = true;
 	switch (sk_runtime) {
-	case sk_runtime_win32:  result = win32_init (app_name); break;
-	case sk_runtime_openxr: result = openxr_init(app_name); break;
+	case sk_runtime_flatscreen:   result = win32_init (app_name); break;
+	case sk_runtime_mixedreality: result = openxr_init(app_name); break;
 	}
 	if (!result)
 		return false;
@@ -41,8 +41,8 @@ bool sk_init(const char *app_name, sk_runtime_ runtime) {
 void sk_shutdown() {
 	render_shutdown();
 	switch (sk_runtime) {
-	case sk_runtime_win32:  win32_shutdown (); break;
-	case sk_runtime_openxr: openxr_shutdown(); break;
+	case sk_runtime_flatscreen:   win32_shutdown (); break;
+	case sk_runtime_mixedreality: openxr_shutdown(); break;
 	}
 	d3d_shutdown();
 }
@@ -64,8 +64,8 @@ void sk_update_timer() {
 
 bool sk_step(void (*app_update)(void)) {
 	switch (sk_runtime) {
-	case sk_runtime_win32:  win32_step_begin (); break;
-	case sk_runtime_openxr: openxr_step_begin(); break;
+	case sk_runtime_flatscreen:   win32_step_begin (); break;
+	case sk_runtime_mixedreality: openxr_step_begin(); break;
 	}
 	
 	sk_update_timer();
@@ -73,8 +73,8 @@ bool sk_step(void (*app_update)(void)) {
 
 	d3d_render_begin();
 	switch (sk_runtime) {
-	case sk_runtime_win32:  win32_step_end (); break;
-	case sk_runtime_openxr: openxr_step_end(); break;
+	case sk_runtime_flatscreen:   win32_step_end (); break;
+	case sk_runtime_mixedreality: openxr_step_end(); break;
 	}
 	d3d_render_end();
 

@@ -180,7 +180,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="d3d.h" />
     <ClInclude Include="material.h" />
-    <ClInclude Include="math.h" />
+    <ClInclude Include="sk_math.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="openxr.h" />
     <ClInclude Include="render.h" />
