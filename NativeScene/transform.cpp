@@ -32,7 +32,7 @@ void transform_set_rot  (transform_t &transform, const quat &rotation) {
 	transform._dirty   = true;
 }
 void transform_lookat  (transform_t &transform, const vec3 &at) {
-	XMMATRIX mat = XMMatrixLookAtLH(to_fast3(transform._position), to_fast3(at), XMVectorSet(0, 1, 0, 0));
+	XMMATRIX mat = XMMatrixLookAtRH(to_fast3(transform._position), to_fast3(at), XMVectorSet(0, 1, 0, 0));
 	transform._rotation = from_fastq(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 	transform._dirty = true;
 }

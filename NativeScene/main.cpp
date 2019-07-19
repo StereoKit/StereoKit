@@ -53,7 +53,7 @@ void app_shutdown() {
 ///////////////////////////////////////////
 
 void app_update() {
-	transform_set_pos(app_camera_transform, { cosf(sk_timef) * 4, 4, sinf(sk_timef) * 4 });
+	transform_set_pos(app_camera_transform, { cosf(sk_timef) * 1, 1, sinf(sk_timef) * 1 });
 	transform_lookat (app_camera_transform, { 0,0,0 });
 
 	render_add(app_cube, app_cube_material, app_cube_transform);

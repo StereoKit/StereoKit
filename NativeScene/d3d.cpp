@@ -4,6 +4,7 @@ ID3D11Device             *d3d_device        = nullptr;
 ID3D11DeviceContext      *d3d_context       = nullptr;
 ID3D11DepthStencilState  *d3d_depthstate    = nullptr;
 ID3D11SamplerState       *d3d_samplerstate  = nullptr;
+ID3D11RasterizerState    *d3d_rasterstate   = nullptr;
 int                       d3d_screen_width  = 640;
 int                       d3d_screen_height = 480;
 
@@ -41,6 +42,13 @@ void d3d_init() {
 	desc_sampler.Filter   = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	d3d_device->CreateSamplerState(&desc_sampler, &d3d_samplerstate);
 	d3d_context->PSSetSamplers(0, 1, &d3d_samplerstate);
+
+	D3D11_RASTERIZER_DESC desc_rasterizer = {};
+	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
+	desc_rasterizer.CullMode = D3D11_CULL_BACK;
+	desc_rasterizer.FrontCounterClockwise = true;
+	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
+	d3d_context->RSSetState(d3d_rasterstate);
 }
 
 ///////////////////////////////////////////
