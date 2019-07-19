@@ -16,6 +16,7 @@ extern float  sk_timef;
 extern double sk_time;
 extern double sk_time_elapsed;
 extern float  sk_time_elapsedf;
+extern long long sk_time_raw;
 
 extern sk_runtime_ sk_runtime;
 extern bool sk_focused;

@@ -19,6 +19,7 @@ double sk_time  = 0;
 double sk_time_start    = 0;
 double sk_time_elapsed  = 0;
 float  sk_time_elapsedf = 0;
+long long sk_time_raw = 0;
 
 bool sk_init(const char *app_name, sk_runtime_ runtime) {
 	sk_runtime = runtime;
@@ -49,8 +50,8 @@ void sk_shutdown() {
 void sk_update_timer() {
 	FILETIME time;
 	GetSystemTimePreciseAsFileTime(&time);
-	LONGLONG ll_now = (LONGLONG)time.dwLowDateTime + ((LONGLONG)(time.dwHighDateTime) << 32LL);
-	double time_curr = ll_now / 10000000.0;
+	sk_time_raw = (LONGLONG)time.dwLowDateTime + ((LONGLONG)(time.dwHighDateTime) << 32LL);
+	double time_curr = sk_time_raw / 10000000.0;
 
 	if (sk_time_start == 0)
 		sk_time_start = time_curr;
