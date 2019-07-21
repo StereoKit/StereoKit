@@ -10,15 +10,15 @@ namespace StereoKit
     public class Mesh
     {
         #region Imports
-        [DllImport("StereoKitC.dll")]
+        [DllImport(Util.DllName)]
         static extern IntPtr mesh_create();
-        [DllImport("StereoKitC.dll", CharSet = CharSet.Ansi)]
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr mesh_create_file(string file);
-        [DllImport("StereoKitC.dll")]
+        [DllImport(Util.DllName)]
         static extern void mesh_destroy(IntPtr mesh);
         #endregion
 
-        IntPtr _meshInst;
+        internal IntPtr _meshInst;
         public Mesh()
         {
             _meshInst = mesh_create();

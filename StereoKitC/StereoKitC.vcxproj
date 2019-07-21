@@ -180,12 +180,16 @@
   <ItemGroup>
     <ClInclude Include="assets.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="openxr.h" />
     <ClInclude Include="rendertarget.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stereokit.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

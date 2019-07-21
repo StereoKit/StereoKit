@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <d3d11.h>
 
+#include "stereokit.h"
 #include "assets.h"
 
 struct _mesh_t {
@@ -14,3 +15,7 @@ struct _mesh_t {
 	int            ind_count;
 	ID3D11Buffer  *ind_buffer;
 };
+
+
+void mesh_draw      (mesh_t mesh);
+void mesh_set_active(mesh_t mesh);

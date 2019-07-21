@@ -8,6 +8,8 @@
 #define SK_API_S __declspec(dllimport)
 #endif
 
+#define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
+
 #include <stdint.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
@@ -62,8 +64,7 @@ struct vert_t {
 	uint8_t col[4];
 };
 
-struct _mesh_t;
-typedef struct _mesh_t *mesh_t;
+SK_DeclarePrivateType(mesh_t);
 
 SK_API mesh_t mesh_create        ();
 SK_API mesh_t mesh_create_file   (const char *file);
@@ -71,53 +72,30 @@ SK_API mesh_t mesh_create_filemem(uint8_t *file_data, uint64_t file_size);
 SK_API void   mesh_destroy   (mesh_t mesh);
 SK_API void   mesh_set_verts (mesh_t mesh, vert_t   *verts, int vert_count);
 SK_API void   mesh_set_inds  (mesh_t mesh, uint16_t *inds,  int ind_count);
-SK_API void   mesh_set_active(mesh_t mesh);
-SK_API void   mesh_draw      (mesh_t mesh);
 
 ///////////////////////////////////////////
 
-struct tex2d_t {
-	int width;
-	int height;
-	ID3D11ShaderResourceView *resource;
-	ID3D11Texture2D          *texture;
-};
+SK_DeclarePrivateType(tex2d_t);
 
-SK_API void tex2d_create     (tex2d_t &tex);
-SK_API bool tex2d_create_file(tex2d_t &tex, const char *file);
-SK_API void tex2d_destroy    (tex2d_t &tex);
-SK_API void tex2d_set_colors (tex2d_t &tex, int width, int height, uint8_t *data_rgba32);
-SK_API void tex2d_set_active (tex2d_t &tex, int slot);
+SK_API tex2d_t tex2d_create     ();
+SK_API tex2d_t tex2d_create_file(const char *file);
+SK_API void    tex2d_destroy    (tex2d_t tex);
+SK_API void    tex2d_set_colors (tex2d_t tex, int width, int height, uint8_t *data_rgba32);
 
 ///////////////////////////////////////////
 
-struct shader_t {
-	ID3D11VertexShader *vshader;
-	ID3D11PixelShader  *pshader;
-	ID3D11InputLayout  *vert_layout;
-};
-struct shaderargs_t {
-	ID3D11Buffer *const_buffer;
-	int buffer_slot;
-	int buffer_size;
-};
+SK_DeclarePrivateType(shader_t);
 
-SK_API void shader_create     (shader_t &shader, const char *hlsl);
-SK_API bool shader_create_file(shader_t &shader, const char *filename);
-SK_API void shader_destroy    (shader_t &shader);
-SK_API void shader_set_active (shader_t &shader);
-
-SK_API void shaderargs_create    (shaderargs_t &args, size_t buffer_size, int buffer_slot);
-SK_API void shaderargs_destroy   (shaderargs_t &args);
-SK_API void shaderargs_set_data  (shaderargs_t &args, void *data);
-SK_API void shaderargs_set_active(shaderargs_t &args);
+SK_API shader_t shader_create     (const char *hlsl);
+SK_API shader_t shader_create_file(const char *filename);
+SK_API void     shader_destroy    (shader_t shader);
 
 ///////////////////////////////////////////
 
-struct material_t {
-	shader_t *shader;
-	tex2d_t *texture;
-};
+SK_DeclarePrivateType(material_t);
+
+SK_API material_t material_create (shader_t shader, tex2d_t tex);
+SK_API void       material_destroy(material_t material);
 
 ///////////////////////////////////////////
 
@@ -153,11 +131,4 @@ SK_API void camera_viewproj  (camera_t &cam, transform_t &cam_transform, DirectX
 ///////////////////////////////////////////
 
 SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
-SK_API void render_add        (mesh_t mesh, material_t &material, transform_t &transform);
-SK_API void render_draw       ();
-SK_API void render_draw_from  (camera_t &cam, transform_t &cam_transform);
-SK_API void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform);
-SK_API void render_clear();
-
-SK_API void render_initialize();
-SK_API void render_shutdown();
+SK_API void render_add        (mesh_t mesh, material_t material, transform_t &transform);

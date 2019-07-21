@@ -15,12 +15,14 @@ namespace StereoKit
     public class StereoKitApp
     {
         #region Imports
-        [DllImport("StereoKitC.dll", CharSet = CharSet.Ansi)]
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern bool sk_init(string app_name, Runtime runtime);
-        [DllImport("StereoKitC.dll")]
+        [DllImport(Util.DllName)]
         static extern void sk_shutdown();
-        [DllImport("StereoKitC.dll")]
+        [DllImport(Util.DllName)]
         static extern bool sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
+        [DllImport(Util.DllName)]
+        static extern float sk_timef();
         #endregion
 
         public StereoKitApp(string name, Runtime runtime)
@@ -36,5 +38,7 @@ namespace StereoKit
         {
             return sk_step(onStep);
         }
+
+        public static float Time { get { return sk_timef(); } }
     }
 }

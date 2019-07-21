@@ -89,7 +89,7 @@ void mesh_destroy(mesh_t mesh) {
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
 	//if (verts.inds        != nullptr) free(verts.inds);
 	//if (verts.poss       != nullptr) free(verts.poss);
-	mesh = {};
+	*mesh = {};
 }
 
 void mesh_set_active(mesh_t mesh) {

@@ -1,37 +1,38 @@
 #include "stereokit.h"
+#include "texture.h"
 
 #include "d3d.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-void tex2d_create(tex2d_t &tex) {
-	tex = {};
+tex2d_t tex2d_create() {
+	return (tex2d_t)assets_allocate(asset_type_texture);
 }
-bool tex2d_create_file(tex2d_t &tex, const char *file) {
-	tex2d_create(tex);
-
+tex2d_t tex2d_create_file(const char *file) {
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
 	uint8_t *data     = stbi_load(file, &width, &height, &channels, 4);
 
-	if (data == nullptr)
-		return false;
+	if (data == nullptr) {
+		return nullptr;
+	}
+	tex2d_t result = tex2d_create();
 
-	tex2d_set_colors(tex, width, height, data);
-	return true;
+	tex2d_set_colors(result, width, height, data);
+	return result;
 }
-void tex2d_destroy(tex2d_t &tex) {
-	if (tex.resource != nullptr) tex.resource->Release();
-	if (tex.texture  != nullptr) tex.texture ->Release();
-	tex = {};
+void tex2d_destroy(tex2d_t tex) {
+	if (tex->resource != nullptr) tex->resource->Release();
+	if (tex->texture  != nullptr) tex->texture ->Release();
+	*tex = {};
 }
 
-void tex2d_set_colors(tex2d_t &tex, int width, int height, uint8_t *data_rgba32) {
-	if (tex.width != width || tex.height != height) {
-		if (tex.resource != nullptr)
-			tex.resource->Release();
+void tex2d_set_colors(tex2d_t tex, int width, int height, uint8_t *data_rgba32) {
+	if (tex->width != width || tex->height != height) {
+		if (tex->resource != nullptr)
+			tex->resource->Release();
 
 		D3D11_TEXTURE2D_DESC desc = {};
 		desc.Width            = width;
@@ -44,7 +45,7 @@ void tex2d_set_colors(tex2d_t &tex, int width, int height, uint8_t *data_rgba32)
 		desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags   = D3D11_CPU_ACCESS_WRITE;
 
-		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &tex.texture))) {
+		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &tex->texture))) {
 			printf("Create texture error!\n");
 			return;
 		}
@@ -53,13 +54,13 @@ void tex2d_set_colors(tex2d_t &tex, int width, int height, uint8_t *data_rgba32)
 		res_desc.Format              = desc.Format;
 		res_desc.Texture2D.MipLevels = desc.MipLevels;
 		res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
-		d3d_device->CreateShaderResourceView(tex.texture, &res_desc, &tex.resource);
+		d3d_device->CreateShaderResourceView(tex->texture, &res_desc, &tex->resource);
 	}
-	tex.width  = width;
-	tex.height = height;
+	tex->width  = width;
+	tex->height = height;
 
 	D3D11_MAPPED_SUBRESOURCE data = {};
-	if (FAILED(d3d_context->Map(tex.texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
+	if (FAILED(d3d_context->Map(tex->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
 		printf("Failed mapping a texture\n");
 		return;
 	}
@@ -71,9 +72,9 @@ void tex2d_set_colors(tex2d_t &tex, int width, int height, uint8_t *data_rgba32)
 		dest_line += data.RowPitch;
 		src_line  += width * sizeof(uint8_t) * 4;
 	}
-	d3d_context->Unmap(tex.texture, 0);
+	d3d_context->Unmap(tex->texture, 0);
 }
 
-void tex2d_set_active(tex2d_t &tex, int slot) {
-	d3d_context->PSSetShaderResources(slot, 1, &tex.resource);
+void tex2d_set_active(tex2d_t tex, int slot) {
+	d3d_context->PSSetShaderResources(slot, 1, &tex->resource);
 }

@@ -41,9 +41,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Camera.cs" />
+    <Compile Include="Renderer.cs" />
+    <Compile Include="Transform.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="Material.cs" />
     <Compile Include="Mesh.cs" />
+    <Compile Include="Shader.cs" />
     <Compile Include="StereoKit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tex2D.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

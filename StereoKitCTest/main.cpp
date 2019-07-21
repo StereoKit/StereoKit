@@ -32,10 +32,10 @@ int main() {
 ///////////////////////////////////////////
 
 void app_init() {
-	app_cube = mesh_create_file("Assets/cube.obj");
-	tex2d_create_file (app_tex,    "Assets/test.png");
-	shader_create_file(app_shader, "Assets/shader.hlsl");
-	app_cube_material = { &app_shader, &app_tex };
+	app_cube          = mesh_create_file  ("Assets/cube.obj");
+	app_tex           = tex2d_create_file ("Assets/test.png");
+	app_shader        = shader_create_file("Assets/shader.hlsl");
+	app_cube_material = material_create   (app_shader, app_tex);
 	transform_set(app_cube_transform, { 0,0,.5f }, { .5f,.5f,.5f }, { 0,0,0,1 });
 
 	transform_initialize(app_camera_transform);

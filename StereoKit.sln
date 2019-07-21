@@ -8,6 +8,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitCTest", "StereoKitCTest\StereoKitCTest.vcxproj", "{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKit", "StereoKit\StereoKit.csproj", "{51E429DE-70D7-4778-89AD-5564E26F4924}"
+	ProjectSection(ProjectDependencies) = postProject
+		{95B47C8E-3A66-483C-ABEE-950E6C2F621A} = {95B47C8E-3A66-483C-ABEE-950E6C2F621A}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitTest", "StereoKitTest\StereoKitTest.csproj", "{E8C5B727-BA6C-4253-8A05-17A941B15929}"
 EndProject

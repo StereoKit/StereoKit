@@ -67,6 +67,18 @@
     <ClInclude Include="assets.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="material.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="render.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

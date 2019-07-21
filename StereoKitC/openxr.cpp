@@ -5,6 +5,7 @@
 #include "d3d.h"
 #include "rendertarget.h"
 #include "stereokit.h"
+#include "render.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>

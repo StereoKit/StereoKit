@@ -1,6 +1,8 @@
 #include "stereokit.h"
+#include "shader.h"
 
 #include "d3d.h"
+#include "assets.h"
 
 #include <d3dcompiler.h>
 #include <stdio.h>
@@ -21,11 +23,11 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 	return compiled;
 }
 
-bool shader_create_file(shader_t &shader, const char *filename) {
+shader_t shader_create_file(const char *filename) {
 	// Open file
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr)
-		return false;
+		return nullptr;
 
 	// Get length of file
 	fseek(fp, 0L, SEEK_END);
@@ -40,16 +42,17 @@ bool shader_create_file(shader_t &shader, const char *filename) {
 	fclose(fp);
 
 	// Compile the shader
-	shader_create(shader, (const char *)data);
+	shader_t result = shader_create((const char *)data);
 	free(data);
 
-	return true;
+	return result;
 }
-void shader_create(shader_t &shader, const char *hlsl) {
+shader_t shader_create(const char *hlsl) {
+	shader_t  result            = (shader_t)assets_allocate(asset_type_shader);
 	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
 	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
-	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &shader.vshader);
-	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &shader.pshader);
+	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &result->vshader);
+	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &result->pshader);
 
 	// Describe how our mesh is laid out in memory
 	D3D11_INPUT_ELEMENT_DESC vert_desc[] = {
@@ -57,20 +60,22 @@ void shader_create(shader_t &shader, const char *hlsl) {
 		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
-	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob->GetBufferPointer(), vert_shader_blob->GetBufferSize(), &shader.vert_layout);
+	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob->GetBufferPointer(), vert_shader_blob->GetBufferSize(), &result->vert_layout);
+
+	return result;
 }
 
-void shader_destroy(shader_t &shader) {
-	if (shader.pshader     != nullptr) shader.pshader    ->Release();
-	if (shader.vshader     != nullptr) shader.vshader    ->Release();
-	if (shader.vert_layout != nullptr) shader.vert_layout->Release();
+void shader_destroy(shader_t shader) {
+	if (shader->pshader     != nullptr) shader->pshader    ->Release();
+	if (shader->vshader     != nullptr) shader->vshader    ->Release();
+	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
 	shader = {};
 }
 
-void shader_set_active(shader_t &shader) {
-	d3d_context->VSSetShader(shader.vshader, nullptr, 0);
-	d3d_context->PSSetShader(shader.pshader, nullptr, 0);
-	d3d_context->IASetInputLayout(shader.vert_layout);
+void shader_set_active(shader_t shader) {
+	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
+	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
+	d3d_context->IASetInputLayout(shader->vert_layout);
 }
 
 void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) {

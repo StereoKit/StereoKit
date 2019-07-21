@@ -1,5 +1,6 @@
 #include "stereokit.h"
 
+#include "render.h"
 #include "d3d.h"
 #include "win32.h"
 #include "openxr.h"

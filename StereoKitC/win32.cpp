@@ -6,6 +6,7 @@
 
 #include "stereokit.h"
 
+#include "render.h"
 #include "rendertarget.h"
 #include "d3d.h"
 
