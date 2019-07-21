@@ -62,23 +62,17 @@ struct vert_t {
 	uint8_t col[4];
 };
 
-struct mesh_t {
-	void         *verts;
-	int           vert_count;
-	ID3D11Buffer *vert_buffer;
-	uint16_t     *inds;
-	int           ind_count;
-	ID3D11Buffer *ind_buffer;
-};
+struct _mesh_t;
+typedef struct _mesh_t *mesh_t;
 
-SK_API void mesh_create        (mesh_t &mesh);
-SK_API bool mesh_create_file   (mesh_t &mesh, const char *file);
-SK_API bool mesh_create_filemem(mesh_t &mesh, uint8_t *file_data, uint64_t file_size);
-SK_API void mesh_destroy   (mesh_t &mesh);
-SK_API void mesh_set_verts (mesh_t &mesh, vert_t   *verts, int vert_count);
-SK_API void mesh_set_inds  (mesh_t &mesh, uint16_t *inds,  int ind_count);
-SK_API void mesh_set_active(mesh_t &mesh);
-SK_API void mesh_draw      (mesh_t &mesh);
+SK_API mesh_t mesh_create        ();
+SK_API mesh_t mesh_create_file   (const char *file);
+SK_API mesh_t mesh_create_filemem(uint8_t *file_data, uint64_t file_size);
+SK_API void   mesh_destroy   (mesh_t mesh);
+SK_API void   mesh_set_verts (mesh_t mesh, vert_t   *verts, int vert_count);
+SK_API void   mesh_set_inds  (mesh_t mesh, uint16_t *inds,  int ind_count);
+SK_API void   mesh_set_active(mesh_t mesh);
+SK_API void   mesh_draw      (mesh_t mesh);
 
 ///////////////////////////////////////////
 
@@ -159,7 +153,7 @@ SK_API void camera_viewproj  (camera_t &cam, transform_t &cam_transform, DirectX
 ///////////////////////////////////////////
 
 SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
-SK_API void render_add        (mesh_t &mesh, material_t &material, transform_t &transform);
+SK_API void render_add        (mesh_t mesh, material_t &material, transform_t &transform);
 SK_API void render_draw       ();
 SK_API void render_draw_from  (camera_t &cam, transform_t &cam_transform);
 SK_API void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform);

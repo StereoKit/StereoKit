@@ -1,4 +1,4 @@
-#include "../StereoKit/stereokit.h"
+#include "../StereoKitC/stereokit.h"
 
 ///////////////////////////////////////////
 
@@ -32,14 +32,16 @@ int main() {
 ///////////////////////////////////////////
 
 void app_init() {
-	mesh_create_file  (app_cube,   "Assets/cube.obj");
+	app_cube = mesh_create_file("Assets/cube.obj");
 	tex2d_create_file (app_tex,    "Assets/test.png");
 	shader_create_file(app_shader, "Assets/shader.hlsl");
 	app_cube_material = { &app_shader, &app_tex };
-	transform_set(app_cube_transform, { 0,0,.5f }, { .2f,.2f,.2f }, { 0,0,0,1 });
+	transform_set(app_cube_transform, { 0,0,.5f }, { .5f,.5f,.5f }, { 0,0,0,1 });
 
 	transform_initialize(app_camera_transform);
 	camera_initialize(app_camera, 90, 0.1f, 50);
+	transform_set_pos(app_camera_transform, { 1, 1, 1 });
+	transform_lookat (app_camera_transform, { 0,0,0 });
 	render_set_camera(app_camera, app_camera_transform);
 }
 
@@ -54,8 +56,8 @@ void app_shutdown() {
 ///////////////////////////////////////////
 
 void app_update() {
-	transform_set_pos(app_camera_transform, { cosf(sk_timef()) * 1, 1, sinf(sk_timef()) * 1 });
-	transform_lookat (app_camera_transform, { 0,0,0 });
+	transform_set_pos(app_cube_transform, { cosf(sk_timef()) * .5f, 0, sinf(sk_timef()) * .5f });
+	transform_lookat (app_cube_transform, { 0,0,0 });
 
 	render_add(app_cube, app_cube_material, app_cube_transform);
 }

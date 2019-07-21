@@ -1,5 +1,7 @@
 #include "stereokit.h"
 
+#include "mesh.h"
+
 #include <vector>
 using namespace std;
 
@@ -8,7 +10,7 @@ using namespace DirectX;
 
 struct render_item_t {
 	transform_t transform;
-	mesh_t     &mesh;
+	mesh_t      mesh;
 	material_t &material;
 };
 struct render_transform_buffer_t {
@@ -26,7 +28,7 @@ void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera_transform = &cam_transform;
 }
 
-void render_add(mesh_t &mesh, material_t &material, transform_t &transform) {
+void render_add(mesh_t mesh, material_t &material, transform_t &transform) {
 	render_queue.push_back({ transform, mesh, material });
 }
 

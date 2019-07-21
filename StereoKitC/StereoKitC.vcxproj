@@ -21,8 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{95B47C8E-3A66-483C-ABEE-950E6C2F621A}</ProjectGuid>
-    <RootNamespace>StereoKit</RootNamespace>
+    <RootNamespace>StereoKitC</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>StereoKitC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -162,6 +163,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="assets.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
     <ClCompile Include="material.cpp" />
@@ -176,7 +178,9 @@
     <ClCompile Include="win32.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="assets.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="openxr.h" />
     <ClInclude Include="rendertarget.h" />

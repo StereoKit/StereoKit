@@ -21,8 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}</ProjectGuid>
-    <RootNamespace>StereoKitTest</RootNamespace>
+    <RootNamespace>StereoKitCTest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>StereoKitCTest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -126,7 +127,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StereoKit\StereoKit.vcxproj">
+    <ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
       <Project>{95b47c8e-3a66-483c-abee-950e6c2f621a}</Project>
     </ProjectReference>
   </ItemGroup>

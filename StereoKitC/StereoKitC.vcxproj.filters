@@ -37,6 +37,9 @@
     <ClCompile Include="stereokit.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="assets.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sk_math.h">
@@ -58,6 +61,12 @@
       <Filter>internal</Filter>
     </ClInclude>
     <ClInclude Include="stereokit.h" />
+    <ClInclude Include="mesh.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="assets.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
