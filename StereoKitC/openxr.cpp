@@ -6,6 +6,7 @@
 #include "rendertarget.h"
 #include "stereokit.h"
 #include "render.h"
+#include "input.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>
@@ -28,6 +29,17 @@ struct swapchain_t {
 	vector<XrSwapchainImageD3D11KHR> surface_images;
 	vector<rendertarget_t>           surface_data;
 };
+struct xr_input_t {
+	XrActionSet action_set;
+	XrAction    poseAction;
+	XrAction    selectAction;
+	XrPath   handSubactionPath[2];
+	XrSpace  handSpace[2];
+	XrPosef  handPose[2];
+	XrBool32 renderHand[2];
+	XrBool32 handSelect[2];
+	int      pointer_ids[2];
+};
 
 XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 XrViewConfigurationType app_config_view = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
@@ -38,6 +50,7 @@ XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 XrSpace        xr_app_space     = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrEnvironmentBlendMode xr_blend;
+xr_input_t     xr_input = {};
 
 vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
@@ -141,6 +154,8 @@ bool openxr_init(const char *app_name) {
 		}
 		xr_swapchains.push_back(swapchain);
 	}
+
+	openxr_make_actions();
 
 	return true;
 }
@@ -316,5 +331,108 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	return true;
 }
 
-void openxr_make_actions() {}
-void openxr_poll_actions() {}
+void openxr_make_actions() {
+	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
+	strcpy_s(actionset_info.actionSetName,          "input");
+	strcpy_s(actionset_info.localizedActionSetName, "Input");
+	xrCreateActionSet(xr_session, &actionset_info, &xr_input.action_set);
+	xrStringToPath(xr_instance, "/user/hand/left",  &xr_input.handSubactionPath[0]);
+	xrStringToPath(xr_instance, "/user/hand/right", &xr_input.handSubactionPath[1]);
+
+	// Create an action to track the position and orientation of the hands! This is
+	// the controller location, or the center of the palms for actual hands.
+	XrActionCreateInfo action_info = { XR_TYPE_ACTION_CREATE_INFO };
+	action_info.countSubactionPaths = _countof(xr_input.handSubactionPath);
+	action_info.subactionPaths      = xr_input.handSubactionPath;
+	action_info.actionType          = XR_INPUT_ACTION_TYPE_POSE;
+	strcpy_s(action_info.actionName,          "hand_pose");
+	strcpy_s(action_info.localizedActionName, "Hand Pose");
+	xrCreateAction(xr_input.action_set, &action_info, &xr_input.poseAction);
+
+	// Create an action for listening to the select action! This is primary trigger
+	// on controllers, and an airtap on HoloLens
+	action_info.actionType = XR_INPUT_ACTION_TYPE_BOOLEAN;
+	strcpy_s(action_info.actionName,          "select");
+	strcpy_s(action_info.localizedActionName, "Select");
+	xrCreateAction(xr_input.action_set, &action_info, &xr_input.selectAction);
+
+	// Bind the actions we just created to specific locations on the Khronos simple_controller
+	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
+	// preferences. For example, if the runtime allows you to remap buttons, or provides input
+	// accessibility settings.
+	XrPath profile_path;
+	XrPath pose_path  [2];
+	XrPath select_path[2];
+	xrStringToPath(xr_instance, "/user/hand/left/input/palm/pose",     &pose_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/palm/pose",    &pose_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
+	xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
+	XrActionSuggestedBinding bindings[] = {
+		{ xr_input.poseAction,   pose_path[0]   },
+		{ xr_input.poseAction,   pose_path[1]   },
+		{ xr_input.selectAction, select_path[0] },
+		{ xr_input.selectAction, select_path[1] }, };
+	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+	suggested_binds.interactionProfile     = profile_path;
+	suggested_binds.suggestedBindings      = &bindings[0];
+	suggested_binds.countSuggestedBindings = _countof(bindings);
+	xrSetInteractionProfileSuggestedBindings(xr_session, &suggested_binds);
+
+	// Create frames of reference for the pose actions
+	for (int32_t i = 0; i < 2; i++) {
+		XrActionSpaceCreateInfo action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
+		action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
+		action_space_info.subactionPath     = xr_input.handSubactionPath[i];
+		xrCreateActionSpace(xr_input.poseAction, &action_space_info, &xr_input.handSpace[i]);
+	}
+
+	for (int32_t i = 0; i < 2; i++) {
+		pointer_source_ hand = i == 0 ? pointer_source_hand_left : pointer_source_hand_right;
+		xr_input.pointer_ids[i] = input_add_pointer((pointer_source_)(pointer_source_can_press | pointer_source_hand | hand));
+	}
+}
+
+void openxr_poll_actions() {
+	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
+		return;
+
+	// Update our action set with up-to-date input data!
+	XrActiveActionSet action_set = { XR_TYPE_ACTIVE_ACTION_SET };
+	action_set.actionSet     = xr_input.action_set;
+	action_set.subactionPath = XR_NULL_PATH;
+	xrSyncActionData(xr_session, 1, &action_set);
+
+	// Now we'll get the current states of our actions, and store them for later use
+	for (uint32_t hand = 0; hand < 2; hand++) {
+		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
+		xrGetActionStatePose(xr_input.poseAction, xr_input.handSubactionPath[hand], &pose_state);
+		xr_input.renderHand[hand] = pose_state.isActive;
+
+		// Events come with a timestamp
+		XrActionStateBoolean select_state = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		xrGetActionStateBoolean(xr_input.selectAction, 1, &xr_input.handSubactionPath[hand], &select_state);
+		xr_input.handSelect[hand] = select_state.currentState && select_state.changedSinceLastSync;
+
+		// If we have a select event, update the hand pose to match the event's timestamp
+		if (xr_input.handSelect[hand]) {
+			XrSpaceRelation spaceRelation = { XR_TYPE_SPACE_RELATION };
+			XrResult        res = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &spaceRelation);
+			if (XR_UNQUALIFIED_SUCCESS(res) &&
+				(spaceRelation.relationFlags & XR_SPACE_RELATION_POSITION_VALID_BIT) != 0 &&
+				(spaceRelation.relationFlags & XR_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
+				xr_input.handPose[hand] = spaceRelation.pose;
+			}
+		}
+
+		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
+		pointer->just    = select_state.currentState != pointer->pressed;
+		pointer->pressed = select_state.currentState;
+		memcpy(&pointer->ray.pos, &xr_input.handPose[hand].position, sizeof(float)*3);
+
+		quat rotation;
+		vec3 forward = { 0,0,1 };
+		memcpy(&rotation, &xr_input.handPose[hand].orientation, sizeof(quat));
+		pointer->ray.dir = rotation * forward;
+	}
+}

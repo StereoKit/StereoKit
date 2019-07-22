@@ -11,7 +11,6 @@
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 
 #include <stdint.h>
-#include <d3d11.h>
 #include <DirectXMath.h>
 
 ///////////////////////////////////////////
@@ -51,6 +50,12 @@ struct vec3 {
 struct quat {
 	float i, j, k, a;
 };
+struct ray {
+	vec3 pos;
+	vec3 dir;
+};
+
+vec3 operator*(const quat &a, const vec3 &b);
 
 #define deg2rad 0.01745329252
 #define rad2deg 57.295779513
@@ -132,3 +137,27 @@ SK_API void camera_viewproj  (camera_t &cam, transform_t &cam_transform, DirectX
 
 SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
 SK_API void render_add        (mesh_t mesh, material_t material, transform_t &transform);
+
+///////////////////////////////////////////
+
+enum pointer_source_ {
+	pointer_source_any        = 0xFFFFFFFF,
+	pointer_source_hand       = 1 << 0,
+	pointer_source_hand_left  = 1 << 1,
+	pointer_source_hand_right = 1 << 2,
+	pointer_source_gaze       = 1 << 4,
+	pointer_source_gaze_head  = 1 << 5,
+	pointer_source_gaze_eyes  = 1 << 6,
+	pointer_source_gaze_cursor= 1 << 7,
+	pointer_source_can_press  = 1 << 8,
+};
+
+struct pointer_t {
+	pointer_source_ source;
+	ray             ray;
+	bool pressed;
+	bool just;
+};
+
+SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);
+SK_API pointer_t input_pointer      (int index, pointer_source_ filter = pointer_source_any);

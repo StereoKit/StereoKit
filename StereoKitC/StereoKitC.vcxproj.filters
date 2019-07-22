@@ -40,6 +40,12 @@
     <ClCompile Include="assets.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="input.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="math.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sk_math.h">
@@ -77,6 +83,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="render.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,6 +9,10 @@ struct vec3 {
 struct quat {
 	float i, j, k, a;
 };
+struct ray {
+	vec3 pos;
+	vec3 dir;
+};
 
 static inline vec2 operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2 operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }

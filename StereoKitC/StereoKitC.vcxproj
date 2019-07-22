@@ -166,7 +166,9 @@
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
+    <ClCompile Include="input.cpp" />
     <ClCompile Include="material.cpp" />
+    <ClCompile Include="math.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="openxr.cpp" />
     <ClCompile Include="render.cpp" />
@@ -180,6 +182,7 @@
   <ItemGroup>
     <ClInclude Include="assets.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="render.h" />
