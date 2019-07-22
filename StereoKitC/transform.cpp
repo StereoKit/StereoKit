@@ -32,7 +32,7 @@ void transform_set_rot  (transform_t &transform, const quat &rotation) {
 	transform._dirty   = true;
 }
 vec3 transform_forward  (transform_t &transform) {
-	vec3 forward = { 0,0,1 };
+	vec3 forward = { 0,0,-1 };
 	return transform._rotation * forward;
 }
 void transform_lookat  (transform_t &transform, const vec3 &at) {

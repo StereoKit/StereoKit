@@ -70,6 +70,7 @@ bool win32_init(const char *app_name) {
 	ID3D11Texture2D *back_buffer;
 	win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 	rendertarget_set_surface(win32_target, back_buffer);
+	rendertarget_make_depthbuffer(win32_target);
 
 	dxgi_factory->Release();
 	dxgi_adapter->Release();
