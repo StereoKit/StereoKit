@@ -119,6 +119,7 @@ SK_API void transform_set_pos   (transform_t &transform, const vec3 &position);
 SK_API void transform_set_scale (transform_t &transform, const vec3 &scale);
 SK_API void transform_set_rot   (transform_t &transform, const quat &rotation);
 SK_API void transform_lookat    (transform_t &transform, const vec3 &at);
+SK_API vec3 transform_forward   (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
@@ -157,6 +158,7 @@ struct pointer_t {
 	ray             ray;
 	bool pressed;
 	bool just;
+	bool available;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);

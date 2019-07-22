@@ -9,10 +9,12 @@
 #include "render.h"
 #include "rendertarget.h"
 #include "d3d.h"
+#include "input.h"
 
 HWND             win32_window = nullptr;
 rendertarget_t   win32_target = {};
 IDXGISwapChain1 *win32_swapchain = {};
+int              win32_input_pointers[2];
 
 void win32_resize(int width, int height) {
 	if (width == d3d_screen_width || height == d3d_screen_height)
@@ -72,6 +74,9 @@ bool win32_init(const char *app_name) {
 	dxgi_factory->Release();
 	dxgi_adapter->Release();
 	dxgi_device ->Release();
+
+	win32_input_pointers[0] = input_add_pointer((pointer_source_)(pointer_source_gaze | pointer_source_gaze_cursor | pointer_source_can_press));
+	win32_input_pointers[1] = input_add_pointer((pointer_source_)(pointer_source_gaze | pointer_source_gaze_head));
 	return true;
 }
 void win32_shutdown() {
@@ -84,6 +89,43 @@ void win32_step_begin() {
 	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
+	}
+
+	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
+	pointer_t *pointer_head   = input_get_pointer(win32_input_pointers[1]);
+
+	camera_t    *cam = nullptr;
+	transform_t *cam_tr = nullptr;
+	render_get_cam(&cam, &cam_tr);
+
+	if (cam != nullptr) {
+		pointer_head->available = true;
+		pointer_head->ray.pos = cam_tr->_position;
+		pointer_head->ray.dir = transform_forward(*cam_tr);
+
+		POINT cursor_pos;
+		if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos))
+		{
+			float x = (((cursor_pos.x / (float)d3d_screen_width ) - 0.5f) * 2.f);
+			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * 2.f);
+			if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
+				pointer_cursor->available = true;
+				pointer_cursor->ray.pos = cam_tr->_position;
+
+				// convert screen pos to world ray
+				DirectX::XMMATRIX mat;
+				camera_viewproj(*cam, *cam_tr, mat);
+				DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
+				DirectX::XMVECTOR cursor_vec = DirectX::XMVectorSet(x, y, 1.0f, 0.0f);
+				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
+				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) & pointer_cursor->ray.dir, cursor_vec);
+			} else {
+				pointer_cursor->available = false;
+			}
+		}
+	} else {
+		pointer_cursor->available = false;
+		pointer_head  ->available = false;
 	}
 }
 void win32_step_end() {

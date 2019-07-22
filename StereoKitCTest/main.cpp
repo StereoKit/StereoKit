@@ -18,7 +18,7 @@ void app_shutdown();
 
 //int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR cmdLine, int cmdShow) {
 int main() {
-	if (!sk_init("Stereo Kit", sk_runtime_mixedreality))
+	if (!sk_init("Stereo Kit", sk_runtime_flatscreen))
 		return 1;
 	app_init();
 
@@ -66,7 +66,9 @@ void app_update() {
 	transform_set_scale(app_cube_transform, { 0.1f,0.1f,0.1f });
 	int ct = input_pointer_count();
 	for (size_t i = 0; i < ct; i++) {
-		transform_set_pos(app_cube_transform, input_pointer(i).ray.pos);
+		ray r = input_pointer(i).ray;
+		vec3 pt = { r.pos.x + r.dir.x * 1, r.pos.y + r.dir.y * 1,r.pos.z + r.dir.z * 1 };
+		transform_set_pos(app_cube_transform, pt);
 		render_add(app_cube, app_cube_material, app_cube_transform);
 	}
 }

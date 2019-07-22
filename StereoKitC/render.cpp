@@ -85,3 +85,8 @@ void render_initialize() {
 void render_shutdown() {
 	shaderargs_destroy(render_shader_transforms);
 }
+
+void render_get_cam(camera_t **cam, transform_t **cam_transform) {
+	*cam = render_camera;
+	*cam_transform = render_camera_transform;
+}

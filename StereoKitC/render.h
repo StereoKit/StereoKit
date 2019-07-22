@@ -9,3 +9,6 @@ void render_clear();
 
 void render_initialize();
 void render_shutdown();
+
+// don't like this function much
+void render_get_cam(camera_t **cam, transform_t **cam_transform);
