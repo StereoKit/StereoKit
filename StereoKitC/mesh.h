@@ -19,3 +19,4 @@ struct _mesh_t {
 
 void mesh_draw      (mesh_t mesh);
 void mesh_set_active(mesh_t mesh);
+void mesh_destroy   (mesh_t mesh);

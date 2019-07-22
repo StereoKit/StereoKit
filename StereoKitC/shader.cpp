@@ -47,6 +47,7 @@ shader_t shader_create_file(const char *filename) {
 
 	return result;
 }
+
 shader_t shader_create(const char *hlsl) {
 	shader_t  result            = (shader_t)assets_allocate(asset_type_shader);
 	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
@@ -65,17 +66,20 @@ shader_t shader_create(const char *hlsl) {
 	return result;
 }
 
-void shader_destroy(shader_t shader) {
-	if (shader->pshader     != nullptr) shader->pshader    ->Release();
-	if (shader->vshader     != nullptr) shader->vshader    ->Release();
-	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
-	shader = {};
-}
-
 void shader_set_active(shader_t shader) {
 	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
 	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
 	d3d_context->IASetInputLayout(shader->vert_layout);
+}
+
+void shader_release(shader_t shader) {
+	assets_releaseref(shader->header);
+}
+void shader_destroy(shader_t shader) {
+	if (shader->pshader     != nullptr) shader->pshader    ->Release();
+	if (shader->vshader     != nullptr) shader->vshader    ->Release();
+	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
+	*shader = {};
 }
 
 void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) {
@@ -83,10 +87,6 @@ void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) 
 	d3d_device->CreateBuffer(&const_buff_desc, nullptr, &args.const_buffer);
 	args.buffer_size = buffer_size;
 	args.buffer_slot = buffer_slot;
-}
-void shaderargs_destroy(shaderargs_t &args) {
-	if (args.const_buffer != nullptr) args.const_buffer->Release();
-	args = {};
 }
 void shaderargs_set_data(shaderargs_t &args, void *data) {
 	D3D11_MAPPED_SUBRESOURCE res;
@@ -96,4 +96,8 @@ void shaderargs_set_data(shaderargs_t &args, void *data) {
 }
 void shaderargs_set_active(shaderargs_t &args) {
 	d3d_context->VSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
+}
+void shaderargs_destroy(shaderargs_t &args) {
+	if (args.const_buffer != nullptr) args.const_buffer->Release();
+	args = {};
 }

@@ -31,6 +31,7 @@ namespace StereoKit
         }
         ~StereoKitApp()
         {
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, false);
             sk_shutdown();
         }
 

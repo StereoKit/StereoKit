@@ -13,7 +13,7 @@ namespace StereoKit
         [DllImport(Util.DllName)]
         static extern IntPtr material_create(IntPtr shader, IntPtr texture);
         [DllImport(Util.DllName)]
-        static extern void material_destroy(IntPtr material);
+        static extern void material_release(IntPtr material);
         #endregion
 
         internal IntPtr _materialInst;
@@ -26,7 +26,7 @@ namespace StereoKit
         ~Material()
         {
             if (_materialInst == IntPtr.Zero)
-                material_destroy(_materialInst);
+                material_release(_materialInst);
         }
     }
 }

@@ -1,5 +1,6 @@
 #include "stereokit.h"
 
+#include "assets.h"
 #include "render.h"
 #include "d3d.h"
 #include "win32.h"
@@ -43,6 +44,7 @@ void sk_shutdown() {
 	case sk_runtime_flatscreen:   win32_shutdown (); break;
 	case sk_runtime_mixedreality: openxr_shutdown(); break;
 	}
+	//assets_shutdown_check();
 	d3d_shutdown();
 }
 

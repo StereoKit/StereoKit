@@ -15,7 +15,7 @@ namespace StereoKit
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr shader_create_file(string file);
         [DllImport(Util.DllName)]
-        static extern void shader_destroy(IntPtr shader);
+        static extern void shader_release(IntPtr shader);
         #endregion
 
         internal IntPtr _shaderInst;
@@ -31,7 +31,7 @@ namespace StereoKit
         ~Shader()
         {
             if (_shaderInst == IntPtr.Zero)
-                shader_destroy(_shaderInst);
+                shader_release(_shaderInst);
         }
 
         public static Shader FromHLSL(string hlsl)

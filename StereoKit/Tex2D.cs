@@ -15,7 +15,7 @@ namespace StereoKit
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr tex2d_create_file(string file);
         [DllImport(Util.DllName)]
-        static extern void tex2d_destroy(IntPtr tex);
+        static extern void tex2d_release(IntPtr tex);
         #endregion
 
         internal IntPtr _texInst;
@@ -30,7 +30,7 @@ namespace StereoKit
         ~Tex2D()
         {
             if (_texInst != IntPtr.Zero)
-                tex2d_destroy(_texInst);
+                tex2d_release(_texInst);
         }
     }
 }

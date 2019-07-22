@@ -48,9 +48,10 @@ void app_init() {
 ///////////////////////////////////////////
 
 void app_shutdown() {
-	tex2d_destroy (app_tex);
-	mesh_destroy  (app_cube);
-	shader_destroy(app_shader);
+	tex2d_release   (app_tex);
+	mesh_release    (app_cube);
+	shader_release  (app_shader);
+	material_release(app_cube_material);
 }
 
 ///////////////////////////////////////////

@@ -15,7 +15,7 @@ namespace StereoKit
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr mesh_create_file(string file);
         [DllImport(Util.DllName)]
-        static extern void mesh_destroy(IntPtr mesh);
+        static extern void mesh_release(IntPtr mesh);
         #endregion
 
         internal IntPtr _meshInst;
@@ -34,7 +34,7 @@ namespace StereoKit
         ~Mesh()
         {
             if (_meshInst == IntPtr.Zero)
-                mesh_destroy(_meshInst);
+                mesh_release(_meshInst);
         }
     }
 }

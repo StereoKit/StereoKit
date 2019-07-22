@@ -13,4 +13,5 @@ struct _tex2d_t {
 	ID3D11Texture2D          *texture;
 };
 
-void tex2d_set_active (tex2d_t tex, int slot);
+void tex2d_set_active(tex2d_t tex, int slot);
+void tex2d_destroy   (tex2d_t tex);

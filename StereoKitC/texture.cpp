@@ -23,6 +23,10 @@ tex2d_t tex2d_create_file(const char *file) {
 	tex2d_set_colors(result, width, height, data);
 	return result;
 }
+
+void tex2d_release(tex2d_t tex) {
+	assets_releaseref(tex->header);
+}
 void tex2d_destroy(tex2d_t tex) {
 	if (tex->resource != nullptr) tex->resource->Release();
 	if (tex->texture  != nullptr) tex->texture ->Release();

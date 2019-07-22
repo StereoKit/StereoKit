@@ -18,7 +18,8 @@ struct shaderargs_t {
 	int buffer_size;
 };
 
-void shader_set_active (shader_t shader);
+void shader_set_active(shader_t shader);
+void shader_destroy   (shader_t shader);
 
 void shaderargs_create    (shaderargs_t &args, size_t buffer_size, int buffer_slot);
 void shaderargs_destroy   (shaderargs_t &args);

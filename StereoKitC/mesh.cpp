@@ -84,6 +84,10 @@ mesh_t mesh_create_filemem(uint8_t *file_data, uint64_t file_size) {
 	meshfmt_obj(result, (const char *)file_data);
 	return result;
 }
+
+void mesh_release(mesh_t mesh) {
+	assets_releaseref(mesh->header);
+}
 void mesh_destroy(mesh_t mesh) {
 	if (mesh->ind_buffer  != nullptr) mesh->ind_buffer ->Release();
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
