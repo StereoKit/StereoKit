@@ -60,6 +60,7 @@ void render_draw() {
 void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 	render_transform_buffer_t transform_buffer;
 	camera_viewproj (cam, cam_transform, transform_buffer.viewproj);
+	transform_buffer.viewproj = XMMatrixTranspose(transform_buffer.viewproj);
 	
 	render_draw_queue(transform_buffer);
 }

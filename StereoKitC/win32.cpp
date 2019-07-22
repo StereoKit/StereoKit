@@ -106,19 +106,20 @@ void win32_step_begin() {
 		POINT cursor_pos;
 		if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos))
 		{
-			float x = (((cursor_pos.x / (float)d3d_screen_width ) - 0.5f) * 2.f);
-			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * 2.f);
+			float x = (((cursor_pos.x / (float)d3d_screen_width ) - 0.5f) *  2.f);
+			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
 			if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
-				pointer_cursor->available = true;
-				pointer_cursor->ray.pos = cam_tr->_position;
-
 				// convert screen pos to world ray
 				DirectX::XMMATRIX mat;
 				camera_viewproj(*cam, *cam_tr, mat);
 				DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
 				DirectX::XMVECTOR cursor_vec = DirectX::XMVectorSet(x, y, 1.0f, 0.0f);
 				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
-				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) & pointer_cursor->ray.dir, cursor_vec);
+				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_cursor->ray.dir, cursor_vec);
+
+				pointer_cursor->available = true;
+				pointer_cursor->ray.pos = cam_tr->_position;
+				pointer_cursor->ray.dir = vec3_normalize(pointer_cursor->ray.dir);
 			} else {
 				pointer_cursor->available = false;
 			}

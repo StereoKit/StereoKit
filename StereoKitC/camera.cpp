@@ -17,5 +17,5 @@ void camera_viewproj(camera_t &cam, transform_t &cam_transform, XMMATRIX &result
 	transform_matrix(cam_transform, mat_view);
 	mat_view = XMMatrixInverse(nullptr, mat_view);
 
-	result = XMMatrixTranspose(mat_view * mat_projection);
+	result = mat_view * mat_projection;
 }

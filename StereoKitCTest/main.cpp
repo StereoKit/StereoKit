@@ -66,9 +66,11 @@ void app_update() {
 	transform_set_scale(app_cube_transform, { 0.1f,0.1f,0.1f });
 	int ct = input_pointer_count();
 	for (size_t i = 0; i < ct; i++) {
-		ray r = input_pointer(i).ray;
-		vec3 pt = { r.pos.x + r.dir.x * 1, r.pos.y + r.dir.y * 1,r.pos.z + r.dir.z * 1 };
-		transform_set_pos(app_cube_transform, pt);
+		pointer_t p = input_pointer(i);
+		if (!p.available)
+			continue;
+		transform_set_pos(app_cube_transform, p.ray.pos + p.ray.dir * 1);
+		transform_set_rot(app_cube_transform, {0,0,0,1});
 		render_add(app_cube, app_cube_material, app_cube_transform);
 	}
 }
