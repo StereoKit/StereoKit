@@ -9,6 +9,9 @@
 #endif
 
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
+#define SK_MakeFlag(enumType) \
+inline enumType  operator| (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) | static_cast<int>(b));} \
+inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; }
 
 #include <stdint.h>
 #include <DirectXMath.h>
@@ -82,6 +85,8 @@ static inline vec3& operator/=(vec3& a, const float b)     { a.x /= b; a.y /= b;
 static inline float vec3_magnitude_sq(const vec3 &a) { return a.x * a.x + a.y * a.y + a.z * a.z; }
 static inline float vec3_magnitude   (const vec3 &a) { return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z); }
 static inline vec3  vec3_normalize   (const vec3 &a) { return a / vec3_magnitude(a); }
+
+quat quat_lookat(const vec3 &from, const vec3 &at);
 
 #define deg2rad 0.01745329252
 #define rad2deg 57.295779513
@@ -178,6 +183,7 @@ enum pointer_source_ {
 	pointer_source_gaze_cursor= 1 << 7,
 	pointer_source_can_press  = 1 << 8,
 };
+SK_MakeFlag(pointer_source_);
 
 enum pointer_state_ {
 	pointer_state_none      = 0,
@@ -185,11 +191,13 @@ enum pointer_state_ {
 	pointer_state_just      = 1 << 1,
 	pointer_state_available = 1 << 2,
 };
+SK_MakeFlag(pointer_state_);
 
 struct pointer_t {
 	pointer_source_ source;
 	pointer_state_  state;
 	ray             ray;
+	quat            orientation;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);

@@ -51,6 +51,7 @@ XrSpace        xr_app_space     = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrEnvironmentBlendMode xr_blend;
 xr_input_t     xr_input = {};
+XrTime         xr_time;
 
 vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
@@ -223,6 +224,9 @@ void openxr_render_frame() {
 	// xrEndFrame right away.
 	xrBeginFrame(xr_session, nullptr);
 
+	// Timing also needs some work, may be best as some sort of anchor system
+	xr_time = frame_state.predictedDisplayTime + frame_state.predictedDisplayPeriod;
+
 	// Execute any code that's dependant on the predicted time, such as updating the location of
 	// controller models.
 	//openxr_poll_predicted(frame_state.predictedDisplayTime);
@@ -363,8 +367,8 @@ void openxr_make_actions() {
 	XrPath profile_path;
 	XrPath pose_path  [2];
 	XrPath select_path[2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/palm/pose",     &pose_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/palm/pose",    &pose_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/pointer/pose",     &pose_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/pointer/pose",    &pose_path[1]);
 	xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
 	xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
@@ -415,25 +419,25 @@ void openxr_poll_actions() {
 		xr_input.handSelect[hand] = select_state.currentState && select_state.changedSinceLastSync;
 
 		// If we have a select event, update the hand pose to match the event's timestamp
-		if (xr_input.handSelect[hand]) {
+		//if (xr_input.handSelect[hand]) {
 			XrSpaceRelation spaceRelation = { XR_TYPE_SPACE_RELATION };
-			XrResult        res = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &spaceRelation);
+			XrResult        res = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time/*select_state.lastChangeTime*/, &spaceRelation);
 			if (XR_UNQUALIFIED_SUCCESS(res) &&
 				(spaceRelation.relationFlags & XR_SPACE_RELATION_POSITION_VALID_BIT) != 0 &&
 				(spaceRelation.relationFlags & XR_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
 				xr_input.handPose[hand] = spaceRelation.pose;
 			}
-		}
+		//}
 
 		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
 		if (select_state.currentState != ((pointer->state & pointer_state_pressed) > 0)) pointer->state = pointer_state_just;
-		if (select_state.currentState) pointer->state = (pointer_state_)(pointer->state | pointer_state_pressed);
-		pointer->state = (pointer_state_)(pointer->state | pointer_state_available);
-		memcpy(&pointer->ray.pos, &xr_input.handPose[hand].position, sizeof(float)*3);
+		else                                                                             pointer->state = pointer_state_none;
+		if (select_state.currentState) pointer->state |= pointer_state_pressed;
+		if (pose_state.isActive)       pointer->state |= pointer_state_available;
+		memcpy(&pointer->ray.pos,     &xr_input.handPose[hand].position,    sizeof(vec3));
+		memcpy(&pointer->orientation, &xr_input.handPose[hand].orientation, sizeof(quat));
 
-		quat rotation;
-		vec3 forward = { 0,0,1 };
-		memcpy(&rotation, &xr_input.handPose[hand].orientation, sizeof(quat));
-		pointer->ray.dir = rotation * forward;
+		vec3 forward = { 0,0,-1 };
+		pointer->ray.dir = pointer->orientation * forward;
 	}
 }

@@ -67,10 +67,13 @@ void app_update() {
 	int ct = input_pointer_count();
 	for (size_t i = 0; i < ct; i++) {
 		pointer_t p = input_pointer(i);
-		if (!(p.state & pointer_state_available))
+		if (!(p.state & pointer_state_pressed))
 			continue;
-		transform_set_pos(app_cube_transform, p.ray.pos + p.ray.dir * 1);
-		transform_set_rot(app_cube_transform, {0,0,0,1});
+		transform_set_pos(app_cube_transform, p.ray.pos);
+		transform_set_rot(app_cube_transform, p.orientation);
+		render_add(app_cube, app_cube_material, app_cube_transform);
+
+		transform_set_pos(app_cube_transform, p.ray.pos + p.ray.dir);
 		render_add(app_cube, app_cube_material, app_cube_transform);
 	}
 }

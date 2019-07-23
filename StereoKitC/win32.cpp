@@ -118,9 +118,14 @@ void win32_step_begin() {
 				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
 				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_cursor->ray.dir, cursor_vec);
 
-				pointer_cursor->state = pointer_state_available;
+				bool pressed = GetKeyState(VK_LBUTTON) < 0;
+				if (pressed != ((pointer_cursor->state & pointer_state_pressed) > 0)) pointer_cursor->state = pointer_state_just;
+				else                                                                  pointer_cursor->state = pointer_state_none;
+				if (pressed)                                                          pointer_cursor->state |= pointer_state_pressed;
+				pointer_cursor->state |= pointer_state_available;
 				pointer_cursor->ray.pos = cam_tr->_position;
 				pointer_cursor->ray.dir = vec3_normalize(pointer_cursor->ray.dir);
+				pointer_cursor->orientation = quat_lookat({ 0,0,0 }, pointer_cursor->ray.dir);
 			} else {
 				pointer_cursor->state = pointer_state_none;
 			}

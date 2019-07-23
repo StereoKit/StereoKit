@@ -7,7 +7,7 @@ using namespace std;
 vector<pointer_t> input_pointers;
 
 int input_add_pointer(pointer_source_ source) {
-	input_pointers.push_back({ source });
+	input_pointers.push_back({ source, pointer_state_none });
 	return input_pointers.size() - 1;
 }
 pointer_t *input_get_pointer(int id) {
