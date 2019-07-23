@@ -76,8 +76,8 @@ bool win32_init(const char *app_name) {
 	dxgi_adapter->Release();
 	dxgi_device ->Release();
 
-	win32_input_pointers[0] = input_add_pointer((pointer_source_)(pointer_source_gaze | pointer_source_gaze_cursor | pointer_source_can_press));
-	win32_input_pointers[1] = input_add_pointer((pointer_source_)(pointer_source_gaze | pointer_source_gaze_head));
+	win32_input_pointers[0] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_cursor | pointer_source_can_press);
+	win32_input_pointers[1] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_head);
 	return true;
 }
 void win32_shutdown() {

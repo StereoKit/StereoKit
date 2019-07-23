@@ -38,7 +38,7 @@ struct xr_input_t {
 	XrPosef  handPose[2];
 	XrBool32 renderHand[2];
 	XrBool32 handSelect[2];
-	int      pointer_ids[2];
+	int      pointer_ids[3];
 };
 
 XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
@@ -393,8 +393,9 @@ void openxr_make_actions() {
 
 	for (int32_t i = 0; i < 2; i++) {
 		pointer_source_ hand = i == 0 ? pointer_source_hand_left : pointer_source_hand_right;
-		xr_input.pointer_ids[i] = input_add_pointer((pointer_source_)(pointer_source_can_press | pointer_source_hand | hand));
+		xr_input.pointer_ids[i] = input_add_pointer(pointer_source_can_press | pointer_source_hand | hand);
 	}
+	xr_input.pointer_ids[2] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_head);
 }
 
 void openxr_poll_actions() {
