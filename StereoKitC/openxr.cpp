@@ -426,8 +426,9 @@ void openxr_poll_actions() {
 		}
 
 		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
-		pointer->just    = select_state.currentState != pointer->pressed;
-		pointer->pressed = select_state.currentState;
+		if (select_state.currentState != ((pointer->state & pointer_state_pressed) > 0)) pointer->state = pointer_state_just;
+		if (select_state.currentState) pointer->state = (pointer_state_)(pointer->state | pointer_state_pressed);
+		pointer->state = (pointer_state_)(pointer->state | pointer_state_available);
 		memcpy(&pointer->ray.pos, &xr_input.handPose[hand].position, sizeof(float)*3);
 
 		quat rotation;

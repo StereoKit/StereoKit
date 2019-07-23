@@ -21,6 +21,10 @@ namespace StereoKit
 
         public static readonly Vec3 Zero = new Vec3(0,0,0);
         public static readonly Vec3 One  = new Vec3(1,1,1);
+        public static Vec3 operator +(Vec3 a, Vec3 b) { return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
+        public static Vec3 operator -(Vec3 a, Vec3 b) { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
+        public static Vec3 operator *(Vec3 a, float b) { return new Vec3(a.x * b, a.y * b, a.z * b); }
+        public static Vec3 operator /(Vec3 a, float b) { return new Vec3(a.x / b, a.y / b, a.z / b); }
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct Vec4
@@ -49,6 +53,18 @@ namespace StereoKit
         public Vec4 row2;
         public Vec4 row3;
         public Vec4 row4;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Ray
+    {
+        public Vec3 pos;
+        public Vec3 dir;
+
+        public Ray(Vec3 position, Vec3 direction)
+        {
+            pos = position;
+            dir = direction;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -93,7 +109,7 @@ namespace StereoKit
 
         public Vec3 Pos   { set { transform_set_pos  (_transformInst, value); } }
         public Quat Rot   { set { transform_set_rot  (_transformInst, value); } }
-        public Vec3 scale { set { transform_set_scale(_transformInst, value); } }
+        public Vec3 Scale { set { transform_set_scale(_transformInst, value); } }
 
         public void LookAt(Vec3 pos) { transform_lookat(_transformInst, pos); }
     }

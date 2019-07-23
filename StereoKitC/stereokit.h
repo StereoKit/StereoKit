@@ -168,7 +168,7 @@ SK_API void render_add        (mesh_t mesh, material_t material, transform_t &tr
 ///////////////////////////////////////////
 
 enum pointer_source_ {
-	pointer_source_any        = 0xFFFFFFFF,
+	pointer_source_any        = 0x7FFFFFFF,
 	pointer_source_hand       = 1 << 0,
 	pointer_source_hand_left  = 1 << 1,
 	pointer_source_hand_right = 1 << 2,
@@ -179,12 +179,17 @@ enum pointer_source_ {
 	pointer_source_can_press  = 1 << 8,
 };
 
+enum pointer_state_ {
+	pointer_state_none      = 0,
+	pointer_state_pressed   = 1 << 0,
+	pointer_state_just      = 1 << 1,
+	pointer_state_available = 1 << 2,
+};
+
 struct pointer_t {
 	pointer_source_ source;
+	pointer_state_  state;
 	ray             ray;
-	bool pressed;
-	bool just;
-	bool available;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);

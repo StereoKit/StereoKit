@@ -67,7 +67,7 @@ void app_update() {
 	int ct = input_pointer_count();
 	for (size_t i = 0; i < ct; i++) {
 		pointer_t p = input_pointer(i);
-		if (!p.available)
+		if (!(p.state & pointer_state_available))
 			continue;
 		transform_set_pos(app_cube_transform, p.ray.pos + p.ray.dir * 1);
 		transform_set_rot(app_cube_transform, {0,0,0,1});

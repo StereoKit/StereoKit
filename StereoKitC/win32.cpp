@@ -100,7 +100,7 @@ void win32_step_begin() {
 	render_get_cam(&cam, &cam_tr);
 
 	if (cam != nullptr) {
-		pointer_head->available = true;
+		pointer_head->state = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
 
@@ -118,16 +118,16 @@ void win32_step_begin() {
 				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
 				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_cursor->ray.dir, cursor_vec);
 
-				pointer_cursor->available = true;
+				pointer_cursor->state = pointer_state_available;
 				pointer_cursor->ray.pos = cam_tr->_position;
 				pointer_cursor->ray.dir = vec3_normalize(pointer_cursor->ray.dir);
 			} else {
-				pointer_cursor->available = false;
+				pointer_cursor->state = pointer_state_none;
 			}
 		}
 	} else {
-		pointer_cursor->available = false;
-		pointer_head  ->available = false;
+		pointer_cursor->state = pointer_state_none;
+		pointer_head  ->state = pointer_state_none;
 	}
 }
 void win32_step_end() {
