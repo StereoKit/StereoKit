@@ -6,10 +6,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-tex2d_t tex2d_create() {
-	return (tex2d_t)assets_allocate(asset_type_texture);
+tex2d_t tex2d_create(const char *name) {
+	return (tex2d_t)assets_allocate(asset_type_texture, name);
 }
 tex2d_t tex2d_create_file(const char *file) {
+	tex2d_t result = (tex2d_t)assets_find(file);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
@@ -18,7 +24,7 @@ tex2d_t tex2d_create_file(const char *file) {
 	if (data == nullptr) {
 		return nullptr;
 	}
-	tex2d_t result = tex2d_create();
+	result = tex2d_create(file);
 
 	tex2d_set_colors(result, width, height, data);
 	return result;

@@ -170,6 +170,7 @@
     <ClCompile Include="material.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="model.cpp" />
     <ClCompile Include="openxr.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="rendertarget.cpp" />
@@ -181,10 +182,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets.h" />
+    <ClInclude Include="cgltf.h" />
     <ClInclude Include="d3d.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="model.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="sk_math.h" />

@@ -4,19 +4,56 @@
 #include "texture.h"
 #include "shader.h"
 #include "material.h"
+#include "model.h"
 
 #include <vector>
 using namespace std;
 
 vector<asset_header_t *> assets;
 
-void *assets_allocate(asset_type_ type) {
+// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
+uint64_t asset_hash(const char *id) {
+	unsigned long hash = 5381;
+	int c;
+
+	while (c = *id++)
+		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+
+	return hash;
+}
+
+void *assets_find(const char *id) {
+	uint64_t hash  = asset_hash(id);
+	size_t   count = assets.size();
+	for (size_t i = 0; i < count; i++) {
+		if (assets[i]->id == hash)
+			return assets[i];
+	}
+	return nullptr;
+}
+
+void assets_unique_name(const char *root_name, char *dest, int dest_size) {
+	sprintf_s(dest, dest_size, "%s", root_name);
+	uint64_t id    = asset_hash(dest);
+	int      count = 1;
+	while (assets_find(dest) != nullptr) {
+		sprintf_s(dest, dest_size, "%s%d", root_name, count);
+		id = asset_hash(dest);
+	}
+}
+
+void *assets_allocate(asset_type_ type, const char *id) {
+#if _DEBUG
+	assert(assets_find(id) == nullptr);
+#endif
+
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
 	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
 	case asset_type_texture:  size = sizeof(_tex2d_t);    break;
 	case asset_type_shader:   size = sizeof(_shader_t);   break;
 	case asset_type_material: size = sizeof(_material_t); break;
+	case asset_type_model:    size = sizeof(_model_t);    break;
 	default: throw "Unimplemented asset type!";
 	}
 
@@ -24,6 +61,7 @@ void *assets_allocate(asset_type_ type) {
 	memset(header, 0, size);
 	header->type = type;
 	header->refs += 1;
+	header->id   = asset_hash(id);
 	assets.push_back(header);
 	return header;
 }
@@ -44,6 +82,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	case asset_type_texture:  tex2d_destroy   ((tex2d_t   )&asset); break;
 	case asset_type_shader:   shader_destroy  ((shader_t  )&asset); break;
 	case asset_type_material: material_destroy((material_t)&asset); break;
+	case asset_type_model:    model_destroy   ((model_t   )&asset); break;
 	default: throw "Unimplemented asset type!";
 	}
 
