@@ -5,11 +5,9 @@ class Program {
     static void Main(string[] args) {
         StereoKitApp kit = new StereoKitApp("CSharp OpenXR", Runtime.Flatscreen);
 
-        Mesh      cube   = new Mesh  ("Assets/cube.obj");
-        Tex2D     tex    = new Tex2D ("Assets/test.png");
-        Shader    shader = new Shader("Assets/shader.hlsl");
-        Material  mat    = new Material (shader, tex);
-        Transform cubeTr = new Transform(Vec3.Zero, Vec3.One * 0.5f);
+        Model     cube   = new Model("Assets/cube.obj");
+        Model     gltf   = new Model("../StereoKitCTest/Assets/DamagedHelmet.gltf");
+        Transform cubeTr = new Transform(Vec3.Zero);
 
         Camera    camera   = new Camera(90, 0.1f, 50);
         Transform cameraTr = new Transform(Vec3.One);
@@ -17,22 +15,25 @@ class Program {
         Renderer.SetCamera(camera, cameraTr);
 
         while (kit.Step(() => {
-            cubeTr.Scale = Vec3.One * 0.5f;
-            cubeTr.Pos   = new Vec3((float)Math.Cos(StereoKitApp.Time)*0.5f, 0, (float)Math.Sin(StereoKitApp.Time)*0.5f);
-            cubeTr.LookAt(Vec3.Zero);
-
-            Renderer.Add(cube, mat, cubeTr);
-
+            Vec3 lookat = new Vec3((float)Math.Cos(StereoKitApp.Time) * 0.5f, 0, (float)Math.Sin(StereoKitApp.Time) * 0.5f);
+            
             for (int i = 0; i < Input.PointerCount(); i++) {
                 Pointer p = Input.Pointer(i);
-                if (!p.IsAvailable)
+                if (!p.IsPressed)
                     continue;
 
-                cubeTr.Pos   = p.ray.pos + p.ray.dir;
+                lookat = p.ray.pos + p.ray.dir;
+
+                cubeTr.Pos   = lookat;
                 cubeTr.Rot   = Quat.Identity;
                 cubeTr.Scale = Vec3.One * 0.1f;
-                Renderer.Add(cube, mat, cubeTr);
+                Renderer.Add(cube, cubeTr);
             }
+
+            cubeTr.Scale = Vec3.One;
+            cubeTr.Pos   = Vec3.Zero;
+            cubeTr.LookAt(Vec3.Zero-lookat);
+            Renderer.Add(gltf, cubeTr);
         }));
     }
 }

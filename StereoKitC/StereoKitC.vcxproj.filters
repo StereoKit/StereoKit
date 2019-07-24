@@ -46,6 +46,9 @@
     <ClCompile Include="math.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="model.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sk_math.h">
@@ -86,6 +89,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="input.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="cgltf.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

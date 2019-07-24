@@ -5,6 +5,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "material.h"
+#include "model.h"
 
 #include <vector>
 using namespace std;
@@ -13,7 +14,7 @@ using namespace std;
 using namespace DirectX;
 
 struct render_item_t {
-	transform_t transform;
+	XMMATRIX    transform;
 	mesh_t      mesh;
 	material_t  material;
 };
@@ -32,8 +33,25 @@ void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera_transform = &cam_transform;
 }
 
-void render_add(mesh_t mesh, material_t material, transform_t &transform) {
-	render_queue.push_back({ transform, mesh, material });
+void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
+	render_item_t item;
+	item.mesh     = mesh;
+	item.material = material;
+	transform_matrix(transform, item.transform);
+	render_queue.emplace_back(item);
+}
+
+void render_add_model(model_t model, transform_t &transform) {
+	XMMATRIX world;
+	transform_matrix(transform, world);
+	for (int i = 0; i < model->subset_count; i++) {
+		render_item_t item;
+		item.mesh     = model->subsets[i].mesh;
+		item.material = model->subsets[i].material;
+		transform_matrix(model->subsets[i].offset, item.transform);
+		item.transform = item.transform * world;
+		render_queue.emplace_back(item);
+	}
 }
 
 void render_draw_queue(render_transform_buffer_t &transform_buffer) {
@@ -41,8 +59,7 @@ void render_draw_queue(render_transform_buffer_t &transform_buffer) {
 	for (size_t i = 0; i < render_queue.size(); i++) {
 		render_item_t &item = render_queue[i];
 
-		transform_matrix(item.transform, transform_buffer.world);
-		transform_buffer.world = XMMatrixTranspose(transform_buffer.world);
+		transform_buffer.world = XMMatrixTranspose(item.transform);
 
 		shader_set_active(item.material->shader);
 		shaderargs_set_data(render_shader_transforms, &transform_buffer);

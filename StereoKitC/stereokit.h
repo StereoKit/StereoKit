@@ -102,18 +102,16 @@ struct vert_t {
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_create        ();
-SK_API mesh_t mesh_create_file   (const char *file);
-SK_API mesh_t mesh_create_filemem(uint8_t *file_data, uint64_t file_size);
-SK_API void   mesh_release   (mesh_t mesh);
-SK_API void   mesh_set_verts (mesh_t mesh, vert_t   *verts, int vert_count);
-SK_API void   mesh_set_inds  (mesh_t mesh, uint16_t *inds,  int ind_count);
+SK_API mesh_t mesh_create   (const char *name);
+SK_API void   mesh_release  (mesh_t mesh);
+SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *verts, int vert_count);
+SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *inds,  int ind_count);
 
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(tex2d_t);
 
-SK_API tex2d_t tex2d_create     ();
+SK_API tex2d_t tex2d_create     (const char *name);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t tex);
 SK_API void    tex2d_set_colors (tex2d_t tex, int width, int height, uint8_t *data_rgba32);
@@ -122,7 +120,7 @@ SK_API void    tex2d_set_colors (tex2d_t tex, int width, int height, uint8_t *da
 
 SK_DeclarePrivateType(shader_t);
 
-SK_API shader_t shader_create     (const char *hlsl);
+SK_API shader_t shader_create     (const char *name, const char *hlsl);
 SK_API shader_t shader_create_file(const char *filename);
 SK_API void     shader_release    (shader_t shader);
 
@@ -130,7 +128,7 @@ SK_API void     shader_release    (shader_t shader);
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_create (shader_t shader, tex2d_t tex);
+SK_API material_t material_create (const char *name, shader_t shader, tex2d_t tex);
 SK_API void       material_release(material_t material);
 
 ///////////////////////////////////////////
@@ -156,6 +154,13 @@ SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(model_t);
+
+SK_API model_t model_create_file(const char *filename);
+SK_API void    model_release    (model_t model);
+
+///////////////////////////////////////////
+
 struct camera_t {
 	float fov;
 	float clip_near;
@@ -168,7 +173,8 @@ SK_API void camera_viewproj  (camera_t &cam, transform_t &cam_transform, DirectX
 ///////////////////////////////////////////
 
 SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
-SK_API void render_add        (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_model  (model_t model, transform_t &transform);
 
 ///////////////////////////////////////////
 
