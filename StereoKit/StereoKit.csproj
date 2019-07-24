@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="Input.cs" />
+    <Compile Include="Model.cs" />
     <Compile Include="Renderer.cs" />
     <Compile Include="Transform.cs" />
     <Compile Include="Util.cs" />

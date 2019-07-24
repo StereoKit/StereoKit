@@ -13,12 +13,18 @@ namespace StereoKit
         [DllImport(Util.DllName)]
         static extern void render_add_mesh(IntPtr mesh, IntPtr material, IntPtr transform);
         [DllImport(Util.DllName)]
+        static extern void render_add_model(IntPtr model, IntPtr transform);
+        [DllImport(Util.DllName)]
         static extern void render_set_camera(IntPtr cam, IntPtr cam_transform);
         #endregion
 
         public static void Add(Mesh mesh, Material material, Transform transform)
         {
             render_add_mesh(mesh._meshInst, material._materialInst, transform._transformInst);
+        }
+        public static void Add(Model model, Transform transform)
+        {
+            render_add_model(model._modelInst, transform._transformInst);
         }
         public static void SetCamera(Camera camera, Transform cameraTransform)
         {
