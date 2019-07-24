@@ -52,11 +52,7 @@ void app_shutdown() {
 ///////////////////////////////////////////
 
 void app_update() {
-	transform_set_scale(app_transform, { 0.5f,0.5f,0.5f });
-	transform_set_pos  (app_transform, { cosf(sk_timef()) * .5f, 0, sinf(sk_timef()) * .5f });
-	transform_lookat   (app_transform, { 0,0,0 });
-
-	render_add_model(app_gltf, app_transform);
+	vec3 lookat = { cosf(sk_timef()) * .5f, 0, sinf(sk_timef()) * .5f };
 
 	transform_set_scale(app_transform, { 0.1f,0.1f,0.1f });
 	int ct = input_pointer_count();
@@ -64,11 +60,15 @@ void app_update() {
 		pointer_t p = input_pointer(i);
 		if (!(p.state & pointer_state_pressed))
 			continue;
-		transform_set_pos(app_transform, p.ray.pos);
-		transform_set_rot(app_transform, p.orientation);
-		render_add_model(app_cube, app_transform);
 
-		transform_set_pos(app_transform, p.ray.pos + p.ray.dir);
+		lookat = p.ray.pos + p.ray.dir;
+		transform_set_rot(app_transform, p.orientation);
+		transform_set_pos(app_transform, lookat);
 		render_add_model(app_cube, app_transform);
 	}
+
+	transform_set(app_transform, { 0,0,0 }, { 1,1,1 }, { 0,0,0,1 });
+	transform_lookat(app_transform, { -lookat.x,-lookat.y,-lookat.z });
+
+	render_add_model(app_gltf, app_transform);
 }

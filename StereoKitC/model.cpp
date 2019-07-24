@@ -132,6 +132,76 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	return true;
 }
 
+mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
+	cgltf_mesh      *m = mesh;
+	cgltf_primitive *p = &m->primitives[0];
+
+	vert_t *verts = nullptr;
+	int     vert_count = 0;
+
+	for (size_t a = 0; a < p->attributes_count; a++) {
+		cgltf_attribute   *attr = &p->attributes[a];
+		cgltf_buffer_view *buff = attr->data->buffer_view;
+
+		// Make sure we have memory for our verts
+		if (vert_count < attr->data->count) {
+			vert_count = attr->data->count;
+			verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
+		}
+
+		// Check what info is in this attribute, and copy it over to our mesh
+		if (attr->type == cgltf_attribute_type_position) {
+			for (size_t v = 0; v < attr->data->count; v++) {
+				vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
+				verts[v].pos = *pos;
+			}
+		} else if (attr->type == cgltf_attribute_type_normal) {
+			for (size_t v = 0; v < attr->data->count; v++) {
+				vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
+				verts[v].norm = *norm;
+			}
+		} else if (attr->type == cgltf_attribute_type_texcoord) {
+			for (size_t v = 0; v < attr->data->count; v++) {
+				vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + buff->offset);
+				verts[v].uv = *uv;
+			}
+		} else if (attr->type == cgltf_attribute_type_color) {
+			for (size_t v = 0; v < attr->data->count; v++) {
+				uint8_t *col = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * 4 * v) + buff->offset);
+				memcpy(verts[v].col, col, sizeof(uint8_t) * 4);
+			}
+		}
+	}
+
+	// Now grab the mesh indices
+	int ind_count = p->indices->count;
+	uint16_t *inds = (uint16_t *)malloc(sizeof(uint16_t) * ind_count);
+	if (p->indices->component_type == cgltf_component_type_r_16u) {
+		cgltf_buffer_view *buff = p->indices->buffer_view;
+		for (size_t v = 0; v < ind_count; v++) {
+			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + buff->offset);
+			inds[v] = *ind;
+		}
+	}
+
+	char id[512];
+	sprintf_s(id, 512, "%s/%s", filename, m->name);
+	mesh_t result = mesh_create(id);
+	mesh_set_verts(result, verts, vert_count);
+	mesh_set_inds (result, inds,  ind_count);
+
+	return result;
+}
+tex2d_t modelfmt_gltf_parsetexture(cgltf_image *image, const char *filename) {
+	tex2d_t result = (tex2d_t)assets_find("default/tex2d");
+	assets_addref(result->header);
+	return result;
+}
+material_t modelfmt_gltf_parsematerial(cgltf_material *material, const char *filename) {
+	material_t result = (material_t)assets_find("default/material");
+	assets_addref(result->header);
+	return result;
+}
 bool modelfmt_gltf(model_t model, const char *filename) {
 	cgltf_options options = {};
 	cgltf_data*   data    = NULL;
@@ -142,71 +212,18 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		return true;
 	}
 	
-	model->subset_count = data->meshes_count;
+	model->subset_count = data->nodes_count;
 	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t) * model->subset_count);
 
-	for (int s = 0; s < data->meshes_count; s++) {
-		cgltf_mesh      *m = &data->meshes[s];
-		cgltf_primitive *p = &m->primitives[s];
+	for (size_t i = 0; i < data->nodes_count; i++) {
+		cgltf_node *n = &data->nodes[i];
+		model->subsets[i].mesh = modelfmt_gltf_parsemesh(n->mesh, filename);
+		model->subsets[i].material = modelfmt_gltf_parsematerial(n->mesh->primitives[0].material, filename);
 
-		vert_t *verts = nullptr;
-		int     vert_count = 0;
-
-		for (size_t a = 0; a < p->attributes_count; a++) {
-			cgltf_attribute   *attr = &p->attributes[a];
-			cgltf_buffer_view *buff = attr->data->buffer_view;
-
-			// Make sure we have memory for our verts
-			if (vert_count < attr->data->count) {
-				vert_count = attr->data->count;
-				verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
-			}
-
-			// Check what info is in this attribute, and copy it over to our mesh
-			if (attr->type == cgltf_attribute_type_position) {
-				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
-					verts[v].pos = *pos;
-				}
-			} else if (attr->type == cgltf_attribute_type_normal) {
-				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
-					verts[v].norm = *norm;
-				}
-			} else if (attr->type == cgltf_attribute_type_texcoord) {
-				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + buff->offset);
-					verts[v].uv = *uv;
-				}
-			} else if (attr->type == cgltf_attribute_type_color) {
-				for (size_t v = 0; v < attr->data->count; v++) {
-					uint8_t *col = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * 4 * v) + buff->offset);
-					memcpy(verts[v].col, col, sizeof(uint8_t) * 4);
-				}
-			}
-		}
-
-		// Now grab the mesh indices
-		int ind_count = p->indices->count;
-		uint16_t *inds = (uint16_t *)malloc(sizeof(uint16_t) * ind_count);
-		if (p->indices->component_type == cgltf_component_type_r_16u) {
-			cgltf_buffer_view *buff = p->indices->buffer_view;
-			for (size_t v = 0; v < ind_count; v++) {
-				uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + buff->offset);
-				inds[v] = *ind;
-			}
-		}
-
-		char id[512];
-		sprintf_s(id, 512, "%s/%s", filename, m->name);
-		model->subsets[s].mesh = mesh_create(id);
-		mesh_set_verts(model->subsets[s].mesh, verts, vert_count);
-		mesh_set_inds (model->subsets[s].mesh, inds,  ind_count);
-
-		model->subsets[s].material = (material_t)assets_find("default/material");
-		assets_addref(model->subsets[s].material->header);
-
-		transform_initialize(model->subsets[s].offset);
+		vec3 pos = { n->translation[0], n->translation[1], n->translation[2] };
+		vec3 scale = { n->scale[0], n->scale[1], n->scale[2] };
+		quat rot = { n->rotation[0], n->rotation[1], n->rotation[2], n->rotation[3] };
+		transform_set(model->subsets[i].offset, pos, scale, rot);
 	}
 	cgltf_free(data);
 	return true;
