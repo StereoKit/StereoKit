@@ -1,7 +1,13 @@
 #include "material.h"
 
-material_t material_create(shader_t shader, tex2d_t tex) {
-	material_t result = (material_t)assets_allocate(asset_type_material);
+material_t material_create(const char *name, shader_t shader, tex2d_t tex) {
+	material_t result = (material_t)assets_find(name);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
+	result = (material_t)assets_allocate(asset_type_material, name);
 	assets_addref(shader->header);
 	assets_addref(tex->header);
 	result->shader  = shader;

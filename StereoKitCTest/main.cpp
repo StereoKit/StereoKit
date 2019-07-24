@@ -4,11 +4,9 @@
 
 camera_t    app_camera;
 transform_t app_camera_transform;
-shader_t    app_shader;
-tex2d_t     app_tex;
-mesh_t      app_cube;
-transform_t app_cube_transform;
-material_t  app_cube_material;
+transform_t app_transform;
+model_t     app_cube;
+model_t     app_gltf;
 
 void app_init    ();
 void app_update  ();
@@ -32,11 +30,10 @@ int main() {
 ///////////////////////////////////////////
 
 void app_init() {
-	app_cube          = mesh_create_file  ("Assets/cube.obj");
-	app_tex           = tex2d_create_file ("Assets/test.png");
-	app_shader        = shader_create_file("Assets/shader.hlsl");
-	app_cube_material = material_create   (app_shader, app_tex);
-	transform_set(app_cube_transform, { 0,0,.5f }, { .5f,.5f,.5f }, { 0,0,0,1 });
+	app_cube = model_create_file("Assets/cube.obj");
+	app_gltf = model_create_file("Assets/DamagedHelmet.gltf");
+	
+	transform_set(app_transform, { 0,0,.5f }, { .5f,.5f,.5f }, { 0,0,0,1 });
 
 	transform_initialize(app_camera_transform);
 	camera_initialize(app_camera, 90, 0.1f, 50);
@@ -48,32 +45,30 @@ void app_init() {
 ///////////////////////////////////////////
 
 void app_shutdown() {
-	tex2d_release   (app_tex);
-	mesh_release    (app_cube);
-	shader_release  (app_shader);
-	material_release(app_cube_material);
+	model_release(app_cube);
+	model_release(app_gltf);
 }
 
 ///////////////////////////////////////////
 
 void app_update() {
-	transform_set_scale(app_cube_transform, { 0.5f,0.5f,0.5f });
-	transform_set_pos(app_cube_transform, { cosf(sk_timef()) * .5f, 0, sinf(sk_timef()) * .5f });
-	transform_lookat (app_cube_transform, { 0,0,0 });
+	vec3 lookat = { cosf(sk_timef()) * .5f, 0, sinf(sk_timef()) * .5f };
 
-	render_add(app_cube, app_cube_material, app_cube_transform);
-
-	transform_set_scale(app_cube_transform, { 0.1f,0.1f,0.1f });
+	transform_set_scale(app_transform, { 0.1f,0.1f,0.1f });
 	int ct = input_pointer_count();
 	for (size_t i = 0; i < ct; i++) {
 		pointer_t p = input_pointer(i);
 		if (!(p.state & pointer_state_pressed))
 			continue;
-		transform_set_pos(app_cube_transform, p.ray.pos);
-		transform_set_rot(app_cube_transform, p.orientation);
-		render_add(app_cube, app_cube_material, app_cube_transform);
 
-		transform_set_pos(app_cube_transform, p.ray.pos + p.ray.dir);
-		render_add(app_cube, app_cube_material, app_cube_transform);
+		lookat = p.ray.pos + p.ray.dir;
+		transform_set_rot(app_transform, p.orientation);
+		transform_set_pos(app_transform, lookat);
+		render_add_model(app_cube, app_transform);
 	}
+
+	transform_set(app_transform, { 0,0,0 }, { 1,1,1 }, { 0,0,0,1 });
+	transform_lookat(app_transform, { -lookat.x,-lookat.y,-lookat.z });
+
+	render_add_model(app_gltf, app_transform);
 }

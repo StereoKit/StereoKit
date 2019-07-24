@@ -24,6 +24,12 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 }
 
 shader_t shader_create_file(const char *filename) {
+	shader_t result = (shader_t)assets_find(filename);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
 	// Open file
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr)
@@ -42,14 +48,14 @@ shader_t shader_create_file(const char *filename) {
 	fclose(fp);
 
 	// Compile the shader
-	shader_t result = shader_create((const char *)data);
+	result = shader_create(filename, (const char *)data);
 	free(data);
 
 	return result;
 }
 
-shader_t shader_create(const char *hlsl) {
-	shader_t  result            = (shader_t)assets_allocate(asset_type_shader);
+shader_t shader_create(const char *name, const char *hlsl) {
+	shader_t  result            = (shader_t)assets_allocate(asset_type_shader, name);
 	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
 	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
 	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &result->vshader);
