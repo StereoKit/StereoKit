@@ -25,7 +25,7 @@ namespace StereoKit
         }
         ~Material()
         {
-            if (_materialInst == IntPtr.Zero)
+            if (_materialInst != IntPtr.Zero)
                 material_release(_materialInst);
         }
     }

@@ -25,7 +25,7 @@ namespace StereoKit
         }
         ~Model()
         {
-            if (_modelInst == IntPtr.Zero)
+            if (_modelInst != IntPtr.Zero)
                 model_release(_modelInst);
         }
     }

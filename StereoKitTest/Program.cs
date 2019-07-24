@@ -7,7 +7,8 @@ class Program {
 
         Model     cube   = new Model("Assets/cube.obj");
         Model     gltf   = new Model("../StereoKitCTest/Assets/DamagedHelmet.gltf");
-        Transform cubeTr = new Transform(Vec3.Zero);
+        Transform cubeTr = new Transform(Vec3.Zero, Vec3.One*0.1f);
+        Transform gltfTr = new Transform(Vec3.Zero);
 
         Camera    camera   = new Camera(90, 0.1f, 50);
         Transform cameraTr = new Transform(Vec3.One);
@@ -24,16 +25,12 @@ class Program {
 
                 lookat = p.ray.pos + p.ray.dir;
 
-                cubeTr.Pos   = lookat;
-                cubeTr.Rot   = Quat.Identity;
-                cubeTr.Scale = Vec3.One * 0.1f;
+                cubeTr.Pos = lookat;
                 Renderer.Add(cube, cubeTr);
             }
 
-            cubeTr.Scale = Vec3.One;
-            cubeTr.Pos   = Vec3.Zero;
-            cubeTr.LookAt(Vec3.Zero-lookat);
-            Renderer.Add(gltf, cubeTr);
+            gltfTr.LookAt(Vec3.Zero-lookat);
+            Renderer.Add(gltf, gltfTr);
         }));
     }
 }
