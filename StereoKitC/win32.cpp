@@ -28,6 +28,7 @@ void win32_resize(int width, int height) {
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 		rendertarget_set_surface(win32_target, back_buffer);
+		rendertarget_make_depthbuffer(win32_target);
 	}
 }
 
@@ -141,7 +142,7 @@ void win32_step_end() {
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	float clear[] = { 0, 0, 0, 1 };
+	float clear[] = { .4f, .4f, .45f, 1 };
 	rendertarget_clear(win32_target, clear);
 	rendertarget_set_active(win32_target);
 

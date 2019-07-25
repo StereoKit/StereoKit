@@ -29,6 +29,26 @@ tex2d_t tex2d_create_file(const char *file) {
 	tex2d_set_colors(result, width, height, data);
 	return result;
 }
+tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
+	tex2d_t result = (tex2d_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
+	int      channels = 0;
+	int      width    = 0;
+	int      height   = 0;
+	uint8_t *col_data =  stbi_load_from_memory((stbi_uc*)data, data_size, &width, &height, &channels, 4);
+
+	if (col_data == nullptr) {
+		return nullptr;
+	}
+	result = tex2d_create(id);
+
+	tex2d_set_colors(result, width, height, col_data);
+	return result;
+}
 
 void tex2d_release(tex2d_t tex) {
 	assets_releaseref(tex->header);

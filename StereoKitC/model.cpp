@@ -136,6 +136,14 @@ mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[0];
 
+	char id[512];
+	sprintf_s(id, 512, "%s/%s", filename, m->name);
+	mesh_t result = (mesh_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
 	vert_t *verts = nullptr;
 	int     vert_count = 0;
 
@@ -184,22 +192,76 @@ mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 		}
 	}
 
-	char id[512];
-	sprintf_s(id, 512, "%s/%s", filename, m->name);
-	mesh_t result = mesh_create(id);
+	result = mesh_create(id);
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);
 
 	return result;
 }
-tex2d_t modelfmt_gltf_parsetexture(cgltf_image *image, const char *filename) {
-	tex2d_t result = (tex2d_t)assets_find("default/tex2d");
-	assets_addref(result->header);
+void modelfmt_gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
+	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
+		char *last1 = strrchr((char*)filename, '/');
+		char *last2 = strrchr((char*)filename, '\\');
+		char *last  = max(last1, last2);
+		sprintf_s(dest, dest_length, "%.*s/%s", last - filename, filename, image->uri);
+		return;
+	}
+
+	for (size_t i = 0; i < data->images_count; i++) {
+		if (&data->images[i] == image) {
+			sprintf_s(dest, dest_length, "%s/image%d", filename, i);
+			return;
+		}
+	}
+
+	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
+}
+tex2d_t modelfmt_gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
+	// Check if we've already loaded this image
+	char id[512];
+	modelfmt_gltf_imagename(data, image, filename, id, 512);
+	tex2d_t result = (tex2d_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+	
+	if (image->buffer_view != nullptr) {
+		// If it's already a loaded buffer, like in a .glb
+		image->buffer_view->buffer->data;
+		result = tex2d_create_mem(id, image->buffer_view->buffer->data, image->buffer_view->buffer->size);
+	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
+		// If it's an image file encoded in a base64 string
+		void         *buffer = nullptr;
+		cgltf_options options = {};
+		
+		char*  start = strchr(image->uri, ',') + 1; // start of base64 data
+		char*  end   = strchr(image->uri, '=');     // end of base64 data
+		size_t size = ((end-start) * 6) / 8;        // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
+		cgltf_load_buffer_base64(&options, size, start, &buffer);
+
+		if (buffer != nullptr) {
+			result = tex2d_create_mem(id, buffer, size);
+			free(buffer);
+		}
+	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
+		// If it's a file path to an external image file
+		result = tex2d_create_file(id);
+	}
 	return result;
 }
-material_t modelfmt_gltf_parsematerial(cgltf_material *material, const char *filename) {
-	material_t result = (material_t)assets_find("default/material");
-	assets_addref(result->header);
+material_t modelfmt_gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename) {
+	// Check if we've already loaded this material
+	char id[512];
+	sprintf_s(id, 512, "%s/%s", filename, material->name);
+	material_t result = (material_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+
+	result = material_create(id, (shader_t)assets_find("default/shader"), modelfmt_gltf_parsetexture(data, material->pbr_metallic_roughness.base_color_texture.texture->image, filename));
+
 	return result;
 }
 bool modelfmt_gltf(model_t model, const char *filename) {
@@ -212,18 +274,31 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		return true;
 	}
 	
-	model->subset_count = data->nodes_count;
-	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t) * model->subset_count);
+	// Count the number of non-empty subsets
+	model->subset_count = 0;
+	for (size_t i = 0; i < data->nodes_count; i++) {
+		if (data->nodes[i].mesh == nullptr)
+			continue;
+		model->subset_count += 1;
+	}
 
+	// Load each subset
+	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t) * model->subset_count);
+	int curr_subset = 0;
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
-		model->subsets[i].mesh = modelfmt_gltf_parsemesh(n->mesh, filename);
-		model->subsets[i].material = modelfmt_gltf_parsematerial(n->mesh->primitives[0].material, filename);
+		if (n->mesh == nullptr)
+			continue;
 
-		vec3 pos = { n->translation[0], n->translation[1], n->translation[2] };
-		vec3 scale = { n->scale[0], n->scale[1], n->scale[2] };
-		quat rot = { n->rotation[0], n->rotation[1], n->rotation[2], n->rotation[3] };
-		transform_set(model->subsets[i].offset, pos, scale, rot);
+		model->subsets[curr_subset].mesh     = modelfmt_gltf_parsemesh    (n->mesh, filename);
+		model->subsets[curr_subset].material = modelfmt_gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
+
+		vec3 pos   = { n->translation[0], n->translation[1], n->translation[2] };
+		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
+		quat rot   = { n->rotation   [0], n->rotation   [1], n->rotation   [2], n->rotation[3] };
+		transform_set(model->subsets[curr_subset].offset, pos, scale, rot);
+
+		curr_subset += 1;
 	}
 	cgltf_free(data);
 	return true;
