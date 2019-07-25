@@ -30,7 +30,7 @@ namespace StereoKit
         }
         ~Shader()
         {
-            if (_shaderInst == IntPtr.Zero)
+            if (_shaderInst != IntPtr.Zero)
                 shader_release(_shaderInst);
         }
 
