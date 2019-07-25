@@ -50,8 +50,8 @@ tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	return result;
 }
 
-void tex2d_release(tex2d_t tex) {
-	assets_releaseref(tex->header);
+void tex2d_release(tex2d_t texture) {
+	assets_releaseref(texture->header);
 }
 void tex2d_destroy(tex2d_t tex) {
 	if (tex->resource != nullptr) tex->resource->Release();
@@ -59,10 +59,10 @@ void tex2d_destroy(tex2d_t tex) {
 	*tex = {};
 }
 
-void tex2d_set_colors(tex2d_t tex, int width, int height, uint8_t *data_rgba32) {
-	if (tex->width != width || tex->height != height) {
-		if (tex->resource != nullptr)
-			tex->resource->Release();
+void tex2d_set_colors(tex2d_t texture, int width, int height, uint8_t *data_rgba32) {
+	if (texture->width != width || texture->height != height) {
+		if (texture->resource != nullptr)
+			texture->resource->Release();
 
 		D3D11_TEXTURE2D_DESC desc = {};
 		desc.Width            = width;
@@ -75,7 +75,7 @@ void tex2d_set_colors(tex2d_t tex, int width, int height, uint8_t *data_rgba32) 
 		desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags   = D3D11_CPU_ACCESS_WRITE;
 
-		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &tex->texture))) {
+		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &texture->texture))) {
 			printf("Create texture error!\n");
 			return;
 		}
@@ -84,13 +84,13 @@ void tex2d_set_colors(tex2d_t tex, int width, int height, uint8_t *data_rgba32) 
 		res_desc.Format              = desc.Format;
 		res_desc.Texture2D.MipLevels = desc.MipLevels;
 		res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
-		d3d_device->CreateShaderResourceView(tex->texture, &res_desc, &tex->resource);
+		d3d_device->CreateShaderResourceView(texture->texture, &res_desc, &texture->resource);
 	}
-	tex->width  = width;
-	tex->height = height;
+	texture->width  = width;
+	texture->height = height;
 
 	D3D11_MAPPED_SUBRESOURCE data = {};
-	if (FAILED(d3d_context->Map(tex->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
+	if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
 		printf("Failed mapping a texture\n");
 		return;
 	}
@@ -102,9 +102,9 @@ void tex2d_set_colors(tex2d_t tex, int width, int height, uint8_t *data_rgba32) 
 		dest_line += data.RowPitch;
 		src_line  += width * sizeof(uint8_t) * 4;
 	}
-	d3d_context->Unmap(tex->texture, 0);
+	d3d_context->Unmap(texture->texture, 0);
 }
 
-void tex2d_set_active(tex2d_t tex, int slot) {
-	d3d_context->PSSetShaderResources(slot, 1, &tex->resource);
+void tex2d_set_active(tex2d_t texture, int slot) {
+	d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
 }
