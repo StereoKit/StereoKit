@@ -4,40 +4,16 @@
     <ClCompile Include="camera.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="material.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="mesh.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="render.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="rendertarget.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="shader.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="texture.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="transform.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="d3d.cpp">
-      <Filter>internal</Filter>
-    </ClCompile>
-    <ClCompile Include="win32.cpp">
-      <Filter>internal</Filter>
-    </ClCompile>
-    <ClCompile Include="openxr.cpp">
-      <Filter>internal</Filter>
-    </ClCompile>
     <ClCompile Include="stereokit.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="assets.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="input.cpp">
@@ -46,45 +22,42 @@
     <ClCompile Include="math.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="assets.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="material.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
     <ClCompile Include="model.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="shader.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="openxr.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
+    <ClCompile Include="win32.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
+    <ClCompile Include="d3d.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sk_math.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="rendertarget.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="d3d.h">
-      <Filter>internal</Filter>
-    </ClInclude>
-    <ClInclude Include="win32.h">
-      <Filter>internal</Filter>
-    </ClInclude>
     <ClInclude Include="stb_image.h">
-      <Filter>internal</Filter>
-    </ClInclude>
-    <ClInclude Include="openxr.h">
-      <Filter>internal</Filter>
+      <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="stereokit.h" />
-    <ClInclude Include="mesh.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="assets.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="shader.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="material.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="render.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -92,9 +65,33 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="cgltf.h">
-      <Filter>internal</Filter>
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="assets.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="material.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>asset_types</Filter>
     </ClInclude>
     <ClInclude Include="model.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="openxr.h">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="win32.h">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="d3d.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -102,8 +99,14 @@
     <Filter Include="src">
       <UniqueIdentifier>{3f36752b-4566-4f15-8a31-664ff4b893d7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="internal">
+    <Filter Include="libraries">
       <UniqueIdentifier>{cfb83ef1-ab77-402c-9941-23c48f8e553a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform">
+      <UniqueIdentifier>{a7d43184-554f-45b0-85ec-8238a89ea6dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="asset_types">
+      <UniqueIdentifier>{b7d6910d-71b4-454e-8c8c-92c434a9b1f4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

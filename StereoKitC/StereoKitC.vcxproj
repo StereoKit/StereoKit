@@ -190,7 +190,6 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="shader.h" />
-    <ClInclude Include="sk_math.h" />
     <ClInclude Include="openxr.h" />
     <ClInclude Include="rendertarget.h" />
     <ClInclude Include="stb_image.h" />
