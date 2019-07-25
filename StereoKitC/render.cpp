@@ -27,6 +27,8 @@ vector<render_item_t> render_queue;
 shaderargs_t          render_shader_transforms;
 transform_t          *render_camera_transform = nullptr;
 camera_t             *render_camera = nullptr;
+transform_t           render_default_camera_tr;
+camera_t              render_default_camera;
 
 void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera           = &cam;
@@ -99,6 +101,11 @@ void render_clear() {
 
 void render_initialize() {
 	shaderargs_create(render_shader_transforms, sizeof(render_transform_buffer_t), 0);
+
+	camera_initialize(render_default_camera, 90, 0.1f, 50);
+	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
+	transform_lookat (render_default_camera_tr, { 0,0,0 });
+	render_set_camera(render_default_camera, render_default_camera_tr);
 }
 void render_shutdown() {
 	shaderargs_destroy(render_shader_transforms);

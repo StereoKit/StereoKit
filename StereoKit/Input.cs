@@ -35,6 +35,7 @@ namespace StereoKit
         public PointerSource source;
         public PointerState  state;
         public Ray           ray;
+        public Quat          orientation;
 
         public bool IsAvailable   { get { return (state & PointerState.Available) > 0; } }
         public bool IsPressed     { get { return (state & PointerState.Pressed) > 0; } }
