@@ -195,6 +195,8 @@ mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	result = mesh_create(id);
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);
+	free(verts);
+	free(inds );
 
 	return result;
 }

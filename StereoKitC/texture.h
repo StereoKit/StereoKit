@@ -9,6 +9,7 @@ struct _tex2d_t {
 	asset_header_t header;
 	int width;
 	int height;
+	bool can_write;
 	ID3D11ShaderResourceView *resource;
 	ID3D11Texture2D          *texture;
 };

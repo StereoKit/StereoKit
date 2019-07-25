@@ -68,6 +68,6 @@ void app_update() {
 		render_add_model(app_cube, app_cube_tr);
 	}
 
-	transform_lookat(app_cube_tr, { -lookat.x,-lookat.y,-lookat.z });
-	render_add_model(app_gltf, app_cube_tr);
+	transform_lookat(app_gltf_tr, { -lookat.x,-lookat.y,-lookat.z });
+	render_add_model(app_gltf, app_gltf_tr);
 }
