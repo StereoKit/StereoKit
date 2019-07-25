@@ -23,9 +23,9 @@ class Program {
                 if (!p.IsPressed)
                     continue;
 
-                lookat = p.ray.pos + p.ray.dir;
+                lookat = p.ray.position + p.ray.direction;
 
-                cubeTr.Pos = lookat;
+                cubeTr.Position = lookat;
                 Renderer.Add(cube, cubeTr);
             }
 

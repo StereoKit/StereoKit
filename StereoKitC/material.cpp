@@ -1,6 +1,6 @@
 #include "material.h"
 
-material_t material_create(const char *name, shader_t shader, tex2d_t tex) {
+material_t material_create(const char *name, shader_t shader, tex2d_t texture) {
 	material_t result = (material_t)assets_find(name);
 	if (result != nullptr) {
 		assets_addref(result->header);
@@ -9,9 +9,9 @@ material_t material_create(const char *name, shader_t shader, tex2d_t tex) {
 
 	result = (material_t)assets_allocate(asset_type_material, name);
 	assets_addref(shader->header);
-	assets_addref(tex->header);
+	assets_addref(texture->header);
 	result->shader  = shader;
-	result->texture = tex;
+	result->texture = texture;
 	return result;
 }
 void material_release(material_t material) {

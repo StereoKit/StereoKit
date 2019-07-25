@@ -11,25 +11,25 @@ void transform_initialize(transform_t &transform) {
 	transform._position = { 0,0,0 };
 	transform._rotation = { 0,0,0,1 };
 	transform._scale    = { 1,1,1 };
-	transform._dirty   = true;
+	transform._dirty    = true;
 }
 void transform_set(transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation) {
 	transform._position = position;
 	transform._scale    = scale;
 	transform._rotation = rotation;
-	transform._dirty   = true;
+	transform._dirty    = true;
 }
-void transform_set_pos(transform_t &transform, const vec3 &position) {
+void transform_set_position(transform_t &transform, const vec3 &position) {
 	transform._position = position;
-	transform._dirty   = true;
+	transform._dirty    = true;
 }
 void transform_set_scale(transform_t &transform, const vec3 &scale) {
-	transform._scale    = scale;
-	transform._dirty   = true;
+	transform._scale = scale;
+	transform._dirty = true;
 }
-void transform_set_rot  (transform_t &transform, const quat &rotation) {
+void transform_set_rotation  (transform_t &transform, const quat &rotation) {
 	transform._rotation = rotation;
-	transform._dirty   = true;
+	transform._dirty    = true;
 }
 vec3 transform_forward  (transform_t &transform) {
 	vec3 forward = { 0,0,-1 };
@@ -38,7 +38,7 @@ vec3 transform_forward  (transform_t &transform) {
 void transform_lookat  (transform_t &transform, const vec3 &at) {
 	XMMATRIX mat = XMMatrixLookAtRH(to_fast3(transform._position), to_fast3(at), XMVectorSet(0, 1, 0, 0));
 	transform._rotation = from_fastq(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
-	transform._dirty = true;
+	transform._dirty    = true;
 }
 void transform_matrix(transform_t &transform, XMMATRIX &result) {
 	if (transform._dirty) {

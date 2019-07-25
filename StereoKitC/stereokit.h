@@ -104,8 +104,8 @@ SK_DeclarePrivateType(mesh_t);
 
 SK_API mesh_t mesh_create   (const char *name);
 SK_API void   mesh_release  (mesh_t mesh);
-SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *verts, int vert_count);
-SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *inds,  int ind_count);
+SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int vertex_count);
+SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int index_count);
 
 ///////////////////////////////////////////
 
@@ -113,8 +113,8 @@ SK_DeclarePrivateType(tex2d_t);
 
 SK_API tex2d_t tex2d_create     (const char *name);
 SK_API tex2d_t tex2d_create_file(const char *file);
-SK_API void    tex2d_release    (tex2d_t tex);
-SK_API void    tex2d_set_colors (tex2d_t tex, int width, int height, uint8_t *data_rgba32);
+SK_API void    tex2d_release    (tex2d_t texture);
+SK_API void    tex2d_set_colors (tex2d_t texture, int width, int height, uint8_t *data_rgba32);
 
 ///////////////////////////////////////////
 
@@ -128,7 +128,7 @@ SK_API void     shader_release    (shader_t shader);
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_create (const char *name, shader_t shader, tex2d_t tex);
+SK_API material_t material_create (const char *name, shader_t shader, tex2d_t texture);
 SK_API void       material_release(material_t material);
 
 ///////////////////////////////////////////
@@ -142,13 +142,13 @@ struct transform_t {
 	DirectX::XMMATRIX _transform;
 };
 
-SK_API void transform_initialize(transform_t &transform);
-SK_API void transform_set       (transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation );
-SK_API void transform_set_pos   (transform_t &transform, const vec3 &position);
-SK_API void transform_set_scale (transform_t &transform, const vec3 &scale);
-SK_API void transform_set_rot   (transform_t &transform, const quat &rotation);
-SK_API void transform_lookat    (transform_t &transform, const vec3 &at);
-SK_API vec3 transform_forward   (transform_t &transform);
+SK_API void transform_initialize  (transform_t &transform);
+SK_API void transform_set         (transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation );
+SK_API void transform_set_position(transform_t &transform, const vec3 &position);
+SK_API void transform_set_scale   (transform_t &transform, const vec3 &scale);
+SK_API void transform_set_rotation(transform_t &transform, const quat &rotation);
+SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
+SK_API vec3 transform_forward     (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 

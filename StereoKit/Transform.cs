@@ -57,13 +57,13 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Ray
     {
-        public Vec3 pos;
-        public Vec3 dir;
+        public Vec3 position;
+        public Vec3 direction;
 
         public Ray(Vec3 position, Vec3 direction)
         {
-            pos = position;
-            dir = direction;
+            this.position  = position;
+            this.direction = direction;
         }
     }
 
@@ -81,12 +81,12 @@ namespace StereoKit
     public class Transform
     {
         #region Imports
-        [DllImport(Util.DllName)] static extern void transform_initialize(IntPtr transform);
-        [DllImport(Util.DllName)] static extern void transform_set       (IntPtr transform, Vec3 position, Vec3 scale, Quat rotation );
-        [DllImport(Util.DllName)] static extern void transform_set_pos   (IntPtr transform, Vec3 position);
-        [DllImport(Util.DllName)] static extern void transform_set_scale (IntPtr transform, Vec3 scale);
-        [DllImport(Util.DllName)] static extern void transform_set_rot   (IntPtr transform, Quat rotation);
-        [DllImport(Util.DllName)] static extern void transform_lookat    (IntPtr transform, Vec3 at);
+        [DllImport(Util.DllName)] static extern void transform_initialize  (IntPtr transform);
+        [DllImport(Util.DllName)] static extern void transform_set         (IntPtr transform, Vec3 position, Vec3 scale, Quat rotation );
+        [DllImport(Util.DllName)] static extern void transform_set_position(IntPtr transform, Vec3 position);
+        [DllImport(Util.DllName)] static extern void transform_set_scale   (IntPtr transform, Vec3 scale);
+        [DllImport(Util.DllName)] static extern void transform_set_rotation(IntPtr transform, Quat rotation);
+        [DllImport(Util.DllName)] static extern void transform_lookat      (IntPtr transform, Vec3 at);
         #endregion
 
         internal IntPtr _transformInst;
@@ -107,10 +107,10 @@ namespace StereoKit
                 Marshal.FreeCoTaskMem(_transformInst);
         }
 
-        public Vec3 Pos   { set { transform_set_pos  (_transformInst, value); } }
-        public Quat Rot   { set { transform_set_rot  (_transformInst, value); } }
-        public Vec3 Scale { set { transform_set_scale(_transformInst, value); } }
+        public Vec3 Position { set { transform_set_position(_transformInst, value); } }
+        public Quat Rotation { set { transform_set_rotation(_transformInst, value); } }
+        public Vec3 Scale    { set { transform_set_scale   (_transformInst, value); } }
 
-        public void LookAt(Vec3 pos) { transform_lookat(_transformInst, pos); }
+        public void LookAt(Vec3 position) { transform_lookat(_transformInst, position); }
     }
 }
