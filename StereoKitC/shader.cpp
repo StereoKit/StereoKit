@@ -65,7 +65,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 		
 			// make sure parameters are padded so they don't overflow into the next register
 			if (buffer_size % shader_register_size != 0 && // if it's evenly aligned, it isn't a problem, but if it's not, we need to check!
-				buffer_size/shader_register_size != buffer_size+item.size/shader_register_size && // if we've crossed into the next register
+				buffer_size/shader_register_size != (buffer_size+item.size)/shader_register_size && // if we've crossed into the next register
 				(buffer_size+item.size) % shader_register_size != 0) // and if crossing over means crossing allll the way over, instead of just up-to
 			{
 				buffer_size += shader_register_size - (buffer_size % shader_register_size);
@@ -196,6 +196,7 @@ void shaderargs_set_data(shaderargs_t &args, void *data) {
 }
 void shaderargs_set_active(shaderargs_t &args) {
 	d3d_context->VSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
+	d3d_context->PSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
 }
 void shaderargs_destroy(shaderargs_t &args) {
 	if (args.const_buffer != nullptr) args.const_buffer->Release();

@@ -107,6 +107,10 @@ void sk_create_defaults() {
 	float4x4 world;
 	float4x4 viewproj;
 };
+cbuffer ParamBuffer : register(b1) {
+	// [param] color color
+	float4 _color;
+};
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
@@ -119,8 +123,12 @@ struct psIn {
 };
 
 // [texture] diffuse
-Texture2D tex;
+Texture2D tex : register(t0);
 SamplerState tex_sampler;
+
+// [texture] emission
+Texture2D tex_emission : register(t1);
+SamplerState tex_e_sampler;
 
 psIn vs(vsIn input) {
 	psIn output;
@@ -136,7 +144,12 @@ psIn vs(vsIn input) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
-	return float4(input.color * col, 1); 
+	float3 em  = tex_emission.Sample(tex_e_sampler, input.uv).rgb;
+
+	col = col * input.color * _color.rgb;
+	col += em;
+
+	return float4(col, _color.a); 
 })_");
 
 	sk_default_material = material_create("default/material", sk_default_shader);

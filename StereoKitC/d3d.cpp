@@ -45,7 +45,10 @@ void d3d_init() {
 	desc_sampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	desc_sampler.Filter   = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	d3d_device->CreateSamplerState(&desc_sampler, &d3d_samplerstate);
-	d3d_context->PSSetSamplers(0, 1, &d3d_samplerstate);
+	for (size_t i = 0; i < 4; i++) {
+		d3d_context->PSSetSamplers(i, 1, &d3d_samplerstate);
+	}
+	
 
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
 	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
