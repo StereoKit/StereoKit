@@ -118,6 +118,7 @@ struct psIn {
 	float2 uv    : TEXCOORD0;
 };
 
+// [texture] diffuse
 Texture2D tex;
 SamplerState tex_sampler;
 
@@ -138,7 +139,8 @@ float4 ps(psIn input) : SV_TARGET {
 	return float4(input.color * col, 1); 
 })_");
 
-	sk_default_material = material_create("default/material", sk_default_shader, sk_default_tex);
+	sk_default_material = material_create("default/material", sk_default_shader);
+	material_set_texture(sk_default_material, "diffuse", sk_default_tex);
 }
 
 void sk_destroy_defaults() {

@@ -49,6 +49,9 @@
     <ClCompile Include="d3d.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="stref.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendertarget.h">
@@ -92,6 +95,9 @@
       <Filter>platform</Filter>
     </ClInclude>
     <ClInclude Include="d3d.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="stref.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

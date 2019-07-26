@@ -28,6 +28,8 @@ model_t model_create_file(const char *filename) {
 
 	if        (modelfmt_gltf(result, filename)) {
 	} else if (modelfmt_obj (result, filename)) {
+	} else {
+		printf("Can't load %s! File not found, or invalid format.", filename);
 	}
 
 	return result;
@@ -262,7 +264,8 @@ material_t modelfmt_gltf_parsematerial(cgltf_data *data, cgltf_material *materia
 		return result;
 	}
 
-	result = material_create(id, (shader_t)assets_find("default/shader"), modelfmt_gltf_parsetexture(data, material->pbr_metallic_roughness.base_color_texture.texture->image, filename));
+	result = material_create(id, (shader_t)assets_find("default/shader"));
+	material_set_texture(result, "diffuse", modelfmt_gltf_parsetexture(data, material->pbr_metallic_roughness.base_color_texture.texture->image, filename));
 
 	return result;
 }

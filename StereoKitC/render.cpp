@@ -63,9 +63,8 @@ void render_draw_queue(render_transform_buffer_t &transform_buffer) {
 
 		transform_buffer.world = XMMatrixTranspose(item.transform);
 
-		shader_set_active(item.material->shader);
+		material_set_active(item.material);
 		shaderargs_set_data(render_shader_transforms, &transform_buffer);
-		tex2d_set_active(item.material->texture, 0);
 
 		mesh_set_active(item.mesh);
 		mesh_draw      (item.mesh);
