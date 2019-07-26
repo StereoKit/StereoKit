@@ -44,14 +44,26 @@ SK_API double sk_time_elapsed();
 
 ///////////////////////////////////////////
 
+struct color32 {
+	uint8_t r, g, b, a;
+};
+struct color128 {
+	float r, g, b, a;
+};
 struct vec2 {
 	float x, y;
 };
 struct vec3 {
 	float x, y, z;
 };
+struct vec4 {
+	float x, y, z, w;
+};
 struct quat {
 	float i, j, k, a;
+};
+struct matrix {
+	vec4 row[4];
 };
 struct ray {
 	vec3 pos;
@@ -128,8 +140,14 @@ SK_API void     shader_release    (shader_t shader);
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_create (const char *name, shader_t shader, tex2d_t texture);
+SK_API material_t material_create (const char *name, shader_t shader);
 SK_API void       material_release(material_t material);
+SK_API void       material_set_float  (material_t material, const char *name, float    value);
+SK_API void       material_set_color32(material_t material, const char *name, color32  value);
+SK_API void       material_set_color  (material_t material, const char *name, color128 value);
+SK_API void       material_set_vector (material_t material, const char *name, vec4     value);
+SK_API void       material_set_matrix (material_t material, const char *name, matrix   value);
+SK_API void       material_set_texture(material_t material, const char *name, tex2d_t  value);
 
 ///////////////////////////////////////////
 

@@ -120,5 +120,8 @@ void tex2d_set_colors(tex2d_t texture, int width, int height, uint8_t *data_rgba
 }
 
 void tex2d_set_active(tex2d_t texture, int slot) {
-	d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
+	if (texture != nullptr)
+		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
+	else
+		d3d_context->PSSetShaderResources(slot, 0, nullptr);
 }

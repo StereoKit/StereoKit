@@ -5,25 +5,15 @@
 #include "shader.h"
 #include "material.h"
 #include "model.h"
+#include "stref.h"
 
 #include <vector>
 using namespace std;
 
 vector<asset_header_t *> assets;
 
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
-uint64_t asset_hash(const char *id) {
-	unsigned long hash = 5381;
-	int c;
-
-	while (c = *id++)
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
-
-	return hash;
-}
-
 void *assets_find(const char *id) {
-	uint64_t hash  = asset_hash(id);
+	uint64_t hash  = string_hash(id);
 	size_t   count = assets.size();
 	for (size_t i = 0; i < count; i++) {
 		if (assets[i]->id == hash)
@@ -34,11 +24,11 @@ void *assets_find(const char *id) {
 
 void assets_unique_name(const char *root_name, char *dest, int dest_size) {
 	sprintf_s(dest, dest_size, "%s", root_name);
-	uint64_t id    = asset_hash(dest);
+	uint64_t id    = string_hash(dest);
 	int      count = 1;
 	while (assets_find(dest) != nullptr) {
 		sprintf_s(dest, dest_size, "%s%d", root_name, count);
-		id = asset_hash(dest);
+		id = string_hash(dest);
 	}
 }
 
@@ -61,7 +51,7 @@ void *assets_allocate(asset_type_ type, const char *id) {
 	memset(header, 0, size);
 	header->type = type;
 	header->refs += 1;
-	header->id   = asset_hash(id);
+	header->id   = string_hash(id);
 	assets.push_back(header);
 	return header;
 }

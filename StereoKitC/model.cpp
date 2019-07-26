@@ -28,6 +28,8 @@ model_t model_create_file(const char *filename) {
 
 	if        (modelfmt_gltf(result, filename)) {
 	} else if (modelfmt_obj (result, filename)) {
+	} else {
+		printf("Can't load %s! File not found, or invalid format.", filename);
 	}
 
 	return result;
@@ -132,7 +134,7 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	return true;
 }
 
-mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
+mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[0];
 
@@ -200,7 +202,7 @@ mesh_t modelfmt_gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 
 	return result;
 }
-void modelfmt_gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
+void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
 		char *last1 = strrchr((char*)filename, '/');
 		char *last2 = strrchr((char*)filename, '\\');
@@ -218,10 +220,10 @@ void modelfmt_gltf_imagename(cgltf_data *data, cgltf_image *image, const char *f
 
 	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
 }
-tex2d_t modelfmt_gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
+tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
 	// Check if we've already loaded this image
 	char id[512];
-	modelfmt_gltf_imagename(data, image, filename, id, 512);
+	gltf_imagename(data, image, filename, id, 512);
 	tex2d_t result = (tex2d_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
@@ -252,7 +254,7 @@ tex2d_t modelfmt_gltf_parsetexture(cgltf_data* data, cgltf_image *image, const c
 	}
 	return result;
 }
-material_t modelfmt_gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename) {
+material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename) {
 	// Check if we've already loaded this material
 	char id[512];
 	sprintf_s(id, 512, "%s/%s", filename, material->name);
@@ -262,7 +264,32 @@ material_t modelfmt_gltf_parsematerial(cgltf_data *data, cgltf_material *materia
 		return result;
 	}
 
-	result = material_create(id, (shader_t)assets_find("default/shader"), modelfmt_gltf_parsetexture(data, material->pbr_metallic_roughness.base_color_texture.texture->image, filename));
+	result = material_create(id, (shader_t)assets_find("default/shader"));
+	cgltf_texture *tex = nullptr;
+	if (material->has_pbr_metallic_roughness) {
+		tex = material->pbr_metallic_roughness.base_color_texture.texture;
+		if (tex != nullptr)
+			material_set_texture(result, "diffuse", gltf_parsetexture(data, tex->image, filename));
+
+		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
+		if (tex != nullptr)
+			material_set_texture(result, "metallic_roughness", gltf_parsetexture(data, tex->image, filename));
+
+		float *c = material->pbr_metallic_roughness.base_color_factor;
+		material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
+	}
+
+	tex = material->normal_texture.texture;
+	if (tex != nullptr)
+		material_set_texture(result, "normal", gltf_parsetexture(data, tex->image, filename));
+
+	tex = material->occlusion_texture.texture;
+	if (tex != nullptr)
+		material_set_texture(result, "occlusion", gltf_parsetexture(data, tex->image, filename));
+
+	tex = material->emissive_texture.texture;
+	if (tex != nullptr)
+		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename));
 
 	return result;
 }
@@ -292,8 +319,8 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		if (n->mesh == nullptr)
 			continue;
 
-		model->subsets[curr_subset].mesh     = modelfmt_gltf_parsemesh    (n->mesh, filename);
-		model->subsets[curr_subset].material = modelfmt_gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
+		model->subsets[curr_subset].mesh     = gltf_parsemesh    (n->mesh, filename);
+		model->subsets[curr_subset].material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
 
 		vec3 pos   = { n->translation[0], n->translation[1], n->translation[2] };
 		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
