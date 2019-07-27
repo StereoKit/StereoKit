@@ -103,13 +103,25 @@ void sk_create_defaults() {
 	memset(tex_colors, 255, sizeof(uint8_t) * 4 * 4);
 	tex2d_set_colors(sk_default_tex, 2, 2, tex_colors);
 
-	sk_default_shader = shader_create("default/shader", R"_(cbuffer TransformBuffer : register(b0) {
-	float4x4 world;
+	sk_default_shader = shader_create("default/shader", R"_(cbuffer GlobalBuffer : register(b0) {
+	float4x4 view;
+	float4x4 proj;
 	float4x4 viewproj;
+	float4   light;
+	float4   light_color;
+	float4   camera_pos;
+	float4   camera_dir;
 };
-cbuffer ParamBuffer : register(b1) {
+cbuffer TransformBuffer : register(b1) {
+	float4x4 world;
+};
+cbuffer ParamBuffer : register(b2) {
 	// [param] color color
 	float4 _color;
+	// [param] float metallic
+	float metallic;
+	// [param] float roughness
+	float roughness;
 };
 struct vsIn {
 	float4 pos  : SV_POSITION;
@@ -120,6 +132,7 @@ struct psIn {
 	float4 pos   : SV_POSITION;
 	float3 color : COLOR0;
 	float2 uv    : TEXCOORD0;
+	float3 world : TEXCOORD1;
 };
 
 // [texture] diffuse
@@ -132,19 +145,18 @@ SamplerState tex_e_sampler;
 
 psIn vs(vsIn input) {
 	psIn output;
-	output.pos = input.pos;
-	output.pos = mul(float4(input.pos.xyz, 1), world);
-	output.pos = mul(output.pos, viewproj);
+	output.world = mul(float4(input.pos.xyz, 1), world).xyz;
+	output.pos   = mul(float4(output.world, 1), viewproj);
 
 	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
 
 	output.uv    = input.uv;
-	output.color = lerp(float3(0.1,0.1,0.2), float3(1,1,1), saturate(dot(normal, normalize(float3(1,2,1)))));
+	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, light.xyz)));
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
-	float3 em  = tex_emission.Sample(tex_e_sampler, input.uv).rgb;
+	float3 col   = tex.Sample(tex_sampler, input.uv).rgb;
+	float3 em    = tex_emission.Sample(tex_e_sampler, input.uv).rgb;
 
 	col = col * input.color * _color.rgb;
 	col += em;

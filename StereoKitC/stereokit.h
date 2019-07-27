@@ -186,11 +186,13 @@ struct camera_t {
 };
 
 SK_API void camera_initialize(camera_t &cam, float fov, float clip_near, float clip_far);
-SK_API void camera_viewproj  (camera_t &cam, transform_t &cam_transform, DirectX::XMMATRIX &result);
+SK_API void camera_view      (transform_t &cam_transform, DirectX::XMMATRIX &result);
+SK_API void camera_proj      (camera_t    &cam, DirectX::XMMATRIX &result);
 
 ///////////////////////////////////////////
 
 SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
+SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
 SK_API void render_add_model  (model_t model, transform_t &transform);
 

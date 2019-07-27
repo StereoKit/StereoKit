@@ -264,7 +264,8 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		return result;
 	}
 
-	result = material_create(id, (shader_t)assets_find("default/shader"));
+	//result = material_create(id, (shader_t)assets_find("default/shader"));
+	result = material_create(id, shader_create_file("Assets/pbr.hlsl"));
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
@@ -273,10 +274,13 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr)
-			material_set_texture(result, "metallic_roughness", gltf_parsetexture(data, tex->image, filename));
+			material_set_texture(result, "metal", gltf_parsetexture(data, tex->image, filename));
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
 		material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
+		
+		material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
+		material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
 	}
 
 	tex = material->normal_texture.texture;

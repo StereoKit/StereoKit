@@ -112,8 +112,10 @@ void win32_step_begin() {
 			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
 			if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
 				// convert screen pos to world ray
-				DirectX::XMMATRIX mat;
-				camera_viewproj(*cam, *cam_tr, mat);
+				DirectX::XMMATRIX mat, view, proj;
+				camera_view(*cam_tr, view);
+				camera_proj(*cam,    proj);
+				mat = view * proj;
 				DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
 				DirectX::XMVECTOR cursor_vec = DirectX::XMVectorSet(x, y, 1.0f, 0.0f);
 				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);

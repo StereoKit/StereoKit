@@ -20,19 +20,33 @@ struct render_item_t {
 };
 struct render_transform_buffer_t {
 	XMMATRIX world;
+};
+struct render_global_buffer_t {
+	XMMATRIX view;
+	XMMATRIX proj;
 	XMMATRIX viewproj;
+	vec4     light;
+	color128 light_color;
+	vec4     camera_pos;
+	vec4     camera_dir;
 };
 
-vector<render_item_t> render_queue;
-shaderargs_t          render_shader_transforms;
-transform_t          *render_camera_transform = nullptr;
-camera_t             *render_camera = nullptr;
-transform_t           render_default_camera_tr;
-camera_t              render_default_camera;
+vector<render_item_t>  render_queue;
+shaderargs_t           render_shader_transforms;
+shaderargs_t           render_shader_globals;
+transform_t           *render_camera_transform = nullptr;
+camera_t              *render_camera = nullptr;
+transform_t            render_default_camera_tr;
+camera_t               render_default_camera;
+render_global_buffer_t render_global_buffer;
 
 void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera           = &cam;
 	render_camera_transform = &cam_transform;
+}
+void render_set_light(const vec3 &direction, float intensity, const color128 &color) {
+	render_global_buffer.light       = { direction.x, direction.y, direction.z, intensity };
+	render_global_buffer.light_color = color;
 }
 
 void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
@@ -56,7 +70,23 @@ void render_add_model(model_t model, transform_t &transform) {
 	}
 }
 
-void render_draw_queue(render_transform_buffer_t &transform_buffer) {
+void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
+	render_transform_buffer_t transform_buffer;
+
+	// Copy camera information into the global buffer
+	XMMATRIX view_inv = XMMatrixInverse(nullptr, view);
+
+	XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+	XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
+	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos, cam_pos);
+	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir, cam_dir);
+
+	render_global_buffer.view = XMMatrixTranspose(view);
+	render_global_buffer.proj = XMMatrixTranspose(projection);
+	render_global_buffer.viewproj = XMMatrixTranspose(view * projection);
+
+	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
+	shaderargs_set_active(render_shader_globals);
 	shaderargs_set_active(render_shader_transforms);
 	for (size_t i = 0; i < render_queue.size(); i++) {
 		render_item_t &item = render_queue[i];
@@ -76,22 +106,17 @@ void render_draw() {
 		render_draw_from(*render_camera, *render_camera_transform);
 }
 void render_draw_from(camera_t &cam, transform_t &cam_transform) {
-	render_transform_buffer_t transform_buffer;
-	camera_viewproj (cam, cam_transform, transform_buffer.viewproj);
-	transform_buffer.viewproj = XMMatrixTranspose(transform_buffer.viewproj);
-	
-	render_draw_queue(transform_buffer);
+	XMMATRIX view, proj;
+	camera_view(cam_transform, view);
+	camera_proj(cam, proj);
+	render_draw_queue(view, proj);
 }
 void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
-	render_transform_buffer_t transform_buffer;
-	XMMATRIX mat_projection = XMLoadFloat4x4((XMFLOAT4X4 *)cam_matrix);
-	XMMATRIX mat_view;
-	transform_matrix(cam_transform, mat_view);
-	mat_view = XMMatrixInverse(nullptr, mat_view);
+	XMMATRIX view, proj;
+	camera_view(cam_transform, view);
+	proj = XMLoadFloat4x4((XMFLOAT4X4 *)cam_matrix);
 
-	transform_buffer.viewproj = XMMatrixTranspose(mat_view * mat_projection);
-
-	render_draw_queue(transform_buffer);
+	render_draw_queue(view, proj);
 }
 
 void render_clear() {
@@ -99,12 +124,17 @@ void render_clear() {
 }
 
 void render_initialize() {
-	shaderargs_create(render_shader_transforms, sizeof(render_transform_buffer_t), 0);
+	shaderargs_create(render_shader_transforms, sizeof(render_transform_buffer_t), 1);
+	shaderargs_create(render_shader_globals,    sizeof(render_global_buffer_t),    0);
 
 	camera_initialize(render_default_camera, 90, 0.1f, 50);
 	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
 	transform_lookat (render_default_camera_tr, { 0,0,0 });
 	render_set_camera(render_default_camera, render_default_camera_tr);
+
+	vec3 dir = { 1,2,1 };
+	dir = vec3_normalize(dir);
+	render_set_light(dir, 1, { 1,1,1,1 });
 }
 void render_shutdown() {
 	shaderargs_destroy(render_shader_transforms);

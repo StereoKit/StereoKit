@@ -91,6 +91,11 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 		}
 	}
 
+	// And ensure our final buffer is a multiple of register size!
+	if (buffer_size % shader_register_size != 0) {
+		buffer_size += shader_register_size - (buffer_size % shader_register_size);
+	}
+
 	shader->args_desc = {};
 	shader->args_desc.buffer_size = buffer_size;
 	size_t data_size = sizeof(shaderargs_desc_item_t) * buffer_items.size();
@@ -148,7 +153,7 @@ shader_t shader_create(const char *name, const char *hlsl) {
 	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &result->vshader);
 	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &result->pshader);
 
-	shaderargs_create(result->args, result->args_desc.buffer_size, 1);
+	shaderargs_create(result->args, result->args_desc.buffer_size, 2);
 
 	// Describe how our mesh is laid out in memory
 	D3D11_INPUT_ELEMENT_DESC vert_desc[] = {
