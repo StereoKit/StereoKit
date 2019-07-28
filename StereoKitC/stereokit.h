@@ -97,6 +97,9 @@ static inline vec3& operator/=(vec3& a, const float b)     { a.x /= b; a.y /= b;
 static inline float vec3_magnitude_sq(const vec3 &a) { return a.x * a.x + a.y * a.y + a.z * a.z; }
 static inline float vec3_magnitude   (const vec3 &a) { return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z); }
 static inline vec3  vec3_normalize   (const vec3 &a) { return a / vec3_magnitude(a); }
+static inline vec3  vec3_lerp        (const vec3 &a, const vec3 &b, float t) { return a + (b - a)*t; }
+
+static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
 quat quat_lookat(const vec3 &from, const vec3 &at);
 
@@ -109,7 +112,7 @@ struct vert_t {
 	vec3    pos;
 	vec3    norm;
 	vec2    uv;
-	uint8_t col[4];
+	color32 col;
 };
 
 SK_DeclarePrivateType(mesh_t);
@@ -118,6 +121,8 @@ SK_API mesh_t mesh_create   (const char *name);
 SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int index_count);
+
+SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int subdivisions);
 
 ///////////////////////////////////////////
 
@@ -174,6 +179,7 @@ SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
 SK_DeclarePrivateType(model_t);
 
+SK_API model_t model_create_mesh(const char *id, mesh_t mesh, material_t material);
 SK_API model_t model_create_file(const char *filename);
 SK_API void    model_release    (model_t model);
 

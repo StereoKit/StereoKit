@@ -18,6 +18,25 @@ model_t model_create(const char *id) {
 	model_t result = (_model_t*)assets_allocate(asset_type_model, id);
 	return result;
 }
+model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
+	model_t result = (model_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+	result = model_create(id);
+
+	result->subset_count = 1;
+	result->subsets = (model_subset_t*)malloc(sizeof(model_subset_t));
+	transform_initialize(result->subsets[0].offset);
+	result->subsets[0].material = material;
+	assets_addref(result->subsets[0].material->header);
+
+	result->subsets[0].mesh = mesh;
+	assets_addref(result->subsets[0].mesh->header);
+
+	return result;
+}
 model_t model_create_file(const char *filename) {
 	model_t result = (model_t)assets_find(filename);
 	if (result != nullptr) {
@@ -177,8 +196,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				uint8_t *col = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * 4 * v) + buff->offset);
-				memcpy(verts[v].col, col, sizeof(uint8_t) * 4);
+				color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + buff->offset);
+				memcpy(&verts[v].col, col, sizeof(color32));
 			}
 		}
 	}

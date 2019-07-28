@@ -118,10 +118,6 @@ cbuffer TransformBuffer : register(b1) {
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color
 	float4 _color;
-	// [param] float metallic
-	float metallic;
-	// [param] float roughness
-	float roughness;
 };
 struct vsIn {
 	float4 pos  : SV_POSITION;
@@ -139,10 +135,6 @@ struct psIn {
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
-// [texture] emission
-Texture2D tex_emission : register(t1);
-SamplerState tex_e_sampler;
-
 psIn vs(vsIn input) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), world).xyz;
@@ -151,21 +143,20 @@ psIn vs(vsIn input) {
 	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
 
 	output.uv    = input.uv;
-	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, light.xyz)));
+	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, -light.xyz)));
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
 	float3 col   = tex.Sample(tex_sampler, input.uv).rgb;
-	float3 em    = tex_emission.Sample(tex_e_sampler, input.uv).rgb;
 
 	col = col * input.color * _color.rgb;
-	col += em;
 
 	return float4(col, _color.a); 
 })_");
 
 	sk_default_material = material_create("default/material", sk_default_shader);
 	material_set_texture(sk_default_material, "diffuse", sk_default_tex);
+	material_set_color32(sk_default_material, "color", { 255,255,255,255 });
 }
 
 void sk_destroy_defaults() {
