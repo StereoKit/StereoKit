@@ -57,19 +57,19 @@ void input_hand_update() {
 
 	// Update hand meshes
 	for (size_t i = 0; i < hand_max; i++) {
-		if (hand_info[i].visible) {
+		if (hand_info[i].tracked) {
 			input_hand_update_mesh(hand_info[i]);
 			render_add_mesh(hand_mesh[i].mesh, hand_material, hand_transform);
 		}
 	}
 }
 
-void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool visible, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_info[handedness];
 
-	// if it's not visible, don't sim it
-	hand.visible = visible;
-	if (!hand.visible)
+	// if it's not tracked, don't sim it
+	hand.tracked = tracked;
+	if (!hand.tracked)
 		return;
 
 	// Switch pose based on what buttons are pressed

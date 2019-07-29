@@ -250,7 +250,7 @@ struct hand_t {
 	pose_t wrist;
 	pose_t root;
 	hand_  handedness;
-	bool   visible;
+	bool   tracked;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);

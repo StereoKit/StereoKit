@@ -29,5 +29,5 @@ void input_hand_init    ();
 void input_hand_shutdown();
 void input_hand_update  ();
 
-void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool visible, bool trigger_pressed, bool grip_pressed);
+void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
 void input_hand_update_mesh(const hand_t &hand);
