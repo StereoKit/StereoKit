@@ -15,6 +15,7 @@ HWND             win32_window = nullptr;
 rendertarget_t   win32_target = {};
 IDXGISwapChain1 *win32_swapchain = {};
 int              win32_input_pointers[2];
+float            win32_scroll;
 
 void win32_resize(int width, int height) {
 	if (width == d3d_screen_width || height == d3d_screen_height)
@@ -40,6 +41,7 @@ bool win32_init(const char *app_name) {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
 		case WM_KILLFOCUS: sk_focused = false; break;
+		case WM_MOUSEWHEEL:win32_scroll += (short)HIWORD(wParam); break;
 		case WM_SIZE:       if (wParam != SIZE_MINIMIZED) win32_resize((UINT)LOWORD(lParam), (UINT)HIWORD(lParam)); break;
 		case WM_SYSCOMMAND: if ((wParam & 0xfff0) == SC_KEYMENU) return (LRESULT)0; // Disable alt menu
 		default: return DefWindowProc(hWnd, message, wParam, lParam);
@@ -121,13 +123,16 @@ void win32_step_begin() {
 				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
 				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_cursor->ray.dir, cursor_vec);
 
-				bool pressed = GetKeyState(VK_LBUTTON) < 0;
-				if (pressed != ((pointer_cursor->state & pointer_state_pressed) > 0)) pointer_cursor->state = pointer_state_just;
-				else                                                                  pointer_cursor->state = pointer_state_none;
-				if (pressed)                                                          pointer_cursor->state |= pointer_state_pressed;
+				bool l_pressed = GetKeyState(VK_LBUTTON) < 0;
+				bool r_pressed = GetKeyState(VK_RBUTTON) < 0;
+				if (l_pressed != ((pointer_cursor->state & pointer_state_pressed) > 0)) pointer_cursor->state = pointer_state_just;
+				else                                                                    pointer_cursor->state = pointer_state_none;
+				if (l_pressed)                                                          pointer_cursor->state |= pointer_state_pressed;
+				if (r_pressed)                                                          pointer_cursor->state |= pointer_state_gripped;
 				pointer_cursor->state |= pointer_state_available;
 				pointer_cursor->ray.pos = cam_tr->_position;
 				pointer_cursor->ray.dir = vec3_normalize(pointer_cursor->ray.dir);
+				pointer_cursor->ray.pos = cam_tr->_position + pointer_cursor->ray.dir * (0.6f+win32_scroll*0.001f);
 				pointer_cursor->orientation = quat_lookat({ 0,0,0 }, pointer_cursor->ray.dir);
 			} else {
 				pointer_cursor->state = pointer_state_none;

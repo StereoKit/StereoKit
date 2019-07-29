@@ -225,18 +225,32 @@ SK_MakeFlag(pointer_source_);
 
 enum pointer_state_ {
 	pointer_state_none      = 0,
-	pointer_state_pressed   = 1 << 0,
-	pointer_state_just      = 1 << 1,
-	pointer_state_available = 1 << 2,
+	pointer_state_available = 1 << 0,
+	pointer_state_pressed   = 1 << 1,
+	pointer_state_just      = 1 << 2,
 	pointer_state_gripped   = 1 << 3,
 };
 SK_MakeFlag(pointer_state_);
+
+enum hand_ {
+	hand_left  = 0,
+	hand_right = 1,
+	hand_max   = 2,
+};
 
 struct pointer_t {
 	pointer_source_ source;
 	pointer_state_  state;
 	ray             ray;
 	quat            orientation;
+};
+
+struct hand_t {
+	pose_t fingers[5][5];
+	pose_t wrist;
+	pose_t root;
+	hand_  handedness;
+	bool   visible;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);
