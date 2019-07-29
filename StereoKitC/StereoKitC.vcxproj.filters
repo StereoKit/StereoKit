@@ -55,6 +55,9 @@
     <ClCompile Include="input_hand.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="win32_input.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendertarget.h">
@@ -108,6 +111,9 @@
     </ClInclude>
     <ClInclude Include="input_hand_poses.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_input.h">
+      <Filter>platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

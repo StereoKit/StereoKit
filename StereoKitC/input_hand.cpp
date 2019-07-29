@@ -57,7 +57,7 @@ void input_hand_update() {
 
 	// Update hand meshes
 	for (size_t i = 0; i < hand_max; i++) {
-		if (hand_info[i].tracked) {
+		if (hand_info[i].state & hand_state_tracked) {
 			input_hand_update_mesh(hand_info[i]);
 			render_add_mesh(hand_mesh[i].mesh, hand_material, hand_transform);
 		}
@@ -68,8 +68,9 @@ void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientat
 	hand_t &hand = hand_info[handedness];
 
 	// if it's not tracked, don't sim it
-	hand.tracked = tracked;
-	if (!hand.tracked)
+	if (tracked) hand.state |= hand_state_tracked;
+	else         hand.state &= ~hand_state_tracked;
+	if (!(hand.state & hand_state_tracked))
 		return;
 
 	// Switch pose based on what buttons are pressed

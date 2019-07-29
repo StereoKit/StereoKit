@@ -11,7 +11,10 @@
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 #define SK_MakeFlag(enumType) \
 inline enumType  operator| (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) | static_cast<int>(b));} \
-inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; }
+inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; } \
+inline enumType  operator& (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) & static_cast<int>(b));} \
+inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return a; } \
+inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~static_cast<int>(a)); }
 
 #include <stdint.h>
 #include <DirectXMath.h>
@@ -238,6 +241,16 @@ enum hand_ {
 	hand_max   = 2,
 };
 
+enum hand_state_ {
+	hand_state_none      = 0,
+	hand_state_tracked   = 1 << 0,
+	hand_state_pinch     = 1 << 1,
+	hand_state_justpinch = 1 << 2,
+	hand_state_grip      = 1 << 3,
+	hand_state_justgrip  = 1 << 4,
+};
+SK_MakeFlag(hand_state_);
+
 struct pointer_t {
 	pointer_source_ source;
 	pointer_state_  state;
@@ -250,7 +263,7 @@ struct hand_t {
 	pose_t wrist;
 	pose_t root;
 	hand_  handedness;
-	bool   tracked;
+	hand_state_ state;
 };
 
 SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);

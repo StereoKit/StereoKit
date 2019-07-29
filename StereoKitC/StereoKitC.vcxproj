@@ -185,6 +185,7 @@
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="transform.cpp" />
     <ClCompile Include="win32.cpp" />
+    <ClCompile Include="win32_input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets.h" />
@@ -205,6 +206,7 @@
     <ClInclude Include="stref.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />
+    <ClInclude Include="win32_input.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
