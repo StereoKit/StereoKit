@@ -52,6 +52,9 @@
     <ClCompile Include="stref.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="input_hand.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendertarget.h">
@@ -98,6 +101,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="stref.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="input_hand.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="input_hand_poses.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

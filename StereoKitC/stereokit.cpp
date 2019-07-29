@@ -5,6 +5,7 @@
 #include "d3d.h"
 #include "win32.h"
 #include "openxr.h"
+#include "input.h"
 
 #include <thread> // sleep_for
 
@@ -42,10 +43,12 @@ bool sk_init(const char *app_name, sk_runtime_ runtime) {
 		return false;
 
 	render_initialize();
+	input_init();
 	return true;
 }
 
 void sk_shutdown() {
+	input_shutdown();
 	render_shutdown();
 	switch (sk_runtime) {
 	case sk_runtime_flatscreen:   win32_shutdown (); break;
@@ -78,6 +81,8 @@ bool sk_step(void (*app_update)(void)) {
 	}
 	
 	sk_update_timer();
+	input_update();
+
 	app_update();
 
 	d3d_render_begin();
@@ -122,6 +127,7 @@ cbuffer ParamBuffer : register(b2) {
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
+	float3 col  : COLOR;
 	float2 uv   : TEXCOORD0;
 };
 struct psIn {
@@ -143,7 +149,7 @@ psIn vs(vsIn input) {
 	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
 
 	output.uv    = input.uv;
-	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, -light.xyz)));
+	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, -light.xyz))) * input.col;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {

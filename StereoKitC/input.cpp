@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "input.h"
+#include "input_hand.h"
 
 #include <vector>
 using namespace std;
@@ -32,4 +33,14 @@ pointer_t input_pointer(int index, pointer_source_ filter) {
 		}
 	}
 	return {};
+}
+
+void input_init() {
+	input_hand_init();
+}
+void input_shutdown() {
+	input_hand_shutdown();
+}
+void input_update() {
+	input_hand_update();
 }

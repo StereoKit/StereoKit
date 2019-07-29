@@ -69,8 +69,13 @@ struct ray {
 	vec3 pos;
 	vec3 dir;
 };
+struct pose_t {
+	vec3 position;
+	quat orientation;
+};
 
 vec3 operator*(const quat &a, const vec3 &b);
+quat operator*(const quat &a, const quat &b);
 
 static inline vec2 operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2 operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
@@ -102,6 +107,7 @@ static inline vec3  vec3_lerp        (const vec3 &a, const vec3 &b, float t) { r
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
 quat quat_lookat(const vec3 &from, const vec3 &at);
+quat quat_lerp(const quat &a, const quat &b, float t);
 
 #define deg2rad 0.01745329252
 #define rad2deg 57.295779513
@@ -222,6 +228,7 @@ enum pointer_state_ {
 	pointer_state_pressed   = 1 << 0,
 	pointer_state_just      = 1 << 1,
 	pointer_state_available = 1 << 2,
+	pointer_state_gripped   = 1 << 3,
 };
 SK_MakeFlag(pointer_state_);
 

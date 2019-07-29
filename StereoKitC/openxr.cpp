@@ -33,6 +33,7 @@ struct xr_input_t {
 	XrActionSet action_set;
 	XrAction    poseAction;
 	XrAction    selectAction;
+	XrAction    gripAction;
 	XrPath   handSubactionPath[2];
 	XrSpace  handSpace[2];
 	XrPosef  handPose[2];
@@ -360,6 +361,11 @@ void openxr_make_actions() {
 	strcpy_s(action_info.localizedActionName, "Select");
 	xrCreateAction(xr_input.action_set, &action_info, &xr_input.selectAction);
 
+	action_info.actionType = XR_INPUT_ACTION_TYPE_BOOLEAN;
+	strcpy_s(action_info.actionName,          "grip");
+	strcpy_s(action_info.localizedActionName, "Grip");
+	xrCreateAction(xr_input.action_set, &action_info, &xr_input.gripAction);
+
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
 	// preferences. For example, if the runtime allows you to remap buttons, or provides input
@@ -367,17 +373,31 @@ void openxr_make_actions() {
 	XrPath profile_path;
 	XrPath pose_path  [2];
 	XrPath select_path[2];
+	XrPath grip_path[2];
 	xrStringToPath(xr_instance, "/user/hand/left/input/pointer/pose",     &pose_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/pointer/pose",    &pose_path[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
-	xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
+	xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/grip/click",  &grip_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/grip/click", &grip_path[1]);
+	
 	XrActionSuggestedBinding bindings[] = {
 		{ xr_input.poseAction,   pose_path[0]   },
 		{ xr_input.poseAction,   pose_path[1]   },
 		{ xr_input.selectAction, select_path[0] },
-		{ xr_input.selectAction, select_path[1] }, };
+		{ xr_input.selectAction, select_path[1] },
+		{ xr_input.gripAction,   grip_path[0]   },
+		{ xr_input.gripAction,   grip_path[1]   } };
+
+	
+	xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+	suggested_binds.interactionProfile     = profile_path;
+	suggested_binds.suggestedBindings      = &bindings[0];
+	suggested_binds.countSuggestedBindings = _countof(bindings);
+	xrSetInteractionProfileSuggestedBindings(xr_session, &suggested_binds);
+
+	xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
 	suggested_binds.interactionProfile     = profile_path;
 	suggested_binds.suggestedBindings      = &bindings[0];
 	suggested_binds.countSuggestedBindings = _countof(bindings);
@@ -419,6 +439,10 @@ void openxr_poll_actions() {
 		xrGetActionStateBoolean(xr_input.selectAction, 1, &xr_input.handSubactionPath[hand], &select_state);
 		xr_input.handSelect[hand] = select_state.currentState && select_state.changedSinceLastSync;
 
+		// Events come with a timestamp
+		XrActionStateBoolean grip_state = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		xrGetActionStateBoolean(xr_input.gripAction, 1, &xr_input.handSubactionPath[hand], &grip_state);
+
 		// If we have a select event, update the hand pose to match the event's timestamp
 		//if (xr_input.handSelect[hand]) {
 			XrSpaceRelation spaceRelation = { XR_TYPE_SPACE_RELATION };
@@ -434,6 +458,7 @@ void openxr_poll_actions() {
 		if (select_state.currentState != ((pointer->state & pointer_state_pressed) > 0)) pointer->state = pointer_state_just;
 		else                                                                             pointer->state = pointer_state_none;
 		if (select_state.currentState) pointer->state |= pointer_state_pressed;
+		if (grip_state.currentState  ) pointer->state |= pointer_state_gripped;
 		if (pose_state.isActive)       pointer->state |= pointer_state_available;
 		memcpy(&pointer->ray.pos,     &xr_input.handPose[hand].position,    sizeof(vec3));
 		memcpy(&pointer->orientation, &xr_input.handPose[hand].orientation, sizeof(quat));

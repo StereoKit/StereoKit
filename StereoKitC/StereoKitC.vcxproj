@@ -171,6 +171,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="input_hand.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="mesh.cpp" />
@@ -190,6 +191,8 @@
     <ClInclude Include="cgltf.h" />
     <ClInclude Include="d3d.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="input_hand.h" />
+    <ClInclude Include="input_hand_poses.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />

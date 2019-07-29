@@ -13,7 +13,21 @@ vec3 operator*(const quat &a, const vec3 &b) {
 	return result;
 }
 
+quat operator*(const quat &a, const quat &b) {
+	XMVECTOR rotation = XMQuaternionMultiply(XMLoadFloat4((XMFLOAT4*)&a),XMLoadFloat4((XMFLOAT4*)&b));
+	quat result;
+	XMStoreFloat4((XMFLOAT4 *)&result, rotation);
+	return result;
+}
+
 quat quat_lookat(const vec3 &from, const vec3 &at) {
 	XMMATRIX mat = XMMatrixLookAtRH(to_fast3(from), to_fast3(at), XMVectorSet(0, 1, 0, 0));
 	return from_fastq(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
+}
+
+quat quat_lerp(const quat &a, const quat &b, float t) {
+	XMVECTOR blend = XMQuaternionSlerp(XMLoadFloat4((XMFLOAT4 *)& a), XMLoadFloat4((XMFLOAT4 *)& b), t);
+	quat result;
+	XMStoreFloat4((XMFLOAT4 *)&result, blend);
+	return result;
 }
