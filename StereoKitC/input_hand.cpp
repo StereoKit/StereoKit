@@ -28,33 +28,14 @@ void input_hand_init() {
 
 void input_hand_shutdown() {
 	material_release(hand_material);
+	for (size_t i = 0; i < hand_max; i++) {
+		if (hand_mesh[i].mesh  != nullptr) mesh_release(hand_mesh[i].mesh);
+		if (hand_mesh[i].inds  != nullptr) free(hand_mesh[i].inds);
+		if (hand_mesh[i].verts != nullptr) free(hand_mesh[i].verts);
+	}
 }
 
 void input_hand_update() {
-	// sim hands using controllers, if we have any
-	int ct = input_pointer_count(pointer_source_hand);
-	for (size_t i = 0; i < ct; i++) {
-		pointer_t pointer = input_pointer(i, pointer_source_hand);
-		hand_     handed  = (pointer.source & pointer_source_hand_left) > 0 ? hand_left : hand_right;
-		
-		input_hand_sim(handed, pointer.ray.pos, pointer.orientation, 
-			pointer.state & pointer_state_available, 
-			pointer.state & pointer_state_pressed, 
-			pointer.state & pointer_state_gripped);
-	}
-
-	// If platform has a cursor instead of hands, lets sim a hand using that!
-	ct = input_pointer_count(pointer_source_gaze_cursor);
-	for (size_t i = 0; i < ct; i++) {
-		pointer_t pointer = input_pointer(i, pointer_source_gaze_cursor);
-		hand_     handed  = hand_right;
-
-		input_hand_sim(handed, pointer.ray.pos, pointer.orientation, 
-			pointer.state & pointer_state_available, 
-			pointer.state & pointer_state_pressed, 
-			pointer.state & pointer_state_gripped);
-	}
-
 	// Update hand meshes
 	for (size_t i = 0; i < hand_max; i++) {
 		if (hand_info[i].state & hand_state_tracked) {
@@ -66,50 +47,61 @@ void input_hand_update() {
 
 void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_info[handedness];
+	hand.root.position    = hand_pos;
+	hand.root.orientation = orientation;
+	hand.state            = hand_state_none;
 
-	// if it's not tracked, don't sim it
-	if (tracked) hand.state |= hand_state_tracked;
-	else         hand.state &= ~hand_state_tracked;
-	if (!(hand.state & hand_state_tracked))
-		return;
+	// Update hand state based on inputs
+	bool was_tracked = hand.state & hand_state_tracked;
+	bool was_trigger = hand.state & hand_state_pinch;
+	bool was_gripped = hand.state & hand_state_grip;
 
-	// Switch pose based on what buttons are pressed
-	const pose_t *dest_pose;
-	if (trigger_pressed && !grip_pressed)
-		dest_pose = &input_pose_pinch[0][0];
-	else if (trigger_pressed && grip_pressed)
-		dest_pose = &input_pose_fist[0][0];
-	else if (!trigger_pressed && grip_pressed)
-		dest_pose = &input_pose_point[0][0];
-	else
-		dest_pose = &input_pose_neutral[0][0];
+	if (was_tracked != tracked)         hand.state |= tracked         ? hand_state_justtracked : hand_state_untracked;
+	if (was_trigger != trigger_pressed) hand.state |= trigger_pressed ? hand_state_justpinch   : hand_state_unpinch;
+	if (was_gripped != grip_pressed)    hand.state |= grip_pressed    ? hand_state_justgrip    : hand_state_ungrip;
+	if (tracked)         hand.state |= hand_state_tracked;
+	if (trigger_pressed) hand.state |= hand_state_pinch;
+	if (grip_pressed)    hand.state |= hand_state_grip;
 
-	// Blend our active pose with our desired pose, for smooth transitions
-	// between poses
-	float delta = sk_time_elapsedf() * 20;
-	delta = delta>1?1:delta;
-	for (size_t f = 0; f < 5; f++) {
-	for (size_t j = 0; j < 5; j++) {
-		pose_t *p = &hand_pose_blend[handedness][f][j];
-		p->position    = vec3_lerp(p->position, dest_pose[f * 5 + j].position, delta);
-		p->orientation = quat_lerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
-	} }
+	// only sim it if it's tracked
+	if (tracked) {
+		// Switch pose based on what buttons are pressed
+		const pose_t *dest_pose;
+		if (trigger_pressed && !grip_pressed)
+			dest_pose = &input_pose_pinch[0][0];
+		else if (trigger_pressed && grip_pressed)
+			dest_pose = &input_pose_fist[0][0];
+		else if (!trigger_pressed && grip_pressed)
+			dest_pose = &input_pose_point[0][0];
+		else
+			dest_pose = &input_pose_neutral[0][0];
+
+		// Blend our active pose with our desired pose, for smooth transitions
+		// between poses
+		float delta = sk_time_elapsedf() * 20;
+		delta = delta>1?1:delta;
+		for (size_t f = 0; f < 5; f++) {
+		for (size_t j = 0; j < 5; j++) {
+			pose_t *p = &hand_pose_blend[handedness][f][j];
+			p->position    = vec3_lerp(p->position,    dest_pose[f * 5 + j].position,    delta);
+			p->orientation = quat_lerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
+		} }
 	
-
-	for (size_t f = 0; f < 5; f++) {
-		const pose_t *finger = &hand_pose_blend[handedness][f][0];
-	for (size_t j = 0; j < 5; j++) {
-		vec3 pos = finger[j].position;
-		quat rot = finger[j].orientation;
-		if (handedness == hand_right) {
-			// mirror along x axis, our pose data is for left hand
-			pos.x = -pos.x;
-			rot.j = -rot.j;
-			rot.k = -rot.k;
-		}
-		hand.fingers[f][j].position    = orientation * pos + hand_pos;
-		hand.fingers[f][j].orientation = rot * orientation;
-	} }
+		for (size_t f = 0; f < 5; f++) {
+			const pose_t *finger = &hand_pose_blend[handedness][f][0];
+		for (size_t j = 0; j < 5; j++) {
+			vec3 pos = finger[j].position;
+			quat rot = finger[j].orientation;
+			if (handedness == hand_right) {
+				// mirror along x axis, our pose data is for left hand
+				pos.x = -pos.x;
+				rot.j = -rot.j;
+				rot.k = -rot.k;
+			}
+			hand.fingers[f][j].position    = orientation * pos + hand_pos;
+			hand.fingers[f][j].orientation = rot * orientation;
+		} }
+	}
 }
 
 void input_hand_update_mesh(const hand_t &hand) {

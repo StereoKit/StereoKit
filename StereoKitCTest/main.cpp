@@ -48,13 +48,9 @@ void app_update() {
 	vec3 light_dir = vec3{ cosf(sk_timef()*1.2f), -1, sinf(sk_timef()*1.2f) } / 1.414;
 	render_set_light(light_dir, 1, { 1,1,1,1 });
 
-	int ct = input_pointer_count();
-	for (size_t i = 0; i < ct; i++) {
-		pointer_t p = input_pointer(i);
-
-		if (p.state & pointer_state_pressed)
-			lookat = p.ray.pos;// +p.ray.dir * 1.0f;
-	}
+	const hand_t &hand = input_hand(hand_right);
+	if (hand.state & hand_state_pinch)
+		lookat = hand.root.position;
 
 	transform_lookat(app_gltf_tr, lookat);
 	render_add_model(app_gltf, app_gltf_tr);

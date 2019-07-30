@@ -25,6 +25,8 @@ struct hand_mesh_t {
 	int       ind_count;
 };
 
+extern hand_t hand_info[2];
+
 void input_hand_init    ();
 void input_hand_shutdown();
 void input_hand_update  ();

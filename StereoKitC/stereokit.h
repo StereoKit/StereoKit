@@ -229,9 +229,6 @@ SK_MakeFlag(pointer_source_);
 enum pointer_state_ {
 	pointer_state_none      = 0,
 	pointer_state_available = 1 << 0,
-	pointer_state_pressed   = 1 << 1,
-	pointer_state_just      = 1 << 2,
-	pointer_state_gripped   = 1 << 3,
 };
 SK_MakeFlag(pointer_state_);
 
@@ -242,12 +239,16 @@ enum hand_ {
 };
 
 enum hand_state_ {
-	hand_state_none      = 0,
-	hand_state_tracked   = 1 << 0,
-	hand_state_pinch     = 1 << 1,
-	hand_state_justpinch = 1 << 2,
-	hand_state_grip      = 1 << 3,
-	hand_state_justgrip  = 1 << 4,
+	hand_state_none        = 0,
+	hand_state_tracked     = 1 << 0,
+	hand_state_justtracked = 1 << 1,
+	hand_state_untracked   = 1 << 2,
+	hand_state_pinch       = 1 << 3,
+	hand_state_justpinch   = 1 << 4,
+	hand_state_unpinch     = 1 << 5,
+	hand_state_grip        = 1 << 6,
+	hand_state_justgrip    = 1 << 7,
+	hand_state_ungrip      = 1 << 8,
 };
 SK_MakeFlag(hand_state_);
 
@@ -266,5 +267,10 @@ struct hand_t {
 	hand_state_ state;
 };
 
-SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);
-SK_API pointer_t input_pointer      (int index, pointer_source_ filter = pointer_source_any);
+SK_API int           input_pointer_count(pointer_source_ filter = pointer_source_any);
+SK_API pointer_t     input_pointer      (int index, pointer_source_ filter = pointer_source_any);
+SK_API const hand_t &input_hand         (hand_ hand);
+
+SK_API void input_subscribe  (pointer_state_ event, void (*event_callback)(const pointer_t &pointer));
+SK_API void input_unsubscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer));
+SK_API void input_fire_event (pointer_state_ event, const pointer_t &pointer);

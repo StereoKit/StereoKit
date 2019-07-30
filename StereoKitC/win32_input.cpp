@@ -4,6 +4,7 @@
 
 #include "win32.h"
 #include "input.h"
+#include "input_hand.h"
 #include "render.h"
 #include "d3d.h"
 
@@ -24,6 +25,17 @@ void win32_input_update() {
 	transform_t *cam_tr = nullptr;
 	render_get_cam(&cam, &cam_tr);
 
+	const hand_t &hand = input_hand(hand_right);
+	vec3 hand_pos     = hand.root.position;
+	quat hand_rot     = hand.root.orientation;
+	bool l_pressed    = false;
+	bool r_pressed    = false;
+	bool hand_tracked = false;
+	vec3 pointer_dir  = pointer_cursor->ray.dir;
+
+	pointer_cursor->state = pointer_state_none;
+	pointer_head  ->state = pointer_state_none;
+
 	if (cam != nullptr) {
 		pointer_head->state = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
@@ -35,33 +47,32 @@ void win32_input_update() {
 			float x = (((cursor_pos.x / (float)d3d_screen_width ) - 0.5f) *  2.f);
 			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
 			if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
+				hand_tracked = true;
+				l_pressed    = GetKeyState(VK_LBUTTON) < 0;
+				r_pressed    = GetKeyState(VK_RBUTTON) < 0;
+
 				// convert screen pos to world ray
 				DirectX::XMMATRIX mat, view, proj;
 				camera_view(*cam_tr, view);
 				camera_proj(*cam,    proj);
 				mat = view * proj;
-				DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
+				DirectX::XMMATRIX inv        = DirectX::XMMatrixInverse(nullptr, mat);
 				DirectX::XMVECTOR cursor_vec = DirectX::XMVectorSet(x, y, 1.0f, 0.0f);
-				cursor_vec = DirectX::XMVector3Transform(cursor_vec, inv);
-				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_cursor->ray.dir, cursor_vec);
+				cursor_vec                   = DirectX::XMVector3Transform(cursor_vec, inv);
+				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_dir, cursor_vec);
+				pointer_dir = vec3_normalize(pointer_dir);
 
-				bool l_pressed = GetKeyState(VK_LBUTTON) < 0;
-				bool r_pressed = GetKeyState(VK_RBUTTON) < 0;
-				if (l_pressed != ((pointer_cursor->state & pointer_state_pressed) > 0)) pointer_cursor->state = pointer_state_just;
-				else                                                                    pointer_cursor->state = pointer_state_none;
-				if (l_pressed)                                                          pointer_cursor->state |= pointer_state_pressed;
-				if (r_pressed)                                                          pointer_cursor->state |= pointer_state_gripped;
-				pointer_cursor->state |= pointer_state_available;
-				pointer_cursor->ray.pos = cam_tr->_position;
-				pointer_cursor->ray.dir = vec3_normalize(pointer_cursor->ray.dir);
-				pointer_cursor->ray.pos = cam_tr->_position + pointer_cursor->ray.dir * (0.6f+win32_scroll*0.001f);
-				pointer_cursor->orientation = quat_lookat({ 0,0,0 }, pointer_cursor->ray.dir);
-			} else {
-				pointer_cursor->state = pointer_state_none;
+				// make a hand pose from the cursor ray
+				hand_pos = cam_tr->_position + pointer_dir * (0.6f + win32_scroll * 0.001f);
+				hand_rot = quat_lookat({ 0,0,0 }, pointer_dir);
 			}
 		}
-	} else {
-		pointer_cursor->state = pointer_state_none;
-		pointer_head  ->state = pointer_state_none;
 	}
+
+	pointer_cursor->state |= pointer_state_available;
+	pointer_cursor->ray.dir     = pointer_dir;
+	pointer_cursor->ray.pos     = hand_pos;
+	pointer_cursor->orientation = hand_rot;
+
+	input_hand_sim(hand_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 }

@@ -5,7 +5,13 @@
 #include <vector>
 using namespace std;
 
-vector<pointer_t> input_pointers;
+struct input_event_t {
+	pointer_state_ event;
+	void (*event_callback)(const pointer_t &pointer);
+};
+
+vector<input_event_t> input_listeners;
+vector<pointer_t>     input_pointers;
 
 int input_add_pointer(pointer_source_ source) {
 	input_pointers.push_back({ source, pointer_state_none });
@@ -34,13 +40,38 @@ pointer_t input_pointer(int index, pointer_source_ filter) {
 	}
 	return {};
 }
+const hand_t &input_hand(hand_ hand) {
+	return hand_info[hand];
+}
+
+void input_subscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer)) {
+	input_listeners.push_back({ event, event_callback });
+}
+void input_unsubscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer)) {
+	for (size_t i = input_listeners.size()-1; i >= 0; i--) {
+		if (input_listeners[i].event == event && 
+			input_listeners[i].event_callback == event_callback) {
+			input_listeners.erase(input_listeners.begin() + i);
+		}
+	}
+}
+void input_fire_event(pointer_state_ event, const pointer_t &pointer) {
+	for (size_t i = 0; i < input_listeners.size(); i++) {
+		if (input_listeners[i].event & event) {
+			input_listeners[i].event_callback(pointer);
+		}
+	}
+}
 
 void input_init() {
 	input_hand_init();
 }
 void input_shutdown() {
+	input_pointers .clear();
+	input_listeners.clear();
 	input_hand_shutdown();
 }
 void input_update() {
 	input_hand_update();
 }
+

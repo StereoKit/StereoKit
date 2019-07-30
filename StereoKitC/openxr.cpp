@@ -7,6 +7,7 @@
 #include "stereokit.h"
 #include "render.h"
 #include "input.h"
+#include "input_hand.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>
@@ -429,7 +430,7 @@ void openxr_poll_actions() {
 	xrSyncActionData(xr_session, 1, &action_set);
 
 	// Now we'll get the current states of our actions, and store them for later use
-	for (uint32_t hand = 0; hand < 2; hand++) {
+	for (uint32_t hand = 0; hand < hand_max; hand++) {
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
 		xrGetActionStatePose(xr_input.poseAction, xr_input.handSubactionPath[hand], &pose_state);
 		xr_input.renderHand[hand] = pose_state.isActive;
@@ -454,16 +455,17 @@ void openxr_poll_actions() {
 			}
 		//}
 
-		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
-		if (select_state.currentState != ((pointer->state & pointer_state_pressed) > 0)) pointer->state = pointer_state_just;
-		else                                                                             pointer->state = pointer_state_none;
-		if (select_state.currentState) pointer->state |= pointer_state_pressed;
-		if (grip_state.currentState  ) pointer->state |= pointer_state_gripped;
-		if (pose_state.isActive)       pointer->state |= pointer_state_available;
-		memcpy(&pointer->ray.pos,     &xr_input.handPose[hand].position,    sizeof(vec3));
-		memcpy(&pointer->orientation, &xr_input.handPose[hand].orientation, sizeof(quat));
+		vec3 hand_pos;
+		quat hand_rot;
+		memcpy(&hand_pos, &xr_input.handPose[hand].position,    sizeof(vec3));
+		memcpy(&hand_rot, &xr_input.handPose[hand].orientation, sizeof(quat));
 
-		vec3 forward = { 0,0,-1 };
-		pointer->ray.dir = pointer->orientation * forward;
+		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
+		pointer->state       = pose_state.isActive ? pointer_state_available : pointer_state_none;
+		pointer->ray.pos     = hand_pos;
+		pointer->ray.dir     = hand_rot * vec3{ 0,0,-1 };
+		pointer->orientation = hand_rot;
+
+		input_hand_sim((hand_)hand, hand_pos, hand_rot, pose_state.isActive, select_state.currentState, grip_state.currentState );
 	}
 }
