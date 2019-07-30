@@ -6,7 +6,7 @@ class Program
     static void Main(string[] args) 
     {
         StereoKitApp kit = new StereoKitApp("CSharp OpenXR", Runtime.MixedReality);
-        Model     gltf   = new Model("Assets/FlightHelmet/FlightHelmet.gltf");
+        Model     gltf   = new Model("Assets/DamagedHelmet.gltf");
         Model     hand   = new Model("Assets/cube.obj");
         Transform gltfTr = new Transform(Vec3.Zero);
         Transform handTr = new Transform(Vec3.Zero);
