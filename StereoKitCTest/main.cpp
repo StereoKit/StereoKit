@@ -49,7 +49,7 @@ void app_update() {
 	render_set_light(light_dir, 1, { 1,1,1,1 });
 
 	const hand_t &hand = input_hand(hand_right);
-	if (hand.state & hand_state_pinch)
+	if (hand.state & input_state_pinch)
 		lookat = hand.root.position;
 
 	transform_lookat(app_gltf_tr, lookat);

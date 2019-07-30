@@ -60,6 +60,13 @@ vector<XrViewConfigurationView> xr_config_views;
 vector<swapchain_t>             xr_swapchains;
 
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
+void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer);
+
+inline bool openxr_rel_valid(XrSpaceRelation &rel) {
+	return 
+		(rel.relationFlags & XR_SPACE_RELATION_POSITION_VALID_BIT   ) != 0 &&
+		(rel.relationFlags & XR_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0;
+}
 
 bool openxr_init(const char *app_name) {
 	const char          *extensions[] = { XR_KHR_D3D11_ENABLE_EXTENSION_NAME };
@@ -413,10 +420,10 @@ void openxr_make_actions() {
 	}
 
 	for (int32_t i = 0; i < 2; i++) {
-		pointer_source_ hand = i == 0 ? pointer_source_hand_left : pointer_source_hand_right;
-		xr_input.pointer_ids[i] = input_add_pointer(pointer_source_can_press | pointer_source_hand | hand);
+		input_source_ hand = i == 0 ? input_source_hand_left : input_source_hand_right;
+		xr_input.pointer_ids[i] = input_add_pointer(input_source_can_press | input_source_hand | hand);
 	}
-	xr_input.pointer_ids[2] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_head);
+	xr_input.pointer_ids[2] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 }
 
 void openxr_poll_actions() {
@@ -445,27 +452,65 @@ void openxr_poll_actions() {
 		xrGetActionStateBoolean(xr_input.gripAction, 1, &xr_input.handSubactionPath[hand], &grip_state);
 
 		// If we have a select event, update the hand pose to match the event's timestamp
-		//if (xr_input.handSelect[hand]) {
-			XrSpaceRelation spaceRelation = { XR_TYPE_SPACE_RELATION };
-			XrResult        res = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time/*select_state.lastChangeTime*/, &spaceRelation);
-			if (XR_UNQUALIFIED_SUCCESS(res) &&
-				(spaceRelation.relationFlags & XR_SPACE_RELATION_POSITION_VALID_BIT) != 0 &&
-				(spaceRelation.relationFlags & XR_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
-				xr_input.handPose[hand] = spaceRelation.pose;
-			}
-		//}
-
-		vec3 hand_pos;
-		quat hand_rot;
-		memcpy(&hand_pos, &xr_input.handPose[hand].position,    sizeof(vec3));
-		memcpy(&hand_rot, &xr_input.handPose[hand].orientation, sizeof(quat));
+		XrSpaceRelation spaceRelation = { XR_TYPE_SPACE_RELATION };
+		XrResult        res = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time, &spaceRelation);
+		if (XR_UNQUALIFIED_SUCCESS(res) &&
+			(spaceRelation.relationFlags & XR_SPACE_RELATION_POSITION_VALID_BIT) != 0 &&
+			(spaceRelation.relationFlags & XR_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
+			xr_input.handPose[hand] = spaceRelation.pose;
+		}
 
 		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
-		pointer->state       = pose_state.isActive ? pointer_state_available : pointer_state_none;
-		pointer->ray.pos     = hand_pos;
-		pointer->ray.dir     = hand_rot * vec3{ 0,0,-1 };
-		pointer->orientation = hand_rot;
+		pointer->state = pose_state.isActive ? pointer_state_available : pointer_state_none;
+		openxr_pose_to_pointer(spaceRelation.pose, pointer);
 
-		input_hand_sim((hand_)hand, hand_pos, hand_rot, pose_state.isActive, select_state.currentState, grip_state.currentState );
+		input_hand_sim((hand_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
+
+		// Get event poses, and fire our own events for them
+		const hand_t &curr_hand = input_hand((hand_)hand);
+		if (select_state.currentState != (curr_hand.state & input_state_pinch > 0)) {
+			spaceRelation = { XR_TYPE_SPACE_RELATION };
+			res           = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &spaceRelation);
+			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_rel_valid(spaceRelation)) {
+				pointer_t event_pointer = *pointer;
+				openxr_pose_to_pointer(spaceRelation.pose, &event_pointer);
+
+				input_fire_event(
+					input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right), 
+					curr_hand.state & input_state_pinch ? input_state_justpinch : input_state_unpinch, 
+					event_pointer);
+			}
+		}
+		if (grip_state.currentState != (curr_hand.state & input_state_pinch > 0)) {
+			spaceRelation = { XR_TYPE_SPACE_RELATION };
+			res           = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, grip_state.lastChangeTime, &spaceRelation);
+			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_rel_valid(spaceRelation)) {
+				pointer_t event_pointer = *pointer;
+				openxr_pose_to_pointer(spaceRelation.pose, &event_pointer);
+
+				input_fire_event(
+					input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+					curr_hand.state & input_state_grip ? input_state_justgrip : input_state_ungrip, 
+					event_pointer);
+			}
+		}
+		if (curr_hand.state & input_state_justtracked) {
+			input_fire_event(
+				input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+				input_state_justtracked, 
+				*pointer);
+		}
+		if (curr_hand.state & input_state_untracked) {
+			input_fire_event(
+				input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+				input_state_untracked, 
+				*pointer);
+		}
 	}
+}
+
+void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer) {
+	memcpy(&pointer->ray.pos,     &pose.position,    sizeof(vec3));
+	memcpy(&pointer->orientation, &pose.orientation, sizeof(quat));
+	pointer->ray.dir = pointer->orientation * vec3{ 0,0,-1 };
 }

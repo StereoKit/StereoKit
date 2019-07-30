@@ -38,7 +38,7 @@ void input_hand_shutdown() {
 void input_hand_update() {
 	// Update hand meshes
 	for (size_t i = 0; i < hand_max; i++) {
-		if (hand_info[i].state & hand_state_tracked) {
+		if (hand_info[i].state & input_state_tracked) {
 			input_hand_update_mesh(hand_info[i]);
 			render_add_mesh(hand_mesh[i].mesh, hand_material, hand_transform);
 		}
@@ -49,19 +49,19 @@ void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientat
 	hand_t &hand = hand_info[handedness];
 	hand.root.position    = hand_pos;
 	hand.root.orientation = orientation;
-	hand.state            = hand_state_none;
+	hand.state            = input_state_none;
 
 	// Update hand state based on inputs
-	bool was_tracked = hand.state & hand_state_tracked;
-	bool was_trigger = hand.state & hand_state_pinch;
-	bool was_gripped = hand.state & hand_state_grip;
+	bool was_tracked = hand.state & input_state_tracked;
+	bool was_trigger = hand.state & input_state_pinch;
+	bool was_gripped = hand.state & input_state_grip;
 
-	if (was_tracked != tracked)         hand.state |= tracked         ? hand_state_justtracked : hand_state_untracked;
-	if (was_trigger != trigger_pressed) hand.state |= trigger_pressed ? hand_state_justpinch   : hand_state_unpinch;
-	if (was_gripped != grip_pressed)    hand.state |= grip_pressed    ? hand_state_justgrip    : hand_state_ungrip;
-	if (tracked)         hand.state |= hand_state_tracked;
-	if (trigger_pressed) hand.state |= hand_state_pinch;
-	if (grip_pressed)    hand.state |= hand_state_grip;
+	if (was_tracked != tracked)         hand.state |= tracked         ? input_state_justtracked : input_state_untracked;
+	if (was_trigger != trigger_pressed) hand.state |= trigger_pressed ? input_state_justpinch   : input_state_unpinch;
+	if (was_gripped != grip_pressed)    hand.state |= grip_pressed    ? input_state_justgrip    : input_state_ungrip;
+	if (tracked)         hand.state |= input_state_tracked;
+	if (trigger_pressed) hand.state |= input_state_pinch;
+	if (grip_pressed)    hand.state |= input_state_grip;
 
 	// only sim it if it's tracked
 	if (tracked) {

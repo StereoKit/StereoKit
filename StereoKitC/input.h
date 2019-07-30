@@ -2,7 +2,7 @@
 
 #include "stereokit.h"
 
-int        input_add_pointer(pointer_source_ source);
+int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int id);
 
 void input_init    ();

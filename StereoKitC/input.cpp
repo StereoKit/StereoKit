@@ -6,14 +6,15 @@
 using namespace std;
 
 struct input_event_t {
-	pointer_state_ event;
+	input_source_ source;
+	input_state_  event;
 	void (*event_callback)(const pointer_t &pointer);
 };
 
 vector<input_event_t> input_listeners;
 vector<pointer_t>     input_pointers;
 
-int input_add_pointer(pointer_source_ source) {
+int input_add_pointer(input_source_ source) {
 	input_pointers.push_back({ source, pointer_state_none });
 	return input_pointers.size() - 1;
 }
@@ -21,7 +22,7 @@ pointer_t *input_get_pointer(int id) {
 	return &input_pointers[id];
 }
 
-int input_pointer_count(pointer_source_ filter) {
+int input_pointer_count(input_source_ filter) {
 	int result = 0;
 	for (size_t i = 0; i < input_pointers.size(); i++) {
 		if (input_pointers[i].source & filter)
@@ -29,7 +30,7 @@ int input_pointer_count(pointer_source_ filter) {
 	}
 	return result;
 }
-pointer_t input_pointer(int index, pointer_source_ filter) {
+pointer_t input_pointer(int index, input_source_ filter) {
 	int curr = 0;
 	for (size_t i = 0; i < input_pointers.size(); i++) {
 		if (input_pointers[i].source & filter) {
@@ -44,20 +45,21 @@ const hand_t &input_hand(hand_ hand) {
 	return hand_info[hand];
 }
 
-void input_subscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer)) {
-	input_listeners.push_back({ event, event_callback });
+void input_subscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer)) {
+	input_listeners.push_back({ source, event, event_callback });
 }
-void input_unsubscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer)) {
+void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer)) {
 	for (size_t i = input_listeners.size()-1; i >= 0; i--) {
-		if (input_listeners[i].event == event && 
+		if (input_listeners[i].source         == source && 
+			input_listeners[i].event          == event  && 
 			input_listeners[i].event_callback == event_callback) {
 			input_listeners.erase(input_listeners.begin() + i);
 		}
 	}
 }
-void input_fire_event(pointer_state_ event, const pointer_t &pointer) {
+void input_fire_event(input_source_ source, input_state_ event, const pointer_t &pointer) {
 	for (size_t i = 0; i < input_listeners.size(); i++) {
-		if (input_listeners[i].event & event) {
+		if (input_listeners[i].source & source && input_listeners[i].event & event) {
 			input_listeners[i].event_callback(pointer);
 		}
 	}

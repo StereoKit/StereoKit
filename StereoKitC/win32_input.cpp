@@ -11,8 +11,8 @@
 int win32_input_pointers[2];
 
 void win32_input_init() {
-	win32_input_pointers[0] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_cursor | pointer_source_can_press);
-	win32_input_pointers[1] = input_add_pointer(pointer_source_gaze | pointer_source_gaze_head);
+	win32_input_pointers[0] = input_add_pointer(input_source_gaze | input_source_gaze_cursor | input_source_can_press);
+	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 }
 void win32_input_shutdown() {
 }
@@ -21,7 +21,7 @@ void win32_input_update() {
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
 	pointer_t *pointer_head   = input_get_pointer(win32_input_pointers[1]);
 
-	camera_t    *cam = nullptr;
+	camera_t    *cam    = nullptr;
 	transform_t *cam_tr = nullptr;
 	render_get_cam(&cam, &cam_tr);
 
@@ -33,11 +33,15 @@ void win32_input_update() {
 	bool hand_tracked = false;
 	vec3 pointer_dir  = pointer_cursor->ray.dir;
 
+	bool was_tracked   = hand.state & input_state_tracked;
+	bool was_l_pressed = hand.state & input_state_pinch;
+	bool was_r_pressed = hand.state & input_state_grip;
+
 	pointer_cursor->state = pointer_state_none;
 	pointer_head  ->state = pointer_state_none;
 
 	if (cam != nullptr) {
-		pointer_head->state = pointer_state_available;
+		pointer_head->state   = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
 
@@ -75,4 +79,9 @@ void win32_input_update() {
 	pointer_cursor->orientation = hand_rot;
 
 	input_hand_sim(hand_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
+
+	input_source_ src = input_source_hand & input_source_hand_right;
+	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? input_state_justtracked : input_state_untracked, *pointer_cursor);
+	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? input_state_justpinch   : input_state_unpinch,   *pointer_cursor);
+	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? input_state_justgrip    : input_state_ungrip,    *pointer_cursor);
 }

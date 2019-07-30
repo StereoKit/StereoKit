@@ -213,18 +213,18 @@ SK_API void render_add_model  (model_t model, transform_t &transform);
 
 ///////////////////////////////////////////
 
-enum pointer_source_ {
-	pointer_source_any        = 0x7FFFFFFF,
-	pointer_source_hand       = 1 << 0,
-	pointer_source_hand_left  = 1 << 1,
-	pointer_source_hand_right = 1 << 2,
-	pointer_source_gaze       = 1 << 4,
-	pointer_source_gaze_head  = 1 << 5,
-	pointer_source_gaze_eyes  = 1 << 6,
-	pointer_source_gaze_cursor= 1 << 7,
-	pointer_source_can_press  = 1 << 8,
+enum input_source_ {
+	input_source_any        = 0x7FFFFFFF,
+	input_source_hand       = 1 << 0,
+	input_source_hand_left  = 1 << 1,
+	input_source_hand_right = 1 << 2,
+	input_source_gaze       = 1 << 4,
+	input_source_gaze_head  = 1 << 5,
+	input_source_gaze_eyes  = 1 << 6,
+	input_source_gaze_cursor= 1 << 7,
+	input_source_can_press  = 1 << 8,
 };
-SK_MakeFlag(pointer_source_);
+SK_MakeFlag(input_source_);
 
 enum pointer_state_ {
 	pointer_state_none      = 0,
@@ -238,25 +238,25 @@ enum hand_ {
 	hand_max   = 2,
 };
 
-enum hand_state_ {
-	hand_state_none        = 0,
-	hand_state_tracked     = 1 << 0,
-	hand_state_justtracked = 1 << 1,
-	hand_state_untracked   = 1 << 2,
-	hand_state_pinch       = 1 << 3,
-	hand_state_justpinch   = 1 << 4,
-	hand_state_unpinch     = 1 << 5,
-	hand_state_grip        = 1 << 6,
-	hand_state_justgrip    = 1 << 7,
-	hand_state_ungrip      = 1 << 8,
+enum input_state_ {
+	input_state_none        = 0,
+	input_state_tracked     = 1 << 0,
+	input_state_justtracked = 1 << 1,
+	input_state_untracked   = 1 << 2,
+	input_state_pinch       = 1 << 3,
+	input_state_justpinch   = 1 << 4,
+	input_state_unpinch     = 1 << 5,
+	input_state_grip        = 1 << 6,
+	input_state_justgrip    = 1 << 7,
+	input_state_ungrip      = 1 << 8,
 };
-SK_MakeFlag(hand_state_);
+SK_MakeFlag(input_state_);
 
 struct pointer_t {
-	pointer_source_ source;
-	pointer_state_  state;
-	ray             ray;
-	quat            orientation;
+	input_source_  source;
+	pointer_state_ state;
+	ray            ray;
+	quat           orientation;
 };
 
 struct hand_t {
@@ -264,13 +264,13 @@ struct hand_t {
 	pose_t wrist;
 	pose_t root;
 	hand_  handedness;
-	hand_state_ state;
+	input_state_ state;
 };
 
-SK_API int           input_pointer_count(pointer_source_ filter = pointer_source_any);
-SK_API pointer_t     input_pointer      (int index, pointer_source_ filter = pointer_source_any);
+SK_API int           input_pointer_count(input_source_ filter = input_source_any);
+SK_API pointer_t     input_pointer      (int index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (hand_ hand);
 
-SK_API void input_subscribe  (pointer_state_ event, void (*event_callback)(const pointer_t &pointer));
-SK_API void input_unsubscribe(pointer_state_ event, void (*event_callback)(const pointer_t &pointer));
-SK_API void input_fire_event (pointer_state_ event, const pointer_t &pointer);
+SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));
+SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));
+SK_API void input_fire_event (input_source_ source, input_state_ event, const pointer_t &pointer);
