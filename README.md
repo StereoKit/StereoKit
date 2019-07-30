@@ -8,6 +8,8 @@ StereoKit offers a modern C# interface for high performance 3D rendering, specif
 
 StereoKit is based on OpenXR to enable targeting a wide array of hardware platforms.
 
+Have a look at the [Getting started documentation](Documentation/StartingWithStereoKit.md) and the samples.
+
 
 ## Tested platforms
 
