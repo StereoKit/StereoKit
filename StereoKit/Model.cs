@@ -12,6 +12,8 @@ namespace StereoKit
         #region Imports
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr model_create_file(string file);
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        static extern IntPtr model_create_mesh(string id, IntPtr mesh, IntPtr material);
         [DllImport(Util.DllName)]
         static extern void model_release(IntPtr model);
         #endregion
@@ -22,6 +24,12 @@ namespace StereoKit
             _modelInst = model_create_file(file);
             if (_modelInst == IntPtr.Zero)
                 Console.WriteLine("Couldn't load {0}!", file);
+        }
+        public Model(string id, Mesh mesh, Material material)
+        {
+            _modelInst = model_create_mesh(id, mesh._meshInst, material._materialInst);
+            if (_modelInst == IntPtr.Zero)
+                Console.WriteLine("Couldn't make {0}!", id);
         }
         ~Model()
         {

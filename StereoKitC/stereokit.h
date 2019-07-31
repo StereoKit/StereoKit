@@ -11,7 +11,10 @@
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 #define SK_MakeFlag(enumType) \
 inline enumType  operator| (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) | static_cast<int>(b));} \
-inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; }
+inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; } \
+inline enumType  operator& (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) & static_cast<int>(b));} \
+inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return a; } \
+inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~static_cast<int>(a)); }
 
 #include <stdint.h>
 #include <DirectXMath.h>
@@ -69,8 +72,13 @@ struct ray {
 	vec3 pos;
 	vec3 dir;
 };
+struct pose_t {
+	vec3 position;
+	quat orientation;
+};
 
 vec3 operator*(const quat &a, const vec3 &b);
+quat operator*(const quat &a, const quat &b);
 
 static inline vec2 operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2 operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
@@ -102,6 +110,7 @@ static inline vec3  vec3_lerp        (const vec3 &a, const vec3 &b, float t) { r
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
 quat quat_lookat(const vec3 &from, const vec3 &at);
+quat quat_lerp(const quat &a, const quat &b, float t);
 
 #define deg2rad 0.01745329252
 #define rad2deg 57.295779513
@@ -204,33 +213,65 @@ SK_API void render_add_model  (model_t model, transform_t &transform);
 
 ///////////////////////////////////////////
 
-enum pointer_source_ {
-	pointer_source_any        = 0x7FFFFFFF,
-	pointer_source_hand       = 1 << 0,
-	pointer_source_hand_left  = 1 << 1,
-	pointer_source_hand_right = 1 << 2,
-	pointer_source_gaze       = 1 << 4,
-	pointer_source_gaze_head  = 1 << 5,
-	pointer_source_gaze_eyes  = 1 << 6,
-	pointer_source_gaze_cursor= 1 << 7,
-	pointer_source_can_press  = 1 << 8,
+enum input_source_ {
+	input_source_any        = 0x7FFFFFFF,
+	input_source_hand       = 1 << 0,
+	input_source_hand_left  = 1 << 1,
+	input_source_hand_right = 1 << 2,
+	input_source_gaze       = 1 << 4,
+	input_source_gaze_head  = 1 << 5,
+	input_source_gaze_eyes  = 1 << 6,
+	input_source_gaze_cursor= 1 << 7,
+	input_source_can_press  = 1 << 8,
 };
-SK_MakeFlag(pointer_source_);
+SK_MakeFlag(input_source_);
 
 enum pointer_state_ {
 	pointer_state_none      = 0,
-	pointer_state_pressed   = 1 << 0,
-	pointer_state_just      = 1 << 1,
-	pointer_state_available = 1 << 2,
+	pointer_state_available = 1 << 0,
 };
 SK_MakeFlag(pointer_state_);
 
-struct pointer_t {
-	pointer_source_ source;
-	pointer_state_  state;
-	ray             ray;
-	quat            orientation;
+enum handed_ {
+	handed_left  = 0,
+	handed_right = 1,
+	handed_max   = 2,
 };
 
-SK_API int       input_pointer_count(pointer_source_ filter = pointer_source_any);
-SK_API pointer_t input_pointer      (int index, pointer_source_ filter = pointer_source_any);
+enum input_state_ {
+	input_state_none        = 0,
+	input_state_any         = 0x7FFFFFFF,
+	input_state_tracked     = 1 << 0,
+	input_state_justtracked = 1 << 1,
+	input_state_untracked   = 1 << 2,
+	input_state_pinch       = 1 << 3,
+	input_state_justpinch   = 1 << 4,
+	input_state_unpinch     = 1 << 5,
+	input_state_grip        = 1 << 6,
+	input_state_justgrip    = 1 << 7,
+	input_state_ungrip      = 1 << 8,
+};
+SK_MakeFlag(input_state_);
+
+struct pointer_t {
+	input_source_  source;
+	pointer_state_ state;
+	ray            ray;
+	quat           orientation;
+};
+
+struct hand_t {
+	pose_t  fingers[5][5];
+	pose_t  wrist;
+	pose_t  root;
+	handed_ handedness;
+	input_state_ state;
+};
+
+SK_API int           input_pointer_count(input_source_ filter = input_source_any);
+SK_API pointer_t     input_pointer      (int index, input_source_ filter = input_source_any);
+SK_API const hand_t &input_hand         (handed_ hand);
+
+SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
+SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
+SK_API void input_fire_event (input_source_ source, input_state_ event, const pointer_t &pointer);

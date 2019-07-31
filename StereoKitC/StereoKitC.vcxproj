@@ -171,6 +171,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="input_hand.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="mesh.cpp" />
@@ -184,12 +185,15 @@
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="transform.cpp" />
     <ClCompile Include="win32.cpp" />
+    <ClCompile Include="win32_input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets.h" />
     <ClInclude Include="cgltf.h" />
     <ClInclude Include="d3d.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="input_hand.h" />
+    <ClInclude Include="input_hand_poses.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />
@@ -202,6 +206,7 @@
     <ClInclude Include="stref.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />
+    <ClInclude Include="win32_input.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
