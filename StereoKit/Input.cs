@@ -32,6 +32,7 @@ namespace StereoKit
     public enum InputState
     {
         None        = 0,
+        Any         = 0x7FFFFFFF,
         Tracked     = 1 << 0,
         JustTracked = 1 << 1,
         Untracked   = 1 << 2,
@@ -83,12 +84,33 @@ namespace StereoKit
 
     public static class Input
     {
+        #region Imports
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void EventCallback(InputSource source, InputState type, IntPtr pointer);
+
         [DllImport(Util.DllName)]
         static extern int input_pointer_count(InputSource filter);
         [DllImport(Util.DllName)]
         static extern Pointer input_pointer(int index, InputSource filter);
         [DllImport(Util.DllName)]
         static extern IntPtr input_hand(Handed handed);
+        [DllImport(Util.DllName)]
+        static extern void input_subscribe(InputSource source, InputState evt, EventCallback event_callback);
+        [DllImport(Util.DllName)]
+        static extern void input_unsubscribe(InputSource source, InputState evt, EventCallback event_callback);
+        [DllImport(Util.DllName)]
+        static extern void input_fire_event(InputSource source, InputState evt, IntPtr pointer);
+        #endregion
+
+        struct EventListener
+        {
+            public InputSource source;
+            public InputState type;
+            public Action<InputSource, InputState, Pointer> callback;
+        }
+        static List<EventListener> listeners   = new List<EventListener>();
+        static bool                initialized = false;
+        static EventCallback       callback;
 
         public static int PointerCount(InputSource filter = InputSource.Any)
         {
@@ -101,6 +123,58 @@ namespace StereoKit
         public static Hand Hand(Handed handed)
         {
             return Marshal.PtrToStructure<Hand>(input_hand(handed));
+        }
+
+        static void Initialize()
+        {
+            initialized = true;
+            callback    = OnEvent; // This is stored in a persistant variable to force the callback from getting garbage collected!
+            input_subscribe(InputSource.Any, InputState.Any, callback);
+        }
+        static void OnEvent(InputSource source, InputState evt, IntPtr pointer)
+        {
+            Pointer ptr = Marshal.PtrToStructure<Pointer>(pointer);
+            for (int i = 0; i < listeners.Count; i++)
+            {
+                if ((listeners[i].source & source) > 0 &&
+                    (listeners[i].type   & evt) > 0)
+                {
+                    listeners[i].callback(source, evt, ptr);
+                }
+            }
+        }
+
+        public static void Subscribe  (InputSource eventSource, InputState eventTypes, Action<InputSource, InputState, Pointer> onEvent)
+        {
+            if (!initialized)
+                Initialize();
+
+            EventListener item;
+            item.callback = onEvent;
+            item.source   = eventSource;
+            item.type     = eventTypes;
+            listeners.Add(item);
+        }
+        public static void Unsubscribe(InputSource eventSource, InputState eventTypes, Action<InputSource, InputState, Pointer> onEvent)
+        {
+            if (!initialized)
+                Initialize();
+
+            for (int i = 0; i < listeners.Count; i++)
+            {
+                if (listeners[i].callback == onEvent && listeners[i].source == eventSource && listeners[i].type == eventTypes)
+                {
+                    listeners.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+        public static void FireEvent  (InputSource eventSource, InputState eventTypes, Pointer pointer)
+        {
+            IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());
+            Marshal.StructureToPtr(pointer, arg, false);
+            input_fire_event(eventSource, eventTypes, arg);
+            Marshal.FreeCoTaskMem(arg);
         }
     }
 }

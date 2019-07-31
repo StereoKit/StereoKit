@@ -240,6 +240,7 @@ enum handed_ {
 
 enum input_state_ {
 	input_state_none        = 0,
+	input_state_any         = 0x7FFFFFFF,
 	input_state_tracked     = 1 << 0,
 	input_state_justtracked = 1 << 1,
 	input_state_untracked   = 1 << 2,
@@ -271,6 +272,6 @@ SK_API int           input_pointer_count(input_source_ filter = input_source_any
 SK_API pointer_t     input_pointer      (int index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
 
-SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));
-SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));
+SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
+SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
 SK_API void input_fire_event (input_source_ source, input_state_ event, const pointer_t &pointer);

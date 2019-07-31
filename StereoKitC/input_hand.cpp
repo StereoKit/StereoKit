@@ -49,12 +49,12 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	hand_t &hand = hand_info[handedness];
 	hand.root.position    = hand_pos;
 	hand.root.orientation = orientation;
-	hand.state            = input_state_none;
-
+	
 	// Update hand state based on inputs
 	bool was_tracked = hand.state & input_state_tracked;
 	bool was_trigger = hand.state & input_state_pinch;
 	bool was_gripped = hand.state & input_state_grip;
+	hand.state = input_state_none;
 
 	if (was_tracked != tracked)         hand.state |= tracked         ? input_state_justtracked : input_state_untracked;
 	if (was_trigger != trigger_pressed) hand.state |= trigger_pressed ? input_state_justpinch   : input_state_unpinch;

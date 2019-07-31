@@ -13,6 +13,10 @@ namespace StereoKit
             y = aY;
             z = aZ;
         }
+        public override string ToString()
+        {
+            return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}>", x, y, z);
+        }
 
         public static readonly Vec3 Zero = new Vec3(0,0,0);
         public static readonly Vec3 One  = new Vec3(1,1,1);

@@ -8,7 +8,7 @@ using namespace std;
 struct input_event_t {
 	input_source_ source;
 	input_state_  event;
-	void (*event_callback)(const pointer_t &pointer);
+	void (*event_callback)(input_source_ source, input_state_ evt, const pointer_t &pointer);
 };
 
 vector<input_event_t> input_listeners;
@@ -45,11 +45,11 @@ const hand_t &input_hand(handed_ hand) {
 	return hand_info[hand];
 }
 
-void input_subscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer)) {
+void input_subscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
 	input_listeners.push_back({ source, event, event_callback });
 }
-void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer)) {
-	for (size_t i = input_listeners.size()-1; i >= 0; i--) {
+void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
+	for (int i = input_listeners.size()-1; i >= 0; i--) {
 		if (input_listeners[i].source         == source && 
 			input_listeners[i].event          == event  && 
 			input_listeners[i].event_callback == event_callback) {
@@ -60,7 +60,7 @@ void input_unsubscribe(input_source_ source, input_state_ event, void (*event_ca
 void input_fire_event(input_source_ source, input_state_ event, const pointer_t &pointer) {
 	for (size_t i = 0; i < input_listeners.size(); i++) {
 		if (input_listeners[i].source & source && input_listeners[i].event & event) {
-			input_listeners[i].event_callback(pointer);
+			input_listeners[i].event_callback(source, event, pointer);
 		}
 	}
 }

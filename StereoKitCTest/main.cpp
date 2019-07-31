@@ -4,7 +4,7 @@ transform_t gltf_tr;
 model_t     gltf;
 
 int main() {
-	sk_init("StereoKit C", sk_runtime_flatscreen);
+	sk_init("StereoKit C", sk_runtime_mixedreality);
 	
 	//gltf = model_create_file("Assets/DamagedHelmet.gltf");
 	gltf = model_create_mesh("app/model_cube", 
