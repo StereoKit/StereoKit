@@ -44,6 +44,12 @@ SamplerState tex_e_sampler;
 Texture2D tex_metal : register(t2);
 SamplerState tex_metal_sampler;
 
+// [texture] normal
+Texture2D tex_normal : register(t3);
+SamplerState tex_normal_sampler;
+
+float3x3 CotangentFrame(float3 N, float3 p, float2 uv);
+
 float DistributionGGX(float3 normal, float3 half_vec, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(float NdotL, float NdotV, float roughness);
@@ -64,14 +70,17 @@ float4 ps(psIn input) : SV_TARGET {
 	float3 albedo      = tex         .Sample(tex_sampler,       input.uv).rgb;
 	float3 emissive    = tex_emission.Sample(tex_e_sampler,     input.uv).rgb;
 	float4 metal_rough = tex_metal   .Sample(tex_metal_sampler, input.uv); // b is metallic, rough is g
+    float3 tex_norm    = tex_normal  .Sample(tex_normal_sampler,input.uv).xyz*2-1;
 
 	float metal = metal_rough.b * metallic;
 	float rough = max(metal_rough.g * roughness, 0.001);
 
     float3 normal   = normalize(input.normal);
+    float3 view     = normalize(sk_camera_pos.xyz - input.world);
+    tex_norm        = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
+    normal          = normalize(tex_norm);
     float3 light    = -normalize(sk_light.xyz);
     float3 half_vec = normalize(light + normal);
-    float3 view     = normalize(sk_camera_pos.xyz - input.world);
     float  NdotL    = (dot(normal,light));
     float  NdotV    = (dot(normal,view));
 
@@ -131,6 +140,26 @@ float4 ps(psIn input) : SV_TARGET {
 	return float4(diffuse + emissive + specular, _color.a); 
 }
 
+// http://www.thetenthplanet.de/archives/1180
+// For creating normals without a precalculated tangent
+float3x3 CotangentFrame(float3 N, float3 p, float2 uv)
+{
+    // get edge vectors of the pixel triangle
+    float3 dp1 = ddx( p );
+    float3 dp2 = ddy( p );
+    float2 duv1 = ddx( uv );
+    float2 duv2 = ddy( uv );
+ 
+    // solve the linear system
+    float3 dp2perp = cross( dp2, N );
+    float3 dp1perp = cross( N, dp1 );
+    float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+    // construct a scale-invariant frame 
+    float invmax = rsqrt( max( dot(T,T), dot(B,B) ) );
+    return float3x3( T * invmax, B * invmax, N );
+}
 
 // https://learnopengl.com/PBR/Theory
 // This is a normal distribution function called, Trowbridge-Reitz GGX
