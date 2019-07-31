@@ -29,20 +29,17 @@ extern "C" {
 
 
 
-#define XR_VERSION_0_90 1
+#define XR_VERSION_1_0 1
 #include "openxr_platform_defines.h"
 #define XR_MAKE_VERSION(major, minor, patch) \
-    (((major) << 22) | ((minor) << 12) | (patch))
+    ((((major) & 0xffffULL) << 48) | (((minor) & 0xffffULL) << 32) | ((patch) & 0xffffffffULL))
 
 // OpenXR current version number.
-#define XR_CURRENT_API_VERSION XR_MAKE_VERSION(0, 90, 1)
+#define XR_CURRENT_API_VERSION XR_MAKE_VERSION(1, 0, 0)
 
-#define XR_VERSION_MAJOR(version) ((uint32_t)(version) >> 22)
-#define XR_VERSION_MINOR(version) (((uint32_t)(version) >> 12) & 0x3ff)
-#define XR_VERSION_PATCH(version) ((uint32_t)(version) & 0xfff)
-// Version of this file
-#define XR_HEADER_VERSION 43
-
+#define XR_VERSION_MAJOR(version) (uint16_t)(((uint64_t)(version) >> 48)& 0xffffULL)
+#define XR_VERSION_MINOR(version) (uint16_t)(((uint64_t)(version) >> 32) & 0xffffULL)
+#define XR_VERSION_PATCH(version) (uint32_t)((uint64_t)(version) & 0xffffffffULL)
 
 #if !defined(XR_NULL_HANDLE)
 #if (XR_PTR_SIZE == 8) && XR_CPP_NULLPTR_SUPPORTED
@@ -108,6 +105,7 @@ extern "C" {
 #endif
         
 
+typedef uint64_t XrVersion;
 typedef uint64_t XrFlags64;
 XR_DEFINE_ATOM(XrSystemId)
 typedef uint32_t XrBool32;
@@ -141,21 +139,18 @@ XR_DEFINE_HANDLE(XrActionSet)
 typedef enum XrResult {
     XR_SUCCESS = 0,
     XR_TIMEOUT_EXPIRED = 1,
-    XR_SESSION_VISIBILITY_UNAVAILABLE = 2,
     XR_SESSION_LOSS_PENDING = 3,
     XR_EVENT_UNAVAILABLE = 4,
-    XR_STATE_UNAVAILABLE = 5,
-    XR_STATE_TYPE_UNAVAILABLE = 6,
     XR_SPACE_BOUNDS_UNAVAILABLE = 7,
     XR_SESSION_NOT_FOCUSED = 8,
     XR_FRAME_DISCARDED = 9,
     XR_ERROR_VALIDATION_FAILURE = -1,
     XR_ERROR_RUNTIME_FAILURE = -2,
     XR_ERROR_OUT_OF_MEMORY = -3,
-    XR_ERROR_RUNTIME_VERSION_INCOMPATIBLE = -4,
-    XR_ERROR_DRIVER_INCOMPATIBLE = -5,
+    XR_ERROR_API_VERSION_UNSUPPORTED = -4,
     XR_ERROR_INITIALIZATION_FAILED = -6,
     XR_ERROR_FUNCTION_UNSUPPORTED = -7,
+    XR_ERROR_FEATURE_UNSUPPORTED = -8,
     XR_ERROR_EXTENSION_NOT_PRESENT = -9,
     XR_ERROR_LIMIT_REACHED = -10,
     XR_ERROR_SIZE_INSUFFICIENT = -11,
@@ -168,11 +163,15 @@ typedef enum XrResult {
     XR_ERROR_PATH_INVALID = -19,
     XR_ERROR_PATH_COUNT_EXCEEDED = -20,
     XR_ERROR_PATH_FORMAT_INVALID = -21,
-    XR_ERROR_LAYER_INVALID = -22,
-    XR_ERROR_LAYER_LIMIT_EXCEEDED = -23,
+    XR_ERROR_PATH_UNSUPPORTED = -22,
+    XR_ERROR_LAYER_INVALID = -23,
+    XR_ERROR_LAYER_LIMIT_EXCEEDED = -24,
     XR_ERROR_SWAPCHAIN_RECT_INVALID = -25,
     XR_ERROR_SWAPCHAIN_FORMAT_UNSUPPORTED = -26,
     XR_ERROR_ACTION_TYPE_MISMATCH = -27,
+    XR_ERROR_SESSION_NOT_READY = -28,
+    XR_ERROR_SESSION_NOT_STOPPING = -29,
+    XR_ERROR_TIME_INVALID = -30,
     XR_ERROR_REFERENCE_SPACE_UNSUPPORTED = -31,
     XR_ERROR_FILE_ACCESS_ERROR = -32,
     XR_ERROR_FILE_CONTENTS_INVALID = -33,
@@ -185,12 +184,14 @@ typedef enum XrResult {
     XR_ERROR_INDEX_OUT_OF_RANGE = -40,
     XR_ERROR_VIEW_CONFIGURATION_TYPE_UNSUPPORTED = -41,
     XR_ERROR_ENVIRONMENT_BLEND_MODE_UNSUPPORTED = -42,
-    XR_ERROR_BINDINGS_DUPLICATED = -43,
     XR_ERROR_NAME_DUPLICATED = -44,
     XR_ERROR_NAME_INVALID = -45,
+    XR_ERROR_ACTIONSET_NOT_ATTACHED = -46,
+    XR_ERROR_ACTIONSETS_ALREADY_ATTACHED = -47,
+    XR_ERROR_LOCALIZED_NAME_DUPLICATED = -48,
+    XR_ERROR_LOCALIZED_NAME_INVALID = -49,
     XR_ERROR_ANDROID_THREAD_SETTINGS_ID_INVALID_KHR = -1000003000,
     XR_ERROR_ANDROID_THREAD_SETTINGS_FAILURE_KHR = -1000003001,
-    XR_ERROR_DEBUG_UTILS_MESSENGER_INVALID_EXT = -1000019000,
     XR_RESULT_MAX_ENUM = 0x7FFFFFFF
 } XrResult;
 
@@ -213,7 +214,7 @@ typedef enum XrStructureType {
     XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING = 17,
     XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED = 18,
     XR_TYPE_ACTION_STATE_BOOLEAN = 23,
-    XR_TYPE_ACTION_STATE_VECTOR1F = 24,
+    XR_TYPE_ACTION_STATE_FLOAT = 24,
     XR_TYPE_ACTION_STATE_VECTOR2F = 25,
     XR_TYPE_ACTION_STATE_POSE = 27,
     XR_TYPE_ACTION_SET_CREATE_INFO = 28,
@@ -224,9 +225,10 @@ typedef enum XrStructureType {
     XR_TYPE_COMPOSITION_LAYER_QUAD = 36,
     XR_TYPE_REFERENCE_SPACE_CREATE_INFO = 37,
     XR_TYPE_ACTION_SPACE_CREATE_INFO = 38,
-    XR_TYPE_SPACE_RELATION = 39,
     XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING = 40,
     XR_TYPE_VIEW_CONFIGURATION_VIEW = 41,
+    XR_TYPE_SPACE_LOCATION = 42,
+    XR_TYPE_SPACE_VELOCITY = 43,
     XR_TYPE_FRAME_STATE = 44,
     XR_TYPE_VIEW_CONFIGURATION_PROPERTIES = 45,
     XR_TYPE_FRAME_BEGIN_INFO = 46,
@@ -234,11 +236,16 @@ typedef enum XrStructureType {
     XR_TYPE_EVENT_DATA_EVENTS_LOST = 49,
     XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING = 51,
     XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED = 52,
-    XR_TYPE_INTERACTION_PROFILE_INFO = 53,
-    XR_TYPE_ACTIVE_ACTION_SET = 54,
+    XR_TYPE_INTERACTION_PROFILE_STATE = 53,
     XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO = 55,
     XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO = 56,
     XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO = 57,
+    XR_TYPE_ACTION_STATE_GET_INFO = 58,
+    XR_TYPE_HAPTIC_ACTION_INFO = 59,
+    XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO = 60,
+    XR_TYPE_ACTIONS_SYNC_INFO = 61,
+    XR_TYPE_BOUND_SOURCES_FOR_ACTION_ENUMERATE_INFO = 62,
+    XR_TYPE_INPUT_SOURCE_LOCALIZED_NAME_GET_INFO = 63,
     XR_TYPE_COMPOSITION_LAYER_CUBE_KHR = 1000006000,
     XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR = 1000008000,
     XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR = 1000010000,
@@ -262,9 +269,6 @@ typedef enum XrStructureType {
     XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR = 1000025000,
     XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR = 1000025001,
     XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR = 1000025002,
-    XR_TYPE_GRAPHICS_BINDING_D3D10_KHR = 1000026000,
-    XR_TYPE_SWAPCHAIN_IMAGE_D3D10_KHR = 1000026001,
-    XR_TYPE_GRAPHICS_REQUIREMENTS_D3D10_KHR = 1000026002,
     XR_TYPE_GRAPHICS_BINDING_D3D11_KHR = 1000027000,
     XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR = 1000027001,
     XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR = 1000027002,
@@ -282,6 +286,13 @@ typedef enum XrFormFactor {
     XR_FORM_FACTOR_MAX_ENUM = 0x7FFFFFFF
 } XrFormFactor;
 
+typedef enum XrViewConfigurationType {
+    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO = 1,
+    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO = 2,
+    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO = 1000037000,
+    XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM = 0x7FFFFFFF
+} XrViewConfigurationType;
+
 typedef enum XrEnvironmentBlendMode {
     XR_ENVIRONMENT_BLEND_MODE_OPAQUE = 1,
     XR_ENVIRONMENT_BLEND_MODE_ADDITIVE = 2,
@@ -296,18 +307,12 @@ typedef enum XrReferenceSpaceType {
     XR_REFERENCE_SPACE_TYPE_MAX_ENUM = 0x7FFFFFFF
 } XrReferenceSpaceType;
 
-typedef enum XrViewConfigurationType {
-    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO = 1,
-    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO = 2,
-    XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM = 0x7FFFFFFF
-} XrViewConfigurationType;
-
 typedef enum XrActionType {
-    XR_INPUT_ACTION_TYPE_BOOLEAN = 1,
-    XR_INPUT_ACTION_TYPE_VECTOR1F = 2,
-    XR_INPUT_ACTION_TYPE_VECTOR2F = 3,
-    XR_INPUT_ACTION_TYPE_POSE = 4,
-    XR_OUTPUT_ACTION_TYPE_VIBRATION = 100,
+    XR_ACTION_TYPE_BOOLEAN_INPUT = 1,
+    XR_ACTION_TYPE_FLOAT_INPUT = 2,
+    XR_ACTION_TYPE_VECTOR2F_INPUT = 3,
+    XR_ACTION_TYPE_POSE_INPUT = 4,
+    XR_ACTION_TYPE_VIBRATION_OUTPUT = 100,
     XR_ACTION_TYPE_MAX_ENUM = 0x7FFFFFFF
 } XrActionType;
 
@@ -322,7 +327,7 @@ typedef enum XrSessionState {
     XR_SESSION_STATE_UNKNOWN = 0,
     XR_SESSION_STATE_IDLE = 1,
     XR_SESSION_STATE_READY = 2,
-    XR_SESSION_STATE_RUNNING = 3,
+    XR_SESSION_STATE_SYNCHRONIZED = 3,
     XR_SESSION_STATE_VISIBLE = 4,
     XR_SESSION_STATE_FOCUSED = 5,
     XR_SESSION_STATE_STOPPING = 6,
@@ -350,17 +355,19 @@ typedef XrFlags64 XrSessionCreateFlags;
 
 // Flag bits for XrSessionCreateFlags
 
-typedef XrFlags64 XrSpaceRelationFlags;
+typedef XrFlags64 XrSpaceVelocityFlags;
 
-// Flag bits for XrSpaceRelationFlags
-static const XrSpaceRelationFlags XR_SPACE_RELATION_ORIENTATION_VALID_BIT = 0x00000001;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_POSITION_VALID_BIT = 0x00000002;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_LINEAR_VELOCITY_VALID_BIT = 0x00000004;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_ANGULAR_VELOCITY_VALID_BIT = 0x00000008;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_LINEAR_ACCELERATION_VALID_BIT = 0x00000010;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_ANGULAR_ACCELERATION_VALID_BIT = 0x00000020;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_ORIENTATION_TRACKED_BIT = 0x00000040;
-static const XrSpaceRelationFlags XR_SPACE_RELATION_POSITION_TRACKED_BIT = 0x00000080;
+// Flag bits for XrSpaceVelocityFlags
+static const XrSpaceVelocityFlags XR_SPACE_VELOCITY_LINEAR_VALID_BIT = 0x00000001;
+static const XrSpaceVelocityFlags XR_SPACE_VELOCITY_ANGULAR_VALID_BIT = 0x00000002;
+
+typedef XrFlags64 XrSpaceLocationFlags;
+
+// Flag bits for XrSpaceLocationFlags
+static const XrSpaceLocationFlags XR_SPACE_LOCATION_ORIENTATION_VALID_BIT = 0x00000001;
+static const XrSpaceLocationFlags XR_SPACE_LOCATION_POSITION_VALID_BIT = 0x00000002;
+static const XrSpaceLocationFlags XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT = 0x00000004;
+static const XrSpaceLocationFlags XR_SPACE_LOCATION_POSITION_TRACKED_BIT = 0x00000008;
 
 typedef XrFlags64 XrSwapchainCreateFlags;
 
@@ -384,6 +391,7 @@ typedef XrFlags64 XrCompositionLayerFlags;
 // Flag bits for XrCompositionLayerFlags
 static const XrCompositionLayerFlags XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT = 0x00000001;
 static const XrCompositionLayerFlags XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT = 0x00000002;
+static const XrCompositionLayerFlags XR_COMPOSITION_LAYER_UNPREMULTIPLIED_ALPHA_BIT = 0x00000004;
 
 typedef XrFlags64 XrViewStateFlags;
 
@@ -405,8 +413,8 @@ typedef struct XrApiLayerProperties {
     XrStructureType       type;
     void* XR_MAY_ALIAS    next;
     char                  layerName[XR_MAX_API_LAYER_NAME_SIZE];
-    uint32_t              specVersion;
-    uint32_t              implementationVersion;
+    XrVersion             specVersion;
+    uint32_t              layerVersion;
     char                  description[XR_MAX_API_LAYER_DESCRIPTION_SIZE];
 } XrApiLayerProperties;
 
@@ -414,15 +422,15 @@ typedef struct XrExtensionProperties {
     XrStructureType       type;
     void* XR_MAY_ALIAS    next;
     char                  extensionName[XR_MAX_EXTENSION_NAME_SIZE];
-    uint32_t              specVersion;
+    uint32_t              extensionVersion;
 } XrExtensionProperties;
 
 typedef struct XrApplicationInfo {
-    char        applicationName[XR_MAX_APPLICATION_NAME_SIZE];
-    uint32_t    applicationVersion;
-    char        engineName[XR_MAX_ENGINE_NAME_SIZE];
-    uint32_t    engineVersion;
-    uint32_t    apiVersion;
+    char         applicationName[XR_MAX_APPLICATION_NAME_SIZE];
+    uint32_t     applicationVersion;
+    char         engineName[XR_MAX_ENGINE_NAME_SIZE];
+    uint32_t     engineVersion;
+    XrVersion    apiVersion;
 } XrApplicationInfo;
 
 typedef struct XrInstanceCreateInfo {
@@ -439,7 +447,7 @@ typedef struct XrInstanceCreateInfo {
 typedef struct XrInstanceProperties {
     XrStructureType       type;
     void* XR_MAY_ALIAS    next;
-    uint32_t              runtimeVersion;
+    XrVersion             runtimeVersion;
     char                  runtimeName[XR_MAX_RUNTIME_NAME_SIZE];
 } XrInstanceProperties;
 
@@ -450,15 +458,14 @@ typedef struct XrEventDataBuffer {
 } XrEventDataBuffer;
 
 typedef struct XrSystemGetInfo {
-    XrStructureType       type;
-    void* XR_MAY_ALIAS    next;
-    XrFormFactor          formFactor;
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrFormFactor                formFactor;
 } XrSystemGetInfo;
 
 typedef struct XrSystemGraphicsProperties {
     uint32_t    maxSwapchainImageHeight;
     uint32_t    maxSwapchainImageWidth;
-    uint32_t    maxViewCount;
     uint32_t    maxLayerCount;
 } XrSystemGraphicsProperties;
 
@@ -484,18 +491,26 @@ typedef struct XrSessionCreateInfo {
     XrSystemId                  systemId;
 } XrSessionCreateInfo;
 
+typedef struct XrVector3f {
+    float    x;
+    float    y;
+    float    z;
+} XrVector3f;
+
+typedef struct XrSpaceVelocity {
+    XrStructureType         type;
+    void* XR_MAY_ALIAS      next;
+    XrSpaceVelocityFlags    velocityFlags;
+    XrVector3f              linearVelocity;
+    XrVector3f              angularVelocity;
+} XrSpaceVelocity;
+
 typedef struct XrQuaternionf {
     float    x;
     float    y;
     float    z;
     float    w;
 } XrQuaternionf;
-
-typedef struct XrVector3f {
-    float    x;
-    float    y;
-    float    z;
-} XrVector3f;
 
 typedef struct XrPosef {
     XrQuaternionf    orientation;
@@ -517,21 +532,17 @@ typedef struct XrExtent2Df {
 typedef struct XrActionSpaceCreateInfo {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
+    XrAction                    action;
     XrPath                      subactionPath;
     XrPosef                     poseInActionSpace;
 } XrActionSpaceCreateInfo;
 
-typedef struct XrSpaceRelation {
+typedef struct XrSpaceLocation {
     XrStructureType         type;
     void* XR_MAY_ALIAS      next;
-    XrSpaceRelationFlags    relationFlags;
-    XrTime                  time;
+    XrSpaceLocationFlags    locationFlags;
     XrPosef                 pose;
-    XrVector3f              linearVelocity;
-    XrVector3f              angularVelocity;
-    XrVector3f              linearAcceleration;
-    XrVector3f              angularAcceleration;
-} XrSpaceRelation;
+} XrSpaceLocation;
 
 typedef struct XrViewConfigurationProperties {
     XrStructureType            type;
@@ -602,6 +613,7 @@ typedef struct XrFrameState {
     void* XR_MAY_ALIAS    next;
     XrTime                predictedDisplayTime;
     XrDuration            predictedDisplayPeriod;
+    XrBool32              shouldRender;
 } XrFrameState;
 
 typedef struct XrFrameBeginInfo {
@@ -628,6 +640,7 @@ typedef struct XrFrameEndInfo {
 typedef struct XrViewLocateInfo {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
+    XrViewConfigurationType     viewConfigurationType;
     XrTime                      displayTime;
     XrSpace                     space;
 } XrViewLocateInfo;
@@ -683,11 +696,25 @@ typedef struct XrInteractionProfileSuggestedBinding {
     const XrActionSuggestedBinding*    suggestedBindings;
 } XrInteractionProfileSuggestedBinding;
 
-typedef struct XrInteractionProfileInfo {
+typedef struct XrSessionActionSetsAttachInfo {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
-    XrPath                      interactionProfile;
-} XrInteractionProfileInfo;
+    uint32_t                    countActionSets;
+    const XrActionSet*          actionSets;
+} XrSessionActionSetsAttachInfo;
+
+typedef struct XrInteractionProfileState {
+    XrStructureType       type;
+    void* XR_MAY_ALIAS    next;
+    XrPath                interactionProfile;
+} XrInteractionProfileState;
+
+typedef struct XrActionStateGetInfo {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrAction                    action;
+    XrPath                      subactionPath;
+} XrActionStateGetInfo;
 
 typedef struct XrActionStateBoolean {
     XrStructureType       type;
@@ -698,14 +725,14 @@ typedef struct XrActionStateBoolean {
     XrBool32              isActive;
 } XrActionStateBoolean;
 
-typedef struct XrActionStateVector1f {
+typedef struct XrActionStateFloat {
     XrStructureType       type;
     void* XR_MAY_ALIAS    next;
     float                 currentState;
     XrBool32              changedSinceLastSync;
     XrTime                lastChangeTime;
     XrBool32              isActive;
-} XrActionStateVector1f;
+} XrActionStateFloat;
 
 typedef struct XrVector2f {
     float    x;
@@ -728,11 +755,36 @@ typedef struct XrActionStatePose {
 } XrActionStatePose;
 
 typedef struct XrActiveActionSet {
+    XrActionSet    actionSet;
+    XrPath         subactionPath;
+} XrActiveActionSet;
+
+typedef struct XrActionsSyncInfo {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
-    XrActionSet                 actionSet;
+    uint32_t                    countActiveActionSets;
+    const XrActiveActionSet*    activeActionSets;
+} XrActionsSyncInfo;
+
+typedef struct XrBoundSourcesForActionEnumerateInfo {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrAction                    action;
+} XrBoundSourcesForActionEnumerateInfo;
+
+typedef struct XrInputSourceLocalizedNameGetInfo {
+    XrStructureType                    type;
+    const void* XR_MAY_ALIAS           next;
+    XrPath                             sourcePath;
+    XrInputSourceLocalizedNameFlags    whichComponents;
+} XrInputSourceLocalizedNameGetInfo;
+
+typedef struct XrHapticActionInfo {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrAction                    action;
     XrPath                      subactionPath;
-} XrActiveActionSet;
+} XrHapticActionInfo;
 
 typedef struct XR_MAY_ALIAS XrHapticBaseHeader {
     XrStructureType             type;
@@ -795,7 +847,7 @@ typedef struct XrCompositionLayerQuad {
     XrEyeVisibility             eyeVisibility;
     XrSwapchainSubImage         subImage;
     XrPosef                     pose;
-    XrVector2f                  size;
+    XrExtent2Df                 size;
 } XrCompositionLayerQuad;
 
 typedef struct XR_MAY_ALIAS XrEventDataBaseHeader {
@@ -826,6 +878,7 @@ typedef struct XrEventDataSessionStateChanged {
 typedef struct XrEventDataReferenceSpaceChangePending {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
+    XrSession                   session;
     XrReferenceSpaceType        referenceSpaceType;
     XrTime                      changeTime;
     XrBool32                    poseValid;
@@ -835,6 +888,7 @@ typedef struct XrEventDataReferenceSpaceChangePending {
 typedef struct XrEventDataInteractionProfileChanged {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
+    XrSession                   session;
 } XrEventDataInteractionProfileChanged;
 
 typedef struct XrHapticVibration {
@@ -880,14 +934,14 @@ typedef XrResult (XRAPI_PTR *PFN_xrResultToString)(XrInstance instance, XrResult
 typedef XrResult (XRAPI_PTR *PFN_xrStructureTypeToString)(XrInstance instance, XrStructureType value, char buffer[XR_MAX_STRUCTURE_NAME_SIZE]);
 typedef XrResult (XRAPI_PTR *PFN_xrGetSystem)(XrInstance instance, const XrSystemGetInfo* getInfo, XrSystemId* systemId);
 typedef XrResult (XRAPI_PTR *PFN_xrGetSystemProperties)(XrInstance instance, XrSystemId systemId, XrSystemProperties* properties);
-typedef XrResult (XRAPI_PTR *PFN_xrEnumerateEnvironmentBlendModes)(XrInstance instance, XrSystemId systemId, uint32_t environmentBlendModeCapacityInput, uint32_t* environmentBlendModeCountOutput, XrEnvironmentBlendMode* environmentBlendModes);
+typedef XrResult (XRAPI_PTR *PFN_xrEnumerateEnvironmentBlendModes)(XrInstance instance, XrSystemId systemId, XrViewConfigurationType viewConfigurationType, uint32_t environmentBlendModeCapacityInput, uint32_t* environmentBlendModeCountOutput, XrEnvironmentBlendMode* environmentBlendModes);
 typedef XrResult (XRAPI_PTR *PFN_xrCreateSession)(XrInstance instance, const XrSessionCreateInfo* createInfo, XrSession* session);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroySession)(XrSession session);
 typedef XrResult (XRAPI_PTR *PFN_xrEnumerateReferenceSpaces)(XrSession session, uint32_t spaceCapacityInput, uint32_t* spaceCountOutput, XrReferenceSpaceType* spaces);
 typedef XrResult (XRAPI_PTR *PFN_xrCreateReferenceSpace)(XrSession session, const XrReferenceSpaceCreateInfo* createInfo, XrSpace* space);
 typedef XrResult (XRAPI_PTR *PFN_xrGetReferenceSpaceBoundsRect)(XrSession session, XrReferenceSpaceType referenceSpaceType, XrExtent2Df* bounds);
-typedef XrResult (XRAPI_PTR *PFN_xrCreateActionSpace)(XrAction action, const XrActionSpaceCreateInfo* createInfo, XrSpace* space);
-typedef XrResult (XRAPI_PTR *PFN_xrLocateSpace)(XrSpace space, XrSpace baseSpace, XrTime   time, XrSpaceRelation* relation);
+typedef XrResult (XRAPI_PTR *PFN_xrCreateActionSpace)(XrSession session, const XrActionSpaceCreateInfo* createInfo, XrSpace* space);
+typedef XrResult (XRAPI_PTR *PFN_xrLocateSpace)(XrSpace space, XrSpace baseSpace, XrTime   time, XrSpaceLocation* location);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroySpace)(XrSpace space);
 typedef XrResult (XRAPI_PTR *PFN_xrEnumerateViewConfigurations)(XrInstance instance, XrSystemId systemId, uint32_t viewConfigurationTypeCapacityInput, uint32_t* viewConfigurationTypeCountOutput, XrViewConfigurationType* viewConfigurationTypes);
 typedef XrResult (XRAPI_PTR *PFN_xrGetViewConfigurationProperties)(XrInstance instance, XrSystemId systemId, XrViewConfigurationType viewConfigurationType, XrViewConfigurationProperties* configurationProperties);
@@ -901,27 +955,29 @@ typedef XrResult (XRAPI_PTR *PFN_xrWaitSwapchainImage)(XrSwapchain swapchain, co
 typedef XrResult (XRAPI_PTR *PFN_xrReleaseSwapchainImage)(XrSwapchain         swapchain, const XrSwapchainImageReleaseInfo* releaseInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrBeginSession)(XrSession session, const XrSessionBeginInfo* beginInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrEndSession)(XrSession session);
+typedef XrResult (XRAPI_PTR *PFN_xrRequestExitSession)(XrSession session);
 typedef XrResult (XRAPI_PTR *PFN_xrWaitFrame)(XrSession session, const XrFrameWaitInfo* frameWaitInfo, XrFrameState* frameState);
 typedef XrResult (XRAPI_PTR *PFN_xrBeginFrame)(XrSession session, const XrFrameBeginInfo* frameBeginInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrEndFrame)(XrSession session, const XrFrameEndInfo* frameEndInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrLocateViews)(XrSession session, const XrViewLocateInfo* viewLocateInfo, XrViewState* viewState, uint32_t viewCapacityInput, uint32_t* viewCountOutput, XrView* views);
 typedef XrResult (XRAPI_PTR *PFN_xrStringToPath)(XrInstance instance, const char* pathString, XrPath* path);
 typedef XrResult (XRAPI_PTR *PFN_xrPathToString)(XrInstance instance, XrPath path, uint32_t bufferCapacityInput, uint32_t* bufferCountOutput, char* buffer);
-typedef XrResult (XRAPI_PTR *PFN_xrCreateActionSet)(XrSession session, const XrActionSetCreateInfo* createInfo, XrActionSet* actionSet);
+typedef XrResult (XRAPI_PTR *PFN_xrCreateActionSet)(XrInstance instance, const XrActionSetCreateInfo* createInfo, XrActionSet* actionSet);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroyActionSet)(XrActionSet actionSet);
 typedef XrResult (XRAPI_PTR *PFN_xrCreateAction)(XrActionSet actionSet, const XrActionCreateInfo* createInfo, XrAction* action);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroyAction)(XrAction action);
-typedef XrResult (XRAPI_PTR *PFN_xrSetInteractionProfileSuggestedBindings)(XrSession session, const XrInteractionProfileSuggestedBinding* suggestedBindings);
-typedef XrResult (XRAPI_PTR *PFN_xrGetCurrentInteractionProfile)(XrSession session, XrPath topLevelUserPath, XrInteractionProfileInfo* interactionProfile);
-typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateBoolean)(XrAction action, uint32_t countSubactionPaths, const XrPath* subactionPaths, XrActionStateBoolean* data);
-typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateVector1f)(XrAction action, uint32_t countSubactionPaths, const XrPath* subactionPaths, XrActionStateVector1f* data);
-typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateVector2f)(XrAction action, uint32_t countSubactionPaths, const XrPath* subactionPaths, XrActionStateVector2f* data);
-typedef XrResult (XRAPI_PTR *PFN_xrGetActionStatePose)(XrAction action, XrPath subactionPath, XrActionStatePose* data);
-typedef XrResult (XRAPI_PTR *PFN_xrSyncActionData)(XrSession session, uint32_t countActionSets, const XrActiveActionSet* actionSets);
-typedef XrResult (XRAPI_PTR *PFN_xrGetBoundSourcesForAction)(XrAction action, uint32_t sourceCapacityInput, uint32_t* sourceCountOutput, XrPath* sources);
-typedef XrResult (XRAPI_PTR *PFN_xrGetInputSourceLocalizedName)(XrSession session, XrPath source, XrInputSourceLocalizedNameFlags whichComponents, uint32_t bufferCapacityInput, uint32_t* bufferCountOutput, char* buffer);
-typedef XrResult (XRAPI_PTR *PFN_xrApplyHapticFeedback)(XrAction hapticAction, uint32_t countSubactionPaths, const XrPath* subactionPaths, const XrHapticBaseHeader* hapticEvent);
-typedef XrResult (XRAPI_PTR *PFN_xrStopHapticFeedback)(XrAction hapticAction, uint32_t countSubactionPaths, const XrPath* subactionPaths);
+typedef XrResult (XRAPI_PTR *PFN_xrSuggestInteractionProfileBindings)(XrInstance instance, const XrInteractionProfileSuggestedBinding* suggestedBindings);
+typedef XrResult (XRAPI_PTR *PFN_xrAttachSessionActionSets)(XrSession session, const XrSessionActionSetsAttachInfo* attachInfo);
+typedef XrResult (XRAPI_PTR *PFN_xrGetCurrentInteractionProfile)(XrSession session, XrPath topLevelUserPath, XrInteractionProfileState* interactionProfile);
+typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateBoolean)(XrSession session, const XrActionStateGetInfo* getInfo, XrActionStateBoolean* state);
+typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateFloat)(XrSession session, const XrActionStateGetInfo* getInfo, XrActionStateFloat* state);
+typedef XrResult (XRAPI_PTR *PFN_xrGetActionStateVector2f)(XrSession session, const XrActionStateGetInfo* getInfo, XrActionStateVector2f* state);
+typedef XrResult (XRAPI_PTR *PFN_xrGetActionStatePose)(XrSession session, const XrActionStateGetInfo* getInfo, XrActionStatePose* state);
+typedef XrResult (XRAPI_PTR *PFN_xrSyncActions)(XrSession session, const XrActionsSyncInfo* syncInfo);
+typedef XrResult (XRAPI_PTR *PFN_xrEnumerateBoundSourcesForAction)(XrSession session, const XrBoundSourcesForActionEnumerateInfo* enumerateInfo, uint32_t sourceCapacityInput, uint32_t* sourceCountOutput, XrPath* sources);
+typedef XrResult (XRAPI_PTR *PFN_xrGetInputSourceLocalizedName)(XrSession session, const XrInputSourceLocalizedNameGetInfo* getInfo, uint32_t bufferCapacityInput, uint32_t* bufferCountOutput, char* buffer);
+typedef XrResult (XRAPI_PTR *PFN_xrApplyHapticFeedback)(XrSession session, const XrHapticActionInfo* hapticActionInfo, const XrHapticBaseHeader* hapticFeedback);
+typedef XrResult (XRAPI_PTR *PFN_xrStopHapticFeedback)(XrSession session, const XrHapticActionInfo* hapticActionInfo);
 
 #ifndef XR_NO_PROTOTYPES
 XRAPI_ATTR XrResult XRAPI_CALL xrGetInstanceProcAddr(
@@ -978,6 +1034,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrGetSystemProperties(
 XRAPI_ATTR XrResult XRAPI_CALL xrEnumerateEnvironmentBlendModes(
     XrInstance                                  instance,
     XrSystemId                                  systemId,
+    XrViewConfigurationType                     viewConfigurationType,
     uint32_t                                    environmentBlendModeCapacityInput,
     uint32_t*                                   environmentBlendModeCountOutput,
     XrEnvironmentBlendMode*                     environmentBlendModes);
@@ -1007,7 +1064,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrGetReferenceSpaceBoundsRect(
     XrExtent2Df*                                bounds);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrCreateActionSpace(
-    XrAction                                    action,
+    XrSession                                   session,
     const XrActionSpaceCreateInfo*              createInfo,
     XrSpace*                                    space);
 
@@ -1015,7 +1072,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrLocateSpace(
     XrSpace                                     space,
     XrSpace                                     baseSpace,
     XrTime                                      time,
-    XrSpaceRelation*                            relation);
+    XrSpaceLocation*                            location);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrDestroySpace(
     XrSpace                                     space);
@@ -1081,6 +1138,9 @@ XRAPI_ATTR XrResult XRAPI_CALL xrBeginSession(
 XRAPI_ATTR XrResult XRAPI_CALL xrEndSession(
     XrSession                                   session);
 
+XRAPI_ATTR XrResult XRAPI_CALL xrRequestExitSession(
+    XrSession                                   session);
+
 XRAPI_ATTR XrResult XRAPI_CALL xrWaitFrame(
     XrSession                                   session,
     const XrFrameWaitInfo*                      frameWaitInfo,
@@ -1115,7 +1175,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrPathToString(
     char*                                       buffer);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrCreateActionSet(
-    XrSession                                   session,
+    XrInstance                                  instance,
     const XrActionSetCreateInfo*                createInfo,
     XrActionSet*                                actionSet);
 
@@ -1130,67 +1190,65 @@ XRAPI_ATTR XrResult XRAPI_CALL xrCreateAction(
 XRAPI_ATTR XrResult XRAPI_CALL xrDestroyAction(
     XrAction                                    action);
 
-XRAPI_ATTR XrResult XRAPI_CALL xrSetInteractionProfileSuggestedBindings(
-    XrSession                                   session,
+XRAPI_ATTR XrResult XRAPI_CALL xrSuggestInteractionProfileBindings(
+    XrInstance                                  instance,
     const XrInteractionProfileSuggestedBinding* suggestedBindings);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrAttachSessionActionSets(
+    XrSession                                   session,
+    const XrSessionActionSetsAttachInfo*        attachInfo);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrGetCurrentInteractionProfile(
     XrSession                                   session,
     XrPath                                      topLevelUserPath,
-    XrInteractionProfileInfo*                   interactionProfile);
+    XrInteractionProfileState*                  interactionProfile);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrGetActionStateBoolean(
-    XrAction                                    action,
-    uint32_t                                    countSubactionPaths,
-    const XrPath*                               subactionPaths,
-    XrActionStateBoolean*                       data);
+    XrSession                                   session,
+    const XrActionStateGetInfo*                 getInfo,
+    XrActionStateBoolean*                       state);
 
-XRAPI_ATTR XrResult XRAPI_CALL xrGetActionStateVector1f(
-    XrAction                                    action,
-    uint32_t                                    countSubactionPaths,
-    const XrPath*                               subactionPaths,
-    XrActionStateVector1f*                      data);
+XRAPI_ATTR XrResult XRAPI_CALL xrGetActionStateFloat(
+    XrSession                                   session,
+    const XrActionStateGetInfo*                 getInfo,
+    XrActionStateFloat*                         state);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrGetActionStateVector2f(
-    XrAction                                    action,
-    uint32_t                                    countSubactionPaths,
-    const XrPath*                               subactionPaths,
-    XrActionStateVector2f*                      data);
+    XrSession                                   session,
+    const XrActionStateGetInfo*                 getInfo,
+    XrActionStateVector2f*                      state);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrGetActionStatePose(
-    XrAction                                    action,
-    XrPath                                      subactionPath,
-    XrActionStatePose*                          data);
-
-XRAPI_ATTR XrResult XRAPI_CALL xrSyncActionData(
     XrSession                                   session,
-    uint32_t                                    countActionSets,
-    const XrActiveActionSet*                    actionSets);
+    const XrActionStateGetInfo*                 getInfo,
+    XrActionStatePose*                          state);
 
-XRAPI_ATTR XrResult XRAPI_CALL xrGetBoundSourcesForAction(
-    XrAction                                    action,
+XRAPI_ATTR XrResult XRAPI_CALL xrSyncActions(
+    XrSession                                   session,
+    const XrActionsSyncInfo*                    syncInfo);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrEnumerateBoundSourcesForAction(
+    XrSession                                   session,
+    const XrBoundSourcesForActionEnumerateInfo* enumerateInfo,
     uint32_t                                    sourceCapacityInput,
     uint32_t*                                   sourceCountOutput,
     XrPath*                                     sources);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrGetInputSourceLocalizedName(
     XrSession                                   session,
-    XrPath                                      source,
-    XrInputSourceLocalizedNameFlags             whichComponents,
+    const XrInputSourceLocalizedNameGetInfo*    getInfo,
     uint32_t                                    bufferCapacityInput,
     uint32_t*                                   bufferCountOutput,
     char*                                       buffer);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrApplyHapticFeedback(
-    XrAction                                    hapticAction,
-    uint32_t                                    countSubactionPaths,
-    const XrPath*                               subactionPaths,
-    const XrHapticBaseHeader*                   hapticEvent);
+    XrSession                                   session,
+    const XrHapticActionInfo*                   hapticActionInfo,
+    const XrHapticBaseHeader*                   hapticFeedback);
 
 XRAPI_ATTR XrResult XRAPI_CALL xrStopHapticFeedback(
-    XrAction                                    hapticAction,
-    uint32_t                                    countSubactionPaths,
-    const XrPath*                               subactionPaths);
+    XrSession                                   session,
+    const XrHapticActionInfo*                   hapticActionInfo);
 #endif
 
 
@@ -1206,7 +1264,6 @@ typedef struct XrCompositionLayerCubeKHR {
     XrSwapchain                 swapchain;
     uint32_t                    imageArrayIndex;
     XrQuaternionf               orientation;
-    XrVector3f                  offset;
 } XrCompositionLayerCubeKHR;
 
 
@@ -1224,11 +1281,6 @@ typedef struct XrCompositionLayerDepthInfoKHR {
     float                       farZ;
 } XrCompositionLayerDepthInfoKHR;
 
-
-
-#define XR_KHR_headless 1
-#define XR_KHR_headless_SPEC_VERSION      2
-#define XR_KHR_HEADLESS_EXTENSION_NAME    "XR_KHR_headless"
 
 
 #define XR_KHR_composition_layer_cylinder 1
@@ -1260,7 +1312,7 @@ typedef struct XrCompositionLayerEquirectKHR {
     XrEyeVisibility             eyeVisibility;
     XrSwapchainSubImage         subImage;
     XrPosef                     pose;
-    XrVector3f                  offset;
+    float                       radius;
     XrVector2f                  scale;
     XrVector2f                  bias;
 } XrCompositionLayerEquirectKHR;
@@ -1268,7 +1320,7 @@ typedef struct XrCompositionLayerEquirectKHR {
 
 
 #define XR_KHR_visibility_mask 1
-#define XR_KHR_visibility_mask_SPEC_VERSION 1
+#define XR_KHR_visibility_mask_SPEC_VERSION 2
 #define XR_KHR_VISIBILITY_MASK_EXTENSION_NAME "XR_KHR_visibility_mask"
 
 typedef enum XrVisibilityMaskTypeKHR {
@@ -1280,15 +1332,18 @@ typedef enum XrVisibilityMaskTypeKHR {
 typedef struct XrVisibilityMaskKHR {
     XrStructureType       type;
     void* XR_MAY_ALIAS    next;
-    uint32_t              vertexCount;
+    uint32_t              vertexCapacityInput;
+    uint32_t              vertexCountOutput;
     XrVector2f*           vertices;
-    uint32_t              indexCount;
+    uint32_t              indexCapacityInput;
+    uint32_t              indexCountOutput;
     uint32_t*             indices;
 } XrVisibilityMaskKHR;
 
 typedef struct XrEventDataVisibilityMaskChangedKHR {
     XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
+    XrSession                   session;
     XrViewConfigurationType     viewConfigurationType;
     uint32_t                    viewIndex;
 } XrEventDataVisibilityMaskChangedKHR;
@@ -1372,7 +1427,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrThermalGetTemperatureTrendEXT(
 
 #define XR_EXT_debug_utils 1
 XR_DEFINE_HANDLE(XrDebugUtilsMessengerEXT)
-#define XR_EXT_debug_utils_SPEC_VERSION   2
+#define XR_EXT_debug_utils_SPEC_VERSION   3
 #define XR_EXT_DEBUG_UTILS_EXTENSION_NAME "XR_EXT_debug_utils"
 typedef XrFlags64 XrDebugUtilsMessageSeverityFlagsEXT;
 
@@ -1388,6 +1443,7 @@ typedef XrFlags64 XrDebugUtilsMessageTypeFlagsEXT;
 static const XrDebugUtilsMessageTypeFlagsEXT XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT = 0x00000001;
 static const XrDebugUtilsMessageTypeFlagsEXT XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT = 0x00000002;
 static const XrDebugUtilsMessageTypeFlagsEXT XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT = 0x00000004;
+static const XrDebugUtilsMessageTypeFlagsEXT XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT = 0x00000008;
 
 typedef struct XrDebugUtilsObjectNameInfoEXT {
     XrStructureType             type;
@@ -1469,6 +1525,11 @@ XRAPI_ATTR XrResult XRAPI_CALL xrSessionInsertDebugUtilsLabelEXT(
     XrSession                                   session,
     const XrDebugUtilsLabelEXT*                 labelInfo);
 #endif
+
+
+#define XR_VARJO_quad_views 1
+#define XR_VARJO_quad_views_SPEC_VERSION  1
+#define XR_VARJO_QUAD_VIEWS_EXTENSION_NAME "XR_VARJO_quad_views"
 
 #ifdef __cplusplus
 }
