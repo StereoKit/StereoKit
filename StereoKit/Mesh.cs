@@ -10,11 +10,11 @@ namespace StereoKit
     public class Mesh
     {
         #region Imports
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName)]
         static extern IntPtr mesh_create();
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr mesh_gen_cube(string id, Vec3 size, int subdivisions);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName)]
         static extern void mesh_release(IntPtr mesh);
         
         #endregion

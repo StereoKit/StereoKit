@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
@@ -15,24 +13,30 @@ namespace StereoKit
     public class StereoKitApp
     {
         #region Imports
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         static extern bool sk_init(string app_name, Runtime runtime);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName)]
         static extern void sk_shutdown();
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName)]
         static extern bool sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName)]
         static extern float sk_timef();
         #endregion
 
         public StereoKitApp(string name, Runtime runtime)
         {
+            NativeLib.LoadDll();
+            Init(name, runtime);
+        }
+        void Init(string name, Runtime runtime)
+        {
             sk_init(name, runtime);
         }
         ~StereoKitApp()
         {
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, false);
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
             sk_shutdown();
+            NativeLib.UnloadDLL();
         }
 
         public bool Step(Action onStep)

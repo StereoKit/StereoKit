@@ -20,7 +20,7 @@
 x64/
 x86/
 bld/
-[Bb]in/
+
 [Oo]bj/
 [Ll]og/
 
@@ -330,4 +330,6 @@ ASALocalRun/
 .mfractor/
 
 !**/OpenXR/**
-!**/Assets/**
+[Bb]in/*
+!/[Bb]in/Assets/
+!/[Bb]in/Assets/*

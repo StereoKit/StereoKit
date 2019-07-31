@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
@@ -18,13 +14,13 @@ namespace StereoKit
     public class Camera
     {
         #region Imports
-        [DllImport(Util.DllName)] static extern void camera_initialize(IntPtr transform, float fov, float clip_near, float clip_far);
+        [DllImport(NativeLib.DllName)] static extern void camera_initialize(IntPtr transform, float fov, float clip_near, float clip_far);
         #endregion
 
         internal IntPtr _cameraInst;
         public Camera(float fov, float clipNear, float clipFar)
         {
-            _cameraInst = Marshal.AllocCoTaskMem(Marshal.SizeOf<camera_t>());
+            _cameraInst = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(camera_t)));
             camera_initialize(_cameraInst, fov, clipNear, clipFar);
         }
         ~Camera()
