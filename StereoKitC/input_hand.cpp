@@ -20,15 +20,15 @@ void input_hand_init() {
 	transform_initialize(hand_transform);
 
 	// Initialize the hand mesh at startup, don't pay creation costs later!
-	hand_info[0].handedness = hand_left;
-	hand_info[1].handedness = hand_right;
+	hand_info[0].handedness = handed_left;
+	hand_info[1].handedness = handed_right;
 	input_hand_update_mesh(hand_info[0]);
 	input_hand_update_mesh(hand_info[1]);
 }
 
 void input_hand_shutdown() {
 	material_release(hand_material);
-	for (size_t i = 0; i < hand_max; i++) {
+	for (size_t i = 0; i < handed_max; i++) {
 		if (hand_mesh[i].mesh  != nullptr) mesh_release(hand_mesh[i].mesh);
 		if (hand_mesh[i].inds  != nullptr) free(hand_mesh[i].inds);
 		if (hand_mesh[i].verts != nullptr) free(hand_mesh[i].verts);
@@ -37,7 +37,7 @@ void input_hand_shutdown() {
 
 void input_hand_update() {
 	// Update hand meshes
-	for (size_t i = 0; i < hand_max; i++) {
+	for (size_t i = 0; i < handed_max; i++) {
 		if (hand_info[i].state & input_state_tracked) {
 			input_hand_update_mesh(hand_info[i]);
 			render_add_mesh(hand_mesh[i].mesh, hand_material, hand_transform);
@@ -45,7 +45,7 @@ void input_hand_update() {
 	}
 }
 
-void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_info[handedness];
 	hand.root.position    = hand_pos;
 	hand.root.orientation = orientation;
@@ -92,7 +92,7 @@ void input_hand_sim(hand_ handedness, const vec3 &hand_pos, const quat &orientat
 		for (size_t j = 0; j < 5; j++) {
 			vec3 pos = finger[j].position;
 			quat rot = finger[j].orientation;
-			if (handedness == hand_right) {
+			if (handedness == handed_right) {
 				// mirror along x axis, our pose data is for left hand
 				pos.x = -pos.x;
 				rot.j = -rot.j;
@@ -173,7 +173,7 @@ void input_hand_update_mesh(const hand_t &hand) {
 			v++;
 		} }
 
-		if (hand.handedness == hand_left)
+		if (hand.handedness == handed_left)
 			data.mesh = mesh_create("default/mesh_lefthand");
 		else
 			data.mesh = mesh_create("default/mesh_righthand");

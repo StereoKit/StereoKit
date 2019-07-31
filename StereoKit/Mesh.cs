@@ -12,8 +12,11 @@ namespace StereoKit
         #region Imports
         [DllImport(Util.DllName)]
         static extern IntPtr mesh_create();
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        static extern IntPtr mesh_gen_cube(string id, Vec3 size, int subdivisions);
         [DllImport(Util.DllName)]
         static extern void mesh_release(IntPtr mesh);
+        
         #endregion
 
         internal IntPtr _meshInst;
@@ -23,10 +26,21 @@ namespace StereoKit
             if (_meshInst == IntPtr.Zero)
                 Console.WriteLine("Couldn't create empty mesh!");
         }
+        private Mesh(IntPtr mesh)
+        {
+            _meshInst = mesh;
+            if (_meshInst == IntPtr.Zero)
+                Console.WriteLine("Received an empty mesh!");
+        }
         ~Mesh()
         {
             if (_meshInst == IntPtr.Zero)
                 mesh_release(_meshInst);
+        }
+
+        public static Mesh GenerateCube(string id, Vec3 size, int subdivisions = 0)
+        {
+            return new Mesh(mesh_gen_cube(id, size, subdivisions));
         }
     }
 }

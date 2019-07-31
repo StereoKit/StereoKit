@@ -232,10 +232,10 @@ enum pointer_state_ {
 };
 SK_MakeFlag(pointer_state_);
 
-enum hand_ {
-	hand_left  = 0,
-	hand_right = 1,
-	hand_max   = 2,
+enum handed_ {
+	handed_left  = 0,
+	handed_right = 1,
+	handed_max   = 2,
 };
 
 enum input_state_ {
@@ -260,16 +260,16 @@ struct pointer_t {
 };
 
 struct hand_t {
-	pose_t fingers[5][5];
-	pose_t wrist;
-	pose_t root;
-	hand_  handedness;
+	pose_t  fingers[5][5];
+	pose_t  wrist;
+	pose_t  root;
+	handed_ handedness;
 	input_state_ state;
 };
 
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int index, input_source_ filter = input_source_any);
-SK_API const hand_t &input_hand         (hand_ hand);
+SK_API const hand_t &input_hand         (handed_ hand);
 
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));
 SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(const pointer_t &pointer));

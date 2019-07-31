@@ -132,7 +132,7 @@ void render_initialize() {
 	transform_lookat (render_default_camera_tr, { 0,0,0 });
 	render_set_camera(render_default_camera, render_default_camera_tr);
 
-	vec3 dir = { 1,2,1 };
+	vec3 dir = { -1,-2,-1 };
 	dir = vec3_normalize(dir);
 	render_set_light(dir, 1, { 1,1,1,1 });
 }

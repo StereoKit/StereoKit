@@ -41,7 +41,7 @@ pointer_t input_pointer(int index, input_source_ filter) {
 	}
 	return {};
 }
-const hand_t &input_hand(hand_ hand) {
+const hand_t &input_hand(handed_ hand) {
 	return hand_info[hand];
 }
 

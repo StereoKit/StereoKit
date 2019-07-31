@@ -437,7 +437,7 @@ void openxr_poll_actions() {
 	xrSyncActionData(xr_session, 1, &action_set);
 
 	// Now we'll get the current states of our actions, and store them for later use
-	for (uint32_t hand = 0; hand < hand_max; hand++) {
+	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
 		xrGetActionStatePose(xr_input.poseAction, xr_input.handSubactionPath[hand], &pose_state);
 		xr_input.renderHand[hand] = pose_state.isActive;
@@ -464,10 +464,10 @@ void openxr_poll_actions() {
 		pointer->state = pose_state.isActive ? pointer_state_available : pointer_state_none;
 		openxr_pose_to_pointer(spaceRelation.pose, pointer);
 
-		input_hand_sim((hand_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
+		input_hand_sim((handed_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
 
 		// Get event poses, and fire our own events for them
-		const hand_t &curr_hand = input_hand((hand_)hand);
+		const hand_t &curr_hand = input_hand((handed_)hand);
 		if (select_state.currentState != (curr_hand.state & input_state_pinch > 0)) {
 			spaceRelation = { XR_TYPE_SPACE_RELATION };
 			res           = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &spaceRelation);
@@ -476,7 +476,7 @@ void openxr_poll_actions() {
 				openxr_pose_to_pointer(spaceRelation.pose, &event_pointer);
 
 				input_fire_event(
-					input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right), 
+					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right), 
 					curr_hand.state & input_state_pinch ? input_state_justpinch : input_state_unpinch, 
 					event_pointer);
 			}
@@ -489,20 +489,20 @@ void openxr_poll_actions() {
 				openxr_pose_to_pointer(spaceRelation.pose, &event_pointer);
 
 				input_fire_event(
-					input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
 					curr_hand.state & input_state_grip ? input_state_justgrip : input_state_ungrip, 
 					event_pointer);
 			}
 		}
 		if (curr_hand.state & input_state_justtracked) {
 			input_fire_event(
-				input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
 				input_state_justtracked, 
 				*pointer);
 		}
 		if (curr_hand.state & input_state_untracked) {
 			input_fire_event(
-				input_source_hand | (hand == hand_left ? input_source_hand_left :input_source_hand_right),
+				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
 				input_state_untracked, 
 				*pointer);
 		}

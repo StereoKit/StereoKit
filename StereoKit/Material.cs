@@ -6,8 +6,8 @@ namespace StereoKit
     public class Material
     {
         #region Imports
-        [DllImport(Util.DllName)]
-        static extern IntPtr material_create(IntPtr shader);
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        static extern IntPtr material_create(string name, IntPtr shader);
         [DllImport(Util.DllName)]
         static extern void material_release(IntPtr material);
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
@@ -25,9 +25,9 @@ namespace StereoKit
         #endregion
 
         internal IntPtr _materialInst;
-        public Material(Shader shader)
+        public Material(string name, Shader shader)
         {
-            _materialInst = material_create(shader._shaderInst);
+            _materialInst = material_create(name, shader == null ? IntPtr.Zero : shader._shaderInst);
             if (_materialInst == IntPtr.Zero)
                 Console.WriteLine("Couldn't create material!");
         }
@@ -35,6 +35,10 @@ namespace StereoKit
         {
             if (_materialInst != IntPtr.Zero)
                 material_release(_materialInst);
+        }
+        public static Material Find(string name)
+        {
+            return new Material(name, null);
         }
 
         public void SetFloat(string name, float value)

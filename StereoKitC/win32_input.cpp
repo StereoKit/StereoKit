@@ -25,7 +25,7 @@ void win32_input_update() {
 	transform_t *cam_tr = nullptr;
 	render_get_cam(&cam, &cam_tr);
 
-	const hand_t &hand = input_hand(hand_right);
+	const hand_t &hand = input_hand(handed_right);
 	vec3 hand_pos     = hand.root.position;
 	quat hand_rot     = hand.root.orientation;
 	bool l_pressed    = false;
@@ -78,7 +78,7 @@ void win32_input_update() {
 	pointer_cursor->ray.pos     = hand_pos;
 	pointer_cursor->orientation = hand_rot;
 
-	input_hand_sim(hand_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
+	input_hand_sim(handed_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 
 	input_source_ src = input_source_hand & input_source_hand_right;
 	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? input_state_justtracked : input_state_untracked, *pointer_cursor);
