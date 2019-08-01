@@ -45,7 +45,8 @@ void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera_transform = &cam_transform;
 }
 void render_set_light(const vec3 &direction, float intensity, const color128 &color) {
-	render_global_buffer.light       = { direction.x, direction.y, direction.z, intensity };
+	vec3 dir = vec3_normalize(direction);
+	render_global_buffer.light       = { dir.x, dir.y, dir.z, intensity };
 	render_global_buffer.light_color = color;
 }
 
