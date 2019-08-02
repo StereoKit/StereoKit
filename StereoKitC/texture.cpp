@@ -6,15 +6,21 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-tex2d_t tex2d_create(const char *name) {
-	return (tex2d_t)assets_allocate(asset_type_texture, name);
+tex2d_t tex2d_create(const char *id) {
+	return (tex2d_t)assets_allocate(asset_type_texture, id);
 }
-tex2d_t tex2d_create_file(const char *file) {
-	tex2d_t result = (tex2d_t)assets_find(file);
+tex2d_t tex2d_find(const char *id) {
+	tex2d_t result = (tex2d_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
 	}
+	return nullptr;
+}
+tex2d_t tex2d_create_file(const char *file) {
+	tex2d_t result = tex2d_find(file);
+	if (result != nullptr)
+		return result;
 
 	int      channels = 0;
 	int      width    = 0;
@@ -32,11 +38,9 @@ tex2d_t tex2d_create_file(const char *file) {
 	return result;
 }
 tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
-	tex2d_t result = (tex2d_t)assets_find(id);
-	if (result != nullptr) {
-		assets_addref(result->header);
+	tex2d_t result = tex2d_find(id);
+	if (result != nullptr)
 		return result;
-	}
 
 	int      channels = 0;
 	int      width    = 0;

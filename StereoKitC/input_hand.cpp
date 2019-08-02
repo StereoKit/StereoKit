@@ -19,8 +19,8 @@ const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_fin
 transform_t hand_transform;
 
 void input_hand_init() {
-	hand_material[handed_left ] = material_create("default/material", nullptr);
-	hand_material[handed_right] = material_create("default/material", nullptr);
+	hand_material[handed_left ] = material_find("default/material");
+	hand_material[handed_right] = material_find("default/material");
 	transform_initialize(hand_transform);
 
 	// Initialize the hand mesh at startup, don't pay creation costs later!

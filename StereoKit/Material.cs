@@ -7,6 +7,8 @@ namespace StereoKit
     {
         #region Imports
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        static extern IntPtr material_find(string id);
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr material_create(string name, IntPtr shader);
         [DllImport(Util.DllName)]
         static extern void material_release(IntPtr material);
@@ -31,14 +33,21 @@ namespace StereoKit
             if (_materialInst == IntPtr.Zero)
                 Console.WriteLine("Couldn't create material!");
         }
+        private Material(IntPtr material)
+        {
+            _materialInst = material;
+            if (_materialInst == IntPtr.Zero)
+                Console.WriteLine("Received an empty material!");
+        }
         ~Material()
         {
             if (_materialInst != IntPtr.Zero)
                 material_release(_materialInst);
         }
-        public static Material Find(string name)
+        public static Material Find(string id)
         {
-            return new Material(name, null);
+            IntPtr material = material_find(id);
+            return material == IntPtr.Zero ? null : new Material(material);
         }
 
         public void SetFloat(string name, float value)

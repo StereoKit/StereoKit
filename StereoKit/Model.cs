@@ -11,6 +11,8 @@ namespace StereoKit
     {
         #region Imports
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        static extern IntPtr model_find(string id);
+        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr model_create_file(string file);
         [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
         static extern IntPtr model_create_mesh(string id, IntPtr mesh, IntPtr material);
@@ -31,10 +33,22 @@ namespace StereoKit
             if (_modelInst == IntPtr.Zero)
                 Console.WriteLine("Couldn't make {0}!", id);
         }
+        private Model(IntPtr model)
+        {
+            _modelInst = model;
+            if (_modelInst == IntPtr.Zero)
+                Console.WriteLine("Received an empty model!");
+        }
         ~Model()
         {
             if (_modelInst != IntPtr.Zero)
                 model_release(_modelInst);
+        }
+
+        public static Model Find(string id)
+        {
+            IntPtr model = model_find(id);
+            return model == IntPtr.Zero ? null : new Model(model);
         }
     }
 }

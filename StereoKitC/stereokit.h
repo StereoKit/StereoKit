@@ -126,7 +126,8 @@ struct vert_t {
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_create   (const char *name);
+SK_API mesh_t mesh_find     (const char *id);
+SK_API mesh_t mesh_create   (const char *id);
 SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int index_count);
@@ -137,7 +138,8 @@ SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int subdivisions);
 
 SK_DeclarePrivateType(tex2d_t);
 
-SK_API tex2d_t tex2d_create     (const char *name);
+SK_API tex2d_t tex2d_find       (const char *id);
+SK_API tex2d_t tex2d_create     (const char *id);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int width, int height, uint8_t *data_rgba32);
@@ -146,7 +148,8 @@ SK_API void    tex2d_set_colors (tex2d_t texture, int width, int height, uint8_t
 
 SK_DeclarePrivateType(shader_t);
 
-SK_API shader_t shader_create     (const char *name, const char *hlsl);
+SK_API shader_t shader_find       (const char *id);
+SK_API shader_t shader_create     (const char *id, const char *hlsl);
 SK_API shader_t shader_create_file(const char *filename);
 SK_API void     shader_release    (shader_t shader);
 
@@ -154,7 +157,8 @@ SK_API void     shader_release    (shader_t shader);
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_create (const char *name, shader_t shader);
+SK_API material_t material_find   (const char *id);
+SK_API material_t material_create (const char *id, shader_t shader);
 SK_API void       material_release(material_t material);
 SK_API void       material_set_float  (material_t material, const char *name, float    value);
 SK_API void       material_set_color32(material_t material, const char *name, color32  value);
@@ -188,6 +192,7 @@ SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
 SK_DeclarePrivateType(model_t);
 
+SK_API model_t model_find       (const char *id);
 SK_API model_t model_create_mesh(const char *id, mesh_t mesh, material_t material);
 SK_API model_t model_create_file(const char *filename);
 SK_API void    model_release    (model_t model);
