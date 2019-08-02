@@ -1,22 +1,26 @@
 #include "input_hand.h"
 #include "input_hand_poses.h"
 
+#include "assets.h"
+#include "material.h"
+
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
 #define SK_SQRT2 1.41421356237f
 
 pose_t hand_pose_blend[2][5][5];
 
+bool        hand_visible[2] = { true, true };
+material_t  hand_material[2] = { };
 hand_t      hand_info[2] = {};
 hand_mesh_t hand_mesh[2] = { {},{} };
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
-
-material_t  hand_material;
 transform_t hand_transform;
 
 void input_hand_init() {
-	hand_material = material_create("default/material", nullptr);
+	hand_material[handed_left ] = material_create("default/material", nullptr);
+	hand_material[handed_right] = material_create("default/material", nullptr);
 	transform_initialize(hand_transform);
 
 	// Initialize the hand mesh at startup, don't pay creation costs later!
@@ -27,8 +31,8 @@ void input_hand_init() {
 }
 
 void input_hand_shutdown() {
-	material_release(hand_material);
 	for (size_t i = 0; i < handed_max; i++) {
+		if (hand_material[i]   != nullptr) material_release(hand_material[i]);
 		if (hand_mesh[i].mesh  != nullptr) mesh_release(hand_mesh[i].mesh);
 		if (hand_mesh[i].inds  != nullptr) free(hand_mesh[i].inds);
 		if (hand_mesh[i].verts != nullptr) free(hand_mesh[i].verts);
@@ -38,9 +42,9 @@ void input_hand_shutdown() {
 void input_hand_update() {
 	// Update hand meshes
 	for (size_t i = 0; i < handed_max; i++) {
-		if (hand_info[i].state & input_state_tracked) {
+		if (hand_visible[i] && hand_material[i] != nullptr && hand_info[i].state & input_state_tracked) {
 			input_hand_update_mesh(hand_info[i]);
-			render_add_mesh(hand_mesh[i].mesh, hand_material, hand_transform);
+			render_add_mesh(hand_mesh[i].mesh, hand_material[i], hand_transform);
 		}
 	}
 }
@@ -210,4 +214,17 @@ void input_hand_update_mesh(const hand_t &hand) {
 
 	// And update the mesh vertices!
 	mesh_set_verts(data.mesh, data.verts, data.vert_count);
+}
+
+void input_hand_visible(handed_ hand, int visible) {
+	hand_visible[hand] = visible;
+}
+void input_hand_material(handed_ hand, material_t material) {
+	if (hand_material[hand] != nullptr) 
+		material_release(hand_material[hand]);
+	
+	if (material != nullptr)
+		assets_addref(material->header);
+
+	hand_material[hand] = material;
 }
