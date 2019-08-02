@@ -25,14 +25,18 @@ namespace StereoKit
         static extern float sk_timef();
         #endregion
 
-        public StereoKitApp(string name, Runtime runtime)
+        public StereoKitApp()
         {
-            sk_init(name, runtime);
         }
         ~StereoKitApp()
         {
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, false);
             sk_shutdown();
+        }
+
+        public bool Initialize(string name, Runtime runtime)
+        {
+            return sk_init(name, runtime);
         }
 
         public bool Step(Action onStep)

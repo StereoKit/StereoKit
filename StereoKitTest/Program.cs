@@ -5,9 +5,14 @@ class Program
 {
     static void Main(string[] args) 
     {
-        StereoKitApp kit = new StereoKitApp("StereoKit C#", Runtime.MixedReality);
+        StereoKitApp kit = new StereoKitApp();
+        if (!kit.Initialize("StereoKit C#", Runtime.MixedReality))
+        {
+            Console.WriteLine("Can't create xr_session!");
+            Environment.Exit(1);
+        }
 
-        Model     gltf   = new Model("Assets/DamagedHelmet.gltf");
+        Model gltf   = new Model("Assets/DamagedHelmet.gltf");
         Transform gltfTr = new Transform(Vec3.Zero, Vec3.One*0.5f);
         
         Input.Subscribe(InputSource.Hand, InputState.Any, (src, st, p) => {
