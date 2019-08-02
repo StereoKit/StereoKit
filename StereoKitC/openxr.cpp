@@ -81,7 +81,7 @@ bool openxr_init(const char *app_name) {
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
-	if (xr_instance == nullptr)
+	if (xr_instance == XR_NULL_HANDLE)
 		return false;
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
@@ -113,7 +113,7 @@ bool openxr_init(const char *app_name) {
 	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
-	if (xr_session == nullptr)
+	if (xr_session == XR_NULL_HANDLE)
 		return false;
 
 	// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
