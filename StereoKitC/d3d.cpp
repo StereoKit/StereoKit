@@ -12,14 +12,14 @@ ID3D11RasterizerState    *d3d_rasterstate   = nullptr;
 int                       d3d_screen_width  = 640;
 int                       d3d_screen_height = 480;
 
-void d3d_init() {
+bool d3d_init() {
 	UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
 	creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
 	if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, 0, creation_flags, featureLevels, _countof(featureLevels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context)))
-		MessageBox(0, "\tFailed to init d3d!\n", "Error", 0);
+		return false;
 
 	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
 	desc_depthstate.DepthEnable    = true;
@@ -49,13 +49,14 @@ void d3d_init() {
 		d3d_context->PSSetSamplers(i, 1, &d3d_samplerstate);
 	}
 	
-
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
 	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
 	desc_rasterizer.CullMode = D3D11_CULL_BACK;
 	desc_rasterizer.FrontCounterClockwise = true;
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
 	d3d_context->RSSetState(d3d_rasterstate);
+
+	return true;
 }
 
 ///////////////////////////////////////////
