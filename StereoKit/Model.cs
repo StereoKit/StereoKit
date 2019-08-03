@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
     public class Model
     {
         #region Imports
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr model_find(string id);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr model_create_file(string file);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr model_create_mesh(string id, IntPtr mesh, IntPtr material);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void model_release(IntPtr model);
         #endregion
 

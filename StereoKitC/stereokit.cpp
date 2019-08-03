@@ -12,8 +12,8 @@
 using namespace std;
 
 sk_runtime_ sk_runtime = sk_runtime_flatscreen;
-bool sk_focused = true;
-bool sk_run     = true;
+bool32_t sk_focused = true;
+bool32_t sk_run     = true;
 
 bool sk_d3d_initialized = false;
 
@@ -22,7 +22,7 @@ double sk_timev  = 0;
 double sk_time_start    = 0;
 double sk_timev_elapsed  = 0;
 float  sk_timev_elapsedf = 0;
-long long sk_timev_raw = 0;
+int64_t sk_timev_raw = 0;
 
 tex2d_t    sk_default_tex;
 shader_t   sk_default_shader;
@@ -30,7 +30,7 @@ material_t sk_default_material;
 bool sk_create_defaults();
 void sk_destroy_defaults();
 
-bool sk_init(const char *app_name, sk_runtime_ runtime) {
+bool32_t sk_init(const char *app_name, sk_runtime_ runtime) {
 	sk_runtime = runtime;
 
 	// Test to avoid initializing the d3d context twice
@@ -78,7 +78,7 @@ void sk_shutdown() {
 void sk_update_timer() {
 	FILETIME time;
 	GetSystemTimePreciseAsFileTime(&time);
-	sk_timev_raw = (LONGLONG)time.dwLowDateTime + ((LONGLONG)(time.dwHighDateTime) << 32LL);
+	sk_timev_raw = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
 	double time_curr = sk_timev_raw / 10000000.0;
 
 	if (sk_time_start == 0)
@@ -90,7 +90,7 @@ void sk_update_timer() {
 	sk_timevf         = (float)sk_timev;
 }
 
-bool sk_step(void (*app_update)(void)) {
+bool32_t sk_step(void (*app_update)(void)) {
 	switch (sk_runtime) {
 	case sk_runtime_flatscreen:   win32_step_begin (); break;
 	case sk_runtime_mixedreality: openxr_step_begin(); break;

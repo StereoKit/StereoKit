@@ -73,18 +73,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

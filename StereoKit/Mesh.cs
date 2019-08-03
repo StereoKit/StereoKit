@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
     public class Mesh
     {
         #region Imports
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_create();
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_find(string id);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_gen_cube(string id, Vec3 size, int subdivisions);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void mesh_release(IntPtr mesh);
         
         #endregion

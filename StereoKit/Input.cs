@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
@@ -88,21 +85,21 @@ namespace StereoKit
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void EventCallback(InputSource source, InputState type, IntPtr pointer);
 
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern int input_pointer_count(InputSource filter);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern Pointer input_pointer(int index, InputSource filter);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr input_hand(Handed handed);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_subscribe(InputSource source, InputState evt, EventCallback event_callback);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_unsubscribe(InputSource source, InputState evt, EventCallback event_callback);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_fire_event(InputSource source, InputState evt, IntPtr pointer);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_hand_visible(Handed hand, int visible);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_hand_material(Handed hand, IntPtr material);
         #endregion
 

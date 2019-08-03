@@ -8,7 +8,7 @@
 
 ID3D11InputLayout *vert_t_layout = nullptr;
 
-void mesh_set_verts(mesh_t mesh, vert_t *vertices, int vertex_count) {
+void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 	if (mesh->vert_buffer != nullptr) { 
 		// Here would be a good place to not release stuff if doing dynamic meshes
 		mesh->vert_buffer->Release();
@@ -26,7 +26,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int vertex_count) {
 		throw;
 	}
 }
-void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int index_count) {
+void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 	if (mesh->ind_buffer != nullptr) { 
 		// Here would be a good place to not release stuff if doing dynamic meshes
 		mesh->ind_buffer->Release();
@@ -96,7 +96,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 		size.z * (nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
 	};
 }
-mesh_t mesh_gen_cube(const char *id, vec3 size, int subdivisions) {
+mesh_t mesh_gen_cube(const char *id, vec3 size, int32_t subdivisions) {
 	mesh_t result = (mesh_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);

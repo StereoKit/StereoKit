@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
@@ -12,38 +8,63 @@ namespace StereoKit
         Flatscreen = 0,
         MixedReality = 1
     }
-    public class StereoKitApp
+    public static class StereoKitApp
     {
         #region Imports
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
-        static extern bool sk_init(string app_name, Runtime runtime);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern int sk_init(string app_name, Runtime runtime);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void sk_shutdown();
-        [DllImport(Util.DllName)]
-        static extern bool sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern int sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern float sk_timef();
         #endregion
 
-        public StereoKitApp()
+        public static bool    IsInitialized { get; private set; }
+        public static Runtime ActiveRuntime { get; private set; }
+        public static float   Time          { get { return sk_timef(); } }
+
+        public static bool Initialize(string name, Runtime runtimePreference, bool fallback = true)
         {
+            // Selects appropriate DLL for the platform, must be called first, and before
+            // any StereoKit native calls
+            NativeLib.LoadDll();
+
+            ActiveRuntime = runtimePreference;
+            IsInitialized = InitializeCall(name, ActiveRuntime);
+
+            // Try falling back to flatscreen, if we didn't just try it
+            if (!IsInitialized && fallback && runtimePreference != Runtime.Flatscreen)
+            {
+                Console.WriteLine("Couldn't create StereoKit in {0} mode, falling back to Flatscreen", runtimePreference.ToString());
+                ActiveRuntime = Runtime.Flatscreen;
+                IsInitialized = InitializeCall(name, ActiveRuntime);
+            }
+
+            return IsInitialized;
         }
-        ~StereoKitApp()
+        private static bool InitializeCall(string name, Runtime runtime)
         {
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, false);
-            sk_shutdown();
+            // DllImport finds the function at the beginning of the function call,
+            // so this needs to be in a separate function from NativeLib.LoadDll
+            return sk_init(name, runtime) > 0;
         }
 
-        public bool Initialize(string name, Runtime runtime)
+        public static void Shutdown()
         {
-            return sk_init(name, runtime);
+            if (IsInitialized)
+            {
+                sk_shutdown();
+                NativeLib.UnloadDLL();
+            }
         }
 
-        public bool Step(Action onStep)
+        public static bool Step(Action onStep)
         {
-            return sk_step(onStep);
+            return sk_step(onStep) > 0;
         }
 
-        public static float Time { get { return sk_timef(); } }
+        
     }
 }

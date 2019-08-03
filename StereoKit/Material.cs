@@ -6,23 +6,23 @@ namespace StereoKit
     public class Material
     {
         #region Imports
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr material_find(string id);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr material_create(string name, IntPtr shader);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_release(IntPtr material);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_float  (IntPtr material, string name, float   value);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_color32(IntPtr material, string name, Color32 value);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_color  (IntPtr material, string name, Color   value);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_vector (IntPtr material, string name, Vec4    value);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_matrix (IntPtr material, string name, Matrix  value);
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void material_set_texture(IntPtr material, string name, IntPtr  value);
         #endregion
 

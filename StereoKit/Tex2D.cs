@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKit
 {
     public class Tex2D
     {
         #region Imports
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_find(string id);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_create();
-        [DllImport(Util.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_create_file(string file);
-        [DllImport(Util.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void tex2d_release(IntPtr tex);
         #endregion
 
