@@ -3,16 +3,28 @@ using StereoKit;
 
 class Program 
 {
+    static bool runningInMRMode = true;
+
     static void Main(string[] args) 
     {
         StereoKitApp kit = new StereoKitApp();
-        if (!kit.Initialize("StereoKit C#", Runtime.MixedReality))
+        if (kit.Initialize("StereoKit C#", Runtime.MixedReality))
         {
-            Console.WriteLine("Can't create xr_session!");
+            Console.WriteLine("Created xr_session, runnning in MixedReality mode!");
+            runningInMRMode = true;
+        }
+        else if (kit.Initialize("StereoKit C#", Runtime.Flatscreen))
+        {
+            Console.WriteLine("Can't create xr_session, running in Flatscreen mode instead!");
+            runningInMRMode = false;
+        }
+        else
+        {
+            Console.WriteLine("Can't create xr_session nor a desktop window instance!");
             Environment.Exit(1);
         }
 
-        Model gltf   = new Model("Assets/DamagedHelmet.gltf");
+        Model gltf       = new Model("Assets/DamagedHelmet.gltf");
         Transform gltfTr = new Transform(Vec3.Zero, Vec3.One*0.5f);
         
         Input.Subscribe(InputSource.Hand, InputState.Any, (src, st, p) => {

@@ -8,7 +8,7 @@ extern ID3D11DeviceContext    *d3d_context;
 extern int                     d3d_screen_width;
 extern int                     d3d_screen_height;
 
-void d3d_init         ();
+bool d3d_init         ();
 void d3d_shutdown     ();
 void d3d_render_begin ();
 void d3d_render_end   ();
