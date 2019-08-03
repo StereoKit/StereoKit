@@ -22,13 +22,13 @@ namespace StereoKit
         {
             _meshInst = mesh_create();
             if (_meshInst == IntPtr.Zero)
-                Console.WriteLine("Couldn't create empty mesh!");
+                Log.Write(LogLevel.Warning, "Couldn't create empty mesh!");
         }
         private Mesh(IntPtr mesh)
         {
             _meshInst = mesh;
             if (_meshInst == IntPtr.Zero)
-                Console.WriteLine("Received an empty mesh!");
+                Log.Write(LogLevel.Warning, "Received an empty mesh!");
         }
         ~Mesh()
         {

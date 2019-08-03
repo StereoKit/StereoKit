@@ -29,7 +29,7 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 
 	ID3DBlob *compiled, *errors;
 	if (FAILED(D3DCompile(hlsl, strlen(hlsl), nullptr, nullptr, nullptr, entrypoint, target, flags, 0, &compiled, &errors)))
-		MessageBox(0, (char*)errors->GetBufferPointer(), "Error", 0);
+		log_write(log_error, (char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
 	return compiled;

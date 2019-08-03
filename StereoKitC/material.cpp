@@ -46,7 +46,7 @@ inline shaderargs_desc_item_t *find_desc(material_t material, const char *name) 
 			return &material->shader->args_desc.item[i];
 		}
 	}
-	printf("Can't find material parameter %s!\n", name);
+	log_writef(log_warning, "Can't find material parameter %s!", name);
 	return nullptr;
 }
 
@@ -89,7 +89,7 @@ void material_set_texture(material_t material, const char *name, tex2d_t value) 
 			return;
 		}
 	}
-	printf("Can't find material texture %s!\n", name);
+	log_writef(log_warning, "Can't find material texture %s!", name);
 }
 
 void material_set_active(material_t material) {

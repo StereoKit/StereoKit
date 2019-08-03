@@ -24,13 +24,13 @@ namespace StereoKit
         {
             _shaderInst = shader;
             if (_shaderInst == IntPtr.Zero)
-                Console.WriteLine("Received an empty shader!");
+                Log.Write(LogLevel.Warning, "Received an empty shader!");
         }
         public Shader(string file)
         {
             _shaderInst = shader_create_file(file);
             if (_shaderInst == IntPtr.Zero)
-                Console.WriteLine("Couldn't load shader file {0}!", file);
+                Log.Write(LogLevel.Warning, "Couldn't load shader file {0}!", file);
         }
         ~Shader()
         {

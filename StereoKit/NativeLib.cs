@@ -30,14 +30,15 @@ namespace StereoKit
             folder += "Release";
             #endif
 
-            Console.WriteLine("[StereoKit] Using " + folder + " build.");
-
             string location = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
             library = LoadLibraryEx(path, IntPtr.Zero, 0);
 
-            if (library == IntPtr.Zero)
+            if (library == IntPtr.Zero) { 
                 throw new Exception("Missing StereoKit DLL, should be at " + path);
+            } else {
+                Log.Write(LogLevel.Info, "Using {0} build.", folder);
+            }
         }
         public static void UnloadDLL()
         {

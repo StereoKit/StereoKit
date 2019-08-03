@@ -6,10 +6,7 @@ class Program
     static void Main(string[] args) 
     {
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
-        {
-            Console.WriteLine("Couldn't initialize StereoKit!");
             Environment.Exit(1);
-        }
 
         Model gltf       = new Model("Assets/DamagedHelmet.gltf");
         Transform gltfTr = new Transform(Vec3.Zero, Vec3.One*0.5f);

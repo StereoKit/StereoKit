@@ -184,6 +184,7 @@
     <ClCompile Include="d3d.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="input_hand.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="mesh.cpp" />

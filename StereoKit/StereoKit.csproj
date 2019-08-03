@@ -46,6 +46,7 @@
     <Compile Include="Camera.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="Input.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="Math.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Renderer.cs" />

@@ -90,6 +90,6 @@ void  assets_releaseref(asset_header_t &asset) {
 
 void  assets_shutdown_check() {
 	if (assets.size() > 0) {
-		printf("Warning: %d unreleased assets still found in the asset manager!\n", (int)assets.size());
+		log_writef(log_error, "%d unreleased assets still found in the asset manager!", (int)assets.size());
 	}
 }

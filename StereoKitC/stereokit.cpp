@@ -39,14 +39,14 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime) {
 			sk_d3d_initialized = true;
 		}
 		else {
-			MessageBox(0, "\tFailed to init d3d!\n", "Error", 0);
+			log_write(log_error, "Failed to init d3d!");
 			return false;
 		}
 	}
 
 	if (!sk_create_defaults())
 	{
-		MessageBox(0, "\tFailed to create defaults!\n", "Error", 0);
+		log_write(log_error, "Failed to create defaults!");
 		return false;
 	}
 	

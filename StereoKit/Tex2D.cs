@@ -25,7 +25,7 @@ namespace StereoKit
         {
             _texInst = tex;
             if (_texInst == IntPtr.Zero)
-                Console.WriteLine("Received an empty texture!");
+                Log.Write(LogLevel.Warning, "Received an empty texture!");
         }
         public Tex2D(string file)
         {

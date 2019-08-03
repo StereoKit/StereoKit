@@ -90,7 +90,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *d
 		data.SysMemPitch = sizeof(uint8_t) * 4 * width;
 
 		if (FAILED(d3d_device->CreateTexture2D(&desc, &data, &texture->texture))) {
-			printf("Create texture error!\n");
+			log_write(log_error, "Create texture error!");
 			return;
 		}
 
@@ -109,7 +109,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *d
 
 	D3D11_MAPPED_SUBRESOURCE data = {};
 	if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
-		printf("Failed mapping a texture\n");
+		log_write(log_error, "Failed mapping a texture");
 		return;
 	}
 

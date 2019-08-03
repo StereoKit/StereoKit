@@ -31,13 +31,13 @@ namespace StereoKit
         {
             _materialInst = material_create(name, shader == null ? IntPtr.Zero : shader._shaderInst);
             if (_materialInst == IntPtr.Zero)
-                Console.WriteLine("Couldn't create material!");
+                Log.Write(LogLevel.Warning, "Couldn't create material!");
         }
         private Material(IntPtr material)
         {
             _materialInst = material;
             if (_materialInst == IntPtr.Zero)
-                Console.WriteLine("Received an empty material!");
+                Log.Write(LogLevel.Warning, "Received an empty material!");
         }
         ~Material()
         {

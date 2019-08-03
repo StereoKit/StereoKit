@@ -21,19 +21,19 @@ namespace StereoKit
         {
             _modelInst = model_create_file(file);
             if (_modelInst == IntPtr.Zero)
-                Console.WriteLine("Couldn't load {0}!", file);
+                Log.Write(LogLevel.Warning, "Couldn't load {0}!", file);
         }
         public Model(string id, Mesh mesh, Material material)
         {
             _modelInst = model_create_mesh(id, mesh._meshInst, material._materialInst);
             if (_modelInst == IntPtr.Zero)
-                Console.WriteLine("Couldn't make {0}!", id);
+                Log.Write(LogLevel.Warning, "Couldn't make {0}!", id);
         }
         private Model(IntPtr model)
         {
             _modelInst = model;
             if (_modelInst == IntPtr.Zero)
-                Console.WriteLine("Received an empty model!");
+                Log.Write(LogLevel.Warning, "Received an empty model!");
         }
         ~Model()
         {

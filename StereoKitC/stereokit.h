@@ -287,3 +287,15 @@ SK_API void          input_hand_material(handed_ hand, material_t material);
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
 SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
 SK_API void input_fire_event (input_source_ source, input_state_ event, const pointer_t &pointer);
+
+///////////////////////////////////////////
+
+enum log_{
+	log_info = 0,
+	log_warning,
+	log_error
+};
+
+SK_API void log_write     (log_ level, const char *text);
+SK_API void log_writef    (log_ level, const char *text, ...);
+SK_API void log_set_filter(log_ level);

@@ -58,6 +58,9 @@
     <ClCompile Include="win32_input.cpp">
       <Filter>platform</Filter>
     </ClCompile>
+    <ClCompile Include="log.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendertarget.h">

@@ -20,7 +20,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
 		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, D3D11_BIND_VERTEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
-			MessageBox(0, "Failed to create vertex buffer\n", "Error", 0);
+			log_write(log_error, "Failed to create vertex buffer");
 	} else {
 		// We don't support dynamic meshes quite yet.
 		throw;
@@ -38,7 +38,7 @@ void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
 		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(uint16_t) * index_count, D3D11_BIND_INDEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
-			MessageBox(0, "Failed to create index buffer\n", "Error", 0);
+			log_write(log_error, "Failed to create index buffer");
 	} else {
 		// We don't support dynamic meshes quite yet.
 		throw;

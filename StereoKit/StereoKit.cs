@@ -37,10 +37,13 @@ namespace StereoKit
             // Try falling back to flatscreen, if we didn't just try it
             if (!IsInitialized && fallback && runtimePreference != Runtime.Flatscreen)
             {
-                Console.WriteLine("Couldn't create StereoKit in {0} mode, falling back to Flatscreen", runtimePreference.ToString());
+                Log.Write(LogLevel.Warning, "Couldn't create StereoKit in {0} mode, falling back to Flatscreen", runtimePreference.ToString());
                 ActiveRuntime = Runtime.Flatscreen;
                 IsInitialized = InitializeCall(name, ActiveRuntime);
             }
+
+            if (!IsInitialized)
+                Log.Write(LogLevel.Error, "Couldn't initialize StereoKit!");
 
             return IsInitialized;
         }
@@ -64,7 +67,5 @@ namespace StereoKit
         {
             return sk_step(onStep) > 0;
         }
-
-        
     }
 }
