@@ -10,11 +10,11 @@ namespace StereoKit
     public class Shader
     {
         #region Imports
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr shader_create(string hlsl);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr shader_create_file(string file);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void shader_release(IntPtr shader);
         #endregion
 

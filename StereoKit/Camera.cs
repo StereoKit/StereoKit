@@ -14,7 +14,8 @@ namespace StereoKit
     public class Camera
     {
         #region Imports
-        [DllImport(NativeLib.DllName)] static extern void camera_initialize(IntPtr transform, float fov, float clip_near, float clip_far);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void camera_initialize(IntPtr transform, float fov, float clip_near, float clip_far);
         #endregion
 
         internal IntPtr _cameraInst;

@@ -10,11 +10,11 @@ namespace StereoKit
     public class Model
     {
         #region Imports
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr model_create_file(string file);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr model_create_mesh(string id, IntPtr mesh, IntPtr material);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void model_release(IntPtr model);
         #endregion
 

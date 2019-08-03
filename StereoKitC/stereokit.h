@@ -179,8 +179,11 @@ struct transform_t {
 SK_API void transform_initialize  (transform_t &transform);
 SK_API void transform_set         (transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation );
 SK_API void transform_set_position(transform_t &transform, const vec3 &position);
+SK_API vec3 transform_get_position(transform_t &transform);
 SK_API void transform_set_scale   (transform_t &transform, const vec3 &scale);
+SK_API vec3 transform_get_scale   (transform_t &transform);
 SK_API void transform_set_rotation(transform_t &transform, const quat &rotation);
+SK_API quat transform_get_rotation(transform_t &transform);
 SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 

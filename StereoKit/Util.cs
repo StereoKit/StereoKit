@@ -21,15 +21,24 @@ namespace StereoKit
 
         internal static void LoadDll()
         {
-            string folder;
-            if (System.Environment.Is64BitProcess)
-                folder = "x64_Release";
-            else
-                folder = "Win32_Release";
+            string folder = Environment.Is64BitProcess ?
+                "x64_" :
+                "Win32_";
+
+            #if DEBUG
+            folder += "Debug";
+            #else
+            folder += "Release";
+            #endif
+
+            Console.WriteLine("[StereoKit] Using " + folder + " build.");
 
             string location = System.Reflection.Assembly.GetExecutingAssembly().Location;
             string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
             library = LoadLibraryEx(path, IntPtr.Zero, 0);
+
+            if (library == IntPtr.Zero)
+                throw new Exception("Missing StereoKit DLL, should be at " + path);
         }
         public static void UnloadDLL()
         {

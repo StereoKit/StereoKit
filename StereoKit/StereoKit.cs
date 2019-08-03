@@ -13,13 +13,13 @@ namespace StereoKit
     public class StereoKitApp
     {
         #region Imports
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern int sk_init(string app_name, Runtime runtime);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void sk_shutdown();
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern int sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern float sk_timef();
         #endregion
 

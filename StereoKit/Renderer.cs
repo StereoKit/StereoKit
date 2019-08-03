@@ -10,11 +10,11 @@ namespace StereoKit
     public class Renderer
     {
         #region Imports
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void render_add_mesh(IntPtr mesh, IntPtr material, IntPtr transform);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void render_add_model(IntPtr model, IntPtr transform);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void render_set_camera(IntPtr cam, IntPtr cam_transform);
         #endregion
 

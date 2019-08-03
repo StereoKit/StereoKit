@@ -10,11 +10,11 @@ namespace StereoKit
     public class Tex2D
     {
         #region Imports
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_create();
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_create_file(string file);
-        [DllImport(NativeLib.DllName)]
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void tex2d_release(IntPtr tex);
         #endregion
 

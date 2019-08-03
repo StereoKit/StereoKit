@@ -23,13 +23,22 @@ void transform_set_position(transform_t &transform, const vec3 &position) {
 	transform._position = position;
 	transform._dirty    = true;
 }
+vec3 transform_get_position(transform_t &transform) {
+	return transform._position;
+}
 void transform_set_scale(transform_t &transform, const vec3 &scale) {
 	transform._scale = scale;
 	transform._dirty = true;
 }
+vec3 transform_get_scale(transform_t &transform) {
+	return transform._scale;
+}
 void transform_set_rotation  (transform_t &transform, const quat &rotation) {
 	transform._rotation = rotation;
 	transform._dirty    = true;
+}
+quat transform_get_rotation(transform_t &transform) {
+	return transform._rotation;
 }
 vec3 transform_forward  (transform_t &transform) {
 	vec3 forward = { 0,0,-1 };
