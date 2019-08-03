@@ -30,33 +30,42 @@ material_t sk_default_material;
 bool sk_create_defaults();
 void sk_destroy_defaults();
 
-bool32_t sk_init(const char *app_name, sk_runtime_ runtime) {
-	sk_runtime = runtime;
-
+bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
 	// Test to avoid initializing the d3d context twice
 	if (!sk_d3d_initialized) {
 		if (d3d_init()) {
 			sk_d3d_initialized = true;
-		}
-		else {
+		} else {
 			log_write(log_error, "Failed to init d3d!");
+			return false;
+		}
+		if (!sk_create_defaults()) {
+			log_write(log_error, "Failed to create defaults!");
 			return false;
 		}
 	}
 
-	if (!sk_create_defaults())
-	{
-		log_write(log_error, "Failed to create defaults!");
-		return false;
-	}
-	
-	bool result = true;
-	switch (sk_runtime) {
-	case sk_runtime_flatscreen:   result = win32_init (app_name); break;
-	case sk_runtime_mixedreality: result = openxr_init(app_name); break;
-	}
+	// Create a runtime
+	sk_runtime = runtime_preference;
+	bool result = sk_runtime == sk_runtime_mixedreality ? 
+		openxr_init(app_name) :
+		win32_init (app_name);
+
 	if (!result)
+		log_writef(log_warning, "Couldn't create StereoKit in %s mode!", sk_runtime == sk_runtime_mixedreality ? "MixedReality" : "Flatscreen");
+
+	// Try falling back to flatscreen, if we didn't just try it
+	if (!result && fallback && runtime_preference != sk_runtime_flatscreen) {
+		log_writef(log_info, "Runtime falling back to Flatscreen");
+		sk_runtime = sk_runtime_flatscreen;
+		result     = win32_init (app_name);
+	}
+
+	// No runtime, return failure
+	if (!result) {
+		log_write(log_error, "Couldn't create a StereoKit runtime!");
 		return false;
+	}
 
 	render_initialize();
 	input_init();
@@ -117,6 +126,7 @@ float  sk_timef        (){ return sk_timevf; };
 double sk_time         (){ return sk_timev; };
 float  sk_time_elapsedf(){ return sk_timev_elapsedf; };
 double sk_time_elapsed (){ return sk_timev_elapsed; };
+sk_runtime_ sk_active_runtime() { return sk_runtime;  }
 
 bool sk_create_defaults() {
 	sk_default_tex = tex2d_create("default/tex2d");

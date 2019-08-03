@@ -6,15 +6,8 @@ model_t     gltf;
 bool runningInMRMode = false;
 
 int main() {
-	if (sk_init("StereoKit C", sk_runtime_mixedreality)) {
-		runningInMRMode = true;
-	}
-	else if (sk_init("StereoKit C", sk_runtime_flatscreen)) {
-		runningInMRMode = false;
-	}
-	else {
+	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
-	}
 
 	//gltf = model_create_file("Assets/DamagedHelmet.gltf");
 	gltf = model_create_mesh("app/model_cube", 

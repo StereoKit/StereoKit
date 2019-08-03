@@ -34,11 +34,10 @@ extern double  sk_timev_elapsed;
 extern float   sk_timev_elapsedf;
 extern int64_t sk_timev_raw;
 
-extern sk_runtime_ sk_runtime;
 extern bool32_t sk_focused;
 extern bool32_t sk_run;
 
-SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ runtime);
+SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtime, bool32_t fallback = true);
 SK_API void     sk_shutdown  ();
 SK_API bool32_t sk_step      (void (*app_update)(void));
 
@@ -46,6 +45,7 @@ SK_API float  sk_timef();
 SK_API double sk_time();
 SK_API float  sk_time_elapsedf();
 SK_API double sk_time_elapsed();
+SK_API sk_runtime_ sk_active_runtime();
 
 ///////////////////////////////////////////
 
