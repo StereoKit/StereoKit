@@ -27,7 +27,8 @@ namespace StereoKit
             else
                 folder = "Win32_Release";
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), folder, DllName);
+            string location = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
             library = LoadLibraryEx(path, IntPtr.Zero, 0);
         }
         public static void UnloadDLL()

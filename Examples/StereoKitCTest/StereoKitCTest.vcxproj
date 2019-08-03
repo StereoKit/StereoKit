@@ -142,7 +142,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+    <ProjectReference Include="..\..\StereoKitC\StereoKitC.vcxproj">
       <Project>{95b47c8e-3a66-483c-abee-950e6c2f621a}</Project>
     </ProjectReference>
   </ItemGroup>

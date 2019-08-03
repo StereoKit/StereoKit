@@ -5,7 +5,7 @@ class Program
 {
     static void Main(string[] args) 
     {
-        StereoKitApp kit = new StereoKitApp("StereoKit C#", Runtime.MixedReality);
+        StereoKitApp kit = new StereoKitApp("StereoKit C#", Runtime.Flatscreen);
 
         Model     gltf   = new Model("Assets/DamagedHelmet.gltf");
         Transform gltfTr = new Transform(Vec3.Zero, Vec3.One*0.5f);

@@ -17,6 +17,7 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+[Bb]in/
 x64/
 x86/
 bld/
@@ -330,6 +331,4 @@ ASALocalRun/
 .mfractor/
 
 !**/OpenXR/**
-[Bb]in/*
-!/[Bb]in/Assets/
-!/[Bb]in/Assets/*
+!**/Assets/**
