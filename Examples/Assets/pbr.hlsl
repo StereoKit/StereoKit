@@ -44,10 +44,23 @@ SamplerState tex_e_sampler;
 Texture2D tex_metal : register(t2);
 SamplerState tex_metal_sampler;
 
-float DistributionGGX(float3 normal, float3 half_vec, float roughness);
+// [texture] normal
+Texture2D tex_normal : register(t3);
+SamplerState tex_normal_sampler;
+
+// [texture] occlusion
+Texture2D tex_occ : register(t4);
+SamplerState tex_occ_sampler;
+
+float3 sRGBToLinear(float3 sRGB);
+float3 LinearTosRGB(float3 lin);
+
+float3x3 CotangentFrame(float3 N, float3 p, float2 uv);
+
+float DistributionGGX   (float3 normal, float3 half_vec, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
-float GeometrySmith(float NdotL, float NdotV, float roughness);
-float3 FresnelSchlick(float NdotV, float3 surfaceColor, float metalness);
+float GeometrySmith     (float NdotL, float NdotV, float roughness);
+float3 FresnelSchlick   (float NdotV, float3 surfaceColor, float metalness);
 
 psIn vs(vsIn input) {
 	psIn output;
@@ -61,17 +74,21 @@ psIn vs(vsIn input) {
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	float3 albedo      = tex         .Sample(tex_sampler,       input.uv).rgb;
-	float3 emissive    = tex_emission.Sample(tex_e_sampler,     input.uv).rgb;
-	float4 metal_rough = tex_metal   .Sample(tex_metal_sampler, input.uv); // b is metallic, rough is g
+	float3 albedo      = sRGBToLinear(tex         .Sample(tex_sampler,       input.uv).rgb);
+	float3 emissive    = sRGBToLinear(tex_emission.Sample(tex_e_sampler,     input.uv).rgb);
+	float3 metal_rough = sRGBToLinear(tex_metal   .Sample(tex_metal_sampler, input.uv).rgb); // b is metallic, rough is g
+    float3 tex_norm    = (tex_normal  .Sample(tex_normal_sampler,input.uv).xyz)*2-1;
+    //float  occlusion   = (tex_occ     .Sample(tex_occ_sampler,input.uv).r);
 
 	float metal = metal_rough.b * metallic;
 	float rough = max(metal_rough.g * roughness, 0.001);
 
     float3 normal   = normalize(input.normal);
+    float3 view     = normalize(sk_camera_pos.xyz - input.world);
+    tex_norm        = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
+    normal          = normalize(tex_norm);
     float3 light    = -normalize(sk_light.xyz);
     float3 half_vec = normalize(light + normal);
-    float3 view     = normalize(sk_camera_pos.xyz - input.world);
     float  NdotL    = (dot(normal,light));
     float  NdotV    = (dot(normal,view));
 
@@ -79,20 +96,6 @@ float4 ps(psIn input) : SV_TARGET {
     // a diffuse reflection, and a specular reflection. These reflections
     // are approximated using functions called BRDFs (Bidirectional Reflectance
     // Distribuition Function).
-    
-    // For the diffuse BRDF, we'll use Lambert's, since it's simple, effective,
-    // and research has said you can't do much better for cheap!
-    // https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
-    //
-    // L = c_diffuse/PI * c_light(n*l)
-    //
-    // Where:
-    // c_diffuse is the diffuse color
-    // c_light is the color of the light
-    // n is the surface normal
-    // l is the vector from the surface to the light position (light direction)
-    
-    float3 diffuse = (albedo/3.14159) * sk_light_color.rgb*saturate(NdotL);
 
     // This formula is a common format for the specular BRDF,
     // Unreal calls this a 'generalized microfacet model', as different functions
@@ -111,26 +114,67 @@ float4 ps(psIn input) : SV_TARGET {
     // l is the vector from the surface to the light position (light direction)
     // v is view direction, or direction from the surface to the camera
     // h is the half vector, h = normalize(l + v)
+    float  D = DistributionGGX(normal, half_vec, rough);
+    float3 F = FresnelSchlick (NdotV, albedo, metal);
+    float  G = GeometrySmith  (max(NdotL, 0), max(NdotV, 0), rough);
     float3 specular = 
-        (DistributionGGX(normal, half_vec, rough) * 
-         FresnelSchlick (NdotV, albedo, metal) * 
-         GeometrySmith  (max(NdotL, 0), max(NdotV, 0), rough)) 
-         //GeometrySchlickGGX(max(NdotV, 0), rough))
-
-        /
-
+        (D * G * F) 
+            /
         (4 * NdotL * NdotV);
 
-    //float3 result = 0;
-    //result = specular;
-    //result = GeometrySchlickGGX(NdotV, rough);
-    //result = DistributionGGX(normal, half_vec, rough);
-    //result = FresnelSchlick(NdotV, albedo, metal);
-    //result = metal;
-    //return float4(result, _color.a);
-	return float4(diffuse + emissive + specular, _color.a); 
+    // For the diffuse BRDF, we'll use Lambert's, since it's simple, effective,
+    // and research has said you can't do much better for cheap!
+    // https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
+    //
+    // L = c_diffuse/PI * c_light(n*l)
+    //
+    // Where:
+    // c_diffuse is the diffuse color
+    // c_light is the color of the light
+    // n is the surface normal
+    // l is the vector from the surface to the light position (light direction)
+
+    // Find the diffuse contribution to the reflectance, this is based on the Fresnel
+    float3 specular_contribution = F;
+    float3 diffuse_contribution  = 1-specular_contribution;
+    diffuse_contribution *= 1 - metal;
+
+    // Combine it all together
+    float3 reflectance = (diffuse_contribution * albedo/3.14159 + specular) * sk_light_color.rgb * saturate(NdotL);
+	return float4(LinearTosRGB( reflectance + emissive ), _color.a); 
 }
 
+// From: http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+float3 sRGBToLinear(float3 sRGB) {
+    return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+}
+float3 LinearTosRGB(float3 lin) {
+    float3 S1 = sqrt(lin);
+    float3 S2 = sqrt(S1);
+    float3 S3 = sqrt(S2);
+    return 0.585122381 * S1 + 0.783140355 * S2 - 0.368262736 * S3;
+}
+
+// http://www.thetenthplanet.de/archives/1180
+// For creating normals without a precalculated tangent
+float3x3 CotangentFrame(float3 N, float3 p, float2 uv)
+{
+    // get edge vectors of the pixel triangle
+    float3 dp1 = ddx( p );
+    float3 dp2 = ddy( p );
+    float2 duv1 = ddx( uv );
+    float2 duv2 = ddy( uv );
+ 
+    // solve the linear system
+    float3 dp2perp = cross( dp2, N );
+    float3 dp1perp = cross( N, dp1 );
+    float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+    // construct a scale-invariant frame 
+    float invmax = rsqrt( max( dot(T,T), dot(B,B) ) );
+    return float3x3( T * invmax, B * invmax, N );
+}
 
 // https://learnopengl.com/PBR/Theory
 // This is a normal distribution function called, Trowbridge-Reitz GGX

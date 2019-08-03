@@ -18,12 +18,18 @@ model_t model_create(const char *id) {
 	model_t result = (_model_t*)assets_allocate(asset_type_model, id);
 	return result;
 }
-model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
+model_t model_find(const char *id) {
 	model_t result = (model_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
 	}
+	return nullptr;
+}
+model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
+	model_t result = model_find(id);
+	if (result != nullptr)
+		return result;
 	result = model_create(id);
 
 	result->subset_count = 1;
@@ -38,11 +44,9 @@ model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
 	return result;
 }
 model_t model_create_file(const char *filename) {
-	model_t result = (model_t)assets_find(filename);
-	if (result != nullptr) {
-		assets_addref(result->header);
+	model_t result = model_find(filename);
+	if (result != nullptr)
 		return result;
-	}
 	result = model_create(filename);
 
 	if        (modelfmt_gltf(result, filename)) {

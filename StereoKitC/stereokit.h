@@ -128,7 +128,8 @@ struct vert_t {
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_create   (const char *name);
+SK_API mesh_t mesh_find     (const char *id);
+SK_API mesh_t mesh_create   (const char *id);
 SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int32_t vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count);
@@ -139,7 +140,8 @@ SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int32_t subdivisions);
 
 SK_DeclarePrivateType(tex2d_t);
 
-SK_API tex2d_t tex2d_create     (const char *name);
+SK_API tex2d_t tex2d_find       (const char *id);
+SK_API tex2d_t tex2d_create     (const char *id);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, uint8_t *data_rgba32);
@@ -148,7 +150,8 @@ SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height,
 
 SK_DeclarePrivateType(shader_t);
 
-SK_API shader_t shader_create     (const char *name, const char *hlsl);
+SK_API shader_t shader_find       (const char *id);
+SK_API shader_t shader_create     (const char *id, const char *hlsl);
 SK_API shader_t shader_create_file(const char *filename);
 SK_API void     shader_release    (shader_t shader);
 
@@ -156,7 +159,8 @@ SK_API void     shader_release    (shader_t shader);
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_create (const char *name, shader_t shader);
+SK_API material_t material_find   (const char *id);
+SK_API material_t material_create (const char *id, shader_t shader);
 SK_API void       material_release(material_t material);
 SK_API void       material_set_float  (material_t material, const char *name, float    value);
 SK_API void       material_set_color32(material_t material, const char *name, color32  value);
@@ -193,6 +197,7 @@ SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
 SK_DeclarePrivateType(model_t);
 
+SK_API model_t model_find       (const char *id);
 SK_API model_t model_create_mesh(const char *id, mesh_t mesh, material_t material);
 SK_API model_t model_create_file(const char *filename);
 SK_API void    model_release    (model_t model);
@@ -276,6 +281,8 @@ struct hand_t {
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
+SK_API void          input_hand_visible (handed_ hand, int visible);
+SK_API void          input_hand_material(handed_ hand, material_t material);
 
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
 SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));

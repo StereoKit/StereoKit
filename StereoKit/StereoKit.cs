@@ -23,14 +23,9 @@ namespace StereoKit
         static extern float sk_timef();
         #endregion
 
-        public StereoKitApp(string name, Runtime runtime)
+        public StereoKitApp()
         {
             NativeLib.LoadDll();
-            Init(name, runtime);
-        }
-        void Init(string name, Runtime runtime)
-        {
-            sk_init(name, runtime);
         }
         ~StereoKitApp()
         {
@@ -39,9 +34,14 @@ namespace StereoKit
             NativeLib.UnloadDLL();
         }
 
+        public bool Initialize(string name, Runtime runtime)
+        {
+            return sk_init(name, runtime) > 0;
+        }
+
         public bool Step(Action onStep)
         {
-            return sk_step(onStep)>0;
+            return sk_step(onStep) > 0;
         }
 
         public static float Time { get { return sk_timef(); } }

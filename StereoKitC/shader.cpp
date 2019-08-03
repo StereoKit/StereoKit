@@ -114,12 +114,19 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 	}
 }
 
-shader_t shader_create_file(const char *filename) {
-	shader_t result = (shader_t)assets_find(filename);
+shader_t shader_find(const char *id) {
+	shader_t result = (shader_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
 	}
+	return nullptr;
+}
+
+shader_t shader_create_file(const char *filename) {
+	shader_t result = shader_find(filename);
+	if (result != nullptr)
+		return result;
 
 	// Open file
 	FILE *fp;
@@ -145,8 +152,12 @@ shader_t shader_create_file(const char *filename) {
 	return result;
 }
 
-shader_t shader_create(const char *name, const char *hlsl) {
-	shader_t  result            = (shader_t)assets_allocate(asset_type_shader, name);
+shader_t shader_create(const char *id, const char *hlsl) {
+	shader_t result = shader_find(id);
+	if (result != nullptr)
+		return result;
+	result = (shader_t)assets_allocate(asset_type_shader, id);
+
 	shader_parse_file(result, hlsl);
 	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
 	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");

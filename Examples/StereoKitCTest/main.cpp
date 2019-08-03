@@ -3,13 +3,23 @@
 transform_t gltf_tr;
 model_t     gltf;
 
+bool runningInMRMode = false;
+
 int main() {
-	sk_init("StereoKit C", sk_runtime_flatscreen);
-	
-	gltf = model_create_file("Assets/DamagedHelmet.gltf");
-	/*gltf = model_create_mesh("app/model_cube", 
-		mesh_gen_cube  ("app/mesh_cube", { .1f,.1f,.1f }, 0), 
-		material_create("default/material", nullptr));*/
+	if (sk_init("StereoKit C", sk_runtime_mixedreality)) {
+		runningInMRMode = true;
+	}
+	else if (sk_init("StereoKit C", sk_runtime_flatscreen)) {
+		runningInMRMode = false;
+	}
+	else {
+		return 1;
+	}
+
+	//gltf = model_create_file("Assets/DamagedHelmet.gltf");
+	gltf = model_create_mesh("app/model_cube", 
+		mesh_gen_cube("app/mesh_cube", { .1f,.1f,.1f }, 0), 
+		material_find("default/material"));
 	transform_set(gltf_tr, { 0,0,0 }, { 1,1,1 }, { 0,0,0,1 });
 
 	while (sk_step( []() {

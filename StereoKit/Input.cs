@@ -100,6 +100,10 @@ namespace StereoKit
         static extern void input_unsubscribe(InputSource source, InputState evt, EventCallback event_callback);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void input_fire_event(InputSource source, InputState evt, IntPtr pointer);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void input_hand_visible(Handed hand, int visible);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void input_hand_material(Handed hand, IntPtr material);
         #endregion
 
         struct EventListener
@@ -123,6 +127,14 @@ namespace StereoKit
         public static Hand Hand(Handed handed)
         {
             return Marshal.PtrToStructure<Hand>(input_hand(handed));
+        }
+        public static void HandVisible(Handed hand, bool visible)
+        {
+            input_hand_visible(hand, visible?1:0);
+        }
+        public static void HandMaterial(Handed hand, Material material)
+        {
+            input_hand_material(hand, material._materialInst);
         }
 
         static void Initialize()

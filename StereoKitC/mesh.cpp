@@ -45,8 +45,16 @@ void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 	}
 }
 
-mesh_t mesh_create(const char *name) {
-	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh, name);
+mesh_t mesh_find(const char *id) {
+	mesh_t result = (mesh_t)assets_find(id);
+	if (result != nullptr) {
+		assets_addref(result->header);
+		return result;
+	}
+	return nullptr;
+}
+mesh_t mesh_create(const char *id) {
+	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh, id);
 	return result;
 }
 

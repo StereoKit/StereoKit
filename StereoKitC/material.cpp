@@ -3,14 +3,20 @@
 
 #include <stdio.h>
 
-material_t material_create(const char *name, shader_t shader) {
-	material_t result = (material_t)assets_find(name);
+material_t material_find(const char *id) {
+	material_t result = (material_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
 	}
+	return result;
+}
+material_t material_create(const char *id, shader_t shader) {
+	material_t result = material_find(id);
+	if (result != nullptr)
+		return result;
 
-	result = (material_t)assets_allocate(asset_type_material, name);
+	result = (material_t)assets_allocate(asset_type_material, id);
 	assets_addref(shader->header);
 	result->shader  = shader;
 	result->args.buffer   = malloc(shader->args.buffer_size);

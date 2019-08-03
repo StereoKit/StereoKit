@@ -11,6 +11,8 @@ namespace StereoKit
     {
         #region Imports
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr shader_find(string id);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr shader_create(string hlsl);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr shader_create_file(string file);
@@ -21,6 +23,12 @@ namespace StereoKit
         internal IntPtr _shaderInst;
         private Shader()
         {
+        }
+        private Shader(IntPtr shader)
+        {
+            _shaderInst = shader;
+            if (_shaderInst == IntPtr.Zero)
+                Console.WriteLine("Received an empty shader!");
         }
         public Shader(string file)
         {
@@ -39,6 +47,11 @@ namespace StereoKit
             Shader result = new Shader();
             result._shaderInst = shader_create(hlsl);
             return result;
+        }
+        public static Shader Find(string id)
+        {
+            IntPtr shader = shader_find(id);
+            return shader == IntPtr.Zero ? null : new Shader(shader);
         }
     }
 }
