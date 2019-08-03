@@ -3,24 +3,11 @@ using StereoKit;
 
 class Program 
 {
-    static bool runningInMRMode = true;
-
     static void Main(string[] args) 
     {
-        StereoKitApp kit = new StereoKitApp();
-        if (kit.Initialize("StereoKit C#", Runtime.MixedReality))
+        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
         {
-            Console.WriteLine("Created xr_session, runnning in MixedReality mode!");
-            runningInMRMode = true;
-        }
-        else if (kit.Initialize("StereoKit C#", Runtime.Flatscreen))
-        {
-            Console.WriteLine("Can't create xr_session, running in Flatscreen mode instead!");
-            runningInMRMode = false;
-        }
-        else
-        {
-            Console.WriteLine("Can't create xr_session nor a desktop window instance!");
+            Console.WriteLine("Couldn't initialize StereoKit!");
             Environment.Exit(1);
         }
 
@@ -31,7 +18,7 @@ class Program
             Console.WriteLine("{0} - {1} - {2}", src, st, p.ray.position);
         });
 
-        while (kit.Step(() => {
+        while (StereoKitApp.Step(() => {
             Vec3 lookat = new Vec3((float)Math.Cos(StereoKitApp.Time) * 0.5f, 0, (float)Math.Sin(StereoKitApp.Time) * 0.5f);
             
             Hand hand = Input.Hand(Handed.Right);
@@ -41,5 +28,7 @@ class Program
             gltfTr.LookAt(-lookat);
             Renderer.Add(gltf, gltfTr);
         }));
+
+        StereoKitApp.Shutdown();
     }
 }

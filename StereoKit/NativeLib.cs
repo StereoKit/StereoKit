@@ -17,6 +17,9 @@ namespace StereoKit
 
         internal static void LoadDll()
         {
+            if (library != IntPtr.Zero)
+                return;
+
             string folder = Environment.Is64BitProcess ?
                 "x64_" :
                 "Win32_";
