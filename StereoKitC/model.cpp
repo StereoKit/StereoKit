@@ -4,8 +4,10 @@
 #include "mesh.h"
 #include "material.h"
 
+#pragma warning( disable : 26451 )
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
+#pragma warning( default: 26451 )
 
 #include <vector>
 #include <map>

@@ -3,8 +3,10 @@
 
 #include "d3d.h"
 
+#pragma warning( disable : 26451 )
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#pragma warning( default : 26451 )
 
 tex2d_t tex2d_create(const char *id) {
 	return (tex2d_t)assets_allocate(asset_type_texture, id);
