@@ -14,11 +14,11 @@ namespace StereoKit
     {
         #region Imports
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
-        static extern bool sk_init(string app_name, Runtime runtime);
+        static extern int sk_init(string app_name, Runtime runtime);
         [DllImport(NativeLib.DllName)]
         static extern void sk_shutdown();
         [DllImport(NativeLib.DllName)]
-        static extern bool sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
+        static extern int sk_step([MarshalAs(UnmanagedType.FunctionPtr)]Action app_update);
         [DllImport(NativeLib.DllName)]
         static extern float sk_timef();
         #endregion
@@ -41,7 +41,7 @@ namespace StereoKit
 
         public bool Step(Action onStep)
         {
-            return sk_step(onStep);
+            return sk_step(onStep)>0;
         }
 
         public static float Time { get { return sk_timef(); } }

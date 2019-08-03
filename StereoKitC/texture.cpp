@@ -63,7 +63,7 @@ void tex2d_destroy(tex2d_t tex) {
 	*tex = {};
 }
 
-void tex2d_set_colors(tex2d_t texture, int width, int height, uint8_t *data_rgba32) {
+void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *data_rgba32) {
 	if (texture->width != width || texture->height != height || (texture->resource != nullptr && texture->can_write == false)) {
 		if (texture->resource != nullptr) {
 			texture->resource->Release();

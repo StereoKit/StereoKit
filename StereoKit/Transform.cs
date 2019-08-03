@@ -10,7 +10,7 @@ namespace StereoKit
         Vec3 _scale;
         Quat _rotation;
 
-        bool _dirty;
+        int _dirty;
         Matrix _transform;
     }
 

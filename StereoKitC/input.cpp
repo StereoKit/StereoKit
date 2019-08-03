@@ -30,7 +30,7 @@ int input_pointer_count(input_source_ filter) {
 	}
 	return result;
 }
-pointer_t input_pointer(int index, input_source_ filter) {
+pointer_t input_pointer(int32_t index, input_source_ filter) {
 	int curr = 0;
 	for (size_t i = 0; i < input_pointers.size(); i++) {
 		if (input_pointers[i].source & filter) {

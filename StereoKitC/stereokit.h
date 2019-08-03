@@ -19,6 +19,8 @@ inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~s
 #include <stdint.h>
 #include <DirectXMath.h>
 
+typedef int32_t bool32_t;
+
 ///////////////////////////////////////////
 
 enum sk_runtime_ {
@@ -26,19 +28,19 @@ enum sk_runtime_ {
 	sk_runtime_mixedreality = 1
 };
 
-extern float  sk_timevf;
-extern double sk_timev;
-extern double sk_timev_elapsed;
-extern float  sk_timev_elapsedf;
-extern long long sk_timev_raw;
+extern float   sk_timevf;
+extern double  sk_timev;
+extern double  sk_timev_elapsed;
+extern float   sk_timev_elapsedf;
+extern int64_t sk_timev_raw;
 
 extern sk_runtime_ sk_runtime;
-extern bool sk_focused;
-extern bool sk_run;
+extern bool32_t sk_focused;
+extern bool32_t sk_run;
 
-SK_API bool sk_init      (const char *app_name, sk_runtime_ runtime);
-SK_API void sk_shutdown  ();
-SK_API bool sk_step      (void (*app_update)(void));
+SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ runtime);
+SK_API void     sk_shutdown  ();
+SK_API bool32_t sk_step      (void (*app_update)(void));
 
 SK_API float  sk_timef();
 SK_API double sk_time();
@@ -128,10 +130,10 @@ SK_DeclarePrivateType(mesh_t);
 
 SK_API mesh_t mesh_create   (const char *name);
 SK_API void   mesh_release  (mesh_t mesh);
-SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int vertex_count);
-SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int index_count);
+SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int32_t vertex_count);
+SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count);
 
-SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int subdivisions);
+SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int32_t subdivisions);
 
 ///////////////////////////////////////////
 
@@ -140,7 +142,7 @@ SK_DeclarePrivateType(tex2d_t);
 SK_API tex2d_t tex2d_create     (const char *name);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t texture);
-SK_API void    tex2d_set_colors (tex2d_t texture, int width, int height, uint8_t *data_rgba32);
+SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, uint8_t *data_rgba32);
 
 ///////////////////////////////////////////
 
@@ -170,7 +172,7 @@ struct transform_t {
 	vec3 _scale;
 	quat _rotation;
 
-	bool _dirty;
+	bool32_t _dirty;
 	DirectX::XMMATRIX _transform;
 };
 
@@ -269,7 +271,7 @@ struct hand_t {
 };
 
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
-SK_API pointer_t     input_pointer      (int index, input_source_ filter = input_source_any);
+SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
 
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
