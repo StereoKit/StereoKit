@@ -1,6 +1,7 @@
 #include "rendertarget.h"
 
 #include "d3d.h"
+#include "texture.h"
 
 void rendertarget_release(rendertarget_t &target) {
 	if (target.shader_view != nullptr) target.shader_view->Release();
@@ -81,4 +82,18 @@ void rendertarget_clear(rendertarget_t &target, const float *color) {
 }
 void rendertarget_set_active(rendertarget_t &target) {
 	d3d_context->OMSetRenderTargets(1, &target.target_view, target.depth_view);
+}
+
+void rendertarget_clear(tex2d_t &target, const float *color) {
+	if (target->target_view != nullptr)
+		d3d_context->ClearRenderTargetView (target->target_view, color);
+
+	if (target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr)
+		d3d_context->ClearDepthStencilView (target->depth_buffer->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+void rendertarget_set_active(tex2d_t &target) {
+	bool                    has_depth  = target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr;
+	ID3D11DepthStencilView *depth_view = has_depth ? target->depth_buffer->depth_view : nullptr;
+
+	d3d_context->OMSetRenderTargets(1, &target->target_view, depth_view);
 }
