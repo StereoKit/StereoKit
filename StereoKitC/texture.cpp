@@ -69,7 +69,7 @@ void tex2d_destroy(tex2d_t tex) {
 	*tex = {};
 }
 
-void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *data_rgba32) {
+void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data, tex_format_ data_format) {
 	if (texture->width != width || texture->height != height || (texture->resource != nullptr && texture->can_write == false)) {
 		if (texture->resource != nullptr) {
 			texture->resource->Release();
@@ -82,16 +82,16 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *d
 		desc.MipLevels        = 1;
 		desc.ArraySize        = 1;
 		desc.SampleDesc.Count = 1;
-		desc.Format           = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Format           = tex2d_get_native_format(data_format);
 		desc.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 		desc.Usage            = texture->can_write ? D3D11_USAGE_DYNAMIC    : D3D11_USAGE_DEFAULT;
 		desc.CPUAccessFlags   = texture->can_write ? D3D11_CPU_ACCESS_WRITE : 0;
 
-		D3D11_SUBRESOURCE_DATA data;
-		data.pSysMem     = data_rgba32;
-		data.SysMemPitch = sizeof(uint8_t) * 4 * width;
+		D3D11_SUBRESOURCE_DATA tex_mem;
+		tex_mem.pSysMem     = data;
+		tex_mem.SysMemPitch = tex2d_format_size(data_format) * width;
 
-		if (FAILED(d3d_device->CreateTexture2D(&desc, &data, &texture->texture))) {
+		if (FAILED(d3d_device->CreateTexture2D(&desc, &tex_mem, &texture->texture))) {
 			log_write(log_error, "Create texture error!");
 			return;
 		}
@@ -109,18 +109,19 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, uint8_t *d
 	texture->width  = width;
 	texture->height = height;
 
-	D3D11_MAPPED_SUBRESOURCE data = {};
-	if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &data))) {
+	D3D11_MAPPED_SUBRESOURCE tex_mem = {};
+	if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &tex_mem))) {
 		log_write(log_error, "Failed mapping a texture");
 		return;
 	}
 
-	uint8_t *dest_line = (uint8_t*)data.pData;
-	uint8_t *src_line  = data_rgba32;
+	size_t   color_size = tex2d_format_size(data_format);
+	uint8_t *dest_line  = (uint8_t*)tex_mem.pData;
+	uint8_t *src_line   = (uint8_t*)data;
 	for (int i = 0; i < height; i++) {
-		memcpy(dest_line, src_line, (size_t)width*sizeof(uint8_t)*4);
-		dest_line += data.RowPitch;
-		src_line  += width * sizeof(uint8_t) * 4;
+		memcpy(dest_line, src_line, (size_t)width*color_size);
+		dest_line += tex_mem.RowPitch;
+		src_line  += width * color_size;
 	}
 	d3d_context->Unmap(texture->texture, 0);
 }
@@ -130,4 +131,22 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
 	else
 		d3d_context->PSSetShaderResources(slot, 0, nullptr);
+}
+
+DXGI_FORMAT tex2d_get_native_format(tex_format_ format) {
+	switch (format) {
+	case tex_format_rgba32:  return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case tex_format_rgba64:  return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case tex_format_rgba128: return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	default: return DXGI_FORMAT_R8G8B8A8_UNORM;
+	}
+}
+
+size_t tex2d_format_size(tex_format_ format) {
+	switch (format) {
+	case tex_format_rgba32:  return sizeof(color32);
+	case tex_format_rgba64:  return sizeof(uint16_t)*4;
+	case tex_format_rgba128: return sizeof(color128);
+	default: return sizeof(color32);
+	}
 }

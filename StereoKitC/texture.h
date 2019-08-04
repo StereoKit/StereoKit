@@ -14,6 +14,8 @@ struct _tex2d_t {
 	ID3D11Texture2D          *texture;
 };
 
-tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size);
-void    tex2d_set_active(tex2d_t texture, int slot);
-void    tex2d_destroy   (tex2d_t texture);
+tex2d_t     tex2d_create_mem(const char *id, void *data, size_t data_size);
+void        tex2d_set_active(tex2d_t texture, int slot);
+void        tex2d_destroy   (tex2d_t texture);
+DXGI_FORMAT tex2d_get_native_format(tex_format_ format);
+size_t      tex2d_format_size      (tex_format_ format);

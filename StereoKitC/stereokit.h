@@ -138,13 +138,19 @@ SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int32_t subdivisions);
 
 ///////////////////////////////////////////
 
+enum tex_format_ {
+	tex_format_rgba32 = 0,
+	tex_format_rgba64,
+	tex_format_rgba128,
+};
+
 SK_DeclarePrivateType(tex2d_t);
 
 SK_API tex2d_t tex2d_find       (const char *id);
 SK_API tex2d_t tex2d_create     (const char *id);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t texture);
-SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, uint8_t *data_rgba32);
+SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data, tex_format_ data_format = tex_format_rgba32);
 
 ///////////////////////////////////////////
 
