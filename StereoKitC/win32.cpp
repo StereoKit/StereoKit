@@ -18,7 +18,7 @@ IDXGISwapChain1 *win32_swapchain = {};
 float            win32_scroll    = 0;
 
 void win32_resize(int width, int height) {
-	if (width == d3d_screen_width || height == d3d_screen_height)
+	if (width == d3d_screen_width && height == d3d_screen_height)
 		return;
 	d3d_screen_width  = width;
 	d3d_screen_height = height;
