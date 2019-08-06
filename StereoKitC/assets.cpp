@@ -29,6 +29,7 @@ void assets_unique_name(const char *root_name, char *dest, int dest_size) {
 	while (assets_find(dest) != nullptr) {
 		sprintf_s(dest, dest_size, "%s%d", root_name, count);
 		id = string_hash(dest);
+		count += 1;
 	}
 }
 

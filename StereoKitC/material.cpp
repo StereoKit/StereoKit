@@ -84,7 +84,8 @@ void material_set_texture(material_t material, const char *name, tex2d_t value) 
 				if (material->args.textures[slot] != nullptr)
 					tex2d_release(material->args.textures[slot]);
 				material->args.textures[slot] = value;
-				assets_addref(value->header);
+				if (value != nullptr)
+					assets_addref(value->header);
 			}
 			return;
 		}

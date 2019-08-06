@@ -4,7 +4,7 @@
 #include "openxr.h"
 
 #include "d3d.h"
-#include "rendertarget.h"
+#include "texture.h"
 #include "stereokit.h"
 #include "render.h"
 #include "input.h"
@@ -20,16 +20,12 @@
 
 using namespace std;
 
-struct swapchain_surfdata_t {
-	ID3D11DepthStencilView *depth_view;
-	ID3D11RenderTargetView *target_view;
-};
 struct swapchain_t {
 	XrSwapchain handle;
 	int32_t     width;
 	int32_t     height;
 	vector<XrSwapchainImageD3D11KHR> surface_images;
-	vector<rendertarget_t>           surface_data;
+	vector<tex2d_t>                  surface_data;
 };
 struct xr_input_t {
 	XrActionSet action_set;
@@ -160,9 +156,12 @@ bool openxr_init(const char *app_name) {
 		swapchain.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
 		swapchain.surface_data  .resize(surface_count, {});
 		xrEnumerateSwapchainImages(swapchain.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)swapchain.surface_images.data());
-		for (uint32_t i = 0; i < surface_count; i++) {
-			rendertarget_set_surface     (swapchain.surface_data[i], swapchain.surface_images[i].texture, DXGI_FORMAT_R8G8B8A8_UNORM);
-			rendertarget_make_depthbuffer(swapchain.surface_data[i]);
+		for (uint32_t s = 0; s < surface_count; s++) {
+			char name[64];
+			sprintf_s(name, 64, "stereokit/system/rendertarget_%d_%d", i, s);
+			swapchain.surface_data[s] = tex2d_create(name, tex_type_rendertarget, tex_format_rgba32);
+			tex2d_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
+			tex2d_add_zbuffer(swapchain.surface_data[s]);
 		}
 		xr_swapchains.push_back(swapchain);
 	}
@@ -177,7 +176,7 @@ void openxr_shutdown() {
 	// give it a chance to release anythig here!
 	for (size_t i = 0; i < xr_swapchains.size(); i++) {
 	for (size_t s = 0; s < xr_swapchains[i].surface_data.size(); s++) {
-		rendertarget_release(xr_swapchains[i].surface_data[s]);
+		tex2d_release(xr_swapchains[i].surface_data[s]);
 	} }
 	xr_swapchains.clear();
 }
@@ -324,10 +323,9 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		views[i].subImage.imageRect.extent = { xr_swapchains[i].width, xr_swapchains[i].height };
 
 		// Call the rendering callback with our view and swapchain info
-		rendertarget_t &target = xr_swapchains[i].surface_data[img_id];
-		float clear[] = { 0, 0, 0, 1 };
-		rendertarget_clear(target, clear);
-		rendertarget_set_active(target);
+		tex2d_t target = xr_swapchains[i].surface_data[img_id];
+		tex2d_rtarget_clear(target, {0,0,0,0});
+		tex2d_rtarget_set_active(target);
 		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(views[i].subImage.imageRect.offset.x, views[i].subImage.imageRect.offset.y, views[i].subImage.imageRect.extent.width, views[i].subImage.imageRect.extent.height);
 		d3d_context->RSSetViewports(1, &viewport);
 
