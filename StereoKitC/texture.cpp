@@ -23,6 +23,9 @@ void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 	char id[64];
 	assets_unique_name("zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex2d_create(id, tex_type_depth, format);
+	if (texture->texture != nullptr) {
+		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
+	}
 }
 tex2d_t tex2d_find(const char *id) {
 	tex2d_t result = (tex2d_t)assets_find(id);
@@ -77,23 +80,27 @@ void tex2d_release(tex2d_t texture) {
 	assets_releaseref(texture->header);
 }
 void tex2d_destroy(tex2d_t tex) {
-	if (tex->resource     != nullptr) tex->resource   ->Release();
-	if (tex->target_view  != nullptr) tex->target_view->Release();
-	if (tex->texture      != nullptr) tex->texture    ->Release();
-	if (tex->depth_view   != nullptr) tex->depth_view ->Release();
+	tex2d_releasesurface(tex);
 	if (tex->depth_buffer != nullptr) tex2d_release(tex->depth_buffer);
 	
 	*tex = {};
+}
+void tex2d_releasesurface(tex2d_t tex) {
+	if (tex->resource    != nullptr) tex->resource   ->Release();
+	if (tex->target_view != nullptr) tex->target_view->Release();
+	if (tex->texture     != nullptr) tex->texture    ->Release();
+	if (tex->depth_view  != nullptr) tex->depth_view ->Release();
+	tex->resource    = nullptr;
+	tex->target_view = nullptr;
+	tex->texture     = nullptr;
+	tex->depth_view  = nullptr;
 }
 
 void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height;
-	if (texture->texture == nullptr || (dynamic && different_size)) {
-		if (texture->resource    != nullptr) texture->resource   ->Release();
-		if (texture->target_view != nullptr) texture->target_view->Release();
-		if (texture->texture     != nullptr) texture->texture    ->Release();
-		if (texture->depth_view  != nullptr) texture->depth_view ->Release();
+	if (texture->texture == nullptr || different_size) {
+		tex2d_releasesurface(texture);
 		
 		texture->width  = width;
 		texture->height = height;
@@ -159,6 +166,24 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 	return true;
 }
 
+void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
+	tex2d_releasesurface(texture);
+	texture->texture = source;
+
+	int old_width  = texture->width;
+	int old_height = texture->height;
+	D3D11_TEXTURE2D_DESC color_desc;
+	texture->texture->GetDesc(&color_desc);
+	texture->width  = color_desc.Width;
+	texture->height = color_desc.Height;
+
+	bool created_views      = tex2d_create_views(texture);
+	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
+	if (created_views && resolution_changed && texture->depth_buffer != nullptr) {
+		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
+	}
+}
+
 bool tex2d_create_views(tex2d_t texture) {
 	DXGI_FORMAT format = tex2d_get_native_format(texture->format);
 
@@ -218,4 +243,27 @@ size_t tex2d_format_size(tex_format_ format) {
 	case tex_format_depth16: return sizeof(uint16_t);
 	default: return sizeof(color32);
 	}
+}
+
+void rendertarget_clear(tex2d_t target, const float *color) {
+	assert(target->type & tex_type_rendertarget);
+
+	if (target->target_view != nullptr)
+		d3d_context->ClearRenderTargetView (target->target_view, color);
+
+	if (target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr)
+		d3d_context->ClearDepthStencilView (target->depth_buffer->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+void rendertarget_set_active(tex2d_t target) {
+	if (target == nullptr) {
+		d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
+		return;
+	}
+
+	assert(target->type & tex_type_rendertarget);
+
+	bool                    has_depth  = target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr;
+	ID3D11DepthStencilView *depth_view = has_depth ? target->depth_buffer->depth_view : nullptr;
+
+	d3d_context->OMSetRenderTargets(1, &target->target_view, depth_view);
 }

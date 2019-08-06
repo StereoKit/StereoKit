@@ -21,6 +21,3 @@ void rendertarget_set_surface     (rendertarget_t &target, ID3D11Texture2D *surf
 void rendertarget_clear           (rendertarget_t &target, const float *color);
 void rendertarget_set_active      (rendertarget_t &target);
 void rendertarget_make_depthbuffer(rendertarget_t &target);
-
-void rendertarget_clear           (tex2d_t &target, const float *color);
-void rendertarget_set_active      (tex2d_t &target);

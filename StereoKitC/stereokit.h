@@ -165,6 +165,9 @@ SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
 SK_API void    tex2d_add_zbuffer(tex2d_t texture, tex_format_ format = tex_format_depthstencil);
 
+SK_API void rendertarget_clear           (tex2d_t target, const float *color);
+SK_API void rendertarget_set_active      (tex2d_t target);
+
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(shader_t);
