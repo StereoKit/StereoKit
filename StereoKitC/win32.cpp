@@ -8,7 +8,6 @@
 
 #include "texture.h"
 #include "render.h"
-#include "rendertarget.h"
 #include "d3d.h"
 #include "input.h"
 #include "win32_input.h"
@@ -107,8 +106,8 @@ void win32_step_end() {
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	float clear[] = { .4f, .4f, .45f, 1 };
-	rendertarget_clear(win32_target, clear);
-	rendertarget_set_active(win32_target);
+	tex2d_rtarget_clear(win32_target, {100,100,150,255});
+	tex2d_rtarget_set_active(win32_target);
 
 	render_draw();
 

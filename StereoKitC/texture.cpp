@@ -245,25 +245,31 @@ size_t tex2d_format_size(tex_format_ format) {
 	}
 }
 
-void rendertarget_clear(tex2d_t target, const float *color) {
-	assert(target->type & tex_type_rendertarget);
+void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
+	assert(render_target->type & tex_type_rendertarget);
 
-	if (target->target_view != nullptr)
-		d3d_context->ClearRenderTargetView (target->target_view, color);
+	if (render_target->target_view != nullptr) {
+		float colorF[4] = {
+			(uint8_t)color.r / 255.0f,
+			(uint8_t)color.g / 255.0f,
+			(uint8_t)color.b / 255.0f,
+			(uint8_t)color.a / 255.0f, };
+		d3d_context->ClearRenderTargetView(render_target->target_view, colorF);
+	}
 
-	if (target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr)
-		d3d_context->ClearDepthStencilView (target->depth_buffer->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	if (render_target->depth_buffer != nullptr && render_target->depth_buffer->depth_view != nullptr)
+		d3d_context->ClearDepthStencilView (render_target->depth_buffer->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
-void rendertarget_set_active(tex2d_t target) {
-	if (target == nullptr) {
+void tex2d_rtarget_set_active(tex2d_t render_target) {
+	if (render_target == nullptr) {
 		d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
 		return;
 	}
 
-	assert(target->type & tex_type_rendertarget);
+	assert(render_target->type & tex_type_rendertarget);
 
-	bool                    has_depth  = target->depth_buffer != nullptr && target->depth_buffer->depth_view != nullptr;
-	ID3D11DepthStencilView *depth_view = has_depth ? target->depth_buffer->depth_view : nullptr;
+	bool                    has_depth  = render_target->depth_buffer != nullptr && render_target->depth_buffer->depth_view != nullptr;
+	ID3D11DepthStencilView *depth_view = has_depth ? render_target->depth_buffer->depth_view : nullptr;
 
-	d3d_context->OMSetRenderTargets(1, &target->target_view, depth_view);
+	d3d_context->OMSetRenderTargets(1, &render_target->target_view, depth_view);
 }

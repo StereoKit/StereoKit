@@ -1,7 +1,6 @@
 #include "stereokit.h"
 #include "render.h"
 
-#include "rendertarget.h"
 #include "d3d.h"
 #include "mesh.h"
 #include "texture.h"
@@ -177,9 +176,8 @@ void render_blit(tex2d_t to, material_t material) {
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	float clear[] = { 0, 0, 0, 0 };
-	rendertarget_clear(to, clear);
-	rendertarget_set_active(to);
+	tex2d_rtarget_clear(to, { 0,0,0,0 });
+	tex2d_rtarget_set_active(to);
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
@@ -196,4 +194,6 @@ void render_blit(tex2d_t to, material_t material) {
 	
 	// And draw to it!
 	mesh_draw(render_blit_quad);
+
+	tex2d_rtarget_set_active(nullptr);
 }

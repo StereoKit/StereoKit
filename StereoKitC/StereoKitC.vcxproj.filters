@@ -7,9 +7,6 @@
     <ClCompile Include="render.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="rendertarget.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="transform.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -63,9 +60,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="rendertarget.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="stb_image.h">
       <Filter>libraries</Filter>
     </ClInclude>

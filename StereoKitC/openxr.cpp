@@ -5,7 +5,6 @@
 
 #include "d3d.h"
 #include "texture.h"
-#include "rendertarget.h"
 #include "stereokit.h"
 #include "render.h"
 #include "input.h"
@@ -325,9 +324,8 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 
 		// Call the rendering callback with our view and swapchain info
 		tex2d_t target = xr_swapchains[i].surface_data[img_id];
-		float clear[] = { 0, 0, 0, 1 };
-		rendertarget_clear     (target, clear);
-		rendertarget_set_active(target);
+		tex2d_rtarget_clear(target, {0,0,0,0});
+		tex2d_rtarget_set_active(target);
 		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(views[i].subImage.imageRect.offset.x, views[i].subImage.imageRect.offset.y, views[i].subImage.imageRect.extent.width, views[i].subImage.imageRect.extent.height);
 		d3d_context->RSSetViewports(1, &viewport);
 
