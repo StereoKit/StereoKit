@@ -114,8 +114,8 @@ static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { r
 quat quat_lookat(const vec3 &from, const vec3 &at);
 quat quat_lerp(const quat &a, const quat &b, float t);
 
-#define deg2rad 0.01745329252
-#define rad2deg 57.295779513
+#define deg2rad 0.01745329252f
+#define rad2deg 57.295779513f
 
 ///////////////////////////////////////////
 
@@ -161,6 +161,7 @@ enum tex_sample_ {
 	tex_sample_point,
 	tex_sample_anisotropic
 };
+
 enum tex_address_ {
 	tex_address_wrap = 0,
 	tex_address_clamp,

@@ -172,7 +172,7 @@ void render_get_cam(camera_t **cam, transform_t **cam_transform) {
 
 void render_blit(tex2d_t to, material_t material) {
 	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, to->width, to->height);
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)to->width, (float)to->height);
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
@@ -181,8 +181,8 @@ void render_blit(tex2d_t to, material_t material) {
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
-	data.width  = to->width;
-	data.height = to->height;
+	data.width  = (float)to->width;
+	data.height = (float)to->height;
 	data.pixel_width  = 1.0f / to->width;
 	data.pixel_height = 1.0f / to->height;
 

@@ -16,7 +16,7 @@ vector<pointer_t>     input_pointers;
 
 int input_add_pointer(input_source_ source) {
 	input_pointers.push_back({ source, pointer_state_none });
-	return input_pointers.size() - 1;
+	return (int)input_pointers.size() - 1;
 }
 pointer_t *input_get_pointer(int id) {
 	return &input_pointers[id];
@@ -49,7 +49,7 @@ void input_subscribe(input_source_ source, input_state_ event, void (*event_call
 	input_listeners.push_back({ source, event, event_callback });
 }
 void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
-	for (int i = input_listeners.size()-1; i >= 0; i--) {
+	for (int i = (int)input_listeners.size()-1; i >= 0; i--) {
 		if (input_listeners[i].source         == source && 
 			input_listeners[i].event          == event  && 
 			input_listeners[i].event_callback == event_callback) {

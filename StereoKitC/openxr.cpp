@@ -326,7 +326,11 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		tex2d_t target = xr_swapchains[i].surface_data[img_id];
 		tex2d_rtarget_clear(target, {0,0,0,0});
 		tex2d_rtarget_set_active(target);
-		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(views[i].subImage.imageRect.offset.x, views[i].subImage.imageRect.offset.y, views[i].subImage.imageRect.extent.width, views[i].subImage.imageRect.extent.height);
+		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(
+			(float)views[i].subImage.imageRect.offset.x, 
+			(float)views[i].subImage.imageRect.offset.y, 
+			(float)views[i].subImage.imageRect.extent.width, 
+			(float)views[i].subImage.imageRect.extent.height);
 		d3d_context->RSSetViewports(1, &viewport);
 
 		float xr_projection[16];

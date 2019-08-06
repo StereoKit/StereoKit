@@ -42,7 +42,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 	vector<shaderargs_desc_item_t > buffer_items;
 	vector<shader_tex_slots_item_t> tex_items;
 
-	int buffer_size = 0;
+	size_t buffer_size = 0;
 	while (stref_nextline(file, line)) {
 		stref_t curr = line;
 		stref_t word = {};
@@ -82,7 +82,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 		} else if (stref_equals(word, "[texture]")) {
 
 			shader_tex_slots_item_t item;
-			item.slot = tex_items.size();
+			item.slot = (int)tex_items.size();
 			if (stref_nextword(curr, word)) {
 				item.id = stref_hash(word);
 			}
@@ -97,10 +97,10 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 	}
 
 	shader->args_desc = {};
-	shader->args_desc.buffer_size = buffer_size;
+	shader->args_desc.buffer_size = (int)buffer_size;
 	size_t data_size = sizeof(shaderargs_desc_item_t) * buffer_items.size();
 	if (data_size > 0) {
-		shader->args_desc.item_count = buffer_items.size();
+		shader->args_desc.item_count = (int)buffer_items.size();
 		shader->args_desc.item       = (shaderargs_desc_item_t *)malloc(data_size);
 		memcpy(shader->args_desc.item, &buffer_items[0], data_size);
 	}
@@ -108,7 +108,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 	shader->tex_slots = {};
 	data_size = sizeof(shader_tex_slots_item_t) * tex_items.size();
 	if (data_size > 0) {
-		shader->tex_slots.tex_count = tex_items.size();
+		shader->tex_slots.tex_count = (int)tex_items.size();
 		shader->tex_slots.tex       = (shader_tex_slots_item_t*)malloc(data_size);
 		memcpy(shader->tex_slots.tex, &tex_items[0], data_size);
 	}
@@ -197,9 +197,9 @@ void shader_destroy(shader_t shader) {
 }
 
 void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) {
-	CD3D11_BUFFER_DESC const_buff_desc(buffer_size, D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
+	CD3D11_BUFFER_DESC const_buff_desc((UINT)buffer_size, D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
 	d3d_device->CreateBuffer(&const_buff_desc, nullptr, &args.const_buffer);
-	args.buffer_size = buffer_size;
+	args.buffer_size = (int)buffer_size;
 	args.buffer_slot = buffer_slot;
 }
 void shaderargs_set_data(shaderargs_t &args, void *data) {

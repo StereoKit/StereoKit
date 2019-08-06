@@ -75,12 +75,12 @@ inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
 	return i1 + (vSize+1) * (i2 + (nSize+1) * i3);
 }
 int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, uint16_t> indmap, vector<vert_t> &mesh_verts) {
-	int  id = meshfmt_obj_idx(iV, iN, iT, verts.size(), norms.size());
+	int  id = meshfmt_obj_idx(iV, iN, iT, (int)verts.size(), (int)norms.size());
 	map<int, uint16_t>::iterator item = indmap.find(id);
 	if (item == indmap.end()) {
 		mesh_verts.push_back({ verts[iV - 1], norms[iN - 1], uvs[iT - 1], {255,255,255,255} });
-		indmap[id] = mesh_verts.size() - 1;
-		return mesh_verts.size() - 1;
+		indmap[id] = (int)mesh_verts.size() - 1;
+		return (int)mesh_verts.size() - 1;
 	}
 	return item->second;
 }
@@ -151,8 +151,8 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
 	model->subsets[0].mesh = mesh_create(id);
-	mesh_set_verts(model->subsets[0].mesh, &verts[0], verts.size());
-	mesh_set_inds (model->subsets[0].mesh, &faces[0], faces.size());
+	mesh_set_verts(model->subsets[0].mesh, &verts[0], (int32_t)verts.size());
+	mesh_set_inds (model->subsets[0].mesh, &faces[0], (int32_t)faces.size());
 
 	free(data);
 
@@ -180,7 +180,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
-			vert_count = attr->data->count;
+			vert_count = (int)attr->data->count;
 			verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
 		}
 
@@ -209,7 +209,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	}
 
 	// Now grab the mesh indices
-	int ind_count = p->indices->count;
+	int ind_count = (int)p->indices->count;
 	uint16_t *inds = (uint16_t *)malloc(sizeof(uint16_t) * ind_count);
 	if (p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff = p->indices->buffer_view;
@@ -232,13 +232,13 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 		char *last1 = strrchr((char*)filename, '/');
 		char *last2 = strrchr((char*)filename, '\\');
 		char *last  = max(last1, last2);
-		sprintf_s(dest, dest_length, "%.*s/%s", last - filename, filename, image->uri);
+		sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
 		return;
 	}
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			sprintf_s(dest, dest_length, "%s/image%d", filename, i);
+			sprintf_s(dest, dest_length, "%s/image%d", filename, (int)i);
 			return;
 		}
 	}

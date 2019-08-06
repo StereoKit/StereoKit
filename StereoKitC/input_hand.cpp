@@ -119,7 +119,7 @@ void input_hand_update_mesh(const hand_t &hand) {
 		data.inds       = (uint16_t*)malloc(sizeof(uint16_t) * data.ind_count );
 
 		int ind = 0;
-		for (size_t f = 0; f < SK_FINGERS; f++) {
+		for (int f = 0; f < SK_FINGERS; f++) {
 			int start_vert =  f    * 4 * SK_FINGERJOINTS;
 			int end_vert   = (f+1) * 4 * SK_FINGERJOINTS;
 
@@ -133,8 +133,8 @@ void input_hand_update_mesh(const hand_t &hand) {
 			data.inds[ind++] = start_vert+3;
 		
 			// tube faces
-			for (size_t j = 0; j < SK_FINGERJOINTS-1; j++) {
-			for (size_t c = 0; c < 4; c++) {
+			for (int j = 0; j < SK_FINGERJOINTS-1; j++) {
+			for (int c = 0; c < 4; c++) {
 				int curr1 = start_vert +  j    * 4 + c;
 				int next1 = start_vert + (j+1) * 4 + c;
 				int curr2 = start_vert +  j    * 4 + (c+1)%4;
@@ -160,8 +160,8 @@ void input_hand_update_mesh(const hand_t &hand) {
 
 		// Generate uvs and colors for the mesh
 		int v = 0;
-		for (size_t f = 0; f < SK_FINGERS;      f++) {
-		for (size_t j = 0; j < SK_FINGERJOINTS; j++) {
+		for (int f = 0; f < SK_FINGERS;      f++) {
+		for (int j = 0; j < SK_FINGERJOINTS; j++) {
 			float y = j / (float)(SK_FINGERJOINTS-1);
 			data.verts[v].uv  = { 0,y };
 			data.verts[v].col = { 255,255,255,255 };
@@ -185,8 +185,8 @@ void input_hand_update_mesh(const hand_t &hand) {
 	}
 
 	int v = 0;
-	for (size_t f = 0; f < SK_FINGERS;      f++) {
-	for (size_t j = 0; j < SK_FINGERJOINTS; j++) {
+	for (int f = 0; f < SK_FINGERS;      f++) {
+	for (int j = 0; j < SK_FINGERJOINTS; j++) {
 		const pose_t &pose = hand.fingers[f][j];
 
 		// Make local right and up axis vectors

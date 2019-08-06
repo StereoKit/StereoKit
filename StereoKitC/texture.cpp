@@ -3,10 +3,10 @@
 
 #include "d3d.h"
 
-#pragma warning( disable : 26451 )
+#pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#pragma warning( default : 26451 )
+#pragma warning( default : 26451 6011 6262 6308 6387 28182 )
 
 tex2d_t tex2d_create(const char *id, tex_type_ type, tex_format_ format) {
 	tex2d_t result = (tex2d_t)assets_allocate(asset_type_texture, id);
@@ -63,7 +63,7 @@ tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *col_data =  stbi_load_from_memory((stbi_uc*)data, data_size, &width, &height, &channels, 4);
+	uint8_t *col_data =  stbi_load_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
 
 	if (col_data == nullptr) {
 		return nullptr;
@@ -192,7 +192,7 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 
 	D3D11_SUBRESOURCE_DATA tex_mem;
 	tex_mem.pSysMem     = data;
-	tex_mem.SysMemPitch = tex2d_format_size(texture->format) * texture->width;
+	tex_mem.SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
 
 	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr ? nullptr : &tex_mem, &texture->texture))) {
 		log_write(log_error, "Create texture error!");

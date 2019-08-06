@@ -22,8 +22,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
 			log_write(log_error, "Failed to create vertex buffer");
 	} else {
-		// We don't support dynamic meshes quite yet.
-		throw;
+		log_write(log_error, "We don't support dynamic meshes quite yet.");
 	}
 }
 void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
@@ -40,8 +39,7 @@ void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
 			log_write(log_error, "Failed to create index buffer");
 	} else {
-		// We don't support dynamic meshes quite yet.
-		throw;
+		log_write(log_error, "We don't support dynamic meshes quite yet.");
 	}
 }
 
@@ -81,7 +79,7 @@ void mesh_draw(mesh_t mesh) {
 }
 
 void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv) {
-	float neg = (i / 4)       % 2 ? -1 : 1;
+	float neg = (float)((i / 4) % 2 ? -1 : 1);
 	int nx  = ((i+24) / 16) % 2;
 	int ny  = (i / 8)       % 2;
 	int nz  = (i / 16)      % 2;

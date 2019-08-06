@@ -142,7 +142,7 @@ void  stref_remend(stref_t &aRef) {
 stref_t  stref_make(const char *aSource) {
 	stref_t result;
 	result.start    = aSource;
-	result.length   = strlen(aSource);
+	result.length   = (uint32_t)strlen(aSource);
 	result.temp_end = 0;
 	result.temp     = false;
 	return result;
@@ -201,7 +201,7 @@ bool stref_nextline(stref_t &from, stref_t &curr_line) {
 
 	curr_line.start = curr;
 	while (*curr != '\n' && *curr != '\r' && *curr != '\0') curr++;
-	curr_line.length = curr - curr_line.start;
+	curr_line.length = (uint32_t)(curr - curr_line.start);
 	return true;
 }
 bool stref_nextword(stref_t &line, stref_t &word) {
@@ -216,7 +216,7 @@ bool stref_nextword(stref_t &line, stref_t &word) {
 
 	word.start = curr;
 	while (*curr != ' ' && *curr != '\n' && *curr != '\r' && *curr != '\0') curr++;
-	word.length = curr - word.start;
+	word.length = (uint32_t)(curr - word.start);
 	return true;
 }
 void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_name) {
