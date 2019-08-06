@@ -156,6 +156,17 @@ enum tex_format_ {
 	tex_format_depth16,
 };
 
+enum tex_sample_ {
+	tex_sample_linear = 0,
+	tex_sample_point,
+	tex_sample_anisotropic
+};
+enum tex_address_ {
+	tex_address_wrap = 0,
+	tex_address_clamp,
+	tex_address_mirror,
+};
+
 SK_DeclarePrivateType(tex2d_t);
 
 SK_API tex2d_t tex2d_find       (const char *id);
@@ -163,6 +174,7 @@ SK_API tex2d_t tex2d_create     (const char *id, tex_type_ type = tex_type_image
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
+SK_API void    tex2d_set_options(tex2d_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
 SK_API void    tex2d_add_zbuffer(tex2d_t texture, tex_format_ format = tex_format_depthstencil);
 SK_API void    tex2d_rtarget_clear     (tex2d_t render_target, color32 color);
 SK_API void    tex2d_rtarget_set_active(tex2d_t render_target);

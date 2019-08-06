@@ -11,6 +11,7 @@ struct _tex2d_t {
 	tex_type_      type;
 	int width;
 	int height;
+	ID3D11SamplerState       *sampler;
 	ID3D11ShaderResourceView *resource;
 	ID3D11RenderTargetView   *target_view;
 	ID3D11DepthStencilView   *depth_view;
