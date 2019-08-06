@@ -38,8 +38,8 @@ namespace StereoKit
         {
             _transformInst = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(transform_t)));
             transform_initialize(_transformInst);
-            Vec3 argScale = scale   .HasValue ? scale   .Value : Vec3.One;
-            Quat argRot   = rotation.HasValue ? rotation.Value : Quat.Identity;
+            Vec3 argScale = scale    ?? Vec3.One;
+            Quat argRot   = rotation ?? Quat.Identity;
             transform_set(_transformInst, ref position, ref argScale, ref argRot);
         }
         ~Transform()

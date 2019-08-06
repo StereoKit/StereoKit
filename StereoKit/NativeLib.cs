@@ -37,7 +37,7 @@ namespace StereoKit
             if (library == IntPtr.Zero) { 
                 throw new Exception("Missing StereoKit DLL, should be at " + path);
             } else {
-                Log.Write(LogLevel.Info, "Using {0} build.", folder);
+                Console.WriteLine("Using {0} build.", folder);
             }
         }
         public static void UnloadDLL()
