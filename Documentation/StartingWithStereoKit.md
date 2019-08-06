@@ -1,6 +1,6 @@
 # Starting with StereoKit
 
-This document assumes that you want to utilize StereoKit as-is for your project. It will run you through the fundamentals and 
+This document assumes that you want to utilize StereoKit as-is for your project. It will run you through the fundamentals along the provided [examples](https://github.com/maluoi/StereoKit/tree/master/Examples).
 
 
 ## Opening a screen
@@ -10,7 +10,7 @@ The application can run in two different modes:
 - `sk_runtime_flatscreen` (CPP) or `Runtime.Flatscreen` (C#): The application will start in desktop mode, opening a win32 [overlapped window](https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles) in 640x480 as default resolution.
 - `sk_runtime_mixedreality` (CPP) or `Runtime.Flatscreen` (C#): The application will start in Mixed Reality mode, opening an [OpenXR instance](https://www.khronos.org/registry/OpenXR/specs/0.90/man/html/xrCreateInstance.html) inside the headset.
 
-If you are using CPP, this is done during the initialization where the first parameter is the application name and the second one the render mode:
+The mode is defined during the initialization where the first parameter is the application name and the second one the render mode:
 
 ```cpp
 // CPP
@@ -18,12 +18,25 @@ if (!sk_init("Stereo Kit", sk_runtime_mixedreality))
 	return 1;
 ```
 
-For C#, this is done as the StereoKitApp object is created.
+```csharp
+// C#
+if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
+	Environment.Exit(1);
+``` 
+
+In case the mode is set to sk_runtime_mixedreality and for some reason no xr_session could be created, there is the option to define sk_runtime_flatscreen as an automatic fallback. In that case the application will open in windowed mode instead.
+
+```cpp
+// CPP
+if (!sk_init("Stereo Kit", sk_runtime_mixedreality, true))
+	return 1;
+```
 
 ```csharp
 // C#
-StereoKitApp kit = new StereoKitApp("CSharp OpenXR", Runtime.MixedReality);
-```
+if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
+	Environment.Exit(1);
+``` 
 
 
 ## Loading assets
@@ -51,28 +64,28 @@ Model obj_example   = new Model("Assets/example_model.obj");
 
 ## Rendering things on screen
 
-Everything in StereoKit is rendered within a step. The step function keeps track of timing, rendering, input, screen buffering and so on and also handles the routing to OpenXR or Win32.
+Everything in StereoKit is rendered within a step. The step function keeps track of timing, rendering, input, screen buffering and so on. Note that the implementation is different for OpenXR and Win32 mode.
 
 ```cpp
 // CPP
-int main() {
-	..
-
-	while (sk_step(app_update));
-
-	..
-	return 0;
-}
-
-void app_update() {
-	// do render things here
-}
-```
-
-
-```csharp
-// C#
-while (kit.Step(() => {
+while (sk_step( []() {
 	// do render things here
 }));
 ```
+
+```csharp
+// C#
+while (StereoKitApp.Step(() => {
+	// do render things here
+}));
+```
+
+
+## Known issues / FAQ
+
+| Issue | Solution |
+| :--- | :--- |
+| Error during compilation: _The command "xcopy "C:\Projects\StereoKit\\x64\Debug\*.dll" "C:\Projects\StereoKit\StereoKitTest\bin\Debug\" /d /k /y" exited with code 4. | Select x64 as target. |
+| Runtime error: _Can't load Assets/..! File not found, or invalid format. | The asset folder is missing from your folder - make sure to copy it when you compiled the example. |
+| Runtime warning: _Error [SPEC \| xrBeginFrame \| VUID-xrBeginFrame-session-parameter] : session is not a valid XrSession_  | There seems to be no XR device active on your computer. Make sure you connected a headset / run the application on a headset or change the render target to `StereoKitApp kit = new StereoKitApp("CSharp OpenXR", Runtime.Flatscreen);` |
+
