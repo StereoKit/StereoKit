@@ -62,7 +62,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			else if (stref_equals(word, "vector")) item.type = shaderarg_type_vector;
 			else if (stref_equals(word, "matrix")) item.type = shaderarg_type_matrix;
 			item.size   = shaderarg_size[item.type];
-		
+
 			// make sure parameters are padded so they don't overflow into the next register
 			if (buffer_size % shader_register_size != 0 && // if it's evenly aligned, it isn't a problem, but if it's not, we need to check!
 				buffer_size/shader_register_size != (buffer_size+item.size)/shader_register_size && // if we've crossed into the next register
@@ -76,6 +76,12 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			item.id = 0;
 			if (stref_nextword(curr, word)) {
 				item.id = stref_hash(word);
+			}
+
+			if (stref_nextword(curr, word)) {
+				stref_t remainder = stref_substr(word, 0, word.length);
+				remainder.length = (line.start + line.length) - remainder.start;
+				item     .tags   = stref_copy(remainder);
 			}
 
 			buffer_items.emplace_back(item);
@@ -194,6 +200,10 @@ void shader_release(shader_t shader) {
 void shader_destroy(shader_t shader) {
 	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
 		tex2d_release(shader->tex_slots.tex[i].default_tex);
+	}
+	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		if (shader->args_desc.item[i].tags != nullptr)
+			free(shader->args_desc.item[i].tags);
 	}
 
 	shaderargs_destroy(shader->args);
