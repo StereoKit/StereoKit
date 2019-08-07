@@ -1,5 +1,6 @@
 #include "material.h"
 #include "stref.h"
+#include "texture.h"
 
 #include <stdio.h>
 
@@ -91,13 +92,4 @@ void material_set_texture(material_t material, const char *name, tex2d_t value) 
 		}
 	}
 	log_writef(log_warning, "Can't find material texture %s!", name);
-}
-
-void material_set_active(material_t material) {
-	shader_set_active    (material->shader);
-	shaderargs_set_data  (material->shader->args, material->args.buffer);
-	shaderargs_set_active(material->shader->args);
-	for (int i = 0; i < material->shader->tex_slots.tex_count; i++) {
-		tex2d_set_active(material->args.textures[i], i);
-	}
 }

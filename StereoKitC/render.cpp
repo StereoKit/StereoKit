@@ -48,6 +48,12 @@ transform_t            render_default_camera_tr;
 camera_t               render_default_camera;
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
+render_stats_t         render_stats = {};
+
+material_t      render_last_material;
+shader_t        render_last_shader;
+mesh_t          render_last_mesh;
+vector<tex2d_t> render_last_textures;
 
 void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera           = &cam;
@@ -103,11 +109,11 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 
 		transform_buffer.world = XMMatrixTranspose(item.transform);
 
-		material_set_active(item.material);
+		render_set_material(item.material);
 		shaderargs_set_data(render_shader_transforms, &transform_buffer);
 
-		mesh_set_active(item.mesh);
-		mesh_draw      (item.mesh);
+		render_set_mesh (item.mesh);
+		render_draw_item();
 	}
 }
 
@@ -130,7 +136,9 @@ void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
 }
 
 void render_clear() {
+	//log_writef(log_info, "draws: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
 	render_queue.clear();
+	render_stats = {};
 }
 
 void render_initialize() {
@@ -189,11 +197,71 @@ void render_blit(tex2d_t to, material_t material) {
 	// Setup render states for blitting
 	shaderargs_set_data  (render_shader_blit, &data);
 	shaderargs_set_active(render_shader_blit);
-	material_set_active(material);
-	mesh_set_active(render_blit_quad);
+	render_set_material(material);
+	render_set_mesh    (render_blit_quad);
 	
 	// And draw to it!
-	mesh_draw(render_blit_quad);
+	render_draw_item();
 
 	tex2d_rtarget_set_active(nullptr);
+}
+
+void render_set_material(material_t material) {
+	if (material == render_last_material)
+		return;
+	render_last_material = material;
+	render_stats.swaps_material++;
+
+	render_set_shader    (material->shader);
+	shaderargs_set_data  (material->shader->args, material->args.buffer);
+	shaderargs_set_active(material->shader->args);
+	for (int i = 0; i < material->shader->tex_slots.tex_count; i++) {
+		render_set_texture(material->args.textures[i], i);
+	}
+}
+
+void render_set_shader(shader_t shader) {
+	if (shader == render_last_shader)
+		return;
+	render_last_shader = shader;
+	render_stats.swaps_shader++;
+
+	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
+	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
+	d3d_context->IASetInputLayout(shader->vert_layout);
+}
+
+void render_set_texture(tex2d_t texture, int slot) {
+	if (render_last_textures.size() < slot + 1)
+		render_last_textures.resize(slot + 1);
+	else if (texture == render_last_textures[slot])
+		return;
+	render_last_textures[slot] = texture;
+	render_stats.swaps_texture++;
+
+	if (texture != nullptr) {
+		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
+		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
+	} else {
+		d3d_context->PSSetShaderResources(slot, 0, nullptr);
+	}
+}
+
+void render_set_mesh(mesh_t mesh) {
+	if (mesh == render_last_mesh)
+		return;
+	render_last_mesh = mesh;
+	render_stats.swaps_mesh++;
+
+	UINT strides[] = { sizeof(vert_t) };
+	UINT offsets[] = { 0 };
+	d3d_context->IASetVertexBuffers    (0, 1, &mesh->vert_buffer, strides, offsets);
+	d3d_context->IASetIndexBuffer      (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
+	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void render_draw_item() {
+	render_stats.draw_calls++;
+
+	d3d_context->DrawIndexed(render_last_mesh->ind_count, 0, 0);
 }

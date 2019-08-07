@@ -3,6 +3,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "material.h"
+#include "texture.h"
 
 #pragma warning( disable : 26451 )
 #define CGLTF_IMPLEMENTATION

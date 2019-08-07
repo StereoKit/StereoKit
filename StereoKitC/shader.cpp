@@ -177,15 +177,10 @@ shader_t shader_create(const char *id, const char *hlsl) {
 	return result;
 }
 
-void shader_set_active(shader_t shader) {
-	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
-	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
-	d3d_context->IASetInputLayout(shader->vert_layout);
-}
-
 void shader_release(shader_t shader) {
 	assets_releaseref(shader->header);
 }
+
 void shader_destroy(shader_t shader) {
 	shaderargs_destroy(shader->args);
 	if (shader->pshader     != nullptr) shader->pshader    ->Release();

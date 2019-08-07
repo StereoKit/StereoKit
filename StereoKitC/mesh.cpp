@@ -66,18 +66,6 @@ void mesh_destroy(mesh_t mesh) {
 	*mesh = {};
 }
 
-void mesh_set_active(mesh_t mesh) {
-	UINT strides[] = { sizeof(vert_t) };
-	UINT offsets[] = { 0 };
-	d3d_context->IASetVertexBuffers    (0, 1, &mesh->vert_buffer, strides, offsets);
-	d3d_context->IASetIndexBuffer      (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
-	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
-
-void mesh_draw(mesh_t mesh) {
-	d3d_context->DrawIndexed(mesh->ind_count, 0, 0);
-}
-
 void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv) {
 	float neg = (float)((i / 4) % 2 ? -1 : 1);
 	int nx  = ((i+24) / 16) % 2;
