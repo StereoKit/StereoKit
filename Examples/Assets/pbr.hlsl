@@ -11,11 +11,11 @@ cbuffer TransformBuffer : register(b1) {
 	float4x4 sk_world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
-	// [param] color color
+	// [param] color color default{1,1,1,1}
 	float4 _color;
-	// [param] float metallic
+	// [param] float metallic default 0
 	float metallic;
-	// [param] float roughness
+	// [param] float roughness default 0
 	float roughness;
 };
 struct vsIn {

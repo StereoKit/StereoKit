@@ -48,19 +48,25 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 		stref_t word = {};
 		stref_trim(curr);
 		
-		if (!stref_nextword(curr, word) || !stref_equals(word, "//"))
+		if (!stref_nextword(curr, word, ' ', '[', ']') || !stref_equals(word, "//"))
 			continue;
-		if (!stref_nextword(curr, word))
+		if (!stref_nextword(curr, word, ' ', '[', ']'))
 			continue;
-		if (stref_equals(word, "[param]")) {
+		if (stref_equals(stref_stripcapture(word,'[',']'), "param")) {
 			if (!stref_nextword(curr, word))
 				continue;
 
 			shaderargs_desc_item_t item = {};
 			if      (stref_equals(word, "float" )) item.type = shaderarg_type_float;
-			else if (stref_equals(word, "color" )) item.type = shaderarg_type_color;
+			else if (stref_equals(word, "color" )) item.type = shaderarg_type_vector;
 			else if (stref_equals(word, "vector")) item.type = shaderarg_type_vector;
 			else if (stref_equals(word, "matrix")) item.type = shaderarg_type_matrix;
+			else {
+				char name[64];
+				stref_copy_to(word, name, 64);
+				log_writef(log_warning, "Unrecognized shader param type: %s", name);
+				free(name);
+			}
 			item.size   = shaderarg_size[item.type];
 
 			// make sure parameters are padded so they don't overflow into the next register
@@ -78,10 +84,30 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 				item.id = stref_hash(word);
 			}
 
-			if (stref_nextword(curr, word)) {
-				stref_t remainder = stref_substr(word, 0, word.length);
-				remainder.length = (line.start + line.length) - remainder.start;
-				item     .tags   = stref_copy(remainder);
+			while (stref_nextword(curr, word, ' ', '{','}')) {
+				if (stref_equals(word, "default")) {
+					if (stref_nextword(curr, word, ' ','{', '}')) {
+						stref_t value = stref_stripcapture(word, '{', '}');
+						if (item.type == shaderarg_type_float) {
+							item.default_value = malloc(sizeof(float));
+							*(float *)item.default_value = stref_to_f(value);
+
+						} else if (item.type == shaderarg_type_vector) {
+							vec4    result    = {};
+							stref_t component = {};
+							if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
+							if (stref_nextword(value, component, ',')) result.y = stref_to_f(component);
+							if (stref_nextword(value, component, ',')) result.z = stref_to_f(component);
+							if (stref_nextword(value, component, ',')) result.w = stref_to_f(component);
+
+							item.default_value = malloc(sizeof(vec4));
+							*(vec4 *)item.default_value = result;
+						}
+					}
+				} else if (stref_equals(word, "tags")) {
+					if (stref_nextword(curr, word, ' ', '{','}'))
+						item.tags = stref_copy(stref_stripcapture(word, '{','}'));
+				}
 			}
 
 			buffer_items.emplace_back(item);
@@ -204,6 +230,8 @@ void shader_destroy(shader_t shader) {
 	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
 		if (shader->args_desc.item[i].tags != nullptr)
 			free(shader->args_desc.item[i].tags);
+		if (shader->args_desc.item[i].default_value != nullptr)
+			free(shader->args_desc.item[i].default_value);
 	}
 
 	shaderargs_destroy(shader->args);

@@ -65,7 +65,7 @@ bool  string_endswith(const char *a, const char *end) {
 	return *a == *end;
 }
 
-bool  stref_equals(stref_t &aRef, const char *aIs) {
+bool  stref_equals(const stref_t &aRef, const char *aIs) {
 	assert(aRef.temp == false);
 
 	const char *currRef = aRef.start;
@@ -79,7 +79,7 @@ bool  stref_equals(stref_t &aRef, const char *aIs) {
 	}
 	return curr == aRef.length;
 }
-bool  stref_equals(stref_t &a, stref_t &b) {
+bool  stref_equals(const stref_t &a, const stref_t &b) {
 	assert(a.temp == false);
 	assert(b.temp == false);
 	if (a.length != b.length)
@@ -113,13 +113,20 @@ int32_t   stref_lastof(stref_t &aRef, char aChar) {
 	return result;
 }
 
-char *stref_copy(stref_t &aRef) {
+char *stref_copy(const stref_t &aRef) {
 	assert(aRef.temp == false);
 
 	char  *result = (char*)malloc((uint64_t)aRef.length+1);
 	memcpy(result, aRef.start, aRef.length);
 	result[aRef.length] = '\0';
 	return result;
+}
+
+void stref_copy_to(const stref_t &ref, char *text, size_t text_size) {
+	assert(ref.temp == false);
+	size_t length = text_size < ref.length ? text_size : ref.length;
+	memcpy(text, ref.start, length);
+	text[length] = '\0';
 }
 
 const char *stref_withend(stref_t &aRef) {
@@ -204,19 +211,49 @@ bool stref_nextline(stref_t &from, stref_t &curr_line) {
 	curr_line.length = (uint32_t)(curr - curr_line.start);
 	return true;
 }
-bool stref_nextword(stref_t &line, stref_t &word) {
+bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_char_start, char capture_char_end, bool *out_capture_error) {
 	assert(word.temp == false);
-
+	if (out_capture_error != nullptr)
+		out_capture_error = false;
 	if (word.start == nullptr)
 		word = stref_substr(line, 0, 0);
 
 	char *curr = (char*)(word.start + word.length);
-	while (*curr == ' ') curr++;
+	while (*curr == separator || *curr == ' ' || *curr== '\t') curr++;
 	if ( *curr == '\n' || *curr == '\r' || *curr == '\0') return false;
 
 	word.start = curr;
-	while (*curr != ' ' && *curr != '\n' && *curr != '\r' && *curr != '\0') curr++;
+
+	// Check if we're looking at a capture group
+	int capture_count = 0;
+	bool want_capture = capture_char_start != '\0';
+	if (want_capture && *curr == capture_char_start) {
+		capture_count = 1;
+		curr++;
+	}
+	
+	while (
+		(*curr != separator || capture_count > 0) &&                            // While we're still part of the same word or capture group
+		!(want_capture && capture_count == 0 && *curr == capture_char_start) && // Check if we're running into an adjacent capture group
+		(*curr != '\n' && *curr != '\r' && *curr != '\0') &&                    // While we're still on the same line
+		(curr < line.start+line.length))                                        // And make sure it's within the confines of the stref we're provided
+	{
+		if (want_capture) {
+			if (*curr == capture_char_start)
+				capture_count += 1;
+			if (*curr == capture_char_end) {
+				capture_count -= 1;
+				if (capture_count == 0) {
+					curr++;
+					break;
+				}
+			}
+		}
+		curr++;
+	}
 	word.length = (uint32_t)(curr - word.start);
+	if (out_capture_error != nullptr)
+		*out_capture_error = capture_count > 0;
 	return true;
 }
 void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_name) {
@@ -231,6 +268,19 @@ void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_na
 		// Has a '.', must be a filename!
 		out_path.length = start-1;
 	}
+}
+stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_char_end) {
+	if (word.length < 2) return word;
+	stref_t result = word;
+	if (*result.start == capture_char_start) {
+		result.start++;
+		result.length--;
+	}
+	if (*(result.start+result.length-1) == capture_char_end) {
+		result.length--;
+	}
+	stref_trim(result);
+	return result;
 }
 
 // djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
@@ -249,4 +299,14 @@ uint64_t stref_hash(const stref_t &ref) {
 		hash = ((hash << 5) + hash) + c; // hash * 33 + c
 	}
 	return hash;
+}
+float stref_to_f(const stref_t &ref) {
+	char text[32];
+	stref_copy_to(ref, text, 32);
+	return atof(text);
+}
+int32_t  stref_to_i(const stref_t &ref) {
+	char text[32];
+	stref_copy_to(ref, text, 32);
+	return atoi(text);
 }

@@ -19,11 +19,17 @@ material_t material_create(const char *id, shader_t shader) {
 
 	result = (material_t)assets_allocate(asset_type_material, id);
 	assets_addref(shader->header);
-	result->shader  = shader;
+	result->shader        = shader;
 	result->args.buffer   = malloc(shader->args.buffer_size);
 	result->args.textures = (tex2d_t*)malloc(sizeof(tex2d_t)*shader->tex_slots.tex_count);
 	memset(result->args.buffer,   0, shader->args.buffer_size);
-	memset(result->args.textures, 0, sizeof(tex2d_t) * shader->tex_slots.tex_count); // maybe default texture?
+	memset(result->args.textures, 0, sizeof(tex2d_t) * shader->tex_slots.tex_count);
+
+	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		shaderargs_desc_item_t &item = shader->args_desc.item[i];
+		if (item.default_value != nullptr)
+			memcpy((uint8_t*)result->args.buffer + item.offset, item.default_value, item.size);
+	}
 	return result;
 }
 void material_release(material_t material) {

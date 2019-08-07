@@ -171,7 +171,7 @@ cbuffer TransformBuffer : register(b1) {
 	float4x4 world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
-	// [param] color color test?
+	// [ param ] vector color default{1, 1, 1, 1} tags { data for whatever! }
 	float4 _color;
 };
 struct vsIn {
@@ -187,7 +187,7 @@ struct psIn {
 	float3 world : TEXCOORD1;
 };
 
-// [texture] diffuse
+// [texture] diffuse white
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
@@ -219,7 +219,6 @@ float4 ps(psIn input) : SV_TARGET {
 	}
 
 	material_set_texture(sk_default_material, "diffuse", sk_default_tex);
-	material_set_color32(sk_default_material, "color", { 255,255,255,255 });
 
 	return true;
 }
