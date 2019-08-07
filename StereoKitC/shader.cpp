@@ -56,7 +56,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			if (!stref_nextword(curr, word))
 				continue;
 
-			shaderargs_desc_item_t item;
+			shaderargs_desc_item_t item = {};
 			if      (stref_equals(word, "float" )) item.type = shaderarg_type_float;
 			else if (stref_equals(word, "color" )) item.type = shaderarg_type_color;
 			else if (stref_equals(word, "vector")) item.type = shaderarg_type_vector;
@@ -85,6 +85,16 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			item.slot = (int)tex_items.size();
 			if (stref_nextword(curr, word)) {
 				item.id = stref_hash(word);
+			}
+
+			// Find a default texture for this slot, in case it isn't used!
+			if (stref_nextword(curr, word)) {
+				if      (stref_equals(word, "white")) item.default_tex = tex2d_find("default/tex2d");
+				else if (stref_equals(word, "black")) item.default_tex = tex2d_find("default/tex2d_black");
+				else if (stref_equals(word, "gray" )) item.default_tex = tex2d_find("default/tex2d_gray");
+				else                                  item.default_tex = tex2d_find("default/tex2d");
+			} else {
+				item.default_tex = tex2d_find("default/tex2d");
 			}
 
 			tex_items.emplace_back(item);
@@ -182,6 +192,10 @@ void shader_release(shader_t shader) {
 }
 
 void shader_destroy(shader_t shader) {
+	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
+		tex2d_release(shader->tex_slots.tex[i].default_tex);
+	}
+
 	shaderargs_destroy(shader->args);
 	if (shader->pshader     != nullptr) shader->pshader    ->Release();
 	if (shader->vshader     != nullptr) shader->vshader    ->Release();

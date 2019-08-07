@@ -105,8 +105,7 @@ void win32_step_end() {
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	float clear[] = { .4f, .4f, .45f, 1 };
-	tex2d_rtarget_clear(win32_target, {100,100,150,255});
+	tex2d_rtarget_clear(win32_target, {0,0,0,255});
 	tex2d_rtarget_set_active(win32_target);
 
 	render_draw();

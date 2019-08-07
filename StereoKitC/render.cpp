@@ -270,7 +270,7 @@ void render_set_material(material_t material) {
 	for (int i = 0; i < material->shader->tex_slots.tex_count; i++) {
 		tex2d_t tex = material->args.textures[i];
 		if (tex == nullptr)
-			tex = render_default_tex;
+			tex = material->shader->tex_slots.tex[i].default_tex;
 
 		samplers [i] = tex->sampler;
 		resources[i] = tex->resource;

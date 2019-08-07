@@ -29,6 +29,8 @@ struct shaderargs_desc_item_t {
 	size_t          offset;
 	size_t          size;
 	shaderarg_type_ type;
+	void           *default_value;
+	char           *tags;
 };
 
 struct shaderargs_desc_t {
@@ -40,6 +42,7 @@ struct shaderargs_desc_t {
 struct shader_tex_slots_item_t {
 	uint64_t id;
 	int      slot;
+	tex2d_t  default_tex;
 };
 
 struct shader_tex_slots_t {
