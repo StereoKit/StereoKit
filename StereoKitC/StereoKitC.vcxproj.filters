@@ -112,6 +112,15 @@
     <ClInclude Include="win32_input.h">
       <Filter>platform</Filter>
     </ClInclude>
+    <ClInclude Include="shader_builtin_pbr.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shader_builtin_default.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shader_builtin.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -125,6 +134,9 @@
     </Filter>
     <Filter Include="asset_types">
       <UniqueIdentifier>{b7d6910d-71b4-454e-8c8c-92c434a9b1f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders_builtin">
+      <UniqueIdentifier>{79036fcf-7c39-414e-be53-be74d4b55359}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -9,10 +9,10 @@ int main() {
 	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
 
-	//gltf = model_create_file("Assets/DamagedHelmet.gltf");
-	gltf = model_create_mesh("app/model_cube", 
+	gltf = model_create_file("../../Examples/Assets/DamagedHelmet.gltf");
+	/*gltf = model_create_mesh("app/model_cube", 
 		mesh_gen_cube("app/mesh_cube", { .1f,.1f,.1f }, 0), 
-		material_find("default/material"));
+		material_find("default/material"));*/
 	transform_set(gltf_tr, { 0,0,0 }, { 1,1,1 }, { 0,0,0,1 });
 
 	while (sk_step( []() {

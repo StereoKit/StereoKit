@@ -291,7 +291,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	}
 
 	//result = material_create(id, (shader_t)assets_find("default/shader"));
-	result = material_create(id, shader_create_file("Assets/pbr.hlsl"));
+	result = material_create(id, shader_find("default/shader_pbr"));
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;

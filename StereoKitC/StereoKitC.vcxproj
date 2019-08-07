@@ -212,6 +212,9 @@
     <ClInclude Include="render.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="openxr.h" />
+    <ClInclude Include="shader_builtin.h" />
+    <ClInclude Include="shader_builtin_default.h" />
+    <ClInclude Include="shader_builtin_pbr.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />
