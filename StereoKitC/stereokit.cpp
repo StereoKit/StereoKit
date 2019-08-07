@@ -25,6 +25,8 @@ float  sk_timev_elapsedf = 0;
 int64_t sk_timev_raw = 0;
 
 tex2d_t    sk_default_tex;
+tex2d_t    sk_default_tex_black;
+tex2d_t    sk_default_tex_gray;
 shader_t   sk_default_shader;
 material_t sk_default_material;
 bool sk_create_defaults();
@@ -129,14 +131,32 @@ double sk_time_elapsed (){ return sk_timev_elapsed; };
 sk_runtime_ sk_active_runtime() { return sk_runtime;  }
 
 bool sk_create_defaults() {
+	// Default white texture
 	sk_default_tex = tex2d_create("default/tex2d");
 	if (sk_default_tex == nullptr) {
 		return false;
 	}
-
-	uint8_t tex_colors[4 * 4];
-	memset(tex_colors, 255, sizeof(uint8_t) * 4 * 4);
+	color32 tex_colors[2*2];
+	memset(tex_colors, 255, sizeof(color32) * 2 * 2);
 	tex2d_set_colors(sk_default_tex, 2, 2, tex_colors);
+
+	// Default black texture, for use with shader defaults
+	sk_default_tex_black = tex2d_create("default/tex2d_black");
+	if (sk_default_tex_black == nullptr) {
+		return false;
+	}
+	for (size_t i = 0; i < 2 * 2; i++) 
+		tex_colors[i] = { 0,0,0,255 };
+	tex2d_set_colors(sk_default_tex_black, 2, 2, tex_colors);
+
+	// Default middle gray texture, for use with shader defaults
+	sk_default_tex_gray = tex2d_create("default/tex2d_gray");
+	if (sk_default_tex_gray == nullptr) {
+		return false;
+	}
+	for (size_t i = 0; i < 2 * 2; i++) 
+		tex_colors[i] = { 128,128,128,255 };
+	tex2d_set_colors(sk_default_tex_gray, 2, 2, tex_colors);
 
 	sk_default_shader = shader_create("default/shader", R"_(cbuffer GlobalBuffer : register(b0) {
 	float4x4 view;
@@ -151,7 +171,7 @@ cbuffer TransformBuffer : register(b1) {
 	float4x4 world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
-	// [param] color color
+	// [param] color color test?
 	float4 _color;
 };
 struct vsIn {
@@ -179,7 +199,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float3 normal = normalize(mul(float4(input.norm, 0), world[id]).xyz);
 
 	output.uv    = input.uv;
-	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, -light.xyz))) * input.col;
+	output.color = lerp(float3(0.0,0.0,0.0), light_color.rgb, saturate(dot(normal, -light.xyz))) * input.col;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
@@ -208,4 +228,6 @@ void sk_destroy_defaults() {
 	material_release(sk_default_material);
 	shader_release  (sk_default_shader);
 	tex2d_release   (sk_default_tex);
+	tex2d_release   (sk_default_tex_black);
+	tex2d_release   (sk_default_tex_gray);
 }
