@@ -197,17 +197,22 @@ void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) 
 	args.buffer_size = (int)buffer_size;
 	args.buffer_slot = buffer_slot;
 }
-void shaderargs_set_data(shaderargs_t &args, void *data) {
+void shaderargs_set_data(shaderargs_t &args, void *data, size_t buffer_size) {
 	if (args.const_buffer == nullptr)
 		return;
+	assert(buffer_size <= args.buffer_size);
+	if (buffer_size == 0)
+		buffer_size = args.buffer_size;
+
 	D3D11_MAPPED_SUBRESOURCE res;
 	d3d_context->Map(args.const_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
-	memcpy(res.pData, data, args.buffer_size);
+	memcpy(res.pData, data, buffer_size);
 	d3d_context->Unmap( args.const_buffer, 0 );
 }
-void shaderargs_set_active(shaderargs_t &args) {
+void shaderargs_set_active(shaderargs_t &args, bool include_ps) {
 	d3d_context->VSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
-	d3d_context->PSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
+	if (include_ps)
+		d3d_context->PSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
 }
 void shaderargs_destroy(shaderargs_t &args) {
 	if (args.const_buffer != nullptr) args.const_buffer->Release();

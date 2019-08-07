@@ -148,7 +148,7 @@ bool sk_create_defaults() {
 	float4   camera_dir;
 };
 cbuffer TransformBuffer : register(b1) {
-	float4x4 world;
+	float4x4 world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color
@@ -171,12 +171,12 @@ struct psIn {
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
-psIn vs(vsIn input) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	output.world = mul(float4(input.pos.xyz, 1), world).xyz;
+	output.world = mul(float4(input.pos.xyz, 1), world[id]).xyz;
 	output.pos   = mul(float4(output.world, 1), viewproj);
 
-	float3 normal = normalize(mul(float4(input.norm, 0), world).xyz);
+	float3 normal = normalize(mul(float4(input.norm, 0), world[id]).xyz);
 
 	output.uv    = input.uv;
 	output.color = lerp(float3(0.1,0.1,0.2), light_color.rgb, saturate(dot(normal, -light.xyz))) * input.col;

@@ -8,7 +8,7 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_camera_dir;
 };
 cbuffer TransformBuffer : register(b1) {
-	float4x4 sk_world;
+	float4x4 sk_world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color
@@ -62,12 +62,12 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith     (float NdotL, float NdotV, float roughness);
 float3 FresnelSchlick   (float NdotV, float3 surfaceColor, float metalness);
 
-psIn vs(vsIn input) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	output.world = mul(float4(input.pos.xyz, 1), sk_world).xyz;
+	output.world = mul(float4(input.pos.xyz, 1), sk_world[id]).xyz;
 	output.pos   = mul(float4(output.world, 1), sk_viewproj);
 
-	output.normal = normalize(mul(float4(input.norm, 0), sk_world).xyz);
+	output.normal = normalize(mul(float4(input.norm, 0), sk_world[id]).xyz);
 	output.uv     = input.uv;
     output.color  = input.color;
 	return output;

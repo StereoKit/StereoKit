@@ -9,6 +9,7 @@
 #include "model.h"
 
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 #include <directxmath.h> // Matrix math functions and objects
@@ -37,9 +38,15 @@ struct render_blit_data_t {
 	float pixel_width;
 	float pixel_height;
 };
+struct render_inst_buffer {
+	size_t       max;
+	shaderargs_t buffer;
+};
+
+vector<render_transform_buffer_t> render_instance_list;
+render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 1000 } };
 
 vector<render_item_t>  render_queue;
-shaderargs_t           render_shader_transforms;
 shaderargs_t           render_shader_globals;
 shaderargs_t           render_shader_blit;
 transform_t           *render_camera_transform = nullptr;
@@ -49,11 +56,14 @@ camera_t               render_default_camera;
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
+tex2d_t                render_default_tex;
 
-material_t      render_last_material;
-shader_t        render_last_shader;
-mesh_t          render_last_mesh;
-vector<tex2d_t> render_last_textures;
+material_t render_last_material;
+shader_t   render_last_shader;
+mesh_t     render_last_mesh;
+
+
+shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
 
 void render_set_camera(camera_t &cam, transform_t &cam_transform) {
 	render_camera           = &cam;
@@ -87,7 +97,13 @@ void render_add_model(model_t model, transform_t &transform) {
 }
 
 void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
-	render_transform_buffer_t transform_buffer;
+	size_t queue_size = render_queue.size();
+	if (queue_size == 0) return;
+
+	// Sort the draw list, this'll get more interesting later
+	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 
+		return (a.material->header.id+a.mesh->header.id) > (b.material->header.id+b.mesh->header.id);
+	});
 
 	// Copy camera information into the global buffer
 	XMMATRIX view_inv = XMMatrixInverse(nullptr, view);
@@ -103,17 +119,34 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
 	shaderargs_set_active(render_shader_globals);
-	shaderargs_set_active(render_shader_transforms);
-	for (size_t i = 0; i < render_queue.size(); i++) {
-		render_item_t &item = render_queue[i];
+	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		transform_buffer.world = XMMatrixTranspose(item.transform);
+	render_item_t *item          = &render_queue[0];
+	material_t     last_material = item->material;
+	mesh_t         last_mesh     = item->mesh;
+	
+	for (size_t i = 0; i < queue_size; i++) {
+		render_instance_list.emplace_back(render_transform_buffer_t { XMMatrixTranspose(item->transform) } );
 
-		render_set_material(item.material);
-		shaderargs_set_data(render_shader_transforms, &transform_buffer);
+		render_item_t *next = i+1>=queue_size?nullptr:&render_queue[i+1];
+		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
+			render_set_material(item->material);
+			render_set_mesh    (item->mesh);
 
-		render_set_mesh (item.mesh);
-		render_draw_item();
+			size_t offsets = 0, count = 0;
+			do {
+				shaderargs_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
+				shaderargs_set_active(*instances, false);
+				render_draw_item(count);
+			} while (offsets != 0);
+			render_instance_list.clear();
+			
+			if (next != nullptr) {
+				last_material = next->material;
+				last_mesh     = next->mesh;
+			}
+		}
+		item = next;
 	}
 }
 
@@ -142,9 +175,12 @@ void render_clear() {
 }
 
 void render_initialize() {
-	shaderargs_create(render_shader_transforms, sizeof(render_transform_buffer_t), 1);
-	shaderargs_create(render_shader_globals,    sizeof(render_global_buffer_t),    0);
-	shaderargs_create(render_shader_blit,       sizeof(render_blit_data_t),        1);
+	shaderargs_create(render_shader_globals, sizeof(render_global_buffer_t), 0);
+	shaderargs_create(render_shader_blit,    sizeof(render_blit_data_t),     1);
+
+	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
+		shaderargs_create(render_instance_buffers[i].buffer, sizeof(render_transform_buffer_t) * render_instance_buffers[i].max, 1);
+	}
 
 	camera_initialize(render_default_camera, 90, 0.1f, 50);
 	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
@@ -165,11 +201,19 @@ void render_initialize() {
 	uint16_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_verts(render_blit_quad, verts, 4);
 	mesh_set_inds(render_blit_quad,  inds,  6);
+
+	render_default_tex = tex2d_find("default/tex2d");
 }
+
 void render_shutdown() {
+	tex2d_release(render_default_tex);
+
+	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
+		shaderargs_destroy(render_instance_buffers[i].buffer);
+	}
+
 	shaderargs_destroy(render_shader_blit);
 	shaderargs_destroy(render_shader_globals);
-	shaderargs_destroy(render_shader_transforms);
 	mesh_release(render_blit_quad);
 }
 
@@ -201,7 +245,7 @@ void render_blit(tex2d_t to, material_t material) {
 	render_set_mesh    (render_blit_quad);
 	
 	// And draw to it!
-	render_draw_item();
+	render_draw_item(1);
 
 	tex2d_rtarget_set_active(nullptr);
 }
@@ -215,9 +259,24 @@ void render_set_material(material_t material) {
 	render_set_shader    (material->shader);
 	shaderargs_set_data  (material->shader->args, material->args.buffer);
 	shaderargs_set_active(material->shader->args);
+
+	// Fill an array of texture data so we can set them all at the same time
+	ID3D11SamplerState       *samplers [10];
+	ID3D11ShaderResourceView *resources[10];
+	assert(material->shader->tex_slots.tex_count < 10);
+
+	// Use a texture from the material, or use the default! But don't
+	// leave any empty, or we can get overflow from previous renders.
 	for (int i = 0; i < material->shader->tex_slots.tex_count; i++) {
-		render_set_texture(material->args.textures[i], i);
+		tex2d_t tex = material->args.textures[i];
+		if (tex == nullptr)
+			tex = render_default_tex;
+
+		samplers [i] = tex->sampler;
+		resources[i] = tex->resource;
 	}
+	d3d_context->PSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
+	d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
 }
 
 void render_set_shader(shader_t shader) {
@@ -231,22 +290,6 @@ void render_set_shader(shader_t shader) {
 	d3d_context->IASetInputLayout(shader->vert_layout);
 }
 
-void render_set_texture(tex2d_t texture, int slot) {
-	if (render_last_textures.size() < slot + 1)
-		render_last_textures.resize(slot + 1);
-	else if (texture == render_last_textures[slot])
-		return;
-	render_last_textures[slot] = texture;
-	render_stats.swaps_texture++;
-
-	if (texture != nullptr) {
-		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
-		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
-	} else {
-		d3d_context->PSSetShaderResources(slot, 0, nullptr);
-	}
-}
-
 void render_set_mesh(mesh_t mesh) {
 	if (mesh == render_last_mesh)
 		return;
@@ -255,13 +298,38 @@ void render_set_mesh(mesh_t mesh) {
 
 	UINT strides[] = { sizeof(vert_t) };
 	UINT offsets[] = { 0 };
-	d3d_context->IASetVertexBuffers    (0, 1, &mesh->vert_buffer, strides, offsets);
-	d3d_context->IASetIndexBuffer      (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
-	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	d3d_context->IASetVertexBuffers(0, 1, &mesh->vert_buffer, strides, offsets);
+	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
 }
 
-void render_draw_item() {
+void render_draw_item(int count) {
 	render_stats.draw_calls++;
 
-	d3d_context->DrawIndexed(render_last_mesh->ind_count, 0, 0);
+	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_count, count, 0, 0, 0);
+}
+
+shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count) {
+	// Find a buffer that can contain this list! Or the biggest one
+	size_t size  = list.size() - offset;
+	int    index = 0;
+	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
+		index = i;
+		if (render_instance_buffers[i].max >= size)
+			break;
+	}
+	size_t start = offset;
+
+	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
+	if (size > render_instance_buffers[index].max) {
+		offset   += render_instance_buffers[index].max;
+		out_count = render_instance_buffers[index].max;
+	} else {
+		// this means we've gotten through the whole list :)
+		offset    = 0;
+		out_count = size;
+	}
+
+	// Copy data into the buffer, and return it!
+	shaderargs_set_data(render_instance_buffers[index].buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
+	return &render_instance_buffers[index].buffer;
 }
