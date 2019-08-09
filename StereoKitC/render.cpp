@@ -102,7 +102,7 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 
 	// Sort the draw list, this'll get more interesting later
 	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 
-		return (a.material->header.id+a.mesh->header.id) > (b.material->header.id+b.mesh->header.id);
+		return (a.material->header.index+a.mesh->header.index) > (b.material->header.index+b.mesh->header.index);
 	});
 
 	// Copy camera information into the global buffer

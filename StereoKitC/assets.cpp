@@ -50,9 +50,10 @@ void *assets_allocate(asset_type_ type, const char *id) {
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
-	header->type = type;
+	header->type  = type;
 	header->refs += 1;
-	header->id   = string_hash(id);
+	header->id    = string_hash(id);
+	header->index = assets.size();
 	assets.push_back(header);
 	return header;
 }
