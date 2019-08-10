@@ -134,7 +134,7 @@ SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int32_t vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count);
 
-SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int32_t subdivisions);
+SK_API mesh_t mesh_gen_cube (const char *id, vec3 dimensions, int32_t subdivisions);
 
 ///////////////////////////////////////////
 
@@ -226,6 +226,25 @@ SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
+
+///////////////////////////////////////////
+
+enum solid_type_ {
+	solid_type_normal = 0,
+	solid_type_immovable,
+	solid_type_unaffected,
+};
+
+typedef void* solid_t;
+
+SK_API solid_t solid_create     (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
+SK_API void    solid_release    (solid_t solid);
+SK_API void    solid_add_sphere (solid_t solid, float diameter = 1, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_box    (solid_t solid, const vec3 &dimensions, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_set_type   (solid_t solid, solid_type_ type);
+SK_API void    solid_set_enabled(solid_t solid, bool32_t enabled);
+SK_API void    solid_set_pose   (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_transform  (const solid_t solid, transform_t &out_transform);
 
 ///////////////////////////////////////////
 

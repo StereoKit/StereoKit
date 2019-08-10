@@ -24,6 +24,8 @@ void input_hand_init() {
 	transform_initialize(hand_transform);
 
 	// Initialize the hand mesh at startup, don't pay creation costs later!
+	hand_info[0].root.orientation = { 0,0,0,1 };
+	hand_info[1].root.orientation = { 0,0,0,1 };
 	hand_info[0].handedness = handed_left;
 	hand_info[1].handedness = handed_right;
 	input_hand_update_mesh(hand_info[0]);

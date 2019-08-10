@@ -82,7 +82,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 		size.z * (nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
 	};
 }
-mesh_t mesh_gen_cube(const char *id, vec3 size, int32_t subdivisions) {
+mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
 	mesh_t result = (mesh_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
@@ -97,8 +97,9 @@ mesh_t mesh_gen_cube(const char *id, vec3 size, int32_t subdivisions) {
 	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
 	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
 
-	int ind    = 0;
-	int offset = 0;
+	vec3 size   = dimensions / 2;
+	int  ind    = 0;
+	int  offset = 0;
 	for (int i = 0; i < 6*4; i+=4) {
 		vec3 p1, p2, p3, p4;
 		vec3 n1, n2, n3, n4;

@@ -7,6 +7,7 @@
 #include "openxr.h"
 #include "input.h"
 #include "shader_builtin.h"
+#include "physics.h"
 
 #include <thread> // sleep_for
 
@@ -49,6 +50,8 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 			return false;
 		}
 	}
+	
+	physics_init();
 
 	// Create a runtime
 	sk_runtime = runtime_preference;
@@ -86,6 +89,7 @@ void sk_shutdown() {
 	}
 	//assets_shutdown_check();
 	sk_destroy_defaults();
+	physics_shutdown();
 	d3d_shutdown();
 }
 
@@ -112,6 +116,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	
 	sk_update_timer();
 	input_update();
+	physics_update();
 
 	app_update();
 

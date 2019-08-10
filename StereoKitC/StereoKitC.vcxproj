@@ -71,23 +71,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -190,6 +190,7 @@
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="openxr.cpp" />
+    <ClCompile Include="physics.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="stereokit.cpp" />
@@ -209,6 +210,7 @@
     <ClInclude Include="material.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="physics.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="openxr.h" />
