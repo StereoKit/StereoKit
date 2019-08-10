@@ -47,7 +47,7 @@ SamplerState tex_e_sampler;
 Texture2D tex_metal : register(t2);
 SamplerState tex_metal_sampler;
 
-// [texture] normal gray
+// [texture] normal flat
 Texture2D tex_normal : register(t3);
 SamplerState tex_normal_sampler;
 

@@ -124,6 +124,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 				if      (stref_equals(word, "white")) item.default_tex = tex2d_find("default/tex2d");
 				else if (stref_equals(word, "black")) item.default_tex = tex2d_find("default/tex2d_black");
 				else if (stref_equals(word, "gray" )) item.default_tex = tex2d_find("default/tex2d_gray");
+				else if (stref_equals(word, "flat" )) item.default_tex = tex2d_find("default/tex2d_flat");
 				else                                  item.default_tex = tex2d_find("default/tex2d");
 			} else {
 				item.default_tex = tex2d_find("default/tex2d");

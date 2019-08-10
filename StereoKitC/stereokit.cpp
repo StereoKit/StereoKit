@@ -28,6 +28,7 @@ int64_t sk_timev_raw = 0;
 tex2d_t    sk_default_tex;
 tex2d_t    sk_default_tex_black;
 tex2d_t    sk_default_tex_gray;
+tex2d_t    sk_default_tex_flat;
 shader_t   sk_default_shader;
 shader_t   sk_default_shader_pbr;
 material_t sk_default_material;
@@ -160,6 +161,15 @@ bool sk_create_defaults() {
 		tex_colors[i] = { 128,128,128,255 };
 	tex2d_set_colors(sk_default_tex_gray, 2, 2, tex_colors);
 
+	// Default normal map, for use with shader defaults
+	sk_default_tex_flat = tex2d_create("default/tex2d_flat");
+	if (sk_default_tex_flat == nullptr) {
+		return false;
+	}
+	for (size_t i = 0; i < 2 * 2; i++) 
+		tex_colors[i] = { 128,128,255,255 };
+	tex2d_set_colors(sk_default_tex_flat, 2, 2, tex_colors);
+
 	sk_default_shader = shader_create("default/shader", sk_shader_builtin_default);
 	if (sk_default_shader == nullptr) {
 		return false;
@@ -186,4 +196,5 @@ void sk_destroy_defaults() {
 	tex2d_release   (sk_default_tex);
 	tex2d_release   (sk_default_tex_black);
 	tex2d_release   (sk_default_tex_gray);
+	tex2d_release   (sk_default_tex_flat);
 }
