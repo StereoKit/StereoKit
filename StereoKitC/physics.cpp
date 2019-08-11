@@ -134,19 +134,27 @@ void solid_set_enabled(solid_t solid, bool32_t enabled) {
 	body->setIsActive(enabled);
 }
 
-void solid_set_pose(solid_t solid, const vec3 &position, const quat &rotation) {
-	// Doesn't seem to like an empty non-identity quaternion
-	//assert(!(rotation.a == 0 && rotation.i == 0 && rotation.j == 0 && rotation.k == 0));
-	
-	RigidBody *body = (RigidBody *)solid;
-	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.i, rotation.j, rotation.k, rotation.a)});
-
-	//body->setLinearVelocity((Vector3&)((vec3&)body->getTransform().getPosition() - position));
-	//Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
-	//body->setTransform(t);
+void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
+	RigidBody *body = (RigidBody *)solid;Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
+	body->setTransform(t);
+	body->setIsSleeping(false);
 }
 
-void solid_transform(const solid_t solid, transform_t &out_transform) {
+void solid_move(solid_t solid, const vec3 &position, const quat &rotation) {
+	RigidBody *body = (RigidBody *)solid;
+	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.i, rotation.j, rotation.k, rotation.a)});
+}
+
+void solid_set_velocity(solid_t solid, const vec3 &meters_per_second) {
+	RigidBody *body = (RigidBody *)solid;
+	body->setLinearVelocity((Vector3&)meters_per_second);
+}
+void solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second) {
+	RigidBody *body = (RigidBody *)solid;
+	body->setAngularVelocity((Vector3&)radians_per_second);
+}
+
+void solid_get_transform(const solid_t solid, transform_t &out_transform) {
 	const Transform &solid_tr = ((RigidBody *)solid)->getTransform();
 	memcpy(&out_transform._position, &solid_tr.getPosition   ().x, sizeof(vec3));
 	memcpy(&out_transform._rotation, &solid_tr.getOrientation().x, sizeof(quat));

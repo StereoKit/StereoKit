@@ -237,14 +237,17 @@ enum solid_type_ {
 
 typedef void* solid_t;
 
-SK_API solid_t solid_create     (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
-SK_API void    solid_release    (solid_t solid);
-SK_API void    solid_add_sphere (solid_t solid, float diameter = 1, float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_add_box    (solid_t solid, const vec3 &dimensions, float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_set_type   (solid_t solid, solid_type_ type);
-SK_API void    solid_set_enabled(solid_t solid, bool32_t enabled);
-SK_API void    solid_set_pose   (solid_t solid, const vec3 &position, const quat &rotation);
-SK_API void    solid_transform  (const solid_t solid, transform_t &out_transform);
+SK_API solid_t solid_create       (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
+SK_API void    solid_release      (solid_t solid);
+SK_API void    solid_add_sphere   (solid_t solid, float diameter = 1, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
+SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
+SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
+SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
+SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
 
 ///////////////////////////////////////////
 
