@@ -8,6 +8,15 @@ using namespace std;
 #include <reactphysics3d.h>
 using namespace reactphysics3d;
 
+struct solid_move_t {
+	RigidBody *body;
+	Vector3 dest;
+	Quaternion dest_rot;
+	Vector3 old_velocity;
+	Vector3 old_rot_velocity;
+};
+vector<solid_move_t> solid_moves;
+
 struct physics_shape_asset_t {
 	int64_t id;
 	void   *shape;
@@ -32,10 +41,45 @@ void physics_shutdown() {
 }
 
 void physics_update() {
+	// How many physics frames are we going to be calculating this time?
+	int frames = ceil((sk_timev - physics_sim_time) / physics_step);
+	if (frames <= 0)
+		return;
+
+	// Calculate move velocities for objects that need to be at their destination by the end of this function!
+	for (size_t i = 0; i < solid_moves.size(); i++) {
+		solid_move_t &move = solid_moves[i];
+		// Position
+		move.old_velocity  = move.body->getLinearVelocity();
+		Vector3       pos  = move.body->getTransform().getPosition();
+		Vector3       velocity = (move.dest - pos) / (physics_step * frames);
+		move.body->setLinearVelocity(velocity);
+		// Rotation
+		move.old_rot_velocity = move.body->getAngularVelocity();
+		Quaternion rot   = move.body->getTransform().getOrientation();
+		if (rot.x != move.dest_rot.x || rot.y != move.dest_rot.y || rot.z != move.dest_rot.z || rot.w != move.dest_rot.w) {
+			Quaternion delta = move.dest_rot * rot.getInverse();
+			float   angle;
+			Vector3 axis;
+			delta.getRotationAngleAxis(angle, axis);
+			if (!isnan(angle)) {
+				move.body->setAngularVelocity((angle / (physics_step * frames)) * axis.getUnit());
+			}
+		}
+	}
+
+	// Sim physics!
 	while (physics_sim_time < sk_timev) {
-		physics_world->update(1.f / 90.f);
+		physics_world->update(physics_step);
 		physics_sim_time += physics_step;
 	}
+
+	// Reset moved objects back to their original values, and clear out our list
+	for (size_t i = 0; i < solid_moves.size(); i++) {
+		solid_moves[i].body->setLinearVelocity (solid_moves[i].old_velocity);
+		solid_moves[i].body->setAngularVelocity(solid_moves[i].old_rot_velocity);
+	}
+	solid_moves.clear();
 }
 
 solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ type) {
@@ -70,7 +114,7 @@ void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3
 
 void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const vec3 *offset) {
 	RigidBody *body = (RigidBody*)solid;
-	BoxShape  *box  = new BoxShape((Vector3&)dimensions);
+	BoxShape  *box  = new BoxShape((Vector3&)(dimensions/2));
 
 	body->addCollisionShape(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
@@ -93,11 +137,13 @@ void solid_set_enabled(solid_t solid, bool32_t enabled) {
 void solid_set_pose(solid_t solid, const vec3 &position, const quat &rotation) {
 	// Doesn't seem to like an empty non-identity quaternion
 	//assert(!(rotation.a == 0 && rotation.i == 0 && rotation.j == 0 && rotation.k == 0));
-
+	
 	RigidBody *body = (RigidBody *)solid;
+	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.i, rotation.j, rotation.k, rotation.a)});
+
 	//body->setLinearVelocity((Vector3&)((vec3&)body->getTransform().getPosition() - position));
-	Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
-	body->setTransform(t);
+	//Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
+	//body->setTransform(t);
 }
 
 void solid_transform(const solid_t solid, transform_t &out_transform) {
