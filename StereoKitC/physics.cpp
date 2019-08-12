@@ -108,15 +108,19 @@ void solid_release(solid_t solid) {
 void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3 *offset) {
 	RigidBody   *body   = (RigidBody*)solid;
 	SphereShape *sphere = new SphereShape(diameter/2);
-
 	body->addCollisionShape(sphere, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 
 void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const vec3 *offset) {
 	RigidBody *body = (RigidBody*)solid;
 	BoxShape  *box  = new BoxShape((Vector3&)(dimensions/2));
-
 	body->addCollisionShape(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
+}
+
+void solid_add_capsule(solid_t solid, float diameter, float height, float kilograms, const vec3 *offset) {
+	RigidBody    *body    = (RigidBody*)solid;
+	CapsuleShape *capsule = new CapsuleShape(diameter/2, height);
+	body->addCollisionShape(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 
 void solid_set_type(solid_t solid, solid_type_ type) {

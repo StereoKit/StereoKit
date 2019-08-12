@@ -9,8 +9,6 @@ transform_t tr;
 model_t     gltf;
 model_t     box;
 
-solid_t hand_solid;
-
 bool runningInMRMode = false;
 
 int main() {
@@ -39,16 +37,6 @@ int main() {
 	solid_t floor = solid_create(floor_tr._position, floor_tr._rotation, solid_type_immovable);
 	solid_add_box (floor, floor_tr._scale);
 
-	// Hand solid
-	hand_solid = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
-	solid_add_box    (hand_solid, vec3{ 0.03f, .1f, .2f });
-	solid_set_enabled(hand_solid, false);
-
-	solid_t new_obj = solid_create({ 0,3,0 }, { 0,0,0,1 });
-	solid_add_sphere(new_obj, 0.45f, 40);
-	solid_add_box   (new_obj, vec3{1,1,1}*0.35f, 40);
-	phys_objs.push_back(new_obj);
-
 	while (sk_step( []() {
 		vec3 lookat = vec3{ cosf(sk_timef()*0.1f), 0, sinf(sk_timef()*0.1f)}* .5f;
 
@@ -62,13 +50,6 @@ int main() {
 			solid_add_box   (new_obj, vec3{1,1,1}*0.35f, 40);
 			phys_objs.push_back(new_obj);
 		}
-
-		// Update the hand solid
-		solid_set_enabled(hand_solid, hand.state & input_state_tracked);
-		solid_move         (hand_solid, hand.root.position, hand.root.orientation);
-		solid_get_transform(hand_solid, tr);
-		transform_set_scale(tr, vec3{ 0.03f, .1f, .2f });
-		//render_add_model (box, tr);
 
 		// Render solid helmets
 		transform_set_scale(tr, vec3{ 1,1,1 }*0.25f);
@@ -84,7 +65,6 @@ int main() {
 	for (size_t i = 0; i < phys_objs.size(); i++) {
 		solid_release(phys_objs[i]);
 	}
-	solid_release(hand_solid);
 	solid_release(floor);
 
 	model_release(gltf);

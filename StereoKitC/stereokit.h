@@ -239,8 +239,9 @@ typedef void* solid_t;
 
 SK_API solid_t solid_create       (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
 SK_API void    solid_release      (solid_t solid);
-SK_API void    solid_add_sphere   (solid_t solid, float diameter = 1, float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_sphere   (solid_t solid, float diameter = 1,           float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions,       float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_capsule  (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
 SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
 SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
 SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
@@ -339,7 +340,8 @@ struct hand_t {
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
-SK_API void          input_hand_visible (handed_ hand, int visible);
+SK_API void          input_hand_visible (handed_ hand, bool32_t visible);
+SK_API void          input_hand_solid   (handed_ hand, bool32_t solid);
 SK_API void          input_hand_material(handed_ hand, material_t material);
 
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
