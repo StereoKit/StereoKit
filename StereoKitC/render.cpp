@@ -194,7 +194,7 @@ void render_initialize() {
 
 	vec3 dir = { -1,-2,-1 };
 	dir = vec3_normalize(dir);
-	render_set_light(dir, 1, { 1,1,1,1 });
+	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
 	render_blit_quad = mesh_create("render/blitquad");
 	vert_t verts[4] = {
