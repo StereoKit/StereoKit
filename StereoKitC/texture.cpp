@@ -138,16 +138,16 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 
 	D3D11_TEXTURE_ADDRESS_MODE mode;
 	switch (address_mode) {
-	case tex_address_clamp:  mode = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-	case tex_address_wrap:   mode = D3D11_TEXTURE_ADDRESS_WRAP; break;
+	case tex_address_clamp:  mode = D3D11_TEXTURE_ADDRESS_CLAMP;  break;
+	case tex_address_wrap:   mode = D3D11_TEXTURE_ADDRESS_WRAP;   break;
 	case tex_address_mirror: mode = D3D11_TEXTURE_ADDRESS_MIRROR; break;
 	}
 
 	D3D11_FILTER filter;
 	switch (sample) {
-	case tex_sample_linear:     filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT; break;
-	case tex_sample_point:      filter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
-	case tex_sample_anisotropic:filter = D3D11_FILTER_ANISOTROPIC; break;
+	case tex_sample_linear:     filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break; // Technically trilinear
+	case tex_sample_point:      filter = D3D11_FILTER_MIN_MAG_MIP_POINT;  break;
+	case tex_sample_anisotropic:filter = D3D11_FILTER_ANISOTROPIC;        break;
 	}
 
 	D3D11_SAMPLER_DESC desc_sampler = {};
@@ -155,8 +155,9 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 	desc_sampler.AddressV = mode;
 	desc_sampler.AddressW = mode;
 	desc_sampler.Filter   = filter;
-	desc_sampler.MaxAnisotropy = anisotropy_level;
-	desc_sampler.MaxLOD   = D3D11_FLOAT32_MAX;
+	desc_sampler.MaxAnisotropy  = anisotropy_level;
+	desc_sampler.MaxLOD         = D3D11_FLOAT32_MAX;
+	desc_sampler.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
 	// D3D will already return the same sampler when provided the same settings, so we
 	// can just lean on that to prevent sampler duplicates :)
@@ -173,6 +174,7 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 }
 
 bool tex2d_create_surface(tex2d_t texture, void *data) {
+	bool mips    = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
 	bool rtarget = texture->type & tex_type_rendertarget;
@@ -180,7 +182,7 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 	D3D11_TEXTURE2D_DESC desc = {};
 	desc.Width            = texture->width;
 	desc.Height           = texture->height;
-	desc.MipLevels        = 1;
+	desc.MipLevels        = mips ? log2(texture->width) + 1 : 1;
 	desc.ArraySize        = 1;
 	desc.SampleDesc.Count = 1;
 	desc.Format           = tex2d_get_native_format(texture->format);
@@ -190,15 +192,36 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 	if (rtarget)
 		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 
-	D3D11_SUBRESOURCE_DATA tex_mem;
-	tex_mem.pSysMem     = data;
-	tex_mem.SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
+	D3D11_SUBRESOURCE_DATA *tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(desc.MipLevels * sizeof(D3D11_SUBRESOURCE_DATA));
+	tex_mem[0].pSysMem     = data;
+	tex_mem[0].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
 
-	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr ? nullptr : &tex_mem, &texture->texture))) {
-		log_write(log_error, "Create texture error!");
-		return false;
+	if (mips) {
+		color32 *mip_data      = (color32*)data;
+		size_t   mip_data_size = 0;
+
+		int32_t  mip_width  = texture->width;
+		int32_t  mip_height = texture->height;
+		for (int32_t i = 1; i < desc.MipLevels; i++) {
+			tex2d_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[i].pSysMem, &mip_width, &mip_height);
+			mip_data = (color32*)tex_mem[i].pSysMem;
+			tex_mem[i].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * mip_width);
+		}
 	}
-	return true;
+	
+	bool result = true;
+	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr ? nullptr : tex_mem, &texture->texture))) {
+		log_write(log_error, "Create texture error!");
+		result = false;
+	}
+
+	// Free any mip-maps we've generated!
+	for (size_t i = 1; i < desc.MipLevels; i++) {
+		free((void*)tex_mem[i].pSysMem);
+	} 
+	free(tex_mem);
+
+	return result;
 }
 
 void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
@@ -221,11 +244,12 @@ void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
 
 bool tex2d_create_views(tex2d_t texture) {
 	DXGI_FORMAT format = tex2d_get_native_format(texture->format);
+	bool        mips   = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 
 	if (!(texture->type & tex_type_depth)) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
 		res_desc.Format              = format;
-		res_desc.Texture2D.MipLevels = 1;
+		res_desc.Texture2D.MipLevels = mips ? log2(texture->width) + 1 : 1;
 		res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
 		if (FAILED(d3d_device->CreateShaderResourceView(texture->texture, &res_desc, &texture->resource))) {
 			log_write(log_error, "Create Shader Resource View error!");
@@ -310,4 +334,37 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 	ID3D11DepthStencilView *depth_view = has_depth ? render_target->depth_buffer->depth_view : nullptr;
 
 	d3d_context->OMSetRenderTargets(1, &render_target->target_view, depth_view);
+}
+
+bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
+	int w = (int32_t)log2(width);
+	int h = (int32_t)log2(height);
+	w = (1 << w)  >> 1;
+	h = (1 << h) >> 1;
+
+	*out_data = (color32*)malloc(w * h * sizeof(color32));
+	memset(*out_data, 0, w * h * sizeof(color32));
+	color32 *result = *out_data;
+
+	for (int32_t y = 0; y < height; y++) {
+		int32_t src_row_start  = y * width;
+		int32_t dest_row_start = (y / 2) * w;
+	for (int32_t x = 0; x < width;  x++) {
+		int src  = x + src_row_start;
+		int dest = (x / 2) + dest_row_start;
+		color32 cD = result[dest];
+		color32 cS = data  [src];
+
+		cD.r += cS.r / 4;
+		cD.g += cS.g / 4;
+		cD.b += cS.b / 4;
+		cD.a += cS.a / 4;
+
+		result[dest] = cD;
+	}
+	}
+
+	*out_width   = w;
+	*out_height  = h;
+	return w > 1 && h > 1;
 }

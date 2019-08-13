@@ -29,3 +29,5 @@ void tex2d_releasesurface(tex2d_t texture);
 void tex2d_setsurface    (tex2d_t texture, ID3D11Texture2D *source);
 bool tex2d_create_surface(tex2d_t texture, void *data);
 bool tex2d_create_views  (tex2d_t texture);
+
+bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height);

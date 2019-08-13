@@ -140,11 +140,13 @@ SK_API mesh_t mesh_gen_sphere(const char *id, float diameter,  int32_t subdivisi
 ///////////////////////////////////////////
 
 enum tex_type_ {
-	tex_type_image         = 1 << 0,
+	tex_type_image_nomips  = 1 << 0,
 	tex_type_cubemap       = 1 << 1,
 	tex_type_rendertarget  = 1 << 2,
-	tex_type_dynamic       = 1 << 3,
-	tex_type_depth         = 1 << 4,
+	tex_type_depth         = 1 << 3,
+	tex_type_mips          = 1 << 4,
+	tex_type_dynamic       = 1 << 5,
+	tex_type_image         = tex_type_image_nomips | tex_type_mips,
 };
 SK_MakeFlag(tex_type_);
 
