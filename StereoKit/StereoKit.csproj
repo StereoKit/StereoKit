@@ -50,6 +50,7 @@
     <Compile Include="Math.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="Renderer.cs" />
+    <Compile Include="Solid.cs" />
     <Compile Include="Transform.cs" />
     <Compile Include="NativeLib.cs" />
     <Compile Include="Material.cs" />
