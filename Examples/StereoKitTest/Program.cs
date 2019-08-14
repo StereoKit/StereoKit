@@ -23,16 +23,13 @@ class Program
         
         List<Solid> objects = new List<Solid>();
         while (StereoKitApp.Step(() => {
-            Hand hand = Input.Hand(Handed.Right);
-            if (Input.Hand(Handed.Right).IsJustPinched)
-            {
+            if (Input.Hand(Handed.Right).IsJustPinched) {
                 objects.Add(new Solid(new Vec3(0,3,0), Quat.Identity));
                 objects[objects.Count-1].AddSphere(.45f, 40);
-                objects[objects.Count-1].AddBox(Vec3.One*.35f, 40);
+                objects[objects.Count-1].AddBox   (Vec3.One*.35f, 40);
             }
 
-            for (int i = 0; i < objects.Count; i++)
-            {
+            for (int i = 0; i < objects.Count; i++) {
                 objects[i].GetTransform(ref solidTr);
                 Renderer.Add(gltf, solidTr);
             }
