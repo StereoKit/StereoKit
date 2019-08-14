@@ -173,8 +173,10 @@ enum tex_address_ {
 SK_DeclarePrivateType(tex2d_t);
 
 SK_API tex2d_t tex2d_find       (const char *id);
-SK_API tex2d_t tex2d_create     (const char *id, tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
+SK_API tex2d_t tex2d_create     (const char *id,   tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
 SK_API tex2d_t tex2d_create_file(const char *file);
+SK_API tex2d_t tex2d_create_cubemap_file (const char *equirectangular_file);
+SK_API tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
 SK_API void    tex2d_set_options(tex2d_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
