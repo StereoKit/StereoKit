@@ -234,10 +234,12 @@ SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 
 SK_DeclarePrivateType(model_t);
 
-SK_API model_t model_find       (const char *id);
-SK_API model_t model_create_mesh(const char *id, mesh_t mesh, material_t material);
-SK_API model_t model_create_file(const char *filename);
-SK_API void    model_release    (model_t model);
+SK_API model_t    model_find        (const char *id);
+SK_API model_t    model_create_mesh (const char *id, mesh_t mesh, material_t material);
+SK_API model_t    model_create_file (const char *filename);
+SK_API material_t model_get_material(model_t model, int32_t subset);
+SK_API int32_t    model_subset_count(model_t model);
+SK_API void       model_release     (model_t model);
 
 ///////////////////////////////////////////
 
