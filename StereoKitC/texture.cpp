@@ -336,6 +336,62 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 	d3d_context->OMSetRenderTargets(1, &render_target->target_view, depth_view);
 }
 
+void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
+	// Make sure we've been provided enough memory to hold this texture
+	int32_t format_size = tex2d_format_size(texture->format);
+	assert(out_data_size == texture->width * texture->height * format_size);
+
+	D3D11_TEXTURE2D_DESC desc             = {};
+	ID3D11Texture2D     *copy_tex         = nullptr;
+	bool                 copy_tex_release = true;
+	texture->texture->GetDesc(&desc);
+
+	// Make sure copy_tex is a texture that we can read from!
+	if (desc.SampleDesc.Count > 1) {
+		// Not gonna bother with MSAA stuff
+		log_write(log_warning, "tex2d_get_data AA surfaces not implemented");
+		return;
+	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
+		// Handle case where the source is already a staging texture we can use directly
+		copy_tex         = texture->texture;
+		copy_tex_release = false;
+	} else {
+		// Otherwise, create a staging texture from the non-MSAA source
+		desc.BindFlags      = 0;
+		desc.MiscFlags     &= D3D11_RESOURCE_MISC_TEXTURECUBE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.Usage          = D3D11_USAGE_STAGING;
+
+		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
+			log_write(log_error, "CreateTexture2D failed!");
+			return;
+		}
+		d3d_context->CopyResource(copy_tex, texture->texture);
+	}
+
+	// Load the data into CPU RAM
+	D3D11_MAPPED_SUBRESOURCE data;
+	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
+		log_write(log_error, "Texture Map failed!");
+		return;
+	}
+
+	// Copy it into our waiting buffer
+	uint8_t *srcPtr  = (uint8_t*)data.pData;
+	uint8_t *destPtr = (uint8_t*)out_data;
+	size_t   msize   = texture->width*format_size;
+	for (size_t h = 0; h < desc.Height; ++h) {
+		memcpy(destPtr, srcPtr, msize);
+		srcPtr  += data.RowPitch;
+		destPtr += msize;
+	}
+
+	// And cleanup
+	d3d_context->Unmap(copy_tex, 0);
+	if (copy_tex_release)
+		copy_tex->Release();
+}
+
 bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);
 	int h = (int32_t)log2(height);
