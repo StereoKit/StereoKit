@@ -19,8 +19,8 @@ int main() {
 	material_t floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
-	tex2d_release(tex_color);
-	tex2d_release(tex_norm);
+	if (tex_color != nullptr) tex2d_release(tex_color);
+	if (tex_norm  != nullptr) tex2d_release(tex_norm);
 
 	// Procedurally create a cube model
 	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", { 1,1,1 }, 0);
