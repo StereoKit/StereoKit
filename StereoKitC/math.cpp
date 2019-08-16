@@ -31,3 +31,13 @@ quat quat_lerp(const quat &a, const quat &b, float t) {
 	XMStoreFloat4((XMFLOAT4 *)&result, blend);
 	return result;
 }
+
+bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t) {
+	float denom = vec3_dot(plane_normal, ray.dir); 
+	if (denom > 1e-6) { 
+		vec3 difference = plane_pt - ray.pos; 
+		out_t = vec3_dot(difference, plane_normal) / denom; 
+		return (out_t >  1e-6); 
+	}
+	return false; 
+}

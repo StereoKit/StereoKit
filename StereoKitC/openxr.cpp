@@ -432,7 +432,7 @@ void openxr_make_actions() {
 	attach_info.actionSets      = &xr_input.action_set;
 	xrAttachSessionActionSets(xr_session, &attach_info);
 
-	for (int32_t i = 0; i < 2; i++) {
+	for (int32_t i = 1; i >= 0; i--) {
 		input_source_ hand = i == 0 ? input_source_hand_left : input_source_hand_right;
 		xr_input.pointer_ids[i] = input_add_pointer(input_source_can_press | input_source_hand | hand);
 	}

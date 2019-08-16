@@ -60,6 +60,12 @@ model_t model_create_file(const char *filename) {
 
 	return result;
 }
+material_t model_get_material(model_t model, int32_t subset) {
+	return model->subsets[subset].material;
+}
+int32_t    model_subset_count(model_t model) {
+	return model->subset_count;
+}
 void model_release(model_t model) {
 	assets_releaseref(model->header);
 }

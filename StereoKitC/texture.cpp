@@ -55,6 +55,51 @@ tex2d_t tex2d_create_file(const char *file) {
 
 	return result;
 }
+tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
+	return nullptr;
+}
+tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
+	tex2d_t result = tex2d_find(cube_face_file_xxyyzz[0]);
+	if (result != nullptr)
+		return result;
+
+	// Load all 6 faces
+	uint8_t *data[6] = {};
+	int  final_width  = 0;
+	int  final_height = 0;
+	bool loaded       = true;
+	for (size_t i = 0; i < 6; i++) {
+		int channels = 0;
+		int width    = 0;
+		int height   = 0;
+		data[i] = stbi_load(cube_face_file_xxyyzz[i], &width, &height, &channels, 4);
+
+		// Check if there were issues, or one of the images is the wrong size!
+		if (data == nullptr || 
+			(final_width  != 0 && final_width  != width ) ||
+			(final_height != 0 && final_height != height)) {
+			loaded = false;
+			break;
+		}
+		final_width  = width;
+		final_height = height;
+	}
+
+	// free memory if we failed
+	if (!loaded) {
+		for (size_t i = 0; i < 6; i++) {
+			if (data[i] != nullptr)
+				free(data[i]);
+		}
+		log_write(log_error, "Issue loading cubemap images, file not found, invalid image format, or faces of different sizes?");
+		return nullptr;
+	}
+
+	// Create with the data we have
+	result = tex2d_create(cube_face_file_xxyyzz[0], tex_type_image | tex_type_cubemap);
+	tex2d_set_colors(result, final_width, final_height, (void**)&data, 6);
+	return result;
+}
 tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	tex2d_t result = tex2d_find(id);
 	if (result != nullptr)
@@ -97,7 +142,7 @@ void tex2d_releasesurface(tex2d_t tex) {
 	tex->depth_view  = nullptr;
 }
 
-void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
+void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height;
 	if (texture->texture == nullptr || different_size) {
@@ -106,7 +151,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data
 		texture->width  = width;
 		texture->height = height;
 
-		bool result = tex2d_create_surface(texture, data);
+		bool result = tex2d_create_surface(texture, data, data_count);
 		if (result)
 			result = tex2d_create_views  (texture);
 		if (result && texture->depth_buffer != nullptr)
@@ -120,7 +165,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data
 
 		size_t   color_size = tex2d_format_size(texture->format);
 		uint8_t *dest_line  = (uint8_t *)tex_mem.pData;
-		uint8_t *src_line   = (uint8_t *)data;
+		uint8_t *src_line   = (uint8_t *)data[0];
 		for (int i = 0; i < height; i++) {
 			memcpy(dest_line, src_line, (size_t)width * color_size);
 			dest_line += tex_mem.RowPitch;
@@ -130,6 +175,10 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data
 	} else {
 		log_write(log_warning, "Attempting additional writes to a non-dynamic texture!");
 	}
+}
+void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
+	void *data_arr[1] = { data };
+	tex2d_set_colors(texture, width, height, data_arr, 1);
 }
 
 void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
@@ -173,7 +222,7 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 	}
 }
 
-bool tex2d_create_surface(tex2d_t texture, void *data) {
+bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 	bool mips    = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
@@ -183,7 +232,7 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 	desc.Width            = texture->width;
 	desc.Height           = texture->height;
 	desc.MipLevels        = mips ? log2(texture->width) + 1 : 1;
-	desc.ArraySize        = 1;
+	desc.ArraySize        = data_count;
 	desc.SampleDesc.Count = 1;
 	desc.Format           = tex2d_get_native_format(texture->format);
 	desc.BindFlags        = depth   ? D3D11_BIND_DEPTH_STENCIL : D3D11_BIND_SHADER_RESOURCE;
@@ -191,34 +240,44 @@ bool tex2d_create_surface(tex2d_t texture, void *data) {
 	desc.CPUAccessFlags   = dynamic ? D3D11_CPU_ACCESS_WRITE   : 0;
 	if (rtarget)
 		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+	if (texture->type & tex_type_cubemap)
+		desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-	D3D11_SUBRESOURCE_DATA *tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(desc.MipLevels * sizeof(D3D11_SUBRESOURCE_DATA));
-	tex_mem[0].pSysMem     = data;
-	tex_mem[0].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
+	D3D11_SUBRESOURCE_DATA *tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(data_count * desc.MipLevels * sizeof(D3D11_SUBRESOURCE_DATA));
+	for (size_t i = 0; i < data_count; i++) {
+		void *curr_data = data[i];
+		
+		tex_mem[i*desc.MipLevels].pSysMem     = curr_data;
+		tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
 
-	if (mips) {
-		color32 *mip_data      = (color32*)data;
-		size_t   mip_data_size = 0;
+		if (mips) {
+			color32 *mip_data      = (color32*)curr_data;
+			size_t   mip_data_size = 0;
 
-		int32_t  mip_width  = texture->width;
-		int32_t  mip_height = texture->height;
-		for (int32_t i = 1; i < desc.MipLevels; i++) {
-			tex2d_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[i].pSysMem, &mip_width, &mip_height);
-			mip_data = (color32*)tex_mem[i].pSysMem;
-			tex_mem[i].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * mip_width);
+			int32_t  mip_width  = texture->width;
+			int32_t  mip_height = texture->height;
+			for (int32_t m = 1; m < desc.MipLevels; m++) {
+				int index = i*desc.MipLevels + m;
+				tex2d_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
+				mip_data = (color32*)tex_mem[index].pSysMem;
+				tex_mem[index].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * mip_width);
+			}
 		}
 	}
 	
 	bool result = true;
-	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr ? nullptr : tex_mem, &texture->texture))) {
+	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr || data[0] == nullptr ? nullptr : tex_mem, &texture->texture))) {
 		log_write(log_error, "Create texture error!");
 		result = false;
 	}
 
 	// Free any mip-maps we've generated!
-	for (size_t i = 1; i < desc.MipLevels; i++) {
-		free((void*)tex_mem[i].pSysMem);
-	} 
+	for (size_t i = 0; i < data_count; i++) {
+		for (size_t m = 1; m < desc.MipLevels; m++) {
+			int index = i*desc.MipLevels + m;
+			free((void*)tex_mem[index].pSysMem);
+		} 
+	}
 	free(tex_mem);
 
 	return result;
@@ -250,7 +309,7 @@ bool tex2d_create_views(tex2d_t texture) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
 		res_desc.Format              = format;
 		res_desc.Texture2D.MipLevels = mips ? log2(texture->width) + 1 : 1;
-		res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
+		res_desc.ViewDimension       = texture->type & tex_type_cubemap ? D3D11_SRV_DIMENSION_TEXTURECUBE : D3D11_SRV_DIMENSION_TEXTURE2D;
 		if (FAILED(d3d_device->CreateShaderResourceView(texture->texture, &res_desc, &texture->resource))) {
 			log_write(log_error, "Create Shader Resource View error!");
 			return false;
@@ -334,6 +393,62 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 	ID3D11DepthStencilView *depth_view = has_depth ? render_target->depth_buffer->depth_view : nullptr;
 
 	d3d_context->OMSetRenderTargets(1, &render_target->target_view, depth_view);
+}
+
+void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
+	// Make sure we've been provided enough memory to hold this texture
+	int32_t format_size = tex2d_format_size(texture->format);
+	assert(out_data_size == texture->width * texture->height * format_size);
+
+	D3D11_TEXTURE2D_DESC desc             = {};
+	ID3D11Texture2D     *copy_tex         = nullptr;
+	bool                 copy_tex_release = true;
+	texture->texture->GetDesc(&desc);
+
+	// Make sure copy_tex is a texture that we can read from!
+	if (desc.SampleDesc.Count > 1) {
+		// Not gonna bother with MSAA stuff
+		log_write(log_warning, "tex2d_get_data AA surfaces not implemented");
+		return;
+	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
+		// Handle case where the source is already a staging texture we can use directly
+		copy_tex         = texture->texture;
+		copy_tex_release = false;
+	} else {
+		// Otherwise, create a staging texture from the non-MSAA source
+		desc.BindFlags      = 0;
+		desc.MiscFlags     &= D3D11_RESOURCE_MISC_TEXTURECUBE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.Usage          = D3D11_USAGE_STAGING;
+
+		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
+			log_write(log_error, "CreateTexture2D failed!");
+			return;
+		}
+		d3d_context->CopyResource(copy_tex, texture->texture);
+	}
+
+	// Load the data into CPU RAM
+	D3D11_MAPPED_SUBRESOURCE data;
+	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
+		log_write(log_error, "Texture Map failed!");
+		return;
+	}
+
+	// Copy it into our waiting buffer
+	uint8_t *srcPtr  = (uint8_t*)data.pData;
+	uint8_t *destPtr = (uint8_t*)out_data;
+	size_t   msize   = texture->width*format_size;
+	for (size_t h = 0; h < desc.Height; ++h) {
+		memcpy(destPtr, srcPtr, msize);
+		srcPtr  += data.RowPitch;
+		destPtr += msize;
+	}
+
+	// And cleanup
+	d3d_context->Unmap(copy_tex, 0);
+	if (copy_tex_release)
+		copy_tex->Release();
 }
 
 bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
