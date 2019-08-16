@@ -1,6 +1,7 @@
 #include "material.h"
 #include "stref.h"
 #include "texture.h"
+#include "d3d.h"
 
 #include <stdio.h>
 
@@ -41,6 +42,7 @@ void material_destroy(material_t material) {
 			tex2d_release(material->args.textures[i]);
 	}
 	shader_release(material->shader);
+	if (material->blend_state   != nullptr) material->blend_state->Release();
 	if (material->args.buffer   != nullptr) free(material->args.buffer);
 	if (material->args.textures != nullptr) free(material->args.textures);
 	*material = {};
@@ -57,6 +59,24 @@ inline shaderargs_desc_item_t *find_desc(material_t material, const char *name) 
 	return nullptr;
 }
 
+void material_set_alpha_mode(material_t material, material_alpha_ mode) {
+	if (material->blend_state != nullptr)
+		material->blend_state->Release();
+	D3D11_BLEND_DESC desc_blend = {};
+	desc_blend.AlphaToCoverageEnable  = false;
+	desc_blend.IndependentBlendEnable = false;
+	desc_blend.RenderTarget[0].BlendEnable = mode == material_alpha_blend;
+	desc_blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	desc_blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	desc_blend.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	desc_blend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	desc_blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	desc_blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	desc_blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+	d3d_device->CreateBlendState(&desc_blend, &material->blend_state);
+	material->mode = mode;
+}
 void material_set_float(material_t material, const char *name, float value) {
 	shaderargs_desc_item_t *desc = find_desc(material, name);
 	if (desc != nullptr)

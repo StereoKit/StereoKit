@@ -102,7 +102,7 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 
 	// Sort the draw list, this'll get more interesting later
 	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 
-		return (a.material->header.index+a.mesh->header.index) > (b.material->header.index+b.mesh->header.index);
+		return ((a.material->mode<<24)&(a.material->header.index+a.mesh->header.index)) > ((b.material->mode<<24)&(b.material->header.index+b.mesh->header.index));
 	});
 
 	// Copy camera information into the global buffer
@@ -277,6 +277,12 @@ void render_set_material(material_t material) {
 	}
 	d3d_context->PSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
 	d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
+
+	if (material->mode == material_alpha_none) {
+		d3d_context->OMSetBlendState(0,0, 0xFFFFFFFF);
+	} else {
+		d3d_context->OMSetBlendState(material->blend_state, nullptr, 0xFFFFFFFF);
+	}
 }
 
 void render_set_shader(shader_t shader) {
@@ -332,4 +338,9 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 	// Copy data into the buffer, and return it!
 	shaderargs_set_data(render_instance_buffers[index].buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
 	return &render_instance_buffers[index].buffer;
+}
+
+void render_get_device(void **device, void **context) {
+	*device  = d3d_device;
+	*context = d3d_context;
 }

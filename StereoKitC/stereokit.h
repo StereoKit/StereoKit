@@ -70,7 +70,7 @@ struct quat {
 struct matrix {
 	vec4 row[4];
 };
-struct ray {
+struct ray_t {
 	vec3 pos;
 	vec3 dir;
 };
@@ -108,11 +108,14 @@ static inline float vec3_magnitude_sq(const vec3 &a) { return a.x * a.x + a.y * 
 static inline float vec3_magnitude   (const vec3 &a) { return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z); }
 static inline vec3  vec3_normalize   (const vec3 &a) { return a / vec3_magnitude(a); }
 static inline vec3  vec3_lerp        (const vec3 &a, const vec3 &b, float t) { return a + (b - a)*t; }
+static inline float vec3_dot         (const vec3 &a, const vec3 &b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
 quat quat_lookat(const vec3 &from, const vec3 &at);
 quat quat_lerp(const quat &a, const quat &b, float t);
+
+SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
 
 #define deg2rad 0.01745329252f
 #define rad2deg 57.295779513f
@@ -196,11 +199,18 @@ SK_API void     shader_release    (shader_t shader);
 
 ///////////////////////////////////////////
 
+enum material_alpha_ {
+	material_alpha_none = 0,
+	material_alpha_blend,
+	material_alpha_test,
+};
+
 SK_DeclarePrivateType(material_t);
 
 SK_API material_t material_find   (const char *id);
 SK_API material_t material_create (const char *id, shader_t shader);
 SK_API void       material_release(material_t material);
+SK_API void       material_set_alpha_mode(material_t material, material_alpha_ mode);
 SK_API void       material_set_float  (material_t material, const char *name, float    value);
 SK_API void       material_set_color32(material_t material, const char *name, color32  value);
 SK_API void       material_set_color  (material_t material, const char *name, color128 value);
@@ -231,6 +241,8 @@ SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
+SK_API vec3 transform_world_to_local(transform_t &transform, vec3 &world_coordinate);
+SK_API vec3 transform_local_to_world(transform_t &transform, vec3 &local_coordinate);
 
 ///////////////////////////////////////////
 
@@ -262,6 +274,7 @@ SK_API void render_set_light  (const vec3 &direction, float intensity, const col
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
 SK_API void render_add_model  (model_t model, transform_t &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
+SK_API void render_get_device (void **device, void **context);
 
 ///////////////////////////////////////////
 
@@ -308,7 +321,7 @@ SK_MakeFlag(input_state_);
 struct pointer_t {
 	input_source_  source;
 	pointer_state_ state;
-	ray            ray;
+	ray_t          ray;
 	quat           orientation;
 };
 
