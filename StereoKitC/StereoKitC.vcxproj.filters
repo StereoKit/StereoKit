@@ -58,6 +58,9 @@
     <ClCompile Include="log.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="physics.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -120,6 +123,9 @@
     </ClInclude>
     <ClInclude Include="shader_builtin.h">
       <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="physics.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

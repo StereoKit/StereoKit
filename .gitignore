@@ -331,4 +331,5 @@ ASALocalRun/
 .mfractor/
 
 !**/OpenXR/**
+!**/ReactPhysics/**
 !**/Assets/**

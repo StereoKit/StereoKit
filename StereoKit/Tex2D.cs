@@ -6,11 +6,13 @@ namespace StereoKit
     [Flags]
     enum TexType
     {
-        Image        = 1 << 0,
+        ImageNomips  = 1 << 0,
         Cubemap      = 1 << 1,
         Rendertarget = 1 << 2,
-        Dynamic      = 1 << 3,
-        Depth        = 1 << 4,
+        Depth        = 1 << 3,
+        Mips         = 1 << 4,
+        Dynamic      = 1 << 5,
+        Image        = ImageNomips | Mips,
     };
 
     enum TexFormat

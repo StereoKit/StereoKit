@@ -65,10 +65,14 @@ mesh_t     render_last_mesh;
 
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
 
-void render_set_camera(camera_t &cam, transform_t &cam_transform) {
-	render_camera           = &cam;
+void render_set_camera(camera_t &cam) {
+	render_camera = &cam;
+}
+
+void render_set_view(transform_t &cam_transform) {
 	render_camera_transform = &cam_transform;
 }
+
 void render_set_light(const vec3 &direction, float intensity, const color128 &color) {
 	vec3 dir = vec3_normalize(direction);
 	render_global_buffer.light       = { dir.x, dir.y, dir.z, intensity };
@@ -185,11 +189,12 @@ void render_initialize() {
 	camera_initialize(render_default_camera, 90, 0.1f, 50);
 	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
 	transform_lookat (render_default_camera_tr, { 0,0,0 });
-	render_set_camera(render_default_camera, render_default_camera_tr);
+	render_set_camera(render_default_camera);
+	render_set_view  (render_default_camera_tr);
 
 	vec3 dir = { -1,-2,-1 };
 	dir = vec3_normalize(dir);
-	render_set_light(dir, 1, { 1,1,1,1 });
+	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
 	render_blit_quad = mesh_create("render/blitquad");
 	vert_t verts[4] = {

@@ -137,7 +137,8 @@ SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int32_t vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count);
 
-SK_API mesh_t mesh_gen_cube (const char *id, vec3 size, int32_t subdivisions);
+SK_API mesh_t mesh_gen_cube  (const char *id, vec3 dimensions, int32_t subdivisions = 0);
+SK_API mesh_t mesh_gen_sphere(const char *id, float diameter,  int32_t subdivisions = 4);
 
 ///////////////////////////////////////////
 
@@ -246,6 +247,29 @@ SK_API vec3 transform_local_to_world(transform_t &transform, vec3 &local_coordin
 
 ///////////////////////////////////////////
 
+enum solid_type_ {
+	solid_type_normal = 0,
+	solid_type_immovable,
+	solid_type_unaffected,
+};
+
+typedef void* solid_t;
+
+SK_API solid_t solid_create       (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
+SK_API void    solid_release      (solid_t solid);
+SK_API void    solid_add_sphere   (solid_t solid, float diameter = 1,           float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions,       float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_capsule  (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
+SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
+SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
+SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
+SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
+
+///////////////////////////////////////////
+
 SK_DeclarePrivateType(model_t);
 
 SK_API model_t    model_find        (const char *id);
@@ -269,7 +293,8 @@ SK_API void camera_proj      (camera_t    &cam, DirectX::XMMATRIX &result);
 
 ///////////////////////////////////////////
 
-SK_API void render_set_camera (camera_t &cam, transform_t &cam_transform);
+SK_API void render_set_camera (camera_t &cam);
+SK_API void render_set_view   (transform_t &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
 SK_API void render_add_model  (model_t model, transform_t &transform);
@@ -336,7 +361,8 @@ struct hand_t {
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
-SK_API void          input_hand_visible (handed_ hand, int visible);
+SK_API void          input_hand_visible (handed_ hand, bool32_t visible);
+SK_API void          input_hand_solid   (handed_ hand, bool32_t solid);
 SK_API void          input_hand_material(handed_ hand, material_t material);
 
 SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));

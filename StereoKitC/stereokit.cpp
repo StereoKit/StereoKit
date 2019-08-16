@@ -7,6 +7,7 @@
 #include "openxr.h"
 #include "input.h"
 #include "shader_builtin.h"
+#include "physics.h"
 
 #include <thread> // sleep_for
 
@@ -29,6 +30,7 @@ tex2d_t    sk_default_tex;
 tex2d_t    sk_default_tex_black;
 tex2d_t    sk_default_tex_gray;
 tex2d_t    sk_default_tex_flat;
+tex2d_t    sk_default_tex_rough;
 shader_t   sk_default_shader;
 shader_t   sk_default_shader_pbr;
 material_t sk_default_material;
@@ -49,6 +51,8 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 			return false;
 		}
 	}
+	
+	physics_init();
 
 	// Create a runtime
 	sk_runtime = runtime_preference;
@@ -86,6 +90,7 @@ void sk_shutdown() {
 	}
 	//assets_shutdown_check();
 	sk_destroy_defaults();
+	physics_shutdown();
 	d3d_shutdown();
 }
 
@@ -112,6 +117,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	
 	sk_update_timer();
 	input_update();
+	physics_update();
 
 	app_update();
 
@@ -170,6 +176,15 @@ bool sk_create_defaults() {
 		tex_colors[i] = { 128,128,255,255 };
 	tex2d_set_colors(sk_default_tex_flat, 2, 2, tex_colors);
 
+	// Default metal/roughness map, for use with shader defaults
+	sk_default_tex_rough = tex2d_create("default/tex2d_rough");
+	if (sk_default_tex_rough == nullptr) {
+		return false;
+	}
+	for (size_t i = 0; i < 2 * 2; i++) 
+		tex_colors[i] = { 0,0,255,255 };
+	tex2d_set_colors(sk_default_tex_rough, 2, 2, tex_colors);
+
 	sk_default_shader = shader_create("default/shader", sk_shader_builtin_default);
 	if (sk_default_shader == nullptr) {
 		return false;
@@ -197,4 +212,5 @@ void sk_destroy_defaults() {
 	tex2d_release   (sk_default_tex_black);
 	tex2d_release   (sk_default_tex_gray);
 	tex2d_release   (sk_default_tex_flat);
+	tex2d_release   (sk_default_tex_rough);
 }

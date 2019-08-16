@@ -18,7 +18,7 @@ cbuffer ParamBuffer : register(b2) {
 	float4 _color;
 	// [param] float metallic default 0
 	float metallic;
-	// [param] float roughness default 0
+	// [param] float roughness default 1
 	float roughness;
 };
 struct vsIn {
@@ -43,7 +43,7 @@ SamplerState tex_sampler;
 Texture2D tex_emission : register(t1);
 SamplerState tex_e_sampler;
 
-// [texture] metal black
+// [texture] metal rough
 Texture2D tex_metal : register(t2);
 SamplerState tex_metal_sampler;
 
@@ -77,23 +77,23 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float3 albedo = sRGBToLinear(tex.Sample(tex_sampler,       input.uv).rgb);
-	float3 emissive = sRGBToLinear(tex_emission.Sample(tex_e_sampler,     input.uv).rgb);
-	float3 metal_rough = sRGBToLinear(tex_metal.Sample(tex_metal_sampler, input.uv).rgb); // b is metallic, rough is g
-	float3 tex_norm = (tex_normal.Sample(tex_normal_sampler,input.uv).xyz) * 2 - 1;
+	float3 albedo      = sRGBToLinear(tex         .Sample(tex_sampler,       input.uv).rgb);
+	float3 emissive    = sRGBToLinear(tex_emission.Sample(tex_e_sampler,     input.uv).rgb);
+	float3 metal_rough = sRGBToLinear(tex_metal   .Sample(tex_metal_sampler, input.uv).rgb); // b is metallic, rough is g
+	float3 tex_norm    = (tex_normal.Sample(tex_normal_sampler,input.uv).xyz) * 2 - 1;
 	//float  occlusion   = (tex_occ     .Sample(tex_occ_sampler,input.uv).r);
 
 	float metal = metal_rough.b * metallic;
 	float rough = max(metal_rough.g * roughness, 0.001);
 
 	float3 normal = normalize(input.normal);
-	float3 view = normalize(sk_camera_pos.xyz - input.world);
+	float3 view   = normalize(sk_camera_pos.xyz - input.world);
 	tex_norm = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
-	normal = normalize(tex_norm);
-	float3 light = -normalize(sk_light.xyz);
-	float3 half_vec = normalize(light + normal);
-	float  NdotL = (dot(normal,light));
-	float  NdotV = (dot(normal,view));
+	normal   = normalize(tex_norm);
+	float3 light    = -normalize(sk_light.xyz);
+	float3 half_vec =  normalize(light + normal);
+	float  NdotL    = (dot(normal,light));
+	float  NdotV    = (dot(normal,view));
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
@@ -139,11 +139,11 @@ float4 ps(psIn input) : SV_TARGET{
 
 	// Find the diffuse contribution to the reflectance, this is based on the Fresnel
 	float3 specular_contribution = F;
-	float3 diffuse_contribution = 1 - specular_contribution;
+	float3 diffuse_contribution  = 1 - specular_contribution;
 	diffuse_contribution *= 1 - metal;
 
 	// Combine it all together
-	float3 reflectance = (diffuse_contribution * albedo / 3.14159 + specular) * sk_light_color.rgb * saturate(NdotL);
+	float3 reflectance = (diffuse_contribution * albedo / 3.14159 + specular) * sk_light_color.rgb * sk_light.w * saturate(NdotL);
 	return float4(LinearTosRGB(reflectance + emissive), _color.a);
 }
 
@@ -163,8 +163,8 @@ float3 LinearTosRGB(float3 lin) {
 float3x3 CotangentFrame(float3 N, float3 p, float2 uv)
 {
 	// get edge vectors of the pixel triangle
-	float3 dp1 = ddx(p);
-	float3 dp2 = ddy(p);
+	float3 dp1  = ddx(p);
+	float3 dp2  = ddy(p);
 	float2 duv1 = ddx(uv);
 	float2 duv2 = ddy(uv);
 
@@ -184,10 +184,10 @@ float3x3 CotangentFrame(float3 N, float3 p, float2 uv)
 float DistributionGGX(float3 normal, float3 half_vec, float roughness)
 {
 	float roughness2 = roughness * roughness;
-	float NdotH = max(dot(normal, half_vec), 0.0);
-	float NdotH2 = NdotH * NdotH;
+	float NdotH      = max(dot(normal, half_vec), 0.0);
+	float NdotH2     = NdotH * NdotH;
 
-	float nom = roughness2;
+	float nom   = roughness2;
 	float denom = (NdotH2 * (roughness2 - 1.0) + 1.0);
 	denom = 3.14159 * denom * denom;
 
@@ -197,7 +197,7 @@ float DistributionGGX(float3 normal, float3 half_vec, float roughness)
 // These are Geometry functions
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
-	float nom = NdotV;
+	float nom   = NdotV;
 	float denom = NdotV * (1.0 - roughness) + roughness;
 
 	return nom / denom;
