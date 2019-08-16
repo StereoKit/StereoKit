@@ -176,6 +176,10 @@ void render_clear() {
 	//log_writef(log_info, "draws: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
 	render_queue.clear();
 	render_stats = {};
+
+	render_last_material = nullptr;
+	render_last_shader = nullptr;
+	render_last_mesh = nullptr;
 }
 
 void render_initialize() {
