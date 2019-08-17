@@ -5,6 +5,7 @@
 #include <dxgi1_2.h>
 
 #include "stereokit.h"
+#include "_stereokit.h"
 
 #include "texture.h"
 #include "render.h"
@@ -35,6 +36,9 @@ void win32_resize(int width, int height) {
 }
 
 bool win32_init(const char *app_name) {
+	d3d_screen_width  = sk_settings.flatscreen_width;
+	d3d_screen_height = sk_settings.flatscreen_height;
+
 	MSG      msg     = {0};
 	WNDCLASS wc      = {0}; 
 	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -53,7 +57,7 @@ bool win32_init(const char *app_name) {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name;
 	if( !RegisterClass(&wc) ) return false;
-	win32_window = CreateWindow(wc.lpszClassName, app_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 20, 20, 640, 480, 0, 0, wc.hInstance, nullptr);
+	win32_window = CreateWindow(wc.lpszClassName, app_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE, sk_settings.flatscreen_pos_x, sk_settings.flatscreen_pos_y, d3d_screen_width, d3d_screen_height, 0, 0, wc.hInstance, nullptr);
 	if( !win32_window ) return false;
 
 	// Create a swapchain for the window

@@ -13,7 +13,8 @@
 
 using namespace std;
 
-sk_runtime_ sk_runtime = sk_runtime_flatscreen;
+sk_runtime_   sk_runtime  = sk_runtime_flatscreen;
+sk_settings_t sk_settings = {100,100,800,480};
 bool32_t sk_focused = true;
 bool32_t sk_run     = true;
 
@@ -36,6 +37,14 @@ shader_t   sk_default_shader_pbr;
 material_t sk_default_material;
 bool sk_create_defaults();
 void sk_destroy_defaults();
+
+void sk_set_settings(sk_settings_t &settings) {
+	if (sk_d3d_initialized) {
+		log_write(log_error, "Settings need set before initialization! Please call this -before- sk_init.");
+		return;
+	}
+	sk_settings = settings;
+}
 
 bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
 	// Test to avoid initializing the d3d context twice

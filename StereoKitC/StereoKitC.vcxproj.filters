@@ -127,6 +127,9 @@
     <ClInclude Include="physics.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="_stereokit.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

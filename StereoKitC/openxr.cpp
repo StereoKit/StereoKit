@@ -6,6 +6,7 @@
 #include "d3d.h"
 #include "texture.h"
 #include "stereokit.h"
+#include "_stereokit.h"
 #include "render.h"
 #include "input.h"
 #include "input_hand.h"

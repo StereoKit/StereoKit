@@ -223,6 +223,7 @@
     <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />
     <ClInclude Include="win32_input.h" />
+    <ClInclude Include="_stereokit.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

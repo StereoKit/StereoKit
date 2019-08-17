@@ -2,6 +2,7 @@
 
 #include "physics.h"
 #include "stereokit.h"
+#include "_stereokit.h"
 
 #include <vector>
 using namespace std;

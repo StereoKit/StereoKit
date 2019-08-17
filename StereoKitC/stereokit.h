@@ -28,14 +28,12 @@ enum sk_runtime_ {
 	sk_runtime_mixedreality = 1
 };
 
-extern float   sk_timevf;
-extern double  sk_timev;
-extern double  sk_timev_elapsed;
-extern float   sk_timev_elapsedf;
-extern int64_t sk_timev_raw;
-
-extern bool32_t sk_focused;
-extern bool32_t sk_run;
+struct sk_settings_t {
+	int32_t flatscreen_pos_x;
+	int32_t flatscreen_pos_y;
+	int32_t flatscreen_width;
+	int32_t flatscreen_height;
+};
 
 SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtime, bool32_t fallback = true);
 SK_API void     sk_shutdown  ();
@@ -46,6 +44,7 @@ SK_API double sk_time();
 SK_API float  sk_time_elapsedf();
 SK_API double sk_time_elapsed();
 SK_API sk_runtime_ sk_active_runtime();
+SK_API void sk_set_settings(sk_settings_t &settings);
 
 ///////////////////////////////////////////
 
