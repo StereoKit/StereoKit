@@ -17,19 +17,10 @@ enum hand_joint_ {
 	input_joint_tip,
 };
 
-struct hand_mesh_t {
-	mesh_t    mesh;
-	vert_t   *verts;
-	int       vert_count;
-	uint16_t *inds;
-	int       ind_count;
-};
-
-extern hand_t hand_info[2];
-
 void input_hand_init    ();
 void input_hand_shutdown();
 void input_hand_update  ();
 
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
-void input_hand_update_mesh(const hand_t &hand);
+void input_hand_update_mesh(handed_ hand);
+void input_hand_make_solid();

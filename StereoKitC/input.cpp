@@ -41,9 +41,6 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 	}
 	return {};
 }
-const hand_t &input_hand(handed_ hand) {
-	return hand_info[hand];
-}
 
 void input_subscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
 	input_listeners.push_back({ source, event, event_callback });
