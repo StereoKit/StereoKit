@@ -19,6 +19,7 @@ struct render_item_t {
 	XMMATRIX    transform;
 	mesh_t      mesh;
 	material_t  material;
+	uint32_t    sort_id;
 };
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -83,6 +84,7 @@ void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 	render_item_t item;
 	item.mesh     = mesh;
 	item.material = material;
+	item.sort_id = (material->mode << 24) | (material->header.index << 12) | mesh->header.index;
 	transform_matrix(transform, item.transform);
 	render_queue.emplace_back(item);
 }
@@ -94,6 +96,7 @@ void render_add_model(model_t model, transform_t &transform) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
+		item.sort_id = (item.material->mode << 24) | (item.material->header.index << 12) | item.mesh->header.index;
 		transform_matrix(model->subsets[i].offset, item.transform);
 		item.transform = item.transform * world;
 		render_queue.emplace_back(item);
@@ -104,9 +107,9 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
 
-	// Sort the draw list, this'll get more interesting later
+	// Sort the draw list
 	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 
-		return ((a.material->mode<<24)&(a.material->header.index+a.mesh->header.index)) > ((b.material->mode<<24)&(b.material->header.index+b.mesh->header.index));
+		return a.sort_id < b.sort_id;
 	});
 
 	// Copy camera information into the global buffer
