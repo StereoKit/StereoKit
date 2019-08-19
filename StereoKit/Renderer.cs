@@ -11,7 +11,11 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void render_add_model(IntPtr model, IntPtr transform);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
-        static extern void render_set_camera(IntPtr cam, IntPtr cam_transform);
+        static extern void render_set_camera(IntPtr cam);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void render_set_view(IntPtr transform);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void render_set_skytex(IntPtr sky_texture, int show_sky);
         #endregion
 
         public static void Add(Mesh mesh, Material material, Transform transform)
@@ -22,9 +26,17 @@ namespace StereoKit
         {
             render_add_model(model._modelInst, transform._transformInst);
         }
-        public static void SetCamera(Camera camera, Transform cameraTransform)
+        public static void SetCamera(Camera camera)
         {
-            render_set_camera(camera._cameraInst, cameraTransform._transformInst);
+            render_set_camera(camera._cameraInst);
+        }
+        public static void SetView(Transform cameraTransform)
+        {
+            render_set_view(cameraTransform._transformInst);
+        }
+        public static void SetSkytex(Tex2D skyTexture, bool showSky = true)
+        {
+            render_set_skytex(skyTexture._texInst, showSky?1:0);
         }
     }
 }

@@ -9,9 +9,19 @@ class Program
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
 
+        Tex2D cubemap = new Tex2D(new string[6] {
+            "../Examples/Assets/Sky/Right.jpg",
+            "../Examples/Assets/Sky/Left.jpg",
+            "../Examples/Assets/Sky/Top.jpg",
+            "../Examples/Assets/Sky/Bottom.jpg",
+            "../Examples/Assets/Sky/Back.jpg",
+            "../Examples/Assets/Sky/Front.jpg" });
+        Renderer.SetSkytex(cubemap);
+
         Material floorMat = new Material("app/mat_floor", Shader.Find("default/shader_pbr"));
-        floorMat.SetTexture("diffuse", new Tex2D("../Examples/Assets/floor_color.jpg" ));
-        floorMat.SetTexture("normal",  new Tex2D("../Examples/Assets/floor_normal.jpg"));
+        floorMat.SetTexture("diffuse", new Tex2D("../Examples/Assets/test.png" ));
+        floorMat.SetTexture("normal",  new Tex2D("../Examples/Assets/test_normal.png"));
+        floorMat.SetFloat  ("tex_scale", 6);
 
         Model     cube   = new Model("app/cube", Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
         Model     gltf   = new Model("../Examples/Assets/DamagedHelmet.gltf");

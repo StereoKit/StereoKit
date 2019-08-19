@@ -48,6 +48,8 @@ namespace StereoKit
         static extern IntPtr tex2d_create(string id, TexType type, TexFormat format);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr tex2d_create_file(string file);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr tex2d_create_cubemap_files(string[] cube_face_file_xxyyzz);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void tex2d_release(IntPtr tex);
         #endregion
@@ -68,6 +70,12 @@ namespace StereoKit
         public Tex2D(string file)
         {
             _texInst = tex2d_create_file(file);
+        }
+        public Tex2D(string[] cubeFaceFiles_xxyyzz)
+        {
+            if (cubeFaceFiles_xxyyzz.Length != 6)
+                Log.Write(LogLevel.Error, "To create a cubemap, you must have exactly 6 images!");
+            _texInst = tex2d_create_cubemap_files(cubeFaceFiles_xxyyzz);
         }
         ~Tex2D()
         {
