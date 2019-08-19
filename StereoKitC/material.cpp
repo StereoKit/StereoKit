@@ -35,6 +35,31 @@ material_t material_create(const char *id, shader_t shader) {
 	}
 	return result;
 }
+material_t material_copy(const char *id, material_t material) {
+	// Make a new empty material
+	material_t result = material_create(id, material->shader);
+	// Store allocated memory temporarily
+	void          *tmp_buffer   = result->args.buffer;
+	tex2d_t       *tmp_textures = result->args.textures;
+	asset_header_t tmp_header   = result->header;
+
+	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
+	memcpy(result, material, sizeof(_material_t));
+	result->header        = tmp_header;
+	result->args.buffer   = tmp_buffer;
+	result->args.textures = tmp_textures;
+	memcpy(result->args.buffer,   material->args.buffer,   material->shader->args.buffer_size);
+	memcpy(result->args.textures, material->args.textures, sizeof(tex2d_t) * material->shader->tex_slots.tex_count);
+
+	// Add references to all the other material's assets
+	assets_addref(result->shader->header);
+	for (size_t i = 0; i < result->shader->tex_slots.tex_count; i++) {
+		if (result->args.textures[i] != nullptr)
+			assets_addref(result->args.textures[i]->header);
+	}
+
+	return result;
+}
 void material_release(material_t material) {
 	assets_releaseref(material->header);
 }

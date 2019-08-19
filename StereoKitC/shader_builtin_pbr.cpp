@@ -82,7 +82,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float3 albedo      = sRGBToLinear(tex         .Sample(tex_sampler,       input.uv).rgb);
+	float3 albedo      = sRGBToLinear(tex         .Sample(tex_sampler,       input.uv).rgb) * _color.rgb;
 	float3 emissive    = sRGBToLinear(tex_emission.Sample(tex_e_sampler,     input.uv).rgb);
 	float3 metal_rough = sRGBToLinear(tex_metal   .Sample(tex_metal_sampler, input.uv).rgb); // b is metallic, rough is g
 	float3 tex_norm    = (tex_normal.Sample(tex_normal_sampler,input.uv).xyz) * 2 - 1;
