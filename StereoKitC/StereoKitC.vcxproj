@@ -193,6 +193,9 @@
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="shader_builtin_default.cpp" />
+    <ClCompile Include="shader_builtin_pbr.cpp" />
+    <ClCompile Include="shader_builtin_skybox.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stref.cpp" />
     <ClCompile Include="texture.cpp" />
@@ -215,8 +218,6 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="openxr.h" />
     <ClInclude Include="shader_builtin.h" />
-    <ClInclude Include="shader_builtin_default.h" />
-    <ClInclude Include="shader_builtin_pbr.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />

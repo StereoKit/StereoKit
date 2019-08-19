@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "texture.h"
 #include "shader.h"
+#include "shader_builtin.h"
 #include "material.h"
 #include "model.h"
 
@@ -19,7 +20,7 @@ struct render_item_t {
 	XMMATRIX    transform;
 	mesh_t      mesh;
 	material_t  material;
-	uint32_t    sort_id;
+	uint64_t    sort_id;
 };
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -59,12 +60,20 @@ mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
 tex2d_t                render_default_tex;
 
+mesh_t     render_sky_mesh = nullptr;
+material_t render_sky_mat = nullptr;
+tex2d_t    render_sky_cubemap = nullptr;
+bool32_t   render_sky_show = false;
+
 material_t render_last_material;
 shader_t   render_last_shader;
 mesh_t     render_last_mesh;
 
-
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
+
+inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
+	return ((uint64_t)(material->mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
+}
 
 void render_set_camera(camera_t &cam) {
 	render_camera = &cam;
@@ -80,11 +89,23 @@ void render_set_light(const vec3 &direction, float intensity, const color128 &co
 	render_global_buffer.light_color = color;
 }
 
+void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
+	if (render_sky_cubemap != nullptr)
+		tex2d_release(render_sky_cubemap);
+
+	render_sky_show    = show_sky;
+	render_sky_cubemap = sky_texture;
+	if (render_sky_cubemap == nullptr)
+		return;
+
+	assets_addref(render_sky_cubemap->header);
+}
+
 void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 	render_item_t item;
 	item.mesh     = mesh;
 	item.material = material;
-	item.sort_id = (material->mode << 24) | (material->header.index << 12) | mesh->header.index;
+	item.sort_id  = render_queue_id(material, mesh);
 	transform_matrix(transform, item.transform);
 	render_queue.emplace_back(item);
 }
@@ -96,7 +117,7 @@ void render_add_model(model_t model, transform_t &transform) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
-		item.sort_id = (item.material->mode << 24) | (item.material->header.index << 12) | item.mesh->header.index;
+		item.sort_id  = render_queue_id(item.material, item.mesh);
 		transform_matrix(model->subsets[i].offset, item.transform);
 		item.transform = item.transform * world;
 		render_queue.emplace_back(item);
@@ -127,6 +148,11 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
 	shaderargs_set_active(render_shader_globals);
 	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	if (render_sky_cubemap != nullptr) {
+		d3d_context->PSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
+		d3d_context->PSSetShaderResources(11, 1, &render_sky_cubemap->resource);
+	}
 
 	render_item_t *item          = &render_queue[0];
 	material_t     last_material = item->material;
@@ -193,16 +219,19 @@ void render_initialize() {
 		shaderargs_create(render_instance_buffers[i].buffer, sizeof(render_transform_buffer_t) * render_instance_buffers[i].max, 1);
 	}
 
+	// Setup a default camera
 	camera_initialize(render_default_camera, 90, 0.1f, 50);
 	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
 	transform_lookat (render_default_camera_tr, { 0,0,0 });
 	render_set_camera(render_default_camera);
 	render_set_view  (render_default_camera_tr);
 
+	// Set default lighting
 	vec3 dir = { -1,-2,-1 };
 	dir = vec3_normalize(dir);
 	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
+	// Set up resources for doing blit operations
 	render_blit_quad = mesh_create("render/blitquad");
 	vert_t verts[4] = {
 		vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
@@ -214,10 +243,31 @@ void render_initialize() {
 	mesh_set_verts(render_blit_quad, verts, 4);
 	mesh_set_inds(render_blit_quad,  inds,  6);
 
+	// Create a default skybox
+	shader_t sky_shader = shader_create("render/skybox_shader", sk_shader_builtin_skybox);
+	render_sky_mesh = mesh_gen_sphere("render/skybox_mesh", 1, 3);
+	render_sky_mat  = material_create("render/skybox_material", sky_shader);
+	material_set_queue_offset(render_sky_mat, 100);
+	material_set_cull        (render_sky_mat, material_cull_none);
+	shader_release(sky_shader);
+
 	render_default_tex = tex2d_find("default/tex2d");
 }
 
+void render_update() {
+	if (render_sky_show) {
+		transform_t tr;
+		transform_initialize(tr);
+		render_add_mesh(render_sky_mesh, render_sky_mat, tr);
+	}
+}
+
 void render_shutdown() {
+	material_release(render_sky_mat);
+	mesh_release    (render_sky_mesh);
+	if (render_sky_cubemap != nullptr)
+		tex2d_release(render_sky_cubemap);
+
 	tex2d_release(render_default_tex);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
@@ -294,6 +344,11 @@ void render_set_material(material_t material) {
 		d3d_context->OMSetBlendState(0,0, 0xFFFFFFFF);
 	} else {
 		d3d_context->OMSetBlendState(material->blend_state, nullptr, 0xFFFFFFFF);
+	}
+	if (material->rasterizer_state != nullptr) {
+		d3d_context->RSSetState(material->rasterizer_state);
+	} else {
+		d3d_context->RSSetState(d3d_rasterstate);
 	}
 }
 

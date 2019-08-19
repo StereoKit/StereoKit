@@ -1,4 +1,5 @@
 #pragma once
 
-#include "shader_builtin_default.h"
-#include "shader_builtin_pbr.h"
+extern const char *sk_shader_builtin_skybox;
+extern const char *sk_shader_builtin_pbr;
+extern const char *sk_shader_builtin_default;

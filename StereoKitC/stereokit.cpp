@@ -130,6 +130,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	app_update();
 
+	render_update();
 	d3d_render_begin();
 	switch (sk_runtime) {
 	case sk_runtime_flatscreen:   win32_step_end (); break;
@@ -203,7 +204,7 @@ bool sk_create_defaults() {
 		return false;
 	}
 
-	sk_default_material = material_create("default/material", sk_default_shader);
+	sk_default_material = material_create("default/material", sk_default_shader_pbr);
 	if (sk_default_material == nullptr) {
 		return false;
 	}

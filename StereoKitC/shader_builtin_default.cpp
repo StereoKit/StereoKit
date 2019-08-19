@@ -1,4 +1,4 @@
-#pragma once
+#include "shader_builtin.h"
 
 const char* sk_shader_builtin_default = R"_(
 cbuffer GlobalBuffer : register(b0) {

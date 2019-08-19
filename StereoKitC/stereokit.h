@@ -200,9 +200,14 @@ SK_API void     shader_release    (shader_t shader);
 ///////////////////////////////////////////
 
 enum material_alpha_ {
-	material_alpha_none = 0,
+	material_alpha_none = 1,
 	material_alpha_blend,
 	material_alpha_test,
+};
+enum material_cull_ {
+	material_cull_ccw = 0,
+	material_cull_cw,
+	material_cull_none,
 };
 
 SK_DeclarePrivateType(material_t);
@@ -211,6 +216,8 @@ SK_API material_t material_find   (const char *id);
 SK_API material_t material_create (const char *id, shader_t shader);
 SK_API void       material_release(material_t material);
 SK_API void       material_set_alpha_mode(material_t material, material_alpha_ mode);
+SK_API void       material_set_cull   (material_t material, material_cull_ mode);
+SK_API void       material_set_queue_offset(material_t material, int32_t offset);
 SK_API void       material_set_float  (material_t material, const char *name, float    value);
 SK_API void       material_set_color32(material_t material, const char *name, color32  value);
 SK_API void       material_set_color  (material_t material, const char *name, color128 value);
@@ -295,6 +302,7 @@ SK_API void camera_proj      (camera_t    &cam, DirectX::XMMATRIX &result);
 SK_API void render_set_camera (camera_t &cam);
 SK_API void render_set_view   (transform_t &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
+SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
 SK_API void render_add_model  (model_t model, transform_t &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);

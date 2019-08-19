@@ -61,6 +61,15 @@
     <ClCompile Include="physics.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="shader_builtin_default.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
+    <ClCompile Include="shader_builtin_pbr.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
+    <ClCompile Include="shader_builtin_skybox.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -114,12 +123,6 @@
     </ClInclude>
     <ClInclude Include="win32_input.h">
       <Filter>platform</Filter>
-    </ClInclude>
-    <ClInclude Include="shader_builtin_pbr.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shader_builtin_default.h">
-      <Filter>shaders_builtin</Filter>
     </ClInclude>
     <ClInclude Include="shader_builtin.h">
       <Filter>shaders_builtin</Filter>

@@ -20,6 +20,8 @@ material_t material_create(const char *id, shader_t shader) {
 
 	result = (material_t)assets_allocate(asset_type_material, id);
 	assets_addref(shader->header);
+	result->cull          = material_cull_ccw;
+	result->mode          = material_alpha_none;
 	result->shader        = shader;
 	result->args.buffer   = malloc(shader->args.buffer_size);
 	result->args.textures = (tex2d_t*)malloc(sizeof(tex2d_t)*shader->tex_slots.tex_count);
@@ -76,6 +78,20 @@ void material_set_alpha_mode(material_t material, material_alpha_ mode) {
 
 	d3d_device->CreateBlendState(&desc_blend, &material->blend_state);
 	material->mode = mode;
+}
+void material_set_cull(material_t material, material_cull_ mode) {
+	if (material->rasterizer_state != nullptr)
+		material->rasterizer_state->Release();
+	D3D11_RASTERIZER_DESC desc_rasterizer = {};
+	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
+	desc_rasterizer.CullMode = mode == material_cull_none ? D3D11_CULL_NONE : D3D11_CULL_BACK;
+	desc_rasterizer.FrontCounterClockwise = mode == material_cull_ccw;
+
+	d3d_device->CreateRasterizerState(&desc_rasterizer, &material->rasterizer_state);
+	material->cull = mode;
+}
+void material_set_queue_offset(material_t material, int32_t offset) {
+	material->queue_offset = offset;
 }
 void material_set_float(material_t material, const char *name, float value) {
 	shaderargs_desc_item_t *desc = find_desc(material, name);

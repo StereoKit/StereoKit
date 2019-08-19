@@ -13,12 +13,27 @@ int main() {
 	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
 
+	const char *cube_files[] = {
+		"../../Examples/Assets/Sky/Right.jpg",
+		"../../Examples/Assets/Sky/Left.jpg",
+		"../../Examples/Assets/Sky/Top.jpg",
+		"../../Examples/Assets/Sky/Bottom.jpg",
+		"../../Examples/Assets/Sky/Back.jpg",
+		"../../Examples/Assets/Sky/Front.jpg",};
+	tex2d_t cubemap = tex2d_create_cubemap_files(cube_files);
+	render_set_skytex(cubemap, true);
+	tex2d_release(cubemap);
+
 	// Create a PBR floor material
-	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/floor_color.jpg");
-	tex2d_t    tex_norm  = tex2d_create_file("../../Examples/Assets/floor_normal.jpg");
+	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/test.png");
+	tex2d_t    tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
 	material_t floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
+	material_set_float  (floor_mat, "tex_scale", 6);
+	material_set_float  (floor_mat, "roughness", 1.0f);
+	material_set_float  (floor_mat, "metallic", 0.5f);
+	material_set_queue_offset(floor_mat, 1);
 	if (tex_color != nullptr) tex2d_release(tex_color);
 	if (tex_norm  != nullptr) tex2d_release(tex_norm);
 

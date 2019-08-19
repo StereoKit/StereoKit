@@ -75,10 +75,11 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 		data[i] = stbi_load(cube_face_file_xxyyzz[i], &width, &height, &channels, 4);
 
 		// Check if there were issues, or one of the images is the wrong size!
-		if (data == nullptr || 
+		if (data[i] == nullptr || 
 			(final_width  != 0 && final_width  != width ) ||
 			(final_height != 0 && final_height != height)) {
 			loaded = false;
+			log_writef(log_error, "Issue loading cubemap image '%s', file not found, invalid image format, or faces of different sizes?", cube_face_file_xxyyzz[i]);
 			break;
 		}
 		final_width  = width;
@@ -91,7 +92,6 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 			if (data[i] != nullptr)
 				free(data[i]);
 		}
-		log_write(log_error, "Issue loading cubemap images, file not found, invalid image format, or faces of different sizes?");
 		return nullptr;
 	}
 

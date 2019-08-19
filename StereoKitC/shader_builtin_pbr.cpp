@@ -1,4 +1,4 @@
-#pragma once
+#include "shader_builtin.h"
 
 const char* sk_shader_builtin_pbr = R"_(
 cbuffer GlobalBuffer : register(b0) {
@@ -13,6 +13,9 @@ cbuffer GlobalBuffer : register(b0) {
 cbuffer TransformBuffer : register(b1) {
 	float4x4 sk_world[1000];
 };
+TextureCube sk_cubemap : register(t11);
+SamplerState tex_cube_sampler;
+
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color default{1,1,1,1}
 	float4 _color;
@@ -20,6 +23,8 @@ cbuffer ParamBuffer : register(b2) {
 	float metallic;
 	// [param] float roughness default 1
 	float roughness;
+	// [param] float tex_scale default 1
+	float tex_scale;
 };
 struct vsIn {
 	float4 pos : SV_POSITION;
@@ -43,7 +48,7 @@ SamplerState tex_sampler;
 Texture2D tex_emission : register(t1);
 SamplerState tex_e_sampler;
 
-// [texture] metal rough
+// [texture] metal white
 Texture2D tex_metal : register(t2);
 SamplerState tex_metal_sampler;
 
@@ -71,7 +76,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.pos = mul(float4(output.world, 1), sk_viewproj);
 
 	output.normal = normalize(mul(float4(input.norm, 0), sk_world[id]).xyz);
-	output.uv = input.uv;
+	output.uv = input.uv * tex_scale;
 	output.color = input.color;
 	return output;
 }
@@ -84,7 +89,7 @@ float4 ps(psIn input) : SV_TARGET{
 	//float  occlusion   = (tex_occ     .Sample(tex_occ_sampler,input.uv).r);
 
 	float metal = metal_rough.b * metallic;
-	float rough = max(metal_rough.g * roughness, 0.001);
+	float rough = max(1-(metal_rough.g * roughness), 0.001);
 
 	float3 normal = normalize(input.normal);
 	float3 view   = normalize(sk_camera_pos.xyz - input.world);
@@ -94,6 +99,10 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 half_vec =  normalize(light + normal);
 	float  NdotL    = (dot(normal,light));
 	float  NdotV    = (dot(normal,view));
+
+	float3 reflection = reflect(-view, normal);
+	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, (1-rough)*20).rgb; // This should be Spherical Harmonics eventually
+	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, (1-rough)*20).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
@@ -143,7 +152,9 @@ float4 ps(psIn input) : SV_TARGET{
 	diffuse_contribution *= 1 - metal;
 
 	// Combine it all together
-	float3 reflectance = (diffuse_contribution * albedo / 3.14159 + specular) * sk_light_color.rgb * sk_light.w * saturate(NdotL);
+	float3 diffuse = (albedo*irradiance);
+	float3 ambient = diffuse_contribution * diffuse + reflection_color*F;
+	float3 reflectance = ambient;// + (diffuse_contribution * albedo / 3.14159) * sk_light_color.rgb * saturate(NdotL);
 	return float4(LinearTosRGB(reflectance + emissive), _color.a);
 }
 
