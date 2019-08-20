@@ -78,8 +78,10 @@ bool openxr_init(const char *app_name) {
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
-	if (xr_instance == XR_NULL_HANDLE)
+	if (xr_instance == XR_NULL_HANDLE) {
+		log_write(log_info, "Couldn't create OpenXR instance, is OpenXR installed and set as the active runtime?");
 		return false;
+	}
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
@@ -110,8 +112,10 @@ bool openxr_init(const char *app_name) {
 	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
-	if (xr_session == XR_NULL_HANDLE)
+	if (xr_session == XR_NULL_HANDLE) {
+		log_write(log_info, "Couldn't create an OpenXR session, no MR device attached/ready?");
 		return false;
+	}
 
 	// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
 	// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
