@@ -1,4 +1,4 @@
-﻿![StereoKit](documentation/img/StereoKitWide.svg)
+![StereoKit Logo](/Documentation/img/StereoKitWide.svg)
 
 StereoKit is a lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!
 
