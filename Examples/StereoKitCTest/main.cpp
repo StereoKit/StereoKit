@@ -14,12 +14,9 @@ int main() {
 		return 1;
 
 	const char *cube_files[] = {
-		"../../Examples/Assets/Sky/Right.jpg",
-		"../../Examples/Assets/Sky/Left.jpg",
-		"../../Examples/Assets/Sky/Top.jpg",
-		"../../Examples/Assets/Sky/Bottom.jpg",
-		"../../Examples/Assets/Sky/Back.jpg",
-		"../../Examples/Assets/Sky/Front.jpg",};
+		"../../Examples/Assets/Sky/Right.jpg", "../../Examples/Assets/Sky/Left.jpg",
+		"../../Examples/Assets/Sky/Top.jpg",   "../../Examples/Assets/Sky/Bottom.jpg",
+		"../../Examples/Assets/Sky/Back.jpg",  "../../Examples/Assets/Sky/Front.jpg",};
 	tex2d_t cubemap = tex2d_create_cubemap_files(cube_files);
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
