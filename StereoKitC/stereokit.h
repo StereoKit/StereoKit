@@ -136,8 +136,9 @@ SK_API void   mesh_release  (mesh_t mesh);
 SK_API void   mesh_set_verts(mesh_t mesh, vert_t   *vertices, int32_t vertex_count);
 SK_API void   mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count);
 
-SK_API mesh_t mesh_gen_cube  (const char *id, vec3 dimensions, int32_t subdivisions = 0);
-SK_API mesh_t mesh_gen_sphere(const char *id, float diameter,  int32_t subdivisions = 4);
+SK_API mesh_t mesh_gen_cube        (const char *id, vec3 dimensions, int32_t subdivisions = 0);
+SK_API mesh_t mesh_gen_sphere      (const char *id, float diameter,  int32_t subdivisions = 4);
+SK_API mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius, int32_t subdivisions);
 
 ///////////////////////////////////////////
 
