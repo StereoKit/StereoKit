@@ -68,7 +68,7 @@ void win32_input_update() {
 
 				// make a hand pose from the cursor ray
 				hand_pos = cam_tr->_position + pointer_dir * (0.6f + win32_scroll * 0.001f);
-				hand_rot = quat_lookat({ 0,0,0 }, pointer_dir);
+				hand_rot = quat_lookat(vec3_zero, pointer_dir);
 			}
 		}
 	}

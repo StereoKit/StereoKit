@@ -221,8 +221,8 @@ void render_initialize() {
 
 	// Setup a default camera
 	camera_initialize(render_default_camera, 90, 0.1f, 50);
-	transform_set    (render_default_camera_tr, { 1,1,1 }, { 1,1,1 }, { 0,0,0,1 });
-	transform_lookat (render_default_camera_tr, { 0,0,0 });
+	transform_set    (render_default_camera_tr, vec3_one, vec3_one, quat_identity);
+	transform_lookat (render_default_camera_tr, vec3_zero);
 	render_set_camera(render_default_camera);
 	render_set_view  (render_default_camera_tr);
 

@@ -96,6 +96,7 @@ static inline vec3 operator*(const vec3 &a, const float b) { return { a.x * b, a
 static inline vec3 operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
 static inline vec3 operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
 static inline vec3 operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3 operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
 static inline vec3 operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
 static inline vec3 operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
 static inline vec3& operator+=(vec3& a, const vec3& b)     { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
@@ -116,8 +117,23 @@ quat quat_lerp(const quat &a, const quat &b, float t);
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
 
-#define deg2rad 0.01745329252f
-#define rad2deg 57.295779513f
+static const float deg2rad = 0.01745329252f;
+static const float rad2deg = 57.295779513f;
+static const float cm2m = 0.1f;
+static const float mm2m = 0.01f;
+static const float m2cm = 10.f;
+static const float m2mm = 100.f;
+
+static const vec3 vec3_one      = vec3{ 1,1, 1 };
+static const vec3 vec3_zero     = vec3{ 0,0, 0 };
+static const vec3 vec3_up       = vec3{ 0,1, 0 };
+static const vec3 vec3_forward  = vec3{ 0,0,-1 };
+static const vec3 vec3_right    = vec3{ 1,0, 0 };
+static const quat quat_identity = quat{ 0,0, 0,1 };
+
+#define unit_cm(cm) ((cm)*0.1f)
+#define unit_mm(mm) ((mm)*0.01f)
+#define unit_dmm(dmm, distance) ((dmm)*(distance))
 
 ///////////////////////////////////////////
 

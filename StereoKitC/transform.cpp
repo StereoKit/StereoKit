@@ -8,9 +8,9 @@ inline vec3     from_fast3(const XMVECTOR &a) { vec3 result; XMStoreFloat3((XMFL
 inline quat     from_fastq(const XMVECTOR &a) { quat result; XMStoreFloat4((XMFLOAT4 *)& result, a); return result; }
 
 void transform_initialize(transform_t &transform) {
-	transform._position = { 0,0,0 };
-	transform._rotation = { 0,0,0,1 };
-	transform._scale    = { 1,1,1 };
+	transform._position = vec3_zero;
+	transform._rotation = quat_identity;
+	transform._scale    = vec3_one;
 	transform._dirty    = true;
 }
 void transform_set(transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation) {

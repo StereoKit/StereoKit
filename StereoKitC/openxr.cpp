@@ -341,7 +341,7 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		float xr_projection[16];
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
 		transform_t cam_transform;
-		transform_set(cam_transform, (vec3&)views[i].pose.position, { 1,1,1 }, (quat&)views[i].pose.orientation);
+		transform_set(cam_transform, (vec3&)views[i].pose.position, vec3_one, (quat&)views[i].pose.orientation);
 		render_draw_matrix(xr_projection, cam_transform);
 
 		// And tell OpenXR we're done with rendering to this one!
@@ -537,5 +537,5 @@ void openxr_poll_actions() {
 void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer) {
 	memcpy(&pointer->ray.pos,     &pose.position,    sizeof(vec3));
 	memcpy(&pointer->orientation, &pose.orientation, sizeof(quat));
-	pointer->ray.dir = pointer->orientation * vec3{ 0,0,-1 };
+	pointer->ray.dir = pointer->orientation * vec3_forward;
 }

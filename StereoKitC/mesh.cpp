@@ -171,7 +171,7 @@ mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
 	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
 	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
 
-	vec3  size = { 1,1,1 };
+	vec3  size = vec3_one;
 	float radius = diameter / 2;
 	int   ind    = 0;
 	int   offset = 0;
@@ -246,8 +246,8 @@ mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius,
 	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
 	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
 
-	vec3  off = (dimensions / 2) - vec3{ 1,1,1 }*edge_radius;
-	vec3  size = { 1,1,1 };
+	vec3  off = (dimensions / 2) - vec3_one*edge_radius;
+	vec3  size = vec3_one;
 	float radius = edge_radius;
 	int   ind    = 0;
 	int   offset = 0;
