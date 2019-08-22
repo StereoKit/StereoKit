@@ -1,3 +1,5 @@
+#ifndef SK_NO_FLATSCREEN
+
 #include "win32_input.h"
 
 #include <windows.h>
@@ -85,3 +87,5 @@ void win32_input_update() {
 	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? input_state_justpinch   : input_state_unpinch,   *pointer_cursor);
 	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? input_state_justgrip    : input_state_ungrip,    *pointer_cursor);
 }
+
+#endif // SK_NO_FLATSCREEN

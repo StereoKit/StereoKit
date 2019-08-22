@@ -80,7 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StereoKit\StereoKit.csproj">
-      <Project>{51e429de-70d7-4778-89ad-5564e26f4924}</Project>
+      <Project>{c775441c-2669-471d-a369-c0b0e7c0f2ab}</Project>
       <Name>StereoKit</Name>
     </ProjectReference>
   </ItemGroup>

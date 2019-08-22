@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -20,17 +21,23 @@ namespace StereoKit
             if (library != IntPtr.Zero)
                 return;
 
-            string folder = Environment.Is64BitProcess ?
-                "x64_" :
-                "Win32_";
+            string folder = "";
+            switch (RuntimeInformation.ProcessArchitecture)
+            {
+                case Architecture.Arm:   folder = "ARM";   break;
+                case Architecture.Arm64: folder = "ARM64"; break;
+                case Architecture.X64:   folder = "x64";   break;
+                case Architecture.X86:   folder = "Win32"; break;
+                default: throw new Exception("What crazy architecture is this?!");
+            }
 
             #if DEBUG
-            folder += "Debug";
+            folder += "_Debug";
             #else
-            folder += "Release";
+            folder += "_Release";
             #endif
 
-            string location = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            string location = Assembly.GetExecutingAssembly().Location;
             string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
             library = LoadLibraryEx(path, IntPtr.Zero, 0);
 

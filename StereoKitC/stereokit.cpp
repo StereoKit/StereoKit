@@ -65,19 +65,25 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 
 	// Create a runtime
 	sk_runtime = runtime_preference;
-	bool result = sk_runtime == sk_runtime_mixedreality ? 
+	bool result = sk_runtime == sk_runtime_mixedreality ?
 		openxr_init(app_name) :
-		win32_init (app_name);
+	#ifndef SK_NO_FLATSCREEN
+		win32_init(app_name);
+	#else
+		false;
+	#endif
 
 	if (!result)
 		log_writef(log_warning, "Couldn't create StereoKit in %s mode!", sk_runtime == sk_runtime_mixedreality ? "MixedReality" : "Flatscreen");
 
 	// Try falling back to flatscreen, if we didn't just try it
+	#ifndef SK_NO_FLATSCREEN
 	if (!result && fallback && runtime_preference != sk_runtime_flatscreen) {
 		log_writef(log_info, "Runtime falling back to Flatscreen");
 		sk_runtime = sk_runtime_flatscreen;
 		result     = win32_init (app_name);
 	}
+	#endif
 
 	// No runtime, return failure
 	if (!result) {
@@ -94,7 +100,9 @@ void sk_shutdown() {
 	input_shutdown();
 	render_shutdown();
 	switch (sk_runtime) {
+	#ifndef SK_NO_FLATSCREEN
 	case sk_runtime_flatscreen:   win32_shutdown (); break;
+	#endif
 	case sk_runtime_mixedreality: openxr_shutdown(); break;
 	}
 	//assets_shutdown_check();
@@ -120,7 +128,9 @@ void sk_update_timer() {
 
 bool32_t sk_step(void (*app_update)(void)) {
 	switch (sk_runtime) {
+	#ifndef SK_NO_FLATSCREEN
 	case sk_runtime_flatscreen:   win32_step_begin (); break;
+	#endif
 	case sk_runtime_mixedreality: openxr_step_begin(); break;
 	}
 	
@@ -133,7 +143,9 @@ bool32_t sk_step(void (*app_update)(void)) {
 	render_update();
 	d3d_render_begin();
 	switch (sk_runtime) {
+	#ifndef SK_NO_FLATSCREEN
 	case sk_runtime_flatscreen:   win32_step_end (); break;
+	#endif
 	case sk_runtime_mixedreality: openxr_step_end(); break;
 	}
 	d3d_render_end();

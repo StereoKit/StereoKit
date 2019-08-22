@@ -1,3 +1,5 @@
+#ifndef SK_NO_FLATSCREEN
+
 #include "win32.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -120,3 +122,5 @@ void win32_step_end() {
 
 	render_clear();
 }
+
+#endif // SK_NO_FLATSCREEN
