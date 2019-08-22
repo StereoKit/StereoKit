@@ -17,17 +17,21 @@ namespace StereoKit
         #endregion
 
         internal IntPtr _modelInst;
+        static int index;
         public Model(string file)
         {
             _modelInst = model_create_file(file);
             if (_modelInst == IntPtr.Zero)
                 Log.Write(LogLevel.Warning, "Couldn't load {0}!", file);
         }
+        public Model(Mesh mesh, Material material)
+        {
+            index += 1;
+            _modelInst = model_create_mesh("auto/model"+index, mesh._meshInst, material._materialInst);
+        }
         public Model(string id, Mesh mesh, Material material)
         {
             _modelInst = model_create_mesh(id, mesh._meshInst, material._materialInst);
-            if (_modelInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't make {0}!", id);
         }
         private Model(IntPtr model)
         {

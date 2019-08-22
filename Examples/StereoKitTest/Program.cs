@@ -15,12 +15,14 @@ class Program
             root+"Sky/Bottom.jpg", root+"Sky/Back.jpg", root+"Sky/Front.jpg" });
         Renderer.SetSkytex(cubemap);
 
-        Material floorMat = new Material("app/mat_floor", Shader.Find("default/shader_pbr"));
-        floorMat.SetTexture("diffuse", new Tex2D(root+"test.png" ));
-        floorMat.SetTexture("normal",  new Tex2D(root+"test_normal.png"));
-        floorMat.SetFloat  ("tex_scale", 6);
+        Material floorMat = new Material(Shader.Find("default/shader_pbr"));
+        floorMat["diffuse"  ] = new Tex2D(root + "test.png");
+        floorMat["normal"   ] = new Tex2D(root + "test_normal.png");
+        floorMat["tex_scale"] = 6;
+        floorMat["color"    ] = new Color(1,1,1,0.75f);
+        floorMat.Alpha = AlphaMode.Blend;
 
-        Model     cube   = new Model("app/cube", Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
+        Model     cube   = new Model(Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
         Model     gltf   = new Model(root+"DamagedHelmet.gltf");
         Transform floorTr= new Transform(new Vec3(0,-1.5f, 0), new Vec3(5,1,5));
         Transform solidTr= new Transform(Vec3.Zero, Vec3.One * 0.25f);

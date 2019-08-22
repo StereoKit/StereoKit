@@ -59,7 +59,7 @@ namespace StereoKit
         public Tex2D()
         {
             index += 1;
-            _texInst = tex2d_create("app/tex"+index, TexType.Image, TexFormat.Rgba32);
+            _texInst = tex2d_create("auto/tex"+index, TexType.Image, TexFormat.Rgba32);
         }
         private Tex2D(IntPtr tex)
         {

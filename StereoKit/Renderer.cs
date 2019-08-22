@@ -16,6 +16,8 @@ namespace StereoKit
         static extern void render_set_view(IntPtr transform);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void render_set_skytex(IntPtr sky_texture, int show_sky);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern void render_blit(IntPtr to_rendertarget, IntPtr material);
         #endregion
 
         public static void Add(Mesh mesh, Material material, Transform transform)
@@ -37,6 +39,10 @@ namespace StereoKit
         public static void SetSkytex(Tex2D skyTexture, bool showSky = true)
         {
             render_set_skytex(skyTexture._texInst, showSky?1:0);
+        }
+        public static void Blit(Tex2D toRendertarget, Material material)
+        {
+            render_blit(toRendertarget._texInst, material._materialInst);
         }
     }
 }

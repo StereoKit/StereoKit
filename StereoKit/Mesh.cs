@@ -13,6 +13,8 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_gen_cube(string id, Vec3 dimensions, int subdivisions);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern IntPtr mesh_gen_rounded_cube(string id, Vec3 dimensions, float edge_radius, int subdivisions);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_gen_sphere(string id, float diameter, int subdivisions);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
         static extern void mesh_release(IntPtr mesh);
@@ -41,6 +43,10 @@ namespace StereoKit
         public static Mesh GenerateCube(string id, Vec3 dimensions, int subdivisions = 0)
         {
             return new Mesh(mesh_gen_cube(id, dimensions, subdivisions));
+        }
+        public static Mesh GenerateRoundedCube(string id, Vec3 dimensions, float edgeRadius, int subdivisions = 4)
+        {
+            return new Mesh(mesh_gen_rounded_cube(id, dimensions, edgeRadius, subdivisions));
         }
         public static Mesh GenerateSphere(string id, float diameter, int subdivisions = 4)
         {
