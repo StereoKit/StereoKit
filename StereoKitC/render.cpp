@@ -310,6 +310,10 @@ void render_blit(tex2d_t to, material_t material) {
 	render_draw_item(1);
 
 	tex2d_rtarget_set_active(nullptr);
+
+	render_last_material = nullptr;
+	render_last_mesh = nullptr;
+	render_last_shader = nullptr;
 }
 
 void render_set_material(material_t material) {

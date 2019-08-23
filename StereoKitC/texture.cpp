@@ -1,7 +1,9 @@
 #include "stereokit.h"
 #include "texture.h"
 
+#include "shader_builtin.h"
 #include "d3d.h"
+#include "stref.h"
 
 #pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
 #define STB_IMAGE_IMPLEMENTATION
@@ -56,7 +58,48 @@ tex2d_t tex2d_create_file(const char *file) {
 	return result;
 }
 tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
-	return nullptr;
+	tex2d_t result = tex2d_find(equirectangular_file);
+	if (result != nullptr)
+		return result;
+
+	const vec3 up   [6] = { -vec3_up, -vec3_up, vec3_forward, -vec3_forward, -vec3_up, -vec3_up };
+	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
+	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
+
+	tex2d_t    equirect         = tex2d_create_file(equirectangular_file);
+	equirect->header.id = string_hash("temp/equirectid");
+	shader_t   convert_shader   = shader_create  ("default/equirect_shader", sk_shader_builtin_equirect);
+	material_t convert_material = material_create("default/equirect_convert", convert_shader);
+	material_set_texture( convert_material, "source", equirect );
+
+	tex2d_t  face    = tex2d_create("temp/equirect_face", tex_type_rendertarget, equirect->format);
+	color32 *data[6] = {};
+	int      width   = equirect->height / 2;
+	int      height  = width;
+	size_t   size    = width*height*tex2d_format_size(equirect->format);
+	tex2d_set_colors(face, width, height, nullptr);
+	for (size_t i = 0; i < 6; i++) {
+		material_set_vector(convert_material, "up",      { up[i].x, up[i].y, up[i].z, 0 });
+		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
+		material_set_vector(convert_material, "forward", { fwd[i].x, fwd[i].y, fwd[i].z, 0 });
+
+		render_blit   (face, convert_material);
+		data[i] = (color32*)malloc(size);
+		tex2d_get_data(face, data[i], size);
+	}
+
+	result = tex2d_create(equirectangular_file, tex_type_image | tex_type_cubemap, equirect->format);
+	tex2d_set_colors(result, width, height, (void**)&data, 6);
+
+	shader_release(convert_shader);
+	material_release(convert_material);
+	tex2d_release(equirect);
+	tex2d_release(face);
+
+	for (size_t i = 0; i < 6; i++) {
+		free(data[i]);
+	}
+	return result;
 }
 tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	tex2d_t result = tex2d_find(cube_face_file_xxyyzz[0]);
@@ -98,6 +141,9 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	// Create with the data we have
 	result = tex2d_create(cube_face_file_xxyyzz[0], tex_type_image | tex_type_cubemap);
 	tex2d_set_colors(result, final_width, final_height, (void**)&data, 6);
+	for (size_t i = 0; i < 6; i++) {
+		free(data[i]);
+	}
 	return result;
 }
 tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
@@ -417,7 +463,6 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	} else {
 		// Otherwise, create a staging texture from the non-MSAA source
 		desc.BindFlags      = 0;
-		desc.MiscFlags     &= D3D11_RESOURCE_MISC_TEXTURECUBE;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		desc.Usage          = D3D11_USAGE_STAGING;
 

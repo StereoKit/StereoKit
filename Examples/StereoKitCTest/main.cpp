@@ -13,11 +13,7 @@ int main() {
 	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
 
-	const char *cube_files[] = {
-		"../../Examples/Assets/Sky/Right.jpg", "../../Examples/Assets/Sky/Left.jpg",
-		"../../Examples/Assets/Sky/Top.jpg",   "../../Examples/Assets/Sky/Bottom.jpg",
-		"../../Examples/Assets/Sky/Back.jpg",  "../../Examples/Assets/Sky/Front.jpg",};
-	tex2d_t cubemap = tex2d_create_cubemap_files(cube_files);
+	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
 

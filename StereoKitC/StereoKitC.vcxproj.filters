@@ -70,6 +70,9 @@
     <ClCompile Include="shader_builtin_skybox.cpp">
       <Filter>shaders_builtin</Filter>
     </ClCompile>
+    <ClCompile Include="shader_builtin_equirect.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">

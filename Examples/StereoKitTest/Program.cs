@@ -10,17 +10,13 @@ class Program
             Environment.Exit(1);
 
         string root = "../Examples/Assets/";
-        Tex2D cubemap = new Tex2D(new string[6] {
-            root+"Sky/Right.jpg",  root+"Sky/Left.jpg", root+"Sky/Top.jpg",  
-            root+"Sky/Bottom.jpg", root+"Sky/Back.jpg", root+"Sky/Front.jpg" });
+        Tex2D cubemap = Tex2D.FromEquirectangular(root + "Sky/sky.hdr");
         Renderer.SetSkytex(cubemap);
 
         Material floorMat = new Material(Shader.Find("default/shader_pbr"));
         floorMat["diffuse"  ] = new Tex2D(root + "test.png");
         floorMat["normal"   ] = new Tex2D(root + "test_normal.png");
         floorMat["tex_scale"] = 6;
-        floorMat["color"    ] = new Color(1,1,1,0.75f);
-        floorMat.Alpha = AlphaMode.Blend;
 
         Model     cube   = new Model(Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
         Model     gltf   = new Model(root+"DamagedHelmet.gltf");
