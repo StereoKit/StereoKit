@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StereoKit;
 
 class Program 
@@ -27,14 +28,17 @@ class Program
         floorSolid.AddBox(floorTr.Scale);
         
         List<Solid> objects = new List<Solid>();
-        while (StereoKitApp.Step(() => {
-            if (Input.Hand(Handed.Right).IsJustPinched) {
+        while (StereoKitApp.Step(() =>
+        {
+            if (Input.Hand(Handed.Right).IsJustPinched)
+            {
                 objects.Add(new Solid(new Vec3(0,3,0), Quat.Identity));
-                objects[objects.Count-1].AddSphere(.45f, 40);
-                objects[objects.Count-1].AddBox   (Vec3.One*.35f, 40);
+                objects.Last().AddSphere(.45f, 40);
+                objects.Last().AddBox   (Vec3.One*.35f, 40);
             }
 
-            for (int i = 0; i < objects.Count; i++) {
+            for (int i = 0; i < objects.Count; i++)
+            {
                 objects[i].GetTransform(ref solidTr);
                 Renderer.Add(gltf, solidTr);
             }

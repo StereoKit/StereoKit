@@ -17,7 +17,7 @@ TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
 
 cbuffer ParamBuffer : register(b2) {
-	// [param] float blur default 0.55
+	// [param] float blur default 0.8
 	float blur;
 };
 struct vsIn {
@@ -42,7 +42,12 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 psOut ps(psIn input) {
 	psOut result;
-	result.color = sk_cubemap.SampleLevel(tex_cube_sampler, input.normal, blur*8);
+
+	float w, h;
+	uint mip_levels;
+	sk_cubemap.GetDimensions(0, w, h, mip_levels);
+
+	result.color = sk_cubemap.SampleLevel(tex_cube_sampler, input.normal, blur*mip_levels);
 	result.depth = 0.99999;
 	return result;
 }

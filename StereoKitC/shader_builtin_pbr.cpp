@@ -100,9 +100,13 @@ float4 ps(psIn input) : SV_TARGET{
 	float  NdotL    = (dot(normal,light));
 	float  NdotV    = (dot(normal,view));
 
+	float w, h;
+	uint mip_levels;
+	sk_cubemap.GetDimensions(0, w, h, mip_levels);
+
 	float3 reflection = reflect(-view, normal);
-	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, (1-rough)*20).rgb; // This should be Spherical Harmonics eventually
-	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, (1-rough)*20).rgb;
+	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, (1-rough)*mip_levels).rgb; // This should be Spherical Harmonics eventually
+	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, (1-rough)*mip_levels).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
