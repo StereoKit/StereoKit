@@ -8,6 +8,7 @@ enum asset_type_ {
 	asset_type_shader,
 	asset_type_material,
 	asset_type_model,
+	asset_type_font,
 };
 
 struct asset_header_t {

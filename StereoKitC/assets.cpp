@@ -5,6 +5,7 @@
 #include "shader.h"
 #include "material.h"
 #include "model.h"
+#include "font.h"
 #include "stref.h"
 
 #include <vector>
@@ -45,6 +46,7 @@ void *assets_allocate(asset_type_ type, const char *id) {
 	case asset_type_shader:   size = sizeof(_shader_t);   break;
 	case asset_type_material: size = sizeof(_material_t); break;
 	case asset_type_model:    size = sizeof(_model_t);    break;
+	case asset_type_font:     size = sizeof(_font_t);     break;
 	default: throw "Unimplemented asset type!";
 	}
 
@@ -75,6 +77,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	case asset_type_shader:   shader_destroy  ((shader_t  )&asset); break;
 	case asset_type_material: material_destroy((material_t)&asset); break;
 	case asset_type_model:    model_destroy   ((model_t   )&asset); break;
+	case asset_type_font:     font_destroy    ((font_t   )&asset); break;
 	default: throw "Unimplemented asset type!";
 	}
 

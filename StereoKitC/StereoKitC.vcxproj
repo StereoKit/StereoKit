@@ -182,6 +182,7 @@
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
+    <ClCompile Include="font.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="input_hand.cpp" />
     <ClCompile Include="log.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="assets.h" />
     <ClInclude Include="cgltf.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="font.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="input_hand.h" />
     <ClInclude Include="input_hand_poses.h" />
@@ -220,6 +222,8 @@
     <ClInclude Include="openxr.h" />
     <ClInclude Include="shader_builtin.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_rect_pack.h" />
+    <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />
     <ClInclude Include="texture.h" />
