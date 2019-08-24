@@ -17,12 +17,15 @@ int main() {
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
 
+	font_t font = font_create("C:/Windows/Fonts/Arial.ttf");
+
 	// Create a PBR floor material
 	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/test.png");
 	tex2d_t    tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
 	material_t floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
+	material_set_texture(floor_mat, "emission",  font_get_tex(font));
 	material_set_float  (floor_mat, "tex_scale", 6);
 	material_set_float  (floor_mat, "roughness", 1.0f);
 	material_set_float  (floor_mat, "metallic", 0.5f);

@@ -209,9 +209,10 @@ SK_API void    tex2d_get_data   (tex2d_t texture, void *out_data, size_t out_dat
 
 SK_DeclarePrivateType(font_t);
 
-SK_API font_t font_find   (const char *id);
-SK_API font_t font_create (const char *file);
-SK_API void   font_release(font_t font);
+SK_API font_t  font_find   (const char *id);
+SK_API font_t  font_create (const char *file);
+SK_API void    font_release(font_t font);
+SK_API tex2d_t font_get_tex(font_t font);
 
 ///////////////////////////////////////////
 
