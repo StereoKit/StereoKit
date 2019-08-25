@@ -9,15 +9,23 @@ transform_t tr;
 model_t     gltf;
 model_t     box;
 
+font_t       font;
+text_style_t font_style;
+material_t   font_mat;
+transform_t  text_tr;
+
 int main() {
-	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
 
 	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
 
-	font_t font = font_create("C:/Windows/Fonts/Arial.ttf");
+	font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
+	font       = font_create("C:/Windows/Fonts/segoeui.ttf");
+	font_style = text_make_style(font, font_mat);
+	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);
 
 	// Create a PBR floor material
 	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/test.png");
@@ -64,6 +72,11 @@ int main() {
 		
 		// Render floor
 		render_add_model(box, floor_tr);
+		
+		transform_set_position(text_tr, input_hand(handed_right).root.position);
+		transform_set_rotation(text_tr, input_hand(handed_right).root.orientation);
+		text_add(font_style, text_tr, "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.");
+		text_render_style(font_style);
 	}));
 
 	// Release everything

@@ -59,7 +59,7 @@ void transform_matrix(transform_t &transform, XMMATRIX &result) {
 	}
 	result = transform._transform;
 }
-vec3 transform_world_to_local(transform_t &transform, vec3 &world_coordinate) {
+vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordinate) {
 	XMMATRIX tr;
 	transform_matrix(transform, tr);
 	tr = XMMatrixInverse(nullptr, tr);
@@ -68,10 +68,28 @@ vec3 transform_world_to_local(transform_t &transform, vec3 &world_coordinate) {
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }
-vec3 transform_local_to_world(transform_t &transform, vec3 &local_coordinate) {
+vec3 transform_local_to_world(transform_t &transform, const vec3 &local_coordinate) {
 	XMMATRIX tr;
 	transform_matrix(transform, tr);
 	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& local_coordinate),  tr);
+	vec3 result;
+	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
+	return result;
+}
+
+vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction) {
+	XMMATRIX tr;
+	transform_matrix(transform, tr);
+	tr = XMMatrixInverse(nullptr, tr);
+	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& world_direction),  tr);
+	vec3 result;
+	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
+	return result;
+}
+vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction) {
+	XMMATRIX tr;
+	transform_matrix(transform, tr);
+	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& local_direction),  tr);
 	vec3 result;
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;

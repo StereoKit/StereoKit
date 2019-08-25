@@ -119,10 +119,10 @@ SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal,
 
 static const float deg2rad = 0.01745329252f;
 static const float rad2deg = 57.295779513f;
-static const float cm2m = 0.1f;
-static const float mm2m = 0.01f;
-static const float m2cm = 10.f;
-static const float m2mm = 100.f;
+static const float cm2m = 0.01f;
+static const float mm2m = 0.001f;
+static const float m2cm = 100.f;
+static const float m2mm = 1000.f;
 
 static const vec3 vec3_one      = vec3{ 1,1, 1 };
 static const vec3 vec3_zero     = vec3{ 0,0, 0 };
@@ -131,8 +131,8 @@ static const vec3 vec3_forward  = vec3{ 0,0,-1 };
 static const vec3 vec3_right    = vec3{ 1,0, 0 };
 static const quat quat_identity = quat{ 0,0, 0,1 };
 
-#define unit_cm(cm) ((cm)*0.1f)
-#define unit_mm(mm) ((mm)*0.01f)
+#define unit_cm(cm) ((cm)*0.01f)
+#define unit_mm(mm) ((mm)*0.001f)
 #define unit_dmm(dmm, distance) ((dmm)*(distance))
 
 ///////////////////////////////////////////
@@ -275,8 +275,18 @@ SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
-SK_API vec3 transform_world_to_local(transform_t &transform, vec3 &world_coordinate);
-SK_API vec3 transform_local_to_world(transform_t &transform, vec3 &local_coordinate);
+SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
+SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
+SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
+SK_API vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
+
+///////////////////////////////////////////
+
+typedef int32_t text_style_t;
+
+SK_API text_style_t text_make_style(font_t font, material_t material);
+SK_API void         text_add(text_style_t style, transform_t &transform, const char *text);
+SK_API void text_render_style(text_style_t style);
 
 ///////////////////////////////////////////
 

@@ -21,10 +21,6 @@ font_t font_create(const char *file) {
 		return result;
 	result = (font_t)assets_allocate(asset_type_font, file);
 
-	stbtt_fontinfo font;
-	unsigned char *bitmap;
-	int width,height,i,j,c =  'a', s = 20;
-
 	FILE *fp;
 	if (fopen_s(&fp, file, "rb") != 0 || fp == nullptr)
 		return nullptr;
@@ -40,20 +36,45 @@ font_t font_create(const char *file) {
 	fread(data, 1, length, fp);
 	fclose(fp);
 
+	// Load and pack font data
+	const int w = 512;
+	const int h = 512;
+	const float size = 64;
+	const int start_char = 32;
+	stbtt_fontinfo font;
+	uint8_t *bitmap;
+	stbtt_pack_context pc;
+	stbtt_packedchar chars[128];
 	stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
-	//bitmap = stbtt_GetCodepointSDF(&font, 0, stbtt_ScaleForPixelHeight(&font, s), c, &width, &height, 0, 0);
-	bitmap = stbtt_GetCodepointBitmap(&font, 0, stbtt_ScaleForPixelHeight(&font, s), c, &width, &height, 0, 0);
-	stbtt_bakedchar cdata[96];
-	unsigned char temp_bitmap[256*256];
-	stbtt_BakeFontBitmap(data, 0, 32.0, temp_bitmap, 256, 256, 32, 96, cdata);
+	bitmap = (uint8_t*)malloc(sizeof(uint8_t) * w * h);
+	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
+	stbtt_PackFontRange(&pc, data, 0, size, start_char, 95, chars);
+	stbtt_PackEnd(&pc);
 	free(data);
 
-	color32 *colors = (color32*)malloc(256 * 256 * sizeof(color32));
-	for (size_t i = 0; i < 256*256; i++) {
-		colors[i] = color32{ temp_bitmap[i], 0, 0, 0 };
+	// convert characters
+	float convert_w = 1.0f / w;
+	float convert_h = 1.0f / h;
+	for (size_t i = 0; i < _countof(chars)-start_char; i++) {
+		result->characters[i+start_char] = {
+			chars[i].xoff/size,  -chars[i].yoff/size,
+			chars[i].xoff2/size, -chars[i].yoff2/size,
+			chars[i].x0*convert_w, chars[i].y0*convert_h,
+			chars[i].x1*convert_w, chars[i].y1*convert_h,
+			chars[i].xadvance/size,
+		};
+	}
+
+	// Convert to color data
+	color32 *colors = (color32*)malloc(w * h * sizeof(color32));
+	for (size_t i = 0; i < w*h; i++) {
+		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}
 	result->font_tex = tex2d_create("fonttex", tex_type_image);
-	tex2d_set_colors(result->font_tex, 256, 256, colors);
+	tex2d_set_colors(result->font_tex, w, h, colors);
+
+	free(bitmap);
+	free(colors);
 
 	return result;
 }

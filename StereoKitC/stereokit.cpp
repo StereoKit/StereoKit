@@ -34,6 +34,7 @@ tex2d_t    sk_default_tex_flat;
 tex2d_t    sk_default_tex_rough;
 shader_t   sk_default_shader;
 shader_t   sk_default_shader_pbr;
+shader_t   sk_default_shader_font;
 material_t sk_default_material;
 bool sk_create_defaults();
 void sk_destroy_defaults();
@@ -215,6 +216,10 @@ bool sk_create_defaults() {
 	if (sk_default_shader_pbr == nullptr) {
 		return false;
 	}
+	sk_default_shader_font = shader_create("default/shader_font", sk_shader_builtin_font);
+	if (sk_default_shader_font == nullptr) {
+		return false;
+	}
 
 	sk_default_material = material_create("default/material", sk_default_shader_pbr);
 	if (sk_default_material == nullptr) {
@@ -228,6 +233,7 @@ bool sk_create_defaults() {
 
 void sk_destroy_defaults() {
 	material_release(sk_default_material);
+	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
 	tex2d_release   (sk_default_tex);
