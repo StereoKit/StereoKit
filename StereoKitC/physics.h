@@ -1,5 +1,5 @@
 #pragma once
 
-void physics_init();
+bool physics_init();
 void physics_shutdown();
 void physics_update();

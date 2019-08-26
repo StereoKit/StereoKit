@@ -76,6 +76,15 @@
     <ClCompile Include="font.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="Text.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="shader_builtin_font.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
+    <ClCompile Include="system.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -147,6 +156,12 @@
     </ClInclude>
     <ClInclude Include="font.h">
       <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="Text.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="system.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

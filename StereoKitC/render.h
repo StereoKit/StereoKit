@@ -15,7 +15,7 @@ void render_draw_from  (camera_t &cam, transform_t &cam_transform);
 void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform);
 void render_clear();
 
-void render_initialize();
+bool render_initialize();
 void render_update();
 void render_shutdown();
 

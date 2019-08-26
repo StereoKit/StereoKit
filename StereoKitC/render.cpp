@@ -211,7 +211,7 @@ void render_clear() {
 	render_last_mesh = nullptr;
 }
 
-void render_initialize() {
+bool render_initialize() {
 	shaderargs_create(render_shader_globals, sizeof(render_global_buffer_t), 0);
 	shaderargs_create(render_shader_blit,    sizeof(render_blit_data_t),     1);
 
@@ -252,6 +252,8 @@ void render_initialize() {
 	shader_release(sky_shader);
 
 	render_default_tex = tex2d_find("default/tex2d");
+
+	return true;
 }
 
 void render_update() {

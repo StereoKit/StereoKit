@@ -62,8 +62,9 @@ void input_fire_event(input_source_ source, input_state_ event, const pointer_t 
 	}
 }
 
-void input_init() {
+bool input_init() {
 	input_hand_init();
+	return true;
 }
 void input_shutdown() {
 	input_pointers .clear();

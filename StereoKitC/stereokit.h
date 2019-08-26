@@ -63,6 +63,9 @@ struct vec3 {
 struct vec4 {
 	float x, y, z, w;
 };
+struct rect {
+	float x, y, w, h;
+};
 struct quat {
 	float i, j, k, a;
 };
@@ -119,10 +122,10 @@ SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal,
 
 static const float deg2rad = 0.01745329252f;
 static const float rad2deg = 57.295779513f;
-static const float cm2m = 0.1f;
-static const float mm2m = 0.01f;
-static const float m2cm = 10.f;
-static const float m2mm = 100.f;
+static const float cm2m = 0.01f;
+static const float mm2m = 0.001f;
+static const float m2cm = 100.f;
+static const float m2mm = 1000.f;
 
 static const vec3 vec3_one      = vec3{ 1,1, 1 };
 static const vec3 vec3_zero     = vec3{ 0,0, 0 };
@@ -131,8 +134,8 @@ static const vec3 vec3_forward  = vec3{ 0,0,-1 };
 static const vec3 vec3_right    = vec3{ 1,0, 0 };
 static const quat quat_identity = quat{ 0,0, 0,1 };
 
-#define unit_cm(cm) ((cm)*0.1f)
-#define unit_mm(mm) ((mm)*0.01f)
+#define unit_cm(cm) ((cm)*0.01f)
+#define unit_mm(mm) ((mm)*0.001f)
 #define unit_dmm(dmm, distance) ((dmm)*(distance))
 
 ///////////////////////////////////////////
@@ -209,9 +212,10 @@ SK_API void    tex2d_get_data   (tex2d_t texture, void *out_data, size_t out_dat
 
 SK_DeclarePrivateType(font_t);
 
-SK_API font_t font_find   (const char *id);
-SK_API font_t font_create (const char *file);
-SK_API void   font_release(font_t font);
+SK_API font_t  font_find   (const char *id);
+SK_API font_t  font_create (const char *file);
+SK_API void    font_release(font_t font);
+SK_API tex2d_t font_get_tex(font_t font);
 
 ///////////////////////////////////////////
 
@@ -274,8 +278,29 @@ SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
 SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
-SK_API vec3 transform_world_to_local(transform_t &transform, vec3 &world_coordinate);
-SK_API vec3 transform_local_to_world(transform_t &transform, vec3 &local_coordinate);
+SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
+SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
+SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
+SK_API vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
+
+///////////////////////////////////////////
+
+enum text_align_ {
+	text_align_x_left      = 0,
+	text_align_y_top       = 0,
+	text_align_x_center    = 1 << 1,
+	text_align_y_center    = 1 << 2,
+	text_align_x_right     = 1 << 3,
+	text_align_y_bottom    = 1 << 4,
+};
+SK_MakeFlag(text_align_);
+
+typedef int32_t text_style_t;
+
+SK_API text_style_t text_make_style(font_t font, material_t material, text_align_ align);
+SK_API void         text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0);
+SK_API vec2         text_size(text_style_t style, const char *text);
+SK_API void text_render_style(text_style_t style);
 
 ///////////////////////////////////////////
 

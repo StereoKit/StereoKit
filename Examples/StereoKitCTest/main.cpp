@@ -9,6 +9,11 @@ transform_t tr;
 model_t     gltf;
 model_t     box;
 
+font_t       font;
+text_style_t font_style;
+material_t   font_mat;
+transform_t  text_tr;
+
 int main() {
 	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
@@ -16,6 +21,11 @@ int main() {
 	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
+
+	font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
+	font       = font_create("C:/Windows/Fonts/segoeui.ttf");
+	font_style = text_make_style(font, font_mat, text_align_x_right | text_align_y_center);
+	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);
 
 	// Create a PBR floor material
 	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/test.png");
@@ -61,6 +71,13 @@ int main() {
 		
 		// Render floor
 		render_add_model(box, floor_tr);
+		
+		transform_set_position(text_tr, input_hand(handed_right).root.position);
+		transform_set_rotation(text_tr, input_hand(handed_right).root.orientation);
+		const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
+		vec2 txt_size = text_size(font_style, txt);
+		text_add_at(font_style, text_tr, txt, 0, 0);
+		text_render_style(font_style);
 	}));
 
 	// Release everything
