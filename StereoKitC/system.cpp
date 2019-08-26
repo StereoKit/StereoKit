@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 #include "stref.h"
 #include "stereokit.h"
 
@@ -28,6 +29,7 @@ void systems_add(const char *name, const char **init_dependencies, int32_t init_
 		systems = (system_t*)realloc(systems, sizeof(system_t) * system_cap);
 	}
 
+	systems[system_count] = {};
 	systems[system_count].init_dependencies       = init_dependencies;
 	systems[system_count].init_dependency_count   = init_dependency_count;
 	systems[system_count].update_dependencies     = update_dependencies;
@@ -112,27 +114,69 @@ bool systems_initialize() {
 	if (!systems_sort())
 		return false;
 
+	FILETIME time;
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
+			// start timing
+			GetSystemTimePreciseAsFileTime(&time);
+			systems[index].profile_start_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+
 			if (!systems[index].func_initialize())
 				return false;
+
+			// end timing
+			GetSystemTimePreciseAsFileTime(&time);
+			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			systems[index].profile_start_duration = end - systems[index].profile_start_duration;
 		}
 	}
 	return true;
 }
 void systems_update() {
+	FILETIME time;
 	for (int32_t i = 0; i < system_count; i++) {
-		if (systems[i].func_update != nullptr)
+		if (systems[i].func_update != nullptr) {
+			// start timing
+			GetSystemTimePreciseAsFileTime(&time);
+			systems[i].profile_frame_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+
 			systems[i].func_update();
+
+			// end timing
+			GetSystemTimePreciseAsFileTime(&time);
+			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			systems[i].profile_frame_duration = end - systems[i].profile_frame_duration;
+			systems[i].profile_update_duration += systems[i].profile_frame_duration;
+			systems[i].profile_update_count += 1;
+		}
 	}
 }
 void systems_shutdown() {
+	FILETIME time;
 	for (int32_t i = system_count-1; i >= 0; i--) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_shutdown != nullptr) {
+			// start timing
+			GetSystemTimePreciseAsFileTime(&time);
+			systems[i].profile_shutdown_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+
 			systems[index].func_shutdown();
+
+			// end timing
+			GetSystemTimePreciseAsFileTime(&time);
+			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			systems[i].profile_shutdown_duration = end - systems[i].profile_shutdown_duration;
 		}
+	}
+
+	log_write(log_info, "Performance report:");
+	for (int32_t i = 0; i < system_count; i++) {
+		int32_t index = system_init_order[i];
+		log_writef(log_info, "%15s: start = %8.2fms | update = %7.2fms | end = %7.2fms", systems[index].name,
+			(float)((double)systems[index].profile_start_duration / 10000.0),
+			systems[index].profile_update_count == 0 ? 0.0f : (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 10000.0),
+			(float)((double)systems[index].profile_shutdown_duration / 10000.0));
 	}
 
 	if (systems           != nullptr) free(systems);
