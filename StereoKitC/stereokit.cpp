@@ -103,8 +103,6 @@ void platform_end_frame() {
 #endif
 	case sk_runtime_mixedreality: openxr_step_end(); break;
 	}
-
-	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
 }
 
 void sk_app_update() {
@@ -179,6 +177,8 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
+	if (!sk_focused)
+		this_thread::sleep_for(chrono::milliseconds(sk_focused ? 1 : 250));
 	return sk_run;
 }
 

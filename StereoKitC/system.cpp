@@ -173,7 +173,7 @@ void systems_shutdown() {
 	log_write(log_info, "Performance report:");
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = system_init_order[i];
-		log_writef(log_info, "%15s: start = %8.2fms | update = %7.2fms | end = %7.2fms", systems[index].name,
+		log_writef(log_info, "%15s: start = %8.2fms | update = %7.3fms | end = %7.2fms", systems[index].name,
 			(float)((double)systems[index].profile_start_duration / 10000.0),
 			systems[index].profile_update_count == 0 ? 0.0f : (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 10000.0),
 			(float)((double)systems[index].profile_shutdown_duration / 10000.0));
