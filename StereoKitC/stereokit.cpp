@@ -15,6 +15,7 @@
 using namespace std;
 
 const char   *sk_app_name;
+void        (*sk_app_update_func)(void);
 sk_runtime_   sk_runtime  = sk_runtime_flatscreen;
 bool          sk_runtime_fallback = false;
 sk_settings_t sk_settings = {100,100,800,480};
@@ -39,8 +40,10 @@ shader_t   sk_default_shader;
 shader_t   sk_default_shader_pbr;
 shader_t   sk_default_shader_font;
 material_t sk_default_material;
+
 bool sk_create_defaults();
 void sk_destroy_defaults();
+void sk_update_timer();
 
 void sk_set_settings(sk_settings_t &settings) {
 	if (sk_d3d_initialized) {
@@ -82,6 +85,33 @@ void platform_shutdown() {
 	}
 }
 
+void platform_begin_frame() {
+	switch (sk_runtime) {
+#ifndef SK_NO_FLATSCREEN
+	case sk_runtime_flatscreen:   win32_step_begin (); break;
+#endif
+	case sk_runtime_mixedreality: openxr_step_begin(); break;
+	}
+
+	sk_update_timer();
+}
+
+void platform_end_frame() {
+	switch (sk_runtime) {
+#ifndef SK_NO_FLATSCREEN
+	case sk_runtime_flatscreen:   win32_step_end (); break;
+#endif
+	case sk_runtime_mixedreality: openxr_step_end(); break;
+	}
+
+	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
+}
+
+void sk_app_update() {
+	if (sk_app_update_func != nullptr)
+		sk_app_update_func();
+}
+
 bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
 	sk_runtime          = runtime_preference;
 	sk_runtime_fallback = fallback;
@@ -92,28 +122,35 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 	const char *default_deps[] = {"Graphics"};
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, sk_create_defaults, nullptr, sk_destroy_defaults);
 
-	const char *paltform_deps[] = {"Graphics", "Defaults"};
-	systems_add("Platform", paltform_deps, _countof(paltform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
+	const char *platform_deps[] = {"Graphics", "Defaults"};
+	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
+	systems_add("PlatformBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
+	const char *platform_end_deps[] = {"App"};
+	systems_add("PlatformEnd",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
 
 	const char *physics_deps[] = {"Defaults"};
-	const char *physics_update_deps[] = {"Input"};
+	const char *physics_update_deps[] = {"Input", "PlatformBegin"};
 	systems_add("Physics",  
 		physics_deps,        _countof(physics_deps), 
 		physics_update_deps, _countof(physics_update_deps), 
 		physics_init, physics_update, physics_shutdown);
 
 	const char *renderer_deps[] = {"Graphics", "Defaults"};
-	const char *renderer_update_deps[] = {"Physics"};
+	const char *renderer_update_deps[] = {"Physics", "PlatformBegin"};
 	systems_add("Renderer",  
 		renderer_deps,        _countof(renderer_deps), 
 		renderer_update_deps, _countof(renderer_update_deps),
 		render_initialize, render_update, render_shutdown);
 
 	const char *input_deps[] = {"Platform", "Defaults"};
-	systems_add("Input",  input_deps, _countof(input_deps), nullptr, 0, input_init, input_update, input_shutdown);
+	const char *input_update_deps[] = {"PlatformBegin"};
+	systems_add("Input",  
+		input_deps,        _countof(input_deps), 
+		input_update_deps, _countof(input_update_deps), 
+		input_init, input_update, input_shutdown);
 
-	//const char *app_deps[] = {"Input", "Defaults", "Platform", "Graphics", "Physics", "Renderer"};
-	//systems_add("App", app_deps, _countof(app_deps), nullptr, nullptr, nullptr);
+	const char *app_deps[] = {"Input", "Defaults", "PlatformBegin", "Graphics", "Physics", "Renderer"};
+	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
 	return systems_initialize();
 }
@@ -138,26 +175,9 @@ void sk_update_timer() {
 }
 
 bool32_t sk_step(void (*app_update)(void)) {
-	switch (sk_runtime) {
-	#ifndef SK_NO_FLATSCREEN
-	case sk_runtime_flatscreen:   win32_step_begin (); break;
-	#endif
-	case sk_runtime_mixedreality: openxr_step_begin(); break;
-	}
-	
-	sk_update_timer();
+	sk_app_update_func = app_update;
+
 	systems_update();
-
-	app_update();
-
-	switch (sk_runtime) {
-	#ifndef SK_NO_FLATSCREEN
-	case sk_runtime_flatscreen:   win32_step_end (); break;
-	#endif
-	case sk_runtime_mixedreality: openxr_step_end(); break;
-	}
-
-	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
 
 	return sk_run;
 }
