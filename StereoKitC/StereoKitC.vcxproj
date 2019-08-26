@@ -201,6 +201,7 @@
     <ClCompile Include="shader_builtin_skybox.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stref.cpp" />
+    <ClCompile Include="system.cpp" />
     <ClCompile Include="text.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="transform.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />
+    <ClInclude Include="system.h" />
     <ClInclude Include="text.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />

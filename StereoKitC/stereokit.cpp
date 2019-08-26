@@ -8,12 +8,15 @@
 #include "input.h"
 #include "shader_builtin.h"
 #include "physics.h"
+#include "system.h"
 
 #include <thread> // sleep_for
 
 using namespace std;
 
+const char   *sk_app_name;
 sk_runtime_   sk_runtime  = sk_runtime_flatscreen;
+bool          sk_runtime_fallback = false;
 sk_settings_t sk_settings = {100,100,800,480};
 bool32_t sk_focused = true;
 bool32_t sk_run     = true;
@@ -47,29 +50,12 @@ void sk_set_settings(sk_settings_t &settings) {
 	sk_settings = settings;
 }
 
-bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
-	// Test to avoid initializing the d3d context twice
-	if (!sk_d3d_initialized) {
-		if (d3d_init()) {
-			sk_d3d_initialized = true;
-		} else {
-			log_write(log_error, "Failed to init d3d!");
-			return false;
-		}
-		if (!sk_create_defaults()) {
-			log_write(log_error, "Failed to create defaults!");
-			return false;
-		}
-	}
-	
-	physics_init();
-
+bool platform_init() {
 	// Create a runtime
-	sk_runtime = runtime_preference;
 	bool result = sk_runtime == sk_runtime_mixedreality ?
-		openxr_init(app_name) :
+		openxr_init(sk_app_name) :
 	#ifndef SK_NO_FLATSCREEN
-		win32_init(app_name);
+		win32_init(sk_app_name);
 	#else
 		false;
 	#endif
@@ -79,37 +65,61 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 
 	// Try falling back to flatscreen, if we didn't just try it
 	#ifndef SK_NO_FLATSCREEN
-	if (!result && fallback && runtime_preference != sk_runtime_flatscreen) {
+	if (!result && sk_runtime_fallback && sk_runtime != sk_runtime_flatscreen) {
 		log_writef(log_info, "Runtime falling back to Flatscreen");
 		sk_runtime = sk_runtime_flatscreen;
-		result     = win32_init (app_name);
+		result     = win32_init (sk_app_name);
 	}
 	#endif
-
-	// No runtime, return failure
-	if (!result) {
-		log_write(log_error, "Couldn't create a StereoKit runtime!");
-		return false;
-	}
-
-	render_initialize();
-	input_init();
-	return true;
+	return result;
 }
-
-void sk_shutdown() {
-	input_shutdown();
-	render_shutdown();
+void platform_shutdown() {
 	switch (sk_runtime) {
 	#ifndef SK_NO_FLATSCREEN
 	case sk_runtime_flatscreen:   win32_shutdown (); break;
 	#endif
 	case sk_runtime_mixedreality: openxr_shutdown(); break;
 	}
-	//assets_shutdown_check();
-	sk_destroy_defaults();
-	physics_shutdown();
-	d3d_shutdown();
+}
+
+bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
+	sk_runtime          = runtime_preference;
+	sk_runtime_fallback = fallback;
+	sk_app_name         = app_name;
+
+	systems_add("Graphics", nullptr, 0, nullptr, 0, d3d_init, nullptr, d3d_shutdown);
+
+	const char *default_deps[] = {"Graphics"};
+	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, sk_create_defaults, nullptr, sk_destroy_defaults);
+
+	const char *paltform_deps[] = {"Graphics", "Defaults"};
+	systems_add("Platform", paltform_deps, _countof(paltform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
+
+	const char *physics_deps[] = {"Defaults"};
+	const char *physics_update_deps[] = {"Input"};
+	systems_add("Physics",  
+		physics_deps,        _countof(physics_deps), 
+		physics_update_deps, _countof(physics_update_deps), 
+		physics_init, physics_update, physics_shutdown);
+
+	const char *renderer_deps[] = {"Graphics", "Defaults"};
+	const char *renderer_update_deps[] = {"Physics"};
+	systems_add("Renderer",  
+		renderer_deps,        _countof(renderer_deps), 
+		renderer_update_deps, _countof(renderer_update_deps),
+		render_initialize, render_update, render_shutdown);
+
+	const char *input_deps[] = {"Platform", "Defaults"};
+	systems_add("Input",  input_deps, _countof(input_deps), nullptr, 0, input_init, input_update, input_shutdown);
+
+	//const char *app_deps[] = {"Input", "Defaults", "Platform", "Graphics", "Physics", "Renderer"};
+	//systems_add("App", app_deps, _countof(app_deps), nullptr, nullptr, nullptr);
+
+	return systems_initialize();
+}
+
+void sk_shutdown() {
+	systems_shutdown();
 }
 
 void sk_update_timer() {
@@ -136,20 +146,16 @@ bool32_t sk_step(void (*app_update)(void)) {
 	}
 	
 	sk_update_timer();
-	input_update();
-	physics_update();
+	systems_update();
 
 	app_update();
 
-	render_update();
-	d3d_render_begin();
 	switch (sk_runtime) {
 	#ifndef SK_NO_FLATSCREEN
 	case sk_runtime_flatscreen:   win32_step_end (); break;
 	#endif
 	case sk_runtime_mixedreality: openxr_step_end(); break;
 	}
-	d3d_render_end();
 
 	this_thread::sleep_for(chrono::milliseconds(sk_focused?1:250));
 

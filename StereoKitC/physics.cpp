@@ -31,10 +31,11 @@ DynamicsWorld *physics_world;
 
 vector<physics_shape_asset_t> physics_shapes;
 
-void physics_init() {
+bool physics_init() {
 
 	WorldSettings settings;
 	physics_world = new DynamicsWorld(Vector3(0,-9.81f,0), settings);
+	return true;
 }
 
 void physics_shutdown() {
