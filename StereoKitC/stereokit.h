@@ -282,10 +282,22 @@ SK_API vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &loc
 
 ///////////////////////////////////////////
 
+enum text_align_ {
+	text_align_x_left      = 0,
+	text_align_y_top       = 0,
+	text_align_x_center    = 1 << 1,
+	text_align_y_center    = 1 << 2,
+	text_align_x_right     = 1 << 3,
+	text_align_y_bottom    = 1 << 4,
+};
+SK_MakeFlag(text_align_);
+
 typedef int32_t text_style_t;
 
-SK_API text_style_t text_make_style(font_t font, material_t material);
-SK_API void         text_add(text_style_t style, transform_t &transform, const char *text);
+SK_API text_style_t text_make_style(font_t font, material_t material, text_align_ align);
+SK_API void         text_add (text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0);
+SK_API vec2         text_size(text_style_t style, const char *text);
+SK_API vec2         text_line_size(text_style_t style, const char *text);
 SK_API void text_render_style(text_style_t style);
 
 ///////////////////////////////////////////

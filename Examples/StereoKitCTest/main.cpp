@@ -15,7 +15,7 @@ material_t   font_mat;
 transform_t  text_tr;
 
 int main() {
-	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
+	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
 
 	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
@@ -24,7 +24,7 @@ int main() {
 
 	font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
 	font       = font_create("C:/Windows/Fonts/segoeui.ttf");
-	font_style = text_make_style(font, font_mat);
+	font_style = text_make_style(font, font_mat, text_align_x_right | text_align_y_center);
 	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);
 
 	// Create a PBR floor material
@@ -33,7 +33,6 @@ int main() {
 	material_t floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
-	material_set_texture(floor_mat, "emission",  font_get_tex(font));
 	material_set_float  (floor_mat, "tex_scale", 6);
 	material_set_float  (floor_mat, "roughness", 1.0f);
 	material_set_float  (floor_mat, "metallic", 0.5f);
@@ -75,7 +74,9 @@ int main() {
 		
 		transform_set_position(text_tr, input_hand(handed_right).root.position);
 		transform_set_rotation(text_tr, input_hand(handed_right).root.orientation);
-		text_add(font_style, text_tr, "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.");
+		const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
+		vec2 txt_size = text_size(font_style, txt);
+		text_add(font_style, text_tr, txt, 0, 0);
 		text_render_style(font_style);
 	}));
 
