@@ -116,7 +116,7 @@ vec2 text_size(text_style_t style, const char *text) {
 	return vec2{ max_x, fabsf(y) };
 }
 
-void text_add(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y) {
+void text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y) {
 	_text_style_t &style_data = text_styles[style];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
 	vec2           size       = text_size(style, text);

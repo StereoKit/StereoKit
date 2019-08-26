@@ -16,3 +16,5 @@ struct text_buffer_t {
 	int      vert_count;
 	int      vert_cap;
 };
+
+vec2 text_line_size(text_style_t style, const char *text);
