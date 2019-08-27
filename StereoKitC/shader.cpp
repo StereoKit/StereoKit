@@ -207,6 +207,8 @@ shader_t shader_create(const char *id, const char *hlsl) {
 	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
 	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &result->vshader);
 	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &result->pshader);
+	DX11ResName(result->vshader, "vertex_shader", id);
+	DX11ResName(result->pshader, "pixel_shader",  id);
 
 	shaderargs_create(result->args, result->args_desc.buffer_size, 2);
 
@@ -250,6 +252,8 @@ void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) 
 	d3d_device->CreateBuffer(&const_buff_desc, nullptr, &args.const_buffer);
 	args.buffer_size = (int)buffer_size;
 	args.buffer_slot = buffer_slot;
+
+	DX11ResType(args.const_buffer, "shader_args");
 }
 void shaderargs_set_data(shaderargs_t &args, void *data, size_t buffer_size) {
 	if (args.const_buffer == nullptr)

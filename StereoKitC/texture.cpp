@@ -55,6 +55,8 @@ tex2d_t tex2d_create_file(const char *file) {
 	tex2d_set_colors(result, width, height, data);
 	free(data);
 
+	DX11ResName(result->resource, "tex2d_view", file);
+	DX11ResName(result->texture,  "tex2d_src", file);
 	return result;
 }
 tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
@@ -99,6 +101,9 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
+
+	DX11ResName(result->resource, "cubemap_view", equirectangular_file);
+	DX11ResName(result->texture,  "cubemap_src", equirectangular_file);
 	return result;
 }
 tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
@@ -144,6 +149,9 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
+
+	DX11ResName(result->resource, "cubemap_view", cube_face_file_xxyyzz[0]);
+	DX11ResName(result->texture,  "cubemap_src", cube_face_file_xxyyzz[0]);
 	return result;
 }
 tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
@@ -164,6 +172,8 @@ tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	tex2d_set_colors(result, width, height, col_data);
 	free(col_data);
 
+	DX11ResName(result->resource, "tex2d_view", id);
+	DX11ResName(result->texture,  "tex2d_src",  id);
 	return result;
 }
 

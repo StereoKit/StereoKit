@@ -116,7 +116,7 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
 
-	systems_add("Graphics", nullptr, 0, nullptr, 0, d3d_init, nullptr, d3d_shutdown);
+	systems_add("Graphics", nullptr, 0, nullptr, 0, d3d_init, d3d_update, d3d_shutdown);
 
 	const char *default_deps[] = {"Graphics"};
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, sk_create_defaults, nullptr, sk_destroy_defaults);
