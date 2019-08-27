@@ -91,7 +91,7 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	color32 *data[6] = {};
 	int      width   = equirect->height / 2;
 	int      height  = width;
-	size_t   size    = width*height*tex2d_format_size(equirect->format);
+	size_t   size    = (size_t)width*(size_t)height*tex2d_format_size(equirect->format);
 	tex2d_set_colors(face, width, height, nullptr);
 	for (size_t i = 0; i < 6; i++) {
 		material_set_vector(convert_material, "up",      { up[i].x, up[i].y, up[i].z, 0 });
@@ -279,6 +279,7 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 	case tex_address_clamp:  mode = D3D11_TEXTURE_ADDRESS_CLAMP;  break;
 	case tex_address_wrap:   mode = D3D11_TEXTURE_ADDRESS_WRAP;   break;
 	case tex_address_mirror: mode = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+	default: mode = D3D11_TEXTURE_ADDRESS_WRAP;
 	}
 
 	D3D11_FILTER filter;
@@ -286,6 +287,7 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 	case tex_sample_linear:     filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break; // Technically trilinear
 	case tex_sample_point:      filter = D3D11_FILTER_MIN_MAG_MIP_POINT;  break;
 	case tex_sample_anisotropic:filter = D3D11_FILTER_ANISOTROPIC;        break;
+	default: filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	}
 
 	D3D11_SAMPLER_DESC desc_sampler = {};
@@ -506,7 +508,7 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	// Make sure we've been provided enough memory to hold this texture
 	int32_t format_size = tex2d_format_size(texture->format);
-	assert(out_data_size == texture->width * texture->height * format_size);
+	assert(out_data_size == (size_t)texture->width * (size_t)texture->height * (size_t)format_size);
 
 	D3D11_TEXTURE2D_DESC desc             = {};
 	ID3D11Texture2D     *copy_tex         = nullptr;

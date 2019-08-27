@@ -21,8 +21,8 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	buffer.verts    = (vert_t *)realloc(buffer.verts, sizeof(vert_t) * buffer.vert_cap);
 
 	// regenerate indices
-	int       quads = buffer.vert_cap / 4;
-	uint16_t *inds  = (uint16_t *)malloc(quads * 6 * sizeof(uint16_t));
+	int     quads = buffer.vert_cap / 4;
+	vind_t *inds  = (vind_t *)malloc(quads * 6 * sizeof(vind_t));
 	for (size_t i = 0; i < quads; i++) {
 		int q = i * 4;
 		int c = i * 6;

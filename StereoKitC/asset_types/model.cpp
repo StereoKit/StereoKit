@@ -111,11 +111,11 @@ inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
 
 ///////////////////////////////////////////
 
-int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, uint16_t> indmap, vector<vert_t> &mesh_verts) {
+int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, vind_t> indmap, vector<vert_t> &mesh_verts) {
 	int  id = meshfmt_obj_idx(iV, iN, iT, (int)verts.size(), (int)norms.size());
-	map<int, uint16_t>::iterator item = indmap.find(id);
+	map<int, vind_t>::iterator item = indmap.find(id);
 	if (item == indmap.end()) {
-		mesh_verts.push_back({ verts[iV - 1], norms[iN - 1], uvs[iT - 1], {255,255,255,255} });
+		mesh_verts.push_back({ verts[iV - 1LL], norms[iN - 1LL], uvs[iT - 1LL], {255,255,255,255} });
 		indmap[id] = (int)mesh_verts.size() - 1;
 		return (int)mesh_verts.size() - 1;
 	}
@@ -151,9 +151,9 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	vector<vec3> norms;
 	vector<vec2> uvs;
 
-	map<int, uint16_t> indmap;
+	map<int, vind_t> indmap;
 	vector<vert_t>   verts;
-	vector<uint16_t> faces;
+	vector<vind_t> faces;
 
 	vec3 in;
 	int inds[12];
@@ -252,7 +252,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 
 	// Now grab the mesh indices
 	int ind_count = (int)p->indices->count;
-	uint16_t *inds = (uint16_t *)malloc(sizeof(uint16_t) * ind_count);
+	vind_t *inds = (vind_t *)malloc(sizeof(vind_t) * ind_count);
 	if (p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff = p->indices->buffer_view;
 		for (size_t v = 0; v < ind_count; v++) {

@@ -12,11 +12,11 @@
 #define SK_FINGER_SOLIDS 1
 
 struct hand_mesh_t {
-	mesh_t    mesh;
-	vert_t   *verts;
-	int       vert_count;
-	uint16_t *inds;
-	int       ind_count;
+	mesh_t  mesh;
+	vert_t *verts;
+	int     vert_count;
+	vind_t *inds;
+	int     ind_count;
 };
 
 struct hand_state_t {
@@ -163,8 +163,8 @@ void input_hand_update_mesh(handed_ hand) {
 	if (data.verts == nullptr) {
 		data.vert_count = 4 * SK_FINGERJOINTS * SK_FINGERS; // verts: per joint, per finger 
 		data.ind_count  = (3 * 8 * (SK_FINGERJOINTS-1) + (4 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
-		data.verts      = (vert_t  *)malloc(sizeof(vert_t  ) * data.vert_count);
-		data.inds       = (uint16_t*)malloc(sizeof(uint16_t) * data.ind_count );
+		data.verts      = (vert_t*)malloc(sizeof(vert_t) * data.vert_count);
+		data.inds       = (vind_t*)malloc(sizeof(vind_t) * data.ind_count );
 
 		int ind = 0;
 		for (int f = 0; f < SK_FINGERS; f++) {

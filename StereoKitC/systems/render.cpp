@@ -272,7 +272,7 @@ bool render_initialize() {
 		vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
 		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
 	};
-	uint16_t inds[6] = { 0,1,2, 0,2,3 };
+	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_verts(render_blit_quad, verts, 4);
 	mesh_set_inds(render_blit_quad,  inds,  6);
 
@@ -425,7 +425,11 @@ void render_set_mesh(mesh_t mesh) {
 	UINT strides[] = { sizeof(vert_t) };
 	UINT offsets[] = { 0 };
 	d3d_context->IASetVertexBuffers(0, 1, &mesh->vert_buffer, strides, offsets);
+#ifdef SK_32BIT_INDICES
+	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R32_UINT, 0);
+#else
 	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
+#endif
 }
 
 ///////////////////////////////////////////

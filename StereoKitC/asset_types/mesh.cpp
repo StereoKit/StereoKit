@@ -32,7 +32,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 
 ///////////////////////////////////////////
 
-void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
+void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 	if (mesh->ind_buffer != nullptr) { 
 		// Here would be a good place to not release stuff if doing dynamic meshes
 		mesh->ind_buffer->Release();
@@ -42,14 +42,13 @@ void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 
 	if (mesh->ind_buffer == nullptr) {
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
-		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(uint16_t) * index_count, D3D11_BIND_INDEX_BUFFER);
+		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, D3D11_BIND_INDEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
 			log_write(log_error, "Failed to create index buffer");
 		DX11ResType(mesh->ind_buffer,  "inds");
 	} else {
 		log_write(log_error, "We don't support dynamic meshes quite yet.");
 	}
-
 }
 
 ///////////////////////////////////////////
@@ -117,8 +116,8 @@ mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
 
 	int vert_count = 6*subdivisions*subdivisions;
 	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
-	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
-	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
 	vec3 size   = dimensions / 2;
 	int  ind    = 0;
@@ -195,8 +194,8 @@ mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
 
 	int vert_count = 6*subdivisions*subdivisions;
 	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
-	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
-	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
 	vec3  size = vec3_one;
 	float radius = diameter / 2;
@@ -274,8 +273,8 @@ mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius,
 
 	int vert_count = 6*subdivisions*subdivisions;
 	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
-	vert_t   *verts = (vert_t   *)malloc(vert_count * sizeof(vert_t));
-	uint16_t *inds  = (uint16_t *)malloc(ind_count  * sizeof(uint16_t));
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
 	vec3  off = (dimensions / 2) - vec3_one*edge_radius;
 	vec3  size = vec3_one;
