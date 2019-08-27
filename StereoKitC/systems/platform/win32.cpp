@@ -14,11 +14,15 @@
 #include "../d3d.h"
 #include "../input.h"
 
+///////////////////////////////////////////
+
 HWND             win32_window    = nullptr;
 tex2d_t          win32_target    = {};
 IDXGISwapChain1 *win32_swapchain = {};
 float            win32_scroll      = 0;
 float            win32_scroll_dest = 0;
+
+///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
 	if (width == d3d_screen_width && height == d3d_screen_height)
@@ -35,6 +39,8 @@ void win32_resize(int width, int height) {
 		tex2d_setsurface(win32_target, back_buffer);
 	}
 }
+
+///////////////////////////////////////////
 
 bool win32_init(const char *app_name) {
 	d3d_screen_width  = sk_settings.flatscreen_width;
@@ -91,11 +97,16 @@ bool win32_init(const char *app_name) {
 
 	return true;
 }
+
+///////////////////////////////////////////
+
 void win32_shutdown() {
 	win32_input_shutdown();
 	tex2d_release(win32_target);
 	win32_swapchain->Release();
 }
+
+///////////////////////////////////////////
 
 void win32_step_begin() {
 	MSG msg = {0};
@@ -106,6 +117,9 @@ void win32_step_begin() {
 	win32_scroll = win32_scroll + (win32_scroll_dest - win32_scroll) * sk_timev_elapsedf * 8;
 	win32_input_update();
 }
+
+///////////////////////////////////////////
+
 void win32_step_end() {
 	// Set up where on the render target we want to draw, the view has a 
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)d3d_screen_width, (float)d3d_screen_height);
@@ -118,6 +132,9 @@ void win32_step_end() {
 	render_draw();
 	render_clear();
 }
+
+///////////////////////////////////////////
+
 void win32_vsync() {
 	win32_swapchain->Present(1, 0);
 }

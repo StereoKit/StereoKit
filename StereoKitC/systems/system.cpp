@@ -7,6 +7,8 @@
 #include "../stref.h"
 #include "../stereokit.h"
 
+///////////////////////////////////////////
+
 struct sort_dependency_t {
 	int32_t *ids;
 	int32_t  count;
@@ -17,11 +19,15 @@ int32_t  *system_init_order = nullptr;
 int32_t   system_count = 0;
 int32_t   system_cap   = 0;
 
+///////////////////////////////////////////
+
 int32_t systems_find(const char *name);
 
 void    array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order);
 int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t **out_order);
 int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, int32_t index, uint8_t *marks, int32_t *sorted_curr, int32_t *out_order);
+
+///////////////////////////////////////////
 
 void systems_add(const char *name, const char **init_dependencies, int32_t init_dependency_count, const char **update_dependencies, int32_t update_dependency_count, bool (*func_initialize)(void), void (*func_update)(void), void (*func_shutdown)(void)) {
 	if (system_count + 1 > system_cap) {
@@ -41,6 +47,9 @@ void systems_add(const char *name, const char **init_dependencies, int32_t init_
 	systems[system_count].func_shutdown    = func_shutdown;
 	system_count += 1;
 }
+
+///////////////////////////////////////////
+
 int32_t systems_find(const char *name) {
 	for (size_t i = 0; i < system_count; i++) {
 		if (string_eq(name, systems[i].name))
@@ -48,6 +57,8 @@ int32_t systems_find(const char *name) {
 	}
 	return -1;
 }
+
+///////////////////////////////////////////
 
 bool systems_sort() {
 	
@@ -111,6 +122,8 @@ bool systems_sort() {
 	return result == 0;
 }
 
+///////////////////////////////////////////
+
 bool systems_initialize() {
 	if (!systems_sort())
 		return false;
@@ -134,6 +147,9 @@ bool systems_initialize() {
 	}
 	return true;
 }
+
+///////////////////////////////////////////
+
 void systems_update() {
 	FILETIME time;
 	for (int32_t i = 0; i < system_count; i++) {
@@ -153,6 +169,9 @@ void systems_update() {
 		}
 	}
 }
+
+///////////////////////////////////////////
+
 void systems_shutdown() {
 	FILETIME time;
 	for (int32_t i = system_count-1; i >= 0; i--) {
@@ -203,6 +222,8 @@ void systems_shutdown() {
 	systems = nullptr;
 }
 
+///////////////////////////////////////////
+
 int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t **out_order) {
 	// Topological sort, Depth-first algorithm:
 	// https://en.wikipedia.org/wiki/Topological_sorting
@@ -230,6 +251,9 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 	free(marks);
 	return 0;
 }
+
+///////////////////////////////////////////
+
 #define MARK_TEMP 1
 #define MARK_PERM 2
 int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, int32_t index, uint8_t *marks, int32_t *sorted_curr, int32_t *out_order) {
@@ -250,6 +274,8 @@ int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, i
 	*sorted_curr = *sorted_curr-1;
 	return 0;
 }
+
+///////////////////////////////////////////
 
 void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order) {
 	uint8_t *src    = (uint8_t*)*list;

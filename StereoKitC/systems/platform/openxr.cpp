@@ -21,6 +21,8 @@
 
 using namespace std;
 
+///////////////////////////////////////////
+
 struct swapchain_t {
 	XrSwapchain handle;
 	int32_t     width;
@@ -41,6 +43,8 @@ struct xr_input_t {
 	int      pointer_ids[3];
 };
 
+///////////////////////////////////////////
+
 XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 XrViewConfigurationType app_config_view = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
@@ -58,14 +62,20 @@ vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
 vector<swapchain_t>             xr_swapchains;
 
+///////////////////////////////////////////
+
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer);
+
+///////////////////////////////////////////
 
 inline bool openxr_loc_valid(XrSpaceLocation &loc) {
 	return 
 		(loc.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) != 0 &&
 		(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
 }
+
+///////////////////////////////////////////
 
 bool openxr_init(const char *app_name) {
 	const char          *extensions[] = { XR_KHR_D3D11_ENABLE_EXTENSION_NAME };
@@ -176,6 +186,8 @@ bool openxr_init(const char *app_name) {
 	return true;
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
 	// We used a graphics API to initialize the swapchain data, so we'll
 	// give it a chance to release anythig here!
@@ -186,16 +198,22 @@ void openxr_shutdown() {
 	xr_swapchains.clear();
 }
 
+///////////////////////////////////////////
+
 void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
 }
 
+///////////////////////////////////////////
+
 void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 }
+
+///////////////////////////////////////////
 
 void openxr_poll_events() {
 	// This object is pretty large, making it static so we only need to create it once
@@ -228,6 +246,8 @@ void openxr_poll_events() {
 		}
 	}
 }
+
+///////////////////////////////////////////
 
 void openxr_render_frame() {
 	// Block until the previous frame is finished displaying, and is ready for another one.
@@ -355,6 +375,8 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	return true;
 }
 
+///////////////////////////////////////////
+
 void openxr_make_actions() {
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	strcpy_s(actionset_info.actionSetName,          "input");
@@ -443,6 +465,8 @@ void openxr_make_actions() {
 	}
 	xr_input.pointer_ids[2] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 }
+
+///////////////////////////////////////////
 
 void openxr_poll_actions() {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
@@ -533,6 +557,8 @@ void openxr_poll_actions() {
 		}
 	}
 }
+
+///////////////////////////////////////////
 
 void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer) {
 	memcpy(&pointer->ray.pos,     &pose.position,    sizeof(vec3));

@@ -5,6 +5,8 @@
 #include "../stereokit.h"
 #include "d3d.h"
 
+///////////////////////////////////////////
+
 ID3D11Device             *d3d_device        = nullptr;
 ID3D11DeviceContext      *d3d_context       = nullptr;
 ID3D11InfoQueue          *d3d_info          = nullptr;
@@ -12,6 +14,8 @@ ID3D11DepthStencilState  *d3d_depthstate    = nullptr;
 ID3D11RasterizerState    *d3d_rasterstate   = nullptr;
 int                       d3d_screen_width  = 640;
 int                       d3d_screen_height = 480;
+
+///////////////////////////////////////////
 
 bool d3d_init() {
 	UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;

@@ -14,13 +14,20 @@
 #include <map>
 using namespace std;
 
+///////////////////////////////////////////
+
 bool modelfmt_obj (model_t model, const char *filename);
 bool modelfmt_gltf(model_t model, const char *filename);
+
+///////////////////////////////////////////
 
 model_t model_create(const char *id) {
 	model_t result = (_model_t*)assets_allocate(asset_type_model, id);
 	return result;
 }
+
+///////////////////////////////////////////
+
 model_t model_find(const char *id) {
 	model_t result = (model_t)assets_find(id);
 	if (result != nullptr) {
@@ -29,6 +36,9 @@ model_t model_find(const char *id) {
 	}
 	return nullptr;
 }
+
+///////////////////////////////////////////
+
 model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
 	model_t result = model_find(id);
 	if (result != nullptr)
@@ -46,6 +56,9 @@ model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 model_t model_create_file(const char *filename) {
 	model_t result = model_find(filename);
 	if (result != nullptr)
@@ -60,15 +73,27 @@ model_t model_create_file(const char *filename) {
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 material_t model_get_material(model_t model, int32_t subset) {
 	return model->subsets[subset].material;
 }
+
+///////////////////////////////////////////
+
 int32_t    model_subset_count(model_t model) {
 	return model->subset_count;
 }
+
+///////////////////////////////////////////
+
 void model_release(model_t model) {
 	assets_releaseref(model->header);
 }
+
+///////////////////////////////////////////
+
 void model_destroy(model_t model) {
 	for (size_t i = 0; i < model->subset_count; i++) {
 		mesh_release    (model->subsets[i].mesh);
@@ -78,9 +103,14 @@ void model_destroy(model_t model) {
 	*model = {};
 }
 
+///////////////////////////////////////////
+
 inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
 	return i1 + (vSize+1) * (i2 + (nSize+1) * i3);
 }
+
+///////////////////////////////////////////
+
 int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, uint16_t> indmap, vector<vert_t> &mesh_verts) {
 	int  id = meshfmt_obj_idx(iV, iN, iT, (int)verts.size(), (int)norms.size());
 	map<int, uint16_t>::iterator item = indmap.find(id);
@@ -91,6 +121,9 @@ int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, ve
 	}
 	return item->second;
 }
+
+///////////////////////////////////////////
+
 bool modelfmt_obj(model_t model, const char *filename) {
 	// Open file
 	FILE *fp;
@@ -166,6 +199,8 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	return true;
 }
 
+///////////////////////////////////////////
+
 mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[0];
@@ -234,6 +269,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
 		char *last1 = strrchr((char*)filename, '/');
@@ -252,6 +290,9 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 
 	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
 }
+
+///////////////////////////////////////////
+
 tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
 	// Check if we've already loaded this image
 	char id[512];
@@ -286,6 +327,9 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 	}
 	return result;
 }
+
+///////////////////////////////////////////
+
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename) {
 	// Check if we've already loaded this material
 	char id[512];
@@ -329,6 +373,9 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 bool modelfmt_gltf(model_t model, const char *filename) {
 	cgltf_options options = {};
 	cgltf_data*   data    = NULL;

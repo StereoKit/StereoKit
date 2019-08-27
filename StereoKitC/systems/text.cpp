@@ -6,8 +6,12 @@
 #include <vector>
 using namespace std;
 
+///////////////////////////////////////////
+
 vector<_text_style_t> text_styles;
 vector<text_buffer_t> text_buffers;
+
+///////////////////////////////////////////
 
 void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
@@ -33,6 +37,8 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	mesh_set_inds(buffer.mesh, inds, quads * 6);
 	free(inds);
 }
+
+///////////////////////////////////////////
 
 text_style_t text_make_style(font_t font, material_t material, text_align_ align) {
 	uint32_t       id     = font->header.id << 16 | material->header.id;
@@ -76,6 +82,8 @@ text_style_t text_make_style(font_t font, material_t material, text_align_ align
 	return text_styles.size() - 1;
 }
 
+///////////////////////////////////////////
+
 vec2 text_line_size(text_style_t style, const char *text) {
 	font_t      font = text_styles[style].font;
 	const char *curr = text;
@@ -93,6 +101,9 @@ vec2 text_line_size(text_style_t style, const char *text) {
 	}
 	return vec2{ x, 1 };
 }
+
+///////////////////////////////////////////
+
 vec2 text_size(text_style_t style, const char *text) {
 	font_t font = text_styles[style].font;
 	const char *curr = text;
@@ -119,6 +130,8 @@ vec2 text_size(text_style_t style, const char *text) {
 	y = fminf(-1, y);
 	return vec2{ max_x, fabsf(y) };
 }
+
+///////////////////////////////////////////
 
 void text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y) {
 	_text_style_t &style_data = text_styles[style];
@@ -173,6 +186,8 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 	}
 }
 
+///////////////////////////////////////////
+
 void text_update() {
 	transform_t tr;
 	transform_initialize(tr);
@@ -185,6 +200,8 @@ void text_update() {
 		buffer.vert_count = 0;
 	}
 }
+
+///////////////////////////////////////////
 
 void text_shutdown() {
 	for (size_t i = 0; i < text_buffers.size(); i++) {

@@ -5,17 +5,25 @@
 #include <assert.h>
 #include <stdarg.h>
 
+///////////////////////////////////////////
+
 char *string_copy(const char *aString) {
 	size_t size   = strlen(aString) + 1;
 	char  *result = (char*)malloc(size);
 	memcpy(result, aString, size);
 	return result;
 }
+
+///////////////////////////////////////////
+
 char *string_make(stref_t &ref) {
 	char *result = string_copy(stref_withend(ref));
 	stref_remend(ref);
 	return result;
 }
+
+///////////////////////////////////////////
+
 char *string_append(char *aBase, uint32_t aCount, ...) {
 	size_t baseSize = aBase == nullptr? 0 : strlen(aBase);
 
@@ -40,6 +48,9 @@ char *string_append(char *aBase, uint32_t aCount, ...) {
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 bool  string_eq(const char *a, const char *b) {
 	while (*a != '\0' && *b != '\0') {
 		if (*a != *b)
@@ -49,6 +60,9 @@ bool  string_eq(const char *a, const char *b) {
 	}
 	return *a == *b;
 }
+
+///////////////////////////////////////////
+
 bool  string_endswith(const char *a, const char *end) {
 	size_t len_a   = strlen(a);
 	size_t len_end = strlen(end);
@@ -65,6 +79,8 @@ bool  string_endswith(const char *a, const char *end) {
 	return *a == *end;
 }
 
+///////////////////////////////////////////
+
 bool  stref_equals(const stref_t &aRef, const char *aIs) {
 	assert(aRef.temp == false);
 
@@ -79,6 +95,9 @@ bool  stref_equals(const stref_t &aRef, const char *aIs) {
 	}
 	return curr == aRef.length;
 }
+
+///////////////////////////////////////////
+
 bool  stref_equals(const stref_t &a, const stref_t &b) {
 	assert(a.temp == false);
 	assert(b.temp == false);
@@ -97,6 +116,9 @@ bool  stref_equals(const stref_t &a, const stref_t &b) {
 	}
 	return true;
 }
+
+///////////////////////////////////////////
+
 int32_t   stref_indexof(stref_t &aRef, char aChar) {
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
@@ -104,6 +126,9 @@ int32_t   stref_indexof(stref_t &aRef, char aChar) {
 	}
 	return -1;
 }
+
+///////////////////////////////////////////
+
 int32_t   stref_lastof(stref_t &aRef, char aChar) {
 	int32_t result = -1;
 	for (uint32_t i = 0; i < aRef.length; i++) {
@@ -112,6 +137,8 @@ int32_t   stref_lastof(stref_t &aRef, char aChar) {
 	}
 	return result;
 }
+
+///////////////////////////////////////////
 
 char *stref_copy(const stref_t &aRef) {
 	assert(aRef.temp == false);
@@ -122,12 +149,16 @@ char *stref_copy(const stref_t &aRef) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 void stref_copy_to(const stref_t &ref, char *text, size_t text_size) {
 	assert(ref.temp == false);
 	size_t length = text_size < ref.length ? text_size : ref.length;
 	memcpy(text, ref.start, length);
 	text[length] = '\0';
 }
+
+///////////////////////////////////////////
 
 const char *stref_withend(stref_t &aRef) {
 	assert(aRef.temp == false);
@@ -138,6 +169,9 @@ const char *stref_withend(stref_t &aRef) {
 
 	return aRef.start;
 }
+
+///////////////////////////////////////////
+
 void  stref_remend(stref_t &aRef) {
 	assert(aRef.temp == true);
 
@@ -145,6 +179,8 @@ void  stref_remend(stref_t &aRef) {
 	aRef.temp_end = 0;
 	aRef.temp = false;
 }
+
+///////////////////////////////////////////
 
 stref_t  stref_make(const char *aSource) {
 	stref_t result;
@@ -154,6 +190,8 @@ stref_t  stref_make(const char *aSource) {
 	result.temp     = false;
 	return result;
 }
+
+///////////////////////////////////////////
 
 stref_t stref_substr(stref_t &aRef, uint32_t aStart, uint32_t aLength) {
 	assert(aRef.temp == false);
@@ -166,6 +204,8 @@ stref_t stref_substr(stref_t &aRef, uint32_t aStart, uint32_t aLength) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 stref_t stref_substr(const char *aSource, uint32_t aLength) {
 	stref_t result;
 	result.start    = aSource;
@@ -175,9 +215,14 @@ stref_t stref_substr(const char *aSource, uint32_t aLength) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 bool is_white(char c) {
 	return c == ' ' || c == '\t' || c=='\n' || c=='\r';
 }
+
+///////////////////////////////////////////
+
 void  stref_trim(stref_t &aRef) {
 	while (aRef.length > 0 && is_white(aRef.start[0])) {
 		aRef.start += 1;
@@ -187,6 +232,9 @@ void  stref_trim(stref_t &aRef) {
 		aRef.length -= 1;
 	}
 }
+
+///////////////////////////////////////////
+
 uint32_t  stref_count(stref_t &aRef, char aChar) {
 	uint32_t result = 0;
 	for (uint32_t i = 0; i < aRef.length; i++) {
@@ -195,6 +243,9 @@ uint32_t  stref_count(stref_t &aRef, char aChar) {
 	}
 	return result;
 }
+
+///////////////////////////////////////////
+
 bool stref_nextline(stref_t &from, stref_t &curr_line) {
 	assert(curr_line.temp == false);
 
@@ -211,6 +262,9 @@ bool stref_nextline(stref_t &from, stref_t &curr_line) {
 	curr_line.length = (uint32_t)(curr - curr_line.start);
 	return true;
 }
+
+///////////////////////////////////////////
+
 bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_char_start, char capture_char_end, bool *out_capture_error) {
 	assert(word.temp == false);
 	if (out_capture_error != nullptr)
@@ -256,6 +310,9 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 		*out_capture_error = capture_count > 0;
 	return true;
 }
+
+///////////////////////////////////////////
+
 void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_name) {
 	out_path = filename;
 	int32_t  end    = out_path.length;
@@ -269,6 +326,9 @@ void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_na
 		out_path.length = start-1;
 	}
 }
+
+///////////////////////////////////////////
+
 stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_char_end) {
 	if (word.length < 2) return word;
 	stref_t result = word;
@@ -283,6 +343,8 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 	return result;
 }
 
+///////////////////////////////////////////
+
 // djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
 uint64_t string_hash(const char *string) {
 	unsigned long hash = 5381;
@@ -291,6 +353,9 @@ uint64_t string_hash(const char *string) {
 		hash = ((hash << 5) + hash) + c; // hash * 33 + c
 	return hash;
 }
+
+///////////////////////////////////////////
+
 uint64_t stref_hash(const stref_t &ref) {
 	unsigned long hash = 5381;
 	int c;
@@ -300,11 +365,17 @@ uint64_t stref_hash(const stref_t &ref) {
 	}
 	return hash;
 }
+
+///////////////////////////////////////////
+
 float stref_to_f(const stref_t &ref) {
 	char text[32];
 	stref_copy_to(ref, text, 32);
 	return atof(text);
 }
+
+///////////////////////////////////////////
+
 int32_t  stref_to_i(const stref_t &ref) {
 	char text[32];
 	stref_copy_to(ref, text, 32);

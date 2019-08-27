@@ -4,6 +4,8 @@
 #include "../asset_types/assets.h"
 #include "../asset_types/material.h"
 
+///////////////////////////////////////////
+
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
 #define SK_SQRT2 1.41421356237f
@@ -29,14 +31,17 @@ struct hand_state_t {
 
 hand_state_t hand_state[2];
 
-
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
 transform_t hand_transform;
 
+///////////////////////////////////////////
+
 const hand_t &input_hand(handed_ hand) {
 	return hand_state[hand].info;
 }
+
+///////////////////////////////////////////
 
 void input_hand_init() {
 	transform_initialize(hand_transform);
@@ -56,6 +61,8 @@ void input_hand_init() {
 	}
 }
 
+///////////////////////////////////////////
+
 void input_hand_shutdown() {
 	for (size_t i = 0; i < handed_max; i++) {
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
@@ -67,6 +74,8 @@ void input_hand_shutdown() {
 		if (hand_state[i].mesh.verts != nullptr) free(hand_state[i].mesh.verts);
 	}
 }
+
+///////////////////////////////////////////
 
 void input_hand_update() {
 	// Update hand meshes
@@ -83,6 +92,8 @@ void input_hand_update() {
 		}
 	}
 }
+
+///////////////////////////////////////////
 
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
@@ -142,6 +153,8 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 		} }
 	}
 }
+
+///////////////////////////////////////////
 
 void input_hand_update_mesh(handed_ hand) {
 	hand_mesh_t &data = hand_state[hand].mesh;
@@ -251,15 +264,21 @@ void input_hand_update_mesh(handed_ hand) {
 	mesh_set_verts(data.mesh, data.verts, data.vert_count);
 }
 
+///////////////////////////////////////////
+
 void input_hand_visible(handed_ hand, bool32_t visible) {
 	hand_state[hand].visible = visible;
 }
+
+///////////////////////////////////////////
 
 void input_hand_solid(handed_ hand, bool32_t solid) {
 	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}
 }
+
+///////////////////////////////////////////
 
 void input_hand_material(handed_ hand, material_t material) {
 	if (hand_state[hand].material != nullptr) 

@@ -9,12 +9,17 @@
 #include "../libraries/stb_image.h"
 #pragma warning( default : 26451 6011 6262 6308 6387 28182 )
 
+///////////////////////////////////////////
+
 tex2d_t tex2d_create(const char *id, tex_type_ type, tex_format_ format) {
 	tex2d_t result = (tex2d_t)assets_allocate(asset_type_texture, id);
 	result->type   = type;
 	result->format = format;
 	return result;
 }
+
+///////////////////////////////////////////
+
 void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_write(log_error, "Can't add a zbuffer to a non-rendertarget texture!");
@@ -28,6 +33,9 @@ void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
 }
+
+///////////////////////////////////////////
+
 tex2d_t tex2d_find(const char *id) {
 	tex2d_t result = (tex2d_t)assets_find(id);
 	if (result != nullptr) {
@@ -36,6 +44,9 @@ tex2d_t tex2d_find(const char *id) {
 	}
 	return nullptr;
 }
+
+///////////////////////////////////////////
+
 tex2d_t tex2d_create_file(const char *file) {
 	tex2d_t result = tex2d_find(file);
 	if (result != nullptr)
@@ -58,6 +69,9 @@ tex2d_t tex2d_create_file(const char *file) {
 	DX11ResName(result->texture,  "tex2d_src", file);
 	return result;
 }
+
+///////////////////////////////////////////
+
 tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	tex2d_t result = tex2d_find(equirectangular_file);
 	if (result != nullptr)
@@ -105,6 +119,9 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	DX11ResName(result->texture,  "cubemap_src", equirectangular_file);
 	return result;
 }
+
+///////////////////////////////////////////
+
 tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	tex2d_t result = tex2d_find(cube_face_file_xxyyzz[0]);
 	if (result != nullptr)
@@ -153,6 +170,9 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	DX11ResName(result->texture,  "cubemap_src", cube_face_file_xxyyzz[0]);
 	return result;
 }
+
+///////////////////////////////////////////
+
 tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	tex2d_t result = tex2d_find(id);
 	if (result != nullptr)
@@ -176,9 +196,14 @@ tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 void tex2d_release(tex2d_t texture) {
 	assets_releaseref(texture->header);
 }
+
+///////////////////////////////////////////
+
 void tex2d_destroy(tex2d_t tex) {
 	tex2d_releasesurface(tex);
 	if (tex->sampler      != nullptr) tex->sampler->Release();
@@ -186,6 +211,9 @@ void tex2d_destroy(tex2d_t tex) {
 	
 	*tex = {};
 }
+
+///////////////////////////////////////////
+
 void tex2d_releasesurface(tex2d_t tex) {
 	if (tex->resource    != nullptr) tex->resource   ->Release();
 	if (tex->target_view != nullptr) tex->target_view->Release();
@@ -196,6 +224,8 @@ void tex2d_releasesurface(tex2d_t tex) {
 	tex->texture     = nullptr;
 	tex->depth_view  = nullptr;
 }
+
+///////////////////////////////////////////
 
 void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
@@ -231,10 +261,15 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **dat
 		log_write(log_warning, "Attempting additional writes to a non-dynamic texture!");
 	}
 }
+
+///////////////////////////////////////////
+
 void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
 	void *data_arr[1] = { data };
 	tex2d_set_colors(texture, width, height, data_arr, 1);
 }
+
+///////////////////////////////////////////
 
 void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
 	if (texture->sampler != nullptr)
@@ -268,6 +303,8 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 	d3d_device->CreateSamplerState(&desc_sampler, &texture->sampler);
 }
 
+///////////////////////////////////////////
+
 void tex2d_set_active(tex2d_t texture, int slot) {
 	if (texture != nullptr) {
 		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
@@ -276,6 +313,8 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 		d3d_context->PSSetShaderResources(slot, 0, nullptr);
 	}
 }
+
+///////////////////////////////////////////
 
 bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 	bool mips    = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
@@ -338,6 +377,8 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
 	tex2d_releasesurface(texture);
 	texture->texture = source;
@@ -355,6 +396,8 @@ void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
 		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
 }
+
+///////////////////////////////////////////
 
 bool tex2d_create_views(tex2d_t texture) {
 	DXGI_FORMAT format = tex2d_get_native_format(texture->format);
@@ -397,6 +440,8 @@ bool tex2d_create_views(tex2d_t texture) {
 	return true;
 }
 
+///////////////////////////////////////////
+
 DXGI_FORMAT tex2d_get_native_format(tex_format_ format) {
 	switch (format) {
 	case tex_format_rgba32:  return DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -409,6 +454,8 @@ DXGI_FORMAT tex2d_get_native_format(tex_format_ format) {
 	}
 }
 
+///////////////////////////////////////////
+
 size_t tex2d_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
@@ -420,6 +467,8 @@ size_t tex2d_format_size(tex_format_ format) {
 	default: return sizeof(color32);
 	}
 }
+
+///////////////////////////////////////////
 
 void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
 	assert(render_target->type & tex_type_rendertarget);
@@ -436,6 +485,9 @@ void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
 	if (render_target->depth_buffer != nullptr && render_target->depth_buffer->depth_view != nullptr)
 		d3d_context->ClearDepthStencilView (render_target->depth_buffer->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
+
+///////////////////////////////////////////
+
 void tex2d_rtarget_set_active(tex2d_t render_target) {
 	if (render_target == nullptr) {
 		d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -449,6 +501,8 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 
 	d3d_context->OMSetRenderTargets(1, &render_target->target_view, depth_view);
 }
+
+///////////////////////////////////////////
 
 void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	// Make sure we've been provided enough memory to hold this texture
@@ -504,6 +558,8 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	if (copy_tex_release)
 		copy_tex->Release();
 }
+
+///////////////////////////////////////////
 
 bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);

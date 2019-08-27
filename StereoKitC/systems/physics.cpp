@@ -9,6 +9,8 @@ using namespace std;
 #include <reactphysics3d.h>
 using namespace reactphysics3d;
 
+///////////////////////////////////////////
+
 struct solid_move_t {
 	RigidBody *body;
 	Vector3 dest;
@@ -31,6 +33,8 @@ DynamicsWorld *physics_world;
 
 vector<physics_shape_asset_t> physics_shapes;
 
+///////////////////////////////////////////
+
 bool physics_init() {
 
 	WorldSettings settings;
@@ -38,9 +42,13 @@ bool physics_init() {
 	return true;
 }
 
+///////////////////////////////////////////
+
 void physics_shutdown() {
 	delete physics_world;
 }
+
+///////////////////////////////////////////
 
 void physics_update() {
 	// How many physics frames are we going to be calculating this time?
@@ -84,11 +92,16 @@ void physics_update() {
 	solid_moves.clear();
 }
 
+///////////////////////////////////////////
+
 solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ type) {
 	RigidBody *body = physics_world->createRigidBody(Transform((Vector3 &)position, (Quaternion &)rotation));
 	solid_set_type(body, type);
 	return (solid_t)body;
 }
+
+///////////////////////////////////////////
+
 void solid_release(solid_t solid) {
 	RigidBody        *body  = (RigidBody*)solid;
 	const ProxyShape *shape = body->getProxyShapesList();
@@ -107,11 +120,15 @@ void solid_release(solid_t solid) {
 	physics_world->destroyRigidBody((RigidBody *)solid);
 }
 
+///////////////////////////////////////////
+
 void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3 *offset) {
 	RigidBody   *body   = (RigidBody*)solid;
 	SphereShape *sphere = new SphereShape(diameter/2);
 	body->addCollisionShape(sphere, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
+
+///////////////////////////////////////////
 
 void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const vec3 *offset) {
 	RigidBody *body = (RigidBody*)solid;
@@ -119,11 +136,15 @@ void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const
 	body->addCollisionShape(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 
+///////////////////////////////////////////
+
 void solid_add_capsule(solid_t solid, float diameter, float height, float kilograms, const vec3 *offset) {
 	RigidBody    *body    = (RigidBody*)solid;
 	CapsuleShape *capsule = new CapsuleShape(diameter/2, height);
 	body->addCollisionShape(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
+
+///////////////////////////////////////////
 
 void solid_set_type(solid_t solid, solid_type_ type) {
 	RigidBody *body = (RigidBody *)solid;
@@ -135,10 +156,14 @@ void solid_set_type(solid_t solid, solid_type_ type) {
 	}
 }
 
+///////////////////////////////////////////
+
 void solid_set_enabled(solid_t solid, bool32_t enabled) {
 	RigidBody *body = (RigidBody *)solid;
 	body->setIsActive(enabled);
 }
+
+///////////////////////////////////////////
 
 void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
 	RigidBody *body = (RigidBody *)solid;Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
@@ -146,19 +171,28 @@ void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
 	body->setIsSleeping(false);
 }
 
+///////////////////////////////////////////
+
 void solid_move(solid_t solid, const vec3 &position, const quat &rotation) {
 	RigidBody *body = (RigidBody *)solid;
 	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.i, rotation.j, rotation.k, rotation.a)});
 }
 
+///////////////////////////////////////////
+
 void solid_set_velocity(solid_t solid, const vec3 &meters_per_second) {
 	RigidBody *body = (RigidBody *)solid;
 	body->setLinearVelocity((Vector3&)meters_per_second);
 }
+
+///////////////////////////////////////////
+
 void solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second) {
 	RigidBody *body = (RigidBody *)solid;
 	body->setAngularVelocity((Vector3&)radians_per_second);
 }
+
+///////////////////////////////////////////
 
 void solid_get_transform(const solid_t solid, transform_t &out_transform) {
 	const Transform &solid_tr = ((RigidBody *)solid)->getTransform();

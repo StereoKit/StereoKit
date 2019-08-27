@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+///////////////////////////////////////////
+
 font_t font_find(const char *id) {
 	font_t result = (font_t)assets_find(id);
 	if (result != nullptr) {
@@ -15,6 +17,9 @@ font_t font_find(const char *id) {
 	}
 	return nullptr;
 }
+
+///////////////////////////////////////////
+
 font_t font_create(const char *file) {
 	font_t result = font_find(file);
 	if (result != nullptr)
@@ -78,14 +83,23 @@ font_t font_create(const char *file) {
 
 	return result;
 }
+
+///////////////////////////////////////////
+
 void font_release(font_t font) {
 	assets_releaseref(font->header);
 }
+
+///////////////////////////////////////////
+
 void font_destroy(font_t font) {
 	if (font->font_tex != nullptr)
 		tex2d_release(font->font_tex);
 	*font = {};
 }
+
+///////////////////////////////////////////
+
 tex2d_t font_get_tex(font_t font) {
 	return font->font_tex;
 }

@@ -11,7 +11,11 @@
 #include <vector>
 using namespace std;
 
+///////////////////////////////////////////
+
 vector<asset_header_t *> assets;
+
+///////////////////////////////////////////
 
 void *assets_find(const char *id) {
 	uint64_t hash  = string_hash(id);
@@ -23,6 +27,8 @@ void *assets_find(const char *id) {
 	return nullptr;
 }
 
+///////////////////////////////////////////
+
 void assets_unique_name(const char *root_name, char *dest, int dest_size) {
 	sprintf_s(dest, dest_size, "%s", root_name);
 	uint64_t id    = string_hash(dest);
@@ -33,6 +39,8 @@ void assets_unique_name(const char *root_name, char *dest, int dest_size) {
 		count += 1;
 	}
 }
+
+///////////////////////////////////////////
 
 void *assets_allocate(asset_type_ type, const char *id) {
 #if _DEBUG
@@ -62,9 +70,15 @@ void *assets_allocate(asset_type_ type, const char *id) {
 	assets.push_back(header);
 	return header;
 }
+
+///////////////////////////////////////////
+
 void  assets_addref(asset_header_t &asset) {
 	asset.refs += 1;
 }
+
+///////////////////////////////////////////
+
 void  assets_releaseref(asset_header_t &asset) {
 	// Manage the reference count
 	asset.refs -= 1;
@@ -98,6 +112,8 @@ void  assets_releaseref(asset_header_t &asset) {
 #endif
 	free(&asset);
 }
+
+///////////////////////////////////////////
 
 void  assets_shutdown_check() {
 	if (assets.size() > 0) {

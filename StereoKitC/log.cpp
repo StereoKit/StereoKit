@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+///////////////////////////////////////////
+
 log_ log_filter = log_info;
+
+///////////////////////////////////////////
 
 void log_write(log_ level, const char *text) {
 	const char *tag = "";
@@ -17,6 +21,8 @@ void log_write(log_ level, const char *text) {
 		printf("[SK %s] %s\n", tag, text);
 }
 
+///////////////////////////////////////////
+
 void log_writef(log_ level, const char *text, ...) {
 	va_list argptr;
 	va_start(argptr, text);
@@ -27,6 +33,8 @@ void log_writef(log_ level, const char *text, ...) {
 
 	log_write(level, buffer);
 }
+
+///////////////////////////////////////////
 
 void log_set_filter(log_ level) {
 	log_filter = level;

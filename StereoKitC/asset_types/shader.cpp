@@ -10,6 +10,8 @@
 #include <vector>
 using namespace std;
 
+///////////////////////////////////////////
+
 const size_t shaderarg_size[] = { 
 	sizeof(float),    // shaderarg_type_float
 	sizeof(float)*4,  // shaderarg_type_color
@@ -17,6 +19,8 @@ const size_t shaderarg_size[] = {
 	sizeof(float)*16, // shaderarg_type_matrix
 };
 const size_t shader_register_size = sizeof(float) * 4;
+
+///////////////////////////////////////////
 
 ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *target) {
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -33,6 +37,8 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 
 	return compiled;
 }
+
+///////////////////////////////////////////
 
 void shader_parse_file(shader_t shader, const char *hlsl) {
 	stref_t file = stref_make(hlsl);
@@ -157,6 +163,8 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 	}
 }
 
+///////////////////////////////////////////
+
 shader_t shader_find(const char *id) {
 	shader_t result = (shader_t)assets_find(id);
 	if (result != nullptr) {
@@ -165,6 +173,8 @@ shader_t shader_find(const char *id) {
 	}
 	return nullptr;
 }
+
+///////////////////////////////////////////
 
 shader_t shader_create_file(const char *filename) {
 	shader_t result = shader_find(filename);
@@ -195,6 +205,8 @@ shader_t shader_create_file(const char *filename) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 shader_t shader_create(const char *id, const char *hlsl) {
 	shader_t result = shader_find(id);
 	if (result != nullptr)
@@ -222,9 +234,13 @@ shader_t shader_create(const char *id, const char *hlsl) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 void shader_release(shader_t shader) {
 	assets_releaseref(shader->header);
 }
+
+///////////////////////////////////////////
 
 void shader_destroy(shader_t shader) {
 	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
@@ -246,6 +262,8 @@ void shader_destroy(shader_t shader) {
 	*shader = {};
 }
 
+///////////////////////////////////////////
+
 void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) {
 	CD3D11_BUFFER_DESC const_buff_desc((UINT)buffer_size, D3D11_BIND_CONSTANT_BUFFER, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
 	d3d_device->CreateBuffer(&const_buff_desc, nullptr, &args.const_buffer);
@@ -254,6 +272,9 @@ void shaderargs_create(shaderargs_t &args, size_t buffer_size, int buffer_slot) 
 
 	DX11ResType(args.const_buffer, "shader_args");
 }
+
+///////////////////////////////////////////
+
 void shaderargs_set_data(shaderargs_t &args, void *data, size_t buffer_size) {
 	if (args.const_buffer == nullptr)
 		return;
@@ -266,11 +287,17 @@ void shaderargs_set_data(shaderargs_t &args, void *data, size_t buffer_size) {
 	memcpy(res.pData, data, buffer_size);
 	d3d_context->Unmap( args.const_buffer, 0 );
 }
+
+///////////////////////////////////////////
+
 void shaderargs_set_active(shaderargs_t &args, bool include_ps) {
 	d3d_context->VSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
 	if (include_ps)
 		d3d_context->PSSetConstantBuffers(args.buffer_slot, 1, &args.const_buffer);
 }
+
+///////////////////////////////////////////
+
 void shaderargs_destroy(shaderargs_t &args) {
 	if (args.const_buffer != nullptr) args.const_buffer->Release();
 	args = {};

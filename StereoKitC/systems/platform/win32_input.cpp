@@ -10,14 +10,23 @@
 #include "../render.h"
 #include "../d3d.h"
 
+///////////////////////////////////////////
+
 int win32_input_pointers[2];
+
+///////////////////////////////////////////
 
 void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 }
+
+///////////////////////////////////////////
+
 void win32_input_shutdown() {
 }
+
+///////////////////////////////////////////
 
 void win32_input_update() {
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);

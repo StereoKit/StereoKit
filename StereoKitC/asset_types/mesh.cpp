@@ -5,7 +5,11 @@
 
 #include <stdio.h>
 
+///////////////////////////////////////////
+
 ID3D11InputLayout *vert_t_layout = nullptr;
+
+///////////////////////////////////////////
 
 void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 	if (mesh->vert_buffer != nullptr) { 
@@ -25,6 +29,9 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 		log_write(log_error, "We don't support dynamic meshes quite yet.");
 	}
 }
+
+///////////////////////////////////////////
+
 void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 	if (mesh->ind_buffer != nullptr) { 
 		// Here would be a good place to not release stuff if doing dynamic meshes
@@ -45,6 +52,8 @@ void mesh_set_inds (mesh_t mesh, uint16_t *indices,  int32_t index_count) {
 
 }
 
+///////////////////////////////////////////
+
 mesh_t mesh_find(const char *id) {
 	mesh_t result = (mesh_t)assets_find(id);
 	if (result != nullptr) {
@@ -53,20 +62,29 @@ mesh_t mesh_find(const char *id) {
 	}
 	return nullptr;
 }
+
+///////////////////////////////////////////
+
 mesh_t mesh_create(const char *id) {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh, id);
 	return result;
 }
 
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	assets_releaseref(mesh->header);
 }
+
+///////////////////////////////////////////
 
 void mesh_destroy(mesh_t mesh) {
 	if (mesh->ind_buffer  != nullptr) mesh->ind_buffer ->Release();
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
 	*mesh = {};
 }
+
+///////////////////////////////////////////
 
 void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv) {
 	float neg = (float)((i / 4) % 2 ? -1 : 1);
@@ -84,6 +102,9 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 		size.z * (nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
 	};
 }
+
+///////////////////////////////////////////
+
 mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
 	mesh_t result = (mesh_t)assets_find(id);
 	if (result != nullptr) {
@@ -160,6 +181,8 @@ mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
 	mesh_t result = (mesh_t)assets_find(id);
 	if (result != nullptr) {
@@ -234,6 +257,8 @@ mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
 	DX11ResName(result->vert_buffer, "verts_gen_sphere", id);
 	return result;
 }
+
+///////////////////////////////////////////
 
 mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius, int32_t subdivisions) {
 	mesh_t result = (mesh_t)assets_find(id);

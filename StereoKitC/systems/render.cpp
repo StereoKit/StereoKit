@@ -15,6 +15,8 @@ using namespace std;
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 
+///////////////////////////////////////////
+
 struct render_item_t {
 	XMMATRIX    transform;
 	mesh_t      mesh;
@@ -44,6 +46,8 @@ struct render_inst_buffer {
 	shaderargs_t buffer;
 };
 
+///////////////////////////////////////////
+
 vector<render_transform_buffer_t> render_instance_list;
 render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 1000 } };
 
@@ -68,25 +72,37 @@ material_t render_last_material;
 shader_t   render_last_shader;
 mesh_t     render_last_mesh;
 
+///////////////////////////////////////////
+
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
+
+///////////////////////////////////////////
 
 inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
 	return ((uint64_t)(material->mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
 }
 
+///////////////////////////////////////////
+
 void render_set_camera(camera_t &cam) {
 	render_camera = &cam;
 }
 
+///////////////////////////////////////////
+
 void render_set_view(transform_t &cam_transform) {
 	render_camera_transform = &cam_transform;
 }
+
+///////////////////////////////////////////
 
 void render_set_light(const vec3 &direction, float intensity, const color128 &color) {
 	vec3 dir = vec3_normalize(direction);
 	render_global_buffer.light       = { dir.x, dir.y, dir.z, intensity };
 	render_global_buffer.light_color = color;
 }
+
+///////////////////////////////////////////
 
 void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 	if (render_sky_cubemap != nullptr)
@@ -100,6 +116,8 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 	assets_addref(render_sky_cubemap->header);
 }
 
+///////////////////////////////////////////
+
 void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 	render_item_t item;
 	item.mesh     = mesh;
@@ -108,6 +126,8 @@ void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 	transform_matrix(transform, item.transform);
 	render_queue.emplace_back(item);
 }
+
+///////////////////////////////////////////
 
 void render_add_model(model_t model, transform_t &transform) {
 	XMMATRIX world;
@@ -122,6 +142,8 @@ void render_add_model(model_t model, transform_t &transform) {
 		render_queue.emplace_back(item);
 	}
 }
+
+///////////////////////////////////////////
 
 void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 	size_t queue_size = render_queue.size();
@@ -182,16 +204,24 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 	}
 }
 
+///////////////////////////////////////////
+
 void render_draw() {
 	if (render_camera != nullptr && render_camera_transform != nullptr)
 		render_draw_from(*render_camera, *render_camera_transform);
 }
+
+///////////////////////////////////////////
+
 void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 	XMMATRIX view, proj;
 	camera_view(cam_transform, view);
 	camera_proj(cam, proj);
 	render_draw_queue(view, proj);
 }
+
+///////////////////////////////////////////
+
 void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
 	XMMATRIX view, proj;
 	camera_view(cam_transform, view);
@@ -199,6 +229,8 @@ void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
 
 	render_draw_queue(view, proj);
 }
+
+///////////////////////////////////////////
 
 void render_clear() {
 	//log_writef(log_info, "draws: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
@@ -209,6 +241,8 @@ void render_clear() {
 	render_last_shader = nullptr;
 	render_last_mesh = nullptr;
 }
+
+///////////////////////////////////////////
 
 bool render_initialize() {
 	shaderargs_create(render_shader_globals, sizeof(render_global_buffer_t), 0);
@@ -255,6 +289,8 @@ bool render_initialize() {
 	return true;
 }
 
+///////////////////////////////////////////
+
 void render_update() {
 	if (render_sky_show) {
 		transform_t tr;
@@ -262,6 +298,8 @@ void render_update() {
 		render_add_mesh(render_sky_mesh, render_sky_mat, tr);
 	}
 }
+
+///////////////////////////////////////////
 
 void render_shutdown() {
 	material_release(render_sky_mat);
@@ -280,10 +318,14 @@ void render_shutdown() {
 	mesh_release(render_blit_quad);
 }
 
+///////////////////////////////////////////
+
 void render_get_cam(camera_t **cam, transform_t **cam_transform) {
 	*cam = render_camera;
 	*cam_transform = render_camera_transform;
 }
+
+///////////////////////////////////////////
 
 void render_blit(tex2d_t to, material_t material) {
 	// Set up where on the render target we want to draw, the view has a 
@@ -316,6 +358,8 @@ void render_blit(tex2d_t to, material_t material) {
 	render_last_mesh = nullptr;
 	render_last_shader = nullptr;
 }
+
+///////////////////////////////////////////
 
 void render_set_material(material_t material) {
 	if (material == render_last_material)
@@ -357,6 +401,8 @@ void render_set_material(material_t material) {
 	}
 }
 
+///////////////////////////////////////////
+
 void render_set_shader(shader_t shader) {
 	if (shader == render_last_shader)
 		return;
@@ -367,6 +413,8 @@ void render_set_shader(shader_t shader) {
 	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
 	d3d_context->IASetInputLayout(shader->vert_layout);
 }
+
+///////////////////////////////////////////
 
 void render_set_mesh(mesh_t mesh) {
 	if (mesh == render_last_mesh)
@@ -380,11 +428,15 @@ void render_set_mesh(mesh_t mesh) {
 	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
 }
 
+///////////////////////////////////////////
+
 void render_draw_item(int count) {
 	render_stats.draw_calls++;
 
 	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_count, count, 0, 0, 0);
 }
+
+///////////////////////////////////////////
 
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
@@ -411,6 +463,8 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 	shaderargs_set_data(render_instance_buffers[index].buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
 	return &render_instance_buffers[index].buffer;
 }
+
+///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
 	*device  = d3d_device;
