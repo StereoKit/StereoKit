@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "assets.h"
 
 enum shaderarg_type_ {

@@ -2,7 +2,7 @@
 #pragma comment(lib,"Dxgi.lib") // CreateSwapChainForHwnd
 #pragma comment(lib,"D3dcompiler.lib") // for shader compile
 
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "d3d.h"
 
 ID3D11Device             *d3d_device        = nullptr;

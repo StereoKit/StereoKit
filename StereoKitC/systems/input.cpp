@@ -1,4 +1,4 @@
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "input.h"
 #include "input_hand.h"
 

@@ -1,15 +1,15 @@
 #include "stereokit.h"
 
-#include "assets.h"
-#include "render.h"
-#include "d3d.h"
-#include "win32.h"
-#include "openxr.h"
-#include "input.h"
-#include "shader_builtin.h"
-#include "physics.h"
-#include "system.h"
-#include "text.h"
+#include "systems/render.h"
+#include "systems/d3d.h"
+#include "systems/input.h"
+#include "systems/physics.h"
+#include "systems/system.h"
+#include "systems/text.h"
+#include "systems/platform/win32.h"
+#include "systems/platform/openxr.h"
+#include "asset_types/assets.h"
+#include "shaders_builtin/shader_builtin.h"
 
 #include <thread> // sleep_for
 

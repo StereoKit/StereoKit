@@ -1,7 +1,7 @@
 #include "text.h"
 
-#include "material.h"
-#include "assets.h"
+#include "../asset_types/material.h"
+#include "../asset_types/assets.h"
 
 #include <vector>
 using namespace std;

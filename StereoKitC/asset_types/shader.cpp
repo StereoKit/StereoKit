@@ -1,9 +1,8 @@
-#include "stereokit.h"
+#include "../stereokit.h"
+#include "../stref.h"
+#include "../systems/d3d.h"
 #include "shader.h"
-
-#include "d3d.h"
 #include "assets.h"
-#include "stref.h"
 
 #include <d3dcompiler.h>
 #include <stdio.h>

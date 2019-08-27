@@ -1,7 +1,6 @@
-#include "stereokit.h"
+#include "../stereokit.h"
+#include "../systems/d3d.h"
 #include "mesh.h"
-
-#include "d3d.h"
 #include "assets.h"
 
 #include <stdio.h>

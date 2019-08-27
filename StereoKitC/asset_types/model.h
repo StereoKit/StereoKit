@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "assets.h"
 
 struct model_subset_t {

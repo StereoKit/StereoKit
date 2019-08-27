@@ -1,19 +1,18 @@
 #ifndef SK_NO_FLATSCREEN
 
 #include "win32.h"
+#include "win32_input.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dxgi1_2.h>
 
-#include "stereokit.h"
-#include "_stereokit.h"
-
-#include "texture.h"
-#include "render.h"
-#include "d3d.h"
-#include "input.h"
-#include "win32_input.h"
+#include "../../stereokit.h"
+#include "../../_stereokit.h"
+#include "../../asset_types/texture.h"
+#include "../render.h"
+#include "../d3d.h"
+#include "../input.h"
 
 HWND             win32_window    = nullptr;
 tex2d_t          win32_target    = {};

@@ -7,7 +7,7 @@
 
 #pragma warning( disable : 26451 )
 #define CGLTF_IMPLEMENTATION
-#include "cgltf.h"
+#include "../libraries/cgltf.h"
 #pragma warning( default: 26451 )
 
 #include <vector>

@@ -6,7 +6,7 @@
 #include "material.h"
 #include "model.h"
 #include "font.h"
-#include "stref.h"
+#include "../stref.h"
 
 #include <vector>
 using namespace std;

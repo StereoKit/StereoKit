@@ -4,8 +4,8 @@
 #include <string.h>
 #include <windows.h> // GetSystemTimePreciseAsFileTime
 #include <stdio.h>
-#include "stref.h"
-#include "stereokit.h"
+#include "../stref.h"
+#include "../stereokit.h"
 
 struct sort_dependency_t {
 	int32_t *ids;

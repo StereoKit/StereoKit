@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <d3d11.h>
 
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "assets.h"
 
 struct _mesh_t {

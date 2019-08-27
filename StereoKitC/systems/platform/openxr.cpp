@@ -3,13 +3,13 @@
 
 #include "openxr.h"
 
-#include "d3d.h"
-#include "texture.h"
-#include "stereokit.h"
-#include "_stereokit.h"
-#include "render.h"
-#include "input.h"
-#include "input_hand.h"
+#include "../../stereokit.h"
+#include "../../_stereokit.h"
+#include "../../systems/d3d.h"
+#include "../../systems/render.h"
+#include "../../systems/input.h"
+#include "../../systems/input_hand.h"
+#include "../../asset_types/texture.h"
 
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>

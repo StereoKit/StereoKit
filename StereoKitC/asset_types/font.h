@@ -1,8 +1,8 @@
 #pragma once
 
-#include "stereokit.h"
+#include "../stereokit.h"
+#include "../libraries/stb_truetype.h"
 #include "assets.h"
-#include "stb_truetype.h"
 
 struct font_char_t {
 	float x0,y0,x1,y1;

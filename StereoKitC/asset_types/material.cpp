@@ -1,7 +1,7 @@
 #include "material.h"
-#include "stref.h"
 #include "texture.h"
-#include "d3d.h"
+#include "../systems/d3d.h"
+#include "../stref.h"
 
 #include <stdio.h>
 

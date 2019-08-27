@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stereokit.h"
+#include "../stereokit.h"
 
 enum hand_finger_ {
 	input_finger_thumb = 0,

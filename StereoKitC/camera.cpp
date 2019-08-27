@@ -1,6 +1,5 @@
 #include "stereokit.h"
-
-#include "d3d.h"
+#include "systems/d3d.h"
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;

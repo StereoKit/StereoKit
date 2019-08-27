@@ -1,8 +1,7 @@
 #pragma once
 
-#include "stereokit.h"
+#include "../stereokit.h"
 #include "assets.h"
-
 #include "shader.h"
 
 struct _material_t {

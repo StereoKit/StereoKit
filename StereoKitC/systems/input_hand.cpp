@@ -1,8 +1,8 @@
 #include "input_hand.h"
 #include "input_hand_poses.h"
 
-#include "assets.h"
-#include "material.h"
+#include "../asset_types/assets.h"
+#include "../asset_types/material.h"
 
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5

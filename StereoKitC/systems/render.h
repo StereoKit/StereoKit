@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stereokit.h"
+#include "../stereokit.h"
 
 struct render_stats_t {
 	int swaps_mesh;

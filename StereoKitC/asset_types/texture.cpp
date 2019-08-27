@@ -1,13 +1,12 @@
-#include "stereokit.h"
+#include "../stereokit.h"
+#include "../shaders_builtin/shader_builtin.h"
+#include "../systems/d3d.h"
+#include "../stref.h"
 #include "texture.h"
-
-#include "shader_builtin.h"
-#include "d3d.h"
-#include "stref.h"
 
 #pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../libraries/stb_image.h"
 #pragma warning( default : 26451 6011 6262 6308 6387 28182 )
 
 tex2d_t tex2d_create(const char *id, tex_type_ type, tex_format_ format) {

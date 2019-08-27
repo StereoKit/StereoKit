@@ -1,13 +1,12 @@
-#include "stereokit.h"
 #include "render.h"
-
 #include "d3d.h"
-#include "mesh.h"
-#include "texture.h"
-#include "shader.h"
-#include "shader_builtin.h"
-#include "material.h"
-#include "model.h"
+#include "../stereokit.h"
+#include "../asset_types/mesh.h"
+#include "../asset_types/texture.h"
+#include "../asset_types/shader.h"
+#include "../asset_types/material.h"
+#include "../asset_types/model.h"
+#include "../shaders_builtin/shader_builtin.h"
 
 #include <vector>
 #include <algorithm>

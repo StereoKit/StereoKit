@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stereokit.h"
-#include "font.h"
+#include "../stereokit.h"
+#include "../asset_types/font.h"
 
 struct _text_style_t {
 	font_t      font;

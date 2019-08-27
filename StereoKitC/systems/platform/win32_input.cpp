@@ -5,10 +5,10 @@
 #include <windows.h>
 
 #include "win32.h"
-#include "input.h"
-#include "input_hand.h"
-#include "render.h"
-#include "d3d.h"
+#include "../input.h"
+#include "../input_hand.h"
+#include "../render.h"
+#include "../d3d.h"
 
 int win32_input_pointers[2];
 
