@@ -11,7 +11,7 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_camera_dir;
 };
 cbuffer TransformBuffer : register(b1) {
-	float4x4 sk_world[1000];
+	float4x4 sk_world[1];
 };
 TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;

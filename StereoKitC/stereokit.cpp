@@ -98,8 +98,8 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
 	const char *platform_end_deps[] = {"App", "Text"};
-	systems_add("FrameEnd",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
-	const char *platform_present_deps[] = {"FrameEnd"};
+	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
+	const char *platform_present_deps[] = {"FrameRender"};
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
 
 	sk_initialized = systems_initialize();
