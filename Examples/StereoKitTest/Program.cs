@@ -16,7 +16,6 @@ class Program
 
         while (StereoKitApp.Step(() =>
         {
-            activeApp.Update();
             if (nextApp != null)
             {
                 activeApp.Shutdown();
@@ -24,6 +23,7 @@ class Program
                 activeApp = nextApp;
                 nextApp = null;
             }
+            activeApp.Update();
         }));
 
         activeApp.Shutdown();
