@@ -197,10 +197,12 @@
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stref.cpp" />
     <ClCompile Include="systems\d3d.cpp" />
+    <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\input.cpp" />
     <ClCompile Include="systems\input_hand.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
+    <ClCompile Include="systems\platform\platform.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
     <ClCompile Include="systems\platform\win32_input.cpp" />
     <ClCompile Include="systems\render.cpp" />
@@ -224,11 +226,13 @@
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />
     <ClInclude Include="systems\d3d.h" />
+    <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\input.h" />
     <ClInclude Include="systems\input_hand.h" />
     <ClInclude Include="systems\input_hand_poses.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\openxr.h" />
+    <ClInclude Include="systems\platform\platform.h" />
     <ClInclude Include="systems\platform\win32.h" />
     <ClInclude Include="systems\platform\win32_input.h" />
     <ClInclude Include="systems\render.h" />
