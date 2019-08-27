@@ -105,6 +105,14 @@ void platform_end_frame() {
 	case sk_runtime_mixedreality: openxr_step_end(); break;
 	}
 }
+void platform_present() {
+	switch (sk_runtime) {
+#ifndef SK_NO_FLATSCREEN
+	case sk_runtime_flatscreen:   win32_vsync(); break;
+#endif
+	case sk_runtime_mixedreality: break;
+	}
+}
 
 void sk_app_update() {
 	if (sk_app_update_func != nullptr)
@@ -158,6 +166,8 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
 	const char *platform_end_deps[] = {"App", "Text"};
 	systems_add("FrameEnd",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
+	const char *platform_present_deps[] = {"FrameEnd"};
+	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
 
 	return systems_initialize();
 }

@@ -176,7 +176,7 @@ void systems_shutdown() {
 	log_write(log_info, "|         System | Initialize |   Update |  Shutdown |");
 	log_write(log_info, "|----------------|------------|----------|-----------|");
 	for (int32_t i = 0; i < system_count; i++) {
-		int32_t index = system_init_order[i];
+		int32_t index = i;
 
 		char start_time[16];
 		char update_time[16];

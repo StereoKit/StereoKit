@@ -4,7 +4,12 @@ app_t sk_app = {};
 app_t sk_next_app = {};
 
 void app_set_active(app_t app) {
-	sk_next_app = app;
+	if (sk_app.init == nullptr) {
+		sk_app = app;
+		app_init();
+	} else {
+		sk_next_app = app;
+	}
 }
 void app_shutdown() {
 	if (sk_app.shutdown != nullptr)

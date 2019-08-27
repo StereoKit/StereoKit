@@ -117,10 +117,10 @@ void win32_step_end() {
 	tex2d_rtarget_set_active(win32_target);
 
 	render_draw();
-
-	win32_swapchain->Present(1, 0);
-
 	render_clear();
+}
+void win32_vsync() {
+	win32_swapchain->Present(1, 0);
 }
 
 #endif // SK_NO_FLATSCREEN

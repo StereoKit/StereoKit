@@ -8,7 +8,8 @@
 #define DX11ResType(res, name) res->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(name)-1, name);
 #define DX11ResName(res, type, name) { char tmp[256]; sprintf_s(tmp, 256, "%s|%s", type, name); res->SetPrivateData(WKPDID_D3DDebugObjectName, strlen(tmp), tmp); }
 #else
-#define DX11ResName(res, name)
+#define DX11ResType(res, name)
+#define DX11ResName(res, type, name)
 #endif
 
 extern ID3D11Device           *d3d_device;
