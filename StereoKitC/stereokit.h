@@ -300,7 +300,6 @@ typedef int32_t text_style_t;
 SK_API text_style_t text_make_style(font_t font, material_t material, text_align_ align);
 SK_API void         text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0);
 SK_API vec2         text_size(text_style_t style, const char *text);
-SK_API void text_render_style(text_style_t style);
 
 ///////////////////////////////////////////
 

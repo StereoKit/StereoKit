@@ -54,21 +54,25 @@ text_style_t text_make_style(font_t font, material_t material, text_align_ align
 
 		char name[26];
 		assets_unique_name("auto/txt_buf/", name, _countof(name));
-		buffer->mesh = mesh_create(name);
-		buffer->id   = id;
+		buffer->mesh     = mesh_create(name);
+		buffer->id       = id;
+		buffer->font     = font;
+		buffer->material = material;
+		assets_addref(font->header);
+		assets_addref(material->header);
+
+		material_set_texture   (material, "diffuse", font_get_tex(font));
+		material_set_cull      (material, material_cull_none);
+		material_set_alpha_mode(material, material_alpha_test);
 	}
 
 	// Create the style
 	_text_style_t style;
 	style.font         = font;
-	style.material     = material;
 	style.buffer_index = index;
 	style.align        = align;
 	text_styles.push_back(style);
 
-	material_set_texture   (material, "diffuse", font_get_tex(font));
-	material_set_cull      (material, material_cull_none);
-	material_set_alpha_mode(material, material_alpha_test);
 	return text_styles.size() - 1;
 }
 
@@ -169,13 +173,27 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 	}
 }
 
-void text_render_style(text_style_t style) {
-	text_buffer_t &buffer = text_buffers[text_styles[style].buffer_index];
+void text_update() {
 	transform_t tr;
 	transform_initialize(tr);
+	for (size_t i = 0; i < text_buffers.size(); i++) {
+		text_buffer_t &buffer = text_buffers[i];
 
-	mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count);
-	
-	render_add_mesh(buffer.mesh, text_styles[style].material, tr);
-	buffer.vert_count = 0;
+		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count);
+
+		render_add_mesh(buffer.mesh, buffer.material, tr);
+		buffer.vert_count = 0;
+	}
+}
+
+void text_shutdown() {
+	for (size_t i = 0; i < text_buffers.size(); i++) {
+		text_buffer_t &buffer = text_buffers[i];
+		mesh_release(buffer.mesh);
+		font_release(buffer.font);
+		material_release(buffer.material);
+		if (buffer.verts != nullptr)
+			free(buffer.verts);
+	}
+	text_buffers.clear();
 }

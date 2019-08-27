@@ -9,6 +9,7 @@
 #include "shader_builtin.h"
 #include "physics.h"
 #include "system.h"
+#include "text.h"
 
 #include <thread> // sleep_for
 
@@ -122,33 +123,41 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 
 	const char *platform_deps[] = {"Graphics", "Defaults"};
 	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
-	systems_add("PlatformBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
-	const char *platform_end_deps[] = {"App"};
-	systems_add("PlatformEnd",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
 
 	const char *physics_deps[] = {"Defaults"};
-	const char *physics_update_deps[] = {"Input", "PlatformBegin"};
+	const char *physics_update_deps[] = {"Input", "FrameBegin"};
 	systems_add("Physics",  
 		physics_deps,        _countof(physics_deps), 
 		physics_update_deps, _countof(physics_update_deps), 
 		physics_init, physics_update, physics_shutdown);
 
 	const char *renderer_deps[] = {"Graphics", "Defaults"};
-	const char *renderer_update_deps[] = {"Physics", "PlatformBegin"};
+	const char *renderer_update_deps[] = {"Physics", "FrameBegin"};
 	systems_add("Renderer",  
 		renderer_deps,        _countof(renderer_deps), 
 		renderer_update_deps, _countof(renderer_update_deps),
 		render_initialize, render_update, render_shutdown);
 
 	const char *input_deps[] = {"Platform", "Defaults"};
-	const char *input_update_deps[] = {"PlatformBegin"};
+	const char *input_update_deps[] = {"FrameBegin"};
 	systems_add("Input",  
 		input_deps,        _countof(input_deps), 
 		input_update_deps, _countof(input_update_deps), 
 		input_init, input_update, input_shutdown);
 
-	const char *app_deps[] = {"Input", "Defaults", "PlatformBegin", "Graphics", "Physics", "Renderer"};
+	const char *text_deps[] = {"Defaults"};
+	const char *text_update_deps[] = {"FrameBegin", "App"};
+	systems_add("Text",  
+		text_deps,        _countof(text_deps), 
+		text_update_deps, _countof(text_update_deps), 
+		nullptr, text_update, text_shutdown);
+
+	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
+
+	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
+	const char *platform_end_deps[] = {"App", "Text"};
+	systems_add("FrameEnd",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
 
 	return systems_initialize();
 }

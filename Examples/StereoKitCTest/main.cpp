@@ -77,7 +77,6 @@ int main() {
 		const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
 		vec2 txt_size = text_size(font_style, txt);
 		text_add_at(font_style, text_tr, txt, 0, 0);
-		text_render_style(font_style);
 	}));
 
 	// Release everything
