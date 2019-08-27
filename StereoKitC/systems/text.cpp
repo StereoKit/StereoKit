@@ -209,8 +209,7 @@ void text_shutdown() {
 		mesh_release(buffer.mesh);
 		font_release(buffer.font);
 		material_release(buffer.material);
-		if (buffer.verts != nullptr)
-			free(buffer.verts);
+		free(buffer.verts);
 	}
 	text_buffers.clear();
 }

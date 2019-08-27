@@ -153,8 +153,7 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	// free memory if we failed
 	if (!loaded) {
 		for (size_t i = 0; i < 6; i++) {
-			if (data[i] != nullptr)
-				free(data[i]);
+			free(data[i]);
 		}
 		return nullptr;
 	}

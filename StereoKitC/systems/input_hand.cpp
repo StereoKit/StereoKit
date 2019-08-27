@@ -70,8 +70,8 @@ void input_hand_shutdown() {
 		}
 		if (hand_state[i].material  != nullptr) material_release(hand_state[i].material);
 		if (hand_state[i].mesh.mesh != nullptr) mesh_release(hand_state[i].mesh.mesh);
-		if (hand_state[i].mesh.inds  != nullptr) free(hand_state[i].mesh.inds);
-		if (hand_state[i].mesh.verts != nullptr) free(hand_state[i].mesh.verts);
+		free(hand_state[i].mesh.inds);
+		free(hand_state[i].mesh.verts);
 	}
 }
 

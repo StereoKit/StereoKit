@@ -247,18 +247,16 @@ void shader_destroy(shader_t shader) {
 		tex2d_release(shader->tex_slots.tex[i].default_tex);
 	}
 	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
-		if (shader->args_desc.item[i].tags != nullptr)
-			free(shader->args_desc.item[i].tags);
-		if (shader->args_desc.item[i].default_value != nullptr)
-			free(shader->args_desc.item[i].default_value);
+		free(shader->args_desc.item[i].tags);
+		free(shader->args_desc.item[i].default_value);
 	}
 
 	shaderargs_destroy(shader->args);
 	if (shader->pshader     != nullptr) shader->pshader    ->Release();
 	if (shader->vshader     != nullptr) shader->vshader    ->Release();
 	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
-	if (shader->args_desc.item != nullptr) free(shader->args_desc.item);
-	if (shader->tex_slots.tex  != nullptr) free(shader->tex_slots.tex );
+	free(shader->args_desc.item);
+	free(shader->tex_slots.tex );
 	*shader = {};
 }
 

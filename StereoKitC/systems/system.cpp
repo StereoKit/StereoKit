@@ -113,8 +113,8 @@ bool systems_sort() {
 
 	// Release memory
 	for (size_t i = 0; i < system_count; i++) {
-		if (init_ids  [i].ids != nullptr) free(init_ids  [i].ids);
-		if (update_ids[i].ids != nullptr) free(update_ids[i].ids);
+		free(init_ids  [i].ids);
+		free(update_ids[i].ids);
 	}
 	free(init_ids);
 	free(update_ids);
@@ -217,8 +217,8 @@ void systems_shutdown() {
 	}
 	log_write(log_info, "|----------------|------------|----------|-----------|");
 
-	if (systems           != nullptr) free(systems);
-	if (system_init_order != nullptr) free(system_init_order);
+	free(systems);
+	free(system_init_order);
 	systems = nullptr;
 }
 

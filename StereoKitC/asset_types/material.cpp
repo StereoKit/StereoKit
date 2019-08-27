@@ -83,9 +83,9 @@ void material_destroy(material_t material) {
 			tex2d_release(material->args.textures[i]);
 	}
 	shader_release(material->shader);
-	if (material->blend_state   != nullptr) material->blend_state->Release();
-	if (material->args.buffer   != nullptr) free(material->args.buffer);
-	if (material->args.textures != nullptr) free(material->args.textures);
+	if (material->blend_state != nullptr) material->blend_state->Release();
+	free(material->args.buffer);
+	free(material->args.textures);
 	*material = {};
 }
 
