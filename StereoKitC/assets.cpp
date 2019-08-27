@@ -56,6 +56,9 @@ void *assets_allocate(asset_type_ type, const char *id) {
 	header->refs += 1;
 	header->id    = string_hash(id);
 	header->index = assets.size();
+#ifdef _DEBUG
+	header->id_text = string_copy(id);
+#endif
 	assets.push_back(header);
 	return header;
 }
@@ -90,6 +93,9 @@ void  assets_releaseref(asset_header_t &asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
+#ifdef _DEBUG
+	free(asset.id_text);
+#endif
 	free(&asset);
 }
 

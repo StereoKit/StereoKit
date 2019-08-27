@@ -16,6 +16,9 @@ struct asset_header_t {
 	uint64_t    id;
 	int32_t     refs;
 	uint64_t    index;
+#ifdef _DEBUG
+	char       *id_text;
+#endif
 };
 
 void *assets_find       (const char *id);

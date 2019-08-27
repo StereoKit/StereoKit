@@ -57,6 +57,8 @@ material_t material_copy(const char *id, material_t material) {
 		if (result->args.textures[i] != nullptr)
 			assets_addref(result->args.textures[i]->header);
 	}
+	if (result->rasterizer_state != nullptr) result->rasterizer_state->AddRef();
+	if (result->blend_state      != nullptr) result->blend_state->AddRef();
 
 	return result;
 }

@@ -28,7 +28,7 @@ bool d3d_init() {
 		d3d_info = nullptr;
 		if (SUCCEEDED(d3dDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3d_info))) {
 			D3D11_MESSAGE_ID hide[] = {
-				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS, (D3D11_MESSAGE_ID)351
 				// Add more message IDs here as needed
 			};
 
