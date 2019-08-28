@@ -22,6 +22,12 @@ IDXGISwapChain1 *win32_swapchain = {};
 float            win32_scroll      = 0;
 float            win32_scroll_dest = 0;
 
+// For managing window resizing
+bool win32_check_resize = true;
+bool win32_resize_drag  = false;
+UINT win32_resize_x     = 0;
+UINT win32_resize_y     = 0;
+
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
@@ -29,7 +35,7 @@ void win32_resize(int width, int height) {
 		return;
 	d3d_screen_width  = width;
 	d3d_screen_height = height;
-	log_write(log_info, "Resize!");
+	log_writef(log_info, "Resized to: %dx%d", width, height);
 
 	if (win32_swapchain != nullptr) {
 		tex2d_releasesurface(win32_target);
@@ -54,8 +60,36 @@ bool win32_init(const char *app_name) {
 		case WM_SETFOCUS:  sk_focused = true;  break;
 		case WM_KILLFOCUS: sk_focused = false; break;
 		case WM_MOUSEWHEEL:win32_scroll_dest += (short)HIWORD(wParam); break;
-		case WM_SIZE:       if (wParam != SIZE_MINIMIZED) win32_resize((UINT)LOWORD(lParam), (UINT)HIWORD(lParam)); break;
-		case WM_SYSCOMMAND: if ((wParam & 0xfff0) == SC_KEYMENU) return (LRESULT)0; // Disable alt menu
+		case WM_SYSCOMMAND: {
+			// Has the user pressed the restore/'un-maximize' button?
+			// WM_SIZE happens -after- this event, and contains the new size.
+			if (wParam == SC_RESTORE) {
+				win32_check_resize = true;
+			}
+			// Disable alt menu
+			if ((wParam & 0xfff0) == SC_KEYMENU) 
+				return (LRESULT)0; 
+		} return DefWindowProc(hWnd, message, wParam, lParam); 
+		case WM_SIZE: {
+			win32_resize_x = (UINT)LOWORD(lParam);
+			win32_resize_y = (UINT)HIWORD(lParam);
+
+			// Don't check every time the size changes, this can lead to ugly memory alloc.
+			// If a restore event, a maximize, or something else says we should resize, check it!
+			if (win32_check_resize || wParam == SIZE_MAXIMIZED) { 
+				win32_check_resize = false; 
+				win32_resize(win32_resize_x, win32_resize_y); 
+			}
+		} return DefWindowProc(hWnd, message, wParam, lParam);
+		case WM_EXITSIZEMOVE: {
+			// If the user was dragging the window around, WM_SIZE is called -before- this 
+			// event, so we can go ahead and resize now!
+			if (win32_resize_drag) {
+				win32_resize_drag = false;
+				win32_resize(win32_resize_x, win32_resize_y);
+			}
+		} return DefWindowProc(hWnd, message, wParam, lParam);
+		case WM_ENTERSIZEMOVE: win32_resize_drag = true; return DefWindowProc(hWnd, message, wParam, lParam);
 		default: return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		return (LRESULT)0;
