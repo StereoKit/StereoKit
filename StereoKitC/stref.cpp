@@ -371,7 +371,7 @@ uint64_t stref_hash(const stref_t &ref) {
 float stref_to_f(const stref_t &ref) {
 	char text[32];
 	stref_copy_to(ref, text, 32);
-	return atof(text);
+	return (float)atof(text);
 }
 
 ///////////////////////////////////////////
