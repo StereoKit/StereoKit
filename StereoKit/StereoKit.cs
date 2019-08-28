@@ -38,6 +38,9 @@ namespace StereoKit
         }
         private static bool InitializeCall(string name, Runtime runtime, bool fallback)
         {
+            // Prep console for colored debug logs
+            Log.SetupConsole();
+
             // DllImport finds the function at the beginning of the function call,
             // so this needs to be in a separate function from NativeLib.LoadDll
             return sk_init(name, runtime, fallback?1:0) > 0;

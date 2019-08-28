@@ -191,31 +191,31 @@ void systems_shutdown() {
 	}
 
 	log_write(log_info, "Session Performance Report:");
-	log_write(log_info, "|----------------|------------|----------|-----------|");
-	log_write(log_info, "|         System | Initialize |   Update |  Shutdown |");
-	log_write(log_info, "|----------------|------------|----------|-----------|");
+	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_write(log_info, "<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = i;
 
-		char start_time[16];
-		char update_time[16];
-		char shutdown_time[16];
+		char start_time[24];
+		char update_time[24];
+		char shutdown_time[24];
 
 		if (systems[index].func_initialize != nullptr)
-			 sprintf_s(start_time, 16, "%8.2fms", (float)((double)systems[index].profile_start_duration / 10000.0));
-		else sprintf_s(start_time, 16, "          ");
+			 sprintf_s(start_time, 24, "%8.2f<~BLK>ms", (float)((double)systems[index].profile_start_duration / 10000.0));
+		else sprintf_s(start_time, 24, "          ");
 
 		if (systems[index].func_update != nullptr)
-			 sprintf_s(update_time, 16, "%6.3fms", (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 10000.0));
-		else sprintf_s(update_time, 16, "        ");
+			 sprintf_s(update_time, 24, "%6.3f<~BLK>ms", (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 10000.0));
+		else sprintf_s(update_time, 24, "        ");
 
 		if (systems[index].func_shutdown != nullptr)
-			 sprintf_s(shutdown_time, 16, "%7.2fms", (float)((double)systems[index].profile_shutdown_duration / 10000.0));
-		else sprintf_s(shutdown_time, 16, "         ");
+			 sprintf_s(shutdown_time, 24, "%7.2f<~BLK>ms", (float)((double)systems[index].profile_shutdown_duration / 10000.0));
+		else sprintf_s(shutdown_time, 24, "         ");
 		
-		log_writef(log_info, "|%15s | %s | %s | %s |", systems[index].name, start_time, update_time, shutdown_time);
+		log_writef(log_info, "<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_write(log_info, "|----------------|------------|----------|-----------|");
+	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
 
 	free(systems);
 	free(system_init_order);

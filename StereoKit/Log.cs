@@ -16,6 +16,31 @@ namespace StereoKit
 
     public static class Log
     {
+        #region Console Color Setup
+        const int  STD_OUTPUT_HANDLE = -11;
+        const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr GetStdHandle(int nStdHandle);
+
+        [DllImport("kernel32.dll")]
+        static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+        [DllImport("kernel32.dll")]
+        static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+        internal static void SetupConsole()
+        {
+            if (!Environment.OSVersion.Platform.ToString().ToLower().Contains("win"))
+                return;
+            
+            IntPtr handle = GetStdHandle(STD_OUTPUT_HANDLE);
+            uint mode;
+            GetConsoleMode(handle, out mode);
+            mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            SetConsoleMode(handle, mode);
+        }
+        #endregion
+
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void log_write(LogLevel level, string text);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)]
