@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-class DemoBasics : ISKApp
+class DemoBasics : IScene
 {
     Model cube;
     Model gltf;

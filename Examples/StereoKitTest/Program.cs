@@ -3,30 +3,30 @@ using StereoKit;
 
 class Program 
 {
-    static ISKApp activeApp;
-    static ISKApp nextApp;
-    public static ISKApp ActiveApp { get{ return activeApp;} set { nextApp = value; } }
+    static IScene activeScene;
+    static IScene nextScene;
+    public static IScene ActiveScene { get{ return activeScene;} set { nextScene = value; } }
     static void Main(string[] args) 
     {
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
 
-        activeApp = new DemoBasics();
-        activeApp.Initialize();
+        activeScene = new DemoBasics();
+        activeScene.Initialize();
 
         while (StereoKitApp.Step(() =>
         {
-            if (nextApp != null)
+            if (nextScene != null)
             {
-                activeApp.Shutdown();
-                nextApp.Initialize();
-                activeApp = nextApp;
-                nextApp = null;
+                activeScene.Shutdown();
+                nextScene.Initialize();
+                activeScene = nextScene;
+                nextScene = null;
             }
-            activeApp.Update();
+            activeScene.Update();
         }));
 
-        activeApp.Shutdown();
+        activeScene.Shutdown();
 
         StereoKitApp.Shutdown();
     }

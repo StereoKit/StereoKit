@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="app.cpp" />
+    <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -149,7 +149,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="app.h" />
+    <ClInclude Include="scene.h" />
     <ClInclude Include="demo_basics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
