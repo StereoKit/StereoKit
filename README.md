@@ -8,28 +8,30 @@ The future of development is coming, and we need better tools! StereoKit aims to
   - Hardware instancing for speed, by default!
   - An extendable shader framework.
 - Runtime everything, including asset pipeline!
-  - GLTF file support.
-  - OBJ file support.
+  - GLTF file support
+  - OBJ file support
   - Procedural mesh API!
 - Physics
-  - Rigidbodies and joints.
+  - Rigid bodies and joints
   - Physically based UI!
-  - Hand-centric user input.
+  - Hand-centric user input
 - OpenXR support
   - StereoKit will eventually run on every Mixed Reality device!
 
-
 ![Screenshot](/Documentation/img/SKScreenshot1.jpg)
+
 
 ## Motivation
 
 As [SharpDX](http://sharpdx.org/) and many other render libraries for C# are sadly deprecated and no longer in development, there are plenty of engines and interfaces out there for rendering in C / CPP, but much less for creating 3D projects with C#. StereoKit tries to fill that gap.
+
 
 ## Getting started
 
 While StereoKit is still in development, you can totally try it out already! The lower level APIs are easy to use, and already fairly well established.
 
 Have a look at the [Getting started documentation](Documentation/StartingWithStereoKit.md) and the [examples](https://github.com/maluoi/StereoKit/tree/master/Examples) to get started!
+
 
 ## Tested platforms
 
