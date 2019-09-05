@@ -57,7 +57,10 @@ void demo_ui_update() {
 	sk_ui_button("Testing!\nok");
 	sk_ui_button("Another");
 	sk_ui_nextline();
-	sk_ui_button("Press me!");
+	if (sk_ui_button("Press me!")) {
+		sk_ui_nextline();
+		sk_ui_button("DYANMIC BUTTON!!");
+	}
 
 	sk_ui_window_end();
 }

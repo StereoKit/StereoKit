@@ -125,11 +125,12 @@ void sk_ui_space(float space) {
 ///////////////////////////////////////////
 bool sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_end) {
 	return
-		pt.x >= box_start.x && pt.x <= box_end.x &&
-		pt.y >= box_start.y && pt.y <= box_end.y &&
-		pt.z >= box_start.z && pt.z <= box_end.z;
+		pt.x >= fminf(box_start.x, box_end.x) && pt.x <= fmaxf(box_start.x, box_end.x) &&
+		pt.y >= fminf(box_start.y, box_end.y) && pt.y <= fmaxf(box_start.y, box_end.y) &&
+		pt.z >= fminf(box_start.z, box_end.z) && pt.z <= fmaxf(box_start.z, box_end.z);
 }
-void sk_ui_button(const char *text) {
+bool sk_ui_button(const char *text) {
+	bool result = false;
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(skui_font_style, text);
 	size += vec2{ skui_padding, skui_padding }*2;
@@ -142,18 +143,22 @@ void sk_ui_button(const char *text) {
 		offset = skui_layers.back().offset;
 	}
 
-	vec3 box_start = offset;
-	vec3 box_end   = offset + vec3{ size.x, size.y, skui_depth };
-	float finger_offset = 0;
+	vec3 box_start = offset + vec3{ 0, 0, -skui_depth };
+	vec3 box_end   = offset + vec3{ size.x, -size.y, skui_depth };
+	float finger_offset = skui_depth;
 	for (size_t i = 0; i < handed_max; i++) {
 		if (sk_ui_inbox(skui_fingertip[i], box_start, box_end)) {
-			finger_offset = skui_fingertip[i].z-box_start.z;
+			finger_offset = fmaxf(mm2m,skui_fingertip[i].z-offset.z);
 		}
 	}
+	if (finger_offset < skui_depth / 2)
+		result = true;
 
 	sk_ui_reserve_box(size);
-	sk_ui_box (offset, vec3{ size.x, size.y, skui_depth+finger_offset });
-	sk_ui_text(offset + vec3{ skui_padding, -skui_padding, (skui_depth + 2*mm2m)+finger_offset }, text);
+	sk_ui_box (offset, vec3{ size.x, size.y, finger_offset });
+	sk_ui_text(offset + vec3{ skui_padding, -skui_padding, finger_offset + 2*mm2m }, text);
+
+	return result;
 }
 
 ///////////////////////////////////////////

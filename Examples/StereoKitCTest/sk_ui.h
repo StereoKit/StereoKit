@@ -13,6 +13,6 @@ void sk_ui_nextline   ();
 void sk_ui_reserve_box(vec2 size);
 void sk_ui_space      (float space);
 
-void sk_ui_button      (const char *text);
+bool sk_ui_button      (const char *text);
 void sk_ui_window_begin(const char *text, pose_t pose, vec2 size = vec2{ 0,0 });
 void sk_ui_window_end  ();
