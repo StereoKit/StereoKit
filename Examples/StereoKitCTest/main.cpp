@@ -5,7 +5,7 @@
 #include "demo_ui.h"
 
 int main() {
-	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
 
 	scene_t demo_basics = {
