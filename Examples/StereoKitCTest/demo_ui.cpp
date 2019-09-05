@@ -50,14 +50,15 @@ void demo_ui_update() {
 	render_add_model(ui_floor_model, ui_floor_tr);
 
 	sk_ui_begin_frame();
-	sk_ui_push_pose(pose_t{ {0.85f,1,0.9f},{0,0,0,1} });
+	//sk_ui_window_begin("Main", pose_t{ {0.85f,1,0.9f},{0,0,0,1} });
+	sk_ui_window_begin("Main", input_hand(handed_right).root);
 
 	sk_ui_button("Testing!\nok");
 	sk_ui_button("Another");
 	sk_ui_nextline();
 	sk_ui_button("Press me!");
 
-	sk_ui_pop_pose();
+	sk_ui_window_end();
 }
 
 ///////////////////////////////////////////

@@ -8,7 +8,9 @@ using namespace std;
 struct layer_t {
 	XMMATRIX transform;
 	vec3     offset;
+	vec2     size;
 	float    line_height;
+	float    max_x;
 };
 
 vector<layer_t> skui_layers;
@@ -22,7 +24,7 @@ transform_t     skui_tr;
 float skui_padding = 10*mm2m;
 float skui_gutter  = 20*mm2m;
 float skui_depth   = 20*mm2m;
-float skui_fontsize= 20 * mm2m;
+float skui_fontsize= 20*mm2m;
 
 void sk_ui_init() {
 	skui_box = mesh_gen_cube("sk_ui/box", vec3_one);
@@ -36,13 +38,13 @@ void sk_ui_init() {
 void sk_ui_begin_frame() {
 }
 
-void sk_ui_push_pose(pose_t pose) {
+void sk_ui_push_pose(pose_t pose, vec2 size) {
 	skui_layers.push_back(layer_t{
 		XMMatrixAffineTransformation(
 			DirectX::g_XMOne, DirectX::g_XMZero,
 			XMLoadFloat4((XMFLOAT4 *)& pose.orientation),
 			XMLoadFloat3((XMFLOAT3 *)& pose.position)),
-		vec3{skui_padding, skui_padding}, 0,
+		vec3{skui_padding, -skui_padding}, size, 0, 0
 	});
 }
 
@@ -69,9 +71,12 @@ void sk_ui_text(vec3 start, const char *text) {
 }
 
 void sk_ui_reserve_box(vec2 size) {
-	skui_layers.back().offset += vec3{ size.x + skui_gutter, 0, 0 };
+	if (skui_layers.back().max_x < skui_layers.back().offset.x + size.x + skui_padding)
+		skui_layers.back().max_x = skui_layers.back().offset.x + size.x + skui_padding;
 	if (skui_layers.back().line_height < size.y)
 		skui_layers.back().line_height = size.y;
+
+	skui_layers.back().offset += vec3{ size.x + skui_gutter, 0, 0 };
 }
 void sk_ui_nextline() {
 	skui_layers.back().offset.x = skui_padding;
@@ -89,7 +94,32 @@ void sk_ui_button(const char *text) {
 	vec2 size   = text_size(skui_font_style, text);
 	size += vec2{ skui_padding, skui_padding }*2;
 
+	if (offset.x                  != skui_padding && 
+		skui_layers.back().size.x != 0            && 
+		offset.x + size.x > skui_layers.back().size.x - skui_padding)
+	{
+		sk_ui_nextline();
+		offset = skui_layers.back().offset;
+	}
+
 	sk_ui_reserve_box(size);
-	sk_ui_box(offset, vec3{ size.x, size.y, skui_depth });
+	sk_ui_box (offset, vec3{ size.x, size.y, skui_depth });
 	sk_ui_text(offset + vec3{ skui_padding, -skui_padding, (skui_depth + 2*mm2m) }, text);
+}
+
+void sk_ui_window_begin(const char *text, pose_t pose, vec2 size) {
+	sk_ui_push_pose(pose, size);
+
+	vec2 name_size = text_size(skui_font_style, text);
+	sk_ui_text(vec3{ skui_padding, name_size.y, 2.f*mm2m }, text);
+}
+void sk_ui_window_end() {
+	vec2 size = skui_layers.back().size;
+	if (size.x == 0)
+		size.x = skui_layers.back().max_x;
+	if (size.y == 0)
+		size.y = -skui_layers.back().offset.y + skui_layers.back().line_height + skui_padding;
+	sk_ui_box(vec3{ 0,0,-skui_depth}, vec3{ size.x, size.y, skui_depth });
+
+	sk_ui_pop_pose();
 }
