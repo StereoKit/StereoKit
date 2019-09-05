@@ -11,6 +11,8 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_find(string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        static extern void   mesh_set_draw_inds(IntPtr mesh, int index_count);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_gen_cube(string id, Vec3 dimensions, int subdivisions);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern IntPtr mesh_gen_rounded_cube(string id, Vec3 dimensions, float edge_radius, int subdivisions);

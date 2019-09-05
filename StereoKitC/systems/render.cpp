@@ -437,7 +437,7 @@ void render_set_mesh(mesh_t mesh) {
 void render_draw_item(int count) {
 	render_stats.draw_calls++;
 
-	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_count, count, 0, 0, 0);
+	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_draw, count, 0, 0, 0);
 }
 
 ///////////////////////////////////////////
