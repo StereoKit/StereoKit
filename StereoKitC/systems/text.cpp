@@ -40,7 +40,7 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, material_t material, text_align_ align) {
+text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align) {
 	uint32_t       id     = font->header.id << 16 | material->header.id;
 	uint32_t       index  = 0;
 	text_buffer_t *buffer = nullptr;
@@ -77,6 +77,7 @@ text_style_t text_make_style(font_t font, material_t material, text_align_ align
 	style.font         = font;
 	style.buffer_index = index;
 	style.align        = align;
+	style.height       = character_height;
 	text_styles.push_back(style);
 
 	return text_styles.size() - 1;
@@ -99,7 +100,7 @@ vec2 text_line_size(text_style_t style, const char *text) {
 		}
 		curr += 1;
 	}
-	return vec2{ x, 1 };
+	return vec2{ x, 1 } * text_styles[style].height;
 }
 
 ///////////////////////////////////////////
@@ -128,12 +129,12 @@ vec2 text_size(text_style_t style, const char *text) {
 	if (line_ct > 0)
 		y -= 1;
 	y = fminf(-1, y);
-	return vec2{ max_x, fabsf(y) };
+	return vec2{ max_x, fabsf(y) } * text_styles[style].height;
 }
 
 ///////////////////////////////////////////
 
-void text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y) {
+void text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y, float off_z) {
 	_text_style_t &style_data = text_styles[style];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
 	vec2           size       = text_size(style, text);
@@ -143,14 +144,14 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 	text_buffer_ensure_capacity(buffer, length);
 	
 	vec3    normal  = transform_local_to_world_dir(transform, -vec3_forward);
-	color32 col     = {255,255,255,255};
+	color32 col     = {128,128,128,255};
 	const char*curr = text;
 	vec2    line_sz = text_line_size(style, curr);
 	float   align_x = 0;
 	if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 	if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
 	float   x       = off_x + align_x;
-	float   y       = off_y-1;
+	float   y       = off_y-style_data.height;
 	if (style_data.align & text_align_y_center) y += (size.y / 2.f);
 	if (style_data.align & text_align_y_bottom) y += size.y;
 	size_t  offset  = buffer.vert_count;
@@ -161,27 +162,27 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += style_data.font->characters[(int)' '].xadvance * 4; continue;
-		case ' ':  x += ch.xadvance; continue;
+		case '\t': x += style_data.font->characters[(int)' '].xadvance * 4 * style_data.height; continue;
+		case ' ':  x += ch.xadvance * style_data.height; continue;
 		case '\n': {
 			line_sz = text_line_size(style, curr);
 			align_x = 0;
 			if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 			if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
 			x = off_x + align_x;
-			y -= 1;
+			y -= style_data.height;
 		} continue;
 		default:break;
 		}
 		
 		// Add a character quad
-		buffer.verts[offset + 0] = { transform_local_to_world(transform, vec3{x + ch.x0, y + ch.y0, 0}), normal, vec2{ch.u0, ch.v0}, col };
-		buffer.verts[offset + 1] = { transform_local_to_world(transform, vec3{x + ch.x1, y + ch.y0, 0}), normal, vec2{ch.u1, ch.v0}, col };
-		buffer.verts[offset + 2] = { transform_local_to_world(transform, vec3{x + ch.x1, y + ch.y1, 0}), normal, vec2{ch.u1, ch.v1}, col };
-		buffer.verts[offset + 3] = { transform_local_to_world(transform, vec3{x + ch.x0, y + ch.y1, 0}), normal, vec2{ch.u0, ch.v1}, col };
+		buffer.verts[offset + 0] = { transform_local_to_world(transform, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, col };
+		buffer.verts[offset + 1] = { transform_local_to_world(transform, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, col };
+		buffer.verts[offset + 2] = { transform_local_to_world(transform, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, col };
+		buffer.verts[offset + 3] = { transform_local_to_world(transform, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, col };
 
 		buffer.vert_count += 4;
-		x += ch.xadvance;
+		x += ch.xadvance * style_data.height;
 		offset += 4;
 	}
 }

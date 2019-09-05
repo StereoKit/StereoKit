@@ -129,6 +129,17 @@ void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 
 ///////////////////////////////////////////
 
+void render_add_mesh_mx(mesh_t mesh, material_t material, XMMATRIX &matrix) {
+	render_item_t item;
+	item.mesh     = mesh;
+	item.material = material;
+	item.sort_id  = render_queue_id(material, mesh);
+	item.transform = matrix;
+	render_queue.emplace_back(item);
+}
+
+///////////////////////////////////////////
+
 void render_add_model(model_t model, transform_t &transform) {
 	XMMATRIX world;
 	transform_matrix(transform, world);
@@ -253,7 +264,7 @@ bool render_initialize() {
 	}
 
 	// Setup a default camera
-	camera_initialize(render_default_camera, 90, 0.1f, 50);
+	camera_initialize(render_default_camera, 90, 0.01f, 50);
 	transform_set    (render_default_camera_tr, vec3_one, vec3_one, quat_identity);
 	transform_lookat (render_default_camera_tr, vec3_zero);
 	render_set_camera(render_default_camera);

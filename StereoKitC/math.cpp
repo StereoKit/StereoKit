@@ -44,6 +44,15 @@ quat quat_lerp(const quat &a, const quat &b, float t) {
 
 ///////////////////////////////////////////
 
+void pose_matrix(const pose_t &pose, matrix &out_result) {
+	XMMATRIX mat = XMMatrixAffineTransformation(
+		DirectX::g_XMOne, DirectX::g_XMZero,
+		XMLoadFloat4((XMFLOAT4*)&pose.orientation),
+		XMLoadFloat3((XMFLOAT3*)&pose.position));
+}
+
+///////////////////////////////////////////
+
 bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t) {
 	float denom = vec3_dot(plane_normal, ray.dir); 
 	if (denom > 1e-6) { 

@@ -121,6 +121,8 @@ static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { r
 quat quat_lookat(const vec3 &from, const vec3 &at);
 quat quat_lerp(const quat &a, const quat &b, float t);
 
+matrix pose_matrix(const pose_t &pose);
+
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
 
 static const float deg2rad = 0.01745329252f;
@@ -307,9 +309,9 @@ SK_MakeFlag(text_align_);
 
 typedef int32_t text_style_t;
 
-SK_API text_style_t text_make_style(font_t font, material_t material, text_align_ align);
-SK_API void         text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0);
-SK_API vec2         text_size(text_style_t style, const char *text);
+SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align);
+SK_API void         text_add_at    (text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API vec2         text_size      (text_style_t style, const char *text);
 
 ///////////////////////////////////////////
 
@@ -364,6 +366,7 @@ SK_API void render_set_view   (transform_t &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
 SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_mesh_mx(mesh_t mesh, material_t material, DirectX::XMMATRIX &matrix);
 SK_API void render_add_model  (model_t model, transform_t &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
 SK_API void render_get_device (void **device, void **context);

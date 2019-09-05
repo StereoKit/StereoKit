@@ -139,9 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="sk_ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StereoKitC\StereoKitC.vcxproj">
@@ -149,8 +151,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="demo_ui.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="demo_basics.h" />
+    <ClInclude Include="sk_ui.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

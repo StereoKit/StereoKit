@@ -2,6 +2,7 @@
 
 #include "scene.h"
 #include "demo_basics.h"
+#include "demo_ui.h"
 
 int main() {
 	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
@@ -12,7 +13,12 @@ int main() {
 		demo_basics_update,
 		demo_basics_shutdown,
 	};
-	scene_set_active(demo_basics);
+	scene_t demo_ui = {
+		demo_ui_init,
+		demo_ui_update,
+		demo_ui_shutdown,
+	};
+	scene_set_active(demo_ui);
 
 	while (sk_step( []() {
 		scene_update();

@@ -30,7 +30,7 @@ void demo_basics_init() {
 
 	font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
 	font       = font_create("C:/Windows/Fonts/segoeui.ttf");
-	font_style = text_make_style(font, font_mat, text_align_x_right | text_align_y_center);
+	font_style = text_make_style(font, 1, font_mat, text_align_x_right | text_align_y_center);
 	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);
 
 	// Create a PBR floor material
@@ -81,11 +81,15 @@ void demo_basics_update() {
 	// Render floor
 	render_add_model(box, floor_tr);
 
+	text_add_at(font_style, tr, "Hi! Yo! What's up? How's it going?", 0, 0);
+
 	transform_set_position(text_tr, input_hand(handed_right).root.position);
 	transform_set_rotation(text_tr, input_hand(handed_right).root.orientation);
-	const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
-	vec2 txt_size = text_size(font_style, txt);
-	text_add_at(font_style, text_tr, txt, 0, 0);
+	if (cosf(sk_timef()*10) > 0) {
+		const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
+		vec2 txt_size = text_size(font_style, txt);
+		text_add_at(font_style, text_tr, txt, 0, 0);
+	}
 }
 
 ///////////////////////////////////////////
