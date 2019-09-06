@@ -1,3 +1,4 @@
+#include "../stereokit.h"
 #include "input_hand.h"
 #include "input_hand_poses.h"
 
@@ -78,19 +79,47 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	// Update hand meshes
+	
 	for (size_t i = 0; i < handed_max; i++) {
+		// Update hand states
+		input_hand_state_update((handed_)i);
+
+		// Update hand meshes
 		bool tracked = hand_state[i].info.state & input_state_tracked;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
 		}
 
+		// Update hand physics
 		solid_set_enabled(hand_state[i].solids[0], tracked);
 		if (tracked) {
 			solid_move(hand_state[i].solids[0], hand_state[i].info.root.position, hand_state[i].info.root.orientation);
 		}
 	}
+}
+
+///////////////////////////////////////////
+
+void input_hand_state_update(handed_ handedness) {
+	hand_t &hand = hand_state[handedness].info;
+
+	// Update hand state based on inputs
+	bool was_tracked = hand.state & input_state_tracked;
+	bool was_trigger = hand.state & input_state_pinch;
+	bool was_gripped = hand.state & input_state_grip;
+	// Clear all except tracking state
+	hand.state &= input_state_tracked | input_state_untracked | input_state_justtracked;
+	
+	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < ((1.f * cm2m) * (1.f * cm2m));
+	bool is_grip =
+		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
+		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m));
+
+	if (was_trigger != is_trigger) hand.state |= is_trigger ? input_state_justpinch   : input_state_unpinch;
+	if (was_gripped != is_grip)    hand.state |= is_grip    ? input_state_justgrip    : input_state_ungrip;
+	if (is_trigger) hand.state |= input_state_pinch;
+	if (is_grip)    hand.state |= input_state_grip;
 }
 
 ///////////////////////////////////////////
@@ -102,16 +131,8 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.state & input_state_tracked;
-	bool was_trigger = hand.state & input_state_pinch;
-	bool was_gripped = hand.state & input_state_grip;
-	hand.state = input_state_none;
-
-	if (was_tracked != tracked)         hand.state |= tracked         ? input_state_justtracked : input_state_untracked;
-	if (was_trigger != trigger_pressed) hand.state |= trigger_pressed ? input_state_justpinch   : input_state_unpinch;
-	if (was_gripped != grip_pressed)    hand.state |= grip_pressed    ? input_state_justgrip    : input_state_ungrip;
-	if (tracked)         hand.state |= input_state_tracked;
-	if (trigger_pressed) hand.state |= input_state_pinch;
-	if (grip_pressed)    hand.state |= input_state_grip;
+	if (was_tracked != tracked) hand.state |= tracked ? input_state_justtracked : input_state_untracked;
+	if (tracked)                hand.state |= input_state_tracked;
 
 	// only sim it if it's tracked
 	if (tracked) {
@@ -128,7 +149,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 
 		// Blend our active pose with our desired pose, for smooth transitions
 		// between poses
-		float delta = sk_time_elapsedf() * 20;
+		float delta = sk_time_elapsedf() * 30;
 		delta = delta>1?1:delta;
 		for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 5; j++) {

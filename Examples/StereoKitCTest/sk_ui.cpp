@@ -251,11 +251,11 @@ void sk_ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(skui_font_style, text);
 	vec3 box_start = vec3{ 0, 0, -skui_depth };
-	vec3 box_end   = vec3{ window_size.x, size.y+skui_padding*2, skui_depth };
+	vec3 box_size  = vec3{ window_size.x, size.y+skui_padding*2, skui_depth };
 
 	sk_ui_reserve_box(size);
 	sk_ui_text(box_start + vec3{skui_padding,-skui_padding, skui_depth + 2*mm2m}, text);
-	sk_ui_box (box_start, box_end, skui_mat);
+	sk_ui_box (box_start, box_size, skui_mat);
 
 	for (size_t i = 0; i < handed_max; i++) {
 		static vec3 start_win_pos = vec3_zero;
@@ -265,7 +265,7 @@ void sk_ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 		XMStoreFloat3((XMFLOAT3 *)&tip_pos, resultXM);
 
 		if (input_hand((handed_)i).state & input_state_pinch &&
-			sk_ui_inbox(skui_fingertip[i], box_start, box_end))
+			sk_ui_inbox(skui_fingertip[i], box_start, box_start + vec3{ box_size.x, -box_size.y, box_size.z }))
 		{
 			if (input_hand((handed_)i).state & input_state_justpinch) {
 				skui_control_active[i] = id;
