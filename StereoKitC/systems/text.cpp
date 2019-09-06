@@ -134,7 +134,7 @@ vec2 text_size(text_style_t style, const char *text) {
 
 ///////////////////////////////////////////
 
-void text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x, float off_y, float off_z) {
+void text_add_at(text_style_t style, transform_t &transform, const char *text, text_align_ position, float off_x, float off_y, float off_z) {
 	_text_style_t &style_data = text_styles[style];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
 	vec2           size       = text_size(style, text);
@@ -147,13 +147,16 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 	color32 col     = {128,128,128,255};
 	const char*curr = text;
 	vec2    line_sz = text_line_size(style, curr);
-	float   align_x = 0;
+	float   start_x = off_x;
+	float   y       = off_y - style_data.height;
+	if (position & text_align_y_center) y += (size.y / 2.f);
+	if (position & text_align_y_bottom) y += size.y;
+	if (position & text_align_x_center) start_x -= size.x / 2.f;
+	if (position & text_align_x_right)  start_x -= size.x;
+	float align_x = 0;
 	if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 	if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
-	float   x       = off_x + align_x;
-	float   y       = off_y-style_data.height;
-	if (style_data.align & text_align_y_center) y += (size.y / 2.f);
-	if (style_data.align & text_align_y_bottom) y += size.y;
+	float x = start_x + align_x;
 	size_t  offset  = buffer.vert_count;
 	while (*curr != '\0') {
 		char currch = *curr;
@@ -169,7 +172,7 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, f
 			align_x = 0;
 			if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 			if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
-			x = off_x + align_x;
+			x = start_x + align_x;
 			y -= style_data.height;
 		} continue;
 		default:break;

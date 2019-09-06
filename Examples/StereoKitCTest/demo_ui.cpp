@@ -50,12 +50,19 @@ void demo_ui_update() {
 	render_add_model(ui_floor_model, ui_floor_tr);
 
 	sk_ui_begin_frame();
-	//sk_ui_window_begin("Main", pose_t{ {0.85f,1,0.9f},{0,0,0,1} });
-	sk_ui_window_begin("Main", pose_t{ {0,0.5f,0},{0,0,0,1} });
-	//sk_ui_window_begin("Main", input_hand(handed_right).root);
+
+	static pose_t window_pose = pose_t{ {0,0.5f,0},{0,0,0,1} };
+	//pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
+	// input_hand(handed_right).root;
+	sk_ui_window_begin("Main", window_pose, vec2{ 24 }*cm2m);
 
 	sk_ui_button("Testing!\nok");
 	sk_ui_button("Another");
+	sk_ui_nextline();
+	static float val = 0.5f;
+	static float val2 = 0.5f;
+	sk_ui_hslider("slider", val, 0, 1, 0.2f, 72*mm2m);
+	sk_ui_hslider("slider2", val2, 0, 1, 0, 72*mm2m);
 	sk_ui_nextline();
 	if (sk_ui_button("Press me!")) {
 		sk_ui_nextline();

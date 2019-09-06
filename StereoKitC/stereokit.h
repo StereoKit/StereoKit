@@ -118,8 +118,8 @@ static inline float vec3_dot         (const vec3 &a, const vec3 &b) { return a.x
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
-quat quat_lookat(const vec3 &from, const vec3 &at);
-quat quat_lerp(const quat &a, const quat &b, float t);
+SK_API quat quat_lookat(const vec3 &from, const vec3 &at);
+SK_API quat quat_lerp(const quat &a, const quat &b, float t);
 
 matrix pose_matrix(const pose_t &pose);
 
@@ -310,7 +310,7 @@ SK_MakeFlag(text_align_);
 typedef int32_t text_style_t;
 
 SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align);
-SK_API void         text_add_at    (text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API void         text_add_at    (text_style_t style, transform_t &transform, const char *text, text_align_ position = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
 SK_API vec2         text_size      (text_style_t style, const char *text);
 
 ///////////////////////////////////////////
