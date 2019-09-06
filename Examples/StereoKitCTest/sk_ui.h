@@ -15,6 +15,7 @@ void sk_ui_space      (float space);
 
 void sk_ui_label       (const char *text);
 bool sk_ui_button      (const char *text);
+bool sk_ui_affordance  (const char *text, pose_t &movement, vec3 at, vec3 size);
 bool sk_ui_hslider     (const char *id, float &value, float min, float max, float step, float width = 0);
 void sk_ui_window_begin(const char *text, pose_t &pose, vec2 size = vec2{ 0,0 });
 void sk_ui_window_end  ();

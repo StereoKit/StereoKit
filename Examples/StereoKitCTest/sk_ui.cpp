@@ -201,6 +201,49 @@ bool sk_ui_button(const char *text) {
 
 ///////////////////////////////////////////
 
+bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
+	uint64_t id = sk_ui_hash(text);
+	bool result = false;
+
+	vec3 box_start = at;
+	vec3 box_end   = at + vec3{ size.x, -size.y, size.z };
+	for (size_t i = 0; i < handed_max; i++) {
+		if (sk_ui_inbox(skui_fingertip[i], box_start, box_end)) {
+			skui_control_focused[i] = id;
+		} else if (skui_control_focused[i] == id) {
+			skui_control_focused[i] = 0;
+		}
+
+		if (skui_control_focused[i] == id || skui_control_active[i] == id) {
+			static vec3 start_aff_pos = vec3_zero;
+			static vec3 start_tip_pos = vec3_zero;
+			vec3 tip_pos;
+			XMVECTOR resultXM = XMVector3Transform(XMLoadFloat3((XMFLOAT3 *)& skui_fingertip[i]), skui_layers.back().transform);
+			XMStoreFloat3((XMFLOAT3 *)& tip_pos, resultXM);
+
+			const hand_t &hand = input_hand((handed_)i);
+			if (hand.state & input_state_justpinch) {
+				skui_control_active[i] = id;
+				start_aff_pos = movement.position;
+				start_tip_pos = tip_pos;
+			}
+			if (skui_control_active[i] == id) {
+				result = true;
+				movement.position = start_aff_pos + (tip_pos - start_tip_pos);
+				if (hand.state & input_state_unpinch) {
+					skui_control_active[i] = 0;
+				}
+			}
+		}
+	}
+
+	sk_ui_box (at, size, result ? skui_mat_active : skui_mat);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool sk_ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
 	uint64_t   id     = sk_ui_hash(name);
 	bool       result = false;
@@ -255,32 +298,7 @@ void sk_ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 
 	sk_ui_reserve_box(size);
 	sk_ui_text(box_start + vec3{skui_padding,-skui_padding, skui_depth + 2*mm2m}, text);
-	sk_ui_box (box_start, box_size, skui_mat);
-
-	for (size_t i = 0; i < handed_max; i++) {
-		static vec3 start_win_pos = vec3_zero;
-		static vec3 start_tip_pos = vec3_zero;
-		vec3 tip_pos;
-		XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)&skui_fingertip[i]), skui_layers.back().transform);
-		XMStoreFloat3((XMFLOAT3 *)&tip_pos, resultXM);
-
-		if (input_hand((handed_)i).state & input_state_pinch &&
-			sk_ui_inbox(skui_fingertip[i], box_start, box_start + vec3{ box_size.x, -box_size.y, box_size.z }))
-		{
-			if (input_hand((handed_)i).state & input_state_justpinch) {
-				skui_control_active[i] = id;
-				start_win_pos = pose.position;
-				start_tip_pos = tip_pos;
-			}
-			
-		}
-		if (skui_control_active[i] == id) {
-			pose.position = start_win_pos + (tip_pos - start_tip_pos);
-			if (input_hand((handed_)i).state & input_state_unpinch) {
-				skui_control_active[i] = 0;
-			}
-		}
-	}
+	sk_ui_affordance(text, pose, box_start, box_size);
 
 	sk_ui_nextline();
 }
