@@ -118,8 +118,10 @@ static inline float vec3_dot         (const vec3 &a, const vec3 &b) { return a.x
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
-SK_API quat quat_lookat(const vec3 &from, const vec3 &at);
-SK_API quat quat_lerp(const quat &a, const quat &b, float t);
+SK_API quat quat_difference(const quat &a, const quat &b);
+SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
+SK_API quat quat_lerp      (const quat &a, const quat &b, float t);
+SK_API quat quat_mul       (const quat &a, const quat &b);
 
 matrix pose_matrix(const pose_t &pose);
 

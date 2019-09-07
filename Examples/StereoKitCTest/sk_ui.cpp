@@ -145,11 +145,12 @@ void sk_ui_space(float space) {
 
 ///////////////////////////////////////////
 
-bool sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_end) {
+bool sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_size) {
+	pt -= box_start;
 	return
-		pt.x >= fminf(box_start.x, box_end.x) && pt.x <= fmaxf(box_start.x, box_end.x) &&
-		pt.y >= fminf(box_start.y, box_end.y) && pt.y <= fmaxf(box_start.y, box_end.y) &&
-		pt.z >= fminf(box_start.z, box_end.z) && pt.z <= fmaxf(box_start.z, box_end.z);
+		pt.x >= 0 && pt.x <=  box_size.x &&
+		pt.y <= 0 && pt.y >= -box_size.y &&
+		pt.z >= 0 && pt.z <=  box_size.z;
 }
 
 ///////////////////////////////////////////
@@ -179,10 +180,10 @@ bool sk_ui_button(const char *text) {
 	}
 
 	vec3 box_start = offset + vec3{ 0, 0, -skui_depth };
-	vec3 box_end   = offset + vec3{ size.x, -size.y, skui_depth };
+	vec3 box_size  = vec3{ size.x, size.y, skui_depth*2 };
 	float finger_offset = skui_depth;
 	for (size_t i = 0; i < handed_max; i++) {
-		if (sk_ui_inbox(skui_fingertip[i], box_start, box_end)) {
+		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
 			finger_offset = fmaxf(mm2m,skui_fingertip[i].z-offset.z);
 		}
@@ -205,10 +206,8 @@ bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
 
-	vec3 box_start = at;
-	vec3 box_end   = at + vec3{ size.x, -size.y, size.z };
 	for (size_t i = 0; i < handed_max; i++) {
-		if (sk_ui_inbox(skui_fingertip[i], box_start, box_end)) {
+		if (sk_ui_inbox(skui_fingertip[i], at, size)) {
 			skui_control_focused[i] = id;
 		} else if (skui_control_focused[i] == id) {
 			skui_control_focused[i] = 0;
@@ -216,7 +215,9 @@ bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 
 		if (skui_control_focused[i] == id || skui_control_active[i] == id) {
 			static vec3 start_aff_pos = vec3_zero;
+			static quat start_aff_rot = quat_identity;
 			static vec3 start_tip_pos = vec3_zero;
+			static quat start_tip_rot = quat_identity;
 			vec3 tip_pos;
 			XMVECTOR resultXM = XMVector3Transform(XMLoadFloat3((XMFLOAT3 *)& skui_fingertip[i]), skui_layers.back().transform);
 			XMStoreFloat3((XMFLOAT3 *)& tip_pos, resultXM);
@@ -225,11 +226,14 @@ bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 			if (hand.state & input_state_justpinch) {
 				skui_control_active[i] = id;
 				start_aff_pos = movement.position;
+				start_aff_rot = movement.orientation;
 				start_tip_pos = tip_pos;
+				start_tip_rot = input_hand((handed_)i).root.orientation;
 			}
 			if (skui_control_active[i] == id) {
 				result = true;
-				movement.position = start_aff_pos + (tip_pos - start_tip_pos);
+				movement.position    = start_aff_pos + (tip_pos - start_tip_pos);
+				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
 				}
@@ -258,9 +262,9 @@ bool sk_ui_hslider(const char *name, float &value, float min, float max, float s
 
 	// Interaction code
 	vec3 box_start = offset + vec3{ 0, 0, -skui_depth };
-	vec3 box_end   = offset + vec3{ size.x, -size.y, skui_depth };
+	vec3 box_size  = vec3{ size.x, size.y, skui_depth*2 };
 	for (size_t i = 0; i < handed_max; i++) {
-		if (sk_ui_inbox(skui_fingertip[i], box_start, box_end)) {
+		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
 			mat = skui_mat_active;
 			float new_val = ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
