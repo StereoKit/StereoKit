@@ -46,11 +46,11 @@ font_t font_create(const char *file) {
 	const int h = 512;
 	const float size = 64;
 	const int start_char = 32;
-	stbtt_fontinfo font;
+	//stbtt_fontinfo font;
 	uint8_t *bitmap;
 	stbtt_pack_context pc;
 	stbtt_packedchar chars[128];
-	stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
+	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
 	bitmap = (uint8_t*)malloc(sizeof(uint8_t) * w * h);
 	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
 	stbtt_PackFontRange(&pc, data, 0, size, start_char, 95, chars);
