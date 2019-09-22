@@ -1,5 +1,6 @@
 #include "render.h"
 #include "d3d.h"
+#include "../math.h"
 #include "../stereokit.h"
 #include "../asset_types/mesh.h"
 #include "../asset_types/texture.h"
@@ -118,12 +119,23 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
+void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform) {
 	render_item_t item;
 	item.mesh     = mesh;
 	item.material = material;
 	item.sort_id  = render_queue_id(material, mesh);
 	transform_matrix(transform, item.transform);
+	render_queue.emplace_back(item);
+}
+
+///////////////////////////////////////////
+
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) {
+	render_item_t item;
+	item.mesh     = mesh;
+	item.material = material;
+	item.sort_id  = render_queue_id(material, mesh);
+	math_matrix_to_fast(transform, &item.transform);
 	render_queue.emplace_back(item);
 }
 
@@ -265,16 +277,8 @@ bool render_initialize() {
 	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_create("render/blitquad");
-	vert_t verts[4] = {
-		vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
-		vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
-		vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
-		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
-	};
-	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_verts(render_blit_quad, verts, 4);
-	mesh_set_inds(render_blit_quad,  inds,  6);
+	render_blit_quad = mesh_find("default/quad");
+	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
 	shader_t sky_shader = shader_create("render/skybox_shader", sk_shader_builtin_skybox);
@@ -293,9 +297,7 @@ bool render_initialize() {
 
 void render_update() {
 	if (render_sky_show) {
-		transform_t tr;
-		transform_initialize(tr);
-		render_add_mesh(render_sky_mesh, render_sky_mat, tr);
+		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
 	}
 }
 

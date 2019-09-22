@@ -83,7 +83,7 @@ void input_hand_update() {
 		bool tracked = hand_state[i].info.state & input_state_tracked;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
-			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
+			render_add_mesh_tr(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
 		}
 
 		solid_set_enabled(hand_state[i].solids[0], tracked);

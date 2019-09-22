@@ -345,9 +345,9 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 
 ///////////////////////////////////////////
 
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
-uint64_t string_hash(const char *string) {
-	unsigned long hash = 5381;
+// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html, start_hash = 5381
+uint64_t string_hash(const char *string, uint64_t start_hash) {
+	unsigned long hash = start_hash;
 	int c;
 	while (c = *string++)
 		hash = ((hash << 5) + hash) + c; // hash * 33 + c
