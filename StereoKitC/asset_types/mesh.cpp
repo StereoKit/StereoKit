@@ -83,6 +83,8 @@ mesh_t mesh_create(const char *id) {
 ///////////////////////////////////////////
 
 void mesh_release(mesh_t mesh) {
+	if (mesh == nullptr)
+		return;
 	assets_releaseref(mesh->header);
 }
 

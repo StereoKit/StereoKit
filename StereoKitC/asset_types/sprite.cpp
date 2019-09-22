@@ -56,16 +56,16 @@ sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char 
 ///////////////////////////////////////////
 
 void sprite_release(sprite_t sprite) {
+	if (sprite == nullptr)
+		return;
 	assets_releaseref(sprite->header);
 }
 
 ///////////////////////////////////////////
 
 void sprite_destroy(sprite_t sprite) {
-	if (sprite->texture != nullptr)
-		tex2d_release(sprite->texture);
-	if (sprite->material != nullptr)
-		material_release(sprite->material);
+	tex2d_release   (sprite->texture);
+	material_release(sprite->material);
 	*sprite = {};
 }
 

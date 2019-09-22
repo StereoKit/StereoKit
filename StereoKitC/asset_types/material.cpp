@@ -72,6 +72,8 @@ material_t material_copy(const char *id, material_t material) {
 ///////////////////////////////////////////
 
 void material_release(material_t material) {
+	if (material == nullptr)
+		return;
 	assets_releaseref(material->header);
 }
 

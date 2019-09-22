@@ -306,10 +306,8 @@ void render_update() {
 void render_shutdown() {
 	material_release(render_sky_mat);
 	mesh_release    (render_sky_mesh);
-	if (render_sky_cubemap != nullptr)
-		tex2d_release(render_sky_cubemap);
-
-	tex2d_release(render_default_tex);
+	tex2d_release   (render_sky_cubemap);
+	tex2d_release   (render_default_tex);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		shaderargs_destroy(render_instance_buffers[i].buffer);

@@ -89,6 +89,8 @@ int32_t    model_subset_count(model_t model) {
 ///////////////////////////////////////////
 
 void model_release(model_t model) {
+	if (model == nullptr)
+		return;
 	assets_releaseref(model->header);
 }
 

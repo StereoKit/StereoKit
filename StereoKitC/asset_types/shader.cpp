@@ -237,6 +237,8 @@ shader_t shader_create(const char *id, const char *hlsl) {
 ///////////////////////////////////////////
 
 void shader_release(shader_t shader) {
+	if (shader == nullptr)
+		return;
 	assets_releaseref(shader->header);
 }
 

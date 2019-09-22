@@ -66,10 +66,10 @@ void input_hand_init() {
 void input_hand_shutdown() {
 	for (size_t i = 0; i < handed_max; i++) {
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
-			if (hand_state[i].solids[f] != nullptr) solid_release(hand_state[i].solids[f]);
+			solid_release(hand_state[i].solids[f]);
 		}
-		if (hand_state[i].material  != nullptr) material_release(hand_state[i].material);
-		if (hand_state[i].mesh.mesh != nullptr) mesh_release(hand_state[i].mesh.mesh);
+		material_release(hand_state[i].material);
+		mesh_release(hand_state[i].mesh.mesh);
 		free(hand_state[i].mesh.inds);
 		free(hand_state[i].mesh.verts);
 	}
@@ -281,8 +281,7 @@ void input_hand_solid(handed_ hand, bool32_t solid) {
 ///////////////////////////////////////////
 
 void input_hand_material(handed_ hand, material_t material) {
-	if (hand_state[hand].material != nullptr) 
-		material_release(hand_state[hand].material);
+	material_release(hand_state[hand].material);
 	
 	if (material != nullptr)
 		assets_addref(material->header);

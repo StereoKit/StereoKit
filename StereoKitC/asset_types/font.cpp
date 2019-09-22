@@ -87,14 +87,15 @@ font_t font_create(const char *file) {
 ///////////////////////////////////////////
 
 void font_release(font_t font) {
+	if (font == nullptr)
+		return;
 	assets_releaseref(font->header);
 }
 
 ///////////////////////////////////////////
 
 void font_destroy(font_t font) {
-	if (font->font_tex != nullptr)
-		tex2d_release(font->font_tex);
+	tex2d_release(font->font_tex);
 	*font = {};
 }
 
