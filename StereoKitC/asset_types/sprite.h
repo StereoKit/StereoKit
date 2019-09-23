@@ -8,6 +8,7 @@ struct _sprite_t {
 
 	vec2       uvs[2];
 	float      size;
+	float      aspect;
 	tex2d_t    texture;
 	material_t material;
 	int32_t    buffer_index;
