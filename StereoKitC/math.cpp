@@ -1,4 +1,5 @@
 #include "stereokit.h"
+#include "math.h"
 
 using namespace DirectX;
 
@@ -40,7 +41,7 @@ quat quat_difference(const quat &a, const quat &b) {
 
 quat quat_lookat(const vec3 &from, const vec3 &at) {
 	XMMATRIX mat = XMMatrixLookAtRH(to_fast3(from), to_fast3(at), XMVectorSet(0, 1, 0, 0));
-	return from_fastq(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
+	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
 
 ///////////////////////////////////////////
@@ -80,4 +81,44 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 		return (out_t >  1e-6); 
 	}
 	return false; 
+}
+
+///////////////////////////////////////////
+
+matrix matrix_mul(const matrix &a, const matrix &b) {
+	XMMATRIX mat_a, mat_b, mat_result;
+	matrix result;
+	math_matrix_to_fast(a, &mat_a);
+	math_matrix_to_fast(b, &mat_b);
+	mat_result = mat_a * mat_b;
+	math_fast_to_matrix(mat_result, &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_mul_point(const matrix &transform, const vec3 &point) {
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	return math_fast_to_vec3( XMVector3Transform(math_vec3_to_fast(point), mat) );
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_mul_direction(const matrix &transform, const vec3 &direction) {
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	return math_fast_to_vec3( XMVector3TransformNormal(math_vec3_to_fast(direction), mat) );
+}
+
+///////////////////////////////////////////
+
+matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &scale) {
+	XMMATRIX mat = XMMatrixAffineTransformation(
+		XMLoadFloat3((XMFLOAT3 *)& scale), DirectX::g_XMZero,
+		XMLoadFloat4((XMFLOAT4 *)& orientation),
+		XMLoadFloat3((XMFLOAT3 *)& position));
+	matrix result;
+	math_fast_to_matrix(mat, &result);
+	return result;
 }

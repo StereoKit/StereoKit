@@ -7,6 +7,7 @@
 #include "systems/physics.h"
 #include "systems/system.h"
 #include "systems/text.h"
+#include "systems/sprite_drawer.h"
 #include "systems/defaults.h"
 #include "systems/platform/platform.h"
 
@@ -87,17 +88,24 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 		input_init, input_update, input_shutdown);
 
 	const char *text_deps[] = {"Defaults"};
-	const char *text_update_deps[] = {"FrameBegin", "App"};
+	const char *text_update_deps[] = {"App"};
 	systems_add("Text",  
 		text_deps,        _countof(text_deps), 
 		text_update_deps, _countof(text_update_deps), 
 		nullptr, text_update, text_shutdown);
 
+	const char *sprite_deps[] = {"Defaults"};
+	const char *sprite_update_deps[] = {"App"};
+	systems_add("Sprites",  
+		sprite_deps,        _countof(sprite_deps), 
+		sprite_update_deps, _countof(sprite_update_deps), 
+		sprite_drawer_init, sprite_drawer_update, sprite_drawer_shutdown);
+
 	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
-	const char *platform_end_deps[] = {"App", "Text"};
+	const char *platform_end_deps[] = {"App", "Text", "Sprites"};
 	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
 	const char *platform_present_deps[] = {"FrameRender"};
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);

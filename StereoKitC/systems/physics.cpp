@@ -103,6 +103,9 @@ solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ typ
 ///////////////////////////////////////////
 
 void solid_release(solid_t solid) {
+	if (solid == nullptr)
+		return;
+
 	RigidBody        *body  = (RigidBody*)solid;
 	const ProxyShape *shape = body->getProxyShapesList();
 	while (shape != nullptr) {

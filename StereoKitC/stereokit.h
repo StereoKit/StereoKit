@@ -125,6 +125,11 @@ SK_API quat quat_mul       (const quat &a, const quat &b);
 
 matrix pose_matrix(const pose_t &pose);
 
+SK_API matrix matrix_mul          (const matrix &a, const matrix &b);
+SK_API vec3   matrix_mul_point    (const matrix &transform, const vec3 &point);
+SK_API vec3   matrix_mul_direction(const matrix &transform, const vec3 &direction);
+SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
+
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
 
 static const float deg2rad = 0.01745329252f;
@@ -140,6 +145,7 @@ static const vec3 vec3_up       = vec3{ 0,1, 0 };
 static const vec3 vec3_forward  = vec3{ 0,0,-1 };
 static const vec3 vec3_right    = vec3{ 1,0, 0 };
 static const quat quat_identity = quat{ 0,0, 0,1 };
+static const matrix matrix_identity = matrix{ vec4{1,0,0,0}, vec4{0,1,0,0}, vec4{0,0,1,0}, vec4{0,0,0,1} };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -351,6 +357,20 @@ SK_API void       model_release     (model_t model);
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(sprite_t);
+
+enum sprite_type_ {
+	sprite_type_atlased = 0,
+	sprite_type_single
+};
+
+SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API void     sprite_release    (sprite_t sprite);
+SK_API void     sprite_draw       (sprite_t sprite, matrix transform, color32 color = {255,255,255,255});
+
+///////////////////////////////////////////
+
 struct camera_t {
 	float fov;
 	float clip_near;
@@ -367,8 +387,8 @@ SK_API void render_set_camera (camera_t &cam);
 SK_API void render_set_view   (transform_t &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
 SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
-SK_API void render_add_mesh_mx(mesh_t mesh, material_t material, DirectX::XMMATRIX &matrix);
+SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform);
+SK_API void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform);
 SK_API void render_add_model  (model_t model, transform_t &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
 SK_API void render_get_device (void **device, void **context);

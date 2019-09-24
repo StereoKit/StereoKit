@@ -193,8 +193,6 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, t
 ///////////////////////////////////////////
 
 void text_update() {
-	transform_t tr;
-	transform_initialize(tr);
 	for (size_t i = 0; i < text_buffers.size(); i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
@@ -203,7 +201,7 @@ void text_update() {
 		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
-		render_add_mesh(buffer.mesh, buffer.material, tr);
+		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
 		buffer.vert_count = 0;
 	}
 }

@@ -97,13 +97,14 @@ void sk_ui_pop_pose() {
 
 void sk_ui_box(vec3 start, vec3 size, material_t material) {
 	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
+	matrix_trs(pos, quat_identity, size);
 	XMMATRIX mx = XMMatrixAffineTransformation(
 			XMLoadFloat3((XMFLOAT3 *)& size), DirectX::g_XMZero,
 			DirectX::g_XMIdentityR3,
 			XMLoadFloat3((XMFLOAT3 *)&pos));
 	mx *= skui_layers.back().transform;
 
-	render_add_mesh_mx(skui_box, material, mx);
+	render_add_mesh(skui_box, material, mx);
 }
 
 ///////////////////////////////////////////
