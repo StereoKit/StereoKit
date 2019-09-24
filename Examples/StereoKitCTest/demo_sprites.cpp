@@ -6,12 +6,19 @@
 
 ///////////////////////////////////////////
 
-sprite_t    sprite;
+sprite_t     sprite;
+text_style_t sprite_text_style;
 
 ///////////////////////////////////////////
 
 void demo_sprites_init() {
-	sprite = sprite_create_file("../../Examples/Assets/icon.png");
+	material_t font_mat = material_create("app/font_segoe", shader_find("default/shader_font"));
+	font_t font         = font_create("C:/Windows/Fonts/segoeui.ttf");
+	sprite_text_style   = text_make_style(font, font_mat, text_align_x_right | text_align_y_center);
+	material_release(font_mat);
+	font_release    (font);
+
+	sprite = sprite_create_file("../../Examples/Assets/test.png");
 }
 
 ///////////////////////////////////////////

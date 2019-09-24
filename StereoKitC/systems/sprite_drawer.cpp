@@ -14,6 +14,18 @@ mesh_t                  sprite_quad;
 
 ///////////////////////////////////////////
 
+void sprite_drawer_add_buffer(material_t material) {
+	sprite_buffers.push_back({});
+	sprite_buffer_t &buffer = sprite_buffers[sprite_buffers.size() - 1];
+	buffer.material = material;
+
+	char id[64];
+	sprintf_s(id, 64, "render/sprite_batch_%d", sprite_buffers.size());
+	buffer.mesh = mesh_create(id);
+}
+
+///////////////////////////////////////////
+
 void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 	if (buffer.vert_count + 4 <= buffer.vert_cap)
 		return;
@@ -60,7 +72,7 @@ void sprite_drawer_add     (sprite_t sprite, matrix at, color32 color) {
 	
 	// Add a sprite quad
 	size_t offset = buffer.vert_count;
-	vec3   normal = matrix_mul_direction(at, vec3_forward);
+	vec3   normal = vec3_normalize( matrix_mul_direction(at, vec3_forward) );
 	buffer.verts[offset + 0] = { matrix_mul_point(at, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
 	buffer.verts[offset + 1] = { matrix_mul_point(at, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
 	buffer.verts[offset + 2] = { matrix_mul_point(at, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };

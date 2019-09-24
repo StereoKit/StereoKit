@@ -49,7 +49,6 @@ sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
 	result->uvs[1] = vec2{ 1,1 };
 	result->aspect = image->width / (float)image->height;
 	
-
 	if (type == sprite_type_single) {
 		result->size         = 1;
 		result->buffer_index = -1;
@@ -57,26 +56,38 @@ sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
 		material_set_texture(result->material, "diffuse", image);
 	} else {
 		// Find the atlas for this id
-		uint64_t map_id = string_hash(atlas_id);
-		int32_t  index  = -1;
+		uint64_t     map_id = string_hash(atlas_id);
+		spritemap_t *map    = nullptr;
+		int32_t      index  = -1;
 		for (size_t i = 0; i < sprite_map_count; i++) {
 			if (sprite_maps[i].id == map_id) {
+				map   = &sprite_maps[i];
 				index = i;
 				break;
 			}
 		}
 		// No atlas yet? Make one!
-		if (index == -1) {
+		if (map == nullptr) {
 			index             = sprite_map_count;
 			sprite_map_count += 1;
 			sprite_maps       = (spritemap_t*)realloc(sprite_maps, sizeof(spritemap_t) * sprite_map_count);
+			map               = &sprite_maps[sprite_map_count-1];
 
-			sprite_maps[index].id       = map_id;
-			sprite_maps[index].material = sprite_create_material(sprite_index);
+			*map = {};
+			map->id       = map_id;
+			map->material = sprite_create_material(sprite_index);
+			sprite_drawer_add_buffer(map->material);
 		}
 
 		// Add a sprite to the list
+		if (map->sprite_count + 1 > map->sprite_cap) {
+			map->sprite_cap = max(1, map->sprite_cap * 2);
+			map->sprites    = (sprite_t *)realloc(map->sprites, map->sprite_cap);
+		}
+		map->sprites[map->sprite_count] = result;
+		map->sprite_count += 1;
 
+		result->buffer_index = index;
 	}
 
 	sprite_index += 1;

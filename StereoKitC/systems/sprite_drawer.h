@@ -12,6 +12,7 @@ struct sprite_buffer_t {
 	int        vert_cap;
 };
 
+void sprite_drawer_add_buffer(material_t material);
 void sprite_drawer_add     (sprite_t sprite, matrix at, color32 color = {255,255,255,255});
 bool sprite_drawer_init    ();
 void sprite_drawer_update  ();
