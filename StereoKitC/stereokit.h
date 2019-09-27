@@ -298,8 +298,9 @@ SK_API quat transform_get_rotation(transform_t &transform);
 SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
-SK_API void transform_update(transform_t &transform);
-SK_API void transform_matrix(transform_t &transform, matrix &result);
+SK_API void   transform_update    (transform_t &transform);
+SK_API void   transform_matrix_out(transform_t &transform, matrix &result);
+SK_API matrix transform_matrix    (transform_t &transform);
 SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
 SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
 SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
@@ -320,7 +321,7 @@ SK_MakeFlag(text_align_);
 typedef int32_t text_style_t;
 
 SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align);
-SK_API void         text_add_at    (text_style_t style, transform_t &transform, const char *text, text_align_ position = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API void         text_add_at    (text_style_t style, const matrix &transform, const char *text, text_align_ position = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
 SK_API vec2         text_size      (text_style_t style, const char *text);
 
 ///////////////////////////////////////////
@@ -369,7 +370,7 @@ enum sprite_type_ {
 SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API void     sprite_release    (sprite_t sprite);
-SK_API void     sprite_draw       (sprite_t sprite, matrix transform, color32 color = {255,255,255,255});
+SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, color32 color = {255,255,255,255});
 
 ///////////////////////////////////////////
 
@@ -391,7 +392,7 @@ SK_API void render_set_light  (const vec3 &direction, float intensity, const col
 SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform);
 SK_API void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform);
-SK_API void render_add_model  (model_t model, transform_t &transform);
+SK_API void render_add_model  (model_t model, const matrix &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
 SK_API void render_get_device (void **device, void **context);
 

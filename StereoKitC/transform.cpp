@@ -97,7 +97,7 @@ void transform_update(transform_t &transform) {
 
 ///////////////////////////////////////////
 
-void transform_matrix(transform_t &transform, matrix &result) {
+void transform_matrix_out(transform_t &transform, matrix &result) {
 	if (transform._dirty) {
 		transform._dirty = false;
 		transform._transform = matrix_trs(
@@ -110,11 +110,24 @@ void transform_matrix(transform_t &transform, matrix &result) {
 
 ///////////////////////////////////////////
 
+matrix transform_matrix(transform_t &transform) {
+	if (transform._dirty) {
+		transform._dirty = false;
+		transform._transform = matrix_trs(
+			transform._position, 
+			transform._rotation, 
+			transform._scale);
+	}
+	return transform._transform;
+}
+
+///////////////////////////////////////////
+
 vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordinate) {
 	matrix   tr;
 	XMMATRIX fast;
 
-	transform_matrix(transform, tr);
+	transform_matrix_out(transform, tr);
 	math_matrix_to_fast(tr, &fast);
 	fast = XMMatrixInverse(nullptr, fast);
 
@@ -129,7 +142,7 @@ vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordina
 vec3 transform_local_to_world(transform_t &transform, const vec3 &local_coordinate) {
 	matrix   tr;
 	XMMATRIX fast;
-	transform_matrix(transform, tr);
+	transform_matrix_out(transform, tr);
 	math_matrix_to_fast(tr, &fast);
 
 	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& local_coordinate),  fast);
@@ -143,7 +156,7 @@ vec3 transform_local_to_world(transform_t &transform, const vec3 &local_coordina
 vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction) {
 	matrix   tr;
 	XMMATRIX fast;
-	transform_matrix(transform, tr);
+	transform_matrix_out(transform, tr);
 	math_matrix_to_fast(tr, &fast);
 	fast = XMMatrixInverse(nullptr, fast);
 
@@ -158,7 +171,7 @@ vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_dire
 vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction) {
 	matrix   tr;
 	XMMATRIX fast;
-	transform_matrix(transform, tr);
+	transform_matrix_out(transform, tr);
 	math_matrix_to_fast(tr, &fast);
 	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& local_direction), fast);
 	vec3     result;

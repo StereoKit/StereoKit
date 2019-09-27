@@ -142,15 +142,13 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) 
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, transform_t &transform) {
-	matrix world;
-	transform_matrix(transform, world);
+void render_add_model(model_t model, const matrix &transform) {
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
 		item.sort_id  = render_queue_id(item.material, item.mesh);
-		matrix_mul(model->subsets[i].offset, world, item.transform);
+		matrix_mul(model->subsets[i].offset, transform, item.transform);
 		render_queue.emplace_back(item);
 	}
 }

@@ -6,7 +6,7 @@
 #include "demo_sprites.h"
 
 solid_t     floor_solid;
-transform_t floor_tr;
+matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
 
@@ -70,11 +70,13 @@ void common_init() {
 	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", vec3_one, 0);
 	floor_model  = model_create_mesh("app/model_cube", mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
-
+	
 	// Build a physical floor!
-	transform_set(floor_tr, { 0,-1.5f,0 }, vec3{ 5,1,5 }, quat_identity);
-	floor_solid = solid_create(floor_tr._position, floor_tr._rotation, solid_type_immovable);
-	solid_add_box (floor_solid, floor_tr._scale);
+	vec3 pos   = vec3{ 0,-1.5f,0 };
+	vec3 scale = vec3{ 5,1,5 };
+	floor_tr = matrix_trs(pos, quat_identity, scale);
+	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
+	solid_add_box (floor_solid, scale);
 }
 void common_update() {
 	// Render floor

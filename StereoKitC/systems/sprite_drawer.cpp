@@ -53,7 +53,7 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_add     (sprite_t sprite, matrix at, color32 color) {
+void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	float width  = (sprite->uvs[1].x - sprite->uvs[0].x) * sprite->size;
 	float height = (sprite->uvs[1].y - sprite->uvs[0].y) * sprite->size;
 

@@ -17,7 +17,7 @@ void camera_initialize(camera_t &cam, float fov, float clip_near, float clip_far
 ///////////////////////////////////////////
 
 void camera_view(transform_t &cam_transform, matrix &result) {
-	transform_matrix(cam_transform, result);
+	transform_matrix_out(cam_transform, result);
 	matrix_inverse(result, result);
 }
 

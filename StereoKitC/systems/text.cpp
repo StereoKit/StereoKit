@@ -134,7 +134,7 @@ vec2 text_size(text_style_t style, const char *text) {
 
 ///////////////////////////////////////////
 
-void text_add_at(text_style_t style, transform_t &transform, const char *text, text_align_ position, float off_x, float off_y, float off_z) {
+void text_add_at(text_style_t style, const matrix &transform, const char *text, text_align_ position, float off_x, float off_y, float off_z) {
 	_text_style_t &style_data = text_styles[style];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
 	vec2           size       = text_size(style, text);
@@ -143,7 +143,7 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, t
 	size_t length = strlen(text);
 	text_buffer_ensure_capacity(buffer, length);
 	
-	vec3    normal  = transform_local_to_world_dir(transform, -vec3_forward);
+	vec3    normal  = matrix_mul_direction(transform, -vec3_forward);
 	color32 col     = {128,128,128,255};
 	const char*curr = text;
 	vec2    line_sz = text_line_size(style, curr);
@@ -179,10 +179,10 @@ void text_add_at(text_style_t style, transform_t &transform, const char *text, t
 		}
 		
 		// Add a character quad
-		buffer.verts[offset + 0] = { transform_local_to_world(transform, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, col };
-		buffer.verts[offset + 1] = { transform_local_to_world(transform, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, col };
-		buffer.verts[offset + 2] = { transform_local_to_world(transform, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, col };
-		buffer.verts[offset + 3] = { transform_local_to_world(transform, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, col };
+		buffer.verts[offset + 0] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, col };
+		buffer.verts[offset + 1] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, col };
+		buffer.verts[offset + 2] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, col };
+		buffer.verts[offset + 3] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, col };
 
 		buffer.vert_count += 4;
 		x += ch.xadvance * style_data.height;

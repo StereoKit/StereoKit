@@ -121,6 +121,6 @@ void sprite_destroy(sprite_t sprite) {
 
 ///////////////////////////////////////////
 
-void sprite_draw(sprite_t sprite, matrix transform, color32 color) {
+void sprite_draw(sprite_t sprite, const matrix &transform, color32 color) {
 	sprite_drawer_add(sprite, transform, color);
 }

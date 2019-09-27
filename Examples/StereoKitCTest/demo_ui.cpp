@@ -6,7 +6,7 @@
 ///////////////////////////////////////////
 
 solid_t     ui_floor_solid;
-transform_t ui_floor_tr;
+matrix      ui_floor_tr;
 material_t  ui_floor_mat;
 model_t     ui_floor_model;
 
@@ -36,9 +36,11 @@ void demo_ui_init() {
 	mesh_release(mesh_cube);
 
 	// Build a physical floor!
-	transform_set(ui_floor_tr, { 0,-1.5f,0 }, vec3{ 5,1,5 }, quat_identity);
-	ui_floor_solid = solid_create(ui_floor_tr._position, ui_floor_tr._rotation, solid_type_immovable);
-	solid_add_box (ui_floor_solid, ui_floor_tr._scale);
+	vec3 pos   = vec3{ 0,-1.5f,0 };
+	vec3 scale = vec3{ 5,1,5 };
+	ui_floor_tr = matrix_trs(pos, quat_identity, scale);
+	ui_floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
+	solid_add_box (ui_floor_solid, scale);
 
 	sk_ui_init();
 }
@@ -51,8 +53,8 @@ void demo_ui_update() {
 
 	sk_ui_begin_frame();
 
-	static pose_t window_pose = pose_t{ {0,0.5f,0},{0,0,0,1} };
-	//pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
+	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
+		pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
 	// input_hand(handed_right).root;
 	sk_ui_window_begin("Main", window_pose, vec2{ 24 }*cm2m);
 

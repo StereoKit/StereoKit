@@ -23,7 +23,6 @@ material_t      skui_mat_active;
 font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
-transform_t     skui_tr;
 vec3            skui_fingertip[2];
 
 float skui_padding = 10*mm2m;
@@ -103,10 +102,7 @@ void sk_ui_box(vec3 start, vec3 size, material_t material) {
 ///////////////////////////////////////////
 
 void sk_ui_text(vec3 start, const char *text, text_align_ position) {
-	skui_tr._dirty     = false;
-	skui_tr._transform = skui_layers.back().transform;
-
-	text_add_at(skui_font_style, skui_tr, text, position, start.x, start.y, start.z);
+	text_add_at(skui_font_style, skui_layers.back().transform, text, position, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
