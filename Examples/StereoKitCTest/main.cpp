@@ -10,32 +10,33 @@ matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
 
+scene_t demo_basics = {
+	demo_basics_init,
+	demo_basics_update,
+	demo_basics_shutdown,
+};
+scene_t demo_ui = {
+	demo_ui_init,
+	demo_ui_update,
+	demo_ui_shutdown,
+};
+scene_t demo_sprites = {
+	demo_sprites_init,
+	demo_sprites_update,
+	demo_sprites_shutdown,
+};
+
 void common_init();
 void common_update();
 void common_shutdown();
 
 int main() {
-	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
+	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
 
 	common_init();
 
-	scene_t demo_basics = {
-		demo_basics_init,
-		demo_basics_update,
-		demo_basics_shutdown,
-	};
-	scene_t demo_ui = {
-		demo_ui_init,
-		demo_ui_update,
-		demo_ui_shutdown,
-	};
 	scene_set_active(demo_ui);
-	scene_t demo_sprites = {
-		demo_sprites_init,
-		demo_sprites_update,
-		demo_sprites_shutdown,
-	};
 
 	while (sk_step( []() {
 		scene_update();

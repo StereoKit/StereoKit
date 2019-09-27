@@ -370,6 +370,7 @@ enum sprite_type_ {
 SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API void     sprite_release    (sprite_t sprite);
+SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, color32 color = {255,255,255,255});
 
 ///////////////////////////////////////////

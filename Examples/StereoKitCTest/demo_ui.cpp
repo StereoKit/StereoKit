@@ -9,6 +9,7 @@ solid_t     ui_floor_solid;
 matrix      ui_floor_tr;
 material_t  ui_floor_mat;
 model_t     ui_floor_model;
+sprite_t    ui_sprite;
 
 ///////////////////////////////////////////
 
@@ -42,6 +43,8 @@ void demo_ui_init() {
 	ui_floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (ui_floor_solid, scale);
 
+	ui_sprite = sprite_create_file("../../Examples/Assets/test.png", sprite_type_single);
+
 	sk_ui_init();
 }
 
@@ -66,6 +69,8 @@ void demo_ui_update() {
 	sk_ui_hslider("slider", val, 0, 1, 0.2f, 72*mm2m);
 	sk_ui_hslider("slider2", val2, 0, 1, 0, 72*mm2m);
 	sk_ui_nextline();
+	sk_ui_image(ui_sprite, vec2{ 6,0 }*cm2m);
+	sk_ui_nextline();
 	if (sk_ui_button("Press me!")) {
 		sk_ui_nextline();
 		sk_ui_button("DYANMIC BUTTON!!");
@@ -78,6 +83,7 @@ void demo_ui_update() {
 
 void demo_ui_shutdown() {
 	// Release everything
+	sprite_release(ui_sprite);
 	solid_release(ui_floor_solid);
 	material_release(ui_floor_mat);
 	model_release(ui_floor_model);

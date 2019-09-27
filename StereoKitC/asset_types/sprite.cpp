@@ -113,6 +113,12 @@ void sprite_release(sprite_t sprite) {
 
 ///////////////////////////////////////////
 
+float sprite_get_aspect(sprite_t sprite) {
+	return sprite->aspect;
+}
+
+///////////////////////////////////////////
+
 void sprite_destroy(sprite_t sprite) {
 	tex2d_release   (sprite->texture);
 	material_release(sprite->material);

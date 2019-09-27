@@ -154,6 +154,22 @@ void sk_ui_label(const char *text) {
 
 ///////////////////////////////////////////
 
+void sk_ui_image(sprite_t image, vec2 size) {
+	float aspect     = sprite_get_aspect(image);
+	vec3  offset     = skui_layers.back().offset;
+	vec2  final_size = vec2{
+		size.x==0 ? size.y/aspect : size.x, 
+		size.y==0 ? size.x*aspect : size.y };
+
+	sk_ui_reserve_box(final_size);
+	
+	matrix result;
+	matrix_mul(matrix_trs(offset, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
+	sprite_draw(image, result);
+}
+
+///////////////////////////////////////////
+
 bool sk_ui_button(const char *text) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;

@@ -84,8 +84,19 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 ///////////////////////////////////////////
 
 bool sprite_drawer_init() {
-	sprite_quad = mesh_find("default/quad");
-	assets_addref(sprite_quad->header);
+
+	// Default rendering quad
+	sprite_quad = mesh_create("render/sprite_quad");
+	vert_t verts[4] = {
+		vec3{0, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
+		vec3{1, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
+		vec3{1,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
+		vec3{0,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
+	};	
+	vind_t inds[6] = { 0,1,2, 0,2,3 };
+	mesh_set_verts(sprite_quad, verts, 4);
+	mesh_set_inds (sprite_quad, inds,  6);
+
 	return true;
 }
 
