@@ -8,12 +8,12 @@ using namespace std;
 ///////////////////////////////////////////
 
 struct layer_t {
-	XMMATRIX transform;
-	XMMATRIX inverse;
-	vec3     offset;
-	vec2     size;
-	float    line_height;
-	float    max_x;
+	matrix transform;
+	matrix inverse;
+	vec3   offset;
+	vec2   size;
+	float  line_height;
+	float  max_x;
 };
 
 vector<layer_t> skui_layers;
@@ -69,21 +69,18 @@ void sk_ui_begin_frame() {
 ///////////////////////////////////////////
 
 void sk_ui_push_pose(pose_t pose, vec2 size) {
-	XMMATRIX mx = XMMatrixAffineTransformation(
-		DirectX::g_XMOne, DirectX::g_XMZero,
-		XMLoadFloat4((XMFLOAT4 *)& pose.orientation),
-		XMLoadFloat3((XMFLOAT3 *)& pose.position));
+	matrix trs = matrix_trs(pose.position, pose.orientation);
+	matrix trs_inverse;
+	matrix_inverse(trs, trs_inverse);
 
 	skui_layers.push_back(layer_t{
-		mx, XMMatrixInverse(nullptr, mx),
+		trs, trs_inverse,
 		vec3{skui_padding, -skui_padding}, size, 0, 0
 	});
 
 	for (size_t i = 0; i < handed_max; i++) {
 		skui_fingertip[i] = input_hand((handed_)i).fingers[1][4].position;
-
-		XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)&skui_fingertip[i]), skui_layers.back().inverse);
-		XMStoreFloat3((XMFLOAT3 *)& skui_fingertip[i], resultXM);
+		skui_fingertip[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip[i]);
 	}
 }
 
@@ -97,12 +94,8 @@ void sk_ui_pop_pose() {
 
 void sk_ui_box(vec3 start, vec3 size, material_t material) {
 	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
-	matrix_trs(pos, quat_identity, size);
-	XMMATRIX mx = XMMatrixAffineTransformation(
-			XMLoadFloat3((XMFLOAT3 *)& size), DirectX::g_XMZero,
-			DirectX::g_XMIdentityR3,
-			XMLoadFloat3((XMFLOAT3 *)&pos));
-	mx *= skui_layers.back().transform;
+	matrix mx = matrix_trs(pos, quat_identity, size);
+	matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_box, material, mx);
 }
@@ -219,9 +212,7 @@ bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 			static quat start_aff_rot = quat_identity;
 			static vec3 start_tip_pos = vec3_zero;
 			static quat start_tip_rot = quat_identity;
-			vec3 tip_pos;
-			XMVECTOR resultXM = XMVector3Transform(XMLoadFloat3((XMFLOAT3 *)& skui_fingertip[i]), skui_layers.back().transform);
-			XMStoreFloat3((XMFLOAT3 *)& tip_pos, resultXM);
+			vec3 tip_pos = matrix_mul_point(skui_layers.back().transform, skui_fingertip[i]);
 
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.state & input_state_justpinch) {

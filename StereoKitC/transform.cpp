@@ -1,5 +1,7 @@
 #include "stereokit.h"
 
+#include "math.h"
+
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 
@@ -83,13 +85,25 @@ void transform_lookat  (transform_t &transform, const vec3 &at) {
 
 ///////////////////////////////////////////
 
-void transform_matrix(transform_t &transform, XMMATRIX &result) {
+void transform_update(transform_t &transform) {
 	if (transform._dirty) {
 		transform._dirty = false;
-		transform._transform = XMMatrixAffineTransformation(
-			XMLoadFloat3((XMFLOAT3*)&transform._scale), DirectX::g_XMZero,
-			XMLoadFloat4((XMFLOAT4*)&transform._rotation),
-			XMLoadFloat3((XMFLOAT3*)&transform._position));
+		transform._transform = matrix_trs(
+			transform._position, 
+			transform._rotation, 
+			transform._scale);
+	}
+}
+
+///////////////////////////////////////////
+
+void transform_matrix(transform_t &transform, matrix &result) {
+	if (transform._dirty) {
+		transform._dirty = false;
+		transform._transform = matrix_trs(
+			transform._position, 
+			transform._rotation, 
+			transform._scale);
 	}
 	result = transform._transform;
 }
@@ -97,11 +111,15 @@ void transform_matrix(transform_t &transform, XMMATRIX &result) {
 ///////////////////////////////////////////
 
 vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordinate) {
-	XMMATRIX tr;
+	matrix   tr;
+	XMMATRIX fast;
+
 	transform_matrix(transform, tr);
-	tr = XMMatrixInverse(nullptr, tr);
-	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& world_coordinate),  tr);
-	vec3 result;
+	math_matrix_to_fast(tr, &fast);
+	fast = XMMatrixInverse(nullptr, fast);
+
+	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& world_coordinate),  fast);
+	vec3     result;
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }
@@ -109,10 +127,13 @@ vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordina
 ///////////////////////////////////////////
 
 vec3 transform_local_to_world(transform_t &transform, const vec3 &local_coordinate) {
-	XMMATRIX tr;
+	matrix   tr;
+	XMMATRIX fast;
 	transform_matrix(transform, tr);
-	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& local_coordinate),  tr);
-	vec3 result;
+	math_matrix_to_fast(tr, &fast);
+
+	XMVECTOR resultXM = XMVector3Transform( XMLoadFloat3((XMFLOAT3 *)& local_coordinate),  fast);
+	vec3     result;
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }
@@ -120,11 +141,14 @@ vec3 transform_local_to_world(transform_t &transform, const vec3 &local_coordina
 ///////////////////////////////////////////
 
 vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction) {
-	XMMATRIX tr;
+	matrix   tr;
+	XMMATRIX fast;
 	transform_matrix(transform, tr);
-	tr = XMMatrixInverse(nullptr, tr);
-	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& world_direction),  tr);
-	vec3 result;
+	math_matrix_to_fast(tr, &fast);
+	fast = XMMatrixInverse(nullptr, fast);
+
+	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& world_direction),  fast);
+	vec3     result;
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }
@@ -132,10 +156,12 @@ vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_dire
 ///////////////////////////////////////////
 
 vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction) {
-	XMMATRIX tr;
+	matrix   tr;
+	XMMATRIX fast;
 	transform_matrix(transform, tr);
-	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& local_direction),  tr);
-	vec3 result;
+	math_matrix_to_fast(tr, &fast);
+	XMVECTOR resultXM = XMVector3TransformNormal( XMLoadFloat3((XMFLOAT3 *)& local_direction), fast);
+	vec3     result;
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }

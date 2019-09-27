@@ -20,7 +20,7 @@ inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return 
 inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~static_cast<int>(a)); }
 
 #include <stdint.h>
-#include <DirectXMath.h>
+#include <math.h>
 
 typedef int32_t bool32_t;
 
@@ -125,7 +125,8 @@ SK_API quat quat_mul       (const quat &a, const quat &b);
 
 matrix pose_matrix(const pose_t &pose);
 
-SK_API matrix matrix_mul          (const matrix &a, const matrix &b);
+SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
+SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
 SK_API vec3   matrix_mul_point    (const matrix &transform, const vec3 &point);
 SK_API vec3   matrix_mul_direction(const matrix &transform, const vec3 &direction);
 SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
@@ -283,7 +284,7 @@ struct transform_t {
 	quat _rotation;
 
 	bool32_t _dirty;
-	DirectX::XMMATRIX _transform;
+	matrix   _transform;
 };
 
 SK_API void transform_initialize  (transform_t &transform);
@@ -297,7 +298,8 @@ SK_API quat transform_get_rotation(transform_t &transform);
 SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
-SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
+SK_API void transform_update(transform_t &transform);
+SK_API void transform_matrix(transform_t &transform, matrix &result);
 SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
 SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
 SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
@@ -378,8 +380,8 @@ struct camera_t {
 };
 
 SK_API void camera_initialize(camera_t &cam, float fov, float clip_near, float clip_far);
-SK_API void camera_view      (transform_t &cam_transform, DirectX::XMMATRIX &result);
-SK_API void camera_proj      (camera_t    &cam, DirectX::XMMATRIX &result);
+SK_API void camera_view      (transform_t &cam_transform, matrix &result);
+SK_API void camera_proj      (camera_t    &cam,           matrix &result);
 
 ///////////////////////////////////////////
 

@@ -9,6 +9,7 @@
 #include "sprite.h"
 #include "../stref.h"
 
+#include <assert.h>
 #include <vector>
 using namespace std;
 

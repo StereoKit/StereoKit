@@ -3,6 +3,9 @@
 #include "stereokit.h"
 #include <DirectXMath.h>
 
+
+void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
+
 ///////////////////////////////////////////
 
 inline DirectX::XMVECTOR math_vec3_to_fast(const vec3 &vector) {

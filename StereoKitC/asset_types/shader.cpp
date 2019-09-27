@@ -6,6 +6,7 @@
 
 #include <d3dcompiler.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <vector>
 using namespace std;

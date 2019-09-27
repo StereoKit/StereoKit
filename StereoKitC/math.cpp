@@ -85,14 +85,30 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 
 ///////////////////////////////////////////
 
-matrix matrix_mul(const matrix &a, const matrix &b) {
+void matrix_inverse(const matrix &a, matrix &out_matrix) {
+	XMMATRIX mat_a, mat_result;
+	math_matrix_to_fast(a, &mat_a);
+	mat_result = XMMatrixInverse(nullptr, mat_a);
+	math_fast_to_matrix(mat_result, &out_matrix);
+}
+
+///////////////////////////////////////////
+
+void matrix_mul(const matrix &a, const matrix &b, matrix &out_matrix) {
 	XMMATRIX mat_a, mat_b, mat_result;
-	matrix result;
 	math_matrix_to_fast(a, &mat_a);
 	math_matrix_to_fast(b, &mat_b);
 	mat_result = mat_a * mat_b;
-	math_fast_to_matrix(mat_result, &result);
-	return result;
+	math_fast_to_matrix(mat_result, &out_matrix);
+}
+
+///////////////////////////////////////////
+
+void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix) {
+	XMMATRIX mat_a, mat_b, mat_result;
+	math_matrix_to_fast(a, &mat_a);
+	math_matrix_to_fast(b, &mat_b);
+	out_matrix = mat_a * mat_b;
 }
 
 ///////////////////////////////////////////

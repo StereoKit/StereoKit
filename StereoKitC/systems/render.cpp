@@ -124,7 +124,8 @@ void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform
 	item.mesh     = mesh;
 	item.material = material;
 	item.sort_id  = render_queue_id(material, mesh);
-	transform_matrix(transform, item.transform);
+	transform_update(transform);
+	math_matrix_to_fast(transform._transform, &item.transform);
 	render_queue.emplace_back(item);
 }
 
@@ -142,22 +143,21 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, transform_t &transform) {
-	XMMATRIX world;
+	matrix world;
 	transform_matrix(transform, world);
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
 		item.sort_id  = render_queue_id(item.material, item.mesh);
-		transform_matrix(model->subsets[i].offset, item.transform);
-		item.transform = item.transform * world;
+		matrix_mul(model->subsets[i].offset, world, item.transform);
 		render_queue.emplace_back(item);
 	}
 }
 
 ///////////////////////////////////////////
 
-void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
+void render_draw_queue(const matrix &view, const matrix &projection) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
 
@@ -166,17 +166,21 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 		return a.sort_id < b.sort_id;
 	});
 
+	XMMATRIX view_f, projection_f;
+	math_matrix_to_fast(view,       &view_f);
+	math_matrix_to_fast(projection, &projection_f);
+
 	// Copy camera information into the global buffer
-	XMMATRIX view_inv = XMMatrixInverse(nullptr, view);
+	XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
 
 	XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
 	XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
 	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos, cam_pos);
 	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir, cam_dir);
 
-	render_global_buffer.view = XMMatrixTranspose(view);
-	render_global_buffer.proj = XMMatrixTranspose(projection);
-	render_global_buffer.viewproj = XMMatrixTranspose(view * projection);
+	render_global_buffer.view = XMMatrixTranspose(view_f);
+	render_global_buffer.proj = XMMatrixTranspose(projection_f);
+	render_global_buffer.viewproj = XMMatrixTranspose(view_f * projection_f);
 
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
 	shaderargs_set_active(render_shader_globals);
@@ -226,7 +230,7 @@ void render_draw() {
 ///////////////////////////////////////////
 
 void render_draw_from(camera_t &cam, transform_t &cam_transform) {
-	XMMATRIX view, proj;
+	matrix view, proj;
 	camera_view(cam_transform, view);
 	camera_proj(cam, proj);
 	render_draw_queue(view, proj);
@@ -234,10 +238,9 @@ void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
-	XMMATRIX view, proj;
+void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
+	matrix view, proj;
 	camera_view(cam_transform, view);
-	proj = XMLoadFloat4x4((XMFLOAT4X4 *)cam_matrix);
 
 	render_draw_queue(view, proj);
 }
