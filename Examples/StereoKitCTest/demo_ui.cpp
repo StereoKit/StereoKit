@@ -43,7 +43,7 @@ void demo_ui_init() {
 	ui_floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (ui_floor_solid, scale);
 
-	ui_sprite = sprite_create_file("../../Examples/Assets/test.png", sprite_type_single);
+	ui_sprite = sprite_create_file("../../Documentation/img/StereoKitLogo.png", sprite_type_single);
 
 	sk_ui_init();
 }

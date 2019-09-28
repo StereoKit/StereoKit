@@ -5,42 +5,30 @@ using namespace DirectX;
 
 ///////////////////////////////////////////
 
-inline XMVECTOR to_fast3  (const vec3 &vec)   { return XMLoadFloat3((XMFLOAT3 *)& vec); }
-inline vec3     from_fast3(const XMVECTOR &a) { vec3 result; XMStoreFloat3((XMFLOAT3 *)& result, a); return result; }
-inline quat     from_fastq(const XMVECTOR &a) { quat result; XMStoreFloat4((XMFLOAT4 *)& result, a); return result; }
-
-///////////////////////////////////////////
-
-vec3 operator*(const quat &a, const vec3 &b) {
+vec3 quat_mul_vec(const quat &a, const vec3 &b) {
 	XMVECTOR rotation = XMVector3Rotate(XMLoadFloat3((XMFLOAT3*)&b), XMLoadFloat4((XMFLOAT4*)&a));
-	vec3 result;
-	XMStoreFloat3((XMFLOAT3 *)&result, rotation);
-	return result;
+	return math_fast_to_vec3(rotation);
 }
 
 ///////////////////////////////////////////
 
-quat operator*(const quat &a, const quat &b) {
+quat quat_mul(const quat &a, const quat &b) {
 	XMVECTOR rotation = XMQuaternionMultiply(XMLoadFloat4((XMFLOAT4*)&a),XMLoadFloat4((XMFLOAT4*)&b));
-	quat result;
-	XMStoreFloat4((XMFLOAT4 *)&result, rotation);
-	return result;
+	return math_fast_to_quat(rotation);
 }
 
 ///////////////////////////////////////////
 
 quat quat_difference(const quat &a, const quat &b) {
-	XMVECTOR inv = XMQuaternionInverse(XMLoadFloat4((XMFLOAT4 *)& a));
+	XMVECTOR inv        = XMQuaternionInverse (XMLoadFloat4((XMFLOAT4 *)& a));
 	XMVECTOR difference = XMQuaternionMultiply(XMLoadFloat4((XMFLOAT4 *)& b), inv);
-	quat result;
-	XMStoreFloat4((XMFLOAT4 *)&result, difference);
-	return result;
+	return math_fast_to_quat(difference);
 }
 
 ///////////////////////////////////////////
 
 quat quat_lookat(const vec3 &from, const vec3 &at) {
-	XMMATRIX mat = XMMatrixLookAtRH(to_fast3(from), to_fast3(at), XMVectorSet(0, 1, 0, 0));
+	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), XMVectorSet(0, 1, 0, 0));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
 
@@ -48,27 +36,19 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 
 quat quat_lerp(const quat &a, const quat &b, float t) {
 	XMVECTOR blend = XMQuaternionSlerp(XMLoadFloat4((XMFLOAT4 *)& a), XMLoadFloat4((XMFLOAT4 *)& b), t);
-	quat result;
-	XMStoreFloat4((XMFLOAT4 *)&result, blend);
-	return result;
+	return math_fast_to_quat(blend);
 }
 
 ///////////////////////////////////////////
 
-quat quat_mul(const quat &a, const quat &b) {
-	XMVECTOR mul = XMQuaternionMultiply(XMLoadFloat4((XMFLOAT4 *)& a), XMLoadFloat4((XMFLOAT4 *)& b));
-	quat result;
-	XMStoreFloat4((XMFLOAT4 *)&result, mul);
-	return result;
+void pose_matrix_out(const pose_t &pose, matrix &out_result) {
+	matrix_trs_out(out_result, pose.position, pose.orientation);
 }
 
 ///////////////////////////////////////////
 
-void pose_matrix(const pose_t &pose, matrix &out_result) {
-	XMMATRIX mat = XMMatrixAffineTransformation(
-		DirectX::g_XMOne, DirectX::g_XMZero,
-		XMLoadFloat4((XMFLOAT4*)&pose.orientation),
-		XMLoadFloat3((XMFLOAT3*)&pose.position));
+matrix pose_matrix(const pose_t &pose) {
+	return matrix_trs(pose.position, pose.orientation);
 }
 
 ///////////////////////////////////////////
@@ -137,4 +117,14 @@ matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &sca
 	matrix result;
 	math_fast_to_matrix(mat, &result);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orientation, const vec3 &scale) {
+	XMMATRIX mat = XMMatrixAffineTransformation(
+		XMLoadFloat3((XMFLOAT3 *)& scale), DirectX::g_XMZero,
+		XMLoadFloat4((XMFLOAT4 *)& orientation),
+		XMLoadFloat3((XMFLOAT3 *)& position));
+	math_fast_to_matrix(mat, &out_result);
 }

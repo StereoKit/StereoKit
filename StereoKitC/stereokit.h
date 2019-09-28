@@ -42,12 +42,12 @@ SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtim
 SK_API void     sk_shutdown  ();
 SK_API bool32_t sk_step      (void (*app_update)(void));
 
-SK_API float  sk_timef();
-SK_API double sk_time();
-SK_API float  sk_time_elapsedf();
-SK_API double sk_time_elapsed();
+SK_API float       sk_timef();
+SK_API double      sk_time();
+SK_API float       sk_time_elapsedf();
+SK_API double      sk_time_elapsed();
 SK_API sk_runtime_ sk_active_runtime();
-SK_API void sk_set_settings(sk_settings_t &settings);
+SK_API void        sk_set_settings(sk_settings_t &settings);
 
 ///////////////////////////////////////////
 
@@ -84,27 +84,24 @@ struct pose_t {
 	quat orientation;
 };
 
-vec3 operator*(const quat &a, const vec3 &b);
-quat operator*(const quat &a, const quat &b);
-
-static inline vec2 operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
-static inline vec2 operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
-static inline vec2 operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
-static inline vec2 operator-(const vec2 &a, const vec2 &b) { return { a.x - b.x, a.y - b.y }; }
-static inline vec2 operator*(const vec2 &a, const vec2 &b) { return { a.x * b.x, a.y * b.y }; }
-static inline vec2 operator/(const vec2 &a, const vec2 &b) { return { a.x / b.x, a.y / b.y }; }
+static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
+static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
+static inline vec2  operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
+static inline vec2  operator-(const vec2 &a, const vec2 &b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2  operator*(const vec2 &a, const vec2 &b) { return { a.x * b.x, a.y * b.y }; }
+static inline vec2  operator/(const vec2 &a, const vec2 &b) { return { a.x / b.x, a.y / b.y }; }
 static inline vec2& operator+=(vec2& a, const vec2& b)     { a.x += b.x; a.y += b.y; return a; }
 static inline vec2& operator-=(vec2& a, const vec2& b)     { a.x -= b.x; a.y -= b.y; return a; }
 static inline vec2& operator*=(vec2& a, const float b)     { a.x *= b; a.y *= b; return a; }
 static inline vec2& operator/=(vec2& a, const float b)     { a.x /= b; a.y /= b; return a; }
 
-static inline vec3 operator*(const vec3 &a, const float b) { return { a.x * b, a.y * b, a.z * b }; }
-static inline vec3 operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
-static inline vec3 operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
-static inline vec3 operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
-static inline vec3 operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
-static inline vec3 operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
-static inline vec3 operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
+static inline vec3  operator*(const vec3 &a, const float b) { return { a.x * b, a.y * b, a.z * b }; }
+static inline vec3  operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
+static inline vec3  operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
+static inline vec3  operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3  operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
+static inline vec3  operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
+static inline vec3  operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
 static inline vec3& operator+=(vec3& a, const vec3& b)     { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
 static inline vec3& operator-=(vec3& a, const vec3& b)     { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
 static inline vec3& operator*=(vec3& a, const float b)     { a.x *= b; a.y *= b; a.z *= b; return a; }
@@ -122,16 +119,23 @@ SK_API quat quat_difference(const quat &a, const quat &b);
 SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
 SK_API quat quat_lerp      (const quat &a, const quat &b, float t);
 SK_API quat quat_mul       (const quat &a, const quat &b);
+SK_API vec3 quat_mul_vec   (const quat &a, const vec3 &b);
 
-matrix pose_matrix(const pose_t &pose);
+SK_API matrix pose_matrix    (const pose_t &pose);
+SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result);
 
 SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
 SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
 SK_API vec3   matrix_mul_point    (const matrix &transform, const vec3 &point);
 SK_API vec3   matrix_mul_direction(const matrix &transform, const vec3 &direction);
 SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
+SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
+
+static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
+static inline quat   operator*(const quat   &a, const quat   &b) { return quat_mul(a, b); }
+static inline matrix operator*(const matrix &a, const matrix &b) { matrix result; matrix_mul(a, b, result); return result; }
 
 static const float deg2rad = 0.01745329252f;
 static const float rad2deg = 57.295779513f;
@@ -301,10 +305,10 @@ SK_API vec3 transform_forward     (transform_t &transform);
 SK_API void   transform_update    (transform_t &transform);
 SK_API void   transform_matrix_out(transform_t &transform, matrix &result);
 SK_API matrix transform_matrix    (transform_t &transform);
-SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
-SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
-SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
-SK_API vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
+SK_API vec3   transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
+SK_API vec3   transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
+SK_API vec3   transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
+SK_API vec3   transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
 
 ///////////////////////////////////////////
 
