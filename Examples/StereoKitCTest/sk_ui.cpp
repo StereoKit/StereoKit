@@ -53,7 +53,7 @@ void sk_ui_init() {
 	skui_mat        = material_copy("sk_ui/mat", mat_default);
 	skui_mat_active = material_copy("sk_ui/mat_active", mat_default);
 	material_release(mat_default);
-	material_set_color32(skui_mat_active, "color", { 128,128,128,255 });
+	material_set_color(skui_mat_active, "color", { .5f,.5f,.5f,1 });
 
 	skui_font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
 	skui_font       = font_create("C:/Windows/Fonts/segoeui.ttf");

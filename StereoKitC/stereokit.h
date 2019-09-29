@@ -265,24 +265,37 @@ enum material_cull_ {
 	material_cull_cw,
 	material_cull_none,
 };
+enum material_param_ {
+	material_param_float = 0,
+	material_param_color128,
+	material_param_vector,
+	material_param_matrix,
+	material_param_texture,
+};
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_find   (const char *id);
-SK_API material_t material_create (const char *id, shader_t shader);
-SK_API material_t material_copy   (const char *id, material_t material);
-SK_API void       material_release(material_t material);
-SK_API void       material_set_alpha_mode(material_t material, material_alpha_ mode);
-SK_API void       material_set_cull      (material_t material, material_cull_ mode);
+SK_API material_t material_find            (const char *id);
+SK_API material_t material_create          (const char *id, shader_t shader);
+SK_API material_t material_copy            (const char *id, material_t material);
+SK_API void       material_release         (material_t material);
+SK_API void       material_set_alpha_mode  (material_t material, material_alpha_ mode);
+SK_API void       material_set_cull        (material_t material, material_cull_ mode);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
-SK_API void       material_set_float     (material_t material, const char *name, float    value);
-SK_API void       material_set_color32   (material_t material, const char *name, color32  value);
-SK_API void       material_set_color     (material_t material, const char *name, color128 value);
-SK_API void       material_set_vector    (material_t material, const char *name, vec4     value);
-SK_API void       material_set_matrix    (material_t material, const char *name, matrix   value);
-SK_API bool32_t   material_set_texture   (material_t material, const char *name, tex2d_t  value);
-SK_API bool32_t   material_set_texture_id(material_t material, uint64_t id, tex2d_t value);
-SK_API void       material_set_shader    (material_t material, shader_t shader);
+SK_API void       material_set_float       (material_t material, const char *name, float    value);
+SK_API void       material_set_color       (material_t material, const char *name, color128 value);
+SK_API void       material_set_vector      (material_t material, const char *name, vec4     value);
+SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
+SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex2d_t  value);
+SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex2d_t  value);
+SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
+SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
+SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
+SK_API bool32_t   material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
+SK_API void       material_get_param_info  (material_t material, int index, char **out_name, material_param_ *out_type);
+SK_API int        material_get_param_count (material_t material);
+SK_API void       material_set_shader      (material_t material, shader_t shader);
+SK_API shader_t   material_get_shader      (material_t material);
 
 ///////////////////////////////////////////
 

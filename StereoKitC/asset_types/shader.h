@@ -5,12 +5,6 @@
 #include "../stereokit.h"
 #include "assets.h"
 
-enum shaderarg_type_ {
-	shaderarg_type_float = 0,
-	shaderarg_type_color,
-	shaderarg_type_vector,
-	shaderarg_type_matrix,
-};
 extern const size_t shaderarg_size[];
 
 struct shaderargs_data_t {
@@ -26,9 +20,10 @@ struct shaderargs_t {
 
 struct shaderargs_desc_item_t {
 	uint64_t        id;
+	char           *name;
 	size_t          offset;
 	size_t          size;
-	shaderarg_type_ type;
+	material_param_ type;
 	void           *default_value;
 	char           *tags;
 };

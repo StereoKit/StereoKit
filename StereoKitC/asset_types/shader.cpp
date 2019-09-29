@@ -64,10 +64,10 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 				continue;
 
 			shaderargs_desc_item_t item = {};
-			if      (stref_equals(word, "float" )) item.type = shaderarg_type_float;
-			else if (stref_equals(word, "color" )) item.type = shaderarg_type_vector;
-			else if (stref_equals(word, "vector")) item.type = shaderarg_type_vector;
-			else if (stref_equals(word, "matrix")) item.type = shaderarg_type_matrix;
+			if      (stref_equals(word, "float" )) item.type = material_param_float;
+			else if (stref_equals(word, "color" )) item.type = material_param_vector;
+			else if (stref_equals(word, "vector")) item.type = material_param_vector;
+			else if (stref_equals(word, "matrix")) item.type = material_param_matrix;
 			else {
 				char name[64];
 				stref_copy_to(word, name, 64);
@@ -88,18 +88,19 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 
 			item.id = 0;
 			if (stref_nextword(curr, word)) {
-				item.id = stref_hash(word);
+				item.name = stref_copy(word);
+				item.id   = stref_hash(word);
 			}
 
 			while (stref_nextword(curr, word, ' ', '{','}')) {
 				if (stref_equals(word, "default")) {
 					if (stref_nextword(curr, word, ' ','{', '}')) {
 						stref_t value = stref_stripcapture(word, '{', '}');
-						if (item.type == shaderarg_type_float) {
+						if (item.type == material_param_float) {
 							item.default_value = malloc(sizeof(float));
 							*(float *)item.default_value = stref_to_f(value);
 
-						} else if (item.type == shaderarg_type_vector) {
+						} else if (item.type == material_param_vector) {
 							vec4    result    = {};
 							stref_t component = {};
 							if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
@@ -275,6 +276,7 @@ void shader_release(shader_t shader) {
 
 void shader_destroy_parsedata(shader_t shader) {
 	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		free(shader->args_desc.item[i].name);
 		free(shader->args_desc.item[i].tags);
 		free(shader->args_desc.item[i].default_value);
 	}
