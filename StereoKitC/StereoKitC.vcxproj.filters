@@ -103,6 +103,9 @@
     <ClCompile Include="systems\input_leap.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="stereokit_ui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -199,6 +202,7 @@
     <ClInclude Include="systems\input_leap.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="stereokit_ui.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

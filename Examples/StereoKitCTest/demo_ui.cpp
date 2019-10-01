@@ -1,7 +1,7 @@
 #include "demo_ui.h"
 
 #include "../../StereoKitC/stereokit.h"
-#include "sk_ui.h"
+#include "../../StereoKitC/stereokit_ui.h"
 
 ///////////////////////////////////////////
 

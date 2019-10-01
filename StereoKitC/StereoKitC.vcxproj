@@ -193,6 +193,7 @@
     <ClCompile Include="shaders_builtin\shader_builtin_skybox.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_unlit.cpp" />
     <ClCompile Include="stereokit.cpp" />
+    <ClCompile Include="stereokit_ui.cpp" />
     <ClCompile Include="stref.cpp" />
     <ClCompile Include="systems\d3d.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
@@ -226,6 +227,7 @@
     <ClInclude Include="math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="stereokit.h" />
+    <ClInclude Include="stereokit_ui.h" />
     <ClInclude Include="stref.h" />
     <ClInclude Include="systems\d3d.h" />
     <ClInclude Include="systems\defaults.h" />

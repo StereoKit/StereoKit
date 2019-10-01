@@ -1,4 +1,4 @@
-#include "sk_ui.h"
+#include "stereokit_ui.h"
 
 #include <DirectXMath.h>
 using namespace DirectX;
@@ -32,6 +32,13 @@ float skui_fontsize= 20*mm2m;
 
 uint64_t skui_control_focused[2] = {};
 uint64_t skui_control_active [2] = {};
+
+///////////////////////////////////////////
+
+void sk_ui_push_pose(pose_t pose, vec2 size);
+void sk_ui_pop_pose ();
+void sk_ui_box      (vec3 start, vec3 size, material_t material);
+void sk_ui_text     (vec3 start, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
 
 ///////////////////////////////////////////
 
@@ -135,7 +142,7 @@ void sk_ui_space(float space) {
 
 ///////////////////////////////////////////
 
-bool sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_size) {
+bool32_t sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_size) {
 	pt -= box_start;
 	return
 		pt.x >= 0 && pt.x <=  box_size.x &&
@@ -170,7 +177,7 @@ void sk_ui_image(sprite_t image, vec2 size) {
 
 ///////////////////////////////////////////
 
-bool sk_ui_button(const char *text) {
+bool32_t sk_ui_button(const char *text) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
 	vec3 offset = skui_layers.back().offset;
@@ -208,7 +215,7 @@ bool sk_ui_button(const char *text) {
 
 ///////////////////////////////////////////
 
-bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
+bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
 
@@ -252,7 +259,7 @@ bool sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 
 ///////////////////////////////////////////
 
-bool sk_ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
+bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
 	uint64_t   id     = sk_ui_hash(name);
 	bool       result = false;
 	material_t mat    = skui_mat;
