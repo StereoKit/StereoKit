@@ -69,11 +69,6 @@ void sk_ui_init() {
 
 ///////////////////////////////////////////
 
-void sk_ui_begin_frame() {
-}
-
-///////////////////////////////////////////
-
 void sk_ui_push_pose(pose_t pose, vec2 size) {
 	matrix trs = matrix_trs(pose.position, pose.orientation);
 	matrix trs_inverse;

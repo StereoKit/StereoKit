@@ -54,8 +54,6 @@ void demo_ui_update() {
 	// Render floor
 	render_add_model(ui_floor_model, ui_floor_tr);
 
-	sk_ui_begin_frame();
-
 	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
 		pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
 	// input_hand(handed_right).root;

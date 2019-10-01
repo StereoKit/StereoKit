@@ -3,7 +3,6 @@
 #include "stereokit.h"
 
 SK_API void     sk_ui_init        ();
-SK_API void     sk_ui_begin_frame ();
 
 SK_API void     sk_ui_nextline    ();
 SK_API void     sk_ui_reserve_box (vec2 size);
