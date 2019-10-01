@@ -11,7 +11,7 @@ class Program
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
 
-        activeScene = new DemoBasics();
+        activeScene = new DemoUI();
         activeScene.Initialize();
 
         while (StereoKitApp.Step(() =>
