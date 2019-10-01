@@ -131,7 +131,7 @@ float4 ps(psIn input) : SV_TARGET{
 	// v is view direction, or direction from the surface to the camera
 	// h is the half vector, h = normalize(l + v)
 	float  D = DistributionGGX(normal, half_vec, rough);
-	float3 F = FresnelSchlick(NdotV, albedo, metal);
+	float3 F = FresnelSchlick(max(NdotV, 0), albedo, metal);
 	float  G = GeometrySmith(max(NdotL, 0), max(NdotV, 0), rough);
 	float3 specular =
 		(D * G * F)

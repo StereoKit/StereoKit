@@ -7,6 +7,7 @@
 #include "win32.h"
 #include "../input.h"
 #include "../input_hand.h"
+#include "../input_leap.h"
 #include "../render.h"
 #include "../d3d.h"
 
@@ -16,22 +17,33 @@ using namespace DirectX;
 ///////////////////////////////////////////
 
 int win32_input_pointers[2];
+bool win32_use_leap = true;
 
 ///////////////////////////////////////////
 
 void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
+
+	win32_use_leap = input_leap_init();
+	log_writef(log_info, "Using Leap: %s", win32_use_leap ? "true" : "false");
 }
 
 ///////////////////////////////////////////
 
 void win32_input_shutdown() {
+	if (win32_use_leap)
+		input_leap_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void win32_input_update() {
+	if (win32_use_leap) {
+		input_leap_update();
+		return;
+	}
+
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
 	pointer_t *pointer_head   = input_get_pointer(win32_input_pointers[1]);
 

@@ -71,23 +71,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -102,8 +102,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -122,8 +121,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -146,8 +144,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -170,8 +167,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -202,6 +198,7 @@
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\input.cpp" />
     <ClCompile Include="systems\input_hand.cpp" />
+    <ClCompile Include="systems\input_leap.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
     <ClCompile Include="systems\platform\platform.cpp" />
@@ -235,6 +232,7 @@
     <ClInclude Include="systems\input.h" />
     <ClInclude Include="systems\input_hand.h" />
     <ClInclude Include="systems\input_hand_poses.h" />
+    <ClInclude Include="systems\input_leap.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\openxr.h" />
     <ClInclude Include="systems\platform\platform.h" />

@@ -111,7 +111,7 @@ void input_hand_state_update(handed_ handedness) {
 	// Clear all except tracking state
 	hand.state &= input_state_tracked | input_state_untracked | input_state_justtracked;
 	
-	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < ((1.f * cm2m) * (1.f * cm2m));
+	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < ((2.f * cm2m) * (2.f * cm2m));
 	bool is_grip =
 		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
 		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m));
@@ -120,6 +120,12 @@ void input_hand_state_update(handed_ handedness) {
 	if (was_gripped != is_grip)    hand.state |= is_grip    ? input_state_justgrip    : input_state_ungrip;
 	if (is_trigger) hand.state |= input_state_pinch;
 	if (is_grip)    hand.state |= input_state_grip;
+}
+
+///////////////////////////////////////////
+
+pose_t *input_hand_get_pose_buffer(handed_ hand) {
+	return &hand_state[hand].info.fingers[0][0];
 }
 
 ///////////////////////////////////////////
