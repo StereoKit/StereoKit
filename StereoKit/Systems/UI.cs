@@ -6,6 +6,7 @@ namespace StereoKit
         public static void Init       () { NativeAPI.sk_ui_init(); }
 
         public static void NextLine   ()            { NativeAPI.sk_ui_nextline(); }
+        public static void SameLine   ()            { NativeAPI.sk_ui_sameline(); }
         public static void ReserveBox (Vec2  size)  { NativeAPI.sk_ui_reserve_box(size); }
         public static void Space      (float space) { NativeAPI.sk_ui_space(space); }
 

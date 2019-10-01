@@ -5,6 +5,7 @@
 SK_API void     sk_ui_init        ();
 
 SK_API void     sk_ui_nextline    ();
+SK_API void     sk_ui_sameline    ();
 SK_API void     sk_ui_reserve_box (vec2 size);
 SK_API void     sk_ui_space       (float space);
 

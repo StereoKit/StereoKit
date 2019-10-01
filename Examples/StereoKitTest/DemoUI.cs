@@ -47,17 +47,12 @@ class DemoUI : IScene
 
         UI.WindowBegin("Main", ref window_pose, new Vec2( 24, 0) * Units.cm2m);
 
-        UI.Button("Testing!\nok");
+        UI.Button("Testing!\nok"); UI.SameLine();
         UI.Button("Another");
-        UI.NextLine();
-        UI.HSlider("slider",  ref slider1, 0, 1, 0.2f, 72 * Units.mm2m);
+        UI.HSlider("slider",  ref slider1, 0, 1, 0.2f, 72 * Units.mm2m); UI.SameLine();
         UI.HSlider("slider2", ref slider2, 0, 1, 0, 72 * Units.mm2m);
-        UI.NextLine();
         if (UI.Button("Press me!"))
-        {
-            UI.NextLine();
             UI.Button("DYANMIC BUTTON!!");
-        }
 
         UI.WindowEnd();
     }

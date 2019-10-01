@@ -30,6 +30,9 @@ float skui_gutter  = 20*mm2m;
 float skui_depth   = 20*mm2m;
 float skui_fontsize= 20*mm2m;
 
+vec3  skui_prev_offset;
+float skui_prev_line_height;
+
 uint64_t skui_control_focused[2] = {};
 uint64_t skui_control_active [2] = {};
 
@@ -121,9 +124,21 @@ void sk_ui_reserve_box(vec2 size) {
 ///////////////////////////////////////////
 
 void sk_ui_nextline() {
-	skui_layers.back().offset.x = skui_padding;
-	skui_layers.back().offset.y -= skui_layers.back().line_height + skui_gutter;
-	skui_layers.back().line_height = 0;
+	layer_t &layer = skui_layers.back();
+	skui_prev_offset      = layer.offset;
+	skui_prev_line_height = layer.line_height;
+
+	layer.offset.x    = skui_padding;
+	layer.offset.y   -= skui_layers.back().line_height + skui_gutter;
+	layer.line_height = 0;
+}
+
+///////////////////////////////////////////
+
+void sk_ui_sameline() {
+	layer_t &layer = skui_layers.back();
+	layer.offset      = skui_prev_offset;
+	layer.line_height = skui_prev_line_height;
 }
 
 ///////////////////////////////////////////
@@ -152,6 +167,7 @@ void sk_ui_label(const char *text) {
 	vec2 size   = text_size(skui_font_style, text);
 	sk_ui_reserve_box(size);
 	sk_ui_text(offset + vec3{ 0, 0, 2*mm2m }, text);
+	sk_ui_nextline();
 }
 
 ///////////////////////////////////////////
@@ -168,6 +184,7 @@ void sk_ui_image(sprite_t image, vec2 size) {
 	matrix result;
 	matrix_mul(matrix_trs(offset, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
 	sprite_draw(image, result);
+	sk_ui_nextline();
 }
 
 ///////////////////////////////////////////
@@ -204,6 +221,7 @@ bool32_t sk_ui_button(const char *text) {
 	sk_ui_reserve_box(size);
 	sk_ui_box (offset, vec3{ size.x, size.y, finger_offset }, result ? skui_mat_active : skui_mat);
 	sk_ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
+	sk_ui_nextline();
 
 	return result;
 }
@@ -248,6 +266,7 @@ bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size
 	}
 
 	sk_ui_box (at, size, result ? skui_mat_active : skui_mat);
+	sk_ui_nextline();
 
 	return result;
 }
@@ -289,6 +308,8 @@ bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, flo
 	sk_ui_reserve_box(size);
 	sk_ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, mat);
 	sk_ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, mat);
+	sk_ui_nextline();
+	
 	return result;
 }
 
