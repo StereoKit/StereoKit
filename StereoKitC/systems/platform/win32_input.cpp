@@ -16,7 +16,7 @@ using namespace DirectX;
 
 ///////////////////////////////////////////
 
-int win32_input_pointers[2];
+int  win32_input_pointers[2];
 bool win32_use_leap = true;
 
 ///////////////////////////////////////////
@@ -26,7 +26,6 @@ void win32_input_init() {
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
 	win32_use_leap = input_leap_init();
-	log_writef(log_info, "Using Leap: %s", win32_use_leap ? "true" : "false");
 }
 
 ///////////////////////////////////////////
@@ -39,7 +38,7 @@ void win32_input_shutdown() {
 ///////////////////////////////////////////
 
 void win32_input_update() {
-	if (win32_use_leap) {
+	if (win32_use_leap && leap_has_device) {
 		input_leap_update();
 		return;
 	}

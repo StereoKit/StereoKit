@@ -16,7 +16,10 @@ LEAP_CONNECTION      leap_handle      = nullptr;
 LEAP_TRACKING_EVENT *leap_last_frame  = nullptr;
 LEAP_DEVICE_INFO    *leap_last_device = nullptr;
 
-bool leap_run = true;
+bool leap_run        = true;
+bool leap_has_device = false;
+bool leap_has_new_hands = false;
+pose_t leap_hands[2][5][5];
 
 void copy_hand(pose_t *dest, LEAP_HAND &hand);
 void input_leap_thread(void *arg);
@@ -43,6 +46,14 @@ void input_leap_shutdown() {
 ///////////////////////////////////////////
 
 void input_leap_update() {
+	if (leap_has_new_hands) {
+		leap_has_new_hands = false;
+
+		for (size_t i = 0; i < handed_max; i++) {
+			pose_t *pose = input_hand_get_pose_buffer((handed_)i);
+			memcpy(pose, &leap_hands[i][0][0], sizeof(pose_t) * 25);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -61,8 +72,13 @@ void input_leap_thread(void *arg) {
 
 					hand_t &inp_hand = (hand_t &)input_hand(handed);
 					inp_hand.state = inp_hand.state | input_state_tracked;
-					copy_hand(pose, hand);
+					copy_hand(&leap_hands[handed][0][0], hand);
 				}
+				leap_has_new_hands = true;
+			} else if (msg.type == eLeapEventType_Device) {
+				leap_has_device = true;
+			} else if (msg.type == eLeapEventType_DeviceLost) {
+				leap_has_device = false;
 			}
 		}
 	}
