@@ -105,7 +105,7 @@ namespace StereoKit
         Unaffected,
     }
 
-    enum SpriteType
+    public enum SpriteType
     {
         Atlased = 0,
         Single
