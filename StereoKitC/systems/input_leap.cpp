@@ -77,7 +77,7 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 	transform_t *tr;
 	render_get_cam(&cam, &tr);
 	vec3 offset = { 0,-0.25f,-0.15f };
-	quat rot = quat_lookat(vec3_zero, -vec3_forward) * tr->_rotation;
+	quat rot    = quat_euler(vec3{ 0,180,-90 });
 
 	for (size_t f = 0; f < 5; f++) {
 		LEAP_BONE &bone = hand.digits[f].bones[0];
@@ -86,7 +86,7 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 		memcpy(&pose->orientation, &bone.rotation,   sizeof(quat));
 		memcpy(&pose->position,    &bone.prev_joint, sizeof(vec3));
 		pose->position = transform_local_to_world(*tr, (pose->position * mm2m) + offset);
-		pose->orientation = rot * pose->orientation;
+		pose->orientation = (rot * pose->orientation) * tr->_rotation;
 	}
 	for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 4; j++) {
@@ -96,7 +96,7 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 			memcpy(&pose->orientation, &bone.rotation,   sizeof(quat));
 			memcpy(&pose->position,    &bone.next_joint, sizeof(vec3));
 			pose->position = transform_local_to_world(*tr, (pose->position * mm2m) + offset);
-			pose->orientation = rot * pose->orientation;
+			pose->orientation = (rot * pose->orientation) * tr->_rotation;
 		}
 	}
 }

@@ -117,7 +117,9 @@ static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { r
 
 SK_API quat quat_difference(const quat &a, const quat &b);
 SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
+SK_API quat quat_euler     (const vec3 &euler_degrees);
 SK_API quat quat_lerp      (const quat &a, const quat &b, float t);
+SK_API quat quat_normalize (const quat &a);
 SK_API quat quat_mul       (const quat &a, const quat &b);
 SK_API vec3 quat_mul_vec   (const quat &a, const vec3 &b);
 

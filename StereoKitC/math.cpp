@@ -34,9 +34,22 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 
 ///////////////////////////////////////////
 
+quat quat_euler(const vec3 &euler_degrees) {
+	XMVECTOR result = XMQuaternionRotationRollPitchYaw(euler_degrees.x * -deg2rad, euler_degrees.y * -deg2rad, euler_degrees.z * -deg2rad);
+	return math_fast_to_quat(result);
+}
+
+///////////////////////////////////////////
+
 quat quat_lerp(const quat &a, const quat &b, float t) {
 	XMVECTOR blend = XMQuaternionSlerp(XMLoadFloat4((XMFLOAT4 *)& a), XMLoadFloat4((XMFLOAT4 *)& b), t);
 	return math_fast_to_quat(blend);
+}
+
+///////////////////////////////////////////
+
+quat quat_normalize(const quat &a) {
+	return math_fast_to_quat(XMQuaternionNormalize(math_quat_to_fast(a)));
 }
 
 ///////////////////////////////////////////
