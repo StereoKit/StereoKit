@@ -12,7 +12,7 @@ struct render_stats_t {
 
 void render_draw       ();
 void render_draw_from  (camera_t &cam, transform_t &cam_transform);
-void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform);
+void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform);
 void render_clear();
 
 bool render_initialize();

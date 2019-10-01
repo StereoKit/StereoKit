@@ -4,9 +4,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="demo_ui.cpp" />
+    <ClCompile Include="demo_sprites.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
     <ClInclude Include="scene.h" />
+    <ClInclude Include="demo_ui.h" />
+    <ClInclude Include="demo_sprites.h" />
   </ItemGroup>
 </Project>

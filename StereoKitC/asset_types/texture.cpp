@@ -58,6 +58,7 @@ tex2d_t tex2d_create_file(const char *file) {
 	uint8_t *data     = stbi_load(file, &width, &height, &channels, 4);
 
 	if (data == nullptr) {
+		log_writef(log_warning, "Couldn't load image file: %s", file);
 		return nullptr;
 	}
 	result = tex2d_create(file, tex_type_image);
@@ -198,6 +199,8 @@ tex2d_t tex2d_create_mem(const char *id, void *data, size_t data_size) {
 ///////////////////////////////////////////
 
 void tex2d_release(tex2d_t texture) {
+	if (texture == nullptr)
+		return;
 	assets_releaseref(texture->header);
 }
 

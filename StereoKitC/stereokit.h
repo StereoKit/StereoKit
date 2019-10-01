@@ -20,7 +20,7 @@ inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return 
 inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~static_cast<int>(a)); }
 
 #include <stdint.h>
-#include <DirectXMath.h>
+#include <math.h>
 
 typedef int32_t bool32_t;
 
@@ -42,12 +42,12 @@ SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtim
 SK_API void     sk_shutdown  ();
 SK_API bool32_t sk_step      (void (*app_update)(void));
 
-SK_API float  sk_timef();
-SK_API double sk_time();
-SK_API float  sk_time_elapsedf();
-SK_API double sk_time_elapsed();
+SK_API float       sk_timef();
+SK_API double      sk_time();
+SK_API float       sk_time_elapsedf();
+SK_API double      sk_time_elapsed();
 SK_API sk_runtime_ sk_active_runtime();
-SK_API void sk_set_settings(sk_settings_t &settings);
+SK_API void        sk_set_settings(sk_settings_t &settings);
 
 ///////////////////////////////////////////
 
@@ -84,27 +84,24 @@ struct pose_t {
 	quat orientation;
 };
 
-vec3 operator*(const quat &a, const vec3 &b);
-quat operator*(const quat &a, const quat &b);
-
-static inline vec2 operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
-static inline vec2 operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
-static inline vec2 operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
-static inline vec2 operator-(const vec2 &a, const vec2 &b) { return { a.x - b.x, a.y - b.y }; }
-static inline vec2 operator*(const vec2 &a, const vec2 &b) { return { a.x * b.x, a.y * b.y }; }
-static inline vec2 operator/(const vec2 &a, const vec2 &b) { return { a.x / b.x, a.y / b.y }; }
+static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
+static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
+static inline vec2  operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
+static inline vec2  operator-(const vec2 &a, const vec2 &b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2  operator*(const vec2 &a, const vec2 &b) { return { a.x * b.x, a.y * b.y }; }
+static inline vec2  operator/(const vec2 &a, const vec2 &b) { return { a.x / b.x, a.y / b.y }; }
 static inline vec2& operator+=(vec2& a, const vec2& b)     { a.x += b.x; a.y += b.y; return a; }
 static inline vec2& operator-=(vec2& a, const vec2& b)     { a.x -= b.x; a.y -= b.y; return a; }
 static inline vec2& operator*=(vec2& a, const float b)     { a.x *= b; a.y *= b; return a; }
 static inline vec2& operator/=(vec2& a, const float b)     { a.x /= b; a.y /= b; return a; }
 
-static inline vec3 operator*(const vec3 &a, const float b) { return { a.x * b, a.y * b, a.z * b }; }
-static inline vec3 operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
-static inline vec3 operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
-static inline vec3 operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
-static inline vec3 operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
-static inline vec3 operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
-static inline vec3 operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
+static inline vec3  operator*(const vec3 &a, const float b) { return { a.x * b, a.y * b, a.z * b }; }
+static inline vec3  operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
+static inline vec3  operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
+static inline vec3  operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3  operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
+static inline vec3  operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
+static inline vec3  operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
 static inline vec3& operator+=(vec3& a, const vec3& b)     { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
 static inline vec3& operator-=(vec3& a, const vec3& b)     { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
 static inline vec3& operator*=(vec3& a, const float b)     { a.x *= b; a.y *= b; a.z *= b; return a; }
@@ -118,10 +115,29 @@ static inline float vec3_dot         (const vec3 &a, const vec3 &b) { return a.x
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
-quat quat_lookat(const vec3 &from, const vec3 &at);
-quat quat_lerp(const quat &a, const quat &b, float t);
+SK_API quat quat_difference(const quat &a, const quat &b);
+SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
+SK_API quat quat_euler     (const vec3 &euler_degrees);
+SK_API quat quat_lerp      (const quat &a, const quat &b, float t);
+SK_API quat quat_normalize (const quat &a);
+SK_API quat quat_mul       (const quat &a, const quat &b);
+SK_API vec3 quat_mul_vec   (const quat &a, const vec3 &b);
+
+SK_API matrix pose_matrix    (const pose_t &pose);
+SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result);
+
+SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
+SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
+SK_API vec3   matrix_mul_point    (const matrix &transform, const vec3 &point);
+SK_API vec3   matrix_mul_direction(const matrix &transform, const vec3 &direction);
+SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
+SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
+
+static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
+static inline quat   operator*(const quat   &a, const quat   &b) { return quat_mul(a, b); }
+static inline matrix operator*(const matrix &a, const matrix &b) { matrix result; matrix_mul(a, b, result); return result; }
 
 static const float deg2rad = 0.01745329252f;
 static const float rad2deg = 57.295779513f;
@@ -136,6 +152,7 @@ static const vec3 vec3_up       = vec3{ 0,1, 0 };
 static const vec3 vec3_forward  = vec3{ 0,0,-1 };
 static const vec3 vec3_right    = vec3{ 1,0, 0 };
 static const quat quat_identity = quat{ 0,0, 0,1 };
+static const matrix matrix_identity = matrix{ vec4{1,0,0,0}, vec4{0,1,0,0}, vec4{0,0,1,0}, vec4{0,0,0,1} };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -158,11 +175,12 @@ typedef uint16_t vind_t;
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_find     (const char *id);
-SK_API mesh_t mesh_create   (const char *id);
-SK_API void   mesh_release  (mesh_t mesh);
-SK_API void   mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count);
-SK_API void   mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count);
+SK_API mesh_t mesh_find         (const char *id);
+SK_API mesh_t mesh_create       (const char *id);
+SK_API void   mesh_release      (mesh_t mesh);
+SK_API void   mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_count);
+SK_API void   mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
+SK_API void   mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 
 SK_API mesh_t mesh_gen_cube        (const char *id, vec3 dimensions, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_sphere      (const char *id, float diameter,  int32_t subdivisions = 4);
@@ -230,10 +248,12 @@ SK_API tex2d_t font_get_tex(font_t font);
 
 SK_DeclarePrivateType(shader_t);
 
-SK_API shader_t shader_find       (const char *id);
-SK_API shader_t shader_create     (const char *id, const char *hlsl);
-SK_API shader_t shader_create_file(const char *filename);
-SK_API void     shader_release    (shader_t shader);
+SK_API shader_t shader_find        (const char *id);
+SK_API shader_t shader_create      (const char *id, const char *hlsl);
+SK_API shader_t shader_create_file (const char *filename);
+SK_API bool32_t shader_set_code    (shader_t shader, const char *hlsl);
+SK_API bool32_t shader_set_codefile(shader_t shader, const char *filename);
+SK_API void     shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
 
@@ -247,22 +267,37 @@ enum material_cull_ {
 	material_cull_cw,
 	material_cull_none,
 };
+enum material_param_ {
+	material_param_float = 0,
+	material_param_color128,
+	material_param_vector,
+	material_param_matrix,
+	material_param_texture,
+};
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_find   (const char *id);
-SK_API material_t material_create (const char *id, shader_t shader);
-SK_API material_t material_copy   (const char *id, material_t material);
-SK_API void       material_release(material_t material);
-SK_API void       material_set_alpha_mode(material_t material, material_alpha_ mode);
-SK_API void       material_set_cull   (material_t material, material_cull_ mode);
+SK_API material_t material_find            (const char *id);
+SK_API material_t material_create          (const char *id, shader_t shader);
+SK_API material_t material_copy            (const char *id, material_t material);
+SK_API void       material_release         (material_t material);
+SK_API void       material_set_alpha_mode  (material_t material, material_alpha_ mode);
+SK_API void       material_set_cull        (material_t material, material_cull_ mode);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
-SK_API void       material_set_float  (material_t material, const char *name, float    value);
-SK_API void       material_set_color32(material_t material, const char *name, color32  value);
-SK_API void       material_set_color  (material_t material, const char *name, color128 value);
-SK_API void       material_set_vector (material_t material, const char *name, vec4     value);
-SK_API void       material_set_matrix (material_t material, const char *name, matrix   value);
-SK_API void       material_set_texture(material_t material, const char *name, tex2d_t  value);
+SK_API void       material_set_float       (material_t material, const char *name, float    value);
+SK_API void       material_set_color       (material_t material, const char *name, color128 value);
+SK_API void       material_set_vector      (material_t material, const char *name, vec4     value);
+SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
+SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex2d_t  value);
+SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex2d_t  value);
+SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
+SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
+SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
+SK_API bool32_t   material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
+SK_API void       material_get_param_info  (material_t material, int index, char **out_name, material_param_ *out_type);
+SK_API int        material_get_param_count (material_t material);
+SK_API void       material_set_shader      (material_t material, shader_t shader);
+SK_API shader_t   material_get_shader      (material_t material);
 
 ///////////////////////////////////////////
 
@@ -272,7 +307,7 @@ struct transform_t {
 	quat _rotation;
 
 	bool32_t _dirty;
-	DirectX::XMMATRIX _transform;
+	matrix   _transform;
 };
 
 SK_API void transform_initialize  (transform_t &transform);
@@ -286,11 +321,13 @@ SK_API quat transform_get_rotation(transform_t &transform);
 SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 
-SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
-SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
-SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
-SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
-SK_API vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
+SK_API void   transform_update    (transform_t &transform);
+SK_API void   transform_matrix_out(transform_t &transform, matrix &result);
+SK_API matrix transform_matrix    (transform_t &transform);
+SK_API vec3   transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
+SK_API vec3   transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
+SK_API vec3   transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
+SK_API vec3   transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
 
 ///////////////////////////////////////////
 
@@ -306,9 +343,9 @@ SK_MakeFlag(text_align_);
 
 typedef int32_t text_style_t;
 
-SK_API text_style_t text_make_style(font_t font, material_t material, text_align_ align);
-SK_API void         text_add_at(text_style_t style, transform_t &transform, const char *text, float off_x = 0, float off_y = 0);
-SK_API vec2         text_size(text_style_t style, const char *text);
+SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align);
+SK_API void         text_add_at    (text_style_t style, const matrix &transform, const char *text, text_align_ position = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API vec2         text_size      (text_style_t style, const char *text);
 
 ///////////////////////////////////////////
 
@@ -346,6 +383,21 @@ SK_API void       model_release     (model_t model);
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(sprite_t);
+
+enum sprite_type_ {
+	sprite_type_atlased = 0,
+	sprite_type_single
+};
+
+SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API void     sprite_release    (sprite_t sprite);
+SK_API float    sprite_get_aspect (sprite_t sprite);
+SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, color32 color = {255,255,255,255});
+
+///////////////////////////////////////////
+
 struct camera_t {
 	float fov;
 	float clip_near;
@@ -353,19 +405,21 @@ struct camera_t {
 };
 
 SK_API void camera_initialize(camera_t &cam, float fov, float clip_near, float clip_far);
-SK_API void camera_view      (transform_t &cam_transform, DirectX::XMMATRIX &result);
-SK_API void camera_proj      (camera_t    &cam, DirectX::XMMATRIX &result);
+SK_API void camera_view      (transform_t &cam_transform, matrix &result);
+SK_API void camera_proj      (camera_t    &cam,           matrix &result);
 
 ///////////////////////////////////////////
 
-SK_API void render_set_camera (camera_t &cam);
-SK_API void render_set_view   (transform_t &cam_transform);
-SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
-SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
-SK_API void render_add_model  (model_t model, transform_t &transform);
-SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
-SK_API void render_get_device (void **device, void **context);
+SK_API void render_set_camera  (camera_t &cam);
+SK_API void render_set_view    (transform_t &cam_transform);
+SK_API void render_set_light   (const vec3 &direction, float intensity, const color128 &color);
+SK_API void render_set_skytex  (tex2d_t sky_texture, bool32_t show_sky);
+SK_API void render_add_mesh    (mesh_t mesh, material_t material, const matrix &transform);
+SK_API void render_add_mesh_tr (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_model   (model_t model, const matrix &transform);
+SK_API void render_add_model_tr(model_t model, transform_t &transform);
+SK_API void render_blit        (tex2d_t to_rendertarget, material_t material);
+SK_API void render_get_device  (void **device, void **context);
 
 ///////////////////////////////////////////
 

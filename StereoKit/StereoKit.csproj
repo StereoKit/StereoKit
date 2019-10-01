@@ -8,4 +8,8 @@
     <OutputPath>..\bin\</OutputPath>
   </PropertyGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(SolutionDir)StereoKitC\LeapC\bin\x64\*.dll&quot; &quot;$(SolutionDir)bin&quot; /d /k /y" />
+  </Target>
+
 </Project>

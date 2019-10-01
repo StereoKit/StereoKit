@@ -12,6 +12,7 @@ struct _mesh_t {
 	ID3D11Buffer  *vert_buffer;
 	int            ind_count;
 	ID3D11Buffer  *ind_buffer;
+	int            ind_draw;
 };
 
 void mesh_destroy(mesh_t mesh);

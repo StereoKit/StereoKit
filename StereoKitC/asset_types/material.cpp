@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+///////////////////////////////////////////
+
 material_t material_find(const char *id) {
 	material_t result = (material_t)assets_find(id);
 	if (result != nullptr) {
@@ -12,6 +14,34 @@ material_t material_find(const char *id) {
 		return result;
 	}
 	return result;
+}
+
+///////////////////////////////////////////
+
+inline size_t material_param_size(material_param_ type) {
+	switch (type) {
+	case material_param_float:    return sizeof(float);
+	case material_param_color128: return sizeof(color128);
+	case material_param_vector:   return sizeof(vec4);
+	case material_param_matrix:   return sizeof(matrix);
+	case material_param_texture:  return sizeof(tex2d_t);
+	default: log_write(log_error, "Bad material param type"); return 0;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_create_arg_defaults(material_t material, shader_t shader) {
+	material->args.buffer   = malloc(shader->args.buffer_size);
+	material->args.textures = (tex2d_t*)malloc(sizeof(tex2d_t)*shader->tex_slots.tex_count);
+	memset(material->args.buffer,   0, shader->args.buffer_size);
+	memset(material->args.textures, 0, sizeof(tex2d_t) * shader->tex_slots.tex_count);
+
+	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		shaderargs_desc_item_t &item = shader->args_desc.item[i];
+		if (item.default_value != nullptr)
+			memcpy((uint8_t*)material->args.buffer + item.offset, item.default_value, item.size);
+	}
 }
 
 ///////////////////////////////////////////
@@ -26,16 +56,9 @@ material_t material_create(const char *id, shader_t shader) {
 	result->cull          = material_cull_ccw;
 	result->mode          = material_alpha_none;
 	result->shader        = shader;
-	result->args.buffer   = malloc(shader->args.buffer_size);
-	result->args.textures = (tex2d_t*)malloc(sizeof(tex2d_t)*shader->tex_slots.tex_count);
-	memset(result->args.buffer,   0, shader->args.buffer_size);
-	memset(result->args.textures, 0, sizeof(tex2d_t) * shader->tex_slots.tex_count);
+	
+	material_create_arg_defaults(result, shader);
 
-	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
-		shaderargs_desc_item_t &item = shader->args_desc.item[i];
-		if (item.default_value != nullptr)
-			memcpy((uint8_t*)result->args.buffer + item.offset, item.default_value, item.size);
-	}
 	return result;
 }
 
@@ -72,6 +95,8 @@ material_t material_copy(const char *id, material_t material) {
 ///////////////////////////////////////////
 
 void material_release(material_t material) {
+	if (material == nullptr)
+		return;
 	assets_releaseref(material->header);
 }
 
@@ -91,15 +116,70 @@ void material_destroy(material_t material) {
 
 ///////////////////////////////////////////
 
-inline shaderargs_desc_item_t *find_desc(material_t material, const char *name) {
-	uint64_t id = string_hash(name);
-	for (size_t i = 0; i < material->shader->args_desc.item_count; i++) {
-		if (material->shader->args_desc.item[i].id == id) {
-			return &material->shader->args_desc.item[i];
+shaderargs_desc_item_t *find_desc(shader_t shader, uint64_t id) {
+	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		if (shader->args_desc.item[i].id == id) {
+			return &shader->args_desc.item[i];
 		}
 	}
-	log_writef(log_warning, "Can't find material parameter %s!", name);
 	return nullptr;
+}
+
+///////////////////////////////////////////
+
+shaderargs_desc_item_t *find_desc(shader_t shader, const char *name) {
+	uint64_t                id     = string_hash(name);
+	shaderargs_desc_item_t *result = find_desc(shader, id);
+	if (result == nullptr)
+		log_writef(log_warning, "Can't find shader parameter %s!", name);
+	return result;
+}
+
+///////////////////////////////////////////
+
+void material_set_shader(material_t material, shader_t shader) {
+	if (shader == material->shader)
+		return;
+
+	// Copy over any relevant values that are attached to the old shader
+	if (material->shader != nullptr && shader != nullptr) {
+		shader_t old_shader   = material->shader;
+		void    *old_buffer   = material->args.buffer;
+		tex2d_t *old_textures = material->args.textures;
+		material_create_arg_defaults(material, shader);
+
+		// Copy old param values
+		for (size_t i = 0; i < old_shader->args_desc.item_count; i++) {
+			shaderargs_desc_item_t &item     = old_shader->args_desc.item[i];
+			shaderargs_desc_item_t *new_slot = find_desc(shader, item.id);
+			if (new_slot != nullptr)
+				memcpy( (uint8_t *)material->args.buffer + new_slot->offset, 
+						(uint8_t *)old_buffer            + item.offset, new_slot->size);
+		}
+
+		// Do the same for textures
+		for (size_t i = 0; i < old_shader->tex_slots.tex_count; i++) {
+			material_set_texture_id(material, old_shader->tex_slots.tex[i].id, old_textures[i]);
+			tex2d_release(old_textures[i]);
+		}
+
+		free(old_buffer);
+		free(old_textures);
+	}
+
+	// Update references
+	if (shader != nullptr)
+		assets_addref(shader->header);
+	if (material->shader != nullptr)
+		shader_release(material->shader);
+
+	material->shader = shader;
+}
+
+///////////////////////////////////////////
+
+shader_t material_get_shader(material_t material) {
+	return material->shader;
 }
 
 ///////////////////////////////////////////
@@ -146,7 +226,7 @@ void material_set_queue_offset(material_t material, int32_t offset) {
 ///////////////////////////////////////////
 
 void material_set_float(material_t material, const char *name, float value) {
-	shaderargs_desc_item_t *desc = find_desc(material, name);
+	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
 	if (desc != nullptr)
 		*(float *)((uint8_t*)material->args.buffer + desc->offset) = value;
 }
@@ -154,7 +234,7 @@ void material_set_float(material_t material, const char *name, float value) {
 ///////////////////////////////////////////
 
 void material_set_color32(material_t material, const char *name, color32 value) {
-	shaderargs_desc_item_t *desc = find_desc(material, name);
+	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
 	if (desc != nullptr)
 		*(color128 *)((uint8_t *)material->args.buffer + desc->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
 }
@@ -162,7 +242,7 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 ///////////////////////////////////////////
 
 void material_set_color(material_t material, const char *name, color128 value) {
-	shaderargs_desc_item_t *desc = find_desc(material, name);
+	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
 	if (desc != nullptr)
 		*(color128 *)((uint8_t*)material->args.buffer + desc->offset) = value;
 }
@@ -170,7 +250,7 @@ void material_set_color(material_t material, const char *name, color128 value) {
 ///////////////////////////////////////////
 
 void material_set_vector(material_t material, const char *name, vec4 value) {
-	shaderargs_desc_item_t *desc = find_desc(material, name);
+	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
 	if (desc != nullptr)
 		*(vec4 *)((uint8_t*)material->args.buffer + desc->offset) = value;
 }
@@ -178,15 +258,14 @@ void material_set_vector(material_t material, const char *name, vec4 value) {
 ///////////////////////////////////////////
 
 void material_set_matrix(material_t material, const char *name, matrix value) {
-	shaderargs_desc_item_t *desc = find_desc(material, name);
+	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
 	if (desc != nullptr)
 		*(matrix *)((uint8_t*)material->args.buffer + desc->offset) = value;
 }
 
 ///////////////////////////////////////////
 
-void material_set_texture(material_t material, const char *name, tex2d_t value) {
-	uint64_t id = string_hash(name);
+bool32_t material_set_texture_id(material_t material, uint64_t id, tex2d_t value) {
 	for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
 		if (material->shader->tex_slots.tex[i].id == id) {
 			int slot = material->shader->tex_slots.tex[i].slot;
@@ -197,8 +276,76 @@ void material_set_texture(material_t material, const char *name, tex2d_t value) 
 				if (value != nullptr)
 					assets_addref(value->header);
 			}
-			return;
+			return true;
 		}
 	}
-	log_writef(log_warning, "Can't find material texture %s!", name);
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_set_texture(material_t material, const char *name, tex2d_t value) {
+	uint64_t id = string_hash(name);
+	return material_set_texture_id(material, id, value);
+}
+
+///////////////////////////////////////////
+
+void material_set_param(material_t material, const char *name, material_param_ type, const void *value) {
+	material_set_param_id(material, string_hash(name), type, value);
+}
+
+///////////////////////////////////////////
+
+void material_set_param_id(material_t material, uint64_t id, material_param_ type, const void *value) {
+	if (type == material_param_texture) {
+		material_set_texture_id(material, id, (tex2d_t)value);
+	} else {
+		shaderargs_desc_item_t *desc = find_desc(material->shader, id);
+		if (desc != nullptr) {
+			size_t size = material_param_size(type);
+			memcpy(((uint8_t *)material->args.buffer + desc->offset), value, size);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_param(material_t material, const char *name, material_param_ type, void *out_value) {
+	return material_get_param_id(material, string_hash(name), type, out_value);
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
+	if (type == material_param_texture) {
+		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
+			if (material->shader->tex_slots.tex[i].id == id) {
+				memcpy(out_value, material->args.textures[material->shader->tex_slots.tex[i].slot], sizeof(tex2d_t));
+				return true;
+			}
+		}
+	} else {
+		shaderargs_desc_item_t *desc = find_desc(material->shader, id);
+		if (desc != nullptr) {
+			size_t size = material_param_size(type);
+			memcpy(out_value, ((uint8_t *)material->args.buffer + desc->offset), size);
+			return true;
+		}
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
+void material_get_param_info(material_t material, int index, char **out_name, material_param_ *out_type) {
+	shaderargs_desc_item_t &item = material->shader->args_desc.item[index];
+	*out_type = item.type;
+	*out_name = item.name;
+}
+
+///////////////////////////////////////////
+
+int material_get_param_count(material_t material) {
+	return material->shader->args_desc.item_count;
 }

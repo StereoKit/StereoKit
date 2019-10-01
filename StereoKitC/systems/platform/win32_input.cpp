@@ -7,28 +7,42 @@
 #include "win32.h"
 #include "../input.h"
 #include "../input_hand.h"
+#include "../input_leap.h"
 #include "../render.h"
 #include "../d3d.h"
 
+#include <directxmath.h> // Matrix math functions and objects
+using namespace DirectX;
+
 ///////////////////////////////////////////
 
-int win32_input_pointers[2];
+int  win32_input_pointers[2];
+bool win32_use_leap = true;
 
 ///////////////////////////////////////////
 
 void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
+
+	win32_use_leap = input_leap_init();
 }
 
 ///////////////////////////////////////////
 
 void win32_input_shutdown() {
+	if (win32_use_leap)
+		input_leap_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void win32_input_update() {
+	if (win32_use_leap && leap_has_device) {
+		input_leap_update();
+		return;
+	}
+
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
 	pointer_t *pointer_head   = input_get_pointer(win32_input_pointers[1]);
 
@@ -67,15 +81,15 @@ void win32_input_update() {
 				r_pressed    = GetKeyState(VK_RBUTTON) < 0;
 
 				// convert screen pos to world ray
-				DirectX::XMMATRIX mat, view, proj;
+				matrix mat, view, proj, inv;
 				camera_view(*cam_tr, view);
 				camera_proj(*cam,    proj);
-				mat = view * proj;
-				DirectX::XMMATRIX inv        = DirectX::XMMatrixInverse(nullptr, mat);
-				DirectX::XMVECTOR cursor_vec = DirectX::XMVectorSet(x, y, 1.0f, 0.0f);
-				cursor_vec                   = DirectX::XMVector3Transform(cursor_vec, inv);
-				DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *) &pointer_dir, cursor_vec);
-				pointer_dir = vec3_normalize(pointer_dir);
+				matrix_mul( view, proj, mat );
+				matrix_inverse(mat, inv);
+
+				vec3 pointer_dir = vec3{ x, y, 1.0f };
+				pointer_dir      = matrix_mul_point(inv, pointer_dir);
+				pointer_dir      = vec3_normalize(pointer_dir);
 
 				// make a hand pose from the cursor ray
 				hand_pos = cam_tr->_position + pointer_dir * (0.6f + win32_scroll * 0.001f);

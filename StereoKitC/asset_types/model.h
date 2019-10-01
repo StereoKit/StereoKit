@@ -6,7 +6,7 @@
 struct model_subset_t {
 	mesh_t      mesh;
 	material_t  material;
-	transform_t offset;
+	matrix      offset;
 };
 
 struct _model_t {

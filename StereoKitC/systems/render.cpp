@@ -1,5 +1,6 @@
 #include "render.h"
 #include "d3d.h"
+#include "../math.h"
 #include "../stereokit.h"
 #include "../asset_types/mesh.h"
 #include "../asset_types/texture.h"
@@ -118,34 +119,45 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
+void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform) {
+	transform_update(transform);
+	render_add_mesh(mesh, material, transform._transform);
+}
+
+///////////////////////////////////////////
+
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) {
 	render_item_t item;
 	item.mesh     = mesh;
 	item.material = material;
 	item.sort_id  = render_queue_id(material, mesh);
-	transform_matrix(transform, item.transform);
+	math_matrix_to_fast(transform, &item.transform);
 	render_queue.emplace_back(item);
 }
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, transform_t &transform) {
-	XMMATRIX world;
-	transform_matrix(transform, world);
+void render_add_model_tr(model_t model, transform_t &transform) {
+	transform_update(transform);
+	render_add_model(model, transform._transform);
+}
+
+///////////////////////////////////////////
+
+void render_add_model(model_t model, const matrix &transform) {
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
 		item.sort_id  = render_queue_id(item.material, item.mesh);
-		transform_matrix(model->subsets[i].offset, item.transform);
-		item.transform = item.transform * world;
+		matrix_mul(model->subsets[i].offset, transform, item.transform);
 		render_queue.emplace_back(item);
 	}
 }
 
 ///////////////////////////////////////////
 
-void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
+void render_draw_queue(const matrix &view, const matrix &projection) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
 
@@ -154,17 +166,21 @@ void render_draw_queue(XMMATRIX view, XMMATRIX projection) {
 		return a.sort_id < b.sort_id;
 	});
 
+	XMMATRIX view_f, projection_f;
+	math_matrix_to_fast(view,       &view_f);
+	math_matrix_to_fast(projection, &projection_f);
+
 	// Copy camera information into the global buffer
-	XMMATRIX view_inv = XMMatrixInverse(nullptr, view);
+	XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
 
 	XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
 	XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
 	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos, cam_pos);
 	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir, cam_dir);
 
-	render_global_buffer.view = XMMatrixTranspose(view);
-	render_global_buffer.proj = XMMatrixTranspose(projection);
-	render_global_buffer.viewproj = XMMatrixTranspose(view * projection);
+	render_global_buffer.view = XMMatrixTranspose(view_f);
+	render_global_buffer.proj = XMMatrixTranspose(projection_f);
+	render_global_buffer.viewproj = XMMatrixTranspose(view_f * projection_f);
 
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
 	shaderargs_set_active(render_shader_globals);
@@ -214,7 +230,7 @@ void render_draw() {
 ///////////////////////////////////////////
 
 void render_draw_from(camera_t &cam, transform_t &cam_transform) {
-	XMMATRIX view, proj;
+	matrix view, proj;
 	camera_view(cam_transform, view);
 	camera_proj(cam, proj);
 	render_draw_queue(view, proj);
@@ -222,10 +238,9 @@ void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const float *cam_matrix, transform_t &cam_transform) {
-	XMMATRIX view, proj;
+void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
+	matrix view, proj;
 	camera_view(cam_transform, view);
-	proj = XMLoadFloat4x4((XMFLOAT4X4 *)cam_matrix);
 
 	render_draw_queue(view, proj);
 }
@@ -253,7 +268,7 @@ bool render_initialize() {
 	}
 
 	// Setup a default camera
-	camera_initialize(render_default_camera, 90, 0.1f, 50);
+	camera_initialize(render_default_camera, 90, 0.01f, 50);
 	transform_set    (render_default_camera_tr, vec3_one, vec3_one, quat_identity);
 	transform_lookat (render_default_camera_tr, vec3_zero);
 	render_set_camera(render_default_camera);
@@ -265,16 +280,8 @@ bool render_initialize() {
 	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_create("render/blitquad");
-	vert_t verts[4] = {
-		vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
-		vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
-		vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
-		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
-	};
-	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_verts(render_blit_quad, verts, 4);
-	mesh_set_inds(render_blit_quad,  inds,  6);
+	render_blit_quad = mesh_find("default/quad");
+	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
 	shader_t sky_shader = shader_create("render/skybox_shader", sk_shader_builtin_skybox);
@@ -293,9 +300,7 @@ bool render_initialize() {
 
 void render_update() {
 	if (render_sky_show) {
-		transform_t tr;
-		transform_initialize(tr);
-		render_add_mesh(render_sky_mesh, render_sky_mat, tr);
+		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
 	}
 }
 
@@ -304,10 +309,8 @@ void render_update() {
 void render_shutdown() {
 	material_release(render_sky_mat);
 	mesh_release    (render_sky_mesh);
-	if (render_sky_cubemap != nullptr)
-		tex2d_release(render_sky_cubemap);
-
-	tex2d_release(render_default_tex);
+	tex2d_release   (render_sky_cubemap);
+	tex2d_release   (render_default_tex);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		shaderargs_destroy(render_instance_buffers[i].buffer);
@@ -437,7 +440,7 @@ void render_set_mesh(mesh_t mesh) {
 void render_draw_item(int count) {
 	render_stats.draw_calls++;
 
-	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_count, count, 0, 0, 0);
+	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_draw, count, 0, 0, 0);
 }
 
 ///////////////////////////////////////////

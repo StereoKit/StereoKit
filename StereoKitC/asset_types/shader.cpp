@@ -6,6 +6,7 @@
 
 #include <d3dcompiler.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <vector>
 using namespace std;
@@ -41,6 +42,7 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 ///////////////////////////////////////////
 
 void shader_parse_file(shader_t shader, const char *hlsl) {
+
 	stref_t file = stref_make(hlsl);
 	stref_t line = {};
 
@@ -62,10 +64,10 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 				continue;
 
 			shaderargs_desc_item_t item = {};
-			if      (stref_equals(word, "float" )) item.type = shaderarg_type_float;
-			else if (stref_equals(word, "color" )) item.type = shaderarg_type_vector;
-			else if (stref_equals(word, "vector")) item.type = shaderarg_type_vector;
-			else if (stref_equals(word, "matrix")) item.type = shaderarg_type_matrix;
+			if      (stref_equals(word, "float" )) item.type = material_param_float;
+			else if (stref_equals(word, "color" )) item.type = material_param_vector;
+			else if (stref_equals(word, "vector")) item.type = material_param_vector;
+			else if (stref_equals(word, "matrix")) item.type = material_param_matrix;
 			else {
 				char name[64];
 				stref_copy_to(word, name, 64);
@@ -86,18 +88,19 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 
 			item.id = 0;
 			if (stref_nextword(curr, word)) {
-				item.id = stref_hash(word);
+				item.name = stref_copy(word);
+				item.id   = stref_hash(word);
 			}
 
 			while (stref_nextword(curr, word, ' ', '{','}')) {
 				if (stref_equals(word, "default")) {
 					if (stref_nextword(curr, word, ' ','{', '}')) {
 						stref_t value = stref_stripcapture(word, '{', '}');
-						if (item.type == shaderarg_type_float) {
+						if (item.type == material_param_float) {
 							item.default_value = malloc(sizeof(float));
 							*(float *)item.default_value = stref_to_f(value);
 
-						} else if (item.type == shaderarg_type_vector) {
+						} else if (item.type == material_param_vector) {
 							vec4    result    = {};
 							stref_t component = {};
 							if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
@@ -180,11 +183,67 @@ shader_t shader_create_file(const char *filename) {
 	shader_t result = shader_find(filename);
 	if (result != nullptr)
 		return result;
+	result = (shader_t)assets_allocate(asset_type_shader, filename);
 
+	shader_set_codefile(result, filename);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+shader_t shader_create(const char *id, const char *hlsl) {
+	shader_t result = shader_find(id);
+	if (result != nullptr)
+		return result;
+	result = (shader_t)assets_allocate(asset_type_shader, id);
+
+	shader_set_code(result, hlsl);
+	
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t shader_set_code(shader_t shader, const char *hlsl) {
+	// Compile the shader code
+	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
+	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
+	if (vert_shader_blob == nullptr || pixel_shader_blob == nullptr)
+		return false;
+
+	// If the shader compiled fine, set up and send it to the GPU
+	if (shader->vshader != nullptr) shader->vshader->Release();
+	if (shader->pshader != nullptr) shader->pshader->Release();
+	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &shader->vshader);
+	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &shader->pshader);
+	DX11ResType(shader->vshader, "vertex_shader");
+	DX11ResType(shader->pshader, "pixel_shader");
+
+	// Check the parameters on this shader
+	shader_destroy_parsedata(shader);
+	shader_parse_file(shader, hlsl);
+	shaderargs_create(shader->args, shader->args_desc.buffer_size, 2);
+
+	// Describe how our mesh is laid out in memory
+	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
+	D3D11_INPUT_ELEMENT_DESC vert_desc[] = {
+		{"SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
+	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob->GetBufferPointer(), vert_shader_blob->GetBufferSize(), &shader->vert_layout);
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t shader_set_codefile(shader_t shader, const char *filename) {
 	// Open file
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr)
-		return nullptr;
+		return false;
 
 	// Get length of file
 	fseek(fp, 0L, SEEK_END);
@@ -199,64 +258,47 @@ shader_t shader_create_file(const char *filename) {
 	fclose(fp);
 
 	// Compile the shader
-	result = shader_create(filename, (const char *)data);
+	shader_set_code(shader, (const char *)data);
 	free(data);
 
-	return result;
-}
-
-///////////////////////////////////////////
-
-shader_t shader_create(const char *id, const char *hlsl) {
-	shader_t result = shader_find(id);
-	if (result != nullptr)
-		return result;
-	result = (shader_t)assets_allocate(asset_type_shader, id);
-
-	shader_parse_file(result, hlsl);
-	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
-	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
-	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &result->vshader);
-	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &result->pshader);
-	DX11ResName(result->vshader, "vertex_shader", id);
-	DX11ResName(result->pshader, "pixel_shader",  id);
-
-	shaderargs_create(result->args, result->args_desc.buffer_size, 2);
-
-	// Describe how our mesh is laid out in memory
-	D3D11_INPUT_ELEMENT_DESC vert_desc[] = {
-		{"SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
-	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob->GetBufferPointer(), vert_shader_blob->GetBufferSize(), &result->vert_layout);
-
-	return result;
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void shader_release(shader_t shader) {
+	if (shader == nullptr)
+		return;
 	assets_releaseref(shader->header);
 }
 
 ///////////////////////////////////////////
 
-void shader_destroy(shader_t shader) {
-	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
-		tex2d_release(shader->tex_slots.tex[i].default_tex);
-	}
+void shader_destroy_parsedata(shader_t shader) {
 	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+		free(shader->args_desc.item[i].name);
 		free(shader->args_desc.item[i].tags);
 		free(shader->args_desc.item[i].default_value);
 	}
 
 	shaderargs_destroy(shader->args);
+	free(shader->args_desc.item);
+}
+
+///////////////////////////////////////////
+
+void shader_destroy(shader_t shader) {
+	shader_destroy_parsedata(shader);
+
+	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
+		tex2d_release(shader->tex_slots.tex[i].default_tex);
+	}
+	free(shader->tex_slots.tex );
+	
 	if (shader->pshader     != nullptr) shader->pshader    ->Release();
 	if (shader->vshader     != nullptr) shader->vshader    ->Release();
 	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
-	free(shader->args_desc.item);
-	free(shader->tex_slots.tex );
+	
 	*shader = {};
 }
 

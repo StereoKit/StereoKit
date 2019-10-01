@@ -332,4 +332,5 @@ ASALocalRun/
 
 !**/OpenXR/**
 !**/ReactPhysics/**
+!**/LeapC/**
 !**/Assets/**

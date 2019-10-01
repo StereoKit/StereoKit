@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -7,7 +8,7 @@ namespace StereoKit
 {
     internal static class NativeLib
     {
-        [DllImport("kernel32")]
+        [DllImport("kernel32", SetLastError = true)]
         static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
         [DllImport("kernel32")]
         static extern bool FreeLibrary(IntPtr hModule);
@@ -42,7 +43,8 @@ namespace StereoKit
             library = LoadLibraryEx(path, IntPtr.Zero, 0);
 
             if (library == IntPtr.Zero) { 
-                throw new Exception("Missing StereoKit DLL, should be at " + path);
+                int err = Marshal.GetLastWin32Error();
+                throw new Exception("Error loading StereoKit DLL at " + path, new Win32Exception(err));
             } else {
                 Console.WriteLine("Using {0} build.", folder);
             }

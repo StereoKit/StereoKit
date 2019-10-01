@@ -45,9 +45,9 @@ model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
 		return result;
 	result = model_create(id);
 
-	result->subset_count = 1;
-	result->subsets = (model_subset_t*)malloc(sizeof(model_subset_t));
-	transform_initialize(result->subsets[0].offset);
+	result->subset_count        = 1;
+	result->subsets             = (model_subset_t*)malloc(sizeof(model_subset_t));
+	result->subsets[0].offset   = matrix_identity;
 	result->subsets[0].material = material;
 	assets_addref(result->subsets[0].material->header);
 
@@ -89,6 +89,8 @@ int32_t    model_subset_count(model_t model) {
 ///////////////////////////////////////////
 
 void model_release(model_t model) {
+	if (model == nullptr)
+		return;
 	assets_releaseref(model->header);
 }
 
@@ -184,7 +186,7 @@ bool modelfmt_obj(model_t model, const char *filename) {
 
 	model->subset_count = 1;
 	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t));
-	transform_initialize(model->subsets[0].offset);
+	model->subsets[0].offset   = matrix_identity;
 	model->subsets[0].material = (material_t)assets_find("default/material");
 	assets_addref(model->subsets[0].material->header);
 
@@ -408,7 +410,7 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		vec3 pos   = { n->translation[0], n->translation[1], n->translation[2] };
 		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
 		quat rot   = { n->rotation   [0], n->rotation   [1], n->rotation   [2], n->rotation[3] };
-		transform_set(model->subsets[curr_subset].offset, pos, scale, rot);
+		model->subsets[curr_subset].offset = matrix_trs(pos, rot, scale);
 
 		curr_subset += 1;
 	}

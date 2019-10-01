@@ -359,10 +359,12 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		d3d_context->RSSetViewports(1, &viewport);
 
 		float xr_projection[16];
+		matrix xr_proj_m;
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
+		memcpy(&xr_proj_m, xr_projection, sizeof(float) * 16);
 		transform_t cam_transform;
 		transform_set(cam_transform, (vec3&)views[i].pose.position, vec3_one, (quat&)views[i].pose.orientation);
-		render_draw_matrix(xr_projection, cam_transform);
+		render_draw_matrix(xr_proj_m, cam_transform);
 
 		// And tell OpenXR we're done with rendering to this one!
 		XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
