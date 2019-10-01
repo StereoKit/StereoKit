@@ -410,15 +410,16 @@ SK_API void camera_proj      (camera_t    &cam,           matrix &result);
 
 ///////////////////////////////////////////
 
-SK_API void render_set_camera (camera_t &cam);
-SK_API void render_set_view   (transform_t &cam_transform);
-SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
-SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform);
-SK_API void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform);
-SK_API void render_add_model  (model_t model, const matrix &transform);
-SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
-SK_API void render_get_device (void **device, void **context);
+SK_API void render_set_camera  (camera_t &cam);
+SK_API void render_set_view    (transform_t &cam_transform);
+SK_API void render_set_light   (const vec3 &direction, float intensity, const color128 &color);
+SK_API void render_set_skytex  (tex2d_t sky_texture, bool32_t show_sky);
+SK_API void render_add_mesh    (mesh_t mesh, material_t material, const matrix &transform);
+SK_API void render_add_mesh_tr (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_model   (model_t model, const matrix &transform);
+SK_API void render_add_model_tr(model_t model, transform_t &transform);
+SK_API void render_blit        (tex2d_t to_rendertarget, material_t material);
+SK_API void render_get_device  (void **device, void **context);
 
 ///////////////////////////////////////////
 

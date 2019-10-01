@@ -120,13 +120,8 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 ///////////////////////////////////////////
 
 void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform) {
-	render_item_t item;
-	item.mesh     = mesh;
-	item.material = material;
-	item.sort_id  = render_queue_id(material, mesh);
 	transform_update(transform);
-	math_matrix_to_fast(transform._transform, &item.transform);
-	render_queue.emplace_back(item);
+	render_add_mesh(mesh, material, transform._transform);
 }
 
 ///////////////////////////////////////////
@@ -138,6 +133,13 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) 
 	item.sort_id  = render_queue_id(material, mesh);
 	math_matrix_to_fast(transform, &item.transform);
 	render_queue.emplace_back(item);
+}
+
+///////////////////////////////////////////
+
+void render_add_model_tr(model_t model, transform_t &transform) {
+	transform_update(transform);
+	render_add_model(model, transform._transform);
 }
 
 ///////////////////////////////////////////
