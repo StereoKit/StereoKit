@@ -389,8 +389,10 @@ void render_set_material(material_t material) {
 		samplers [i] = tex->sampler;
 		resources[i] = tex->resource;
 	}
-	d3d_context->PSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
-	d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
+	if (material->shader->tex_slots.tex_count != 0) {
+		d3d_context->PSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
+		d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
+	}
 
 	if (material->mode == material_alpha_none) {
 		d3d_context->OMSetBlendState(0,0, 0xFFFFFFFF);

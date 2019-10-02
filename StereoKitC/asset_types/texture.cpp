@@ -314,7 +314,7 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
 		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
 	} else {
-		d3d_context->PSSetShaderResources(slot, 0, nullptr);
+		d3d_context->PSSetShaderResources(slot, 1, nullptr);
 	}
 }
 
