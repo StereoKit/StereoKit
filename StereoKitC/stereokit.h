@@ -27,19 +27,44 @@ typedef int32_t bool32_t;
 ///////////////////////////////////////////
 
 enum sk_runtime_ {
+	/// <summary>Creates a flat, Win32 window, and simulares some MR functionality. Great for debugging.</summary>
 	sk_runtime_flatscreen   = 0,
+	/// <summary>Creates an OpenXR instance, and drives display/input through that.</summary>
 	sk_runtime_mixedreality = 1
 };
 
+/// <summary>StereoKit miscellaneous initialization settings! Call sk_set_settings() with this data before calling sk_init.</summary>
 struct sk_settings_t {
+	/// <summary>If using sk_runtime_flatscreen, the position of the window on the screen.</summary>
 	int32_t flatscreen_pos_x;
+	/// <summary>If using sk_runtime_flatscreen, the position of the window on the screen.</summary>
 	int32_t flatscreen_pos_y;
+	/// <summary>If using sk_runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_width;
+	/// <summary>If using sk_runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_height;
 };
 
+/// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling this function, if defaults need changed!</summary>
+/// <param name='app_name'         >Name of the application, this shows up an the top of the Win32 window, and is submitted to OpenXR. OpenXR caps this at 128 characters.</param>
+/// <param name='preferred_runtime'>Which runtime should we try to load?</param>
+/// <param name='fallback'         >If the preferred runtime fails, should we fall back to flatscreen?</param>
+/// <returns>Returns true if all systems are successfully initialized!</returns>
+/// <example><code>
+/// if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+///     return false;
+/// </code></example>
 SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtime, bool32_t fallback = true);
+/// <summary>Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.</summary>
 SK_API void     sk_shutdown  ();
+/// <summary>Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.</summary>
+/// <param name='app_update'>A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.</param>
+/// <returns>If an exit message is received from the platform, this function will return false.</returns>
+/// <example><code>
+/// while (sk_step( []() {
+///		// ...application code here...
+/// }));
+/// </code></example>
 SK_API bool32_t sk_step      (void (*app_update)(void));
 
 SK_API float       sk_timef();
