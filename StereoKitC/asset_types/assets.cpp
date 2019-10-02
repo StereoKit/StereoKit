@@ -80,7 +80,7 @@ void *assets_allocate(asset_type_ type) {
 void assets_set_id(asset_header_t &header, const char *id) {
 	assets_set_id(header, string_hash(id));
 #ifdef _DEBUG
-	header->id_text = string_copy(id);
+	header.id_text = string_copy(id);
 #endif
 }
 

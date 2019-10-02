@@ -197,8 +197,8 @@ tex2d_t tex2d_create_mem(void *data, size_t data_size) {
 	tex2d_set_colors(result, width, height, col_data);
 	free(col_data);
 
-	DX11ResName(result->resource, "tex2d_view", id);
-	DX11ResName(result->texture,  "tex2d_src",  id);
+	DX11ResType(result->resource, "tex2d_view");
+	DX11ResType(result->texture,  "tex2d_src" );
 	return result;
 }
 

@@ -189,8 +189,8 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	free(verts);
 	free(inds);
 
-	DX11ResName(result->ind_buffer,  "inds_gen_cube",  id);
-	DX11ResName(result->vert_buffer, "verts_gen_cube", id);
+	DX11ResType(result->ind_buffer,  "inds_gen_cube" );
+	DX11ResType(result->vert_buffer, "verts_gen_cube");
 	return result;
 }
 
@@ -261,8 +261,8 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 	free(verts);
 	free(inds);
 
-	DX11ResName(result->ind_buffer,  "inds_gen_sphere",  id);
-	DX11ResName(result->vert_buffer, "verts_gen_sphere", id);
+	DX11ResType(result->ind_buffer,  "inds_gen_sphere" );
+	DX11ResType(result->vert_buffer, "verts_gen_sphere");
 	return result;
 }
 
@@ -354,7 +354,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 	free(verts);
 	free(inds);
 
-	DX11ResName(result->ind_buffer,  "inds_gen_rndcube",  id);
-	DX11ResName(result->vert_buffer, "verts_gen_rndcube", id);
+	DX11ResType(result->ind_buffer,  "inds_gen_rndcube" );
+	DX11ResType(result->vert_buffer, "verts_gen_rndcube");
 	return result;
 }
