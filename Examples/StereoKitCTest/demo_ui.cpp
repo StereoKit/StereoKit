@@ -5,55 +5,18 @@
 
 ///////////////////////////////////////////
 
-solid_t     ui_floor_solid;
-matrix      ui_floor_tr;
-material_t  ui_floor_mat;
-model_t     ui_floor_model;
-sprite_t    ui_sprite;
+sprite_t ui_sprite;
 
 ///////////////////////////////////////////
 
 void demo_ui_init() {
-	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
-	render_set_skytex(cubemap, true);
-	tex2d_release(cubemap);
-
-	// Create a PBR floor material
-	tex2d_t tex_color = tex2d_create_file("../../Examples/Assets/test.png");
-	tex2d_t tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
-	ui_floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
-	material_set_texture(ui_floor_mat, "diffuse", tex_color);
-	material_set_texture(ui_floor_mat, "normal",  tex_norm);
-	material_set_float  (ui_floor_mat, "tex_scale", 6);
-	material_set_float  (ui_floor_mat, "roughness", 1.0f);
-	material_set_float  (ui_floor_mat, "metallic", 0.5f);
-	material_set_queue_offset(ui_floor_mat, 1);
-	if (tex_color != nullptr) tex2d_release(tex_color);
-	if (tex_norm  != nullptr) tex2d_release(tex_norm);
-
-	// Procedurally create a cube model
-	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", vec3_one, 0);
-	ui_floor_model = model_create_mesh("app/model_cube", mesh_cube, ui_floor_mat);
-	mesh_release(mesh_cube);
-
-	// Build a physical floor!
-	vec3 pos   = vec3{ 0,-1.5f,0 };
-	vec3 scale = vec3{ 5,1,5 };
-	ui_floor_tr = matrix_trs(pos, quat_identity, scale);
-	ui_floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
-	solid_add_box (ui_floor_solid, scale);
-
 	ui_sprite = sprite_create_file("../../Documentation/img/StereoKitLogo.png", sprite_type_single);
-
 	sk_ui_init();
 }
 
 ///////////////////////////////////////////
 
 void demo_ui_update() {
-	// Render floor
-	render_add_model(ui_floor_model, ui_floor_tr);
-
 	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
 		pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
 	// input_hand(handed_right).root;
@@ -79,7 +42,4 @@ void demo_ui_update() {
 void demo_ui_shutdown() {
 	// Release everything
 	sprite_release(ui_sprite);
-	solid_release(ui_floor_solid);
-	material_release(ui_floor_mat);
-	model_release(ui_floor_model);
 }

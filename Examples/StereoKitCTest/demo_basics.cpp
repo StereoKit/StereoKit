@@ -8,8 +8,6 @@ using namespace std;
 
 vector<solid_t> phys_objs;
 
-
-
 transform_t tr;
 model_t     gltf;
 
