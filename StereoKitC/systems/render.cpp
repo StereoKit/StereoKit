@@ -239,10 +239,10 @@ void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 ///////////////////////////////////////////
 
 void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
-	matrix view, proj;
+	matrix view;
 	camera_view(cam_transform, view);
 
-	render_draw_queue(view, proj);
+	render_draw_queue(view, cam_matrix);
 }
 
 ///////////////////////////////////////////
