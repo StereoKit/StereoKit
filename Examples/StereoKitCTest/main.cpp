@@ -57,7 +57,7 @@ void common_init() {
 	// Create a PBR floor material
 	tex2d_t tex_color = tex2d_create_file("../../Examples/Assets/test.png");
 	tex2d_t tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
-	floor_mat = material_create("app/material_floor", shader_find("default/shader_pbr"));
+	floor_mat = material_create(shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);
@@ -68,8 +68,8 @@ void common_init() {
 	if (tex_norm  != nullptr) tex2d_release(tex_norm);
 
 	// Procedurally create a cube model
-	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", vec3_one, 0);
-	floor_model  = model_create_mesh("app/model_cube", mesh_cube, floor_mat);
+	mesh_t mesh_cube = mesh_gen_cube(vec3_one, 0);
+	floor_model  = model_create_mesh(mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
 	
 	// Build a physical floor!

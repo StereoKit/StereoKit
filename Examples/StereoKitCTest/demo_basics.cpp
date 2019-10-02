@@ -19,7 +19,7 @@ transform_t  text_tr;
 ///////////////////////////////////////////
 
 void demo_basics_init() {
-	font_mat   = material_create("app/font_segoe", shader_find("default/shader_font"));
+	font_mat   = material_create(shader_find("default/shader_font"));
 	font       = font_create("C:/Windows/Fonts/segoeui.ttf");
 	font_style = text_make_style(font, 1, font_mat, text_align_x_right | text_align_y_center);
 	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);

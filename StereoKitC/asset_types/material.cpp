@@ -18,6 +18,12 @@ material_t material_find(const char *id) {
 
 ///////////////////////////////////////////
 
+void material_set_name(material_t material, const char *name) {
+	assets_set_id(material->header, name);
+}
+
+///////////////////////////////////////////
+
 inline size_t material_param_size(material_param_ type) {
 	switch (type) {
 	case material_param_float:    return sizeof(float);
@@ -46,12 +52,9 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 
 ///////////////////////////////////////////
 
-material_t material_create(const char *id, shader_t shader) {
-	material_t result = material_find(id);
-	if (result != nullptr)
-		return result;
+material_t material_create(shader_t shader) {
 
-	result = (material_t)assets_allocate(asset_type_material, id);
+	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
 	result->cull          = material_cull_ccw;
 	result->mode          = material_alpha_none;
@@ -64,9 +67,9 @@ material_t material_create(const char *id, shader_t shader) {
 
 ///////////////////////////////////////////
 
-material_t material_copy(const char *id, material_t material) {
+material_t material_copy(material_t material) {
 	// Make a new empty material
-	material_t result = material_create(id, material->shader);
+	material_t result = material_create(material->shader);
 	// Store allocated memory temporarily
 	void          *tmp_buffer   = result->args.buffer;
 	tex2d_t       *tmp_textures = result->args.textures;

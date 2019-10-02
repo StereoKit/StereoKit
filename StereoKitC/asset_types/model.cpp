@@ -21,9 +21,15 @@ bool modelfmt_gltf(model_t model, const char *filename);
 
 ///////////////////////////////////////////
 
-model_t model_create(const char *id) {
-	model_t result = (_model_t*)assets_allocate(asset_type_model, id);
+model_t model_create() {
+	model_t result = (_model_t*)assets_allocate(asset_type_model);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void model_set_name(model_t model, const char *name) {
+	assets_set_id(model->header, name);
 }
 
 ///////////////////////////////////////////
@@ -39,11 +45,8 @@ model_t model_find(const char *id) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mesh(const char *id, mesh_t mesh, material_t material) {
-	model_t result = model_find(id);
-	if (result != nullptr)
-		return result;
-	result = model_create(id);
+model_t model_create_mesh(mesh_t mesh, material_t material) {
+	model_t result = model_create();
 
 	result->subset_count        = 1;
 	result->subsets             = (model_subset_t*)malloc(sizeof(model_subset_t));
@@ -63,7 +66,8 @@ model_t model_create_file(const char *filename) {
 	model_t result = model_find(filename);
 	if (result != nullptr)
 		return result;
-	result = model_create(filename);
+	result = model_create();
+	model_set_name(result, filename);
 
 	if        (modelfmt_gltf(result, filename)) {
 	} else if (modelfmt_obj (result, filename)) {
@@ -192,7 +196,8 @@ bool modelfmt_obj(model_t model, const char *filename) {
 
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
-	model->subsets[0].mesh = mesh_create(id);
+	model->subsets[0].mesh = mesh_create();
+	mesh_set_name (model->subsets[0].mesh, id);
 	mesh_set_verts(model->subsets[0].mesh, &verts[0], (int32_t)verts.size());
 	mesh_set_inds (model->subsets[0].mesh, &faces[0], (int32_t)faces.size());
 
@@ -263,7 +268,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 		}
 	}
 
-	result = mesh_create(id);
+	result = mesh_create();
+	mesh_set_name (result, id);
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);
 	free(verts);
@@ -308,7 +314,8 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
 		image->buffer_view->buffer->data;
-		result = tex2d_create_mem(id, image->buffer_view->buffer->data, image->buffer_view->buffer->size);
+		result = tex2d_create_mem(image->buffer_view->buffer->data, image->buffer_view->buffer->size);
+		tex2d_set_name(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
 		void         *buffer = nullptr;
@@ -320,7 +327,8 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 		cgltf_load_buffer_base64(&options, size, start, &buffer);
 
 		if (buffer != nullptr) {
-			result = tex2d_create_mem(id, buffer, size);
+			result = tex2d_create_mem(buffer, size);
+			tex2d_set_name(result, id);
 			free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
@@ -343,7 +351,8 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	}
 
 	//result = material_create(id, (shader_t)assets_find("default/shader"));
-	result = material_create(id, shader_find("default/shader_pbr"));
+	result = material_create(shader_find("default/shader_pbr"));
+	material_set_name(result, id);
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;

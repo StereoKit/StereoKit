@@ -179,12 +179,18 @@ shader_t shader_find(const char *id) {
 
 ///////////////////////////////////////////
 
+void shader_set_name(shader_t shader, const char *name) {
+	assets_set_id(shader->header, name);
+}
+
+///////////////////////////////////////////
+
 shader_t shader_create_file(const char *filename) {
 	shader_t result = shader_find(filename);
 	if (result != nullptr)
 		return result;
-	result = (shader_t)assets_allocate(asset_type_shader, filename);
-
+	result = (shader_t)assets_allocate(asset_type_shader);
+	shader_set_name    (result, filename);
 	shader_set_codefile(result, filename);
 
 	return result;
@@ -192,11 +198,8 @@ shader_t shader_create_file(const char *filename) {
 
 ///////////////////////////////////////////
 
-shader_t shader_create(const char *id, const char *hlsl) {
-	shader_t result = shader_find(id);
-	if (result != nullptr)
-		return result;
-	result = (shader_t)assets_allocate(asset_type_shader, id);
+shader_t shader_create(const char *hlsl) {
+	shader_t result = (shader_t)assets_allocate(asset_type_shader);
 
 	shader_set_code(result, hlsl);
 	

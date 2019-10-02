@@ -26,10 +26,10 @@ namespace StereoKit
                 NativeAPI.shader_release(_shaderInst);
         }
 
-        public static Shader FromHLSL(string id, string hlsl)
+        public static Shader FromHLSL(string hlsl)
         {
             Shader result = new Shader();
-            result._shaderInst = NativeAPI.shader_create(id, hlsl);
+            result._shaderInst = NativeAPI.shader_create(hlsl);
             return result;
         }
         public static Shader Find(string id)

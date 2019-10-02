@@ -175,16 +175,17 @@ typedef uint16_t vind_t;
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_find         (const char *id);
-SK_API mesh_t mesh_create       (const char *id);
+SK_API mesh_t mesh_find         (const char *name);
+SK_API mesh_t mesh_create       ();
+SK_API void   mesh_set_name     (mesh_t mesh, const char *name);
 SK_API void   mesh_release      (mesh_t mesh);
 SK_API void   mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_count);
 SK_API void   mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
 SK_API void   mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 
-SK_API mesh_t mesh_gen_cube        (const char *id, vec3 dimensions, int32_t subdivisions = 0);
-SK_API mesh_t mesh_gen_sphere      (const char *id, float diameter,  int32_t subdivisions = 4);
-SK_API mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius, int32_t subdivisions);
+SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);
+SK_API mesh_t mesh_gen_sphere      (float diameter,  int32_t subdivisions = 4);
+SK_API mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
 
 ///////////////////////////////////////////
 
@@ -223,10 +224,11 @@ enum tex_address_ {
 SK_DeclarePrivateType(tex2d_t);
 
 SK_API tex2d_t tex2d_find       (const char *id);
-SK_API tex2d_t tex2d_create     (const char *id,   tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
+SK_API tex2d_t tex2d_create     (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
 SK_API tex2d_t tex2d_create_file(const char *file);
 SK_API tex2d_t tex2d_create_cubemap_file (const char *equirectangular_file);
 SK_API tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz);
+SK_API void    tex2d_set_name   (tex2d_t texture, const char *name);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
 SK_API void    tex2d_set_options(tex2d_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
@@ -249,8 +251,9 @@ SK_API tex2d_t font_get_tex(font_t font);
 SK_DeclarePrivateType(shader_t);
 
 SK_API shader_t shader_find        (const char *id);
-SK_API shader_t shader_create      (const char *id, const char *hlsl);
+SK_API shader_t shader_create      (const char *hlsl);
 SK_API shader_t shader_create_file (const char *filename);
+SK_API void     shader_set_name    (shader_t shader, const char *name);
 SK_API bool32_t shader_set_code    (shader_t shader, const char *hlsl);
 SK_API bool32_t shader_set_codefile(shader_t shader, const char *filename);
 SK_API void     shader_release     (shader_t shader);
@@ -278,8 +281,9 @@ enum material_param_ {
 SK_DeclarePrivateType(material_t);
 
 SK_API material_t material_find            (const char *id);
-SK_API material_t material_create          (const char *id, shader_t shader);
-SK_API material_t material_copy            (const char *id, material_t material);
+SK_API material_t material_create          (shader_t shader);
+SK_API material_t material_copy            (material_t material);
+SK_API void       material_set_name        (material_t material, const char *name);
 SK_API void       material_release         (material_t material);
 SK_API void       material_set_alpha_mode  (material_t material, material_alpha_ mode);
 SK_API void       material_set_cull        (material_t material, material_cull_ mode);
@@ -375,8 +379,9 @@ SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transfo
 SK_DeclarePrivateType(model_t);
 
 SK_API model_t    model_find        (const char *id);
-SK_API model_t    model_create_mesh (const char *id, mesh_t mesh, material_t material);
+SK_API model_t    model_create_mesh (mesh_t mesh, material_t material);
 SK_API model_t    model_create_file (const char *filename);
+SK_API void       model_set_name    (model_t model, const char *name);
 SK_API material_t model_get_material(model_t model, int32_t subset);
 SK_API int32_t    model_subset_count(model_t model);
 SK_API void       model_release     (model_t model);
@@ -392,6 +397,7 @@ enum sprite_type_ {
 
 SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API void     sprite_set_name   (sprite_t sprite, const char *name);
 SK_API void     sprite_release    (sprite_t sprite);
 SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, color32 color = {255,255,255,255});

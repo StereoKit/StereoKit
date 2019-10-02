@@ -174,7 +174,8 @@ bool openxr_init(const char *app_name) {
 		for (uint32_t s = 0; s < surface_count; s++) {
 			char name[64];
 			sprintf_s(name, 64, "stereokit/system/rendertarget_%d_%d", i, s);
-			swapchain.surface_data[s] = tex2d_create(name, tex_type_rendertarget, tex_format_rgba32);
+			swapchain.surface_data[s] = tex2d_create(tex_type_rendertarget, tex_format_rgba32);
+			tex2d_set_name   (swapchain.surface_data[s], name);
 			tex2d_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
 			tex2d_add_zbuffer(swapchain.surface_data[s]);
 		}

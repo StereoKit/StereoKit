@@ -5,7 +5,6 @@ namespace StereoKit
     public class Material
     {
         internal IntPtr _materialInst;
-        static int index;
 
         public AlphaMode Alpha       { set { NativeAPI.material_set_alpha_mode  (_materialInst, value); } }
         public CullMode  Cull        { set { NativeAPI.material_set_cull        (_materialInst, value); } }
@@ -13,12 +12,12 @@ namespace StereoKit
 
         public Material(Shader shader)
         {
-            index += 1;
-            _materialInst = NativeAPI.material_create("auto/material"+index, shader == null ? IntPtr.Zero : shader._shaderInst);
+            _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
         }
         public Material(string name, Shader shader)
         {
-            _materialInst = NativeAPI.material_create(name, shader == null ? IntPtr.Zero : shader._shaderInst);
+            _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
+            NativeAPI.material_set_name(_materialInst, name);
         }
         private Material(IntPtr material)
         {
@@ -53,8 +52,7 @@ namespace StereoKit
 
         public Material Copy()
         {
-            index += 1;
-            NativeAPI.material_copy("auto/material" + index, _materialInst);
+            NativeAPI.material_copy(_materialInst);
             return new Material(_materialInst);
         }
 

@@ -24,7 +24,8 @@ font_t font_create(const char *file) {
 	font_t result = font_find(file);
 	if (result != nullptr)
 		return result;
-	result = (font_t)assets_allocate(asset_type_font, file);
+	result = (font_t)assets_allocate(asset_type_font);
+	assets_set_id(result->header, file);
 
 	FILE *fp;
 	if (fopen_s(&fp, file, "rb") != 0 || fp == nullptr)
@@ -75,7 +76,7 @@ font_t font_create(const char *file) {
 	for (size_t i = 0; i < w*h; i++) {
 		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}
-	result->font_tex = tex2d_create("fonttex", tex_type_image);
+	result->font_tex = tex2d_create(tex_type_image);
 	tex2d_set_colors(result->font_tex, w, h, colors);
 
 	free(bitmap);

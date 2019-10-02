@@ -5,7 +5,6 @@ namespace StereoKit
     public class Model
     {
         internal IntPtr _modelInst;
-        static int index;
         public Model(string file)
         {
             _modelInst = NativeAPI.model_create_file(file);
@@ -14,12 +13,12 @@ namespace StereoKit
         }
         public Model(Mesh mesh, Material material)
         {
-            index += 1;
-            _modelInst = NativeAPI.model_create_mesh("auto/model"+index, mesh._meshInst, material._materialInst);
+            _modelInst = NativeAPI.model_create_mesh(mesh._meshInst, material._materialInst);
         }
         public Model(string id, Mesh mesh, Material material)
         {
-            _modelInst = NativeAPI.model_create_mesh(id, mesh._meshInst, material._materialInst);
+            _modelInst = NativeAPI.model_create_mesh(mesh._meshInst, material._materialInst);
+            NativeAPI.material_set_name(_modelInst, id);
         }
         private Model(IntPtr model)
         {

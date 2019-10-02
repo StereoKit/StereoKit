@@ -28,10 +28,17 @@ int32_t      sprite_map_count = 0;
 
 ///////////////////////////////////////////
 
+void sprite_set_name(sprite_t sprite, const char *name) {
+	assets_set_id(sprite->header, name);
+}
+
+///////////////////////////////////////////
+
 material_t sprite_create_material(int index_id) {
 	char id[64];
 	sprintf_s(id, 64, "render/sprite_mat_%d", index_id);
-	material_t result = material_create(id, shader_find("default/shader_unlit"));
+	material_t result = material_create(shader_find("default/shader_unlit"));
+	material_set_name      (result, id);
 	material_set_alpha_mode(result, material_alpha_blend);
 	material_set_cull      (result, material_cull_none);
 
@@ -42,7 +49,7 @@ material_t sprite_create_material(int index_id) {
 
 sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
 	assets_addref(image->header);
-	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite, string_hash("_sprite", image->header.id));
+	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };

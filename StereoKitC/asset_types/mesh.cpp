@@ -75,8 +75,14 @@ mesh_t mesh_find(const char *id) {
 
 ///////////////////////////////////////////
 
-mesh_t mesh_create(const char *id) {
-	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh, id);
+void mesh_set_name(mesh_t mesh, const char *name) {
+	assets_set_id(mesh->header, name);
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_create() {
+	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
 	return result;
 }
 
@@ -117,13 +123,8 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
-	mesh_t result = (mesh_t)assets_find(id);
-	if (result != nullptr) {
-		assets_addref(result->header);
-		return result;
-	}
-	result = mesh_create(id);
+mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
+	mesh_t result = mesh_create();
 
 	subdivisions = max(0,subdivisions) + 2;
 
@@ -195,13 +196,8 @@ mesh_t mesh_gen_cube(const char *id, vec3 dimensions, int32_t subdivisions) {
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
-	mesh_t result = (mesh_t)assets_find(id);
-	if (result != nullptr) {
-		assets_addref(result->header);
-		return result;
-	}
-	result = mesh_create(id);
+mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
+	mesh_t result = mesh_create();
 
 	subdivisions = max(0,subdivisions) + 2;
 
@@ -272,13 +268,8 @@ mesh_t mesh_gen_sphere(const char *id, float diameter, int32_t subdivisions) {
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_rounded_cube(const char *id, vec3 dimensions, float edge_radius, int32_t subdivisions) {
-	mesh_t result = (mesh_t)assets_find(id);
-	if (result != nullptr) {
-		assets_addref(result->header);
-		return result;
-	}
-	result = mesh_create(id);
+mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions) {
+	mesh_t result = mesh_create();
 
 	subdivisions = max(0,subdivisions) + 2;
 	if (subdivisions % 2 == 1) // need an even number of subdivisions

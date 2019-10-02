@@ -5,11 +5,9 @@ namespace StereoKit
     public class Tex2D
     {
         internal IntPtr _texInst;
-        static   int    index = 0;
         public Tex2D()
         {
-            index += 1;
-            _texInst = NativeAPI.tex2d_create("auto/tex"+index, TexType.Image, TexFormat.Rgba32);
+            _texInst = NativeAPI.tex2d_create(TexType.Image, TexFormat.Rgba32);
         }
         private Tex2D(IntPtr tex)
         {

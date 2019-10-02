@@ -252,10 +252,11 @@ void input_hand_update_mesh(handed_ hand) {
 			v++;
 		} }
 
+		data.mesh = mesh_create();
 		if (hand == handed_left)
-			data.mesh = mesh_create("default/mesh_lefthand");
+			mesh_set_name(data.mesh, "default/mesh_lefthand");
 		else
-			data.mesh = mesh_create("default/mesh_righthand");
+			mesh_set_name(data.mesh, "default/mesh_righthand");
 		mesh_set_inds(data.mesh, data.inds, data.ind_count);
 	}
 

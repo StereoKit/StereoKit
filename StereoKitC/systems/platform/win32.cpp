@@ -119,7 +119,8 @@ bool win32_init(const char *app_name) {
 	ID3D11Texture2D *back_buffer;
 	win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 
-	win32_target = tex2d_create("stereokit/system/rendertarget", tex_type_rendertarget);
+	win32_target = tex2d_create(tex_type_rendertarget);
+	tex2d_set_name   (win32_target, "stereokit/system/rendertarget");
 	tex2d_setsurface (win32_target, back_buffer);
 	tex2d_add_zbuffer(win32_target);
 

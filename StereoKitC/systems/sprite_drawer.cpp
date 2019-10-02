@@ -18,10 +18,7 @@ void sprite_drawer_add_buffer(material_t material) {
 	sprite_buffers.push_back({});
 	sprite_buffer_t &buffer = sprite_buffers[sprite_buffers.size() - 1];
 	buffer.material = material;
-
-	char id[64];
-	sprintf_s(id, 64, "render/sprite_batch_%d", sprite_buffers.size());
-	buffer.mesh = mesh_create(id);
+	buffer.mesh     = mesh_create();
 }
 
 ///////////////////////////////////////////
@@ -86,7 +83,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 bool sprite_drawer_init() {
 
 	// Default rendering quad
-	sprite_quad = mesh_create("render/sprite_quad");
+	sprite_quad = mesh_create();
 	vert_t verts[4] = {
 		vec3{0, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
 		vec3{1, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
@@ -94,6 +91,7 @@ bool sprite_drawer_init() {
 		vec3{0,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
+	mesh_set_name (sprite_quad, "render/sprite_quad");
 	mesh_set_verts(sprite_quad, verts, 4);
 	mesh_set_inds (sprite_quad, inds,  6);
 

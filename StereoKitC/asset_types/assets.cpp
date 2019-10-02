@@ -20,10 +20,15 @@ vector<asset_header_t *> assets;
 ///////////////////////////////////////////
 
 void *assets_find(const char *id) {
-	uint64_t hash  = string_hash(id);
-	size_t   count = assets.size();
+	return assets_find(string_hash(id));
+}
+
+///////////////////////////////////////////
+
+void *assets_find(uint64_t id) {
+	size_t count = assets.size();
 	for (size_t i = 0; i < count; i++) {
-		if (assets[i]->id == hash)
+		if (assets[i]->id == id)
 			return assets[i];
 	}
 	return nullptr;
@@ -44,20 +49,7 @@ void assets_unique_name(const char *root_name, char *dest, int dest_size) {
 
 ///////////////////////////////////////////
 
-void *assets_allocate(asset_type_ type, const char *id) {
-#if _DEBUG
-	assert(assets_find(id) == nullptr);
-#endif
-	asset_header_t *header = (asset_header_t *)assets_allocate(type, string_hash(id));
-#ifdef _DEBUG
-	header->id_text = string_copy(id);
-#endif
-	return header;
-}
-
-///////////////////////////////////////////
-
-void *assets_allocate(asset_type_ type, uint64_t id) {
+void *assets_allocate(asset_type_ type) {
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
 	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
@@ -70,14 +62,35 @@ void *assets_allocate(asset_type_ type, uint64_t id) {
 	default: throw "Unimplemented asset type!";
 	}
 
+	char name[64];
+	sprintf_s(name, 64, "auto/asset_%d", assets.size());
+
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
 	header->type  = type;
 	header->refs += 1;
-	header->id    = id;
+	header->id    = string_hash(name);
 	header->index = assets.size();
 	assets.push_back(header);
 	return header;
+}
+
+///////////////////////////////////////////
+
+void assets_set_id(asset_header_t &header, const char *id) {
+	assets_set_id(header, string_hash(id));
+#ifdef _DEBUG
+	header->id_text = string_copy(id);
+#endif
+}
+
+///////////////////////////////////////////
+
+void assets_set_id(asset_header_t &header, uint64_t id) {
+#if _DEBUG
+	assert(assets_find(id) == nullptr);
+#endif
+	header.id = id;
 }
 
 ///////////////////////////////////////////

@@ -5,9 +5,9 @@ namespace StereoKit
     public class Mesh
     {
         internal IntPtr _meshInst;
-        public Mesh(string id)
+        public Mesh()
         {
-            _meshInst = NativeAPI.mesh_create(id);
+            _meshInst = NativeAPI.mesh_create();
             if (_meshInst == IntPtr.Zero)
                 Log.Write(LogLevel.Warning, "Couldn't create empty mesh!");
         }
@@ -23,17 +23,17 @@ namespace StereoKit
                 NativeAPI.mesh_release(_meshInst);
         }
 
-        public static Mesh GenerateCube(string id, Vec3 dimensions, int subdivisions = 0)
+        public static Mesh GenerateCube(Vec3 dimensions, int subdivisions = 0)
         {
-            return new Mesh(NativeAPI.mesh_gen_cube(id, dimensions, subdivisions));
+            return new Mesh(NativeAPI.mesh_gen_cube(dimensions, subdivisions));
         }
-        public static Mesh GenerateRoundedCube(string id, Vec3 dimensions, float edgeRadius, int subdivisions = 4)
+        public static Mesh GenerateRoundedCube(Vec3 dimensions, float edgeRadius, int subdivisions = 4)
         {
-            return new Mesh(NativeAPI.mesh_gen_rounded_cube(id, dimensions, edgeRadius, subdivisions));
+            return new Mesh(NativeAPI.mesh_gen_rounded_cube(dimensions, edgeRadius, subdivisions));
         }
-        public static Mesh GenerateSphere(string id, float diameter, int subdivisions = 4)
+        public static Mesh GenerateSphere(float diameter, int subdivisions = 4)
         {
-            return new Mesh(NativeAPI.mesh_gen_sphere(id, diameter, subdivisions));
+            return new Mesh(NativeAPI.mesh_gen_sphere(diameter, subdivisions));
         }
         public static Mesh Find(string id)
         {

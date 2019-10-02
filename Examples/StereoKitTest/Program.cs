@@ -50,7 +50,7 @@ class Program
         floorMat["normal"   ] = new Tex2D(Program.Root + "test_normal.png");
         floorMat["tex_scale"] = 6;
 
-        floorMesh = new Model(Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
+        floorMesh = new Model(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = new Transform(new Vec3(0, -1.5f, 0), new Vec3(5, 1, 5));
 
         floorSolid = new Solid(floorTr.Position, floorTr.Rotation, SolidType.Immovable);

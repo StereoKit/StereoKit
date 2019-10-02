@@ -58,9 +58,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 		index  = text_buffers.size() - 1;
 		buffer = &text_buffers[index];
 
-		char name[26];
-		assets_unique_name("auto/txt_buf/", name, _countof(name));
-		buffer->mesh     = mesh_create(name);
+		buffer->mesh     = mesh_create();
 		buffer->id       = id;
 		buffer->font     = font;
 		buffer->material = material;
