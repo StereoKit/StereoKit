@@ -343,8 +343,8 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 
 void material_get_param_info(material_t material, int index, char **out_name, material_param_ *out_type) {
 	shaderargs_desc_item_t &item = material->shader->args_desc.item[index];
-	*out_type = item.type;
-	*out_name = item.name;
+	if (out_type != nullptr) *out_type = item.type;
+	if (out_name != nullptr) *out_name = item.name;
 }
 
 ///////////////////////////////////////////
