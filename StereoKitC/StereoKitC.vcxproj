@@ -102,7 +102,10 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -121,7 +124,10 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -144,7 +150,10 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -167,7 +176,10 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
