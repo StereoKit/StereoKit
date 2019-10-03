@@ -90,7 +90,9 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
-	tex2d_t    equirect         = tex2d_create_file(equirectangular_file);
+	tex2d_t equirect = tex2d_create_file(equirectangular_file);
+	if (equirect == nullptr)
+		return nullptr;
 	equirect->header.id = string_hash("temp/equirectid");
 	material_t convert_material = material_find("default/equirect_convert");
 
