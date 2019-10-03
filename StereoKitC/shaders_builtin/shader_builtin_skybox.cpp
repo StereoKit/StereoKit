@@ -17,7 +17,7 @@ TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
 
 cbuffer ParamBuffer : register(b2) {
-	// [param] float blur default 0.8
+	// [param] float blur 0.8
 	float blur;
 };
 struct InOut {

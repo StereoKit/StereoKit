@@ -93,28 +93,26 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			}
 
 			while (stref_nextword(curr, word, ' ', '{','}')) {
-				if (stref_equals(word, "default")) {
-					if (stref_nextword(curr, word, ' ','{', '}')) {
-						stref_t value = stref_stripcapture(word, '{', '}');
-						if (item.type == material_param_float) {
-							item.default_value = malloc(sizeof(float));
-							*(float *)item.default_value = stref_to_f(value);
-
-						} else if (item.type == material_param_vector) {
-							vec4    result    = {};
-							stref_t component = {};
-							if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
-							if (stref_nextword(value, component, ',')) result.y = stref_to_f(component);
-							if (stref_nextword(value, component, ',')) result.z = stref_to_f(component);
-							if (stref_nextword(value, component, ',')) result.w = stref_to_f(component);
-
-							item.default_value = malloc(sizeof(vec4));
-							*(vec4 *)item.default_value = result;
-						}
-					}
-				} else if (stref_equals(word, "tags")) {
+				if (stref_equals(word, "tags")) {
 					if (stref_nextword(curr, word, ' ', '{','}'))
 						item.tags = stref_copy(stref_stripcapture(word, '{','}'));
+				} else {
+					stref_t value = stref_stripcapture(word, '{', '}');
+					if (item.type == material_param_float) {
+						item.default_value = malloc(sizeof(float));
+						*(float *)item.default_value = stref_to_f(value);
+
+					} else if (item.type == material_param_vector) {
+						vec4    result    = {};
+						stref_t component = {};
+						if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
+						if (stref_nextword(value, component, ',')) result.y = stref_to_f(component);
+						if (stref_nextword(value, component, ',')) result.z = stref_to_f(component);
+						if (stref_nextword(value, component, ',')) result.w = stref_to_f(component);
+
+						item.default_value = malloc(sizeof(vec4));
+						*(vec4 *)item.default_value = result;
+					}
 				}
 			}
 

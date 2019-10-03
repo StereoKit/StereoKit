@@ -14,7 +14,7 @@ cbuffer TransformBuffer : register(b1) {
 	float4x4 world[1000];
 };
 cbuffer ParamBuffer : register(b2) {
-	// [ param ] vector color default{1, 1, 1, 1} tags { data for whatever! }
+	// [ param ] vector color {1, 1, 1, 1} tags { data for whatever! }
 	float4 _color;
 };
 struct vsIn {

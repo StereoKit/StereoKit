@@ -17,13 +17,13 @@ TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
 
 cbuffer ParamBuffer : register(b2) {
-	// [param] color color default{1,1,1,1}
+	// [param] color color {1,1,1,1}
 	float4 _color;
-	// [param] float metallic default 0
+	// [param] float metallic 0
 	float metallic;
-	// [param] float roughness default 1
+	// [param] float roughness 1
 	float roughness;
-	// [param] float tex_scale default 1
+	// [param] float tex_scale 1
 	float tex_scale;
 };
 struct vsIn {
