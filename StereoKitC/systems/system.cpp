@@ -2,10 +2,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h> // GetSystemTimePreciseAsFileTime
 #include <stdio.h>
 #include "../stref.h"
 #include "../stereokit.h"
+
+#include <chrono>
+using namespace std::chrono;
 
 ///////////////////////////////////////////
 
@@ -128,21 +130,18 @@ bool systems_initialize() {
 	if (!systems_sort())
 		return false;
 
-	FILETIME time;
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
 			// start timing
-			GetSystemTimePreciseAsFileTime(&time);
-			systems[index].profile_start_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
 			if (!systems[index].func_initialize())
 				return false;
 
 			// end timing
-			GetSystemTimePreciseAsFileTime(&time);
-			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
-			systems[index].profile_start_duration = end - systems[index].profile_start_duration;
+			time_point<high_resolution_clock> end = high_resolution_clock::now();
+			systems[index].profile_start_duration = duration_cast<nanoseconds>(end - start).count();
 		}
 	}
 	return true;
@@ -151,21 +150,18 @@ bool systems_initialize() {
 ///////////////////////////////////////////
 
 void systems_update() {
-	FILETIME time;
 	for (int32_t i = 0; i < system_count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
-			GetSystemTimePreciseAsFileTime(&time);
-			systems[i].profile_frame_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
 			systems[i].func_update();
 
 			// end timing
-			GetSystemTimePreciseAsFileTime(&time);
-			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
-			systems[i].profile_frame_duration = end - systems[i].profile_frame_duration;
+			time_point<high_resolution_clock> end = high_resolution_clock::now();
+			systems[i].profile_frame_duration   = duration_cast<nanoseconds>(end - start).count();
 			systems[i].profile_update_duration += systems[i].profile_frame_duration;
-			systems[i].profile_update_count += 1;
+			systems[i].profile_update_count    += 1;
 		}
 	}
 }
@@ -173,20 +169,17 @@ void systems_update() {
 ///////////////////////////////////////////
 
 void systems_shutdown() {
-	FILETIME time;
 	for (int32_t i = system_count-1; i >= 0; i--) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_shutdown != nullptr) {
 			// start timing
-			GetSystemTimePreciseAsFileTime(&time);
-			systems[i].profile_shutdown_duration = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
+			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
 			systems[index].func_shutdown();
 
 			// end timing
-			GetSystemTimePreciseAsFileTime(&time);
-			int64_t end = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
-			systems[i].profile_shutdown_duration = end - systems[i].profile_shutdown_duration;
+			time_point<high_resolution_clock> end = high_resolution_clock::now();
+			systems[i].profile_shutdown_duration = duration_cast<nanoseconds>(end - start).count();
 		}
 	}
 
@@ -202,15 +195,15 @@ void systems_shutdown() {
 		char shutdown_time[24];
 
 		if (systems[index].func_initialize != nullptr)
-			 sprintf_s(start_time, 24, "%8.2f<~BLK>ms", (float)((double)systems[index].profile_start_duration / 10000.0));
+			 sprintf_s(start_time, 24, "%8.2f<~BLK>ms", (float)((double)systems[index].profile_start_duration / 1000000.0));
 		else sprintf_s(start_time, 24, "          ");
 
 		if (systems[index].func_update != nullptr)
-			 sprintf_s(update_time, 24, "%6.3f<~BLK>ms", (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 10000.0));
+			 sprintf_s(update_time, 24, "%6.3f<~BLK>ms", (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 1000000.0));
 		else sprintf_s(update_time, 24, "        ");
 
 		if (systems[index].func_shutdown != nullptr)
-			 sprintf_s(shutdown_time, 24, "%7.2f<~BLK>ms", (float)((double)systems[index].profile_shutdown_duration / 10000.0));
+			 sprintf_s(shutdown_time, 24, "%7.2f<~BLK>ms", (float)((double)systems[index].profile_shutdown_duration / 1000000.0));
 		else sprintf_s(shutdown_time, 24, "         ");
 		
 		log_writef(log_info, "<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);

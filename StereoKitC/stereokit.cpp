@@ -12,8 +12,10 @@
 #include "systems/platform/platform.h"
 
 #include <thread> // sleep_for
-
 using namespace std;
+
+#include <chrono>
+using namespace std::chrono;
 
 ///////////////////////////////////////////
 
@@ -132,17 +134,16 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		this_thread::sleep_for(chrono::milliseconds(sk_focused ? 1 : 250));
+		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 250));
 	return sk_run;
 }
 
 ///////////////////////////////////////////
 
 void sk_update_timer() {
-	FILETIME time;
-	GetSystemTimePreciseAsFileTime(&time);
-	sk_timev_raw = (int64_t)time.dwLowDateTime + ((int64_t)(time.dwHighDateTime) << 32LL);
-	double time_curr = sk_timev_raw / 10000000.0;
+	time_point<high_resolution_clock> now = high_resolution_clock::now();
+	sk_timev_raw = duration_cast<nanoseconds>(now.time_since_epoch()).count();
+	double time_curr = sk_timev_raw / 1000000000.0;
 
 	if (sk_time_start == 0)
 		sk_time_start = time_curr;
