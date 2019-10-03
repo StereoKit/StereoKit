@@ -2,6 +2,7 @@
 
 // #define SK_32BIT_INDICES
 // #define SK_NO_FLATSCREEN
+// #define SK_NO_LEAP_MOTION
 
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)

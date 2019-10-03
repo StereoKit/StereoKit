@@ -25,23 +25,29 @@ void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
+#if !defined(SK_NO_LEAP_MOTION)
 	win32_use_leap = input_leap_init();
+#endif
 }
 
 ///////////////////////////////////////////
 
 void win32_input_shutdown() {
+#if !defined(SK_NO_LEAP_MOTION)
 	if (win32_use_leap)
 		input_leap_shutdown();
+#endif
 }
 
 ///////////////////////////////////////////
 
 void win32_input_update() {
+#if !defined(SK_NO_LEAP_MOTION)
 	if (win32_use_leap && leap_has_device) {
 		input_leap_update();
 		return;
 	}
+#endif
 
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
 	pointer_t *pointer_head   = input_get_pointer(win32_input_pointers[1]);

@@ -1,3 +1,5 @@
+#if !defined( SK_NO_LEAP_MOTION )
+
 #pragma comment(lib, "leapC.lib")
 
 #include "input_leap.h"
@@ -116,3 +118,5 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 		}
 	}
 }
+
+#endif
