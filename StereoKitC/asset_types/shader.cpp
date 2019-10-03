@@ -23,7 +23,7 @@ const size_t shader_register_size = sizeof(float) * 4;
 
 ///////////////////////////////////////////
 
-ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *target) {
+ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #ifdef _DEBUG
 	flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
@@ -32,7 +32,7 @@ ID3DBlob *compile_shader(const char *hlsl, const char *entrypoint, const char *t
 #endif
 
 	ID3DBlob *compiled, *errors;
-	if (FAILED(D3DCompile(hlsl, strlen(hlsl), nullptr, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
+	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
 		log_write(log_error, (char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
@@ -201,17 +201,17 @@ shader_t shader_create_file(const char *filename) {
 shader_t shader_create(const char *hlsl) {
 	shader_t result = (shader_t)assets_allocate(asset_type_shader);
 
-	shader_set_code(result, hlsl);
+	shader_set_code(result, hlsl, nullptr);
 	
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t shader_set_code(shader_t shader, const char *hlsl) {
+bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename) {
 	// Compile the shader code
-	ID3DBlob *vert_shader_blob  = compile_shader(hlsl, "vs", "vs_5_0");
-	ID3DBlob *pixel_shader_blob = compile_shader(hlsl, "ps", "ps_5_0");
+	ID3DBlob *vert_shader_blob  = compile_shader(filename, hlsl, "vs", "vs_5_0");
+	ID3DBlob *pixel_shader_blob = compile_shader(filename, hlsl, "ps", "ps_5_0");
 	if (vert_shader_blob == nullptr || pixel_shader_blob == nullptr)
 		return false;
 
@@ -261,7 +261,7 @@ bool32_t shader_set_codefile(shader_t shader, const char *filename) {
 	fclose(fp);
 
 	// Compile the shader
-	shader_set_code(shader, (const char *)data);
+	shader_set_code(shader, (const char *)data, filename);
 	free(data);
 
 	return true;

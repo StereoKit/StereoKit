@@ -280,7 +280,7 @@ SK_API shader_t shader_find        (const char *id);
 SK_API shader_t shader_create      (const char *hlsl);
 SK_API shader_t shader_create_file (const char *filename);
 SK_API void     shader_set_name    (shader_t shader, const char *name);
-SK_API bool32_t shader_set_code    (shader_t shader, const char *hlsl);
+SK_API bool32_t shader_set_code    (shader_t shader, const char *hlsl, const char *filename = nullptr);
 SK_API bool32_t shader_set_codefile(shader_t shader, const char *filename);
 SK_API void     shader_release     (shader_t shader);
 
