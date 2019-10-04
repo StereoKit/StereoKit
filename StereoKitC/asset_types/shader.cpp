@@ -77,6 +77,8 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 		log_writef(log_error, "Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
 #else
 		ID3DBlob *blob = compile_shader(filename, hlsl, entrypoint, target);
+		if (blob == nullptr)
+			return result;
 		result.size = blob->GetBufferSize();
 		result.data = malloc(result.size);
 		blob->Release();
