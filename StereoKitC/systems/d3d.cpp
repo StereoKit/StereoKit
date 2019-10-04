@@ -1,6 +1,5 @@
 #pragma comment(lib,"D3D11.lib")
 #pragma comment(lib,"Dxgi.lib") // CreateSwapChainForHwnd
-#pragma comment(lib,"D3dcompiler.lib") // for shader compile
 
 #include "../stereokit.h"
 #include "d3d.h"

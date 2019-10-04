@@ -5,7 +5,6 @@
 #include "shader.h"
 #include "assets.h"
 
-#include <d3dcompiler.h>
 #include <stdio.h>
 #include <assert.h>
 #include <direct.h>
@@ -14,6 +13,11 @@
 using namespace std;
 
 ///////////////////////////////////////////
+
+struct shader_blob_t {
+	void *data;
+	size_t size;
+};
 
 const size_t shaderarg_size[] = { 
 	sizeof(float),    // shaderarg_type_float
@@ -24,6 +28,10 @@ const size_t shaderarg_size[] = {
 const size_t shader_register_size = sizeof(float) * 4;
 
 ///////////////////////////////////////////
+
+#ifndef SK_NO_RUNTIME_SHADER_COMPILE
+#include <d3dcompiler.h>
+#pragma comment(lib,"D3dcompiler.lib")
 
 ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -41,9 +49,11 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 	return compiled;
 }
 
+#endif
+
 ///////////////////////////////////////////
 
-ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
+shader_blob_t load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
 	uint64_t hash = string_hash(hlsl);
 	char folder_name[128];
 	sprintf_s(folder_name, "%s/cache", sk_settings.shader_cache);
@@ -52,17 +62,24 @@ ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entryp
 	char target[16];
 	sprintf_s(target, "%s_5_0", entrypoint);
 
-	ID3DBlob *result;
-	FILE     *fp = nullptr;
+	shader_blob_t result = {};
+	FILE         *fp     = nullptr;
 	if (fopen_s(&fp, cache_name, "rb") == 0 && fp != nullptr) {
 		fseek(fp, 0, SEEK_END);
 		long length = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
-		D3DCreateBlob(length, &result);
-		fread(result->GetBufferPointer(), length, 1, fp);
+		result.data = malloc(length);
+		result.size = length;
+		fread(result.data, result.size, 1, fp);
 		fclose(fp);
 	} else {
-		result = compile_shader(filename, hlsl, entrypoint, target);
+#ifdef SK_NO_RUNTIME_SHADER_COMPILE
+		log_writef(log_error, "Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
+#else
+		ID3DBlob *blob = compile_shader(filename, hlsl, entrypoint, target);
+		result.size = blob->GetBufferSize();
+		result.data = malloc(result.size);
+		blob->Release();
 
 		// Ensure cache folder is present
 		struct stat st = { 0 };
@@ -72,9 +89,10 @@ ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entryp
 
 		// Write the blob to file for future use.
 		if (fopen_s(&fp, cache_name, "wb") == 0 && fp != nullptr) {
-			fwrite(result->GetBufferPointer(), result->GetBufferSize(), 1, fp);
+			fwrite(result.data, result.size, 1, fp);
 			fclose(fp);
 		}
+#endif
 	}
 	return result;
 }
@@ -258,16 +276,16 @@ shader_t shader_create(const char *hlsl) {
 
 bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename) {
 	// Compile the shader code
-	ID3DBlob *vert_shader_blob  = load_shader(filename, hlsl, "vs");
-	ID3DBlob *pixel_shader_blob = load_shader(filename, hlsl, "ps");
-	if (vert_shader_blob == nullptr || pixel_shader_blob == nullptr)
+	shader_blob_t vert_shader_blob  = load_shader(filename, hlsl, "vs");
+	shader_blob_t pixel_shader_blob = load_shader(filename, hlsl, "ps");
+	if (vert_shader_blob.data == nullptr || pixel_shader_blob.data == nullptr)
 		return false;
 
 	// If the shader compiled fine, set up and send it to the GPU
 	if (shader->vshader != nullptr) shader->vshader->Release();
 	if (shader->pshader != nullptr) shader->pshader->Release();
-	d3d_device->CreateVertexShader(vert_shader_blob ->GetBufferPointer(), vert_shader_blob ->GetBufferSize(), nullptr, &shader->vshader);
-	d3d_device->CreatePixelShader (pixel_shader_blob->GetBufferPointer(), pixel_shader_blob->GetBufferSize(), nullptr, &shader->pshader);
+	d3d_device->CreateVertexShader(vert_shader_blob .data, vert_shader_blob .size, nullptr, &shader->vshader);
+	d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader);
 	DX11ResType(shader->vshader, "vertex_shader");
 	DX11ResType(shader->pshader, "pixel_shader");
 
@@ -283,7 +301,10 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
-	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob->GetBufferPointer(), vert_shader_blob->GetBufferSize(), &shader->vert_layout);
+	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob.data, vert_shader_blob.size, &shader->vert_layout);
+
+	free(vert_shader_blob .data);
+	free(pixel_shader_blob.data);
 
 	return true;
 }
