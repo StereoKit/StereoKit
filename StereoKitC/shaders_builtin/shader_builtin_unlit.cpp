@@ -1,6 +1,7 @@
 #include "shader_builtin.h"
 
 const char* sk_shader_builtin_unlit = R"_(
+// [name] sk/unlit
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view;
 	float4x4 sk_proj;

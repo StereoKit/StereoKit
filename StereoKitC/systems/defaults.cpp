@@ -22,56 +22,36 @@ material_t sk_default_material_equirect;
 
 ///////////////////////////////////////////
 
-bool defaults_init() {
-	// Default white texture
-	sk_default_tex = tex2d_create();
-	if (sk_default_tex == nullptr) {
-		return false;
+tex2d_t defaults_texture(const char *id, color32 color) {
+	tex2d_t result = tex2d_create();
+	if (result == nullptr) {
+		return nullptr;
 	}
 	color32 tex_colors[2*2];
-	memset(tex_colors, 255, sizeof(color32) * 2 * 2);
-	tex2d_set_name  (sk_default_tex, "default/tex2d");
-	tex2d_set_colors(sk_default_tex, 2, 2, tex_colors);
-
-	// Default black texture, for use with shader defaults
-	sk_default_tex_black = tex2d_create();
-	if (sk_default_tex_black == nullptr) {
-		return false;
-	}
 	for (size_t i = 0; i < 2 * 2; i++) 
-		tex_colors[i] = { 0,0,0,255 };
-	tex2d_set_name  (sk_default_tex_black, "default/tex2d_black");
-	tex2d_set_colors(sk_default_tex_black, 2, 2, tex_colors);
+		tex_colors[i] = color;
+	tex2d_set_id    (result, id);
+	tex2d_set_colors(result, 2, 2, tex_colors);
 
-	// Default middle gray texture, for use with shader defaults
-	sk_default_tex_gray = tex2d_create();
-	if (sk_default_tex_gray == nullptr) {
-		return false;
-	}
-	for (size_t i = 0; i < 2 * 2; i++) 
-		tex_colors[i] = { 128,128,128,255 };
-	tex2d_set_name  (sk_default_tex_gray, "default/tex2d_gray");
-	tex2d_set_colors(sk_default_tex_gray, 2, 2, tex_colors);
+	return result;
+}
 
-	// Default normal map, for use with shader defaults
-	sk_default_tex_flat = tex2d_create();
-	if (sk_default_tex_flat == nullptr) {
-		return false;
-	}
-	for (size_t i = 0; i < 2 * 2; i++) 
-		tex_colors[i] = { 128,128,255,255 };
-	tex2d_set_name  (sk_default_tex_flat, "default/tex2d_flat");
-	tex2d_set_colors(sk_default_tex_flat, 2, 2, tex_colors);
+///////////////////////////////////////////
 
-	// Default metal/roughness map, for use with shader defaults
-	sk_default_tex_rough = tex2d_create();
-	if (sk_default_tex_rough == nullptr) {
+bool defaults_init() {
+	// Textures
+	sk_default_tex       = defaults_texture("default/tex2d",       {255,255,255,255});
+	sk_default_tex_black = defaults_texture("default/tex2d_black", {0,0,0,255}      );
+	sk_default_tex_gray  = defaults_texture("default/tex2d_gray",  {128,128,128,255});
+	sk_default_tex_flat  = defaults_texture("default/tex2d_flat",  {128,128,255,255}); // Default for normal maps
+	sk_default_tex_rough = defaults_texture("default/tex2d_rough", {0,0,255,255}    ); // Default for metal/roughness maps
+
+	if (sk_default_tex       == nullptr ||
+		sk_default_tex_black == nullptr ||
+		sk_default_tex_gray  == nullptr ||
+		sk_default_tex_flat  == nullptr ||
+		sk_default_tex_rough == nullptr)
 		return false;
-	}
-	for (size_t i = 0; i < 2 * 2; i++) 
-		tex_colors[i] = { 0,0,255,255 };
-	tex2d_set_name  (sk_default_tex_rough, "default/tex2d_rough");
-	tex2d_set_colors(sk_default_tex_rough, 2, 2, tex_colors);
 
 	// Default rendering quad
 	sk_default_quad = mesh_create();
@@ -82,47 +62,40 @@ bool defaults_init() {
 		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
 	};
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_name (sk_default_quad, "default/quad");
+	mesh_set_id   (sk_default_quad, "default/quad");
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad,  inds,  6);
 
 	// Shaders
-	sk_default_shader = shader_create(sk_shader_builtin_default);
-	shader_set_name(sk_default_shader, "default/shader");
-	if (sk_default_shader == nullptr) {
-		return false;
-	}
-	sk_default_shader_pbr = shader_create(sk_shader_builtin_pbr);
-	shader_set_name(sk_default_shader_pbr, "default/shader_pbr");
-	if (sk_default_shader_pbr == nullptr) {
-		return false;
-	}
-	sk_default_shader_unlit = shader_create(sk_shader_builtin_unlit);
-	shader_set_name(sk_default_shader_unlit, "default/shader_unlit");
-	if (sk_default_shader_unlit == nullptr) {
-		return false;
-	}
-	sk_default_shader_font = shader_create(sk_shader_builtin_font);
-	shader_set_name(sk_default_shader_font, "default/shader_font");
-	if (sk_default_shader_font == nullptr) {
-		return false;
-	}
+	sk_default_shader          = shader_create(sk_shader_builtin_default);
+	sk_default_shader_pbr      = shader_create(sk_shader_builtin_pbr);
+	sk_default_shader_unlit    = shader_create(sk_shader_builtin_unlit);
+	sk_default_shader_font     = shader_create(sk_shader_builtin_font);
 	sk_default_shader_equirect = shader_create(sk_shader_builtin_equirect);
-	shader_set_name(sk_default_shader_equirect, "default/equirect_shader");
-	if (sk_default_shader_equirect == nullptr) {
+	
+	if (sk_default_shader          == nullptr ||
+		sk_default_shader_pbr      == nullptr ||
+		sk_default_shader_unlit    == nullptr ||
+		sk_default_shader_font     == nullptr ||
+		sk_default_shader_equirect == nullptr)
 		return false;
-	}
 
-	sk_default_material = material_create(sk_default_shader_pbr);
-	material_set_name(sk_default_material, "default/material");
-	if (sk_default_material == nullptr) {
-		return false;
-	}
+	shader_set_id(sk_default_shader,          "default/shader");
+	shader_set_id(sk_default_shader_pbr,      "default/shader_pbr");
+	shader_set_id(sk_default_shader_unlit,    "default/shader_unlit");
+	shader_set_id(sk_default_shader_font,     "default/shader_font");
+	shader_set_id(sk_default_shader_equirect, "default/equirect_shader");
+	
+	// Materials
+	sk_default_material          = material_create(sk_default_shader_pbr);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
-	material_set_name(sk_default_material_equirect, "default/equirect_convert");
-	if (sk_default_material_equirect == nullptr) {
+	
+	if (sk_default_material          == nullptr ||
+		sk_default_material_equirect == nullptr)
 		return false;
-	}
+
+	material_set_id(sk_default_material,          "default/material");
+	material_set_id(sk_default_material_equirect, "default/equirect_convert");
 
 	material_set_texture(sk_default_material, "diffuse", sk_default_tex);
 

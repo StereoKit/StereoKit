@@ -28,8 +28,8 @@ int32_t      sprite_map_count = 0;
 
 ///////////////////////////////////////////
 
-void sprite_set_name(sprite_t sprite, const char *name) {
-	assets_set_id(sprite->header, name);
+void sprite_set_id(sprite_t sprite, const char *id) {
+	assets_set_id(sprite->header, id);
 }
 
 ///////////////////////////////////////////
@@ -38,7 +38,7 @@ material_t sprite_create_material(int index_id) {
 	char id[64];
 	sprintf_s(id, 64, "render/sprite_mat_%d", index_id);
 	material_t result = material_create(shader_find("default/shader_unlit"));
-	material_set_name      (result, id);
+	material_set_id        (result, id);
 	material_set_alpha_mode(result, material_alpha_blend);
 	material_set_cull      (result, material_cull_none);
 

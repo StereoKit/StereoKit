@@ -28,8 +28,8 @@ model_t model_create() {
 
 ///////////////////////////////////////////
 
-void model_set_name(model_t model, const char *name) {
-	assets_set_id(model->header, name);
+void model_set_id(model_t model, const char *id) {
+	assets_set_id(model->header, id);
 }
 
 ///////////////////////////////////////////
@@ -67,7 +67,7 @@ model_t model_create_file(const char *filename) {
 	if (result != nullptr)
 		return result;
 	result = model_create();
-	model_set_name(result, filename);
+	model_set_id(result, filename);
 
 	if        (modelfmt_gltf(result, filename)) {
 	} else if (modelfmt_obj (result, filename)) {
@@ -197,7 +197,7 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
 	model->subsets[0].mesh = mesh_create();
-	mesh_set_name (model->subsets[0].mesh, id);
+	mesh_set_id   (model->subsets[0].mesh, id);
 	mesh_set_verts(model->subsets[0].mesh, &verts[0], (int32_t)verts.size());
 	mesh_set_inds (model->subsets[0].mesh, &faces[0], (int32_t)faces.size());
 
@@ -269,7 +269,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	}
 
 	result = mesh_create();
-	mesh_set_name (result, id);
+	mesh_set_id   (result, id);
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);
 	free(verts);
@@ -315,7 +315,7 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 		// If it's already a loaded buffer, like in a .glb
 		image->buffer_view->buffer->data;
 		result = tex2d_create_mem(image->buffer_view->buffer->data, image->buffer_view->buffer->size);
-		tex2d_set_name(result, id);
+		tex2d_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
 		void         *buffer = nullptr;
@@ -328,7 +328,7 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 
 		if (buffer != nullptr) {
 			result = tex2d_create_mem(buffer, size);
-			tex2d_set_name(result, id);
+			tex2d_set_id(result, id);
 			free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
@@ -352,7 +352,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	//result = material_create(id, (shader_t)assets_find("default/shader"));
 	result = material_create(shader_find("default/shader_pbr"));
-	material_set_name(result, id);
+	material_set_id(result, id);
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;

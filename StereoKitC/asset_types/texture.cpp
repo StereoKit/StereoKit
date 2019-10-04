@@ -29,7 +29,7 @@ void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 	char id[64];
 	assets_unique_name("zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex2d_create(tex_type_depth, format);
-	tex2d_set_name(texture->depth_buffer, id);
+	tex2d_set_id(texture->depth_buffer, id);
 	if (texture->texture != nullptr) {
 		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
@@ -48,8 +48,8 @@ tex2d_t tex2d_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void tex2d_set_name(tex2d_t mesh, const char *name) {
-	assets_set_id(mesh->header, name);
+void tex2d_set_id(tex2d_t mesh, const char *id) {
+	assets_set_id(mesh->header, id);
 }
 
 ///////////////////////////////////////////
@@ -69,7 +69,7 @@ tex2d_t tex2d_create_file(const char *file) {
 		return nullptr;
 	}
 	result = tex2d_create(tex_type_image);
-	tex2d_set_name(result, file);
+	tex2d_set_id(result, file);
 
 	tex2d_set_colors(result, width, height, data);
 	free(data);
@@ -115,7 +115,7 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	}
 
 	result = tex2d_create(tex_type_image | tex_type_cubemap, equirect->format);
-	tex2d_set_name  (result, equirectangular_file);
+	tex2d_set_id    (result, equirectangular_file);
 	tex2d_set_colors(result, width, height, (void**)&data, 6);
 
 	material_release(convert_material);
@@ -171,7 +171,7 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 
 	// Create with the data we have
 	result = tex2d_create(tex_type_image | tex_type_cubemap);
-	tex2d_set_name  (result, cube_face_file_xxyyzz[0]);
+	tex2d_set_id    (result, cube_face_file_xxyyzz[0]);
 	tex2d_set_colors(result, final_width, final_height, (void**)&data, 6);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);

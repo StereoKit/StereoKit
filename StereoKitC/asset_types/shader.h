@@ -53,6 +53,7 @@ struct _shader_t {
 	shaderargs_t        args;
 	shaderargs_desc_t   args_desc;
 	shader_tex_slots_t  tex_slots;
+	char               *name;
 };
 
 void shader_destroy          (shader_t shader);

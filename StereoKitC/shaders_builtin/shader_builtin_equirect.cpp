@@ -1,6 +1,7 @@
 #include "shader_builtin.h"
 
 const char* sk_shader_builtin_equirect = R"_(
+// [name] sk/blit/equirect_convert
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view;
 	float4x4 sk_proj;

@@ -254,9 +254,9 @@ void input_hand_update_mesh(handed_ hand) {
 
 		data.mesh = mesh_create();
 		if (hand == handed_left)
-			mesh_set_name(data.mesh, "default/mesh_lefthand");
+			mesh_set_id(data.mesh, "default/mesh_lefthand");
 		else
-			mesh_set_name(data.mesh, "default/mesh_righthand");
+			mesh_set_id(data.mesh, "default/mesh_righthand");
 		mesh_set_inds(data.mesh, data.inds, data.ind_count);
 	}
 

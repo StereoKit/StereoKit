@@ -117,7 +117,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			}
 
 			buffer_items.emplace_back(item);
-		} else if (stref_equals(word, "[texture]")) {
+		} if (stref_equals(stref_stripcapture(word,'[',']'), "texture")) {
 
 			shader_tex_slots_item_t item;
 			item.slot = (int)tex_items.size();
@@ -138,6 +138,10 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			}
 
 			tex_items.emplace_back(item);
+		} if (stref_equals(stref_stripcapture(word, '[', ']'), "name")) {
+			if (!stref_nextword(curr, word))
+				continue;
+			shader->name = stref_copy(word);
 		}
 	}
 
@@ -177,8 +181,14 @@ shader_t shader_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void shader_set_name(shader_t shader, const char *name) {
-	assets_set_id(shader->header, name);
+void shader_set_id(shader_t shader, const char *id) {
+	assets_set_id(shader->header, id);
+}
+
+///////////////////////////////////////////
+
+const char *shader_get_name(shader_t shader) {
+	return shader->name;
 }
 
 ///////////////////////////////////////////
@@ -188,7 +198,7 @@ shader_t shader_create_file(const char *filename) {
 	if (result != nullptr)
 		return result;
 	result = (shader_t)assets_allocate(asset_type_shader);
-	shader_set_name    (result, filename);
+	shader_set_id      (result, filename);
 	shader_set_codefile(result, filename);
 
 	return result;
@@ -284,6 +294,7 @@ void shader_destroy_parsedata(shader_t shader) {
 
 	shaderargs_destroy(shader->args);
 	free(shader->args_desc.item);
+	free(shader->name);
 }
 
 ///////////////////////////////////////////

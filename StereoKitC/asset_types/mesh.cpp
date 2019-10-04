@@ -75,8 +75,8 @@ mesh_t mesh_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void mesh_set_name(mesh_t mesh, const char *name) {
-	assets_set_id(mesh->header, name);
+void mesh_set_id(mesh_t mesh, const char *id) {
+	assets_set_id(mesh->header, id);
 }
 
 ///////////////////////////////////////////

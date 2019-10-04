@@ -18,8 +18,8 @@ material_t material_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void material_set_name(material_t material, const char *name) {
-	assets_set_id(material->header, name);
+void material_set_id(material_t material, const char *id) {
+	assets_set_id(material->header, id);
 }
 
 ///////////////////////////////////////////

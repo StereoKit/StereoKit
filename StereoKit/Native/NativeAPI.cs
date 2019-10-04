@@ -30,7 +30,7 @@ namespace StereoKit
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr mesh_find         (string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr mesh_create       ();
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   mesh_set_name     (IntPtr mesh, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   mesh_set_id       (IntPtr mesh, string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   mesh_release      (IntPtr mesh);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void mesh_set_verts    (IntPtr mesh, vert_t* vertices, int vertex_count);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void mesh_set_inds     (IntPtr mesh, vind_t* indices, int index_count);
@@ -47,7 +47,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr tex2d_create_file         (string file);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr tex2d_create_cubemap_file (string equirectangular_file);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr tex2d_create_cubemap_files(string[] cube_face_file_xxyyzz);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex2d_set_name            (IntPtr texture, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex2d_set_id              (IntPtr texture, string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex2d_release             (IntPtr texture);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex2d_set_colors          (IntPtr texture, int width, int height, void* data);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex2d_set_options         (IntPtr texture, TexSample sample = TexSample.Linear, TexAddress address_mode = TexAddress.Wrap, int anisotropy_level = 4);
@@ -68,7 +68,8 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr shader_find        (string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr shader_create      (string hlsl);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr shader_create_file (string filename);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   shader_set_name    (IntPtr shader, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   shader_set_id      (IntPtr shader, string id);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern string shader_get_name    (IntPtr shader);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern int    shader_set_code    (IntPtr shader, string hlsl);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern int    shader_set_codefile(IntPtr shader, string filename);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   shader_release     (IntPtr shader);
@@ -78,7 +79,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr material_find            (string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr material_create          (IntPtr shader);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr material_copy            (IntPtr material);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   material_set_name        (IntPtr material, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   material_set_id          (IntPtr material, string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   material_release         (IntPtr material);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   material_set_alpha_mode  (IntPtr material, AlphaMode mode);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   material_set_cull        (IntPtr material, CullMode  mode);
@@ -144,7 +145,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr model_find        (string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr model_create_mesh (IntPtr mesh, IntPtr material);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr model_create_file (string filename);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   model_set_name    (IntPtr model, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   model_set_id      (IntPtr model, string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr model_get_material(IntPtr model, int subset);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern int    model_subset_count(IntPtr model);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   model_release     (IntPtr model);
@@ -153,7 +154,7 @@ namespace StereoKit
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr sprite_create     (IntPtr sprite,   SpriteType type = SpriteType.Atlased, string atlas_id = "default");
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr sprite_create_file(string filename, SpriteType type = SpriteType.Atlased, string atlas_id = "default");
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_set_name   (IntPtr sprite, string name);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_set_id     (IntPtr sprite, string id);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_release    (IntPtr sprite);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern float  sprite_get_aspect (IntPtr sprite);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_draw       (IntPtr sprite, ref Matrix transform, Color32 color);

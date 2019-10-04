@@ -1,6 +1,7 @@
 #include "shader_builtin.h"
 
 const char* sk_shader_builtin_pbr = R"_(
+// [name] sk/default_pbr
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view;
 	float4x4 sk_proj;

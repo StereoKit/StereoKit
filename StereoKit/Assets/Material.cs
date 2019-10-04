@@ -17,7 +17,7 @@ namespace StereoKit
         public Material(string name, Shader shader)
         {
             _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
-            NativeAPI.material_set_name(_materialInst, name);
+            NativeAPI.material_set_id(_materialInst, name);
         }
         private Material(IntPtr material)
         {

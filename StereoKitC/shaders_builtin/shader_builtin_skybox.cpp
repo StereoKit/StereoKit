@@ -1,6 +1,7 @@
 #include "shader_builtin.h"
 
 extern const char* sk_shader_builtin_skybox = R"_(
+// [name] sk/skybox
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view;
 	float4x4 sk_proj;

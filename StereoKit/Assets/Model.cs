@@ -18,7 +18,7 @@ namespace StereoKit
         public Model(string id, Mesh mesh, Material material)
         {
             _modelInst = NativeAPI.model_create_mesh(mesh._meshInst, material._materialInst);
-            NativeAPI.material_set_name(_modelInst, id);
+            NativeAPI.material_set_id(_modelInst, id);
         }
         private Model(IntPtr model)
         {
