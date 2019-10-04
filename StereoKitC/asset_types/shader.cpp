@@ -7,6 +7,7 @@
 #include <d3dcompiler.h>
 #include <stdio.h>
 #include <assert.h>
+#include <direct.h>
 
 #include <vector>
 using namespace std;
@@ -37,6 +38,41 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 	if (errors) errors->Release();
 
 	return compiled;
+}
+
+///////////////////////////////////////////
+
+ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
+	uint64_t hash = string_hash(hlsl);
+	char cache_name[64];
+	sprintf_s(cache_name, sizeof(cache_name), "cache/%lld.%s.blob", hash, entrypoint);
+	char target[16];
+	sprintf_s(target, sizeof(target), "%s_5_0", entrypoint);
+
+	ID3DBlob *result;
+	FILE     *fp = nullptr;
+	if (fopen_s(&fp, cache_name, "rb") == 0 && fp != nullptr) {
+		fseek(fp, 0, SEEK_END);
+		long length = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+		D3DCreateBlob(length, &result);
+		fread(result->GetBufferPointer(), length, 1, fp);
+		fclose(fp);
+	} else {
+		result = compile_shader(filename, hlsl, entrypoint, target);
+
+		// ensure cache folder is present
+		struct stat st = { 0 };
+		if (stat("cache", &st) == -1) {
+			int err = _mkdir("cache");
+		}
+
+		if (fopen_s(&fp, cache_name, "wb") == 0 && fp != nullptr) {
+			fwrite(result->GetBufferPointer(), result->GetBufferSize(), 1, fp);
+			fclose(fp);
+		}
+	}
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -218,8 +254,8 @@ shader_t shader_create(const char *hlsl) {
 
 bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename) {
 	// Compile the shader code
-	ID3DBlob *vert_shader_blob  = compile_shader(filename, hlsl, "vs", "vs_5_0");
-	ID3DBlob *pixel_shader_blob = compile_shader(filename, hlsl, "ps", "ps_5_0");
+	ID3DBlob *vert_shader_blob  = load_shader(filename, hlsl, "vs");
+	ID3DBlob *pixel_shader_blob = load_shader(filename, hlsl, "ps");
 	if (vert_shader_blob == nullptr || pixel_shader_blob == nullptr)
 		return false;
 
