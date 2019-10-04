@@ -14,6 +14,7 @@ class Program
     public static IScene ActiveScene { get{ return activeScene;} set { nextScene = value; } }
     static void Main(string[] args) 
     {
+        StereoKitApp.settings.shaderCache = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
         CommonInit();

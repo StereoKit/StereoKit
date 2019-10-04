@@ -1,4 +1,5 @@
 #include "../stereokit.h"
+#include "../_stereokit.h"
 #include "../stref.h"
 #include "../systems/d3d.h"
 #include "shader.h"
@@ -44,10 +45,12 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 
 ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
 	uint64_t hash = string_hash(hlsl);
-	char cache_name[64];
-	sprintf_s(cache_name, sizeof(cache_name), "cache/%lld.%s.blob", hash, entrypoint);
+	char folder_name[128];
+	sprintf_s(folder_name, "%s/cache", sk_settings.shader_cache);
+	char cache_name[128];
+	sprintf_s(cache_name, "%s/cache/%lld.%s.blob", sk_settings.shader_cache, hash, entrypoint);
 	char target[16];
-	sprintf_s(target, sizeof(target), "%s_5_0", entrypoint);
+	sprintf_s(target, "%s_5_0", entrypoint);
 
 	ID3DBlob *result;
 	FILE     *fp = nullptr;
@@ -61,12 +64,13 @@ ID3DBlob* load_shader(const char* filename, const char* hlsl, const char* entryp
 	} else {
 		result = compile_shader(filename, hlsl, entrypoint, target);
 
-		// ensure cache folder is present
+		// Ensure cache folder is present
 		struct stat st = { 0 };
-		if (stat("cache", &st) == -1) {
-			int err = _mkdir("cache");
+		if (stat(folder_name, &st) == -1) {
+			int err = _mkdir(folder_name);
 		}
 
+		// Write the blob to file for future use.
 		if (fopen_s(&fp, cache_name, "wb") == 0 && fp != nullptr) {
 			fwrite(result->GetBufferPointer(), result->GetBufferSize(), 1, fp);
 			fclose(fp);

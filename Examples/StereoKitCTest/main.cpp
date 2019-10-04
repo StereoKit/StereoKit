@@ -5,6 +5,8 @@
 #include "demo_ui.h"
 #include "demo_sprites.h"
 
+#include <stdio.h>
+
 solid_t     floor_solid;
 matrix      floor_tr;
 material_t  floor_mat;
@@ -31,6 +33,10 @@ void common_update();
 void common_shutdown();
 
 int main() {
+	sk_settings_t settings = {};
+	sprintf_s(settings.shader_cache, "../../Examples/Assets");
+	sk_set_settings(settings);
+
 	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
 		return 1;
 

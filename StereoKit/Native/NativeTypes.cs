@@ -9,13 +9,15 @@ namespace StereoKit
         MixedReality = 1
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct Settings
     {
         public int flatscreenPosX;
         public int flatscreenPosY;
         public int flatscreenWidth;
         public int flatscreenHeight;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string shaderCache;
     }
 
     [Flags]

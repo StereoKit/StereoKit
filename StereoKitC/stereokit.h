@@ -44,6 +44,8 @@ struct sk_settings_t {
 	int32_t flatscreen_width;
 	/// <summary>If using sk_runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_height;
+	/// <summary>Where to look for cached shaders. Final path will look like '[shader_cache]/cache/[hash].blob'</summary>
+	char shader_cache[128];
 };
 
 /// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling this function, if defaults need changed!</summary>

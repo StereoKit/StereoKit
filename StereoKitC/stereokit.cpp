@@ -23,7 +23,7 @@ const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
 sk_runtime_   sk_runtime  = sk_runtime_flatscreen;
 bool          sk_runtime_fallback = false;
-sk_settings_t sk_settings = {100,100,800,480};
+sk_settings_t sk_settings = {};
 bool32_t      sk_focused = true;
 bool32_t      sk_run     = true;
 
@@ -44,6 +44,12 @@ void sk_set_settings(sk_settings_t &settings) {
 		return;
 	}
 	sk_settings = settings;
+
+	// Set some default values
+	if (sk_settings.flatscreen_width  == 0)
+		sk_settings.flatscreen_width  = 800;
+	if (sk_settings.flatscreen_height == 0)
+		sk_settings.flatscreen_height = 480;
 }
 
 ///////////////////////////////////////////
@@ -59,6 +65,9 @@ bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t 
 	sk_runtime          = runtime_preference;
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
+
+	// Make sure settings get their default values
+	sk_set_settings(sk_settings);
 
 	sk_update_timer();
 

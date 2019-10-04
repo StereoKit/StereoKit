@@ -4,9 +4,11 @@ namespace StereoKit
 {
     public static class StereoKitApp
     {
+        public static Settings settings;
         public static bool    IsInitialized { get; private set; }
         public static Runtime ActiveRuntime { get { return NativeAPI.sk_active_runtime(); } }
         public static float   Time          { get { return NativeAPI.sk_timef(); } }
+
 
         public static bool Initialize(string name, Runtime runtimePreference, bool fallback = true)
         {
@@ -24,6 +26,7 @@ namespace StereoKit
 
             // DllImport finds the function at the beginning of the function call,
             // so this needs to be in a separate function from NativeLib.LoadDll
+            NativeAPI.sk_set_settings(settings);
             return NativeAPI.sk_init(name, runtime, fallback?1:0) > 0;
         }
 
