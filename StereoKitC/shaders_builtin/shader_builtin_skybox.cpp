@@ -11,8 +11,12 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_camera_pos;
 	float4   sk_camera_dir;
 };
+struct Inst {
+	float4x4 world;
+	float4   color;
+};
 cbuffer TransformBuffer : register(b1) {
-	float4x4 sk_world[1];
+	Inst sk_inst[800];
 };
 TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
@@ -33,7 +37,7 @@ struct psOut {
 InOut vs(InOut input, uint id : SV_InstanceID) {
 	InOut output;
 	output.pos  = mul(float4(input.pos.xyz, 0), sk_viewproj);
-	output.norm = normalize(mul(float4(input.norm, 0), sk_world[id]).xyz);
+	output.norm = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	return output;
 }
 

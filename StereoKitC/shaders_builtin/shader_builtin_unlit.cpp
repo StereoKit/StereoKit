@@ -11,8 +11,12 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_camera_pos;
 	float4   sk_camera_dir;
 };
+struct Inst {
+	float4x4 world;
+	float4   color;
+};
 cbuffer TransformBuffer : register(b1) {
-	float4x4 sk_world[1000];
+	Inst sk_inst[800];
 };
 cbuffer ParamBuffer : register(b2) {
 	// [ param ] vector color {1, 1, 1, 1} tags { data for whatever! }
@@ -35,10 +39,10 @@ SamplerState tex_sampler;
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	float3 world = mul(float4(input.pos.xyz, 1), sk_world[id]).xyz;
+	float3 world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
 	output.pos   = mul(float4(world, 1), sk_viewproj);
 	output.uv    = input.uv;
-	output.color = input.col * _color;
+	output.color = input.col * _color * sk_inst[id].color;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {

@@ -17,6 +17,8 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Color
     {
+        public static readonly Color White = new Color(1,1,1,1);
+
         public float r, g, b, a;
         public Color(float r, float g, float b, float a)
         {

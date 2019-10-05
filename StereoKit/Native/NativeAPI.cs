@@ -171,10 +171,10 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_set_view    (IntPtr cam_transform);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_set_light   (ref Vec3 direction, float intensity, ref Color color);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_set_skytex  (IntPtr sky_texture, int show_sky);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_mesh    (IntPtr mesh, IntPtr material, ref Matrix transform);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_mesh_tr (IntPtr mesh, IntPtr material, IntPtr transform);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_model   (IntPtr model, ref Matrix transform);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_model_tr(IntPtr model, IntPtr transform);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_mesh    (IntPtr mesh, IntPtr material, ref Matrix transform, Color color);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_mesh_tr (IntPtr mesh, IntPtr material, IntPtr transform, Color color);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_model   (IntPtr model, ref Matrix transform, Color color);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_add_model_tr(IntPtr model, IntPtr transform, Color color);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_blit        (IntPtr to_rendertarget, IntPtr material);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void render_get_device (void **device, void **context);
 

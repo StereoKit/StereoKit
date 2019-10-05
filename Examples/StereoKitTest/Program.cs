@@ -59,7 +59,7 @@ class Program
     }
     static void CommonUpdate()
     {
-        Renderer.Add(floorMesh, floorTr);
+        Renderer.Add(floorMesh, floorTr, Color.White);
     }
     static void CommonShutdown()
     {

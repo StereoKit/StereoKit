@@ -20,12 +20,14 @@ using namespace DirectX;
 
 struct render_item_t {
 	XMMATRIX    transform;
+	color128    color;
 	mesh_t      mesh;
 	material_t  material;
 	uint64_t    sort_id;
 };
 struct render_transform_buffer_t {
 	XMMATRIX world;
+	color128 color;
 };
 struct render_global_buffer_t {
 	XMMATRIX view;
@@ -50,7 +52,7 @@ struct render_inst_buffer {
 ///////////////////////////////////////////
 
 vector<render_transform_buffer_t> render_instance_list;
-render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 1000 } };
+render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 800 } };
 
 vector<render_item_t>  render_queue;
 shaderargs_t           render_shader_globals;
@@ -119,17 +121,18 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 
 ///////////////////////////////////////////
 
-void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform) {
+void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform, color128 color) {
 	transform_update(transform);
-	render_add_mesh(mesh, material, transform._transform);
+	render_add_mesh(mesh, material, transform._transform, color);
 }
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) {
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color) {
 	render_item_t item;
 	item.mesh     = mesh;
 	item.material = material;
+	item.color    = color;
 	item.sort_id  = render_queue_id(material, mesh);
 	math_matrix_to_fast(transform, &item.transform);
 	render_queue.emplace_back(item);
@@ -137,18 +140,19 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform) 
 
 ///////////////////////////////////////////
 
-void render_add_model_tr(model_t model, transform_t &transform) {
+void render_add_model_tr(model_t model, transform_t &transform, color128 color) {
 	transform_update(transform);
-	render_add_model(model, transform._transform);
+	render_add_model(model, transform._transform, color);
 }
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, const matrix &transform) {
+void render_add_model(model_t model, const matrix &transform, color128 color) {
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
+		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, item.mesh);
 		matrix_mul(model->subsets[i].offset, transform, item.transform);
 		render_queue.emplace_back(item);
@@ -196,7 +200,7 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 	mesh_t         last_mesh     = item->mesh;
 	
 	for (size_t i = 0; i < queue_size; i++) {
-		render_instance_list.emplace_back(render_transform_buffer_t { XMMatrixTranspose(item->transform) } );
+		render_instance_list.emplace_back(render_transform_buffer_t { XMMatrixTranspose(item->transform), item->color } );
 
 		render_item_t *next = i+1>=queue_size?nullptr:&render_queue[i+1];
 		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {

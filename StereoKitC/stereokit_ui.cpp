@@ -40,7 +40,7 @@ uint64_t skui_control_active [2] = {};
 
 void sk_ui_push_pose(pose_t pose, vec2 size);
 void sk_ui_pop_pose ();
-void sk_ui_box      (vec3 start, vec3 size, material_t material);
+void sk_ui_box      (vec3 start, vec3 size, material_t material, color128 color);
 void sk_ui_text     (vec3 start, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
 
 ///////////////////////////////////////////
@@ -96,12 +96,12 @@ void sk_ui_pop_pose() {
 
 ///////////////////////////////////////////
 
-void sk_ui_box(vec3 start, vec3 size, material_t material) {
+void sk_ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
 	matrix mx = matrix_trs(pos, quat_identity, size);
 	matrix_mul(mx, skui_layers.back().transform, mx);
 
-	render_add_mesh(skui_box, material, mx);
+	render_add_mesh(skui_box, material, mx, color);
 }
 
 ///////////////////////////////////////////
@@ -219,7 +219,7 @@ bool32_t sk_ui_button(const char *text) {
 	}
 
 	sk_ui_reserve_box(size);
-	sk_ui_box (offset, vec3{ size.x, size.y, finger_offset }, result ? skui_mat_active : skui_mat);
+	sk_ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
 	sk_ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
 	sk_ui_nextline();
 
@@ -265,7 +265,7 @@ bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size
 		}
 	}
 
-	sk_ui_box (at, size, result ? skui_mat_active : skui_mat);
+	sk_ui_box (at, size, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
 	sk_ui_nextline();
 
 	return result;
@@ -276,7 +276,7 @@ bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size
 bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
 	uint64_t   id     = sk_ui_hash(name);
 	bool       result = false;
-	material_t mat    = skui_mat;
+	color128   color  = {1,1,1,1};
 	vec3       offset = skui_layers.back().offset;
 
 	// Find sizes of slider elements
@@ -291,7 +291,7 @@ bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, flo
 	for (size_t i = 0; i < handed_max; i++) {
 		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
-			mat = skui_mat_active;
+			color = { 0.5f,0.5f,0.5f,1 };
 			float new_val = ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
@@ -306,8 +306,8 @@ bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, flo
 
 	// Draw the UI
 	sk_ui_reserve_box(size);
-	sk_ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, mat);
-	sk_ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, mat);
+	sk_ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, color);
+	sk_ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, skui_mat, color);
 	sk_ui_nextline();
 	
 	return result;

@@ -26,7 +26,7 @@ class DemoBasics : IScene
         for (int i = 0; i < objects.Count; i++)
         {
             objects[i].GetTransform(ref solidTr);
-            Renderer.Add(gltf, solidTr);
+            Renderer.Add(gltf, solidTr, Color.White);
         }
     }
 
