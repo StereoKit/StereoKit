@@ -81,6 +81,7 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 			return result;
 		result.size = blob->GetBufferSize();
 		result.data = malloc(result.size);
+		memcpy(result.data, blob->GetBufferPointer(), result.size);
 		blob->Release();
 
 		// Ensure cache folder is present
@@ -102,7 +103,6 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 ///////////////////////////////////////////
 
 void shader_parse_file(shader_t shader, const char *hlsl) {
-
 	stref_t file = stref_make(hlsl);
 	stref_t line = {};
 
@@ -115,11 +115,16 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 		stref_t word = {};
 		stref_trim(curr);
 		
+		// Make sure it's not an empty line, and it begins with a comment tag
 		if (!stref_nextword(curr, word, ' ', '[', ']') || !stref_equals(word, "//"))
 			continue;
 		if (!stref_nextword(curr, word, ' ', '[', ']'))
 			continue;
-		if (stref_equals(stref_stripcapture(word,'[',']'), "param")) {
+		// Ensure this is a tag we'll want to parse (starts with '[')
+		if (*word.start != '[')
+			continue;
+		stref_t stripped_word = stref_stripcapture(word, '[', ']');
+		if (stref_equals(stripped_word, "param")) {
 			if (!stref_nextword(curr, word))
 				continue;
 
@@ -177,7 +182,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			}
 
 			buffer_items.emplace_back(item);
-		} if (stref_equals(stref_stripcapture(word,'[',']'), "texture")) {
+		} if (stref_equals(stripped_word, "texture")) {
 
 			shader_tex_slots_item_t item;
 			item.slot = (int)tex_items.size();
@@ -198,7 +203,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			}
 
 			tex_items.emplace_back(item);
-		} if (stref_equals(stref_stripcapture(word, '[', ']'), "name")) {
+		} if (stref_equals(stripped_word, "name")) {
 			if (!stref_nextword(curr, word))
 				continue;
 			shader->name = stref_copy(word);
