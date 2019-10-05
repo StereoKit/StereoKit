@@ -334,3 +334,6 @@ ASALocalRun/
 !**/ReactPhysics/**
 !**/LeapC/**
 !**/Assets/**
+
+# Ignore cached shader blobs
+*/Assets/cache
