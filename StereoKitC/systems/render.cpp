@@ -207,7 +207,7 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 			do {
 				shaderargs_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
 				shaderargs_set_active(*instances, false);
-				render_draw_item(count);
+				render_draw_item((int)count);
 			} while (offsets != 0);
 			render_instance_list.clear();
 			
@@ -453,7 +453,7 @@ void render_draw_item(int count) {
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
 	size_t size  = list.size() - offset;
-	int    index = 0;
+	size_t index = 0;
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		index = i;
 		if (render_instance_buffers[i].max >= size)

@@ -66,7 +66,7 @@ sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
 		uint64_t     map_id = string_hash(atlas_id);
 		spritemap_t *map    = nullptr;
 		int32_t      index  = -1;
-		for (size_t i = 0; i < sprite_map_count; i++) {
+		for (int32_t i = 0; i < sprite_map_count; i++) {
 			if (sprite_maps[i].id == map_id) {
 				map   = &sprite_maps[i];
 				index = i;

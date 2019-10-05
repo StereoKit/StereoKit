@@ -17,15 +17,15 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
 		return;
 
-	buffer.vert_cap = buffer.vert_count + characters * 4;
+	buffer.vert_cap = buffer.vert_count + (int)characters * 4;
 	buffer.verts    = (vert_t *)realloc(buffer.verts, sizeof(vert_t) * buffer.vert_cap);
 
 	// regenerate indices
 	int     quads = buffer.vert_cap / 4;
 	vind_t *inds  = (vind_t *)malloc(quads * 6 * sizeof(vind_t));
-	for (size_t i = 0; i < quads; i++) {
-		int q = i * 4;
-		int c = i * 6;
+	for (int32_t i = 0; i < quads; i++) {
+		int32_t q = i * 4;
+		int32_t c = i * 6;
 		inds[c+0] = q+2;
 		inds[c+1] = q+1;
 		inds[c+2] = q;
@@ -41,8 +41,8 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 ///////////////////////////////////////////
 
 text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align) {
-	uint32_t       id     = font->header.id << 16 | material->header.id;
-	uint32_t       index  = 0;
+	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
+	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
 	
 	// Find or make a buffer for this style
@@ -73,12 +73,12 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	// Create the style
 	_text_style_t style;
 	style.font         = font;
-	style.buffer_index = index;
+	style.buffer_index = (uint32_t)index;
 	style.align        = align;
 	style.height       = character_height;
 	text_styles.push_back(style);
 
-	return text_styles.size() - 1;
+	return (text_style_t)(text_styles.size() - 1);
 }
 
 ///////////////////////////////////////////

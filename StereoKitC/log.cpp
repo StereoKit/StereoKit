@@ -116,7 +116,7 @@ char *log_replace_colors(const char *text, const char **color_keys, const char *
 			}
 			if (*ch == '>') {
 				int key_id = count-1;
-				for (size_t i = 0; i < count; i++) {
+				for (int i = 0; i < count; i++) {
 					if (string_eq(key, color_keys[i])) {
 						key_id = i;
 						break;

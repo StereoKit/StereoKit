@@ -53,7 +53,7 @@ void systems_add(const char *name, const char **init_dependencies, int32_t init_
 ///////////////////////////////////////////
 
 int32_t systems_find(const char *name) {
-	for (size_t i = 0; i < system_count; i++) {
+	for (int32_t i = 0; i < system_count; i++) {
 		if (string_eq(name, systems[i].name))
 			return i;
 	}
@@ -227,7 +227,7 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 	memset(marks, 0, sizeof(uint8_t) * count);
 
 	while (sorted_curr > 0) {
-		for (size_t i = 0; i < count; i++) {
+		for (int32_t i = 0; i < count; i++) {
 			if (marks[i] != 0)
 				continue;
 			int result = topological_sort_visit(dependencies, count, i, marks, &sorted_curr, *out_order);
@@ -253,8 +253,8 @@ int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, i
 	if (marks[index] == MARK_PERM) return 0;
 	if (marks[index] == MARK_TEMP) return index;
 	marks[index] = MARK_TEMP;
-	for (size_t i = 0; i < count; i++) {
-		for (size_t d = 0; d < dependencies[i].count; d++) {
+	for (int32_t i = 0; i < count; i++) {
+		for (int32_t d = 0; d < dependencies[i].count; d++) {
 			if (dependencies[i].ids[d] == index) {
 				int result = topological_sort_visit(dependencies, count, i, marks, sorted_curr, out_order);
 				if (result != 0)
@@ -274,7 +274,7 @@ void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_o
 	uint8_t *src    = (uint8_t*)*list;
 	uint8_t *result = (uint8_t*)malloc(item_size * count);
 
-	for (size_t i = 0; i < count; i++) {
+	for (int32_t i = 0; i < count; i++) {
 		memcpy(&result[i * item_size], &src[sort_order[i] * item_size], item_size);
 	}
 

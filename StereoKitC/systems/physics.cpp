@@ -52,7 +52,7 @@ void physics_shutdown() {
 
 void physics_update() {
 	// How many physics frames are we going to be calculating this time?
-	int frames = ceil((sk_timev - physics_sim_time) / physics_step);
+	int32_t frames = (int32_t)ceil((sk_timev - physics_sim_time) / physics_step);
 	if (frames <= 0)
 		return;
 
@@ -62,7 +62,7 @@ void physics_update() {
 		// Position
 		move.old_velocity  = move.body->getLinearVelocity();
 		Vector3       pos  = move.body->getTransform().getPosition();
-		Vector3       velocity = (move.dest - pos) / (physics_step * frames);
+		Vector3       velocity = (move.dest - pos) / (reactphysics3d::decimal)(physics_step * frames);
 		move.body->setLinearVelocity(velocity);
 		// Rotation
 		move.old_rot_velocity = move.body->getAngularVelocity();
@@ -73,14 +73,14 @@ void physics_update() {
 			Vector3 axis;
 			delta.getRotationAngleAxis(angle, axis);
 			if (!isnan(angle)) {
-				move.body->setAngularVelocity((angle / (physics_step * frames)) * axis.getUnit());
+				move.body->setAngularVelocity((angle / (reactphysics3d::decimal)(physics_step * frames)) * axis.getUnit());
 			}
 		}
 	}
 
 	// Sim physics!
 	while (physics_sim_time < sk_timev) {
-		physics_world->update(physics_step);
+		physics_world->update((reactphysics3d::decimal)physics_step);
 		physics_sim_time += physics_step;
 	}
 

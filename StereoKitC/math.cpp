@@ -98,7 +98,7 @@ void matrix_mul(const matrix &a, const matrix &b, matrix &out_matrix) {
 ///////////////////////////////////////////
 
 void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix) {
-	XMMATRIX mat_a, mat_b, mat_result;
+	XMMATRIX mat_a, mat_b;
 	math_matrix_to_fast(a, &mat_a);
 	math_matrix_to_fast(b, &mat_b);
 	out_matrix = mat_a * mat_b;

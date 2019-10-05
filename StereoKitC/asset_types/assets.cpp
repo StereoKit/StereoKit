@@ -63,7 +63,7 @@ void *assets_allocate(asset_type_ type) {
 	}
 
 	char name[64];
-	sprintf_s(name, 64, "auto/asset_%d", assets.size());
+	sprintf_s(name, "auto/asset_%lld", assets.size());
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
