@@ -93,7 +93,7 @@ bool  stref_equals(const stref_t &aRef, const char *aIs) {
 		aIs++;
 		curr++;
 	}
-	return curr == aRef.length;
+	return curr == aRef.length && *aIs == '\0';
 }
 
 ///////////////////////////////////////////
@@ -249,8 +249,13 @@ uint32_t  stref_count(stref_t &aRef, char aChar) {
 bool stref_nextline(stref_t &from, stref_t &curr_line) {
 	assert(curr_line.temp == false);
 
-	if (curr_line.start == nullptr)
+	if (curr_line.start == nullptr) {
 		curr_line = stref_substr(from, 0, from.length);
+		char *curr = (char*)(curr_line.start);
+		while (*curr != '\n' && *curr != '\r' && *curr != '\0') curr++;
+		curr_line.length = (uint32_t)(curr - curr_line.start);
+		return true;
+	}
 
 	char *curr = (char*)(curr_line.start);
 	while (*curr != '\n' && *curr != '\r' && *curr != '\0') curr++;
