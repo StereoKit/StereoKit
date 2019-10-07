@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 font_t font_find(const char *id) {
@@ -105,3 +107,5 @@ void font_destroy(font_t font) {
 tex2d_t font_get_tex(font_t font) {
 	return font->font_tex;
 }
+
+} // namespace sk

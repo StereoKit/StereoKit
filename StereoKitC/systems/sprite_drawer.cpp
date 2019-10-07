@@ -7,6 +7,8 @@
 #include <vector>
 using namespace std;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 vector<sprite_buffer_t> sprite_buffers;
@@ -126,3 +128,5 @@ void sprite_drawer_shutdown() {
 	}
 	sprite_buffers.clear();
 }
+
+} // namespace sk

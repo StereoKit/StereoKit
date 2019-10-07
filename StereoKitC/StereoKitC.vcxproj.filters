@@ -13,9 +13,6 @@
     <ClCompile Include="math.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="stref.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="log.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -106,12 +103,12 @@
     <ClCompile Include="stereokit_ui.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\stref.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
-    <ClInclude Include="stref.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="_stereokit.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -203,6 +200,9 @@
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="stereokit_ui.h" />
+    <ClInclude Include="libraries\stref.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

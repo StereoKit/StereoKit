@@ -4,6 +4,8 @@
 
 #include <string.h>
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 tex2d_t    sk_default_tex;
@@ -119,3 +121,5 @@ void defaults_shutdown() {
 	tex2d_release   (sk_default_tex_flat);
 	tex2d_release   (sk_default_tex_rough);
 }
+
+} // namespace sk

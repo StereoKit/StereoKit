@@ -1,9 +1,11 @@
 #include "material.h"
 #include "texture.h"
 #include "../systems/d3d.h"
-#include "../stref.h"
+#include "../libraries/stref.h"
 
 #include <stdio.h>
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -352,3 +354,5 @@ void material_get_param_info(material_t material, int index, char **out_name, ma
 int material_get_param_count(material_t material) {
 	return material->shader->args_desc.item_count;
 }
+
+} // namespace sk

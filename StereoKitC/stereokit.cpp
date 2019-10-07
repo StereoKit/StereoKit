@@ -17,28 +17,30 @@ using namespace std;
 #include <chrono>
 using namespace std::chrono;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
-const char   *sk_app_name;
-void        (*sk_app_update_func)(void);
-sk_runtime_   sk_runtime  = sk_runtime_flatscreen;
-bool          sk_runtime_fallback = false;
-sk_settings_t sk_settings = {};
-bool32_t      sk_focused = true;
-bool32_t      sk_run     = true;
+const char*sk_app_name;
+void     (*sk_app_update_func)(void);
+runtime_   sk_runtime = runtime_flatscreen;
+bool       sk_runtime_fallback = false;
+settings_t sk_settings = {};
+bool32_t   sk_focused  = true;
+bool32_t   sk_run      = true;
 
 bool sk_initialized = false;
 
-float  sk_timevf = 0;
-double sk_timev  = 0;
-double sk_time_start    = 0;
-double sk_timev_elapsed  = 0;
-float  sk_timev_elapsedf = 0;
-int64_t sk_timev_raw = 0;
+float   sk_timevf = 0;
+double  sk_timev  = 0;
+double  sk_time_start     = 0;
+double  sk_timev_elapsed  = 0;
+float   sk_timev_elapsedf = 0;
+int64_t sk_timev_raw      = 0;
 
 ///////////////////////////////////////////
 
-void sk_set_settings(sk_settings_t &settings) {
+void sk_set_settings(settings_t &settings) {
 	if (sk_initialized) {
 		log_write(log_error, "Settings need set before initialization! Please call this -before- sk_init.");
 		return;
@@ -61,7 +63,7 @@ void sk_app_update() {
 
 ///////////////////////////////////////////
 
-bool32_t sk_init(const char *app_name, sk_runtime_ runtime_preference, bool32_t fallback) {
+bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
 	sk_runtime          = runtime_preference;
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
@@ -165,8 +167,14 @@ void sk_update_timer() {
 
 ///////////////////////////////////////////
 
-float  sk_timef        (){ return sk_timevf; };
-double sk_time         (){ return sk_timev; };
-float  sk_time_elapsedf(){ return sk_timev_elapsedf; };
-double sk_time_elapsed (){ return sk_timev_elapsed; };
-sk_runtime_ sk_active_runtime() { return sk_runtime;  }
+runtime_ sk_active_runtime() { return sk_runtime; }
+
+///////////////////////////////////////////
+
+float  time_getf    (){ return sk_timevf; };
+double time_get     (){ return sk_timev; };
+float  time_elapsedf(){ return sk_timev_elapsedf; };
+double time_elapsed (){ return sk_timev_elapsed; };
+
+
+} // namespace sk

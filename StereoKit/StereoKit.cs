@@ -5,11 +5,9 @@ namespace StereoKit
     public static class StereoKitApp
     {
         public static Settings settings;
-        public static bool    IsInitialized { get; private set; }
-        public static Runtime ActiveRuntime { get { return NativeAPI.sk_active_runtime(); } }
-        public static float   Time          { get { return NativeAPI.sk_timef(); } }
-
-
+        public static bool     IsInitialized { get; private set; }
+        public static Runtime  ActiveRuntime { get { return NativeAPI.sk_active_runtime(); } }
+        
         public static bool Initialize(string name, Runtime runtimePreference, bool fallback = true)
         {
             // Selects appropriate DLL for the platform, must be called first, and before

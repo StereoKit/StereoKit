@@ -1,13 +1,15 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/d3d.h"
-#include "../stref.h"
+#include "../libraries/stref.h"
 #include "texture.h"
 
 #pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libraries/stb_image.h"
 #pragma warning( default : 26451 6011 6262 6308 6387 28182 )
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -605,3 +607,5 @@ bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **ou
 	*out_height  = h;
 	return w > 1 && h > 1;
 }
+
+} // namespace sk

@@ -14,6 +14,8 @@
 #include <map>
 using namespace std;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 bool modelfmt_obj (model_t model, const char *filename);
@@ -426,3 +428,5 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 	cgltf_free(data);
 	return true;
 }
+
+} // namespace sk

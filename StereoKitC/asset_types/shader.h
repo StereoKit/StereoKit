@@ -5,6 +5,8 @@
 #include "../stereokit.h"
 #include "assets.h"
 
+namespace sk {
+
 extern const size_t shaderarg_size[];
 
 struct shaderargs_data_t {
@@ -63,3 +65,5 @@ void shaderargs_create    (shaderargs_t &args, size_t buffer_size, int buffer_sl
 void shaderargs_destroy   (shaderargs_t &args);
 void shaderargs_set_data  (shaderargs_t &args, void *data, size_t buffer_size = 0);
 void shaderargs_set_active(shaderargs_t &args, bool include_ps = true);
+
+} // namespace sk

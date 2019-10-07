@@ -1,10 +1,12 @@
 #include "stereokit.h"
 #include "_stereokit.h"
-#include "stref.h"
+#include "libraries/stref.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -186,3 +188,5 @@ void log_set_filter(log_ level) {
 void log_set_colors(log_colors_ colors) {
 	log_colors = colors;
 }
+
+} // namespace sk

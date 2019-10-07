@@ -6,6 +6,8 @@
 #include <vector>
 using namespace std;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 vector<_text_style_t> text_styles;
@@ -216,3 +218,5 @@ void text_shutdown() {
 	}
 	text_buffers.clear();
 }
+
+} // namespace sk

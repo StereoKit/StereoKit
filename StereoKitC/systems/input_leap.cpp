@@ -1,4 +1,4 @@
-#if !defined( SK_NO_LEAP_MOTION )
+#ifndef SK_NO_LEAP_MOTION
 
 #pragma comment(lib, "leapC.lib")
 
@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <process.h>
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -118,5 +120,7 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 		}
 	}
 }
+
+} // namespace sk
 
 #endif

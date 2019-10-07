@@ -16,6 +16,8 @@ using namespace std;
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 struct render_item_t {
@@ -486,3 +488,5 @@ void render_get_device(void **device, void **context) {
 	*device  = d3d_device;
 	*context = d3d_context;
 }
+
+} // namespace sk

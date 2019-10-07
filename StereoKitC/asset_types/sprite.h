@@ -3,6 +3,8 @@
 #include "../stereokit.h"
 #include "assets.h"
 
+namespace sk {
+
 struct _sprite_t {
 	asset_header_t header;
 
@@ -15,3 +17,5 @@ struct _sprite_t {
 };
 
 void sprite_destroy(sprite_t sprite);
+
+} // namespace sk

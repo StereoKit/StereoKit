@@ -3,6 +3,8 @@
 #include "../stereokit.h"
 #include "../asset_types/sprite.h"
 
+namespace sk {
+
 struct sprite_buffer_t {
 	material_t material;
 	mesh_t     mesh;
@@ -17,3 +19,5 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color = {
 bool sprite_drawer_init    ();
 void sprite_drawer_update  ();
 void sprite_drawer_shutdown();
+
+} // namespace sk

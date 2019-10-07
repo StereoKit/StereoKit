@@ -3,6 +3,7 @@
 #include "stereokit.h"
 #include <DirectXMath.h>
 
+namespace sk {
 
 void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
 
@@ -45,3 +46,5 @@ inline void math_matrix_to_fast(const matrix &mat, DirectX::XMMATRIX *out_matrix
 inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix) {
 	DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4 *)out_matrix, mat);
 }
+
+} // namespace sk

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "../../StereoKitC/stereokit.h"
+using namespace sk;
 
 ///////////////////////////////////////////
 

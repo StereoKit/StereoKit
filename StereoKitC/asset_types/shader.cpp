@@ -1,6 +1,6 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
-#include "../stref.h"
+#include "../libraries/stref.h"
 #include "../systems/d3d.h"
 #include "shader.h"
 #include "assets.h"
@@ -11,6 +11,8 @@
 
 #include <vector>
 using namespace std;
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -422,3 +424,5 @@ void shaderargs_destroy(shaderargs_t &args) {
 	if (args.const_buffer != nullptr) args.const_buffer->Release();
 	args = {};
 }
+
+} // namespace sk

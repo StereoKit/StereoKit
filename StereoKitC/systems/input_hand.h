@@ -2,6 +2,8 @@
 
 #include "../stereokit.h"
 
+namespace sk {
+
 enum hand_finger_ {
 	hand_finger_thumb = 0,
 	hand_finger_index,
@@ -26,3 +28,5 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 void input_hand_update_mesh(handed_ hand);
 void input_hand_state_update(handed_ handedness);
 void input_hand_make_solid();
+
+} // namespace sk

@@ -14,6 +14,8 @@
 #include "../d3d.h"
 #include "../input.h"
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 HWND             win32_window    = nullptr;
@@ -173,5 +175,7 @@ void win32_step_end() {
 void win32_vsync() {
 	win32_swapchain->Present(1, 0);
 }
+
+} // namespace sk
 
 #endif // SK_NO_FLATSCREEN

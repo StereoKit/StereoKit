@@ -6,6 +6,8 @@
 #include "../stereokit.h"
 #include "assets.h"
 
+namespace sk {
+
 struct _mesh_t {
 	asset_header_t header;
 	int            vert_count;
@@ -16,3 +18,5 @@ struct _mesh_t {
 };
 
 void mesh_destroy(mesh_t mesh);
+
+} // namespace sk

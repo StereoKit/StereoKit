@@ -14,6 +14,8 @@
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 int  win32_input_pointers[2];
@@ -25,7 +27,7 @@ void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
-#if !defined(SK_NO_LEAP_MOTION)
+#ifndef SK_NO_LEAP_MOTION
 	win32_use_leap = input_leap_init();
 #endif
 }
@@ -33,7 +35,7 @@ void win32_input_init() {
 ///////////////////////////////////////////
 
 void win32_input_shutdown() {
-#if !defined(SK_NO_LEAP_MOTION)
+#ifndef SK_NO_LEAP_MOTION
 	if (win32_use_leap)
 		input_leap_shutdown();
 #endif
@@ -42,7 +44,7 @@ void win32_input_shutdown() {
 ///////////////////////////////////////////
 
 void win32_input_update() {
-#if !defined(SK_NO_LEAP_MOTION)
+#ifndef SK_NO_LEAP_MOTION
 	if (win32_use_leap && leap_has_device) {
 		input_leap_update();
 		return;
@@ -116,5 +118,7 @@ void win32_input_update() {
 	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? input_state_justpinch   : input_state_unpinch,   *pointer_cursor);
 	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? input_state_justgrip    : input_state_ungrip,    *pointer_cursor);
 }
+
+} // namespace sk
 
 #endif // SK_NO_FLATSCREEN

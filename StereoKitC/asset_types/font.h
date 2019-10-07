@@ -4,6 +4,8 @@
 #include "../libraries/stb_truetype.h"
 #include "assets.h"
 
+namespace sk {
+
 struct font_char_t {
 	float x0,y0,x1,y1;
 	float u0,v0,u1,v1;
@@ -16,3 +18,5 @@ struct _font_t {
 };
 
 void font_destroy(font_t font);
+
+} // namespace sk

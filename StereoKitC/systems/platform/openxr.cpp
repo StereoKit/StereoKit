@@ -21,6 +21,8 @@
 
 using namespace std;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 struct swapchain_t {
@@ -568,3 +570,5 @@ void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer) {
 	memcpy(&pointer->orientation, &pose.orientation, sizeof(quat));
 	pointer->ray.dir = pointer->orientation * vec3_forward;
 }
+
+} // namespace sk

@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../stref.h"
+#include "../libraries/stref.h"
 #include "../stereokit.h"
 
 #include <chrono>
 using namespace std::chrono;
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -281,3 +283,5 @@ void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_o
 	*list = result;
 	free(src);
 }
+
+} // namespace sk

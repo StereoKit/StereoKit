@@ -5,6 +5,8 @@
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 void transform_initialize(transform_t &transform) {
@@ -171,3 +173,5 @@ vec3 transform_local_to_world_dir(transform_t &transform, const vec3 &local_dire
 	XMStoreFloat3((XMFLOAT3 *)& result, resultXM);
 	return result;
 }
+
+} // namespace sk

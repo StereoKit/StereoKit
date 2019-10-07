@@ -5,6 +5,8 @@
 #include <vector>
 using namespace std;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 struct input_event_t {
@@ -103,3 +105,4 @@ void input_update() {
 	input_hand_update();
 }
 
+} // namespace sk {

@@ -24,26 +24,28 @@ inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~s
 #include <stdint.h>
 #include <math.h>
 
+namespace sk {
+
 typedef int32_t bool32_t;
 
 ///////////////////////////////////////////
 
-enum sk_runtime_ {
+enum runtime_ {
 	/// <summary>Creates a flat, Win32 window, and simulares some MR functionality. Great for debugging.</summary>
-	sk_runtime_flatscreen   = 0,
+	runtime_flatscreen   = 0,
 	/// <summary>Creates an OpenXR instance, and drives display/input through that.</summary>
-	sk_runtime_mixedreality = 1
+	runtime_mixedreality = 1
 };
 
 /// <summary>StereoKit miscellaneous initialization settings! Call sk_set_settings() with this data before calling sk_init.</summary>
-struct sk_settings_t {
-	/// <summary>If using sk_runtime_flatscreen, the position of the window on the screen.</summary>
+struct settings_t {
+	/// <summary>If using runtime_flatscreen, the position of the window on the screen.</summary>
 	int32_t flatscreen_pos_x;
-	/// <summary>If using sk_runtime_flatscreen, the position of the window on the screen.</summary>
+	/// <summary>If using runtime_flatscreen, the position of the window on the screen.</summary>
 	int32_t flatscreen_pos_y;
-	/// <summary>If using sk_runtime_flatscreen, the size of the window on the screen.</summary>
+	/// <summary>If using runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_width;
-	/// <summary>If using sk_runtime_flatscreen, the size of the window on the screen.</summary>
+	/// <summary>If using runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_height;
 	/// <summary>Where to look for cached shaders. Final path will look like '[shader_cache]/cache/[hash].blob'</summary>
 	char shader_cache[128];
@@ -55,10 +57,10 @@ struct sk_settings_t {
 /// <param name='fallback'         >If the preferred runtime fails, should we fall back to flatscreen?</param>
 /// <returns>Returns true if all systems are successfully initialized!</returns>
 /// <example><code>
-/// if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+/// if (!sk_init("StereoKit C", runtime_flatscreen))
 ///     return false;
 /// </code></example>
-SK_API bool32_t sk_init      (const char *app_name, sk_runtime_ preferred_runtime, bool32_t fallback = true);
+SK_API bool32_t sk_init      (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
 /// <summary>Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.</summary>
 SK_API void     sk_shutdown  ();
 /// <summary>Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.</summary>
@@ -70,13 +72,15 @@ SK_API void     sk_shutdown  ();
 /// }));
 /// </code></example>
 SK_API bool32_t sk_step      (void (*app_update)(void));
+SK_API runtime_ sk_active_runtime();
+SK_API void     sk_set_settings  (settings_t& settings);
 
-SK_API float       sk_timef();
-SK_API double      sk_time();
-SK_API float       sk_time_elapsedf();
-SK_API double      sk_time_elapsed();
-SK_API sk_runtime_ sk_active_runtime();
-SK_API void        sk_set_settings(sk_settings_t &settings);
+///////////////////////////////////////////
+
+SK_API float    time_getf();
+SK_API double   time_get ();
+SK_API float    time_elapsedf();
+SK_API double   time_elapsed ();
 
 ///////////////////////////////////////////
 
@@ -541,3 +545,5 @@ SK_API void log_write     (log_ level, const char *text);
 SK_API void log_writef    (log_ level, const char *text, ...);
 SK_API void log_set_filter(log_ level);
 SK_API void log_set_colors(log_colors_ colors);
+
+} // namespace sk

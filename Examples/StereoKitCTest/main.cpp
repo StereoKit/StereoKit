@@ -1,4 +1,5 @@
 #include "../../StereoKitC/stereokit.h"
+using namespace sk;
 
 #include "scene.h"
 #include "demo_basics.h"
@@ -33,11 +34,11 @@ void common_update();
 void common_shutdown();
 
 int main() {
-	sk_settings_t settings = {};
+	settings_t settings = {};
 	sprintf_s(settings.shader_cache, "../../Examples/Assets");
 	sk_set_settings(settings);
 
-	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+	if (!sk_init("StereoKit C", runtime_flatscreen))
 		return 1;
 
 	common_init();

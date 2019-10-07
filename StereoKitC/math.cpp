@@ -3,6 +3,8 @@
 
 using namespace DirectX;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 vec3 quat_mul_vec(const quat &a, const vec3 &b) {
@@ -141,3 +143,5 @@ void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orient
 		XMLoadFloat3((XMFLOAT3 *)& position));
 	math_fast_to_matrix(mat, &out_result);
 }
+
+} // namespace sk

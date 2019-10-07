@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+namespace sk {
+
 enum asset_type_ {
 	asset_type_mesh = 0,
 	asset_type_texture,
@@ -31,3 +33,5 @@ void  assets_unique_name(const char *root_name, char *dest, int dest_size);
 void  assets_addref     (asset_header_t &asset);
 void  assets_releaseref (asset_header_t &asset);
 void  assets_shutdown_check();
+
+} // namespace sk

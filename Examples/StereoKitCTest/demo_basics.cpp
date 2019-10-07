@@ -1,6 +1,7 @@
 #include "demo_basics.h"
 
 #include "../../StereoKitC/stereokit.h"
+using namespace sk;
 #include <vector>
 using namespace std;
 
@@ -48,7 +49,7 @@ void demo_basics_update() {
 
 	transform_set_position(text_tr, input_hand(handed_right).root.position);
 	transform_set_rotation(text_tr, input_hand(handed_right).root.orientation);
-	if (cosf(sk_timef()*10) > 0) {
+	if (cosf(time_getf()*10) > 0) {
 		const char *txt = "Testing spaces!!!\n\tAnd newlines?\tAnd Tabs.\nAnother line\n<3";
 		vec2 txt_size = text_size(font_style, txt);
 		text_add_at(font_style, transform_matrix(text_tr), txt);

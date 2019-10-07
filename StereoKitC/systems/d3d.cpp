@@ -4,6 +4,8 @@
 #include "../stereokit.h"
 #include "d3d.h"
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 ID3D11Device             *d3d_device        = nullptr;
@@ -112,3 +114,5 @@ void d3d_update() {
 	d3d_info->ClearStoredMessages();
 	#endif
 }
+
+} // namespace sk

@@ -7,11 +7,13 @@
 #include "model.h"
 #include "font.h"
 #include "sprite.h"
-#include "../stref.h"
+#include "../libraries/stref.h"
 
 #include <assert.h>
 #include <vector>
 using namespace std;
+
+namespace sk {
 
 ///////////////////////////////////////////
 
@@ -63,7 +65,7 @@ void *assets_allocate(asset_type_ type) {
 	}
 
 	char name[64];
-	sprintf_s(name, "auto/asset_%lld", assets.size());
+	sprintf_s(name, "auto/asset_%d", (int)assets.size());
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
@@ -143,3 +145,5 @@ void  assets_shutdown_check() {
 		log_writef(log_error, "%d unreleased assets still found in the asset manager!", (int)assets.size());
 	}
 }
+
+} // namespace sk

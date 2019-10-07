@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 ID3D11InputLayout *vert_t_layout = nullptr;
@@ -358,3 +360,5 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 	DX11ResType(result->vert_buffer, "verts_gen_rndcube");
 	return result;
 }
+
+} // namespace sk

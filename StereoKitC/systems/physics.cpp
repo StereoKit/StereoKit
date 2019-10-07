@@ -9,6 +9,8 @@ using namespace std;
 #include <reactphysics3d.h>
 using namespace reactphysics3d;
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 struct solid_move_t {
@@ -203,3 +205,5 @@ void solid_get_transform(const solid_t solid, transform_t &out_transform) {
 	memcpy(&out_transform._rotation, &solid_tr.getOrientation().x, sizeof(quat));
 	out_transform._dirty = true;
 }
+
+} // namespace sk

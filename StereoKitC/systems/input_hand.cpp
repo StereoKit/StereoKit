@@ -5,6 +5,8 @@
 #include "../asset_types/assets.h"
 #include "../asset_types/material.h"
 
+namespace sk {
+
 ///////////////////////////////////////////
 
 #define SK_FINGERS 5
@@ -155,7 +157,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 
 		// Blend our active pose with our desired pose, for smooth transitions
 		// between poses
-		float delta = sk_time_elapsedf() * 30;
+		float delta = time_elapsedf() * 30;
 		delta = delta>1?1:delta;
 		for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 5; j++) {
@@ -316,3 +318,5 @@ void input_hand_material(handed_ hand, material_t material) {
 
 	hand_state[hand].material = material;
 }
+
+} // namespace sk

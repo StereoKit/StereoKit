@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+namespace sk {
+
 struct system_t {
 	const char  *name;
 	const char **init_dependencies;
@@ -27,3 +29,5 @@ void    systems_add (const char *name, const char **init_dependencies, int32_t i
 bool    systems_initialize();
 void    systems_update();
 void    systems_shutdown();
+
+} // namespace sk

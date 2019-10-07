@@ -7,6 +7,8 @@ using namespace std;
 
 ///////////////////////////////////////////
 
+namespace sk {
+
 struct layer_t {
 	matrix transform;
 	matrix inverse;
@@ -38,10 +40,10 @@ uint64_t skui_control_active [2] = {};
 
 ///////////////////////////////////////////
 
-void sk_ui_push_pose(pose_t pose, vec2 size);
-void sk_ui_pop_pose ();
-void sk_ui_box      (vec3 start, vec3 size, material_t material, color128 color);
-void sk_ui_text     (vec3 start, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
+void ui_push_pose(pose_t pose, vec2 size);
+void ui_pop_pose ();
+void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
+void ui_text     (vec3 start, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
 
 ///////////////////////////////////////////
 
@@ -56,7 +58,7 @@ uint64_t sk_ui_hash(const char *string) {
 
 ///////////////////////////////////////////
 
-void sk_ui_init() {
+void ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 
 	material_t mat_default = material_find("default/material");
@@ -72,7 +74,7 @@ void sk_ui_init() {
 
 ///////////////////////////////////////////
 
-void sk_ui_push_pose(pose_t pose, vec2 size) {
+void ui_push_pose(pose_t pose, vec2 size) {
 	matrix trs = matrix_trs(pose.position, pose.orientation);
 	matrix trs_inverse;
 	matrix_inverse(trs, trs_inverse);
@@ -90,13 +92,13 @@ void sk_ui_push_pose(pose_t pose, vec2 size) {
 
 ///////////////////////////////////////////
 
-void sk_ui_pop_pose() {
+void ui_pop_pose() {
 	skui_layers.pop_back();
 }
 
 ///////////////////////////////////////////
 
-void sk_ui_box(vec3 start, vec3 size, material_t material, color128 color) {
+void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
 	matrix mx = matrix_trs(pos, quat_identity, size);
 	matrix_mul(mx, skui_layers.back().transform, mx);
@@ -106,13 +108,13 @@ void sk_ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 
 ///////////////////////////////////////////
 
-void sk_ui_text(vec3 start, const char *text, text_align_ position) {
+void ui_text(vec3 start, const char *text, text_align_ position) {
 	text_add_at(skui_font_style, skui_layers.back().transform, text, position, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
 
-void sk_ui_reserve_box(vec2 size) {
+void ui_reserve_box(vec2 size) {
 	if (skui_layers.back().max_x < skui_layers.back().offset.x + size.x + skui_padding)
 		skui_layers.back().max_x = skui_layers.back().offset.x + size.x + skui_padding;
 	if (skui_layers.back().line_height < size.y)
@@ -123,7 +125,7 @@ void sk_ui_reserve_box(vec2 size) {
 
 ///////////////////////////////////////////
 
-void sk_ui_nextline() {
+void ui_nextline() {
 	layer_t &layer = skui_layers.back();
 	skui_prev_offset      = layer.offset;
 	skui_prev_line_height = layer.line_height;
@@ -135,7 +137,7 @@ void sk_ui_nextline() {
 
 ///////////////////////////////////////////
 
-void sk_ui_sameline() {
+void ui_sameline() {
 	layer_t &layer = skui_layers.back();
 	layer.offset      = skui_prev_offset;
 	layer.line_height = skui_prev_line_height;
@@ -143,7 +145,7 @@ void sk_ui_sameline() {
 
 ///////////////////////////////////////////
 
-void sk_ui_space(float space) {
+void ui_space(float space) {
 	if (skui_layers.back().offset.x == skui_padding)
 		skui_layers.back().offset.y -= space;
 	else
@@ -162,34 +164,34 @@ bool32_t sk_ui_inbox(vec3 pt, vec3 box_start, vec3 box_size) {
 
 ///////////////////////////////////////////
 
-void sk_ui_label(const char *text) {
+void ui_label(const char *text) {
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(skui_font_style, text);
-	sk_ui_reserve_box(size);
-	sk_ui_text(offset + vec3{ 0, 0, 2*mm2m }, text);
-	sk_ui_nextline();
+	ui_reserve_box(size);
+	ui_text(offset + vec3{ 0, 0, 2*mm2m }, text);
+	ui_nextline();
 }
 
 ///////////////////////////////////////////
 
-void sk_ui_image(sprite_t image, vec2 size) {
+void ui_image(sprite_t image, vec2 size) {
 	float aspect     = sprite_get_aspect(image);
 	vec3  offset     = skui_layers.back().offset;
 	vec2  final_size = vec2{
 		size.x==0 ? size.y/aspect : size.x, 
 		size.y==0 ? size.x*aspect : size.y };
 
-	sk_ui_reserve_box(final_size);
+	ui_reserve_box(final_size);
 	
 	matrix result;
 	matrix_mul(matrix_trs(offset, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
 	sprite_draw(image, result);
-	sk_ui_nextline();
+	ui_nextline();
 }
 
 ///////////////////////////////////////////
 
-bool32_t sk_ui_button(const char *text) {
+bool32_t ui_button(const char *text) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
 	vec3 offset = skui_layers.back().offset;
@@ -200,7 +202,7 @@ bool32_t sk_ui_button(const char *text) {
 		skui_layers.back().size.x != 0            && 
 		offset.x + size.x > skui_layers.back().size.x - skui_padding)
 	{
-		sk_ui_nextline();
+		ui_nextline();
 		offset = skui_layers.back().offset;
 	}
 
@@ -218,17 +220,17 @@ bool32_t sk_ui_button(const char *text) {
 		}
 	}
 
-	sk_ui_reserve_box(size);
-	sk_ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
-	sk_ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
-	sk_ui_nextline();
+	ui_reserve_box(size);
+	ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
+	ui_nextline();
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
+bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
 
@@ -265,15 +267,15 @@ bool32_t sk_ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size
 		}
 	}
 
-	sk_ui_box (at, size, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
-	sk_ui_nextline();
+	ui_box (at, size, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_nextline();
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
+bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
 	uint64_t   id     = sk_ui_hash(name);
 	bool       result = false;
 	color128   color  = {1,1,1,1};
@@ -305,37 +307,39 @@ bool32_t sk_ui_hslider(const char *name, float &value, float min, float max, flo
 	}
 
 	// Draw the UI
-	sk_ui_reserve_box(size);
-	sk_ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, color);
-	sk_ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, skui_mat, color);
-	sk_ui_nextline();
+	ui_reserve_box(size);
+	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, color);
+	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, skui_mat, color);
+	ui_nextline();
 	
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void sk_ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
+void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 	uint64_t id = sk_ui_hash(text);
 
 	if (window_size.x == 0) window_size.x = 1;
 
-	sk_ui_push_pose(pose, window_size);
+	ui_push_pose(pose, window_size);
 
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(skui_font_style, text);
 	vec3 box_start = vec3{ 0, 0, -skui_depth };
 	vec3 box_size  = vec3{ window_size.x, size.y+skui_padding*2, skui_depth };
 
-	sk_ui_reserve_box(size);
-	sk_ui_text(box_start + vec3{skui_padding,-skui_padding, skui_depth + 2*mm2m}, text);
-	sk_ui_affordance(text, pose, box_start, box_size);
+	ui_reserve_box(size);
+	ui_text(box_start + vec3{skui_padding,-skui_padding, skui_depth + 2*mm2m}, text);
+	ui_affordance(text, pose, box_start, box_size);
 
-	sk_ui_nextline();
+	ui_nextline();
 }
 
 ///////////////////////////////////////////
 
-void sk_ui_window_end() {
-	sk_ui_pop_pose();
+void ui_window_end() {
+	ui_pop_pose();
 }
+
+} // namespace sk

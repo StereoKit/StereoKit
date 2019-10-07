@@ -1,11 +1,13 @@
 #include "sprite.h"
 #include "assets.h"
 #include "texture.h"
-#include "../stref.h"
+#include "../libraries/stref.h"
 #include "../systems/sprite_drawer.h"
 
 #include <vector>
 using namespace std;
+
+namespace sk {
 
 struct sprite_inst_t {
 	vec2    uvs[2];
@@ -137,3 +139,5 @@ void sprite_destroy(sprite_t sprite) {
 void sprite_draw(sprite_t sprite, const matrix &transform, color32 color) {
 	sprite_drawer_add(sprite, transform, color);
 }
+
+} // namespace sk
