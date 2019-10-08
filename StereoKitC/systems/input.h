@@ -4,7 +4,12 @@
 
 namespace sk {
 
-extern mouse_t input_mouse_data;
+struct keyboard_t {
+	uint8_t keys[key_MAX];
+};
+
+extern mouse_t    input_mouse_data;
+extern keyboard_t input_key_data;
 
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int id);

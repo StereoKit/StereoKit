@@ -18,6 +18,7 @@ struct input_event_t {
 vector<input_event_t> input_listeners;
 vector<pointer_t>     input_pointers;
 mouse_t               input_mouse_data = {};
+keyboard_t            input_key_data   = {};
 
 ///////////////////////////////////////////
 
@@ -104,6 +105,18 @@ void input_shutdown() {
 
 void input_update() {
 	input_hand_update();
+}
+
+///////////////////////////////////////////
+
+const mouse_t &input_mouse() {
+	return input_mouse_data;
+}
+
+///////////////////////////////////////////
+
+button_state_ input_key(key_ key) {
+	return (button_state_)input_key_data.keys[key];
 }
 
 } // namespace sk {

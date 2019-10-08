@@ -62,8 +62,7 @@ void win32_input_update() {
 	win32_mouse_hand();
 #endif
 
-	pointer_t *pointer_head = input_get_pointer(win32_input_pointers[1]);
-
+	pointer_t   *pointer_head = input_get_pointer(win32_input_pointers[1]);
 	camera_t    *cam    = nullptr;
 	transform_t *cam_tr = nullptr;
 	render_get_cam(&cam, &cam_tr);
@@ -72,6 +71,12 @@ void win32_input_update() {
 		pointer_head->state   = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
+	}
+
+	for (size_t i = 0; i < 256; i++) {
+		input_key_data.keys[i] = button_make_state(
+			input_key_data.keys[i] & button_state_down,
+			GetKeyState(i) & 0x8000);
 	}
 }
 
