@@ -55,6 +55,10 @@ namespace StereoKit
         {
             return Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
         }
+        public static Mouse Mouse()
+        {
+            return Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
+        }
         public static void HandVisible(Handed hand, bool visible)
         {
             NativeAPI.input_hand_visible(hand, visible?1:0);
@@ -66,6 +70,10 @@ namespace StereoKit
         public static void HandMaterial(Handed hand, Material material)
         {
             NativeAPI.input_hand_material(hand, material._materialInst);
+        }
+        public static BtnState Key(Key key)
+        {
+            return NativeAPI.input_key(key);
         }
 
         static void Initialize()
