@@ -72,12 +72,6 @@ void win32_input_update() {
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
 	}
-
-	for (size_t i = 0; i < 256; i++) {
-		input_key_data.keys[i] = button_make_state(
-			input_key_data.keys[i] & button_state_down,
-			GetKeyState(i) & 0x8000);
-	}
 }
 
 ///////////////////////////////////////////

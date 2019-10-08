@@ -2,6 +2,10 @@
 #include "input.h"
 #include "input_hand.h"
 
+#ifndef SK_NO_FLATSCREEN
+#include <windows.h>
+#endif
+
 #include <vector>
 using namespace std;
 
@@ -104,6 +108,14 @@ void input_shutdown() {
 ///////////////////////////////////////////
 
 void input_update() {
+#ifndef SK_NO_FLATSCREEN
+	for (size_t i = 0; i < key_MAX; i++) {
+		input_key_data.keys[i] = button_make_state(
+			input_key_data.keys[i] & button_state_down,
+			GetKeyState(i) & 0x8000);
+	}
+#endif
+
 	input_hand_update();
 }
 
