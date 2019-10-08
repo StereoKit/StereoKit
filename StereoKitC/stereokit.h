@@ -167,6 +167,8 @@ SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation
 SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
+SK_API ray_t    ray_from_mouse     (vec2 screen_pixel_pos);
+
 
 static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
 static inline quat   operator*(const quat   &a, const quat   &b) { return quat_mul(a, b); }
@@ -503,6 +505,15 @@ enum input_state_ {
 };
 SK_MakeFlag(input_state_);
 
+enum button_state_ {
+	button_state_up        = 0,
+	button_state_down      = 1 << 0,
+	button_state_just_up   = 1 << 1,
+	button_state_just_down = 1 << 2,
+	button_state_changed   = button_state_just_up | button_state_just_down,
+};
+SK_MakeFlag(button_state_);
+
 struct pointer_t {
 	input_source_  source;
 	pointer_state_ state;
@@ -518,9 +529,21 @@ struct hand_t {
 	input_state_ state;
 };
 
+struct mouse_t {
+	bool32_t available;
+	vec2     pos;
+	vec2     pos_change;
+	float    scroll;
+	float    scroll_change;
+	button_state_ button_left;
+	button_state_ button_right;
+	button_state_ button_center;
+};
+
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
+SK_API const mouse_t&input_mouse        ();
 SK_API void          input_hand_visible (handed_ hand, bool32_t visible);
 SK_API void          input_hand_solid   (handed_ hand, bool32_t solid);
 SK_API void          input_hand_material(handed_ hand, material_t material);

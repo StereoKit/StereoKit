@@ -18,8 +18,9 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int  win32_input_pointers[2];
-bool win32_use_leap = true;
+int   win32_input_pointers[2];
+bool  win32_use_leap    = true;
+float win32_hand_scroll = 0;
 
 ///////////////////////////////////////////
 
@@ -44,6 +45,8 @@ void win32_input_shutdown() {
 ///////////////////////////////////////////
 
 void win32_input_update() {
+	win32_mouse_update();
+
 #ifndef SK_NO_LEAP_MOTION
 	if (win32_use_leap && leap_has_device) {
 		input_leap_update();
@@ -71,39 +74,18 @@ void win32_input_update() {
 	bool was_r_pressed = hand.state & input_state_grip;
 
 	pointer_cursor->state = pointer_state_none;
-	pointer_head  ->state = pointer_state_none;
+	pointer_head  ->state = pointer_state_none;	
+
+	win32_hand_scroll = win32_hand_scroll + (input_mouse.scroll - win32_hand_scroll) * time_elapsedf();
 
 	if (cam != nullptr) {
 		pointer_head->state   = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
 
-		POINT cursor_pos;
-		if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos))
-		{
-			float x = (((cursor_pos.x / (float)d3d_screen_width ) - 0.5f) *  2.f);
-			float y = (((cursor_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
-			if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
-				hand_tracked = true;
-				l_pressed    = GetKeyState(VK_LBUTTON) < 0;
-				r_pressed    = GetKeyState(VK_RBUTTON) < 0;
-
-				// convert screen pos to world ray
-				matrix mat, view, proj, inv;
-				camera_view(*cam_tr, view);
-				camera_proj(*cam,    proj);
-				matrix_mul( view, proj, mat );
-				matrix_inverse(mat, inv);
-
-				vec3 pointer_dir = vec3{ x, y, 1.0f };
-				pointer_dir      = matrix_mul_point(inv, pointer_dir);
-				pointer_dir      = vec3_normalize(pointer_dir);
-
-				// make a hand pose from the cursor ray
-				hand_pos = cam_tr->_position + pointer_dir * (0.6f + win32_scroll * 0.001f);
-				hand_rot = quat_lookat(vec3_zero, pointer_dir);
-			}
-		}
+		ray_t ray = ray_from_mouse(input_mouse.pos);
+		hand_pos = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.001f);
+		hand_rot = quat_lookat(vec3_zero, ray.dir);
 	}
 
 	pointer_cursor->state |= pointer_state_available;
@@ -117,6 +99,28 @@ void win32_input_update() {
 	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? input_state_justtracked : input_state_untracked, *pointer_cursor);
 	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? input_state_justpinch   : input_state_unpinch,   *pointer_cursor);
 	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? input_state_justgrip    : input_state_ungrip,    *pointer_cursor);
+}
+
+///////////////////////////////////////////
+
+void win32_mouse_update() {
+	// Mouse scroll
+	input_mouse.scroll_change = win32_scroll - input_mouse.scroll;
+	input_mouse.scroll        = win32_scroll;
+	// Mouse position and on-screen
+	POINT cursor_pos;
+	if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos)) {
+		vec2 new_pos = vec2{ cursor_pos.x, cursor_pos.y };
+		input_mouse.pos_change = new_pos - input_mouse.pos;
+		input_mouse.pos        = new_pos;
+		input_mouse.available  = true;
+	} else {
+		input_mouse.available = false;
+	}
+	// Mouse buttons
+	input_mouse.button_left   = button_make_state(input_mouse.button_left   & button_state_down, GetKeyState(VK_LBUTTON) < 0);
+	input_mouse.button_right  = button_make_state(input_mouse.button_right  & button_state_down, GetKeyState(VK_RBUTTON) < 0);
+	input_mouse.button_center = button_make_state(input_mouse.button_center & button_state_down, GetKeyState(VK_MBUTTON) < 0);
 }
 
 } // namespace sk
