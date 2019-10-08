@@ -21,8 +21,7 @@ namespace sk {
 HWND             win32_window    = nullptr;
 tex2d_t          win32_target    = {};
 IDXGISwapChain1 *win32_swapchain = {};
-float            win32_scroll      = 0;
-float            win32_scroll_dest = 0;
+float            win32_scroll    = 0;
 
 // For managing window resizing
 bool win32_check_resize = true;
@@ -61,7 +60,7 @@ bool win32_init(const char *app_name) {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
 		case WM_KILLFOCUS: sk_focused = false; break;
-		case WM_MOUSEWHEEL:win32_scroll_dest += (short)HIWORD(wParam); break;
+		case WM_MOUSEWHEEL:win32_scroll += (short)HIWORD(wParam); break;
 		case WM_SYSCOMMAND: {
 			// Has the user pressed the restore/'un-maximize' button?
 			// WM_SIZE happens -after- this event, and contains the new size.
@@ -151,7 +150,6 @@ void win32_step_begin() {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
-	win32_scroll = win32_scroll + (win32_scroll_dest - win32_scroll) * sk_timev_elapsedf * 8;
 	win32_input_update();
 }
 

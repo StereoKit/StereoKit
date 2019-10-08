@@ -167,6 +167,8 @@ SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation
 SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
+SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, ray_t &out_ray);
+
 
 static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
 static inline quat   operator*(const quat   &a, const quat   &b) { return quat_mul(a, b); }
@@ -503,6 +505,15 @@ enum input_state_ {
 };
 SK_MakeFlag(input_state_);
 
+enum button_state_ {
+	button_state_up        = 0,
+	button_state_down      = 1 << 0,
+	button_state_just_up   = 1 << 1,
+	button_state_just_down = 1 << 2,
+	button_state_changed   = button_state_just_up | button_state_just_down,
+};
+SK_MakeFlag(button_state_);
+
 struct pointer_t {
 	input_source_  source;
 	pointer_state_ state;
@@ -518,9 +529,42 @@ struct hand_t {
 	input_state_ state;
 };
 
+struct mouse_t {
+	bool32_t available;
+	vec2     pos;
+	vec2     pos_change;
+	float    scroll;
+	float    scroll_change;
+	button_state_ button_left;
+	button_state_ button_right;
+	button_state_ button_center;
+};
+
+// Based on VK codes
+enum key_ {
+	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04,
+	key_backspace = 0x08, key_tab       = 0x09,
+	key_return    = 0x0D, key_shift     = 0x10,
+	key_ctrl      = 0x11, key_alt       = 0x12,
+	key_esc       = 0x1B, key_space     = 0x20,
+	key_end       = 0x23, key_home      = 0x24,
+	key_left      = 0x25, key_right     = 0x27,
+	key_up        = 0x26, key_down      = 0x28,
+	key_printscreen=0x2A, key_insert    = 0x2D, key_del = 0x2E,
+	key_0 = 0x30, key_1 = 0x31, key_2 = 0x32, key_3 = 0x33, key_4 = 0x34, key_5 = 0x35, key_6 = 0x36, key_7 = 0x37, key_8 = 0x38, key_9 = 0x39, 
+	key_a = 0x41, key_b = 0x42, key_c = 0x43, key_d = 0x44, key_e = 0x45, key_f = 0x46, key_g = 0x47, key_h = 0x48, key_i = 0x49, key_j = 0x4A, key_k = 0x4B, key_l = 0x4C, key_m = 0x4D, key_n = 0x4E, key_o = 0x4F, key_p = 0x50, key_q = 0x51, key_r = 0x52, key_s = 0x53, key_t = 0x54, key_u = 0x55, key_v = 0x56, key_w = 0x57, key_x = 0x58, key_y = 0x59, key_z = 0x5A,
+	key_lcmd = 0x5B, key_rcmd = 0x5C,
+	key_num0 = 0x60, key_num1 = 0x61, key_num2 = 0x62, key_num3 = 0x63, key_num4 = 0x64, key_num5 = 0x65, key_num6 = 0x66, key_num7 = 0x67, key_num8 = 0x68, key_num9 = 0x69,
+	key_multiply = 0x6A, key_add = 0x6B, key_subtract = 0x6D, key_decimal = 0x6E, key_divide = 0x6F,
+	key_f1 = 0x70, key_f2 = 0x71, key_f3 = 0x72, key_f4 = 0x73, key_f5 = 0x74, key_f6 = 0x75, key_f7 = 0x76, key_f8 = 0x77, key_f9 = 0x78, key_f10 = 0x79, key_f11 = 0x7A, key_f12 = 0x7B,
+	key_MAX = 0xFF,
+};
+
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
+SK_API const mouse_t&input_mouse        ();
+SK_API button_state_ input_key          (key_ key);
 SK_API void          input_hand_visible (handed_ hand, bool32_t visible);
 SK_API void          input_hand_solid   (handed_ hand, bool32_t solid);
 SK_API void          input_hand_material(handed_ hand, material_t material);

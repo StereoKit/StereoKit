@@ -19,7 +19,8 @@ class DemoUI : IScene
 
         UI.Button("Testing!\nok"); UI.SameLine();
         UI.Button("Another");
-        UI.Image(logo, new Vec2(6,0) * Units.cm2m);
+        if (Input.Key(Key.Space).IsPressed())
+            UI.Image(logo, new Vec2(6,0) * Units.cm2m);
         UI.HSlider("slider",  ref slider1, 0, 1, 0.2f, 72 * Units.mm2m); UI.SameLine();
         UI.HSlider("slider2", ref slider2, 0, 1, 0,    72 * Units.mm2m);
         if (UI.Button("Press me!"))
