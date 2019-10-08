@@ -17,7 +17,7 @@ struct input_event_t {
 
 vector<input_event_t> input_listeners;
 vector<pointer_t>     input_pointers;
-mouse_t               input_mouse = {};
+mouse_t               input_mouse_data = {};
 
 ///////////////////////////////////////////
 

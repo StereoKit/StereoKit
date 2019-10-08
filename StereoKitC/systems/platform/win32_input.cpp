@@ -24,6 +24,10 @@ float win32_hand_scroll = 0;
 
 ///////////////////////////////////////////
 
+void win32_mouse_update();
+
+///////////////////////////////////////////
+
 void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
@@ -76,16 +80,19 @@ void win32_input_update() {
 	pointer_cursor->state = pointer_state_none;
 	pointer_head  ->state = pointer_state_none;	
 
-	win32_hand_scroll = win32_hand_scroll + (input_mouse.scroll - win32_hand_scroll) * time_elapsedf();
+	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf() * 8;
 
 	if (cam != nullptr) {
 		pointer_head->state   = pointer_state_available;
 		pointer_head->ray.pos = cam_tr->_position;
 		pointer_head->ray.dir = transform_forward(*cam_tr);
 
-		ray_t ray = ray_from_mouse(input_mouse.pos);
-		hand_pos = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.001f);
-		hand_rot = quat_lookat(vec3_zero, ray.dir);
+		ray_t ray = ray_from_mouse(input_mouse_data.pos);
+		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.001f);
+		hand_rot     = quat_lookat(vec3_zero, ray.dir);
+		hand_tracked = true;
+		l_pressed    = input_mouse_data.button_left  & button_state_down;
+		r_pressed    = input_mouse_data.button_right & button_state_down;
 	}
 
 	pointer_cursor->state |= pointer_state_available;
@@ -105,22 +112,22 @@ void win32_input_update() {
 
 void win32_mouse_update() {
 	// Mouse scroll
-	input_mouse.scroll_change = win32_scroll - input_mouse.scroll;
-	input_mouse.scroll        = win32_scroll;
+	input_mouse_data.scroll_change = win32_scroll - input_mouse_data.scroll;
+	input_mouse_data.scroll        = win32_scroll;
 	// Mouse position and on-screen
 	POINT cursor_pos;
 	if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos)) {
-		vec2 new_pos = vec2{ cursor_pos.x, cursor_pos.y };
-		input_mouse.pos_change = new_pos - input_mouse.pos;
-		input_mouse.pos        = new_pos;
-		input_mouse.available  = true;
+		vec2 new_pos = vec2{ (float)cursor_pos.x, (float)cursor_pos.y };
+		input_mouse_data.pos_change = new_pos - input_mouse_data.pos;
+		input_mouse_data.pos        = new_pos;
+		input_mouse_data.available  = true;
 	} else {
-		input_mouse.available = false;
+		input_mouse_data.available = false;
 	}
 	// Mouse buttons
-	input_mouse.button_left   = button_make_state(input_mouse.button_left   & button_state_down, GetKeyState(VK_LBUTTON) < 0);
-	input_mouse.button_right  = button_make_state(input_mouse.button_right  & button_state_down, GetKeyState(VK_RBUTTON) < 0);
-	input_mouse.button_center = button_make_state(input_mouse.button_center & button_state_down, GetKeyState(VK_MBUTTON) < 0);
+	input_mouse_data.button_left   = button_make_state(input_mouse_data.button_left   & button_state_down, GetKeyState(VK_LBUTTON) < 0);
+	input_mouse_data.button_right  = button_make_state(input_mouse_data.button_right  & button_state_down, GetKeyState(VK_RBUTTON) < 0);
+	input_mouse_data.button_center = button_make_state(input_mouse_data.button_center & button_state_down, GetKeyState(VK_MBUTTON) < 0);
 }
 
 } // namespace sk

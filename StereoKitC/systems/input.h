@@ -4,7 +4,7 @@
 
 namespace sk {
 
-extern mouse_t input_mouse;
+extern mouse_t input_mouse_data;
 
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int id);
