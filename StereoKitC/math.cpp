@@ -83,16 +83,14 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 
 ///////////////////////////////////////////
 
-ray_t ray_from_mouse(vec2 screen_pixel_pos) {
+bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 	camera_t    *cam    = nullptr;
 	transform_t *cam_tr = nullptr;
 	render_get_cam(&cam, &cam_tr);
 
-	ray_t result = {cam_tr->_position, vec3_forward};
-
 	float x = (((screen_pixel_pos.x / (float)d3d_screen_width ) - 0.5f) *  2.f);
 	float y = (((screen_pixel_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
-	if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
+	if (cam != nullptr && cam_tr != nullptr && x >= -1 && y >= -1 && x <= 1 && y <= 1) {
 		// convert screen pos to world ray
 		matrix mat, view, proj, inv;
 		camera_view(*cam_tr, view);
@@ -100,14 +98,15 @@ ray_t ray_from_mouse(vec2 screen_pixel_pos) {
 		matrix_mul( view, proj, mat );
 		matrix_inverse(mat, inv);
 
-		result.dir = vec3{ x, y, 1.0f };
-		result.dir = matrix_mul_point(inv, result.dir);
-		result.dir = vec3_normalize(result.dir);
-	} else {
-		result.dir = cam_tr->_rotation * result.dir;
+		out_ray.pos = cam_tr->_position;
+		out_ray.dir = vec3{ x, y, 1.0f };
+		out_ray.dir = matrix_mul_point(inv, out_ray.dir);
+		out_ray.dir = vec3_normalize(out_ray.dir);
+
+		return true;
 	}
 
-	return result;
+	return false;
 }
 
 ///////////////////////////////////////////

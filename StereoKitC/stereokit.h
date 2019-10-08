@@ -167,7 +167,7 @@ SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation
 SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
-SK_API ray_t    ray_from_mouse     (vec2 screen_pixel_pos);
+SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, ray_t &out_ray);
 
 
 static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
