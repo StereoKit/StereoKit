@@ -203,9 +203,6 @@ namespace StereoKit
         public Vec2  posChange;
         public float scroll;
         public float scrollChange;
-        public BtnState buttonLeft;
-        public BtnState buttonRight;
-        public BtnState buttonCenter;
     };
 
     public enum Key

@@ -90,10 +90,6 @@ void win32_mouse_update() {
 	} else {
 		input_mouse_data.available = false;
 	}
-	// Mouse buttons
-	input_mouse_data.button_left   = button_make_state(input_mouse_data.button_left   & button_state_down, GetKeyState(VK_LBUTTON) < 0);
-	input_mouse_data.button_right  = button_make_state(input_mouse_data.button_right  & button_state_down, GetKeyState(VK_RBUTTON) < 0);
-	input_mouse_data.button_center = button_make_state(input_mouse_data.button_center & button_state_down, GetKeyState(VK_MBUTTON) < 0);
 }
 
 ///////////////////////////////////////////
@@ -122,8 +118,8 @@ void win32_mouse_hand() {
 		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.001f);
 		hand_rot     = quat_lookat(vec3_zero, ray.dir);
 		hand_tracked = true;
-		l_pressed    = input_mouse_data.button_left  & button_state_down;
-		r_pressed    = input_mouse_data.button_right & button_state_down;
+		l_pressed    = input_key(key_mouse_left ) & button_state_down;
+		r_pressed    = input_key(key_mouse_right) & button_state_down;
 
 		pointer_cursor->state |= pointer_state_available;
 		pointer_cursor->ray.dir     = ray.dir;

@@ -535,9 +535,6 @@ struct mouse_t {
 	vec2     pos_change;
 	float    scroll;
 	float    scroll_change;
-	button_state_ button_left;
-	button_state_ button_right;
-	button_state_ button_center;
 };
 
 // Based on VK codes
