@@ -26,6 +26,7 @@ font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
 vec3            skui_fingertip[2];
+vec3            skui_fingergrip[2];
 
 float skui_padding = 10*mm2m;
 float skui_gutter  = 20*mm2m;
@@ -84,9 +85,14 @@ void ui_push_pose(pose_t pose, vec2 size) {
 		vec3{skui_padding, -skui_padding}, size, 0, 0
 	});
 
+	
 	for (size_t i = 0; i < handed_max; i++) {
-		skui_fingertip[i] = input_hand((handed_)i).fingers[1][4].position;
+		const hand_t &hand = input_hand((handed_)i);
+		skui_fingertip[i] = hand.fingers[1][4].position;
 		skui_fingertip[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip[i]);
+
+		skui_fingergrip[i] = (hand.fingers[1][4].position + hand.fingers[0][4].position)/2.f;
+		skui_fingergrip[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingergrip[i]);
 	}
 }
 
@@ -230,13 +236,15 @@ bool32_t ui_button(const char *text) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
+bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
+	color128 color = { 1,1,1,1 };
 
 	for (size_t i = 0; i < handed_max; i++) {
-		if (sk_ui_inbox(skui_fingertip[i], at, size)) {
+		if (sk_ui_inbox(skui_fingergrip[i], at, size)) {
 			skui_control_focused[i] = id;
+			color = { 0.75f,0.75f,0.75f,1 };
 		} else if (skui_control_focused[i] == id) {
 			skui_control_focused[i] = 0;
 		}
@@ -246,29 +254,33 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size) {
 			static quat start_aff_rot = quat_identity;
 			static vec3 start_tip_pos = vec3_zero;
 			static quat start_tip_rot = quat_identity;
-			vec3 tip_pos = matrix_mul_point(skui_layers.back().transform, skui_fingertip[i]);
+			vec3 grip_pos = matrix_mul_point(skui_layers.back().transform, skui_fingergrip[i]);
 
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.state & input_state_justpinch) {
 				skui_control_active[i] = id;
 				start_aff_pos = movement.position;
 				start_aff_rot = movement.orientation;
-				start_tip_pos = tip_pos;
+				start_tip_pos = grip_pos;
 				start_tip_rot = input_hand((handed_)i).root.orientation;
 			}
 			if (skui_control_active[i] == id) {
+				color = { 0.5f,0.5f,0.5f,1 };
 				result = true;
-				movement.position    = start_aff_pos + (tip_pos - start_tip_pos);
+				movement.position    = start_aff_pos + (grip_pos - start_tip_pos);
 				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
+					log_write(log_info, "unpinch");
 				}
 			}
 		}
 	}
 
-	ui_box (at, size, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
-	ui_nextline();
+	if (draw) {
+		ui_box(at, size, skui_mat, color);
+		ui_nextline();
+	}
 
 	return result;
 }
@@ -331,7 +343,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 
 	ui_reserve_box(size);
 	ui_text(box_start + vec3{skui_padding,-skui_padding, skui_depth + 2*mm2m}, text);
-	ui_affordance(text, pose, box_start, box_size);
+	ui_affordance(text, pose, box_start, box_size, true);
 
 	ui_nextline();
 }
