@@ -1,5 +1,4 @@
-#pragma comment(lib,"Shlwapi.lib")
-#pragma comment(lib,"openxr_loader-1_0.lib")
+#pragma comment(lib,"openxr_loader.lib")
 
 #include "openxr.h"
 
@@ -99,6 +98,10 @@ bool openxr_init(const char *app_name) {
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	systemInfo.formFactor = app_config_form;
 	xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+
+	// If this code is not present, a mysterious error is thrown in xrCreateSession
+	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
+	xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
 
 	// Check what blend mode is valid for this device (opaque vs transparent displays)
 	// We'll just take the first one available!
