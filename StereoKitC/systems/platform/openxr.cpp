@@ -99,7 +99,9 @@ bool openxr_init(const char *app_name) {
 	systemInfo.formFactor = app_config_form;
 	xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 
-	// If this code is not present, a mysterious error is thrown in xrCreateSession
+	// OpenXR wants to ensure apps are using the correct LUID, so this must be called before xrCreateSession
+	// TODO: Figure out how to make sure we're using the correct LUID, and get it to the d3d device before initialization >.<
+	// see here for reference: https://github.com/microsoft/OpenXR-SDK-VisualStudio/blob/fce13c538839a7c1f185595d6490e8d227741356/samples/BasicXrApp/DxUtility.cpp#L22
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
 	xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
 
