@@ -8,6 +8,7 @@
 #include "systems/system.h"
 #include "systems/text.h"
 #include "systems/sprite_drawer.h"
+#include "systems/line_drawer.h"
 #include "systems/defaults.h"
 #include "systems/platform/platform.h"
 
@@ -116,11 +117,18 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		sprite_update_deps, _countof(sprite_update_deps), 
 		sprite_drawer_init, sprite_drawer_update, sprite_drawer_shutdown);
 
+	const char *line_deps[] = {"Defaults"};
+	const char *line_update_deps[] = {"App"};
+	systems_add("Lines",  
+		line_deps,        _countof(line_deps), 
+		line_update_deps, _countof(line_update_deps), 
+		line_drawer_init, line_drawer_update, line_drawer_shutdown);
+
 	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
-	const char *platform_end_deps[] = {"App", "Text", "Sprites"};
+	const char *platform_end_deps[] = {"App", "Text", "Sprites", "Lines"};
 	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
 	const char *platform_present_deps[] = {"FrameRender"};
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);

@@ -440,6 +440,19 @@ SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, col
 
 ///////////////////////////////////////////
 
+struct line_point_t {
+	vec3    pt;
+	float   thickness;
+	color32 color;
+};
+
+SK_API void line_add      (vec3 start, vec3 end, color32 color, float thickness);
+SK_API void line_addv     (line_point_t start, line_point_t end);
+SK_API void line_add_list (const vec3 *points, int32_t count, color32 color, float thickness);
+SK_API void line_add_listv(const line_point_t *points, int32_t count);
+
+///////////////////////////////////////////
+
 struct camera_t {
 	float fov;
 	float clip_near;
