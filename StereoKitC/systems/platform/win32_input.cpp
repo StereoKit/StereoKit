@@ -2,6 +2,7 @@
 
 #include "win32_input.h"
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #include "win32.h"

@@ -2,6 +2,7 @@
 
 #ifndef SK_NO_FLATSCREEN
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 namespace sk {
