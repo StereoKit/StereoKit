@@ -81,10 +81,13 @@ inline bool openxr_loc_valid(XrSpaceLocation &loc) {
 bool openxr_init(const char *app_name) {
 	const char          *extensions[] = { XR_KHR_D3D11_ENABLE_EXTENSION_NAME };
 	XrInstanceCreateInfo createInfo   = { XR_TYPE_INSTANCE_CREATE_INFO };
-	createInfo.enabledExtensionCount      = _countof(extensions);
-	createInfo.enabledExtensionNames      = extensions;
-	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	strcpy_s(createInfo.applicationInfo.applicationName, 128, app_name);
+	createInfo.enabledExtensionCount = _countof(extensions);
+	createInfo.enabledExtensionNames = extensions;
+	createInfo.applicationInfo.applicationVersion = 1;
+	createInfo.applicationInfo.engineVersion      = SK_VERSION_ID;
+	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
+	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
+	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
 	xrCreateInstance(&createInfo, &xr_instance);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an

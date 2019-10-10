@@ -5,6 +5,9 @@
 // #define SK_NO_LEAP_MOTION
 // #define SK_NO_RUNTIME_SHADER_COMPILE
 
+#define SK_VERSION "0.1"
+#define SK_VERSION_ID 000001
+
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)
 #define SK_API_S __declspec(dllexport)
