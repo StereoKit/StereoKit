@@ -25,10 +25,10 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
 		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, D3D11_BIND_VERTEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
-			log_write(log_error, "mesh_set_verts: Failed to create vertex buffer");
+			log_err("mesh_set_verts: Failed to create vertex buffer");
 		DX11ResType(mesh->vert_buffer, "verts");
 	} else {
-		log_write(log_error, "mesh_set_verts: We don't support dynamic meshes quite yet.");
+		log_err("mesh_set_verts: We don't support dynamic meshes quite yet.");
 	}
 }
 
@@ -47,10 +47,10 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
 		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, D3D11_BIND_INDEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
-			log_write(log_error, "mesh_set_inds: Failed to create index buffer");
+			log_err("mesh_set_inds: Failed to create index buffer");
 		DX11ResType(mesh->ind_buffer,  "inds");
 	} else {
-		log_write(log_error, "mesh_set_inds: We don't support dynamic meshes quite yet.");
+		log_err("mesh_set_inds: We don't support dynamic meshes quite yet.");
 	}
 }
 
@@ -59,7 +59,7 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 	if (index_count > mesh->ind_count) {
 		index_count = mesh->ind_count;
-		log_write(log_warning, "mesh_set_draw_inds: Can't render more indices than the mesh has! Capping...");
+		log_warn("mesh_set_draw_inds: Can't render more indices than the mesh has! Capping...");
 	}
 	mesh->ind_draw  = index_count;
 }

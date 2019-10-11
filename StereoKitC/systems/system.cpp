@@ -77,7 +77,7 @@ bool systems_sort() {
 		for (size_t d = 0; d < systems[i].update_dependency_count; d++) {
 			update_ids[i].ids[d] = systems_find(systems[i].update_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
-				log_writef(log_error, "Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
+				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
 				result = 1;
 			}
 		}
@@ -88,7 +88,7 @@ bool systems_sort() {
 		int32_t *update_order = nullptr;
 
 		result = topological_sort(update_ids, system_count, &update_order);
-		if (result != 0) log_writef(log_error, "Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
+		if (result != 0) log_errf("Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
 		else array_reorder((void**)&systems, sizeof(system_t), system_count, update_order);
 
 		free(update_order);
@@ -103,7 +103,7 @@ bool systems_sort() {
 		for (size_t d = 0; d < systems[i].init_dependency_count; d++) {
 			init_ids[i].ids[d] = systems_find(systems[i].init_dependencies[d]);
 			if (init_ids[i].ids[d] == -1) {
-				log_writef(log_error, "Can't find system init dependency by the name of %s!", systems[i].init_dependencies[d]);
+				log_errf("Can't find system init dependency by the name of %s!", systems[i].init_dependencies[d]);
 				result = 1;
 			}
 		}
@@ -112,7 +112,7 @@ bool systems_sort() {
 	// Sort the init order
 	if (result == 0) {
 		result = topological_sort(init_ids, system_count, &system_init_order);
-		if (result != 0) log_writef(log_error, "Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
+		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
 
 	// Release memory
@@ -185,10 +185,10 @@ void systems_shutdown() {
 		}
 	}
 
-	log_write(log_info, "Session Performance Report:");
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
-	log_write(log_info, "<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("Session Performance Report:");
+	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = i;
 
@@ -208,9 +208,9 @@ void systems_shutdown() {
 			 sprintf_s(shutdown_time, 24, "%7.2f<~BLK>ms", (float)((double)systems[index].profile_shutdown_duration / 1000000.0));
 		else sprintf_s(shutdown_time, 24, "         ");
 		
-		log_writef(log_info, "<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
+		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
 
 	free(systems);
 	free(system_init_order);

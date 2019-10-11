@@ -107,7 +107,7 @@ void d3d_update() {
 			case D3D11_MESSAGE_CATEGORY_EXECUTION:           cat = "Exec";         break;
 			case D3D11_MESSAGE_CATEGORY_SHADER:              cat = "Shader";       break;
 			}
-			log_writef(log_info, "%s: [%d] %s\n", cat, pMessage->ID, pMessage->pDescription);
+			log_infof("%s: [%d] %s\n", cat, pMessage->ID, pMessage->pDescription);
 		}
 		free(pMessage);
 	}

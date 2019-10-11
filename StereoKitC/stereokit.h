@@ -589,7 +589,7 @@ SK_API void input_fire_event (input_source_ source, input_state_ event, const po
 ///////////////////////////////////////////
 
 enum log_{
-	log_info = 0,
+	log_inform = 0,
 	log_warning,
 	log_error
 };
@@ -598,8 +598,14 @@ enum log_colors_ {
 	log_colors_none
 };
 
-SK_API void log_write     (log_ level, const char *text);
-SK_API void log_writef    (log_ level, const char *text, ...);
+       void log_info      (const char* text);
+       void log_infof     (const char* text, ...);
+       void log_warn      (const char* text);
+       void log_warnf     (const char* text, ...);
+       void log_err       (const char* text);
+       void log_errf      (const char* text, ...);
+       void log_writef    (log_ level, const char *text, ...);
+SK_API void log_write     (log_ level, const char* text);
 SK_API void log_set_filter(log_ level);
 SK_API void log_set_colors(log_colors_ colors);
 

@@ -24,7 +24,7 @@ tex2d_t tex2d_create(tex_type_ type, tex_format_ format) {
 
 void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
-		log_write(log_error, "Can't add a zbuffer to a non-rendertarget texture!");
+		log_err("Can't add a zbuffer to a non-rendertarget texture!");
 		return;
 	}
 
@@ -67,7 +67,7 @@ tex2d_t tex2d_create_file(const char *file) {
 	uint8_t *data     = stbi_load(file, &width, &height, &channels, 4);
 
 	if (data == nullptr) {
-		log_writef(log_warning, "Couldn't load image file: %s", file);
+		log_warnf("Couldn't load image file: %s", file);
 		return nullptr;
 	}
 	result = tex2d_create(tex_type_image);
@@ -156,7 +156,7 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 			(final_width  != 0 && final_width  != width ) ||
 			(final_height != 0 && final_height != height)) {
 			loaded = false;
-			log_writef(log_error, "Issue loading cubemap image '%s', file not found, invalid image format, or faces of different sizes?", cube_face_file_xxyyzz[i]);
+			log_errf("Issue loading cubemap image '%s', file not found, invalid image format, or faces of different sizes?", cube_face_file_xxyyzz[i]);
 			break;
 		}
 		final_width  = width;
@@ -256,7 +256,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **dat
 	} else if (dynamic) {
 		D3D11_MAPPED_SUBRESOURCE tex_mem = {};
 		if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &tex_mem))) {
-			log_write(log_error, "Failed mapping a texture");
+			log_err("Failed mapping a texture");
 			return;
 		}
 
@@ -270,7 +270,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **dat
 		}
 		d3d_context->Unmap(texture->texture, 0);
 	} else {
-		log_write(log_warning, "Attempting additional writes to a non-dynamic texture!");
+		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
 }
 
@@ -375,7 +375,7 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 	
 	bool result = true;
 	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr || data[0] == nullptr ? nullptr : tex_mem, &texture->texture))) {
-		log_write(log_error, "Create texture error!");
+		log_err("Create texture error!");
 		result = false;
 	}
 
@@ -423,7 +423,7 @@ bool tex2d_create_views(tex2d_t texture) {
 		res_desc.Texture2D.MipLevels = (UINT)(mips ? log2(texture->width) + 1 : 1);
 		res_desc.ViewDimension       = texture->type & tex_type_cubemap ? D3D11_SRV_DIMENSION_TEXTURECUBE : D3D11_SRV_DIMENSION_TEXTURE2D;
 		if (FAILED(d3d_device->CreateShaderResourceView(texture->texture, &res_desc, &texture->resource))) {
-			log_write(log_error, "Create Shader Resource View error!");
+			log_err("Create Shader Resource View error!");
 			return false;
 		}
 	}
@@ -433,7 +433,7 @@ bool tex2d_create_views(tex2d_t texture) {
 		target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		target_desc.Format        = format;
 		if (FAILED(d3d_device->CreateRenderTargetView(texture->texture, &target_desc, &texture->target_view))) {
-			log_write(log_error, "Create Render Target View error!");
+			log_err("Create Render Target View error!");
 			return false;
 		}
 	}
@@ -443,7 +443,7 @@ bool tex2d_create_views(tex2d_t texture) {
 		stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		stencil_desc.Format        = format;
 		if (FAILED(d3d_device->CreateDepthStencilView(texture->texture, &stencil_desc, &texture->depth_view))) {
-			log_write(log_error, "Create Depth Stencil View error!");
+			log_err("Create Depth Stencil View error!");
 			return false;
 		}
 	}
@@ -531,7 +531,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	// Make sure copy_tex is a texture that we can read from!
 	if (desc.SampleDesc.Count > 1) {
 		// Not gonna bother with MSAA stuff
-		log_write(log_warning, "tex2d_get_data AA surfaces not implemented");
+		log_warn("tex2d_get_data AA surfaces not implemented");
 		return;
 	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
 		// Handle case where the source is already a staging texture we can use directly
@@ -544,7 +544,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 		desc.Usage          = D3D11_USAGE_STAGING;
 
 		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
-			log_write(log_error, "CreateTexture2D failed!");
+			log_err("CreateTexture2D failed!");
 			return;
 		}
 		d3d_context->CopyResource(copy_tex, texture->texture);
@@ -553,7 +553,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	// Load the data into CPU RAM
 	D3D11_MAPPED_SUBRESOURCE data;
 	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
-		log_write(log_error, "Texture Map failed!");
+		log_err("Texture Map failed!");
 		return;
 	}
 

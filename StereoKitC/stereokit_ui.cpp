@@ -271,7 +271,7 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
-					log_write(log_info, "unpinch");
+					log_info("unpinch");
 				}
 			}
 		}

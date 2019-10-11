@@ -45,7 +45,7 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 
 	ID3DBlob *compiled, *errors;
 	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
-		log_write(log_error, (char*)errors->GetBufferPointer());
+		log_err((char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
 	return compiled;
@@ -76,7 +76,7 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 		fclose(fp);
 	} else {
 #ifdef SK_NO_RUNTIME_SHADER_COMPILE
-		log_writef(log_error, "Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
+		log_errf("Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
 #else
 		ID3DBlob *blob = compile_shader(filename, hlsl, entrypoint, target);
 		if (blob == nullptr)
@@ -138,7 +138,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 			else {
 				char name[64];
 				stref_copy_to(word, name, 64);
-				log_writef(log_warning, "Unrecognized shader param type: %s", name);
+				log_warnf("Unrecognized shader param type: %s", name);
 				free(name);
 			}
 			item.size   = shaderarg_size[item.type];

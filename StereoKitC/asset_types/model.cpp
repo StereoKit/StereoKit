@@ -74,7 +74,7 @@ model_t model_create_file(const char *filename) {
 	if        (modelfmt_gltf(result, filename)) {
 	} else if (modelfmt_obj (result, filename)) {
 	} else {
-		log_writef(log_error, "Can't load %s! File not found, or invalid format.", filename);
+		log_errf("Can't load %s! File not found, or invalid format.", filename);
 	}
 
 	return result;

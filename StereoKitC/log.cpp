@@ -10,7 +10,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-log_        log_filter = log_info;
+log_        log_filter = log_inform;
 log_colors_ log_colors = log_colors_ansi;
 
 const char *log_colorkeys_c[] = {
@@ -145,13 +145,12 @@ char *log_replace_colors(const char *text, const char **color_keys, const char *
 }
 
 ///////////////////////////////////////////
-
 void log_write(log_ level, const char *text) {
 	bool no_colors = log_colors == log_colors_none;
 
 	const char *tag = "";
 	switch (level) {
-	case log_info:    tag = no_colors ? "info"    : "\033[0;36minfo\033[0;;0m";    break;
+	case log_inform:  tag = no_colors ? "info"    : "\033[0;36minfo\033[0;;0m";    break;
 	case log_warning: tag = no_colors ? "warning" : "\033[0;33mwarning\033[0;;0m"; break;
 	case log_error:   tag = no_colors ? "error"   : "\033[0;31merror\033[0;;0m";   break;
 	default:
@@ -159,22 +158,54 @@ void log_write(log_ level, const char *text) {
 	}
 
 	char *colored_text = log_replace_colors(text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
-	if (level >= log_filter)
+	if (level >= log_filter) {
 		printf("[SK %s] %s\n", tag, colored_text == nullptr ? text : colored_text);
+	}
 	free(colored_text);
 }
 
 ///////////////////////////////////////////
 
-void log_writef(log_ level, const char *text, ...) {
-	va_list argptr;
-	va_start(argptr, text);
-	size_t length = vsnprintf(nullptr, 0, text, argptr);
-	char  *buffer = (char*)malloc(length+2);
-	vsnprintf(buffer, length+2, text, argptr);
-	va_end(argptr);
+void _log_writef(log_ level, const char* text, va_list args) {
+	size_t length = vsnprintf(nullptr, 0, text, args);
+	char* buffer = (char*)malloc(length + 2);
+	vsnprintf(buffer, length + 2, text, args);
 
 	log_write(level, buffer);
+	free(buffer);
+}
+
+///////////////////////////////////////////
+
+void log_writef(log_ level, const char *text, ...) {
+	va_list args;
+	va_start(args, text);
+	_log_writef(level, text, args);
+	va_end(args);
+}
+
+///////////////////////////////////////////
+
+void log_info(const char* text) { log_write(log_inform,  text); }
+void log_warn(const char* text) { log_write(log_warning, text); }
+void log_err (const char* text) { log_write(log_error,   text); }
+void log_infof(const char* text, ...) {
+	va_list args;
+	va_start(args, text);
+	_log_writef(log_inform, text, args);
+	va_end(args);
+}
+void log_warnf(const char* text, ...) {
+	va_list args;
+	va_start(args, text);
+	_log_writef(log_warning, text, args);
+	va_end(args);
+}
+void log_errf (const char* text, ...) {
+	va_list args;
+	va_start(args, text);
+	_log_writef(log_error, text, args);
+	va_end(args);
 }
 
 ///////////////////////////////////////////

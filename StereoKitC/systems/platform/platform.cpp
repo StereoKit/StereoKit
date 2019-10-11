@@ -19,12 +19,12 @@ bool platform_init() {
 #endif
 
 	if (!result)
-		log_writef(log_warning, "Couldn't create StereoKit in %s mode!", sk_runtime == runtime_mixedreality ? "MixedReality" : "Flatscreen");
+		log_warnf("Couldn't create StereoKit in %s mode!", sk_runtime == runtime_mixedreality ? "MixedReality" : "Flatscreen");
 
 	// Try falling back to flatscreen, if we didn't just try it
 #ifndef SK_NO_FLATSCREEN
 	if (!result && sk_runtime_fallback && sk_runtime != runtime_flatscreen) {
-		log_writef(log_info, "Runtime falling back to Flatscreen");
+		log_infof("Runtime falling back to Flatscreen");
 		sk_runtime = runtime_flatscreen;
 		result     = win32_init (sk_app_name);
 	}

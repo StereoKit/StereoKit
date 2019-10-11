@@ -94,7 +94,7 @@ bool openxr_init(const char *app_name) {
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
 	if (xr_instance == XR_NULL_HANDLE) {
-		log_write(log_info, "Couldn't create OpenXR instance, is OpenXR installed and set as the active runtime?");
+		log_info("Couldn't create OpenXR instance, is OpenXR installed and set as the active runtime?");
 		return false;
 	}
 
@@ -134,7 +134,7 @@ bool openxr_init(const char *app_name) {
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (xr_session == XR_NULL_HANDLE) {
-		log_write(log_info, "Couldn't create an OpenXR session, no MR device attached/ready?");
+		log_info("Couldn't create an OpenXR session, no MR device attached/ready?");
 		return false;
 	}
 

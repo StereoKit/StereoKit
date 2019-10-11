@@ -33,7 +33,7 @@ inline size_t material_param_size(material_param_ type) {
 	case material_param_vector:   return sizeof(vec4);
 	case material_param_matrix:   return sizeof(matrix);
 	case material_param_texture:  return sizeof(tex2d_t);
-	default: log_write(log_error, "Bad material param type"); return 0;
+	default: log_err("Bad material param type"); return 0;
 	}
 }
 
@@ -136,7 +136,7 @@ shaderargs_desc_item_t *find_desc(shader_t shader, const char *name) {
 	uint64_t                id     = string_hash(name);
 	shaderargs_desc_item_t *result = find_desc(shader, id);
 	if (result == nullptr)
-		log_writef(log_warning, "Can't find shader parameter %s!", name);
+		log_warnf("Can't find shader parameter %s!", name);
 	return result;
 }
 

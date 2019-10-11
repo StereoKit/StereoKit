@@ -117,7 +117,7 @@ void solid_release(solid_t solid) {
 		if (name == CollisionShapeName::BOX || name == CollisionShapeName::SPHERE || name == CollisionShapeName::CAPSULE)
 			delete asset;
 		else
-			log_write(log_warning, "Haven't added support for all physics shapes yet!");
+			log_warn("Haven't added support for all physics shapes yet!");
 
 		shape = shape->getNext();
 	}

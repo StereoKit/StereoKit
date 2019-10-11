@@ -254,7 +254,7 @@ void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
 ///////////////////////////////////////////
 
 void render_clear() {
-	//log_writef(log_info, "draws: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
+	//log_infof("draws: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
 	render_queue.clear();
 	render_stats = {};
 
