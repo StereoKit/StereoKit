@@ -115,6 +115,18 @@ struct ray_t {
 	vec3 pos;
 	vec3 dir;
 };
+struct bounds_t {
+	vec3 center;
+	vec3 dimensions;
+};
+struct plane_t {
+	vec3 normal;
+	float d;
+};
+struct sphere_t {
+	vec3 center;
+	float radius;
+};
 struct pose_t {
 	vec3 position;
 	quat orientation;
@@ -148,6 +160,7 @@ static inline float vec3_magnitude   (const vec3 &a) { return sqrtf(a.x * a.x + 
 static inline vec3  vec3_normalize   (const vec3 &a) { return a / vec3_magnitude(a); }
 static inline vec3  vec3_lerp        (const vec3 &a, const vec3 &b, float t) { return a + (b - a)*t; }
 static inline float vec3_dot         (const vec3 &a, const vec3 &b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+static inline vec3  vec3_abs         (const vec3 &a) { return { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; }
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
@@ -195,6 +208,16 @@ static const matrix matrix_identity = matrix{ vec4{1,0,0,0}, vec4{0,1,0,0}, vec4
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
 #define unit_dmm(dmm, distance) ((dmm)*(distance))
+
+///////////////////////////////////////////
+
+SK_API bool32_t plane_ray_intersect  (plane_t plane, ray_t ray, vec3 *out_pt);
+SK_API bool32_t plane_line_intersect (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt);
+SK_API vec3     plane_point_closest  (plane_t plane, vec3 pt);
+SK_API bool32_t sphere_ray_intersect (sphere_t sphere, ray_t ray, vec3 *out_pt);
+SK_API bool32_t sphere_point_contains(sphere_t sphere, vec3 pt);
+SK_API bool32_t bounds_ray_intersect (bounds_t bounds, ray_t ray, vec3 *out_pt);
+SK_API bool32_t bounds_point_contains(bounds_t bounds, vec3 pt);
 
 ///////////////////////////////////////////
 
