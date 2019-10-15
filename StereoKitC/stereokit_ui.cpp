@@ -236,6 +236,65 @@ bool32_t ui_button(const char *text) {
 
 ///////////////////////////////////////////
 
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
+	uint64_t id_hash= sk_ui_hash(id);
+	bool     result = false;
+	bool     focused = false;
+	vec3     offset = skui_layers.back().offset;
+	vec2     size   = text_size(skui_font_style, buffer);
+	size += vec2{ skui_padding, skui_padding } * 2;
+
+	vec3 box_start = offset;
+	vec3 box_size  = vec3{ size.x, size.y, skui_depth/2 };
+	for (size_t i = 0; i < handed_max; i++) {
+		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
+			skui_control_focused[i] = id_hash;
+		}
+		if (skui_control_focused[i] == id_hash)
+			focused = true;
+	}
+	if (focused) {
+		char add = '\0';
+		bool shift = input_key(key_shift) & button_state_down;
+		if (input_key(key_backspace) & button_state_just_down) {
+			int len = strlen(buffer);
+			if (len >= 0) {
+				buffer[len - 1] = '\0';
+				result = true;
+			}
+		}
+		if (input_key(key_space) & button_state_just_down) add = ' ';
+		for (int32_t k = 0; k < 26; k++) {
+			if (input_key((key_)(key_a + k)) & button_state_just_down) {
+				add = (shift ? 'A' : 'a') + k;
+			}
+		}
+		for (int32_t k = 0; k < 10; k++) {
+			if (input_key((key_)(key_0 + k)) & button_state_just_down) {
+				const char *nums = ")!@#$%^&*(";
+				add = (shift ? nums[k] : '0'+k);
+			}
+		}
+		if (add != '\0') {
+			int len = strlen(buffer);
+			if (len + 2 < buffer_size) {
+				buffer[len] = add;
+				buffer[len + 1] = '\0';
+				result = true;
+			}
+		}
+	}
+
+	ui_reserve_box(size);
+	ui_box (offset, vec3{ size.x, size.y, skui_depth/2 }, skui_mat, focused ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_depth/2 + 2*mm2m }, buffer, text_align_x_center | text_align_y_center);
+	ui_nextline();
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;

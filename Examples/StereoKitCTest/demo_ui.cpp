@@ -24,7 +24,8 @@ void demo_ui_update() {
 	ui_window_begin("Main", window_pose, vec2{ 24 }*cm2m);
 
 	ui_button("Testing!"); ui_sameline();
-	ui_button("Another");
+	static char buffer[128] = {};
+	ui_input("text", buffer, 128);
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;
