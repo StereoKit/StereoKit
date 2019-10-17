@@ -33,17 +33,35 @@ void common_init();
 void common_update();
 void common_shutdown();
 
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+const char* file_cache      = "Assets";
+const char* file_cubemap    = "Assets/Sky/sky.hdr";
+const char* file_tex        = "Assets/test.png";
+const char* file_tex_normal = "Assets/test_normal.png";
+#else
+const char* file_cache      = "../../Examples/Assets";
+const char* file_cubemap    = "../../Examples/Assets/Sky/sky.hdr";
+const char* file_tex        = "../../Examples/Assets/test.png";
+const char* file_tex_normal = "../../Examples/Assets/test_normal.png";
+#endif
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
+#else
 int main() {
+#endif
 	settings_t settings = {};
-	sprintf_s(settings.shader_cache, "../../Examples/Assets");
+	sprintf_s(settings.shader_cache, file_cache);
 	sk_set_settings(settings);
 
-	if (!sk_init("StereoKit C", runtime_flatscreen))
+	if (!sk_init("StereoKit C", runtime_mixedreality))
 		return 1;
 
 	common_init();
 
-	scene_set_active(demo_ui);
+	scene_set_active(demo_basics);
 
 	while (sk_step( []() {
 		scene_update();
@@ -57,13 +75,13 @@ int main() {
 }
 
 void common_init() {
-	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
+	tex2d_t cubemap = tex2d_create_cubemap_file(file_cubemap);
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
 
 	// Create a PBR floor material
-	tex2d_t tex_color = tex2d_create_file("../../Examples/Assets/test.png");
-	tex2d_t tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
+	tex2d_t tex_color = tex2d_create_file(file_tex);
+	tex2d_t tex_norm  = tex2d_create_file(file_tex_normal);
 	floor_mat = material_create(shader_find("default/shader_pbr"));
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
