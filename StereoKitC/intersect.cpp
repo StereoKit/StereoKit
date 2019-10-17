@@ -47,7 +47,7 @@ bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
 
 	float dist = sqrtf( radius2 - dist2 );
 
-	*out_pt = dot - dist;
+	//*out_pt = dot - dist;
 
 	return true;
 }
@@ -61,13 +61,14 @@ bool32_t sphere_point_contains(sphere_t sphere, vec3 pt) {
 
 ///////////////////////////////////////////
 
-bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3 *out_pt) {
+bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
+return false; 
 }
 
 ///////////////////////////////////////////
 
 bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
-	vec3 pt = vec3_abs(pt - bounds.center) * 2;
+	pt = vec3_abs(pt - bounds.center) * 2;
 	return
 		pt.x < bounds.dimensions.x &&
 		pt.y < bounds.dimensions.y &&
