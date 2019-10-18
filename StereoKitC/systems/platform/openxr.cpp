@@ -117,10 +117,25 @@ bool openxr_init(const char *app_name) {
 	blend_modes.resize(blend_count);
 	xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, blend_count, &blend_count, blend_modes.data());
 	for (size_t i = 0; i < blend_count; i++) {
-		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE) {
+		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
 			xr_blend = blend_modes[i];
 			break;
 		}
+	}
+
+	// register dispay type with the system
+	switch (xr_blend) {
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE: {
+		sk_info.display_type = display_opaque;
+	}break;
+	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE: {
+		sk_info.display_type = display_additive;
+	}break;
+	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: {
+		sk_info.display_type = display_passthrough;
+	}break;
 	}
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
@@ -361,7 +376,7 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 
 		// Call the rendering callback with our view and swapchain info
 		tex2d_t target = xr_swapchains[i].surface_data[img_id];
-		tex2d_rtarget_clear(target, {0,0,0,0});
+		tex2d_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
 		tex2d_rtarget_set_active(target);
 		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(
 			(float)views[i].subImage.imageRect.offset.x, 

@@ -53,6 +53,8 @@ bool win32_init(const char *app_name) {
 	d3d_screen_width  = sk_settings.flatscreen_width;
 	d3d_screen_height = sk_settings.flatscreen_height;
 
+	sk_info.display_type = display_opaque;
+
 	MSG      msg     = {0};
 	WNDCLASS wc      = {0}; 
 	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
