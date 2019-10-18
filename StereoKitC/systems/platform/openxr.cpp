@@ -443,35 +443,45 @@ void openxr_make_actions() {
 	XrPath profile_path;
 	XrPath pose_path  [2];
 	XrPath select_path[2];
-	XrPath grip_path[2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",     &pose_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",    &pose_path[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
-	
-	XrActionSuggestedBinding bindings[] = {
-		{ xr_input.poseAction,   pose_path[0]   },
-		{ xr_input.poseAction,   pose_path[1]   },
-		{ xr_input.selectAction, select_path[0] },
-		{ xr_input.selectAction, select_path[1] },
-		{ xr_input.gripAction,   grip_path[0]   },
-		{ xr_input.gripAction,   grip_path[1]   } };
-
-	
-	xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
+	XrPath grip_path  [2];
+	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",       &pose_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",      &pose_path[1]);
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
-	suggested_binds.interactionProfile     = profile_path;
-	suggested_binds.suggestedBindings      = &bindings[0];
-	suggested_binds.countSuggestedBindings = _countof(bindings);
-	xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
 
-	xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
-	suggested_binds.interactionProfile     = profile_path;
-	suggested_binds.suggestedBindings      = &bindings[0];
-	suggested_binds.countSuggestedBindings = _countof(bindings);
-	xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
+	// microsoft / motion_controller
+	{
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
+		XrActionSuggestedBinding bindings[] = {
+			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
+			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
+			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] }
+		};
+
+		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = &bindings[0];
+		suggested_binds.countSuggestedBindings = _countof(bindings);
+		xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
+	}
+
+	// khr / simple_controller
+	{
+		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
+		XrActionSuggestedBinding bindings[] = {
+			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
+			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
+		};
+
+		xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = &bindings[0];
+		suggested_binds.countSuggestedBindings = _countof(bindings);
+		xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
+	}
 
 	// Create frames of reference for the pose actions
 	for (int32_t i = 0; i < 2; i++) {
