@@ -17,7 +17,7 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-[Bb]in/
+/[Bb]in/
 x64/
 x86/
 bld/
@@ -330,9 +330,7 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-!**/OpenXR/**
-!**/ReactPhysics/**
-!**/LeapC/**
+!StereoKitC/lib/bin/**
 !**/Assets/**
 
 # Ignore cached shader blobs

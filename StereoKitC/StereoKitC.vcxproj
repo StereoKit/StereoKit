@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -26,19 +18,6 @@
     <ProjectName>StereoKitC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -57,12 +36,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -70,48 +43,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)ReactPhysics\include;$(ProjectDir)OpenXR\include;$(ProjectDir)LeapC\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)ReactPhysics\bin\$(Platform)\$(Configuration);$(ProjectDir)OpenXR\bin\$(Platform)\$(Configuration);$(ProjectDir)LeapC\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-    </Link>
-    <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -124,36 +67,10 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Comm
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-    <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)lib\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -176,10 +93,10 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Comm
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)LeapC\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\" /d /k /y
-xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\" /d /k /y</Command>
+      <Command>xcopy "$(ProjectDir)lib\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
