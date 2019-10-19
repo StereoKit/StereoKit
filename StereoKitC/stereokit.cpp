@@ -22,13 +22,14 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-const char*sk_app_name;
-void     (*sk_app_update_func)(void);
-runtime_   sk_runtime = runtime_flatscreen;
-bool       sk_runtime_fallback = false;
-settings_t sk_settings = {};
-bool32_t   sk_focused  = true;
-bool32_t   sk_run      = true;
+const char   *sk_app_name;
+void        (*sk_app_update_func)(void);
+runtime_      sk_runtime = runtime_flatscreen;
+bool          sk_runtime_fallback = false;
+settings_t    sk_settings = {};
+system_info_t sk_info     = {};
+bool32_t      sk_focused  = true;
+bool32_t      sk_run      = true;
 
 bool sk_initialized = false;
 
@@ -53,6 +54,12 @@ void sk_set_settings(settings_t &settings) {
 		sk_settings.flatscreen_width  = 800;
 	if (sk_settings.flatscreen_height == 0)
 		sk_settings.flatscreen_height = 480;
+}
+
+///////////////////////////////////////////
+
+const system_info_t& sk_get_info() {
+	return sk_info;
 }
 
 ///////////////////////////////////////////

@@ -54,6 +54,16 @@ struct settings_t {
 	char shader_cache[128];
 };
 
+enum display_ {
+	display_opaque = 0,
+	display_additive,
+	display_passthrough,
+};
+
+struct system_info_t {
+	display_ display_type;
+};
+
 /// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling this function, if defaults need changed!</summary>
 /// <param name='app_name'         >Name of the application, this shows up an the top of the Win32 window, and is submitted to OpenXR. OpenXR caps this at 128 characters.</param>
 /// <param name='preferred_runtime'>Which runtime should we try to load?</param>
@@ -77,6 +87,7 @@ SK_API void     sk_shutdown  ();
 SK_API bool32_t sk_step      (void (*app_update)(void));
 SK_API runtime_ sk_active_runtime();
 SK_API void     sk_set_settings  (settings_t& settings);
+SK_API const system_info_t &sk_get_info();
 
 ///////////////////////////////////////////
 

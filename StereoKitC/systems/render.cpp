@@ -308,7 +308,7 @@ bool render_initialize() {
 ///////////////////////////////////////////
 
 void render_update() {
-	if (render_sky_show) {
+	if (render_sky_show && sk_get_info().display_type == display_opaque) {
 		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
 	}
 }

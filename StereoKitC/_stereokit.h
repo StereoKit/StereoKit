@@ -4,10 +4,11 @@
 
 namespace sk {
 
-extern const char *sk_app_name;
-extern settings_t  sk_settings;
-extern runtime_    sk_runtime;
-extern bool        sk_runtime_fallback;
+extern const char   *sk_app_name;
+extern settings_t    sk_settings;
+extern system_info_t sk_info;
+extern runtime_      sk_runtime;
+extern bool          sk_runtime_fallback;
 
 extern float   sk_timevf;
 extern double  sk_timev;

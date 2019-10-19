@@ -1,6 +1,7 @@
 #include "demo_basics.h"
 
 #include "../../StereoKitC/stereokit.h"
+#include "../../StereoKitC/stereokit_ui.h"
 using namespace sk;
 #include <vector>
 using namespace std;
@@ -26,19 +27,54 @@ void demo_basics_init() {
 	transform_set(text_tr, vec3_up*0.1f, vec3_one*unit_cm(5), quat_identity);
 
 	// Load a gltf model
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+	gltf = model_create_file("Assets/DamagedHelmet.gltf");
+#else
 	gltf = model_create_file("../../Examples/Assets/DamagedHelmet.gltf");
+#endif
+
+	ui_init();
 }
 
 ///////////////////////////////////////////
 
 void demo_basics_update() {
 	// Do hand input
-	if (input_hand(handed_right).state & input_state_justpinch) {
+	/*if (input_hand(handed_right).state & input_state_justpinch) {
 		solid_t new_obj = solid_create({ 0,3,0 }, quat_identity);
 		solid_add_sphere(new_obj, 0.45f, 40);
 		solid_add_box   (new_obj, vec3_one*0.35f, 40);
 		phys_objs.push_back(new_obj);
+	}*/
+
+	static pose_t window_pose =
+		pose_t{ {0.25f,0,0.25f}, quat_lookat({0.25f,0,0.25f}, {0,0,0}) };
+	ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
+
+	static float val = 0.5f;
+	static float val2 = 0.5f;
+	ui_hslider("slider", val, 0, 1, 0.2f, 72 * mm2m); ui_sameline();
+	ui_hslider("slider2", val2, 0, 1, 0, 72 * mm2m);
+
+	static bool pressed = false;
+	if (ui_button("Spawn helmet")) {
+		if (!pressed) {
+			pressed = true;
+			solid_t new_obj = solid_create({ 0,1,0 }, quat_identity);
+			solid_add_sphere(new_obj, 0.45f, 40);
+			solid_add_box(new_obj, vec3_one * 0.35f, 40);
+			phys_objs.push_back(new_obj);
+		}
+	} else {
+		pressed = false;
 	}
+	if (ui_button("Clear")) {
+		for (size_t i = 0; i < phys_objs.size(); i++)
+			solid_release(phys_objs[i]);
+		phys_objs.clear();
+	}
+
+	ui_window_end();
 
 	// Render solid helmets
 	transform_set_scale(tr, vec3_one*0.25f);
