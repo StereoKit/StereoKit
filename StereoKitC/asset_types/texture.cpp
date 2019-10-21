@@ -578,6 +578,12 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 
 ///////////////////////////////////////////
 
+void *tex2d_get_resource(tex2d_t texture) {
+	return texture->resource;
+}
+
+///////////////////////////////////////////
+
 bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);
 	int h = (int32_t)log2(height);

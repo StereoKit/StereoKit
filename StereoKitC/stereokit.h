@@ -308,6 +308,7 @@ SK_API void    tex2d_add_zbuffer(tex2d_t texture, tex_format_ format = tex_forma
 SK_API void    tex2d_rtarget_clear     (tex2d_t render_target, color32 color);
 SK_API void    tex2d_rtarget_set_active(tex2d_t render_target);
 SK_API void    tex2d_get_data   (tex2d_t texture, void *out_data, size_t out_data_size);
+SK_API void   *tex2d_get_resource(tex2d_t texture);
 
 ///////////////////////////////////////////
 
