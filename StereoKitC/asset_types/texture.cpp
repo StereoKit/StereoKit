@@ -242,6 +242,8 @@ void tex2d_releasesurface(tex2d_t tex) {
 void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height;
+	if (!different_size && data == nullptr)
+		return;
 	if (texture->texture == nullptr || different_size) {
 		tex2d_releasesurface(texture);
 		
@@ -504,7 +506,8 @@ void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
 
 void tex2d_rtarget_set_active(tex2d_t render_target) {
 	if (render_target == nullptr) {
-		d3d_context->OMSetRenderTargets(0, nullptr, nullptr);
+		ID3D11RenderTargetView* null_rtv = nullptr;
+		d3d_context->OMSetRenderTargets(1, &null_rtv, nullptr);
 		return;
 	}
 
