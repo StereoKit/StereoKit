@@ -95,19 +95,28 @@ void d3d_update() {
 		if (SUCCEEDED(d3d_info->GetMessageA(i, pMessage, &size)) && pMessage->Severity <= D3D11_MESSAGE_SEVERITY_WARNING) {
 			const char *cat = "None";
 			switch(pMessage->Category) {
-			case D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED: cat = "App";          break;
-			case D3D11_MESSAGE_CATEGORY_MISCELLANEOUS:       cat = "Misc";         break;
-			case D3D11_MESSAGE_CATEGORY_INITIALIZATION:      cat = "Init";         break;
-			case D3D11_MESSAGE_CATEGORY_CLEANUP:             cat = "Cleanup";      break;
-			case D3D11_MESSAGE_CATEGORY_COMPILATION:         cat = "Compile";      break;
-			case D3D11_MESSAGE_CATEGORY_STATE_CREATION:      cat = "State Create"; break;
-			case D3D11_MESSAGE_CATEGORY_STATE_SETTING:       cat = "State Set";    break;
-			case D3D11_MESSAGE_CATEGORY_STATE_GETTING:       cat = "State Get";    break;
-			case D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION: cat = "Resource";   break;
-			case D3D11_MESSAGE_CATEGORY_EXECUTION:           cat = "Exec";         break;
-			case D3D11_MESSAGE_CATEGORY_SHADER:              cat = "Shader";       break;
+			case D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED:  cat = "App";          break;
+			case D3D11_MESSAGE_CATEGORY_MISCELLANEOUS:        cat = "Misc";         break;
+			case D3D11_MESSAGE_CATEGORY_INITIALIZATION:       cat = "Init";         break;
+			case D3D11_MESSAGE_CATEGORY_CLEANUP:              cat = "Cleanup";      break;
+			case D3D11_MESSAGE_CATEGORY_COMPILATION:          cat = "Compile";      break;
+			case D3D11_MESSAGE_CATEGORY_STATE_CREATION:       cat = "State Create"; break;
+			case D3D11_MESSAGE_CATEGORY_STATE_SETTING:        cat = "State Set";    break;
+			case D3D11_MESSAGE_CATEGORY_STATE_GETTING:        cat = "State Get";    break;
+			case D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION:cat = "Resource";   break;
+			case D3D11_MESSAGE_CATEGORY_EXECUTION:            cat = "Exec";         break;
+			case D3D11_MESSAGE_CATEGORY_SHADER:               cat = "Shader";       break;
 			}
-			log_infof("%s: [%d] %s\n", cat, pMessage->ID, pMessage->pDescription);
+			log_ level;
+			switch (pMessage->Severity) {
+			case D3D11_MESSAGE_SEVERITY_MESSAGE:
+			case D3D11_MESSAGE_SEVERITY_INFO:       level = log_inform;  break;
+			case D3D11_MESSAGE_SEVERITY_WARNING:    level = log_warning; break;
+			case D3D11_MESSAGE_SEVERITY_CORRUPTION:
+			case D3D11_MESSAGE_SEVERITY_ERROR:      level = log_error;   break;
+			default: level = log_inform;
+			}
+			log_writef(level, "%s: [%d] %s", cat, pMessage->ID, pMessage->pDescription);
 		}
 		free(pMessage);
 	}

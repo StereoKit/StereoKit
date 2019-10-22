@@ -293,8 +293,10 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 	// If the shader compiled fine, set up and send it to the GPU
 	if (shader->vshader != nullptr) shader->vshader->Release();
 	if (shader->pshader != nullptr) shader->pshader->Release();
-	d3d_device->CreateVertexShader(vert_shader_blob .data, vert_shader_blob .size, nullptr, &shader->vshader);
-	d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader);
+	if (FAILED(d3d_device->CreateVertexShader(vert_shader_blob.data, vert_shader_blob.size, nullptr, &shader->vshader)))
+		log_warnf("Issue creating vertex shader for %s", filename);
+	if (FAILED(d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader)))
+		log_warnf("Issue creating pixel shader for %s", filename);
 	DX11ResType(shader->vshader, "vertex_shader");
 	DX11ResType(shader->pshader, "pixel_shader");
 
@@ -310,7 +312,8 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
-	d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob.data, vert_shader_blob.size, &shader->vert_layout);
+	if (FAILED(d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob.data, vert_shader_blob.size, &shader->vert_layout)))
+		log_warnf("Issue creating vertex layout for %s", filename);
 
 	free(vert_shader_blob .data);
 	free(pixel_shader_blob.data);
