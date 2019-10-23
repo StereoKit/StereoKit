@@ -88,7 +88,7 @@ void d3d_update() {
 	#ifdef _DEBUG
 	if (d3d_info == nullptr)
 		return;
-	for(size_t i = 0; i < d3d_info->GetNumStoredMessages(); i++) {
+	/*for(size_t i = 0; i < d3d_info->GetNumStoredMessages(); i++) {
 		SIZE_T size = 0;
 		d3d_info->GetMessageA(0, nullptr, &size);
 		D3D11_MESSAGE * pMessage = (D3D11_MESSAGE*)malloc(size);
@@ -119,7 +119,7 @@ void d3d_update() {
 			log_writef(level, "%s: [%d] %s", cat, pMessage->ID, pMessage->pDescription);
 		}
 		free(pMessage);
-	}
+	}*/
 	d3d_info->ClearStoredMessages();
 	#endif
 }

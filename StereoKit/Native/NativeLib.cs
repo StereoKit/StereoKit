@@ -13,14 +13,15 @@ namespace StereoKit
         static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
         [DllImport("kernel32")]
         static extern bool FreeLibrary(IntPtr hModule);
-        [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
-        static extern int GetCurrentPackageFullName(ref int packageFullNameLength, StringBuilder packageFullName);
+
+        //[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+        //static extern int GetCurrentPackageFullName(ref int packageFullNameLength, StringBuilder packageFullName);
 
         public const string DllName = "StereoKitC.dll";
 
         static IntPtr library;
 
-        static bool IsUWP()
+        /*static bool IsUWP()
         {
             int           length = 0;
             StringBuilder sb     = new StringBuilder(0);
@@ -30,7 +31,7 @@ namespace StereoKit
             result = GetCurrentPackageFullName(ref length, sb);
 
             return result != 15700L; // APPMODEL_ERROR_NO_PACKAGE;
-        }
+        }*/
 
         internal static void LoadDll()
         {
@@ -52,8 +53,8 @@ namespace StereoKit
             #else
             folder += "_Release";
             #endif
-            if (IsUWP())
-                folder += "_UWP";
+            //if (IsUWP())
+            //    folder += "_UWP";
 
             string location = Assembly.GetExecutingAssembly().Location;
             string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
