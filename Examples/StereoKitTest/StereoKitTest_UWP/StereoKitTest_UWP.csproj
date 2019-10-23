@@ -71,7 +71,7 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="..\*.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -88,7 +88,6 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC.dll" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
@@ -105,6 +104,15 @@
     <Content Include="..\..\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC.dll" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>$(Platform)_$(Configuration)\%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
   <ItemGroup />
