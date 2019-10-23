@@ -117,8 +117,8 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	}
 
 	result = tex2d_create(tex_type_image | tex_type_cubemap, equirect->format);
-	tex2d_set_id    (result, equirectangular_file);
-	tex2d_set_colors(result, width, height, (void**)&data, 6);
+	tex2d_set_id       (result, equirectangular_file);
+	tex2d_set_color_arr(result, width, height, (void**)&data, 6);
 
 	material_release(convert_material);
 	tex2d_release(equirect);
@@ -173,8 +173,8 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 
 	// Create with the data we have
 	result = tex2d_create(tex_type_image | tex_type_cubemap);
-	tex2d_set_id    (result, cube_face_file_xxyyzz[0]);
-	tex2d_set_colors(result, final_width, final_height, (void**)&data, 6);
+	tex2d_set_id       (result, cube_face_file_xxyyzz[0]);
+	tex2d_set_color_arr(result, final_width, final_height, (void**)&data, 6);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -239,7 +239,7 @@ void tex2d_releasesurface(tex2d_t tex) {
 
 ///////////////////////////////////////////
 
-void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
+void tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height;
 	if (!different_size && (data == nullptr || *data == nullptr))
@@ -280,7 +280,7 @@ void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **dat
 
 void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
 	void *data_arr[1] = { data };
-	tex2d_set_colors(texture, width, height, data_arr, 1);
+	tex2d_set_color_arr(texture, width, height, data_arr, 1);
 }
 
 ///////////////////////////////////////////

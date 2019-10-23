@@ -303,6 +303,7 @@ SK_API tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz);
 SK_API void    tex2d_set_id     (tex2d_t texture, const char *id);
 SK_API void    tex2d_release    (tex2d_t texture);
 SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
+SK_API void    tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
 SK_API void    tex2d_set_options(tex2d_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
 SK_API void    tex2d_add_zbuffer(tex2d_t texture, tex_format_ format = tex_format_depthstencil);
 SK_API void    tex2d_rtarget_clear     (tex2d_t render_target, color32 color);

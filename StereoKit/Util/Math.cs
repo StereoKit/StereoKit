@@ -98,6 +98,16 @@ namespace StereoKit
         public Vec4 row2;
         public Vec4 row3;
         public Vec4 row4;
+
+        public static Matrix Identity { get{
+            return new Matrix { 
+                row1 = new Vec4(1,0,0,0),
+                row2 = new Vec4(0,1,0,0),
+                row3 = new Vec4(0,0,1,0),
+                row4 = new Vec4(0,0,0,1),
+            };
+        } }
+    
     }
 
     [StructLayout(LayoutKind.Sequential)]
