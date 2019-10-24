@@ -1,15 +1,43 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Platforms>x64;ARM64</Platforms>
     <OutputPath>..\bin\</OutputPath>
   </PropertyGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy &quot;$(SolutionDir)StereoKitC\lib\bin\x64\*.dll&quot; &quot;$(SolutionDir)bin&quot; /d /k /y" />
-  </Target>
+  <!-- NuGet package -->
+  <PropertyGroup>
+    <Id>StereoKit</Id>
+    <Version>0.1.0-a</Version>
+    <Title>StereoKit</Title>
+    <Authors>Nick Klingensmith</Authors>
+    <ProjectUrl>https://github.com/maluoi/StereoKit</ProjectUrl>
+    <Icon>images\StereoKitLogo.png</Icon>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <!-- Files and DLLs that are needed for the NuGet package -->
+  <ItemGroup>
+    <None Include="..\Documentation\img\StereoKitLogo.png" Pack="true" PackagePath="images\" />
+
+    <!-- Win32 DLLs -->
+    <Content Include="..\bin\x64_Release\StereoKitC.*">
+      <Pack>true</Pack>
+      <PackagePath>runtimes\win32-x64\</PackagePath>
+    </Content>
+
+    <!-- UWP DLLs -->
+    <Content Include="..\bin\x64_Release_UWP\StereoKitC.*">
+      <Pack>true</Pack>
+      <PackagePath>runtimes\win10-x64\</PackagePath>
+    </Content>
+    <Content Include="..\bin\ARM64_Release_UWP\StereoKitC.*">
+      <Pack>true</Pack>
+      <PackagePath>runtimes\win10-arm64\</PackagePath>
+    </Content>
+    
+  </ItemGroup>
 
 </Project>

@@ -26,7 +26,6 @@ void        tex2d_set_active(tex2d_t texture, int slot);
 void        tex2d_destroy   (tex2d_t texture);
 DXGI_FORMAT tex2d_get_native_format(tex_format_ format);
 size_t      tex2d_format_size      (tex_format_ format);
-void        tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count);
 
 void tex2d_releasesurface(tex2d_t texture);
 void tex2d_setsurface    (tex2d_t texture, ID3D11Texture2D *source);
