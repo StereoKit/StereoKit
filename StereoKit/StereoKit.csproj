@@ -13,6 +13,7 @@
     <Authors>Nick Klingensmith</Authors>
     <ProjectUrl>https://github.com/maluoi/StereoKit</ProjectUrl>
     <Icon>images\StereoKitLogo.png</Icon>
+    <PackageIcon>images\StereoKitLogo.png</PackageIcon>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -23,20 +24,15 @@
     <None Include="..\Documentation\img\StereoKitLogo.png" Pack="true" PackagePath="images\" />
 
     <!-- Win32 DLLs -->
-    <Content Include="..\bin\x64_Release\StereoKitC.*">
-      <Pack>true</Pack>
-      <PackagePath>runtimes\win32-x64\</PackagePath>
-    </Content>
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC.dll" PackagePath="lib\win32-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC.pdb" PackagePath="lib\win32-x64\" />
 
     <!-- UWP DLLs -->
-    <Content Include="..\bin\x64_Release_UWP\StereoKitC.*">
-      <Pack>true</Pack>
-      <PackagePath>runtimes\win10-x64\</PackagePath>
-    </Content>
-    <Content Include="..\bin\ARM64_Release_UWP\StereoKitC.*">
-      <Pack>true</Pack>
-      <PackagePath>runtimes\win10-arm64\</PackagePath>
-    </Content>
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\" />
+
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\" />
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\" />
     
   </ItemGroup>
 
