@@ -114,6 +114,14 @@ void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 
 ///////////////////////////////////////////
 
+void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
+	matrix mx = matrix_trs(start, quat_identity, size);
+	matrix_mul(mx, skui_layers.back().transform, mx);
+	render_add_model(model, mx, color);
+}
+
+///////////////////////////////////////////
+
 void ui_text(vec3 start, const char *text, text_align_ position) {
 	text_add_at(skui_font_style, skui_layers.back().transform, text, position, start.x, start.y, start.z);
 }
@@ -232,6 +240,18 @@ bool32_t ui_button(const char *text) {
 	ui_nextline();
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void ui_model(model_t model, vec2 ui_size, float model_scale) {
+	vec3 offset = skui_layers.back().offset;
+	vec2 size   = ui_size + vec2{ skui_padding, skui_padding }*2;
+
+	ui_reserve_box(size);
+	size = size / 2;
+	ui_model_at(model, { offset.x + size.x, offset.y - size.y, offset.z }, vec3_one * model_scale, { 1,1,1,1 });
+	ui_nextline();
 }
 
 ///////////////////////////////////////////
@@ -365,7 +385,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
 			color = { 0.5f,0.5f,0.5f,1 };
-			float new_val = ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
+			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
 			}
