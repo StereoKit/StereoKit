@@ -220,14 +220,27 @@ bool32_t ui_button(const char *text) {
 		offset = skui_layers.back().offset;
 	}
 
-	vec3 box_start = offset + vec3{ 0, 0, -skui_depth };
-	vec3 box_size  = vec3{ size.x, size.y, skui_depth*2 };
+	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
+	// or 'side' presses where the finger comes from the back or side.
+	vec3 box_start = offset + vec3{ 0, 0, skui_depth/2.f };
+	vec3 box_size  = vec3{ size.x, size.y, skui_depth/2.f };
 	float finger_offset = skui_depth;
 	for (size_t i = 0; i < handed_max; i++) {
-		if (sk_ui_inbox(skui_fingertip[i], box_start, box_size)) {
+		// Once focused is gained, interaction is tracked within a volume that extends from the 
+		// front, to a good distance through the button's back. This is to help when the user's
+		// finger inevitably goes completely through the button. May consider expanding the volume 
+		// a bit too on the X/Y axes later.
+		bool focused    = skui_control_focused[i] == id;
+		vec3 test_start = focused ? box_start + vec3{ 0,0,-skui_depth * 4 } : box_start;
+		vec3 test_size  = focused ? box_size  + vec3{ 0,0, skui_depth * 4 } : box_size;
+
+		if (sk_ui_inbox(skui_fingertip[i], test_start, test_size)) {
 			skui_control_focused[i] = id;
-			finger_offset = fmaxf(mm2m,skui_fingertip[i].z-offset.z);
+			finger_offset = fmaxf(mm2m, skui_fingertip[i].z - offset.z);
+		} else if (focused) {
+			skui_control_focused[i] = 0;
 		}
+	
 		if (finger_offset < skui_depth / 2) {
 			skui_control_active[i] = id;
 			result = true;
