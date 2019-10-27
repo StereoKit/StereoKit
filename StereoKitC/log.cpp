@@ -6,6 +6,9 @@
 #include <stdarg.h>
 #include <string.h>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -146,22 +149,34 @@ char *log_replace_colors(const char *text, const char **color_keys, const char *
 
 ///////////////////////////////////////////
 void log_write(log_ level, const char *text) {
-	bool no_colors = log_colors == log_colors_none;
+	if (level < log_filter)
+		return;
 
 	const char *tag = "";
 	switch (level) {
-	case log_inform:  tag = no_colors ? "info"    : "\033[0;36minfo\033[0;;0m";    break;
-	case log_warning: tag = no_colors ? "warning" : "\033[0;33mwarning\033[0;;0m"; break;
-	case log_error:   tag = no_colors ? "error"   : "\033[0;31merror\033[0;;0m";   break;
+	case log_inform:  tag = "<~cyn>info<~clr>";    break;
+	case log_warning: tag = "<~ylw>warning<~clr>"; break;
+	case log_error:   tag = "<~red>error<~clr>";   break;
 	default:
 		break;
 	}
 
-	char *colored_text = log_replace_colors(text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
-	if (level >= log_filter) {
-		printf("[SK %s] %s\n", tag, colored_text == nullptr ? text : colored_text);
+	size_t len       = strlen(tag) + strlen(text) + 10;
+	char  *full_text = (char*)malloc(len * sizeof(char));
+	sprintf_s(full_text, len, "[SK %s] %s\n", tag, text);
+
+	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
+	printf("[SK %s] %s\n", tag, colored_text == nullptr ? text : colored_text);
+	
+	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
+	if (log_colors != log_colors_none) {
+		free(colored_text);
+		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
+	OutputDebugStringA(colored_text);
 	free(colored_text);
+	
+	free(full_text);
 }
 
 ///////////////////////////////////////////

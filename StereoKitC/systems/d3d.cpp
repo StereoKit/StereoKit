@@ -90,9 +90,9 @@ void d3d_update() {
 		return;
 	for(size_t i = 0; i < d3d_info->GetNumStoredMessages(); i++) {
 		SIZE_T size = 0;
-		d3d_info->GetMessageA(0, nullptr, &size);
+		d3d_info->GetMessage(0, nullptr, &size);
 		D3D11_MESSAGE * pMessage = (D3D11_MESSAGE*)malloc(size);
-		if (SUCCEEDED(d3d_info->GetMessageA(i, pMessage, &size)) && pMessage->Severity <= D3D11_MESSAGE_SEVERITY_WARNING) {
+		if (SUCCEEDED(d3d_info->GetMessage(i, pMessage, &size)) && pMessage->Severity <= D3D11_MESSAGE_SEVERITY_WARNING) {
 			const char *cat = "None";
 			switch(pMessage->Category) {
 			case D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED:  cat = "App";          break;

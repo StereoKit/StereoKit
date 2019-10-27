@@ -9,10 +9,6 @@
     <ClCompile Include="..\demo_ui.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
     <ClCompile Include="..\*.cpp">
       <Filter>reference_files</Filter>
     </ClCompile>
@@ -56,6 +52,10 @@
     <ClCompile Include="..\*.cpp">
       <Filter>reference_files</Filter>
     </ClCompile>
+    <ClCompile Include="..\*.cpp" />
+    <ClCompile Include="..\*.cpp" />
+    <ClCompile Include="..\*.cpp" />
+    <ClCompile Include="..\*.cpp" />
     <ClCompile Include="..\*.cpp" />
     <ClCompile Include="..\*.cpp" />
     <ClCompile Include="..\*.cpp" />
@@ -65,9 +65,6 @@
     <ClInclude Include="..\demo_sprites.h" />
     <ClInclude Include="..\demo_ui.h" />
     <ClInclude Include="..\scene.h" />
-    <ClInclude Include="..\demo_sprites.h" />
-    <ClInclude Include="..\demo_ui.h" />
-    <ClInclude Include="..\scene.h" />
     <ClInclude Include="..\*.h">
       <Filter>reference_files</Filter>
     </ClInclude>
@@ -98,6 +95,9 @@
     <ClInclude Include="..\*.h">
       <Filter>reference_files</Filter>
     </ClInclude>
+    <ClInclude Include="..\*.h" />
+    <ClInclude Include="..\*.h" />
+    <ClInclude Include="..\*.h" />
     <ClInclude Include="..\*.h" />
     <ClInclude Include="..\*.h" />
     <ClInclude Include="..\*.h" />

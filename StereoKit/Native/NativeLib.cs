@@ -19,7 +19,7 @@ namespace StereoKit
 
         internal static void LoadDll()
         {
-            if (library != IntPtr.Zero)
+           /* if (library != IntPtr.Zero)
                 return;
 
             string folder = "";
@@ -47,11 +47,11 @@ namespace StereoKit
                 throw new Exception("Error loading StereoKit DLL at " + path, new Win32Exception(err));
             } else {
                 Console.WriteLine("Using {0} build.", folder);
-            }
+            }*/
         }
         public static void UnloadDLL()
         {
-            FreeLibrary(library);
+            //FreeLibrary(library);
         }
     }
 }

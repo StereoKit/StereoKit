@@ -56,7 +56,7 @@ int main() {
 	sprintf_s(settings.shader_cache, file_cache);
 	sk_set_settings(settings);
 
-	if (!sk_init("StereoKit C", runtime_mixedreality))
+	if (!sk_init("StereoKit C", runtime_flatscreen))
 		return 1;
 
 	common_init();

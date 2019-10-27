@@ -138,8 +138,10 @@ bool systems_initialize() {
 			// start timing
 			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
-			if (!systems[index].func_initialize())
+			if (!systems[index].func_initialize()) {
+				log_errf("System %s failed to initialize!", systems[index].name);
 				return false;
+			}
 
 			// end timing
 			time_point<high_resolution_clock> end = high_resolution_clock::now();
