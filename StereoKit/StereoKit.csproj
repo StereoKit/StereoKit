@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
-    <BaseIntermediateOutputPath>..\bin\intermediate\StereoKit\</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -33,15 +32,15 @@
     <None Include="..\Documentation\img\StereoKitLogo.png" Pack="true" PackagePath="images\" />
 
     <!-- Win32 DLLs -->
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="lib\win32-x64\" />
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="lib\win32-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win32-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win32-x64\" />
 
     <!-- UWP DLLs -->
-    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\" />
-    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\" />
 
-    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\" />
-    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\" />
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\" />
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\" />
     
   </ItemGroup>
 
