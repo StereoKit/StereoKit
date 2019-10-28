@@ -3,7 +3,7 @@ using StereoKit;
 
 class Program 
 {
-    public const string Root = "../Examples/Assets/";
+    public const string Root = "../../../Examples/Assets/";
 
     static Model     floorMesh;
     static Transform floorTr;

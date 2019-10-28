@@ -49,6 +49,8 @@ bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
 
 	//*out_pt = dot - dist;
 
+	log_warn("sphere_ray_intersect not implemented");
+
 	return true;
 }
 
@@ -62,7 +64,8 @@ bool32_t sphere_point_contains(sphere_t sphere, vec3 pt) {
 ///////////////////////////////////////////
 
 bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
-return false; 
+	log_warn("bounds_ray_intersect not implemented");
+	return false; 
 }
 
 ///////////////////////////////////////////

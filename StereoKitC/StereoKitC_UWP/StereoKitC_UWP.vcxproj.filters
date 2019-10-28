@@ -769,6 +769,10 @@
     <ClInclude Include="..\shaders_builtin\*.h">
       <Filter>reference_files</Filter>
     </ClInclude>
+    <ClInclude Include="..\libraries\stb_image.h" />
+    <ClInclude Include="..\libraries\stb_rect_pack.h" />
+    <ClInclude Include="..\libraries\stb_truetype.h" />
+    <ClInclude Include="..\libraries\stref.h" />
     <ClInclude Include="..\asset_types\font.h" />
     <ClInclude Include="..\asset_types\material.h" />
     <ClInclude Include="..\asset_types\mesh.h" />
@@ -790,6 +794,24 @@
     <ClInclude Include="..\asset_types\shader.h" />
     <ClInclude Include="..\asset_types\sprite.h" />
     <ClInclude Include="..\asset_types\texture.h" />
+    <ClInclude Include="..\asset_types\font.h" />
+    <ClInclude Include="..\asset_types\material.h" />
+    <ClInclude Include="..\asset_types\mesh.h" />
+    <ClInclude Include="..\asset_types\model.h" />
+    <ClInclude Include="..\asset_types\shader.h" />
+    <ClInclude Include="..\asset_types\sprite.h" />
+    <ClInclude Include="..\asset_types\texture.h" />
+    <ClInclude Include="..\systems\defaults.h" />
+    <ClInclude Include="..\systems\input.h" />
+    <ClInclude Include="..\systems\input_hand.h" />
+    <ClInclude Include="..\systems\input_hand_poses.h" />
+    <ClInclude Include="..\systems\input_leap.h" />
+    <ClInclude Include="..\systems\line_drawer.h" />
+    <ClInclude Include="..\systems\physics.h" />
+    <ClInclude Include="..\systems\render.h" />
+    <ClInclude Include="..\systems\sprite_drawer.h" />
+    <ClInclude Include="..\systems\system.h" />
+    <ClInclude Include="..\systems\text.h" />
     <ClInclude Include="..\systems\defaults.h" />
     <ClInclude Include="..\systems\input.h" />
     <ClInclude Include="..\systems\input_hand.h" />

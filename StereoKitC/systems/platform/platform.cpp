@@ -9,6 +9,11 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool platform_init() {
+#if SK_NO_FLATSCREEN
+	if (sk_runtime == runtime_flatscreen)
+		log_warn("Flatscreen support has been compiled out of this configuration. Try a non-UWP x64 build!");
+#endif
+
 	// Create a runtime
 	bool result = sk_runtime == runtime_mixedreality ?
 		openxr_init(sk_app_name) :

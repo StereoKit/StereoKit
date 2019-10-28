@@ -62,24 +62,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\;$(VC_LibraryPath_ARM64);$(WindowsSDK_LibraryPath_ARM64);$(NETFXKitsDir)Lib\um\ARM64</LibraryPath>
+    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_ARM64);$(WindowsSDK_LibraryPath_ARM64);$(NETFXKitsDir)Lib\um\ARM64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\;$(VC_LibraryPath_ARM64);$(WindowsSDK_LibraryPath_ARM64);$(NETFXKitsDir)Lib\um\ARM64</LibraryPath>
+    <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_ARM64);$(WindowsSDK_LibraryPath_ARM64);$(NETFXKitsDir)Lib\um\ARM64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -135,7 +135,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\*.dll">
+    <Content Include="$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

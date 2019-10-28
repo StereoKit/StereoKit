@@ -9,7 +9,7 @@ class DemoUI : IScene
 
     public void Initialize()
     {
-        logo = new Sprite("../Documentation/img/StereoKitLogo.png", SpriteType.Single);
+        logo = new Sprite("../../../Documentation/img/StereoKitLogo.png", SpriteType.Single);
         UI.Init();
     }
 
