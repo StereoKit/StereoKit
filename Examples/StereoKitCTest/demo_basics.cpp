@@ -25,7 +25,7 @@ void demo_basics_init() {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
 	gltf = model_create_file("Assets/DamagedHelmet.gltf");
 #else
-	gltf = model_create_file("../../Examples/Assets/DamagedHelmet.gltf");
+	gltf = model_create_file("../../../Examples/Assets/DamagedHelmet.gltf");
 #endif
 
 	ui_init();
