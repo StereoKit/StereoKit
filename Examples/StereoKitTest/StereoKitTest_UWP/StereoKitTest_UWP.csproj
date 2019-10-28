@@ -107,12 +107,12 @@
     </Content>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Release'">
-    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC.dll" />
+    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC.dll">
+    <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>$(Platform)_$(Configuration)\%(Filename)%(Extension)</Link>
+      <Link>%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
   <ItemGroup />

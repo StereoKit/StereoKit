@@ -10,6 +10,10 @@
     <OutputPath>..\bin\</OutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutputPath>..\bin\</OutputPath>
+  </PropertyGroup>
+
   <!-- NuGet package -->
   <PropertyGroup>
     <Id>StereoKit</Id>
@@ -22,8 +26,6 @@
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutputPath>..\bin\</OutputPath>
   </PropertyGroup>
 
   <!-- Files and DLLs that are needed for the NuGet package -->
@@ -31,8 +33,8 @@
     <None Include="..\Documentation\img\StereoKitLogo.png" Pack="true" PackagePath="images\" />
 
     <!-- Win32 DLLs -->
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC.dll" PackagePath="lib\win32-x64\" />
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC.pdb" PackagePath="lib\win32-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="lib\win32-x64\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="lib\win32-x64\" />
 
     <!-- UWP DLLs -->
     <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\" />
