@@ -177,6 +177,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
     <ClInclude Include="_stereokit.h" />
+    <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

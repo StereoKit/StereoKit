@@ -27,8 +27,6 @@ void demo_basics_init() {
 #else
 	gltf = model_create_file("../../../Examples/Assets/DamagedHelmet.gltf");
 #endif
-
-	ui_init();
 }
 
 ///////////////////////////////////////////

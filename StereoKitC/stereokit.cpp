@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "_stereokit.h"
+#include "_stereokit_ui.h"
 
 #include "systems/render.h"
 #include "systems/d3d.h"
@@ -85,6 +86,9 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 
 	const char *default_deps[] = {"Graphics"};
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, defaults_init, nullptr, defaults_shutdown);
+
+	const char *ui_deps[] = {"Defaults"};
+	systems_add("UI", ui_deps, _countof(ui_deps), nullptr, 0, ui_init, nullptr, nullptr);
 
 	const char *platform_deps[] = {"Graphics", "Defaults"};
 	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);

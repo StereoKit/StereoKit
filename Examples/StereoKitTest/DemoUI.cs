@@ -8,7 +8,6 @@ class DemoUI : IScene
 
     public void Initialize()
     {
-        UI.Init();
     }
 
     public void Update()

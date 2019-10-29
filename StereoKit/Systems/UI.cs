@@ -3,8 +3,6 @@ namespace StereoKit
 {
     public static class UI
     {
-        public static void Init       () { NativeAPI.ui_init(); }
-
         public static void NextLine   ()            { NativeAPI.ui_nextline(); }
         public static void SameLine   ()            { NativeAPI.ui_sameline(); }
         public static void ReserveBox (Vec2  size)  { NativeAPI.ui_reserve_box(size); }

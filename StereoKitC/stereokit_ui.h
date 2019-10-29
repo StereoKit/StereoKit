@@ -4,8 +4,6 @@
 
 namespace sk {
 
-SK_API void     ui_init        ();
-
 SK_API void     ui_nextline    ();
 SK_API void     ui_sameline    ();
 SK_API void     ui_reserve_box (vec2 size);

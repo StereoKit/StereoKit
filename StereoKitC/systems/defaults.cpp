@@ -41,37 +41,6 @@ tex2d_t defaults_texture(const char *id, color32 color) {
 
 ///////////////////////////////////////////
 
-tex2d_t defaults_cubemap(const char* id, color32 color_a, color32 color_b) {
-	tex2d_t result = tex2d_create(tex_type_image | tex_type_cubemap);
-	if (result == nullptr) {
-		return nullptr;
-	}
-	color32 top [16 * 16];
-	color32 bot [16 * 16];
-	color32 side[16 * 16];
-	for (size_t i = 0; i < 16 * 16; i++) top[i] = color_b;
-	for (size_t i = 0; i < 16 * 16; i++) bot[i] = color_a;
-	for (size_t y = 0; y < 16; y++) {
-		float pct = y / 15.f;
-		color32 col = {
-			(color_b.r - color_a.r) * pct + color_a.r,
-			(color_b.g - color_a.g) * pct + color_a.g,
-			(color_b.b - color_a.b) * pct + color_a.b,
-			255 };
-		for (size_t x = 0; x < 16; x++) {
-			side[x + y * 16] = col;
-		}
-	}
-	color32* data[] = { side, side, top, bot, side, side };
-
-	tex2d_set_id(result, id);
-	tex2d_set_color_arr(result, 16, 16, (void**)data, 6);
-	
-	return result;
-}
-
-///////////////////////////////////////////
-
 bool defaults_init() {
 	// Textures
 	sk_default_tex       = defaults_texture("default/tex2d",       {255,255,255,255});
@@ -88,7 +57,9 @@ bool defaults_init() {
 		return false;
 
 	// Cubemap
-	sk_default_cubemap = defaults_cubemap("default/cubemap", { 45,30,37,255 }, { 141,216,255,255 });
+	color32 gradient[2] = { { 45,30,37,255 }, { 141,216,255,255 } };
+	sk_default_cubemap = tex2d_gen_cubemap(gradient, 2);
+	tex2d_set_id(sk_default_cubemap, "default/cubemap");
 	render_set_skytex(sk_default_cubemap, true);
 
 	// Default rendering quad
@@ -102,7 +73,7 @@ bool defaults_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id   (sk_default_quad, "default/quad");
 	mesh_set_verts(sk_default_quad, verts, 4);
-	mesh_set_inds (sk_default_quad,  inds,  6);
+	mesh_set_inds (sk_default_quad, inds,  6);
 
 	// Shaders
 	sk_default_shader          = shader_create(sk_shader_builtin_default);

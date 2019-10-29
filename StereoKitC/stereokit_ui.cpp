@@ -1,4 +1,5 @@
 #include "stereokit_ui.h"
+#include "_stereokit_ui.h"
 
 #include <DirectXMath.h>
 using namespace DirectX;
@@ -59,7 +60,7 @@ uint64_t sk_ui_hash(const char *string) {
 
 ///////////////////////////////////////////
 
-void ui_init() {
+bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 
 	material_t mat_default = material_find("default/material");
@@ -71,6 +72,8 @@ void ui_init() {
 	skui_font_mat   = material_create(shader_find("default/shader_font"));
 	skui_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, text_align_x_left | text_align_y_top);
+
+	return true;
 }
 
 ///////////////////////////////////////////
