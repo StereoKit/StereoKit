@@ -112,12 +112,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <PreprocessorDefinitions>SK_NO_FLATSCREEN;SK_NO_LEAP_MOTION;SK_NO_RUNTIME_SHADER_COMPILE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SK_NO_FLATSCREEN;SK_NO_LEAP_MOTION;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <PreprocessorDefinitions>SK_NO_FLATSCREEN;SK_NO_LEAP_MOTION;SK_NO_RUNTIME_SHADER_COMPILE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SK_NO_FLATSCREEN;SK_NO_LEAP_MOTION;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</CompileAsWinRT>
     </ClCompile>
   </ItemDefinitionGroup>

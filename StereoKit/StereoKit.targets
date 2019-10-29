@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Target Name="StereoKitTarget" AfterTargets="Build">
-        <Message Importance="high" Text="Message from MyNuGetCustomTarget. Configuration: $(Configuration)" />
-        <Copy Condition="'$(Platform)'=='x64'" SourceFiles="$(SolutionDir)\packages\StereoKit.0.1.0-a\runtimes\win32-x64\native\StereoKitC.dll" DestinationFolder="$(OutDir)" />
+        <Message Importance="high" Text="Copying native DLL for $(TargetPlatformIdentifier) from $(NuGetPackageRoot)" />
+        <Copy Condition="'$(Platform)'=='x64' And $(TargetPlatformIdentifier)=='Windows'" SourceFiles="$(SolutionDir)packages\StereoKit.0.1.0-a\runtimes\win-x64\native\StereoKitC.dll" DestinationFolder="$(OutDir)" />
+        <Copy Condition="'$(Platform)'=='x64' And $(TargetPlatformIdentifier)=='Windows'" SourceFiles="$(SolutionDir)packages\StereoKit.0.1.0-a\runtimes\win-x64\native\LeapC.dll" DestinationFolder="$(OutDir)" />
+        <!--<Copy Condition="'$(Platform)'=='x64' And $(TargetFramework)=='UAP'" SourceFiles="$(NuGetPackageRoot)\packages\StereoKit.0.1.0-a\runtimes\win10-x64\native\StereoKitC.dll" DestinationFolder="$(OutDir)" />
+        <Copy Condition="'$(Platform)'=='ARM64' And $(TargetFramework)=='UAP'" SourceFiles="$(NuGetPackageRoot)\packages\StereoKit.0.1.0-a\runtimes\win10-arm64\native\StereoKitC.dll" DestinationFolder="$(OutDir)" /> -->
     </Target>
 </Project>
