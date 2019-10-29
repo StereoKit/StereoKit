@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="StereoKitTemplates.4506f751-7385-4f5a-acbb-5d4a821407fc" Version="1.0" Language="en-US" Publisher="Nick Klingensmith" />
+        <DisplayName>StereoKit Templates</DisplayName>
+        <Description xml:space="preserve">Starter templates for Mixed Reality projects using StereoKit and C#!</Description>
+        <Icon>StereoKitLogo64.png</Icon>
+        <Tags>C#;StereoKit;MR;Windows</Tags>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)" />
+    </Installation>
+    <Dependencies>
+    </Dependencies>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\StereoKit .Net Core.zip" />
+    </Assets>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[16.0,17.0)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+</PackageManifest>
