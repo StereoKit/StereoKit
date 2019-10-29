@@ -212,6 +212,9 @@
     <ClInclude Include="systems\line_drawer.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="_stereokit_ui.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
