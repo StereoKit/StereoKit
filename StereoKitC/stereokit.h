@@ -359,6 +359,7 @@ SK_DeclarePrivateType(material_t);
 SK_API material_t material_find            (const char *id);
 SK_API material_t material_create          (shader_t shader);
 SK_API material_t material_copy            (material_t material);
+SK_API material_t material_copy_id         (const char *id);
 SK_API void       material_set_id          (material_t material, const char *id);
 SK_API void       material_release         (material_t material);
 SK_API void       material_set_alpha_mode  (material_t material, material_alpha_ mode);

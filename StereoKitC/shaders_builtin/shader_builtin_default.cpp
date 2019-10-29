@@ -3,13 +3,13 @@
 const char* sk_shader_builtin_default = R"_(
 // [name] sk/default
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 view;
-	float4x4 proj;
-	float4x4 viewproj;
-	float4   light;
-	float4   light_color;
-	float4   camera_pos;
-	float4   camera_dir;
+	float4x4 sk_view;
+	float4x4 sk_proj;
+	float4x4 sk_viewproj;
+	float4   sk_light;
+	float4   sk_light_color;
+	float4   sk_camera_pos;
+	float4   sk_camera_dir;
 };
 struct Inst {
 	float4x4 world;
@@ -18,9 +18,14 @@ struct Inst {
 cbuffer TransformBuffer : register(b1) {
 	Inst sk_inst[800];
 };
+TextureCube sk_cubemap : register(t11);
+SamplerState tex_cube_sampler;
+
 cbuffer ParamBuffer : register(b2) {
-	// [ param ] vector color {1, 1, 1, 1} tags { data for whatever! }
+	// [param] color color {1, 1, 1, 1}
 	float4 _color;
+	// [param] float tex_scale 1
+	float tex_scale;
 };
 struct vsIn {
 	float4 pos  : SV_POSITION;
@@ -42,16 +47,16 @@ SamplerState tex_sampler;
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world, 1), viewproj);
+	output.pos   = mul(float4(output.world,  1), sk_viewproj);
 
 	float3 normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 
-	output.uv    = input.uv;
-	output.color = lerp(float3(0.0,0.0,0.0), light_color.rgb, saturate(dot(normal, -light.xyz))) * input.col * sk_inst[id].color.rgb;
+	output.uv    = input.uv * tex_scale;
+	output.color = lerp(float3(0.0,0.0,0.0), sk_light_color.rgb, saturate(dot(normal, -sk_light.xyz))) * input.col * sk_inst[id].color.rgb;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float3 col   = tex.Sample(tex_sampler, input.uv).rgb;
+	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
 
 	col = col * input.color * _color.rgb;
 
