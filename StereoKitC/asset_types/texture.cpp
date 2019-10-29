@@ -584,6 +584,45 @@ void *tex2d_get_resource(tex2d_t texture) {
 
 ///////////////////////////////////////////
 
+tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count) {
+	tex2d_t result = tex2d_create(tex_type_image | tex_type_cubemap);
+	if (result == nullptr) {
+		return nullptr;
+	}
+
+	int32_t  size  = gradient_count * 4;
+	size_t   size2 = size * size;
+	color32 *top  = (color32*)malloc(size2 * sizeof(color32));
+	color32 *bot  = (color32*)malloc(size2 * sizeof(color32));
+	color32 *side = (color32*)malloc(size2 * sizeof(color32));
+	for (int32_t i = 0; i < size2; i++) top[i] = gradient_bot_to_top[gradient_count-1];
+	for (int32_t i = 0; i < size2; i++) bot[i] = gradient_bot_to_top[0];
+	for (int32_t y = 0; y < size; y++) {
+		color32 color_a = gradient_bot_to_top[(int32_t)(y / 4.f)];
+		color32 color_b = gradient_bot_to_top[(int32_t)(y / 4.f) + 1];
+		float pct = (y%4)/4.f;
+		color32 col = {
+			(color_b.r - color_a.r) * pct + color_a.r,
+			(color_b.g - color_a.g) * pct + color_a.g,
+			(color_b.b - color_a.b) * pct + color_a.b,
+			255 };
+		for (int32_t x = 0; x < size; x++) {
+			side[x + y * size] = col;
+		}
+	}
+
+	color32* data[] = { side, side, top, bot, side, side };
+	tex2d_set_color_arr(result, size, size, (void**)data, 6);
+
+	free(top);
+	free(bot);
+	free(side);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);
 	int h = (int32_t)log2(height);
