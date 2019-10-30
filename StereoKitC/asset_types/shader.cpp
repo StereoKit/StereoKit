@@ -60,7 +60,7 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 	char folder_name[128];
 	sprintf_s(folder_name, "%s/cache", sk_settings.shader_cache);
 	char cache_name[128];
-	sprintf_s(cache_name, "%s/cache/%lld.%s.blob", sk_settings.shader_cache, hash, entrypoint);
+	sprintf_s(cache_name, "%s/cache/%I64u.%s.blob", sk_settings.shader_cache, hash, entrypoint);
 	char target[16];
 	sprintf_s(target, "%s_5_0", entrypoint);
 

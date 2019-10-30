@@ -350,23 +350,23 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 
 ///////////////////////////////////////////
 
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html, start_hash = 5381
-uint64_t string_hash(const char *string, uint64_t start_hash) {
-	unsigned long hash = start_hash;
-	int c;
+// FNV-1a hash (64bit): http://isthe.com/chongo/tech/comp/fnv/, start_hash = 14695981039346656037
+uint64_t  string_hash(const char* string, uint64_t start_hash) {
+	uint64_t hash = start_hash;
+	uint8_t  c;
 	while (c = *string++)
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+		hash = (hash ^ c) * 1099511628211;
 	return hash;
 }
 
 ///////////////////////////////////////////
 
 uint64_t stref_hash(const stref_t &ref) {
-	unsigned long hash = 5381;
-	int c;
+	uint64_t hash = 14695981039346656037;
+	uint8_t  c;
 	for (uint32_t i=0; i<ref.length; i++) {
 		c = *(ref.start + i);
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+		hash = (hash ^ c) * 1099511628211;
 	}
 	return hash;
 }

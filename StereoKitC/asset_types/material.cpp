@@ -145,7 +145,7 @@ shaderargs_desc_item_t *find_desc(shader_t shader, const char *name) {
 	uint64_t                id     = string_hash(name);
 	shaderargs_desc_item_t *result = find_desc(shader, id);
 	if (result == nullptr)
-		log_warnf("Can't find shader parameter %s!", name);
+		log_infof("Can't find shader parameter %s in %s!", name, shader->name);
 	return result;
 }
 

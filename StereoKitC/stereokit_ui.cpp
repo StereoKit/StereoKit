@@ -63,10 +63,8 @@ uint64_t sk_ui_hash(const char *string) {
 bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 
-	material_t mat_default = material_find("default/material");
-	skui_mat        = material_copy(mat_default);
-	skui_mat_active = material_copy(mat_default);
-	material_release(mat_default);
+	skui_mat        = material_copy_id("default/material");
+	skui_mat_active = material_copy_id("default/material");
 	material_set_color(skui_mat_active, "color", { .5f,.5f,.5f,1 });
 
 	skui_font_mat   = material_create(shader_find("default/shader_font"));
