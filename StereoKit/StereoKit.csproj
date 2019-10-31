@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
-    <BaseIntermediateOutputPath>..\bin\intermediate\StereoKit\</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -12,6 +11,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutputPath>..\bin\</OutputPath>
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
   </PropertyGroup>
 
 </Project>

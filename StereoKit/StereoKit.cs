@@ -2,6 +2,9 @@
 
 namespace StereoKit
 {
+    /// <summary>
+    /// This class contains functions for running the StereoKit library!
+    /// </summary>
     public static class StereoKitApp
     {
         public static Settings settings;

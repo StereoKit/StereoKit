@@ -39,10 +39,10 @@ const char* file_cubemap    = "Assets/Sky/sky.hdr";
 const char* file_tex        = "Assets/test.png";
 const char* file_tex_normal = "Assets/test_normal.png";
 #else
-const char* file_cache      = "../../../Examples/Assets";
-const char* file_cubemap    = "../../../Examples/Assets/Sky/sky.hdr";
-const char* file_tex        = "../../../Examples/Assets/test.png";
-const char* file_tex_normal = "../../../Examples/Assets/test_normal.png";
+const char* file_cache      = "../../Examples/Assets";
+const char* file_cubemap    = "../../Examples/Assets/Sky/sky.hdr";
+const char* file_tex        = "../../Examples/Assets/test.png";
+const char* file_tex_normal = "../../Examples/Assets/test_normal.png";
 #endif
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
