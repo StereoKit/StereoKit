@@ -45,11 +45,18 @@
   <ItemGroup>
     <Compile Include="DocClass.cs" />
     <Compile Include="DocMethod.cs" />
+    <Compile Include="DocParam.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StereoKit\StereoKit.csproj">
+      <Project>{0152979d-5d5e-4d18-9ef7-7261581b2bc6}</Project>
+      <Name>StereoKit</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

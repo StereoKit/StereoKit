@@ -10,8 +10,10 @@ namespace StereoKitDocumenter
         public const string xmlDocs = "../../../bin/StereoKit.xml";
         public const string referenceOut = "../../../docs/assets/pages/reference/";
 
-        static List<DocClass>  classes = new List<DocClass>();
-        static List<DocMethod> methods = new List<DocMethod>();
+        public static List<DocClass>  classes = new List<DocClass>();
+        public static List<DocMethod> methods = new List<DocMethod>();
+
+        public static DocClass GetClass(string name) { return classes.Find((a)=>a.name==name); }
 
         static void Main(string[] args)
         {
@@ -87,6 +89,12 @@ namespace StereoKitDocumenter
                 {
                     case "summary": result.summary = reader.ReadElementContentAsString().Trim(); break;
                     case "returns": result.returns = reader.ReadElementContentAsString().Trim(); break;
+                    case "param": {
+                        DocParam p = new DocParam();
+                        p.name    = reader.GetAttribute("name");
+                        p.summary = reader.ReadElementContentAsString().Trim();
+                        result.parameters.Add(p);
+                    } break;
                 }
             }
 
