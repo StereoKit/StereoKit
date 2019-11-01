@@ -1,5 +1,5 @@
 var documents = {
-    name : "Root",
+    name : "pages",
     pages : ["StereoKit", "Getting Started"],
     folders : [
         {

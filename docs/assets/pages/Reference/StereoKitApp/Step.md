@@ -1,5 +1,5 @@
 ---
 layout: default
-title: StereoKit
+title: StereoKitApp.Step
 description: Description for SEO
 ---

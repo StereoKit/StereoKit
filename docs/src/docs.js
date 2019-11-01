@@ -22,19 +22,20 @@ function updateSearch(text) {
         } 
         branches[i].style.display = valid ? "block" : "none"; 
     }
- }
+}
 function nameValid(name) {
     return search === "" || name.toLowerCase().includes(search);
     
 }
 function renderFolder(folder, parent) {
-    var result = parent == null ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span>"+folder.name+"<ul>";
-    parent = parent == null ? "" : parent + folder.name;
+    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span>"+folder.name+"<ul>";
+    if (parent != "") parent += "/";
+    parent += folder.name.replace(" ", "-");
 
     // Render the pages in this folder
     if (folder.pages) {
         for (var i = 0; i<folder.pages.length; i+=1) {
-            result += "<li class='tree-leaf'><a href=''>"+folder.pages[i]+"</a></li>";
+            result += "<li class='tree-leaf'><a href='/assets/"+parent+"/"+folder.pages[i].replace(" ", "-")+".html'>"+folder.pages[i]+"</a></li>";
         }
     }
 
@@ -50,7 +51,7 @@ function renderFolder(folder, parent) {
 }
 function renderNav() {
     var nav = document.getElementById("links");
-    nav.innerHTML = renderFolder(documents);
+    nav.innerHTML = renderFolder(documents, "");
 }
 
 window.addEventListener('load', function () {

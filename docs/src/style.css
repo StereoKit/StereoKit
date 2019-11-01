@@ -25,6 +25,10 @@ main {
 }
 
 /* Page styling */
+html {
+    width:100%;
+    height:100%;
+}
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #EEE;

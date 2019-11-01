@@ -1,5 +1,5 @@
 ---
 layout: default
-title: StereoKit
+title: StereoKitApp.Shutdown
 description: Description for SEO
 ---

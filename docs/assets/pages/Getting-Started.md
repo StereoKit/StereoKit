@@ -1,5 +1,5 @@
 ---
 layout: default
-title: StereoKit
+title: Getting Started
 description: Description for SEO
 ---
