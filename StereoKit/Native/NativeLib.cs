@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -13,15 +14,37 @@ namespace StereoKit
         [DllImport("kernel32")]
         static extern bool FreeLibrary(IntPtr hModule);
 
+        //[DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+        //static extern int GetCurrentPackageFullName(ref int packageFullNameLength, StringBuilder packageFullName);
+
         public const string DllName = "StereoKitC.dll";
 
         static IntPtr library;
+
+        /*static bool IsUWP()
+        {
+            int           length = 0;
+            StringBuilder sb     = new StringBuilder(0);
+            int           result = GetCurrentPackageFullName(ref length, sb);
+
+            sb     = new StringBuilder(length);
+            result = GetCurrentPackageFullName(ref length, sb);
+
+            return result != 15700L; // APPMODEL_ERROR_NO_PACKAGE;
+        }*/
 
         internal static void LoadDll()
         {
            /* if (library != IntPtr.Zero)
                 return;
 
+            // .NET Native compiles DLLs into the application, no need to load it.
+            string framework = RuntimeInformation.FrameworkDescription;
+            framework = framework.Substring(0, framework.LastIndexOf(' '));
+            if (framework == ".NET Native")
+                return;
+
+            // Find out which native DLL architecture we need to load
             string folder = "";
             switch (RuntimeInformation.ProcessArchitecture)
             {
@@ -32,12 +55,16 @@ namespace StereoKit
                 default: throw new Exception("What crazy architecture is this?!");
             }
 
+            // Debug vs. release uses different DLLs too
             #if DEBUG
             folder += "_Debug";
             #else
             folder += "_Release";
-            #endif
+#endif
+            //if (IsUWP())
+            //    folder += "_UWP";
 
+            
             string location = Assembly.GetExecutingAssembly().Location;
             string path     = Path.Combine(Path.GetDirectoryName(location), folder, DllName);
             library = LoadLibraryEx(path, IntPtr.Zero, 0);

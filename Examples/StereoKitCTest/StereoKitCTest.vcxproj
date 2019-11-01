@@ -99,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\*.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>

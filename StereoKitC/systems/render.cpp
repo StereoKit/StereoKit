@@ -193,6 +193,8 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	if (render_sky_cubemap != nullptr) {
+		d3d_context->VSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
+		d3d_context->VSSetShaderResources(11, 1, &render_sky_cubemap->resource);
 		d3d_context->PSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
 		d3d_context->PSSetShaderResources(11, 1, &render_sky_cubemap->resource);
 	}

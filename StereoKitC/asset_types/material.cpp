@@ -99,6 +99,15 @@ material_t material_copy(material_t material) {
 
 ///////////////////////////////////////////
 
+material_t material_copy_id(const char *id) {
+	material_t src = material_find(id);
+	material_t result = material_copy(src);
+	material_release(src);
+	return result;
+}
+
+///////////////////////////////////////////
+
 void material_release(material_t material) {
 	if (material == nullptr)
 		return;
@@ -136,7 +145,7 @@ shaderargs_desc_item_t *find_desc(shader_t shader, const char *name) {
 	uint64_t                id     = string_hash(name);
 	shaderargs_desc_item_t *result = find_desc(shader, id);
 	if (result == nullptr)
-		log_warnf("Can't find shader parameter %s!", name);
+		log_infof("Can't find shader parameter %s in %s!", name, shader->name);
 	return result;
 }
 

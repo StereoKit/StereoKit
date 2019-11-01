@@ -7,10 +7,10 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Hand {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
-        public Pose[,] fingers;
-        public Pose    wrist;
-        public Pose    root;
-        public Handed  handedness;
+        public Pose[] fingers;
+        public Pose   wrist;
+        public Pose   root;
+        public Handed handedness;
         public InputState state;
 
         public bool IsPinched       { get { return (state & InputState.Pinch)     > 0; } }

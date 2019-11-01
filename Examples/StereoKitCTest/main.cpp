@@ -39,10 +39,10 @@ const char* file_cubemap    = "Assets/Sky/sky.hdr";
 const char* file_tex        = "Assets/test.png";
 const char* file_tex_normal = "Assets/test_normal.png";
 #else
-const char* file_cache      = "../../Examples/Assets";
-const char* file_cubemap    = "../../Examples/Assets/Sky/sky.hdr";
-const char* file_tex        = "../../Examples/Assets/test.png";
-const char* file_tex_normal = "../../Examples/Assets/test_normal.png";
+const char* file_cache      = "../../../Examples/Assets";
+const char* file_cubemap    = "../../../Examples/Assets/Sky/sky.hdr";
+const char* file_tex        = "../../../Examples/Assets/test.png";
+const char* file_tex_normal = "../../../Examples/Assets/test_normal.png";
 #endif
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
@@ -82,7 +82,7 @@ void common_init() {
 	// Create a PBR floor material
 	tex2d_t tex_color = tex2d_create_file(file_tex);
 	tex2d_t tex_norm  = tex2d_create_file(file_tex_normal);
-	floor_mat = material_create(shader_find("default/shader_pbr"));
+	floor_mat = material_copy_id("default/material");
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);

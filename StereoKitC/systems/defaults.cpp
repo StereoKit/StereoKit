@@ -96,7 +96,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_equirect, "default/equirect_shader");
 	
 	// Materials
-	sk_default_material          = material_create(sk_default_shader_pbr);
+	sk_default_material          = material_create(sk_default_shader);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
 	
 	if (sk_default_material          == nullptr ||

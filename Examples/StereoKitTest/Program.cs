@@ -3,7 +3,11 @@ using StereoKit;
 
 class Program 
 {
+#if WINDOWS_UWP
+    public const string Root = "Assets/";
+#else
     public const string Root = "../../../Examples/Assets/";
+#endif
 
     static Model     floorMesh;
     static Transform floorTr;
@@ -15,7 +19,7 @@ class Program
     static void Main(string[] args) 
     {
         StereoKitApp.settings.shaderCache = Program.Root;
-        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
+        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
             Environment.Exit(1);
         CommonInit();
 

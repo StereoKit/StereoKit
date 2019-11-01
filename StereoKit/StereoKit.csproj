@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Platforms>AnyCPU;x64</Platforms>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <Platforms>x64;ARM64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -13,5 +13,38 @@
     <OutputPath>..\bin\</OutputPath>
     <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
   </PropertyGroup>
+
+  <!-- NuGet package -->
+  <PropertyGroup>
+    <Id>StereoKit</Id>
+    <Version>0.1.0-a</Version>
+    <Title>StereoKit</Title>
+    <Authors>Nick Klingensmith</Authors>
+    <PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
+    <PackageIcon>images\StereoKitLogo64.png</PackageIcon>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <!-- Files and DLLs that are needed for the NuGet package -->
+  <ItemGroup>
+    <None Include="..\Documentation\img\StereoKitLogo64.png" Pack="true" PackagePath="images\" />
+
+    <!-- Win32 DLLs -->
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\LeapC.dll" PackagePath="runtimes\win-x64\native\" />
+    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
+
+    <!-- UWP DLLs -->
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\native\" />
+    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\native\" />
+
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
+    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
+
+    <Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
+    
+  </ItemGroup>
 
 </Project>
