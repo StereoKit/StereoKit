@@ -47,4 +47,9 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 	DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4 *)out_matrix, mat);
 }
 
+///////////////////////////////////////////
+
+inline int32_t  maxi(int32_t  a, int32_t  b) { return a > b ? a : b; }
+inline uint32_t maxi(uint32_t a, uint32_t b) { return a > b ? a : b; }
+
 } // namespace sk

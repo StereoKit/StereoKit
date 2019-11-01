@@ -361,9 +361,7 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 		tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
 
 		if (mips) {
-			color32 *mip_data      = (color32*)curr_data;
-			size_t   mip_data_size = 0;
-
+			color32 *mip_data   = (color32*)curr_data;
 			int32_t  mip_width  = texture->width;
 			int32_t  mip_height = texture->height;
 			for (uint32_t m = 1; m < desc.MipLevels; m++) {
@@ -602,9 +600,9 @@ tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_c
 		color32 color_b = gradient_bot_to_top[(int32_t)(y / 4.f) + 1];
 		float pct = (y%4)/4.f;
 		color32 col = {
-			(color_b.r - color_a.r) * pct + color_a.r,
-			(color_b.g - color_a.g) * pct + color_a.g,
-			(color_b.b - color_a.b) * pct + color_a.b,
+			(uint8_t)((color_b.r - color_a.r) * pct + color_a.r),
+			(uint8_t)((color_b.g - color_a.g) * pct + color_a.g),
+			(uint8_t)((color_b.b - color_a.b) * pct + color_a.b),
 			255 };
 		for (int32_t x = 0; x < size; x++) {
 			side[x + y * size] = col;

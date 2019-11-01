@@ -195,10 +195,10 @@ void input_hand_update_mesh(handed_ hand) {
 		data.verts      = (vert_t*)malloc(sizeof(vert_t) * data.vert_count);
 		data.inds       = (vind_t*)malloc(sizeof(vind_t) * data.ind_count );
 
-		int ind = 0;
-		for (int f = 0; f < SK_FINGERS; f++) {
-			int start_vert =  f    * 4 * SK_FINGERJOINTS;
-			int end_vert   = (f+1) * 4 * SK_FINGERJOINTS;
+		int32_t ind = 0;
+		for (vind_t f = 0; f < SK_FINGERS; f++) {
+			vind_t start_vert =  f    * 4 * SK_FINGERJOINTS;
+			vind_t end_vert   = (f+1) * 4 * SK_FINGERJOINTS;
 
 			// start cap
 			data.inds[ind++] = start_vert+0;
@@ -210,12 +210,12 @@ void input_hand_update_mesh(handed_ hand) {
 			data.inds[ind++] = start_vert+3;
 		
 			// tube faces
-			for (int j = 0; j < SK_FINGERJOINTS-1; j++) {
-			for (int c = 0; c < 4; c++) {
-				int curr1 = start_vert +  j    * 4 + c;
-				int next1 = start_vert + (j+1) * 4 + c;
-				int curr2 = start_vert +  j    * 4 + (c+1)%4;
-				int next2 = start_vert + (j+1) * 4 + (c+1)%4;
+			for (vind_t j = 0; j < SK_FINGERJOINTS-1; j++) {
+			for (vind_t c = 0; c < 4; c++) {
+				vind_t curr1 = start_vert +  j    * 4 + c;
+				vind_t next1 = start_vert + (j+1) * 4 + c;
+				vind_t curr2 = start_vert +  j    * 4 + (c+1)%4;
+				vind_t next2 = start_vert + (j+1) * 4 + (c+1)%4;
 				data.inds[ind++] = curr1;
 				data.inds[ind++] = next1;
 				data.inds[ind++] = next2;

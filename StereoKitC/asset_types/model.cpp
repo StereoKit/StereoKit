@@ -124,7 +124,7 @@ int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, ve
 	map<int, vind_t>::iterator item = indmap.find(id);
 	if (item == indmap.end()) {
 		mesh_verts.push_back({ verts[iV - 1LL], norms[iN - 1LL], uvs[iT - 1LL], {255,255,255,255} });
-		indmap[id] = (int)mesh_verts.size() - 1;
+		indmap[id] = (vind_t)(mesh_verts.size() - 1);
 		return (int)mesh_verts.size() - 1;
 	}
 	return item->second;
@@ -175,12 +175,12 @@ bool modelfmt_obj(model_t model, const char *filename) {
 			vec2 uv = { in.x, in.y };
 			uvs.push_back(uv);
 		} else if ((count = sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read)) > 0) {
-			int id1 = indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
-			int id2 = indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
-			int id3 = indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
+			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
+			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
+			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
 			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
 			if (count > 9) {
-				int id4 = indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
+				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
 				faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
 			}
 		} else {

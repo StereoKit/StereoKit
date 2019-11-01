@@ -89,7 +89,7 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 		// Ensure cache folder is present
 		struct stat st = { 0 };
 		if (stat(folder_name, &st) == -1) {
-			int err = _mkdir(folder_name);
+			_mkdir(folder_name);
 		}
 
 		// Write the blob to file for future use.

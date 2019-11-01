@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutputPath>..\bin\</OutputPath>
+    <OutputPath>..\bin</OutputPath>
     <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
   </PropertyGroup>
 
@@ -25,6 +25,22 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|x64'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>..\bin</OutputPath>
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|x64'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|ARM64'">
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+    <OutputPath>..\bin</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|ARM64'">
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+    <OutputPath>..\bin</OutputPath>
   </PropertyGroup>
 
   <!-- Files and DLLs that are needed for the NuGet package -->

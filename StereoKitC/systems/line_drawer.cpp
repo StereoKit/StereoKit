@@ -1,6 +1,7 @@
 #include "line_drawer.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
+#include "../math.h"
 
 #include <stdlib.h>
 
@@ -57,12 +58,12 @@ void line_drawer_shutdown() {
 
 void line_ensure_cap(int32_t verts, int32_t inds) {
 	if (line_vert_ct + verts >= line_vert_cap) {
-		line_vert_cap = fmaxf(line_vert_ct + verts, line_vert_cap * 2);
+		line_vert_cap = maxi(line_vert_ct + verts, line_vert_cap * 2);
 		line_verts    = (vert_t*)realloc(line_verts, line_vert_cap * sizeof(vert_t));
 	}
 
 	if (line_ind_ct + inds >= line_ind_cap) {
-		line_ind_cap = fmaxf(line_ind_ct + inds, line_ind_cap * 2);
+		line_ind_cap = maxi(line_ind_ct + inds, line_ind_cap * 2);
 		line_inds    = (vind_t*)realloc(line_inds, line_ind_cap * sizeof(vind_t));
 	}
 }
@@ -77,18 +78,19 @@ void line_add(vec3 start, vec3 end, color32 color, float thickness) {
 
 void line_addv(line_point_t start, line_point_t end) {
 	line_ensure_cap(4, 6);
-	vec3 dir = vec3_normalize(end.pt - start.pt);
+	vind_t start_vert = (vind_t)line_vert_ct;
+	vec3   dir        = vec3_normalize(end.pt - start.pt);
 	line_verts[line_vert_ct+0] = vert_t{ start.pt, dir* start.thickness, {0,0}, start.color };
 	line_verts[line_vert_ct+1] = vert_t{ start.pt, dir*-start.thickness, {0,1}, start.color };
 	line_verts[line_vert_ct+2] = vert_t{ end  .pt, dir* end.thickness,   {1,0}, end  .color };
 	line_verts[line_vert_ct+3] = vert_t{ end  .pt, dir*-end.thickness,   {1,1}, end  .color };
 
-	line_inds[line_ind_ct++] = line_vert_ct + 0;
-	line_inds[line_ind_ct++] = line_vert_ct + 2;
-	line_inds[line_ind_ct++] = line_vert_ct + 3;
-	line_inds[line_ind_ct++] = line_vert_ct + 0;
-	line_inds[line_ind_ct++] = line_vert_ct + 3;
-	line_inds[line_ind_ct++] = line_vert_ct + 1;
+	line_inds[line_ind_ct++] = start_vert + 0;
+	line_inds[line_ind_ct++] = start_vert + 2;
+	line_inds[line_ind_ct++] = start_vert + 3;
+	line_inds[line_ind_ct++] = start_vert + 0;
+	line_inds[line_ind_ct++] = start_vert + 3;
+	line_inds[line_ind_ct++] = start_vert + 1;
 
 	line_vert_ct += 4;
 }

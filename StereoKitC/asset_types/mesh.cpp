@@ -126,19 +126,20 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 ///////////////////////////////////////////
 
 mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
+	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subdivisions = max(0,subdivisions) + 2;
+	subd = max(0,subd) + 2;
 
-	int vert_count = 6*subdivisions*subdivisions;
-	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
+	int vert_count = 6*subd*subd;
+	int ind_count  = 6*(subd-1)*(subd-1)*6;
 	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
 	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
-	vec3 size   = dimensions / 2;
-	int  ind    = 0;
-	int  offset = 0;
-	for (int i = 0; i < 6*4; i+=4) {
+	vec3   size   = dimensions / 2;
+	int    ind    = 0;
+	vind_t offset = 0;
+	for (vind_t i = 0; i < 6*4; i+=4) {
 		vec3 p1, p2, p3, p4;
 		vec3 n1, n2, n3, n4;
 		vec2 u1, u2, u3, u4;
@@ -148,11 +149,11 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 		mesh_gen_cube_vert(i+2, size, p3, n3, u3);
 		mesh_gen_cube_vert(i+3, size, p4, n4, u4);
 
-		offset = (i/4) * (subdivisions)*(subdivisions);
-		for (int y = 0; y < subdivisions; y++) {
-			float py    = y / (float)(subdivisions-1);
-			int   yOff  = offset + y * subdivisions;
-			int   yOffN = offset + (y+1) * subdivisions;
+		offset = (i/4) * (subd)*(subd);
+		for (vind_t y = 0; y < subd; y++) {
+			float  py    = y / (float)(subd-1);
+			vind_t yOff  = offset + y * subd;
+			vind_t yOffN = offset + (y+1) * subd;
 
 			vec3 pl = vec3_lerp(p1, p4, py);
 			vec3 pr = vec3_lerp(p2, p3, py);
@@ -161,17 +162,17 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 			vec2 ul = vec2_lerp(u1, u4, py);
 			vec2 ur = vec2_lerp(u2, u3, py);
 
-			for (int x = 0; x < subdivisions; x++) {
-				float px = x / (float)(subdivisions-1);
-				int   ptIndex = x + yOff;
-				vert_t *pt = &verts[ptIndex];
+			for (vind_t x = 0; x < subd; x++) {
+				float px = x / (float)(subd-1);
+				vind_t  ptIndex = x + yOff;
+				vert_t *pt      = &verts[ptIndex];
 
 				pt->pos = vec3_lerp(pl, pr, px);
 				pt->norm= vec3_lerp(nl, nr, px);
 				pt->uv  = vec2_lerp(ul, ur, px);
 				pt->col = {255,255,255,255};
 
-				if (y != subdivisions-1 && x != subdivisions-1) {
+				if (y != subd-1 && x != subd-1) {
 
 					inds[ind++] = (x  ) + yOff;
 					inds[ind++] = (x+1) + yOff;
@@ -199,20 +200,21 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 ///////////////////////////////////////////
 
 mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
+	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subdivisions = max(0,subdivisions) + 2;
+	subd = max(0,subd) + 2;
 
-	int vert_count = 6*subdivisions*subdivisions;
-	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
+	int vert_count = 6*subd*subd;
+	int ind_count  = 6*(subd-1)*(subd-1)*6;
 	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
 	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
-	vec3  size = vec3_one;
-	float radius = diameter / 2;
-	int   ind    = 0;
-	int   offset = 0;
-	for (int i = 0; i < 6*4; i+=4) {
+	vec3   size = vec3_one;
+	float  radius = diameter / 2;
+	int    ind    = 0;
+	vind_t offset = 0;
+	for (vind_t i = 0; i < 6*4; i+=4) {
 		vec3 p1, p2, p3, p4;
 		vec3 n1, n2, n3, n4;
 		vec2 u1, u2, u3, u4;
@@ -222,20 +224,20 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 		mesh_gen_cube_vert(i+2, size, p3, n3, u3);
 		mesh_gen_cube_vert(i+3, size, p4, n4, u4);
 
-		offset = (i/4) * (subdivisions)*(subdivisions);
-		for (int y = 0; y < subdivisions; y++) {
-			float py    = y / (float)(subdivisions-1);
-			int   yOff  = offset + y * subdivisions;
-			int   yOffN = offset + (y+1) * subdivisions;
+		offset = (i/4) * (subd)*(subd);
+		for (vind_t y = 0; y < subd; y++) {
+			float  py    = y / (float)(subd-1);
+			vind_t yOff  = offset + y * subd;
+			vind_t yOffN = offset + (y+1) * subd;
 
 			vec3 pl = vec3_lerp(p1, p4, py);
 			vec3 pr = vec3_lerp(p2, p3, py);
 			vec2 ul = vec2_lerp(u1, u4, py);
 			vec2 ur = vec2_lerp(u2, u3, py);
 
-			for (int x = 0; x < subdivisions; x++) {
-				float px = x / (float)(subdivisions-1);
-				int   ptIndex = x + yOff;
+			for (vind_t x = 0; x < subd; x++) {
+				float px = x / (float)(subd-1);
+				vind_t  ptIndex = x + yOff;
 				vert_t *pt = &verts[ptIndex];
 
 				pt->norm= vec3_normalize(vec3_lerp(pl, pr, px));
@@ -243,7 +245,7 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 				pt->uv  = vec2_lerp(ul, ur, px);
 				pt->col = {255,255,255,255};
 
-				if (y != subdivisions-1 && x != subdivisions-1) {
+				if (y != subd-1 && x != subd-1) {
 
 					inds[ind++] = (x  ) + yOff;
 					inds[ind++] = (x+1) + yOff;
@@ -271,23 +273,24 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 ///////////////////////////////////////////
 
 mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions) {
+	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subdivisions = max(0,subdivisions) + 2;
-	if (subdivisions % 2 == 1) // need an even number of subdivisions
-		subdivisions += 1;
+	subd = max(0,subd) + 2;
+	if (subd % 2 == 1) // need an even number of subdivisions
+		subd += 1;
 
-	int vert_count = 6*subdivisions*subdivisions;
-	int ind_count  = 6*(subdivisions-1)*(subdivisions-1)*6;
+	vind_t  vert_count = 6*subd*subd;
+	vind_t  ind_count  = 6*(subd-1)*(subd-1)*6;
 	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
 	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
-	vec3  off = (dimensions / 2) - vec3_one*edge_radius;
-	vec3  size = vec3_one;
-	float radius = edge_radius;
-	int   ind    = 0;
-	int   offset = 0;
-	for (int i = 0; i < 6*4; i+=4) {
+	vec3   off = (dimensions / 2) - vec3_one*edge_radius;
+	vec3   size = vec3_one;
+	float  radius = edge_radius;
+	vind_t ind    = 0;
+	vind_t offset = 0;
+	for (vind_t i = 0; i < 6*4; i+=4) {
 		vec3 p1, p2, p3, p4;
 		vec3 n1, n2, n3, n4;
 		vec2 u1, u2, u3, u4;
@@ -300,34 +303,34 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 		float sizeU = vec3_magnitude((p4 - p1) * (dimensions/2));
 		float sizeV = vec3_magnitude((p2 - p1) * (dimensions/2));
 
-		offset = (i/4) * (subdivisions)*(subdivisions);
-		int x, y;
-		for (int sy = 0; sy < subdivisions; sy++) {
-			bool first_half_y = sy < subdivisions / 2;
+		offset = (i/4) * (subd)*(subd);
+		vind_t x, y;
+		for (vind_t sy = 0; sy < subd; sy++) {
+			bool first_half_y = sy < subd / 2;
 			y = first_half_y ? sy : sy-1;
 			vec3 stretchA  = first_half_y ? p1 : p4;
 			vec3 stretchB  = first_half_y ? p2 : p3;
 			float stretchV = (radius*2)/sizeV;
 			float offV     = first_half_y ? 0 : sizeV-(radius*2);
 			
-			float py    = y / (float)(subdivisions-2);
+			float py    = y / (float)(subd-2);
 			float pv    = py * stretchV + offV;
-			int   yOff  = offset + sy * subdivisions;
-			int   yOffN = offset + (sy+1) * subdivisions;
+			vind_t yOff  = offset + sy * subd;
+			vind_t yOffN = offset + (sy+1) * subd;
 			
 			vec3 pl = vec3_lerp(p1, p4, py);
 			vec3 pr = vec3_lerp(p2, p3, py);
 			vec2 ul = vec2_lerp(u1, u4, pv);
 			vec2 ur = vec2_lerp(u2, u3, pv);
 
-			for (int sx = 0; sx < subdivisions; sx++) {
-				bool first_half_x = sx < subdivisions / 2;
+			for (vind_t sx = 0; sx < subd; sx++) {
+				bool first_half_x = sx < subd / 2;
 				x = first_half_x ? sx : sx-1;
 				vec3  stretch = first_half_x ? stretchA : stretchB;
 				float stretchU = (radius*2)/sizeU;
 				float offU     = first_half_x ? 0 : sizeU-(radius*2);
 
-				float px      = x / (float)(subdivisions-2);
+				float px      = x / (float)(subd-2);
 				float pu      = px * stretchU + offU;
 				int   ptIndex = sx + yOff;
 				vert_t *pt    = &verts[ptIndex];
@@ -337,7 +340,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 				pt->uv = vec2_lerp(ul, ur, pu);
 				pt->col = {255,255,255,255};
 
-				if (sy != subdivisions-1 && sx != subdivisions-1) {
+				if (sy != subd-1 && sx != subd-1) {
 					inds[ind++] = (sx  ) + yOff;
 					inds[ind++] = (sx+1) + yOff;
 					inds[ind++] = (sx+1) + yOffN;

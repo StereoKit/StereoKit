@@ -291,7 +291,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 		char add = '\0';
 		bool shift = input_key(key_shift) & button_state_down;
 		if (input_key(key_backspace) & button_state_just_down) {
-			int len = strlen(buffer);
+			size_t len = strlen(buffer);
 			if (len >= 0) {
 				buffer[len - 1] = '\0';
 				result = true;
@@ -300,17 +300,17 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 		if (input_key(key_space) & button_state_just_down) add = ' ';
 		for (int32_t k = 0; k < 26; k++) {
 			if (input_key((key_)(key_a + k)) & button_state_just_down) {
-				add = (shift ? 'A' : 'a') + k;
+				add = (char)((shift ? 'A' : 'a') + k);
 			}
 		}
 		for (int32_t k = 0; k < 10; k++) {
 			if (input_key((key_)(key_0 + k)) & button_state_just_down) {
 				const char *nums = ")!@#$%^&*(";
-				add = (shift ? nums[k] : '0'+k);
+				add = (char)(shift ? nums[k] : '0'+k);
 			}
 		}
 		if (add != '\0') {
-			int len = strlen(buffer);
+			size_t len = strlen(buffer);
 			if (len + 2 < buffer_size) {
 				buffer[len] = add;
 				buffer[len + 1] = '\0';
