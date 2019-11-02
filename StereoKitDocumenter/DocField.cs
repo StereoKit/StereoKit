@@ -12,6 +12,7 @@ namespace StereoKitDocumenter
         public string name;
         public string summary;
         public DocClass parent;
+        public List<DocExample> examples = new List<DocExample>();
 
         public DocField(DocClass aParent, string aName)
         {
@@ -20,6 +21,7 @@ namespace StereoKitDocumenter
             parent.fields.Add(this);
         }
 
+        public string Name { get { return $"{parent.name}.{name}"; } }
         public string FileName { get {
             return Path.Combine(Program.referenceOut, parent.name + "/" + name + ".md");
         } }
@@ -27,8 +29,17 @@ namespace StereoKitDocumenter
             return $"/assets/pages/Reference/{parent.name}/{name}.html";
         } }
 
+        public void AddExample(DocExample aExample) { examples.Add(aExample); }
+
         public override string ToString()
         {
+            string exampleText = "";
+            if (examples.Count > 0) {
+                exampleText = "\n\n## Examples\n\n";
+                for (int i = 0; i < examples.Count; i++) {
+                    exampleText += examples[i];
+                }
+            }
             return $@"---
 layout: default
 title: {parent.name}.{name}
@@ -38,6 +49,7 @@ description: {StringHelper.CleanForDescription(summary)}
 
 ## Description
 {summary}
+{exampleText}
 ";
 
         }

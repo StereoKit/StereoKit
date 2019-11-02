@@ -10,6 +10,7 @@ namespace StereoKitDocumenter
     {
         public const string xmlDocs = "../../../bin/StereoKit.xml";
         public const string pagesOut = "../../../docs/assets/pages/";
+        public const string samplesProj = "../../../Examples/StereoKitTest/";
         public const string referenceOut = pagesOut+"reference/";
 
         public static List<DocClass>  classes = new List<DocClass>();
@@ -38,7 +39,8 @@ namespace StereoKitDocumenter
                 }
             }
 
-            
+            DocExampleFinder.FindExamples(samplesProj);
+
             for (int i = 0; i < items.Count; i++)
             {
                 StreamWriter writer =  new StreamWriter(items[i].FileName);

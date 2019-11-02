@@ -13,13 +13,17 @@ namespace StereoKitDocumenter
         public string summary;
         public List<DocMethod> methods = new List<DocMethod>();
         public List<DocField> fields = new List<DocField>();
+        public List<DocExample> examples = new List<DocExample>();
 
+        public string Name { get { return name; } }
         public string FileName { get{ 
             return Path.Combine( Program.referenceOut, name+".md");
         } }
         public string UrlName { get{ 
             return $"/assets/pages/Reference/{name}.html";
         } }
+
+        public void AddExample(DocExample aExample) { examples.Add(aExample); }
 
         public override string ToString()
         {
@@ -43,6 +47,14 @@ namespace StereoKitDocumenter
                 }
             }
 
+            string exampleText = "";
+            if (examples.Count > 0) {
+                exampleText = "\n\n## Examples\n\n";
+                for (int i = 0; i < examples.Count; i++) {
+                    exampleText += examples[i];
+                }
+            }
+
             return $@"---
 layout: default
 title: {name}
@@ -54,6 +66,7 @@ description: {StringHelper.CleanForDescription(summary)}
 {summary}
 {fieldText}
 {memberText}
+{exampleText}
 ";
 
         }

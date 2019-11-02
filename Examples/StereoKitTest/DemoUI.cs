@@ -14,8 +14,15 @@ class DemoUI : IScene
 
     public void Update()
     {
+        /// :CodeSample: StereoKitApp.Initialize Units.mm2m
+        /// Here, we're doing a window!
+        /// With lots of explanation.
+        /// and lines
         UI.WindowBegin("Main", ref window_pose, new Vec2(24, 0) * Units.cm2m);
 
+        /// Maybe we'll break it up into sections?
+        
+        // Regular comment
         UI.Button("Testing!\nok"); UI.SameLine();
         UI.Button("Another");
         if (Input.Key(Key.Space).IsPressed())
@@ -26,6 +33,9 @@ class DemoUI : IScene
             UI.Button("DYANMIC BUTTON!!");
 
         UI.WindowEnd();
+        /// That's all folks!
+        /// Whaddya think?
+        /// :End:
     }
 
     public void Shutdown()
