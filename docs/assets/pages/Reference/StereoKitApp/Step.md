@@ -1,12 +1,12 @@
-
 ---
 layout: default
 title: StereoKitApp.Step
 description: Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
 ---
-# [StereoKitApp](/assets/pages/Reference/StereoKitApp.md).Step
+# [StereoKitApp](/assets/pages/Reference/StereoKitApp.html).Step
 
 ## Parameters
+
 |  |  |
 |--|--|
 |onStep|A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.|
@@ -16,3 +16,4 @@ If an exit message is received from the platform, this function will return fals
 
 ## Description
 Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
+

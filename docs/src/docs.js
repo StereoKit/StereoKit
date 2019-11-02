@@ -28,7 +28,7 @@ function nameValid(name) {
     
 }
 function renderFolder(folder, parent) {
-    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span>"+folder.name+"<ul>";
+    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span><a href='/assets/"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
     if (parent != "") parent += "/";
     parent += folder.name.replace(" ", "-");
 

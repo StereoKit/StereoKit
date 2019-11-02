@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace StereoKitDocumenter
@@ -8,10 +9,14 @@ namespace StereoKitDocumenter
     class Program
     {
         public const string xmlDocs = "../../../bin/StereoKit.xml";
-        public const string referenceOut = "../../../docs/assets/pages/reference/";
+        public const string pagesOut = "../../../docs/assets/pages/";
+        public const string samplesProj = "../../../Examples/StereoKitTest/";
+        public const string referenceOut = pagesOut+"reference/";
 
         public static List<DocClass>  classes = new List<DocClass>();
         public static List<DocMethod> methods = new List<DocMethod>();
+        public static List<DocField> fields = new List<DocField>();
+        public static List<IDocItem>  items = new List<IDocItem>();
 
         public static DocClass GetClass(string name) { return classes.Find((a)=>a.name==name); }
 
@@ -29,19 +34,25 @@ namespace StereoKitDocumenter
                     ReadClass(signature, reader.ReadSubtree());
                 } else if (type == "M") {
                     ReadMethod(signature, reader.ReadSubtree());
+                } else if (type == "F") {
+                    ReadField(signature, reader.ReadSubtree());
                 }
             }
 
-            for (int i = 0; i < classes.Count; i++)
+            DocExampleFinder.FindExamples(samplesProj);
+
+            for (int i = 0; i < items.Count; i++)
             {
-                StreamWriter writer =  new StreamWriter(classes[i].FileName);
-                writer.Write(classes[i].ToString());
+                Directory.CreateDirectory(Path.GetDirectoryName(items[i].FileName));
+                StreamWriter writer =  new StreamWriter(items[i].FileName);
+                writer.Write(items[i].ToString());
                 writer.Close();
             }
-            for (int i = 0; i < methods.Count; i++)
-            {
-                StreamWriter writer = new StreamWriter(methods[i].FileName);
-                writer.Write(methods[i].ToString());
+
+            classes.Sort((a, b) => a.name.CompareTo(b.name));
+            { 
+                StreamWriter writer = new StreamWriter(pagesOut+"data.js");
+                writer.Write(WriteIndex());
                 writer.Close();
             }
         }
@@ -66,12 +77,36 @@ namespace StereoKitDocumenter
             }
 
             classes.Add(result);
+            items.Add(result);
+        }
+
+        static void ReadField(string signature, XmlReader reader)
+        {
+            // Get names
+            string[] segs = signature.Split('(');
+            string nameSignature = segs[0];
+            string paramSignature = segs.Length > 1 ? segs[1] : "";
+            segs = nameSignature.Split('.');
+            if (segs.Length != 3)
+                Console.WriteLine("Unexpected signature length, " + signature);
+
+            DocField result = new DocField(GetClass(segs[1]), segs[2]);
+
+            // Read properties
+            while (reader.Read())
+            {
+                switch (reader.Name.ToLower())
+                {
+                    case "summary": result.summary = reader.ReadElementContentAsString().Trim(); break;
+                }
+            }
+
+            fields.Add(result);
+            items.Add(result);
         }
 
         static void ReadMethod(string signature, XmlReader reader)
         {
-            DocMethod result = new DocMethod();
-
             // Get names
             string[] segs = signature.Split('(');
             string nameSignature  = segs[0];
@@ -79,8 +114,8 @@ namespace StereoKitDocumenter
             segs = nameSignature.Split('.');
             if (segs.Length != 3)
                 Console.WriteLine("Unexpected signature length, " + signature);
-            result.name      = segs[2];
-            result.className = segs[1];
+
+            DocMethod result = new DocMethod(GetClass(segs[1]), segs[2]);
 
             // Read properties
             while (reader.Read())
@@ -99,6 +134,51 @@ namespace StereoKitDocumenter
             }
 
             methods.Add(result);
+            items.Add(result);
+        }
+
+        static string WriteIndex()
+        {
+            DocIndexFolder root      = new DocIndexFolder("pages");
+            DocIndexFolder reference = new DocIndexFolder("Reference");
+            root.folders.Add(reference);
+
+            for (int i = 0; i < classes.Count; i++)
+            {
+                DocIndexFolder classFolder = new DocIndexFolder(classes[i].name);
+                reference.folders.Add(classFolder);
+
+                for (int f = 0; f < classes[i].fields.Count; f++)
+                {
+                    classFolder.pages.Add(classes[i].fields[f].name);
+                }
+
+                for (int m = 0; m < classes[i].methods.Count; m++)
+                {
+                    classFolder.pages.Add(classes[i].methods[m].name);
+                }
+            }
+
+            for (int e = 0; e < DocExampleFinder.examples.Count; e++)
+            {
+                DocExample ex = DocExampleFinder.examples[e];
+                if (ex.type == ExampleType.Document)
+                {
+                    DocIndexFolder folder = null;
+                    if (ex.category.ToLower() == "root")
+                        folder = root;
+                    else
+                        folder = root.folders.Find((a) => a.name == ex.category);
+                    if (folder == null)
+                    {
+                        folder = new DocIndexFolder(ex.category);
+                        root.folders.Add(folder);
+                    }
+                    folder.pages.Add(ex.Name);
+                }
+            }
+
+            return root.ToString();
         }
     }
 }
