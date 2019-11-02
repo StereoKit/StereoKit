@@ -82,17 +82,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DemoBasics.cs" />
+    <Compile Include="DemoProceduralGeometry.cs" />
+    <Compile Include="Demos.cs" />
     <Compile Include="DemoUI.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ISKScene.cs" />
+    <Compile Include="IDemo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\*.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>

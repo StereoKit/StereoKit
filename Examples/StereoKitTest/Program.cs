@@ -13,9 +13,6 @@ class Program
     static Transform floorTr;
     static Solid     floorSolid;
 
-    static IScene activeScene;
-    static IScene nextScene;
-    public static IScene ActiveScene { get{ return activeScene;} set { nextScene = value; } }
     static void Main(string[] args) 
     {
         StereoKitApp.settings.shaderCache = Program.Root;
@@ -23,23 +20,17 @@ class Program
             Environment.Exit(1);
         CommonInit();
 
-        activeScene = new DemoUI();
-        activeScene.Initialize();
+        Demos.FindDemos();
+        Demos.SetActive("Basics");
+        Demos.Initialize();
 
         while (StereoKitApp.Step(() =>
         {
-            if (nextScene != null)
-            {
-                activeScene.Shutdown();
-                nextScene.Initialize();
-                activeScene = nextScene;
-                nextScene = null;
-            }
+            Demos.Update();
             CommonUpdate();
-            activeScene.Update();
         }));
 
-        activeScene.Shutdown();
+        Demos.Shutdown();
         CommonShutdown();
 
         StereoKitApp.Shutdown();

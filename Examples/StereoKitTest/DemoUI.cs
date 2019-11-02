@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoUI : IScene
+class DemoUI : IDemo
 {
     float  slider1 = 0.5f;
     float  slider2 = 0.5f;

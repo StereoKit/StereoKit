@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-class DemoBasics : IScene
+class DemoBasics : IDemo
 {
     Model       gltf;
     Transform   solidTr;

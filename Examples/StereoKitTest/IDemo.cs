@@ -1,4 +1,4 @@
-﻿interface IScene
+﻿interface IDemo
 {
     void Initialize();
     void Update();
