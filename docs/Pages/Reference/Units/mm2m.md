@@ -1,14 +1,14 @@
 ---
 layout: default
 title: Units.mm2m
-description: Converts millimeters to meters. There are 1000mm in 1m. In StereoKit              1 unit is 1 meter, so 250 * Units.mm2m == 0.25, 250 millimeters is .25              meters/units.
+description: Converts millimeters to meters. There are 1000mm in 1m. In StereoKit 1 unit is 1 meter, so 250 * Units.mm2m == 0.25, 250 millimeters is .25 meters/units.
 ---
 # [Units]({{site.url}}/Pages/Reference/Units.html).mm2m
 
 ## Description
-Converts millimeters to meters. There are 1000mm in 1m. In StereoKit 
-            1 unit is 1 meter, so `250 * Units.mm2m == 0.25`, 250 millimeters is .25 
-            meters/units.
+Converts millimeters to meters. There are 1000mm in 1m. In StereoKit
+1 unit is 1 meter, so `250 * Units.mm2m == 0.25`, 250 millimeters is .25
+meters/units.
 
 
 ## Examples
@@ -16,12 +16,12 @@ Converts millimeters to meters. There are 1000mm in 1m. In StereoKit
 Here, we're doing a window!
 With lots of explanation.
 and lines
-```
+```csharp
 UI.WindowBegin("Main", ref window_pose, new Vec2(24, 0) * Units.cm2m);
 
 ```
 Maybe we'll break it up into sections?
-```
+```csharp
 // Regular comment
 UI.Button("Testing!\nok"); UI.SameLine();
 UI.Button("Another");

@@ -28,7 +28,7 @@ namespace StereoKitDocumenter
         public override string ToString()
         {
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
-            fields.Sort((a, b) => a.name.CompareTo(b.name));
+            fields .Sort((a,b)=>a.name.CompareTo(b.name));
 
             string memberText = "";
             if (methods.Count > 0) {

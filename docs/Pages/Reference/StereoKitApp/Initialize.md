@@ -25,12 +25,12 @@ Initializes StereoKit window, default resources, systems, etc. Set settings befo
 Here, we're doing a window!
 With lots of explanation.
 and lines
-```
+```csharp
 UI.WindowBegin("Main", ref window_pose, new Vec2(24, 0) * Units.cm2m);
 
 ```
 Maybe we'll break it up into sections?
-```
+```csharp
 // Regular comment
 UI.Button("Testing!\nok"); UI.SameLine();
 UI.Button("Another");

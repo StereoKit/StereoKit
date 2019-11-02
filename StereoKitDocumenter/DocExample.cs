@@ -70,7 +70,7 @@ namespace StereoKitDocumenter
             } else {
                 // If we were in comments before, start up a code section
                 if (comments)
-                    data += "```\n";
+                    data += "```csharp\n";
                 comments = false;
 
                 if (!skipBlanks || text.Trim() != "") { 

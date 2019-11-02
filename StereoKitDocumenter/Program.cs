@@ -72,7 +72,7 @@ namespace StereoKitDocumenter
             {
                 switch (reader.Name.ToLower())
                 {
-                    case "summary": result.summary = reader.ReadElementContentAsString().Trim(); break;
+                    case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
                 }
             }
 
@@ -97,7 +97,7 @@ namespace StereoKitDocumenter
             {
                 switch (reader.Name.ToLower())
                 {
-                    case "summary": result.summary = reader.ReadElementContentAsString().Trim(); break;
+                    case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
                 }
             }
 
@@ -122,8 +122,8 @@ namespace StereoKitDocumenter
             {
                 switch(reader.Name.ToLower())
                 {
-                    case "summary": result.summary = reader.ReadElementContentAsString().Trim(); break;
-                    case "returns": result.returns = reader.ReadElementContentAsString().Trim(); break;
+                    case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+                    case "returns": result.returns = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
                     case "param": {
                         DocParam p = new DocParam();
                         p.name    = reader.GetAttribute("name");

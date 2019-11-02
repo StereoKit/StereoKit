@@ -5,7 +5,7 @@ description: Using Hands
 ---
 
 Using hands is easy, just do this!
-```
+```csharp
 if (Input.Hand(Handed.Right).IsJustPinched)
 {
     objects.Add(new Solid(new Vec3(0, 3, 0), Quat.Identity));

@@ -21,5 +21,13 @@ namespace StereoKitDocumenter
             return text.Replace('\n', ' ')
                        .Replace('\r', ' ');
         }
+
+        public static string CleanMultiLine(string text)
+        {
+            return string.Join("\n", text
+                .Split('\n')
+                .Select(a=>a.Trim())
+                .ToArray());
+        }
     }
 }

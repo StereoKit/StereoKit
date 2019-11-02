@@ -50,6 +50,8 @@ namespace StereoKitDocumenter
                     }
                 }
             }
+            if (curr != null)
+                Console.WriteLine("Missing an :End: in documentation code sample!");
         }
     }
 }
