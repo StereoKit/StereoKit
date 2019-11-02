@@ -12,6 +12,7 @@ namespace StereoKitDocumenter
         public string name;
         public string summary;
         public List<DocMethod> methods = new List<DocMethod>();
+        public List<DocField> fields = new List<DocField>();
 
         public string FileName { get{ 
             return Path.Combine( Program.referenceOut, name+".md");
@@ -23,27 +24,35 @@ namespace StereoKitDocumenter
         public override string ToString()
         {
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
+            fields.Sort((a, b) => a.name.CompareTo(b.name));
 
             string memberText = "";
-            for (int i = 0; i < methods.Count; i++)
-            {
-                memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{methods[i].summary}|\n";
+            if (methods.Count > 0) {
+                memberText = "\n\n## Methods\n\n|  |  |\n|--|--|\n";
+                for (int i = 0; i < methods.Count; i++)
+                {
+                    memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{StringHelper.CleanForTable(methods[i].summary)}|\n";
+                }
+            }
+            string fieldText = "";
+            if (fields.Count > 0) { 
+                fieldText = "\n\n## Fields\n\n|  |  |\n|--|--|\n";
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    fieldText += $"|[{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
+                }
             }
 
             return $@"---
 layout: default
 title: {name}
-description: {summary}
+description: {StringHelper.CleanForDescription(summary)}
 ---
 # {name}
 
 ## Description
 {summary}
-
-## Methods
-
-|  |  |
-|--|--|
+{fieldText}
 {memberText}
 ";
 

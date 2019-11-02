@@ -31,14 +31,14 @@ namespace StereoKitDocumenter
             if (parameters.Count > 0) {
                 paramText += "\n## Parameters\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++) {
-                    paramText += $"|{parameters[i].name}|{parameters[i].summary}|\n";
+                    paramText += $"|{parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
                 }
             }
 
             return $@"---
 layout: default
 title: {parent.name}.{name}
-description: {summary}
+description: {StringHelper.CleanForDescription(summary)}
 ---
 # [{parent.name}]({parent.UrlName}).{name}
 {paramText}
