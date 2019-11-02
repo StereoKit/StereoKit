@@ -25,9 +25,9 @@ namespace StereoKitDocumenter
 
         public string Name => info;
 
-        public string FileName => Path.Combine(Program.referenceOut, info + ".md");
+        public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
 
-        public string UrlName => $"/assets/pages/{category}/{info}.html";
+        public string UrlName => $"/assets/pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
 
         public DocExample(ExampleType aType, string aInfo)
         {
@@ -93,7 +93,15 @@ namespace StereoKitDocumenter
 
         public override string ToString()
         {
-            return data;
+
+            return $@"---
+layout: default
+title: {(category.ToLower()=="root"?"":category)} {info}
+description: {info}
+---
+
+{data}
+";
         }
 
         public void AddExample(DocExample aExample)

@@ -9,7 +9,7 @@ namespace StereoKitDocumenter
 {
     static class DocExampleFinder
     {
-        static List<DocExample> examples = new List<DocExample>();
+        public static List<DocExample> examples = new List<DocExample>();
 
         public static void FindExamples(string root)
         {
@@ -21,11 +21,6 @@ namespace StereoKitDocumenter
                 StreamReader reader = new StreamReader(files[i]);
                 ParseFile(reader.ReadToEnd());
                 reader.Close();
-            }
-
-            for (int i = 0; i < examples.Count; i++)
-            {
-                Console.WriteLine(examples[i]);
             }
         }
 
@@ -41,7 +36,7 @@ namespace StereoKitDocumenter
                         curr = new DocExample( ExampleType.CodeSample, lines[i].Substring(lines[i].LastIndexOf(':')).Trim());
                         examples.Add(curr);
                     } else if (trim.StartsWith("///") && lines[i].Contains(":CodeDoc:")) {
-                        curr = new DocExample(ExampleType.Document, lines[i].Substring(lines[i].LastIndexOf(':')).Trim());
+                        curr = new DocExample(ExampleType.Document, lines[i].Substring(lines[i].LastIndexOf(':')+1).Trim());
                         examples.Add(curr);
                     }
                 } else {

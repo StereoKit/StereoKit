@@ -43,6 +43,7 @@ namespace StereoKitDocumenter
 
             for (int i = 0; i < items.Count; i++)
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(items[i].FileName));
                 StreamWriter writer =  new StreamWriter(items[i].FileName);
                 writer.Write(items[i].ToString());
                 writer.Close();
@@ -138,7 +139,7 @@ namespace StereoKitDocumenter
 
         static string WriteIndex()
         {
-            DocIndexFolder root = new DocIndexFolder("pages");
+            DocIndexFolder root      = new DocIndexFolder("pages");
             DocIndexFolder reference = new DocIndexFolder("Reference");
             root.folders.Add(reference);
 
@@ -155,6 +156,25 @@ namespace StereoKitDocumenter
                 for (int m = 0; m < classes[i].methods.Count; m++)
                 {
                     classFolder.pages.Add(classes[i].methods[m].name);
+                }
+            }
+
+            for (int e = 0; e < DocExampleFinder.examples.Count; e++)
+            {
+                DocExample ex = DocExampleFinder.examples[e];
+                if (ex.type == ExampleType.Document)
+                {
+                    DocIndexFolder folder = null;
+                    if (ex.category.ToLower() == "root")
+                        folder = root;
+                    else
+                        folder = root.folders.Find((a) => a.name == ex.category);
+                    if (folder == null)
+                    {
+                        folder = new DocIndexFolder(ex.category);
+                        root.folders.Add(folder);
+                    }
+                    folder.pages.Add(ex.Name);
                 }
             }
 

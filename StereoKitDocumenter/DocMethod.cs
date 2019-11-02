@@ -43,7 +43,7 @@ namespace StereoKitDocumenter
             if (examples.Count > 0) {
                 exampleText = "\n\n## Examples\n\n";
                 for (int i = 0; i < examples.Count; i++) {
-                    exampleText += examples[i];
+                    exampleText += examples[i].data;
                 }
             }
 
