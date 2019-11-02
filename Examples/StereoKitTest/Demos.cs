@@ -6,10 +6,10 @@ using System.Reflection;
 
 public static class Demos
 {
-    static List<IDemo> demos = new List<IDemo>();
+    static List<Type> demos = new List<Type>();
     static IDemo activeScene;
     static IDemo nextScene;
-    static IDemo ActiveScene { get { return activeScene; } set { nextScene = value; } }
+    static Type ActiveScene { set { nextScene = (IDemo)Activator.CreateInstance(value); } }
     public static int Count => demos.Count;
 
     public static void FindDemos()
@@ -17,7 +17,6 @@ public static class Demos
         demos = Assembly.GetExecutingAssembly()
             .GetTypes()
             .Where ( a => a != typeof(IDemo) && typeof(IDemo).IsAssignableFrom(a) )
-            .Select( a => (IDemo)Activator.CreateInstance(a) )
             .ToList();
     }
 
@@ -26,7 +25,7 @@ public static class Demos
         if (activeScene == null)
             activeScene = nextScene;
         if (activeScene == null)
-            activeScene = demos[0];
+            activeScene = (IDemo)Activator.CreateInstance(demos[0]);
         activeScene.Initialize();
     }
     public static void Update()
@@ -43,6 +42,7 @@ public static class Demos
     public static void Shutdown()
     {
         activeScene.Shutdown();
+        activeScene = null;
     }
 
     public static string GetName(int index)
@@ -56,13 +56,13 @@ public static class Demos
     public static void SetActive(string name)
     {
         name = name.ToLower();
-        IDemo result = demos.OrderBy( a => {
-            string str = a.GetType().Name.ToLower();
+        Type result = demos.OrderBy( a => {
+            string str = a.Name.ToLower();
             if (str == name)             return 0;
             else if (str.Contains(name)) return str.Length - name.Length;
             else                         return 1000 + string.Compare(str, name);
         }).First();
-        Console.WriteLine("Starting Scene: " + result.GetType().Name);
+        Console.WriteLine("Starting Scene: " + result.Name);
 
         ActiveScene = result;
     }
