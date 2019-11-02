@@ -31,14 +31,14 @@ function nameValid(name) {
     
 }
 function renderFolder(folder, parent) {
-    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span><a href='{{url}}"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
+    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span><a href='{{site.url}}/"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
     if (parent != "") parent += "/";
     parent += folder.name.replace(" ", "-");
 
     // Render the pages in this folder
     if (folder.pages) {
         for (var i = 0; i<folder.pages.length; i+=1) {
-            result += "<li class='tree-leaf'><a href='{{url}}"+parent+"/"+folder.pages[i].replace(" ", "-")+".html'>"+folder.pages[i]+"</a></li>";
+            result += "<li class='tree-leaf'><a href='{{site.url}}/"+parent+"/"+folder.pages[i].replace(" ", "-")+".html'>"+folder.pages[i]+"</a></li>";
         }
     }
 

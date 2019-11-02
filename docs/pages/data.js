@@ -1,6 +1,6 @@
 var documents =
 	{
-	name : 'pages',
+	name : 'Pages',
 	pages : [],
 	folders : [
 		{

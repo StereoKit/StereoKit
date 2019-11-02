@@ -3,7 +3,7 @@ layout: default
 title: StereoKitApp.Step
 description: Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
 ---
-# [StereoKitApp]({{url}}pages/Reference/StereoKitApp.html).Step
+# [StereoKitApp]({{site.url}}/Pages/Reference/StereoKitApp.html).Step
 
 ## Parameters
 

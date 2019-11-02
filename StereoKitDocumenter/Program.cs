@@ -9,9 +9,9 @@ namespace StereoKitDocumenter
     class Program
     {
         public const string xmlDocs = "../../../bin/StereoKit.xml";
-        public const string pagesOut = "../../../docs/pages/";
+        public const string pagesOut = "../../../docs/Pages/";
         public const string samplesProj = "../../../Examples/StereoKitTest/";
-        public const string referenceOut = pagesOut+"reference/";
+        public const string referenceOut = pagesOut+"Reference/";
 
         public static List<DocClass>  classes = new List<DocClass>();
         public static List<DocMethod> methods = new List<DocMethod>();
@@ -139,7 +139,7 @@ namespace StereoKitDocumenter
 
         static string WriteIndex()
         {
-            DocIndexFolder root      = new DocIndexFolder("pages");
+            DocIndexFolder root      = new DocIndexFolder("Pages");
             DocIndexFolder reference = new DocIndexFolder("Reference");
             root.folders.Add(reference);
 

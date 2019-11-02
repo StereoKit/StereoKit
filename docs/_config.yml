@@ -22,7 +22,7 @@ title: StereoKit Documentation
 description: >- # this means to ignore newlines until "baseurl:"
   StereoKit is A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://maluoi.github.io/StereoKit/" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://maluoi.github.io/StereoKit" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: koujaku
 github_username:  maluoi
 
@@ -32,7 +32,7 @@ plugins:
   - jekyll-feed
 
 include:
-  - pages/
+  - Pages/
   - img/
   - src/
 

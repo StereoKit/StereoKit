@@ -27,7 +27,7 @@ namespace StereoKitDocumenter
 
         public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
 
-        public string UrlName => $"{{{{url}}}}pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
+        public string UrlName => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
 
         public DocExample(ExampleType aType, string aInfo)
         {

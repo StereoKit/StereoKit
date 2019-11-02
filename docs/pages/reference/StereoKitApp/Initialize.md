@@ -3,7 +3,7 @@ layout: default
 title: StereoKitApp.Initialize
 description: Initializes StereoKit window, default resources, systems, etc. Set settings before calling this function, if defaults need changed!
 ---
-# [StereoKitApp]({{url}}pages/Reference/StereoKitApp.html).Initialize
+# [StereoKitApp]({{site.url}}/Pages/Reference/StereoKitApp.html).Initialize
 
 ## Parameters
 
