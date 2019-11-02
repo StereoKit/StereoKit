@@ -1,0 +1,117 @@
+/* Grid layout */
+body {
+    display: grid;
+    grid-template-columns: 200px auto;
+    grid-template-rows: 100px 3em auto;
+    grid-template-areas: 
+        "head   head"
+        "search crumbs"
+        "nav    main";
+}
+header {
+    grid-area: head;
+}
+nav {
+    grid-area: nav;
+}
+main {
+    grid-area: main
+}
+#search-bar {
+    grid-area: search;
+}
+#breadcrumbs {
+    grid-area: crumbs;
+}
+
+/* Page styling */
+html {
+    width:100%;
+    height:100%;
+}
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #EEE;
+
+    width:100%;
+    height:100%;
+    margin:0px;
+    padding:0px;
+    background-color: #333;
+}
+a {
+    color: #FFF;
+}
+header {
+    background-color: #444;
+}
+#search-bar, #breadcrumbs {
+    background-color: #DDD;
+    color: #111;
+    padding:1em;
+}
+#breadcrumbs a {
+    color: #000;
+}
+nav {
+    background-color: #444;
+    padding:10px;
+    z-index: 2;
+}
+main {
+    padding:10px;
+}
+
+/* Search styling */
+#search {
+    width:100%;
+    border: 1px solid #FFF;
+    border-radius: 4px;
+    transition:.25s;
+    padding:4px;
+    margin: -2px -2px 0 0;
+}
+#search:focus {
+    border: 1px solid #444;
+}
+
+/* Tree customization styles */
+.tree-view {
+    line-height: 160%;
+}
+.tree-branch {
+    font-weight: bold;
+}
+.tree-leaf {
+    font-weight: normal;
+}
+
+/* Tree view styling*/
+.tree-view ul {
+    margin-left: 0; 
+    padding-left: 0;
+}
+.tree-view li {
+    margin-left: 1em; 
+    padding-left: 0;
+    list-style: none;
+}
+.tree-view input {
+    opacity:0;
+    margin-left: -1em; 
+    cursor: pointer;
+}
+.tree-view input ~ span:before {
+    content:"\25BD";
+    left:-1em;
+    margin-right:-1em;
+    position: relative;
+    z-index: -2;
+    cursor: pointer;
+}
+.tree-view input:checked ~ span:before {
+    content:"\25B7";
+}
+.tree-view input:checked ~ ul {
+    display:none;
+}
