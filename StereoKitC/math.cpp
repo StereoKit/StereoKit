@@ -10,6 +10,12 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+vec3 vec3_cross(const vec3 &a, const vec3 &b) {
+	return math_fast_to_vec3( XMVector3Cross(math_vec3_to_fast(a), math_vec3_to_fast(b)) );
+}
+
+///////////////////////////////////////////
+
 vec3 quat_mul_vec(const quat &a, const vec3 &b) {
 	XMVECTOR rotation = XMVector3Rotate(XMLoadFloat3((XMFLOAT3*)&b), XMLoadFloat4((XMFLOAT4*)&a));
 	return math_fast_to_vec3(rotation);

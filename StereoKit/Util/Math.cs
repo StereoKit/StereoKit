@@ -44,6 +44,7 @@ namespace StereoKit
 
         public static readonly Vec3 Zero = new Vec3(0,0,0);
         public static readonly Vec3 One  = new Vec3(1,1,1);
+        public static readonly Vec3 Up   = new Vec3(0,1,0);
         public static Vec3 operator +(Vec3 a, Vec3 b)  { return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
         public static Vec3 operator -(Vec3 a, Vec3 b)  { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
         public static Vec3 operator -(Vec3 a)          { return new Vec3(-a.x, -a.y, -a.z); }
@@ -99,6 +100,23 @@ namespace StereoKit
         public Vec4 row3;
         public Vec4 row4;
 
+        public Matrix Inverse() 
+        {
+            Matrix result; 
+            NativeAPI.matrix_inverse(ref this, out result); 
+            return result;
+        }
+        public Vec3 TransformPoint    (Vec3 point)     => NativeAPI.matrix_mul_point    (ref this, ref point);
+        public Vec3 TransformDirection(Vec3 direction) => NativeAPI.matrix_mul_direction(ref this, ref direction);
+
+        public static Matrix operator *(Matrix a, Matrix b) { 
+            Matrix result;
+            NativeAPI.matrix_mul(ref a, ref b, out result);
+            return result;
+        }
+        public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(ref a, ref b);
+
+        public static Matrix TRS(Vec3 position, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(ref position, ref rotation, ref scale);
         public static Matrix Identity { get{
             return new Matrix { 
                 row1 = new Vec4(1,0,0,0),
@@ -107,7 +125,6 @@ namespace StereoKit
                 row4 = new Vec4(0,0,0,1),
             };
         } }
-    
     }
 
     [StructLayout(LayoutKind.Sequential)]

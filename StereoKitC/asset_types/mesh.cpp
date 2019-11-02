@@ -5,6 +5,9 @@
 
 #include <stdio.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -267,6 +270,71 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	DX11ResType(result->ind_buffer,  "inds_gen_sphere" );
 	DX11ResType(result->vert_buffer, "verts_gen_sphere");
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivisions) {
+	mesh_t result = mesh_create();
+	dir = vec3_normalize(dir);
+	float radius = diameter / 2;
+
+	int vert_count = subdivisions * 4 + 2;
+	int ind_count  = subdivisions * 12;
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
+
+	vec3 perp = dir.z < dir.x ? vec3{dir.y, -dir.x, 0} : vec3{0, -dir.z, dir.y};
+	vec3 axis_x = vec3_cross(dir, perp);
+	vec3 axis_y = vec3_cross(dir, axis_x);
+	vec3 z_off  = dir * (depth / 2.f);
+	vind_t ind = 0;
+
+	for (vind_t i = 0; i < subdivisions; i++) {
+		float ang = ((float)i / subdivisions) * M_PI * 2;
+		float x = cos(ang);
+		float y = sin(ang);
+		vec3 normal  = axis_x * x + axis_y * y;
+		vec3 top_pos = normal*radius + z_off;
+		vec3 bot_pos = normal*radius - z_off;
+
+		// strip first
+		verts[i * 4  ] = { top_pos,  normal, {x,y}, {255,255,255,255} };
+		verts[i * 4+1] = { bot_pos,  normal, {x,y}, {255,255,255,255} };
+		// now circular faces
+		verts[i * 4+2] = { top_pos,  dir,    {x,y}, {255,255,255,255} };
+		verts[i * 4+3] = { bot_pos, -dir,    {x,y}, {255,255,255,255} };
+
+		vind_t in = (i + 1) % subdivisions;
+		// Top slice
+		inds[ind++] = i  * 4 + 2;
+		inds[ind++] = in * 4 + 2;
+		inds[ind++] = subdivisions * 4;
+		// Bottom slice
+		inds[ind++] = subdivisions * 4+1;
+		inds[ind++] = in * 4 + 3;
+		inds[ind++] = i  * 4 + 3;
+		// Now edge strip quad
+		inds[ind++] = in * 4+1;
+		inds[ind++] = in * 4;
+		inds[ind++] = i  * 4;
+		inds[ind++] = i  * 4+1;
+		inds[ind++] = in * 4+1;
+		inds[ind++] = i  * 4;
+	}
+	// center points for the circle
+	verts[subdivisions*4]   = {  dir*radius,  dir, {.5f,.5f}, {255,255,255,255} };
+	verts[subdivisions*4+1] = { -dir*radius, -dir, {.5f,.5f}, {255,255,255,255} };
+
+	mesh_set_verts(result, verts, vert_count);
+	mesh_set_inds (result, inds,  ind_count);
+
+	free(verts);
+	free(inds);
+
+	DX11ResType(result->ind_buffer,  "inds_gen_cylinder" );
+	DX11ResType(result->vert_buffer, "verts_gen_cylinder");
 	return result;
 }
 

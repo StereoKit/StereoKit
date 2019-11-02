@@ -30,11 +30,6 @@ namespace StereoKit
             if (_materialInst != IntPtr.Zero)
                 NativeAPI.material_release(_materialInst);
         }
-        public static Material Find(string id)
-        {
-            IntPtr material = NativeAPI.material_find(id);
-            return material == IntPtr.Zero ? null : new Material(material);
-        }
 
         public object this[string parameterName] { set { 
             switch(value)
@@ -52,10 +47,9 @@ namespace StereoKit
 
         public Material Copy()
         {
-            NativeAPI.material_copy(_materialInst);
-            return new Material(_materialInst);
+            return new Material(NativeAPI.material_copy(_materialInst));
         }
-
+        
         public void SetFloat(string name, float value)
         {
             NativeAPI.material_set_float(_materialInst, name, value);
@@ -79,6 +73,16 @@ namespace StereoKit
         public void SetTexture(string name, Tex2D value)
         {
             NativeAPI.material_set_texture(_materialInst, name, value._texInst);
+        }
+
+        public static Material Find(string id)
+        {
+            IntPtr material = NativeAPI.material_find(id);
+            return material == IntPtr.Zero ? null : new Material(material);
+        }
+        public static Material Copy(string materialId)
+        {
+            return new Material(NativeAPI.material_copy_id(materialId));
         }
     }
 }

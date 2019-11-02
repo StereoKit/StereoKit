@@ -35,6 +35,10 @@ namespace StereoKit
         {
             return new Mesh(NativeAPI.mesh_gen_sphere(diameter, subdivisions));
         }
+        public static Mesh GenerateCylinder(float diameter, float depth, Vec3 direction, int subdivisions = 16)
+        {
+            return new Mesh(NativeAPI.mesh_gen_cylinder(diameter, depth, direction, subdivisions));
+        }
         public static Mesh Find(string id)
         {
             IntPtr mesh = NativeAPI.mesh_find(id);

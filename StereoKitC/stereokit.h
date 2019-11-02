@@ -175,6 +175,8 @@ static inline vec3  vec3_abs         (const vec3 &a) { return { fabsf(a.x), fabs
 
 static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { return a + (b - a)*t; }
 
+SK_API vec3 vec3_cross(const vec3 &a, const vec3 &b);
+
 SK_API quat quat_difference(const quat &a, const quat &b);
 SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
 SK_API quat quat_euler     (const vec3 &euler_degrees);
@@ -258,6 +260,7 @@ SK_API void   mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_sphere      (float diameter,  int32_t subdivisions = 4);
 SK_API mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
+SK_API mesh_t mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions = 16);
 
 ///////////////////////////////////////////
 

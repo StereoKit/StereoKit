@@ -21,7 +21,7 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
-        Demos.SetActive("Basics");
+        Demos.SetActive("Geo");
         Demos.Initialize();
 
         while (StereoKitApp.Step(() =>
