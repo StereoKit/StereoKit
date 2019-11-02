@@ -9,7 +9,7 @@ namespace StereoKitDocumenter
     class Program
     {
         public const string xmlDocs = "../../../bin/StereoKit.xml";
-        public const string pagesOut = "../../../docs/assets/pages/";
+        public const string pagesOut = "../../../docs/pages/";
         public const string samplesProj = "../../../Examples/StereoKitTest/";
         public const string referenceOut = pagesOut+"reference/";
 

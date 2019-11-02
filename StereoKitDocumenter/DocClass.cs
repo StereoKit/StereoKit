@@ -20,7 +20,7 @@ namespace StereoKitDocumenter
             return Path.Combine( Program.referenceOut, name+".md");
         } }
         public string UrlName { get{ 
-            return $"/assets/pages/Reference/{name}.html";
+            return $"{{{{url}}}}pages/Reference/{name}.html";
         } }
 
         public void AddExample(DocExample aExample) { examples.Add(aExample); }
