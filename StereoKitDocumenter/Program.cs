@@ -178,6 +178,9 @@ namespace StereoKitDocumenter
                 }
             }
 
+            root     .folders.Sort((a,b)=>string.Compare(a.name,b.name));
+            reference.folders.Sort((a,b)=>string.Compare(a.name,b.name));
+
             return root.ToString();
         }
     }
