@@ -3,40 +3,44 @@ using System.IO;
 
 namespace StereoKitDocumenter
 {
-    class DocMethod
+    class DocMethod : IDocItem
     {
         public string name;
-        public string className;
         public string summary;
         public string returns;
+        public DocClass parent;
         public List<DocParam> parameters = new List<DocParam>();
 
+        public DocMethod(DocClass aParent, string aName)
+        {
+            parent = aParent;
+            name   = aName;
+            parent.methods.Add(this);
+        }
+
         public string FileName { get{ 
-            return Path.Combine( Program.referenceOut, className+"/"+name+".md");
+            return Path.Combine( Program.referenceOut, parent.name+"/"+name+".md");
         } }
         public string UrlName { get{ 
-            return $"/assets/pages/Reference/{className}/{name}.md";
+            return $"/assets/pages/Reference/{parent.name}/{name}.html";
         } }
 
         public override string ToString()
         {
-            DocClass parent = Program.GetClass(className);
-
             string paramText = "";
             if (parameters.Count > 0) {
-                paramText += "\n## Parameters\n|  |  |\n|--|--|\n";
+                paramText += "\n## Parameters\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++) {
                     paramText += $"|{parameters[i].name}|{parameters[i].summary}|\n";
                 }
             }
 
-            return $@"
----
+            return $@"---
 layout: default
-title: {className}.{name}
+title: {parent.name}.{name}
 description: {summary}
 ---
-# [{className}]({parent.UrlName}).{name}
+# [{parent.name}]({parent.UrlName}).{name}
 {paramText}
 ## Returns
 {returns}

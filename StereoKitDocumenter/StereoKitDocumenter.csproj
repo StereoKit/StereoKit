@@ -44,8 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DocClass.cs" />
+    <Compile Include="DocIndexFolder.cs" />
     <Compile Include="DocMethod.cs" />
     <Compile Include="DocParam.cs" />
+    <Compile Include="IDocItem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

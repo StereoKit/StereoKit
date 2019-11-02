@@ -7,27 +7,21 @@ using System.Threading.Tasks;
 
 namespace StereoKitDocumenter
 {
-    class DocClass
+    class DocClass : IDocItem
     {
         public string name;
         public string summary;
+        public List<DocMethod> methods = new List<DocMethod>();
 
         public string FileName { get{ 
             return Path.Combine( Program.referenceOut, name+".md");
         } }
         public string UrlName { get{ 
-            return $"/assets/pages/Reference/{name}.md";
+            return $"/assets/pages/Reference/{name}.html";
         } }
 
         public override string ToString()
         {
-            
-            List<DocMethod> methods = new List<DocMethod>();
-            for (int i = 0; i < Program.methods.Count; i++)
-            {
-                if (Program.methods[i].className == name) 
-                    methods.Add(Program.methods[i]);
-            }
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
 
             string memberText = "";
@@ -36,8 +30,7 @@ namespace StereoKitDocumenter
                 memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{methods[i].summary}|\n";
             }
 
-            return $@"
----
+            return $@"---
 layout: default
 title: {name}
 description: {summary}
@@ -48,6 +41,7 @@ description: {summary}
 {summary}
 
 ## Methods
+
 |  |  |
 |--|--|
 {memberText}

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace StereoKitDocumenter
@@ -8,7 +9,8 @@ namespace StereoKitDocumenter
     class Program
     {
         public const string xmlDocs = "../../../bin/StereoKit.xml";
-        public const string referenceOut = "../../../docs/assets/pages/reference/";
+        public const string pagesOut = "../../../docs/assets/pages/";
+        public const string referenceOut = pagesOut+"reference/";
 
         public static List<DocClass>  classes = new List<DocClass>();
         public static List<DocMethod> methods = new List<DocMethod>();
@@ -44,6 +46,12 @@ namespace StereoKitDocumenter
                 writer.Write(methods[i].ToString());
                 writer.Close();
             }
+
+            { 
+                StreamWriter writer = new StreamWriter(pagesOut+"data.js");
+                writer.Write(WriteIndex());
+                writer.Close();
+            }
         }
 
         static void ReadClass(string signature, XmlReader reader)
@@ -70,8 +78,6 @@ namespace StereoKitDocumenter
 
         static void ReadMethod(string signature, XmlReader reader)
         {
-            DocMethod result = new DocMethod();
-
             // Get names
             string[] segs = signature.Split('(');
             string nameSignature  = segs[0];
@@ -79,8 +85,8 @@ namespace StereoKitDocumenter
             segs = nameSignature.Split('.');
             if (segs.Length != 3)
                 Console.WriteLine("Unexpected signature length, " + signature);
-            result.name      = segs[2];
-            result.className = segs[1];
+
+            DocMethod result = new DocMethod(GetClass(segs[1]), segs[2]);
 
             // Read properties
             while (reader.Read())
@@ -99,6 +105,27 @@ namespace StereoKitDocumenter
             }
 
             methods.Add(result);
+        }
+
+        static string WriteIndex()
+        {
+            DocIndexFolder root = new DocIndexFolder("pages");
+            DocIndexFolder reference = new DocIndexFolder("Reference");
+            root.folders.Add(reference);
+
+            for (int i = 0; i < classes.Count; i++)
+            {
+                DocIndexFolder classFolder = new DocIndexFolder(classes[i].name);
+                reference.folders.Add(classFolder);
+
+                for (int m = 0; m < classes[i].methods.Count; m++)
+                {
+                    classFolder.pages.Add(classes[i].methods[m].name);
+                }
+
+            }
+
+            return root.ToString();
         }
     }
 }
