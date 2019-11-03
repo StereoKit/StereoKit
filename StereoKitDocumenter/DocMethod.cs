@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using StereoKit;
 
 namespace StereoKitDocumenter
 {
@@ -31,12 +35,25 @@ namespace StereoKitDocumenter
 
         public override string ToString()
         {
+            Vec3 vec;
+            Type t = Type.GetType("StereoKit."+parent.name+", StereoKit");
+            MethodInfo m = t.GetMethod(name);
+            List<ParameterInfo> param = new List<ParameterInfo>(m.GetParameters());
+
+            string paramList = string.Join(", ", param.Select(a=> $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}" ));
+            string signature = (m.IsStatic ? "static " : "")+$"{StringHelper.TypeName(m.ReturnType.Name)} {m.Name}({paramList})";
+
             string paramText = "";
-            if (parameters.Count > 0) {
+            if (parameters.Count > 0 || m.ReturnType != typeof(void)) {
                 paramText += "\n## Parameters\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++) {
-                    paramText += $"|{parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
+                    
+                    ParameterInfo p = param.Find(a => a.Name == parameters[i].name);
+                    paramText += $"|{StringHelper.TypeName(p.ParameterType.Name)} {parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
                 }
+
+                if (m.ReturnType != typeof(void))
+                    paramText += $"|RETURNS: {StringHelper.TypeName(m.ReturnType.Name)}|{StringHelper.CleanForTable(returns)}|\n";
             }
 
             string exampleText = "";
@@ -53,9 +70,10 @@ title: {parent.name}.{name}
 description: {StringHelper.CleanForDescription(summary)}
 ---
 # [{parent.name}]({parent.UrlName}).{name}
+<div class='signature' markdown='1'>
+{signature}
+</div>
 {paramText}
-## Returns
-{returns}
 
 ## Description
 {summary}

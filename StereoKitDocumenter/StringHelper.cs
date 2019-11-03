@@ -29,5 +29,19 @@ namespace StereoKitDocumenter
                 .Select(a=>a.Trim())
                 .ToArray());
         }
+
+        public static string TypeName(string type)
+        {
+            switch(type)
+            {
+                case "Single" : return "float";
+                case "Int32" : return "int";
+                case "String": return "string";
+                default: {
+                    DocClass typeDoc = Program.GetClass(type);
+                    return typeDoc != null ? $"[{type}]({typeDoc.UrlName})" : type;
+                }
+            }
+        }
     }
 }

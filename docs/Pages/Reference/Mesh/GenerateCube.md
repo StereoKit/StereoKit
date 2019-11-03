@@ -4,16 +4,18 @@ title: Mesh.GenerateCube
 description: Generates a flat-shaded cube mesh, pre-sized to the given dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCube
+<div class='signature' markdown='1'>
+static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCube([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, int subdivisions)
+</div>
 
 ## Parameters
 
 |  |  |
 |--|--|
-|dimensions|How large is this cube on each axis, in meters?|
-|subdivisions|Use this to add extra slices of vertices across the cube's              faces. This can be useful for some types of vertex-based effects!|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions|How large is this cube on each axis, in meters?|
+|int subdivisions|Use this to add extra slices of vertices across the cube's              faces. This can be useful for some types of vertex-based effects!|
+|RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A flat-shaded cube mesh, pre-sized to the given dimensions.|
 
-## Returns
-A flat-shaded cube mesh, pre-sized to the given dimensions.
 
 ## Description
 Generates a flat-shaded cube mesh, pre-sized to the given

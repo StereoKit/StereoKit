@@ -27,6 +27,7 @@ namespace StereoKitDocumenter
 
         public override string ToString()
         {
+            Type t = Type.GetType("StereoKit." + name + ", StereoKit");
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
             fields .Sort((a,b)=>a.name.CompareTo(b.name));
 
@@ -38,12 +39,13 @@ namespace StereoKitDocumenter
                     memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{StringHelper.CleanForTable(methods[i].summary)}|\n";
                 }
             }
+
             string fieldText = "";
             if (fields.Count > 0) { 
                 fieldText = "\n\n## Fields\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < fields.Count; i++)
                 {
-                    fieldText += $"|[{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
+                    fieldText += $"|{StringHelper.TypeName(t.GetField(fields[i].name).FieldType.Name)} [{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
                 }
             }
 

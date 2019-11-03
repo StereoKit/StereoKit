@@ -4,17 +4,18 @@ title: Mesh.GenerateSphere
 description: Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateSphere
+<div class='signature' markdown='1'>
+static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diameter, int subdivisions)
+</div>
 
 ## Parameters
 
 |  |  |
 |--|--|
-|diameter|The diameter of the sphere in meters, or 2*radius. This is the              full length from one side to the other.|
-|subdivisions|How many times should the initial cube be subdivided?|
+|float diameter|The diameter of the sphere in meters, or 2*radius. This is the              full length from one side to the other.|
+|int subdivisions|How many times should the initial cube be subdivided?|
+|RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.|
 
-## Returns
-A sphere mesh, pre-sized to the given diameter, created by sphereifying a
-subdivided cube! UV coordinates are taken from the initial unspherified cube.
 
 ## Description
 Generates a sphere mesh, pre-sized to the given diameter, created
