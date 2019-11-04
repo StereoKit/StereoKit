@@ -1,4 +1,5 @@
 ﻿
+using StereoKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +48,7 @@ public static class Demos
 
     public static string GetName(int index)
     {
-        return demos[index].GetType().Name;
+        return demos[index].Name;
     }
     public static void SetActive(int index)
     {
@@ -62,7 +63,7 @@ public static class Demos
             else if (str.Contains(name)) return str.Length - name.Length;
             else                         return 1000 + string.Compare(str, name);
         }).First();
-        Console.WriteLine("Starting Scene: " + result.Name);
+        Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
 
         ActiveScene = result;
     }

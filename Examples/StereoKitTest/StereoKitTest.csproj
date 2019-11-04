@@ -84,6 +84,7 @@
     <Compile Include="DemoBasics.cs" />
     <Compile Include="DemoProceduralGeometry.cs" />
     <Compile Include="Demos.cs" />
+    <Compile Include="DemoSelect.cs" />
     <Compile Include="DemoUI.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

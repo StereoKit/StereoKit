@@ -21,7 +21,7 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
-        Demos.SetActive("Geo");
+        Demos.SetActive(args.Length > 0 ? args[0] : "Select");
         Demos.Initialize();
 
         while (StereoKitApp.Step(() =>
@@ -38,9 +38,6 @@ class Program
 
     static void CommonInit()
     {
-        Tex2D cubemap = Tex2D.FromEquirectangular(Program.Root + "Sky/sky.hdr");
-        Renderer.SetSkytex(cubemap);
-
         Material floorMat = new Material(Shader.Find("default/shader_pbr"));
         floorMat["diffuse"  ] = new Tex2D(Program.Root + "test.png");
         floorMat["normal"   ] = new Tex2D(Program.Root + "test_normal.png");
