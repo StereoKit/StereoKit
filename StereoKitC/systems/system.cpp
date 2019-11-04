@@ -148,6 +148,7 @@ bool systems_initialize() {
 			systems[index].profile_start_duration = duration_cast<nanoseconds>(end - start).count();
 		}
 	}
+	log_info("Initialization successful");
 	return true;
 }
 
@@ -188,9 +189,9 @@ void systems_shutdown() {
 	}
 
 	log_info("Session Performance Report:");
-	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("<~BLK>______________________________________________________<~clr>");
 	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
-	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = i;
 
@@ -212,7 +213,7 @@ void systems_shutdown() {
 		
 		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_info("<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 
 	free(systems);
 	free(system_init_order);

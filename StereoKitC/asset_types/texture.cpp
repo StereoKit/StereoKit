@@ -588,7 +588,14 @@ tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_c
 		return nullptr;
 	}
 
-	int32_t  size  = gradient_count * 4;
+	size_t  size  = gradient_count * 4;
+	// make size a power of two
+	int32_t power = (int32_t)logf(size);
+	if (pow(2, power) < size)
+		power += 1;
+	size = pow(2, power);
+
+
 	size_t   size2 = size * size;
 	color32 *top  = (color32*)malloc(size2 * sizeof(color32));
 	color32 *bot  = (color32*)malloc(size2 * sizeof(color32));

@@ -22,7 +22,6 @@ struct layer_t {
 vector<layer_t> skui_layers;
 mesh_t          skui_box;
 material_t      skui_mat;
-material_t      skui_mat_active;
 font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
@@ -100,10 +99,7 @@ bool32_t ui_in_box(vec3 pt, vec3 box_start, vec3 box_size) {
 
 bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
-
-	skui_mat        = material_copy_id("default/material");
-	skui_mat_active = material_copy_id("default/material");
-	material_set_color(skui_mat_active, "color", { .5f,.5f,.5f,1 });
+	skui_mat = material_copy_id("default/material");
 
 	skui_font_mat   = material_create(shader_find("default/shader_font"));
 	skui_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
@@ -390,7 +386,6 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
-					log_info("unpinch");
 				}
 			}
 		}
