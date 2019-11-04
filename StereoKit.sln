@@ -21,6 +21,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StereoKit", "StereoKit\Ster
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitC_UWP", "StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj", "{45AF7827-11CA-4691-A063-8C78FB0BE1EC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{95B47C8E-3A66-483C-ABEE-950E6C2F621A} = {95B47C8E-3A66-483C-ABEE-950E6C2F621A}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitCTest_UWP", "Examples\StereoKitCTest\StereoKitCTest_UWP\StereoKitCTest_UWP.vcxproj", "{0362B3F9-F256-4DA7-8F36-01DA3B7776D5}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -105,14 +108,10 @@ Global
 		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.ActiveCfg = Release|x64
 		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.Build.0 = Release|x64
 		{6AAC0A23-0742-4689-B65D-0B2F5291FB39}.Release|x64.Deploy.0 = Release|x64
-		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|ARM64.ActiveCfg = Debug|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|ARM64.Build.0 = Debug|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Debug|x64.Build.0 = Debug|Any CPU
-		{4803A1B6-3799-4055-903E-3554B1111208}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4803A1B6-3799-4055-903E-3554B1111208}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Release|ARM64.Build.0 = Release|Any CPU
 		{4803A1B6-3799-4055-903E-3554B1111208}.Release|x64.ActiveCfg = Release|Any CPU

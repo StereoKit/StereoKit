@@ -73,5 +73,13 @@
     <Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
     
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
 
 </Project>
