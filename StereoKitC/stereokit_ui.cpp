@@ -101,9 +101,9 @@ bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 	skui_mat = material_copy_id("default/material");
 
-	skui_font_mat   = material_create(shader_find("default/shader_font"));
-	skui_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
-	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, text_align_x_left | text_align_y_top);
+	skui_font_mat   = material_find("default/material_font");
+	skui_font       = font_find("default/font");
+	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color32{255,255,255,255});
 
 	return true;
 }
@@ -158,7 +158,7 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 ///////////////////////////////////////////
 
 void ui_text(vec3 start, const char *text, text_align_ position) {
-	text_add_at(skui_font_style, skui_layers.back().transform, text, position, start.x, start.y, start.z);
+	text_add_at(text, skui_layers.back().transform, skui_font_style, position, text_align_x_left | text_align_y_top, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
@@ -205,7 +205,7 @@ void ui_space(float space) {
 
 void ui_label(const char *text) {
 	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(skui_font_style, text);
+	vec2 size   = text_size(text, skui_font_style);
 	ui_reserve_box(size);
 	ui_text(offset + vec3{ 0, 0, 2*mm2m }, text);
 	ui_nextline();
@@ -235,7 +235,7 @@ bool32_t ui_button(const char *text) {
 	bool result = false;
 	color128 color = color128{ 1,1,1,1 };
 	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(skui_font_style, text);
+	vec2 size   = text_size(text, skui_font_style);
 	size += vec2{ skui_padding, skui_padding }*2;
 
 	// If this is not the first element, and it goes outside the active window
@@ -276,7 +276,7 @@ bool32_t ui_button(const char *text) {
 
 	ui_reserve_box(size);
 	ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, color);
-	ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
+	ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 	ui_nextline();
 
 	return result;
@@ -301,7 +301,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 	bool     result = false;
 	bool     focused = false;
 	vec3     offset = skui_layers.back().offset;
-	vec2     size   = text_size(skui_font_style, buffer);
+	vec2     size   = text_size(buffer, skui_font_style);
 	size += vec2{ skui_padding, skui_padding } * 2;
 
 	vec3 box_start = offset;
@@ -347,7 +347,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 
 	ui_reserve_box(size);
 	ui_box (offset, vec3{ size.x, size.y, skui_depth/2 }, skui_mat, focused ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
-	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_depth/2 + 2*mm2m }, buffer, text_align_x_center | text_align_y_center);
+	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_depth/2 + 2*mm2m }, buffer, text_align_center);
 	ui_nextline();
 
 	return result;
@@ -455,7 +455,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
 	ui_push_pose(pose, window_size);
 
 	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(skui_font_style, text);
+	vec2 size   = text_size(text, skui_font_style);
 	vec3 box_start = vec3{ 0, 0, -skui_depth };
 	vec3 box_size  = vec3{ window_size.x, size.y+skui_padding*2, skui_depth };
 

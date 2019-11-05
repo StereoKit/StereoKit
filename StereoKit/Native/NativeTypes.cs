@@ -98,6 +98,17 @@ namespace StereoKit
         YCenter = 1 << 2,
         XRight  = 1 << 3,
         YBottom = 1 << 4,
+        Center  = XCenter | YCenter,
+    }
+
+    /// <summary>A text style is a font plus size/color/material parameters, and are 
+    /// used to keep text looking more consistent through the application by encouraging 
+    /// devs to re-use styles throughout the project. See Text.MakeStyle for making a 
+    /// TextStyle object.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextStyle
+    {
+        internal int id;
     }
 
     public enum SolidType

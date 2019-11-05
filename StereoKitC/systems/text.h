@@ -8,7 +8,7 @@ namespace sk {
 struct _text_style_t {
 	font_t      font;
 	uint32_t    buffer_index;
-	text_align_ align;
+	color32     color;
 	float       height;
 };
 struct text_buffer_t {

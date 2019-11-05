@@ -2,6 +2,7 @@
 
 #include "../asset_types/material.h"
 #include "../asset_types/assets.h"
+#include "../systems/defaults.h"
 
 #include <vector>
 using namespace std;
@@ -42,7 +43,7 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align) {
+text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
 	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
@@ -76,7 +77,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	_text_style_t style;
 	style.font         = font;
 	style.buffer_index = (uint32_t)index;
-	style.align        = align;
+	style.color        = color;
 	style.height       = character_height;
 	text_styles.push_back(style);
 
@@ -105,8 +106,8 @@ vec2 text_line_size(text_style_t style, const char *text) {
 
 ///////////////////////////////////////////
 
-vec2 text_size(text_style_t style, const char *text) {
-	font_t font = text_styles[style].font;
+vec2 text_size(const char *text, text_style_t style) {
+	font_t font = text_styles[style == -1 ? 0 : style].font;
 	const char *curr = text;
 	float x = 0;
 	float y = 0;
@@ -134,17 +135,16 @@ vec2 text_size(text_style_t style, const char *text) {
 
 ///////////////////////////////////////////
 
-void text_add_at(text_style_t style, const matrix &transform, const char *text, text_align_ position, float off_x, float off_y, float off_z) {
-	_text_style_t &style_data = text_styles[style];
+void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+	_text_style_t &style_data = text_styles[style == -1 ? 0 : style];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
-	vec2           size       = text_size(style, text);
+	vec2           size       = text_size(text, style);
 
 	// Resize array if we need more room for this text
 	size_t length = strlen(text);
 	text_buffer_ensure_capacity(buffer, length);
 	
 	vec3    normal  = matrix_mul_direction(transform, -vec3_forward);
-	color32 col     = {128,128,128,255};
 	const char*curr = text;
 	vec2    line_sz = text_line_size(style, curr);
 	float   start_x = off_x;
@@ -154,8 +154,8 @@ void text_add_at(text_style_t style, const matrix &transform, const char *text, 
 	if (position & text_align_x_center) start_x -= size.x / 2.f;
 	if (position & text_align_x_right)  start_x -= size.x;
 	float align_x = 0;
-	if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
-	if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
+	if (align & text_align_x_center) align_x = -(line_sz.x / 2.f);
+	if (align & text_align_x_right)  align_x = -line_sz.x;
 	float x = start_x + align_x;
 	size_t  offset  = buffer.vert_count;
 	while (*curr != '\0') {
@@ -170,8 +170,8 @@ void text_add_at(text_style_t style, const matrix &transform, const char *text, 
 		case '\n': {
 			line_sz = text_line_size(style, curr);
 			align_x = 0;
-			if (style_data.align & text_align_x_center) align_x = -(line_sz.x / 2.f);
-			if (style_data.align & text_align_x_right)  align_x = -line_sz.x;
+			if (align & text_align_x_center) align_x = -(line_sz.x / 2.f);
+			if (align & text_align_x_right)  align_x = -line_sz.x;
 			x = start_x + align_x;
 			y -= style_data.height;
 		} continue;
@@ -179,10 +179,10 @@ void text_add_at(text_style_t style, const matrix &transform, const char *text, 
 		}
 		
 		// Add a character quad
-		buffer.verts[offset + 0] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, col };
-		buffer.verts[offset + 1] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, col };
-		buffer.verts[offset + 2] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, col };
-		buffer.verts[offset + 3] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, col };
+		buffer.verts[offset + 0] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, style_data.color };
+		buffer.verts[offset + 1] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, style_data.color };
+		buffer.verts[offset + 2] = { matrix_mul_point(transform, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, style_data.color };
+		buffer.verts[offset + 3] = { matrix_mul_point(transform, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, style_data.color };
 
 		buffer.vert_count += 4;
 		x += ch.xadvance * style_data.height;

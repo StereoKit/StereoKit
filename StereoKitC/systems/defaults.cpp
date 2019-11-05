@@ -22,6 +22,9 @@ shader_t   sk_default_shader_font;
 shader_t   sk_default_shader_equirect;
 material_t sk_default_material;
 material_t sk_default_material_equirect;
+material_t sk_default_material_font;
+font_t     sk_default_font;
+text_style_t sk_default_text_style;
 
 ///////////////////////////////////////////
 
@@ -98,15 +101,24 @@ bool defaults_init() {
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
-	
+	sk_default_material_font     = material_create(sk_default_shader_font);
+
 	if (sk_default_material          == nullptr ||
-		sk_default_material_equirect == nullptr)
+		sk_default_material_equirect == nullptr ||
+		sk_default_material_font     == nullptr)
 		return false;
 
 	material_set_id(sk_default_material,          "default/material");
 	material_set_id(sk_default_material_equirect, "default/equirect_convert");
+	material_set_id(sk_default_material_equirect, "default/material_font");
 
-	material_set_texture(sk_default_material, "diffuse", sk_default_tex);
+	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
+
+	// Text!
+	sk_default_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
+	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color32{ 255,255,255,255 });
+
+	font_set_id(sk_default_font, "default/font");
 
 	return true;
 }

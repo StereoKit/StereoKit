@@ -89,6 +89,12 @@ font_t font_create(const char *file) {
 
 ///////////////////////////////////////////
 
+void font_set_id(font_t font, const char* id) {
+	assets_set_id(font->header, id);
+}
+
+///////////////////////////////////////////
+
 void font_release(font_t font) {
 	if (font == nullptr)
 		return;

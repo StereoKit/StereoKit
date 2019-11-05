@@ -321,6 +321,7 @@ SK_DeclarePrivateType(font_t);
 
 SK_API font_t  font_find   (const char *id);
 SK_API font_t  font_create (const char *file);
+SK_API void    font_set_id(font_t font, const char* id);
 SK_API void    font_release(font_t font);
 SK_API tex2d_t font_get_tex(font_t font);
 
@@ -416,20 +417,21 @@ SK_API vec3   transform_local_to_world_dir(transform_t &transform, const vec3 &l
 ///////////////////////////////////////////
 
 enum text_align_ {
-	text_align_x_left      = 0,
-	text_align_y_top       = 0,
-	text_align_x_center    = 1 << 1,
-	text_align_y_center    = 1 << 2,
-	text_align_x_right     = 1 << 3,
-	text_align_y_bottom    = 1 << 4,
+	text_align_x_left   = 0,
+	text_align_y_top    = 0,
+	text_align_x_center = 1 << 1,
+	text_align_y_center = 1 << 2,
+	text_align_x_right  = 1 << 3,
+	text_align_y_bottom = 1 << 4,
+	text_align_center   = text_align_x_center | text_align_y_center,
 };
 SK_MakeFlag(text_align_);
 
 typedef int32_t text_style_t;
 
-SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, text_align_ align);
-SK_API void         text_add_at    (text_style_t style, const matrix &transform, const char *text, text_align_ position = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
-SK_API vec2         text_size      (text_style_t style, const char *text);
+SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color);
+SK_API void         text_add_at    (const char *text, const matrix& transform, text_style_t style = -1, text_align_ position = text_align_x_center | text_align_y_center, text_align_ align = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API vec2         text_size      (const char *text, text_style_t style = -1);
 
 ///////////////////////////////////////////
 
