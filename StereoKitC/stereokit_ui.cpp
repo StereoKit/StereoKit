@@ -113,6 +113,17 @@ bool ui_init() {
 void ui_push_pose(pose_t pose, vec2 size) {
 	vec3   right = pose.orientation * vec3_right; // Use the position as the center of the window.
 	matrix trs = matrix_trs(pose.position - right*(size.x/2), pose.orientation);
+
+	// In a right-handed coordinate system, a forward (0,0,-1) facing UI would start at 1,1 in the top left
+	// and -1,-1 in the bottom right. This feels profoundly wrong to me, so I set the root of all UI windows 
+	// to a 180 rotation on the Y axis to switch it to -1,1 -> 1,-1 instead, yet still retain the benefit
+	// of having a 'forward facing' UI.
+	// TODO: Review this later, see how it turns out over time.
+	if (skui_layers.size() == 0)
+		trs = matrix_trs(vec3_zero, quat_euler({ 0, 180, 0 }), vec3_one) * trs;
+	else
+		trs = skui_layers.back().transform * trs;
+
 	matrix trs_inverse;
 	matrix_inverse(trs, trs_inverse);
 

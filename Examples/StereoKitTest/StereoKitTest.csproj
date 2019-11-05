@@ -94,7 +94,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\bin\x64_Debug\StereoKitC\StereoKitC.dll">
+    <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\StereoKitC.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\*.dll">

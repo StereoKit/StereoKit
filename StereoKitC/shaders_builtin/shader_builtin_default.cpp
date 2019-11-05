@@ -38,7 +38,7 @@ struct psIn {
 	float3 color : COLOR0;
 	float2 uv    : TEXCOORD0;
 	float3 world : TEXCOORD1;
-	float3 normal: TEXCOORD2;
+	float3 normal: NORMAL;
 };
 
 // [texture] diffuse white

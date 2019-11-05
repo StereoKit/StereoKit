@@ -45,7 +45,7 @@ SamplerState tex_sampler;
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	float3 world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(world, 1), sk_viewproj);
+	output.pos   = mul(float4(world,         1), sk_viewproj);
 
 	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	output.uv     = input.uv;
@@ -63,7 +63,6 @@ float4 ps(psIn input, bool frontface : SV_IsFrontFace) : SV_TARGET{
 	float w, h;
 	uint mip_levels;
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-
 	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, 0.8*mip_levels).rgb; // This should be Spherical Harmonics eventually
 
 	return float4(albedo * irradiance, input.color.a);

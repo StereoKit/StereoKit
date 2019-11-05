@@ -15,7 +15,7 @@ text_style_t sprite_text_style;
 void demo_sprites_init() {
 	material_t font_mat = material_create(shader_find("default/shader_font"));
 	font_t font         = font_create("C:/Windows/Fonts/segoeui.ttf");
-	sprite_text_style   = text_make_style(font, 0.1f, font_mat, text_align_x_right | text_align_y_center);
+	sprite_text_style = text_make_style(font, 0.1f, font_mat, { 255,255,255,255 });
 	material_release(font_mat);
 	font_release    (font);
 

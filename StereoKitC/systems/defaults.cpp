@@ -110,7 +110,7 @@ bool defaults_init() {
 
 	material_set_id(sk_default_material,          "default/material");
 	material_set_id(sk_default_material_equirect, "default/equirect_convert");
-	material_set_id(sk_default_material_equirect, "default/material_font");
+	material_set_id(sk_default_material_font,     "default/material_font");
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
