@@ -78,8 +78,11 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
 			hand = i;
-		} else if (focused) {
-			skui_control_focused[i] = 0;
+		} else {
+			if (focused)
+				skui_control_focused[i] = 0;
+			if (skui_control_active[i] == id)
+				skui_control_active[i] = 0;
 		}
 	}
 	return hand;
@@ -100,6 +103,7 @@ bool32_t ui_in_box(vec3 pt, vec3 box_start, vec3 box_size) {
 bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 	skui_mat = material_copy_id("default/material");
+	material_set_color(skui_mat, "color", { .25,.25,.35,1 });
 
 	skui_font_mat   = material_find("default/material_font");
 	skui_font       = font_find("default/font");
@@ -112,7 +116,7 @@ bool ui_init() {
 
 void ui_push_pose(pose_t pose, vec2 size) {
 	vec3   right = pose.orientation * vec3_right; // Use the position as the center of the window.
-	matrix trs = matrix_trs(pose.position - right*(size.x/2), pose.orientation);
+	matrix trs = matrix_trs(pose.position + right*(size.x/2), pose.orientation);
 
 	// In a right-handed coordinate system, a forward (0,0,-1) facing UI would start at 1,1 in the top left
 	// and -1,-1 in the bottom right. This feels profoundly wrong to me, so I set the root of all UI windows 
