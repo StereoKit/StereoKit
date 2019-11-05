@@ -178,6 +178,23 @@ void ui_text(vec3 start, const char *text, text_align_ position) {
 
 ///////////////////////////////////////////
 
+void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size) {
+	out_position   = skui_layers.back().offset;
+	out_final_size = content_size;
+	out_final_size += vec2{ skui_padding, skui_padding }*2;
+
+	// If this is not the first element, and it goes outside the active window
+	if (out_position.x            != skui_padding && 
+		skui_layers.back().size.x != 0            && 
+		out_position.x + out_final_size.x > skui_layers.back().size.x - skui_padding)
+	{
+		ui_nextline();
+		out_position = skui_layers.back().offset;
+	}
+}
+
+///////////////////////////////////////////
+
 void ui_reserve_box(vec2 size) {
 	if (skui_layers.back().max_x < skui_layers.back().offset.x + size.x + skui_padding)
 		skui_layers.back().max_x = skui_layers.back().offset.x + size.x + skui_padding;
@@ -245,22 +262,9 @@ void ui_image(sprite_t image, vec2 size) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_button(const char *text) {
-	uint64_t id = sk_ui_hash(text);
-	bool result = false;
-	color128 color = color128{ 1,1,1,1 };
-	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(text, skui_font_style);
-	size += vec2{ skui_padding, skui_padding }*2;
-
-	// If this is not the first element, and it goes outside the active window
-	if (offset.x                  != skui_padding && 
-		skui_layers.back().size.x != 0            && 
-		offset.x + size.x > skui_layers.back().size.x - skui_padding)
-	{
-		ui_nextline();
-		offset = skui_layers.back().offset;
-	}
+button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset) {
+	uint64_t      id     = sk_ui_hash(text);
+	button_state_ result = button_state_up;
 
 	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
 	// or 'side' presses where the finger comes from the back or side.
@@ -269,7 +273,7 @@ bool32_t ui_button(const char *text) {
 	// front, to a good distance through the button's back. This is to help when the user's
 	// finger inevitably goes completely through the button. May consider expanding the volume 
 	// a bit too on the X/Y axes later.
-	vec3    box_start = offset + vec3{ 0, 0, skui_depth/2.f };
+	vec3    box_start = window_relative_pos + vec3{ 0, 0, skui_depth/2.f };
 	vec3    box_size  = vec3{ size.x, size.y, skui_depth/2.f };
 	int32_t hand = ui_box_interaction_1h(id,
 		box_start, box_size,
@@ -277,24 +281,48 @@ bool32_t ui_button(const char *text) {
 		box_size  + vec3{ 0,0, skui_depth * 4 });
 
 	// If a hand is interacting, adjust the button surface accordingly
-	float finger_offset = skui_depth;
+	finger_offset = skui_depth;
 	if (hand != -1) {
-		finger_offset = fmaxf(mm2m, skui_fingertip[hand].z - offset.z);
+		skui_control_focused[hand] = id;
+		
+		finger_offset = fmaxf(mm2m, skui_fingertip[hand].z - window_relative_pos.z);
 		if (finger_offset < skui_depth / 2) {
+			result = button_state_down;
 			if (skui_control_active[hand] != id) {
 				skui_control_active[hand] = id;
-				result = true;
+				result |= button_state_just_down;
 			}
-			color = color128{ 0.5f, 0.5f, 0.5f, 1 };
 		}
+	} else if (skui_control_focused[hand] == id) {
+		skui_control_focused[hand] = 0;
+		result |= button_state_just_up;
 	}
 
-	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, color);
-	ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
-	ui_nextline();
-
 	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
+	float         finger_offset;
+	button_state_ state = ui_button_behavior(window_relative_pos, size, text, finger_offset);
+
+	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, state & button_state_down ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
+
+	return state & button_state_just_down;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_button(const char *text) {
+	vec3 offset;
+	vec2 size;
+	ui_layout_box (text_size(text, skui_font_style), offset, size);
+	ui_reserve_box(size);
+	ui_nextline   ();
+
+	return ui_button_at(offset, size, text);
 }
 
 ///////////////////////////////////////////
