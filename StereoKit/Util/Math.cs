@@ -45,11 +45,14 @@ namespace StereoKit
         }
 
         /// <summary>Shorthand for a vector where all values are 0! Same as `new Vec3(0,0,0)`.</summary>
-        public static readonly Vec3 Zero = new Vec3(0,0,0);
+        public static readonly Vec3 Zero    = new Vec3(0,0,0);
         /// <summary>Shorthand for a vector where all values are 1! Same as `new Vec3(1,1,1)`.</summary>
-        public static readonly Vec3 One  = new Vec3(1,1,1);
+        public static readonly Vec3 One     = new Vec3(1,1,1);
         /// <summary>A vector representing the up axis. In StereoKit, this is the same as `new Vec3(0,1,0)`.</summary>
-        public static readonly Vec3 Up   = new Vec3(0,1,0);
+        public static readonly Vec3 Up      = new Vec3(0,1,0);
+        /// <summary>StereoKit uses a right-handed coordinate system, which means that forwrd is 
+        /// looking down the -Z axis! This value is the same as `new Vec3(0,0,-1)`</summary>
+        public static readonly Vec3 Forward = new Vec3(0,0,-1);
         public static Vec3 operator +(Vec3 a, Vec3 b)  { return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
         public static Vec3 operator -(Vec3 a, Vec3 b)  { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
         public static Vec3 operator -(Vec3 a)          { return new Vec3(-a.x, -a.y, -a.z); }

@@ -277,8 +277,7 @@ bool render_initialize() {
 
 	// Setup a default camera
 	camera_initialize(render_default_camera, 90, 0.01f, 50);
-	transform_set    (render_default_camera_tr, vec3_one, vec3_one, quat_identity);
-	transform_lookat (render_default_camera_tr, vec3_zero);
+	transform_set    (render_default_camera_tr, vec3{ 0,0.2f,0.4f }, vec3_one, quat_lookat({ 0,0.2f,0.4f }, vec3_zero));
 	render_set_camera(render_default_camera);
 	render_set_view  (render_default_camera_tr);
 

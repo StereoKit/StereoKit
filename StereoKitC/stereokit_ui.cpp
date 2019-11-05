@@ -111,7 +111,8 @@ bool ui_init() {
 ///////////////////////////////////////////
 
 void ui_push_pose(pose_t pose, vec2 size) {
-	matrix trs = matrix_trs(pose.position, pose.orientation);
+	vec3   right = pose.orientation * vec3_right; // Use the position as the center of the window.
+	matrix trs = matrix_trs(pose.position - right*(size.x/2), pose.orientation);
 	matrix trs_inverse;
 	matrix_inverse(trs, trs_inverse);
 
@@ -120,7 +121,6 @@ void ui_push_pose(pose_t pose, vec2 size) {
 		vec3{skui_padding, -skui_padding}, size, 0, 0
 	});
 
-	
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
 		skui_fingertip[i] = hand.fingers[1][4].position;
@@ -233,6 +233,7 @@ void ui_image(sprite_t image, vec2 size) {
 bool32_t ui_button(const char *text) {
 	uint64_t id = sk_ui_hash(text);
 	bool result = false;
+	color128 color = color128{ 1,1,1,1 };
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(skui_font_style, text);
 	size += vec2{ skui_padding, skui_padding }*2;
@@ -265,13 +266,16 @@ bool32_t ui_button(const char *text) {
 	if (hand != -1) {
 		finger_offset = fmaxf(mm2m, skui_fingertip[hand].z - offset.z);
 		if (finger_offset < skui_depth / 2) {
-			skui_control_active[hand] = id;
-			result = true;
+			if (skui_control_active[hand] != id) {
+				skui_control_active[hand] = id;
+				result = true;
+			}
+			color = color128{ 0.5f, 0.5f, 0.5f, 1 };
 		}
 	}
 
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, result ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_box (offset, vec3{ size.x, size.y, finger_offset }, skui_mat, color);
 	ui_text(offset + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_x_center | text_align_y_center);
 	ui_nextline();
 

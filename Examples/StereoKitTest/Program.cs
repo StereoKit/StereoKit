@@ -12,6 +12,7 @@ class Program
     static Model     floorMesh;
     static Transform floorTr;
     static Solid     floorSolid;
+    static Pose      demoSelectPose = new Pose();
 
     static void Main(string[] args) 
     {
@@ -48,10 +49,28 @@ class Program
 
         floorSolid = new Solid(floorTr.Position, floorTr.Rotation, SolidType.Immovable);
         floorSolid.AddBox(floorTr.Scale);
+
+        demoSelectPose.position    = new Vec3(0, 0, -0.25f);
+        demoSelectPose.orientation = Quat.Lookat(demoSelectPose.position, Vec3.Zero);
     }
     static void CommonUpdate()
     {
         Renderer.Add(floorMesh, floorTr, Color.White);
+
+        // Make a window for demo selection
+        UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));
+        for (int i = 0; i < Demos.Count; i++)
+        {
+            // Chop off the "Demo" part of any demo name that has it
+            string name = Demos.GetName(i);
+            if (name.StartsWith("Demo"))
+                name = name.Substring("Demo".Length);
+
+            if (UI.Button(name))
+                Demos.SetActive(i);
+            UI.SameLine();
+        }
+        UI.WindowEnd();
     }
     static void CommonShutdown()
     {
