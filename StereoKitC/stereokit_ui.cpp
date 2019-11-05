@@ -39,71 +39,37 @@ float skui_prev_line_height;
 uint64_t skui_control_focused[2] = {};
 uint64_t skui_control_active [2] = {};
 
+const color128 skui_color_base = { .25,.25,.35,1 };
+
 ///////////////////////////////////////////
 
-void ui_push_pose(pose_t pose, vec2 size);
-void ui_pop_pose ();
+uint64_t ui_hash(const char *string);
 
-bool32_t ui_in_box             (vec3 pt, vec3 box_start, vec3 box_size);
-int32_t  ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size);
+// Layout
+void ui_push_pose  (pose_t pose, vec2 size);
+void ui_pop_pose   ();
+void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size);
+void ui_reserve_box(vec2 size);
 
+void ui_nextline    ();
+void ui_sameline    ();
+void ui_reserve_box (vec2 size);
+void ui_space       (float space);
+
+// Interaction
+bool32_t      ui_in_box            (vec3 pt, vec3 box_start, vec3 box_size);
+int32_t       ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size);
+button_state_ ui_button_behavior   (vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset);
+
+// Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
 void ui_text     (vec3 start, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
-
-///////////////////////////////////////////
-
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
-uint64_t sk_ui_hash(const char *string) {
-	unsigned long hash = 5381;
-	int c;
-	while (c = *string++)
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
-	return hash;
-}
-
-///////////////////////////////////////////
-
-int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size) {
-	int32_t hand = -1;
-
-	for (int32_t i = 0; i < handed_max; i++) {
-		bool focused   = skui_control_focused[i] == id;
-		vec3 box_start = box_unfocused_start;
-		vec3 box_size  = box_unfocused_size;
-		if (focused) {
-			box_start = box_focused_start;
-			box_size  = box_focused_size;
-		}
-
-		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
-			skui_control_focused[i] = id;
-			hand = i;
-		} else {
-			if (focused)
-				skui_control_focused[i] = 0;
-			if (skui_control_active[i] == id)
-				skui_control_active[i] = 0;
-		}
-	}
-	return hand;
-}
-
-///////////////////////////////////////////
-
-bool32_t ui_in_box(vec3 pt, vec3 box_start, vec3 box_size) {
-	pt -= box_start;
-	return
-		pt.x >= 0 && pt.x <=  box_size.x &&
-		pt.y <= 0 && pt.y >= -box_size.y &&
-		pt.z >= 0 && pt.z <=  box_size.z;
-}
 
 ///////////////////////////////////////////
 
 bool ui_init() {
 	skui_box = mesh_gen_cube(vec3_one);
 	skui_mat = material_copy_id("default/material");
-	material_set_color(skui_mat, "color", { .25,.25,.35,1 });
 
 	skui_font_mat   = material_find("default/material_font");
 	skui_font       = font_find("default/font");
@@ -112,6 +78,19 @@ bool ui_init() {
 	return true;
 }
 
+///////////////////////////////////////////
+
+// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
+uint64_t ui_hash(const char *string) {
+	unsigned long hash = 5381;
+	int c;
+	while (c = *string++)
+		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+	return hash;
+}
+
+///////////////////////////////////////////
+//////////////   Layout!   ////////////////
 ///////////////////////////////////////////
 
 void ui_push_pose(pose_t pose, vec2 size) {
@@ -134,7 +113,7 @@ void ui_push_pose(pose_t pose, vec2 size) {
 	skui_layers.push_back(layer_t{
 		trs, trs_inverse,
 		vec3{skui_padding, -skui_padding}, size, 0, 0
-	});
+		});
 
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
@@ -150,30 +129,6 @@ void ui_push_pose(pose_t pose, vec2 size) {
 
 void ui_pop_pose() {
 	skui_layers.pop_back();
-}
-
-///////////////////////////////////////////
-
-void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
-	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
-	matrix mx = matrix_trs(pos, quat_identity, size);
-	matrix_mul(mx, skui_layers.back().transform, mx);
-
-	render_add_mesh(skui_box, material, mx, color);
-}
-
-///////////////////////////////////////////
-
-void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
-	matrix mx = matrix_trs(start, quat_identity, size);
-	matrix_mul(mx, skui_layers.back().transform, mx);
-	render_add_model(model, mx, color);
-}
-
-///////////////////////////////////////////
-
-void ui_text(vec3 start, const char *text, text_align_ position) {
-	text_add_at(text, skui_layers.back().transform, skui_font_style, position, text_align_x_left | text_align_y_top, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
@@ -234,6 +189,114 @@ void ui_space(float space) {
 }
 
 ///////////////////////////////////////////
+///////////   Interaction!   //////////////
+///////////////////////////////////////////
+
+int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size) {
+	int32_t hand = -1;
+
+	for (int32_t i = 0; i < handed_max; i++) {
+		bool focused   = skui_control_focused[i] == id;
+		vec3 box_start = box_unfocused_start;
+		vec3 box_size  = box_unfocused_size;
+		if (focused) {
+			box_start = box_focused_start;
+			box_size  = box_focused_size;
+		}
+
+		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
+			skui_control_focused[i] = id;
+			hand = i;
+		} else {
+			if (focused)
+				skui_control_focused[i] = 0;
+			if (skui_control_active[i] == id)
+				skui_control_active[i] = 0;
+		}
+	}
+	return hand;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_in_box(vec3 pt, vec3 box_start, vec3 box_size) {
+	pt -= box_start;
+	return
+		pt.x >= 0 && pt.x <=  box_size.x &&
+		pt.y <= 0 && pt.y >= -box_size.y &&
+		pt.z >= 0 && pt.z <=  box_size.z;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset) {
+	uint64_t      id     = ui_hash(text);
+	button_state_ result = button_state_up;
+
+	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
+	// or 'side' presses where the finger comes from the back or side.
+	//
+	// Once focused is gained, interaction is tracked within a volume that extends from the 
+	// front, to a good distance through the button's back. This is to help when the user's
+	// finger inevitably goes completely through the button. May consider expanding the volume 
+	// a bit too on the X/Y axes later.
+	vec3    box_start = window_relative_pos + vec3{ 0, 0, skui_depth/2.f };
+	vec3    box_size  = vec3{ size.x, size.y, skui_depth/2.f };
+	int32_t hand = ui_box_interaction_1h(id,
+		box_start, box_size,
+		box_start + vec3{ 0,0,-skui_depth * 4 },
+		box_size  + vec3{ 0,0, skui_depth * 4 });
+
+	// If a hand is interacting, adjust the button surface accordingly
+	finger_offset = skui_depth;
+	if (hand != -1) {
+		skui_control_focused[hand] = id;
+
+		finger_offset = fmaxf(mm2m*4, skui_fingertip[hand].z - window_relative_pos.z);
+		if (finger_offset < skui_depth / 2) {
+			result = button_state_down;
+			if (skui_control_active[hand] != id) {
+				skui_control_active[hand] = id;
+				result |= button_state_just_down;
+			}
+		}
+	} else if (skui_control_focused[hand] == id) {
+		skui_control_focused[hand] = 0;
+		result |= button_state_just_up;
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+////////   Base Visual Elements   /////////
+///////////////////////////////////////////
+
+void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
+	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
+	matrix mx = matrix_trs(pos, quat_identity, size);
+	matrix_mul(mx, skui_layers.back().transform, mx);
+
+	render_add_mesh(skui_box, material, mx, color);
+}
+
+///////////////////////////////////////////
+
+void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
+	matrix mx = matrix_trs(start, quat_identity, size);
+	matrix_mul(mx, skui_layers.back().transform, mx);
+	render_add_model(model, mx, color);
+}
+
+///////////////////////////////////////////
+
+void ui_text(vec3 start, const char *text, text_align_ position) {
+	text_add_at(text, skui_layers.back().transform, skui_font_style, position, text_align_x_left | text_align_y_top, start.x, start.y, start.z);
+}
+
+///////////////////////////////////////////
+///////////   UI Components   /////////////
+///////////////////////////////////////////
 
 void ui_label(const char *text) {
 	vec3 offset = skui_layers.back().offset;
@@ -262,52 +325,12 @@ void ui_image(sprite_t image, vec2 size) {
 
 ///////////////////////////////////////////
 
-button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset) {
-	uint64_t      id     = sk_ui_hash(text);
-	button_state_ result = button_state_up;
-
-	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
-	// or 'side' presses where the finger comes from the back or side.
-	//
-	// Once focused is gained, interaction is tracked within a volume that extends from the 
-	// front, to a good distance through the button's back. This is to help when the user's
-	// finger inevitably goes completely through the button. May consider expanding the volume 
-	// a bit too on the X/Y axes later.
-	vec3    box_start = window_relative_pos + vec3{ 0, 0, skui_depth/2.f };
-	vec3    box_size  = vec3{ size.x, size.y, skui_depth/2.f };
-	int32_t hand = ui_box_interaction_1h(id,
-		box_start, box_size,
-		box_start + vec3{ 0,0,-skui_depth * 4 },
-		box_size  + vec3{ 0,0, skui_depth * 4 });
-
-	// If a hand is interacting, adjust the button surface accordingly
-	finger_offset = skui_depth;
-	if (hand != -1) {
-		skui_control_focused[hand] = id;
-		
-		finger_offset = fmaxf(mm2m, skui_fingertip[hand].z - window_relative_pos.z);
-		if (finger_offset < skui_depth / 2) {
-			result = button_state_down;
-			if (skui_control_active[hand] != id) {
-				skui_control_active[hand] = id;
-				result |= button_state_just_down;
-			}
-		}
-	} else if (skui_control_focused[hand] == id) {
-		skui_control_focused[hand] = 0;
-		result |= button_state_just_up;
-	}
-
-	return result;
-}
-
-///////////////////////////////////////////
-
 bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 	float         finger_offset;
 	button_state_ state = ui_button_behavior(window_relative_pos, size, text, finger_offset);
 
-	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, state & button_state_down ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * (state & button_state_down ? 0.5f : 1));
+	ui_box (window_relative_pos + vec3{-mm2m, mm2m, 0}, vec3{ size.x+mm2m*2, size.y+mm2m*2,   mm2m*4 }, skui_mat, skui_color_base * (state & button_state_down ? 0.5f : 1.2f));
 	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_just_down;
@@ -340,7 +363,7 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 ///////////////////////////////////////////
 
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
-	uint64_t id_hash= sk_ui_hash(id);
+	uint64_t id_hash= ui_hash(id);
 	bool     result = false;
 	bool     focused = false;
 	vec3     offset = skui_layers.back().offset;
@@ -389,7 +412,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 	}
 
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_depth/2 }, skui_mat, focused ? color128{0.5f, 0.5f, 0.5f, 1} : color128{1,1,1,1});
+	ui_box (offset, vec3{ size.x, size.y, skui_depth/2 }, skui_mat, skui_color_base * (focused ? 0.5f : 1.f) );
 	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_depth/2 + 2*mm2m }, buffer, text_align_center);
 	ui_nextline();
 
@@ -399,14 +422,14 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 ///////////////////////////////////////////
 
 bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
-	uint64_t id = sk_ui_hash(text);
+	uint64_t id = ui_hash(text);
 	bool result = false;
-	color128 color = { 1,1,1,1 };
+	float color = 1;
 
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_fingergrip[i], at, size)) {
 			skui_control_focused[i] = id;
-			color = { 0.75f,0.75f,0.75f,1 };
+			color = 0.75f;
 		} else if (skui_control_focused[i] == id) {
 			skui_control_focused[i] = 0;
 		}
@@ -427,7 +450,7 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 				start_tip_rot = input_hand((handed_)i).root.orientation;
 			}
 			if (skui_control_active[i] == id) {
-				color = { 0.5f,0.5f,0.5f,1 };
+				color  = 0.5f;
 				result = true;
 				movement.position    = start_aff_pos + (grip_pos - start_tip_pos);
 				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
@@ -439,7 +462,7 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 	}
 
 	if (draw) {
-		ui_box(at, size, skui_mat, color);
+		ui_box(at, size, skui_mat, skui_color_base * color);
 		ui_nextline();
 	}
 
@@ -449,9 +472,9 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 ///////////////////////////////////////////
 
 bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
-	uint64_t   id     = sk_ui_hash(name);
+	uint64_t   id     = ui_hash(name);
 	bool       result = false;
-	color128   color  = {1,1,1,1};
+	float      color  = 1;
 	vec3       offset = skui_layers.back().offset;
 
 	// Find sizes of slider elements
@@ -466,7 +489,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
-			color = { 0.5f,0.5f,0.5f,1 };
+			color = 0.5f;
 			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
@@ -481,8 +504,8 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 	// Draw the UI
 	ui_reserve_box(size);
-	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, color);
-	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, skui_mat, color);
+	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_depth}, skui_mat, skui_color_base * color);
 	ui_nextline();
 	
 	return result;
@@ -491,7 +514,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 ///////////////////////////////////////////
 
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
-	uint64_t id = sk_ui_hash(text);
+	uint64_t id = ui_hash(text);
 
 	if (window_size.x == 0) window_size.x = 1;
 

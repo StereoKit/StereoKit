@@ -35,7 +35,7 @@ void demo_basics_update() {
 	// Do hand input
 
 	static pose_t window_pose = //pose_t{ vec3{1,1,1} * 0.9f, quat_lookat({1,1,1}, {0,0,0}) };
-		pose_t{ {0.25f,0,0.25f}, quat_lookat({0.25f,0,0.25f}, {0,0,0}) };
+		pose_t{ {0,0,-0.25f}, quat_lookat({0,0,-0.25f}, {0,0,0}) };
 	ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
 
 	static float scale = 0.25f;

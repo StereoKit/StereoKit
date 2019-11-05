@@ -75,10 +75,6 @@ int main() {
 }
 
 void common_init() {
-	tex2d_t cubemap = tex2d_create_cubemap_file(file_cubemap);
-	render_set_skytex(cubemap, true);
-	tex2d_release(cubemap);
-
 	// Create a PBR floor material
 	tex2d_t tex_color = tex2d_create_file(file_tex);
 	tex2d_t tex_norm  = tex2d_create_file(file_tex_normal);

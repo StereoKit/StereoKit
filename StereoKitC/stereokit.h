@@ -143,6 +143,8 @@ struct pose_t {
 	quat orientation;
 };
 
+static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
+
 static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
 static inline vec2  operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
