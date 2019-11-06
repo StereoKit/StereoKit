@@ -39,7 +39,7 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = Material.Copy("default/material");// new Material(Shader.Find("default/shader_pbr"));
+        Material floorMat = Material.Copy(DefaultIds.material);// new Material(Shader.Find("default/shader_pbr"));
         floorMat["diffuse"  ] = new Tex2D("test.png");
         floorMat["normal"   ] = new Tex2D("test_normal.png");
         floorMat["tex_scale"] = 6;

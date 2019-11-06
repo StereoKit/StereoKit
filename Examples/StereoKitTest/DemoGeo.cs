@@ -21,7 +21,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.8f);
-        Model cubeModel = new Model(cubeMesh, Material.Copy("default/material"));
+        Model cubeModel = new Model(cubeMesh, Material.Copy(DefaultIds.material));
         /// :End:
         demoCubeMesh  = cubeMesh;
         demoCubeModel = cubeModel;
@@ -30,7 +30,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.8f, 0.2f);
-        Model roundedCubeModel = new Model(roundedCubeMesh, Material.Copy("default/material"));
+        Model roundedCubeModel = new Model(roundedCubeMesh, Material.Copy(DefaultIds.material));
         /// :End:
         demoRoundedCubeMesh  = roundedCubeMesh;
         demoRoundedCubeModel = roundedCubeModel;
@@ -39,7 +39,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  sphereMesh  = Mesh.GenerateSphere(0.8f);
-        Model sphereModel = new Model(sphereMesh, Material.Copy("default/material"));
+        Model sphereModel = new Model(sphereMesh, Material.Copy(DefaultIds.material));
         /// :End:
         demoSphereMesh  = sphereMesh;
         demoSphereModel = sphereModel;
@@ -48,7 +48,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.8f, 0.8f, Vec3.Up);
-        Model cylinderModel = new Model(cylinderMesh, Material.Copy("default/material"));
+        Model cylinderModel = new Model(cylinderMesh, Material.Copy(DefaultIds.material));
         /// :End:
         demoCylinderMesh  = cylinderMesh;
         demoCylinderModel = cylinderModel;
