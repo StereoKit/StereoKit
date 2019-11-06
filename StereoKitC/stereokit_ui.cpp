@@ -65,8 +65,8 @@ void ui_space       (float space);
 
 // Interaction
 bool32_t      ui_in_box            (vec3 pt, vec3 box_start, vec3 box_size);
-int32_t       ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size);
-button_state_ ui_button_behavior   (vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset);
+int32_t       ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state);
+button_state_ ui_button_behavior   (vec3 window_relative_pos, vec2 size, const char *text, float &finger_offset, float &active_time);
 
 // Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
