@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoProceduralGeometry : IDemo
+class DemoGeo : IDemo
 {
     Material defaultMaterial;
 

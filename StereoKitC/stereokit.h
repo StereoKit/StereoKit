@@ -200,7 +200,6 @@ SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, con
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float &out_t);
 SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, ray_t &out_ray);
 
-
 static inline vec3   operator*(const quat   &a, const vec3   &b) { return quat_mul_vec(a, b); }
 static inline quat   operator*(const quat   &a, const quat   &b) { return quat_mul(a, b); }
 static inline matrix operator*(const matrix &a, const matrix &b) { matrix result; matrix_mul(a, b, result); return result; }
@@ -212,6 +211,8 @@ static const float mm2m = 0.001f;
 static const float m2cm = 100.f;
 static const float m2mm = 1000.f;
 
+static const vec2 vec2_zero     = vec2{ 0,0 };
+static const vec2 vec2_one      = vec2{ 1,1 };
 static const vec3 vec3_one      = vec3{ 1,1, 1 };
 static const vec3 vec3_zero     = vec3{ 0,0, 0 };
 static const vec3 vec3_up       = vec3{ 0,1, 0 };

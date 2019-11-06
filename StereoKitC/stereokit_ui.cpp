@@ -1,5 +1,6 @@
 #include "stereokit_ui.h"
 #include "_stereokit_ui.h"
+#include "math.h"
 
 #include <DirectXMath.h>
 using namespace DirectX;
@@ -21,6 +22,7 @@ struct layer_t {
 
 vector<layer_t> skui_layers;
 mesh_t          skui_box;
+mesh_t          skui_cylinder;
 material_t      skui_mat;
 font_t          skui_font;
 text_style_t    skui_font_style;
@@ -32,14 +34,19 @@ float skui_padding = 10*mm2m;
 float skui_gutter  = 20*mm2m;
 float skui_depth   = 20*mm2m;
 float skui_fontsize= 20*mm2m;
+float skui_backplate        = 2 * mm2m;
+float skui_backplate_border = mm2m;
 
 vec3  skui_prev_offset;
 float skui_prev_line_height;
 
 uint64_t skui_control_focused[2] = {};
 uint64_t skui_control_active [2] = {};
+float    skui_control_focused_time[2] = {};
+float    skui_control_active_time [2] = {};
 
 const color128 skui_color_base = { .25,.25,.35,1 };
+const color128 skui_color_border = { 1,1,1,1 };
 
 ///////////////////////////////////////////
 
@@ -68,14 +75,25 @@ void ui_text     (vec3 start, const char *text, text_align_ position = text_alig
 ///////////////////////////////////////////
 
 bool ui_init() {
-	skui_box = mesh_gen_cube(vec3_one);
-	skui_mat = material_copy_id("default/material");
+	skui_box      = mesh_gen_cube(vec3_one);
+	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
+	skui_mat      = material_copy_id("default/material");
 
 	skui_font_mat   = material_find("default/material_font");
 	skui_font       = font_find("default/font");
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color32{255,255,255,255});
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void ui_shutdown() {
+	mesh_release(skui_box);
+	mesh_release(skui_cylinder);
+	material_release(skui_mat);
+	material_release(skui_font_mat);
+	font_release(skui_font);
 }
 
 ///////////////////////////////////////////
@@ -192,27 +210,38 @@ void ui_space(float space) {
 ///////////   Interaction!   //////////////
 ///////////////////////////////////////////
 
-int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size) {
+int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state) {
 	int32_t hand = -1;
 
 	for (int32_t i = 0; i < handed_max; i++) {
+		button_state_ focus_state = button_state_up;
 		bool focused   = skui_control_focused[i] == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
 		if (focused) {
+			focus_state = button_state_down;
 			box_start = box_focused_start;
 			box_size  = box_focused_size;
 		}
 
 		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
-			skui_control_focused[i] = id;
+			if (!focused) {
+				skui_control_focused[i] = id;
+				skui_control_focused_time[i] = time_getf();
+				focus_state = button_state_down | button_state_just_down;
+			} else {
+				focus_state = button_state_down;
+			}
 			hand = i;
 		} else {
-			if (focused)
+			if (focused) {
 				skui_control_focused[i] = 0;
-			if (skui_control_active[i] == id)
-				skui_control_active[i] = 0;
+				focus_state = button_state_up | button_state_just_up;
+			}
 		}
+
+		if (hand == i && out_focus_state != nullptr)
+			*out_focus_state = focus_state;
 	}
 	return hand;
 }
@@ -242,26 +271,30 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char
 	// a bit too on the X/Y axes later.
 	vec3    box_start = window_relative_pos + vec3{ 0, 0, skui_depth/2.f };
 	vec3    box_size  = vec3{ size.x, size.y, skui_depth/2.f };
+	button_state_ focus;
 	int32_t hand = ui_box_interaction_1h(id,
 		box_start, box_size,
 		box_start + vec3{ 0,0,-skui_depth * 4 },
-		box_size  + vec3{ 0,0, skui_depth * 4 });
+		box_size  + vec3{ 0,0, skui_depth * 4 },
+		&focus);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	finger_offset = skui_depth;
 	if (hand != -1) {
-		skui_control_focused[hand] = id;
-
-		finger_offset = fmaxf(mm2m*4, skui_fingertip[hand].z - window_relative_pos.z);
+		finger_offset = fmaxf(mm2m*3, skui_fingertip[hand].z - window_relative_pos.z);
 		if (finger_offset < skui_depth / 2) {
 			result = button_state_down;
 			if (skui_control_active[hand] != id) {
 				skui_control_active[hand] = id;
+				skui_control_active_time[hand] = time_getf();
 				result |= button_state_just_down;
 			}
+		} else if (skui_control_active[hand] == id) {
+			skui_control_active[hand] = 0;
+			result |= button_state_just_up;
 		}
-	} else if (skui_control_focused[hand] == id) {
-		skui_control_focused[hand] = 0;
+	} else if (focus & button_state_just_up && skui_control_active[hand] == id) {
+		skui_control_active[hand] = 0;
 		result |= button_state_just_up;
 	}
 
@@ -273,11 +306,21 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char
 ///////////////////////////////////////////
 
 void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
-	vec3 pos = start + (vec3{ size.x, -size.y, size.z } / 2);
-	matrix mx = matrix_trs(pos, quat_identity, size);
+	vec3   pos = start + (vec3{ size.x, -size.y, size.z } / 2);
+	matrix mx  = matrix_trs(pos, quat_identity, size);
 	matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_box, material, mx, color);
+}
+
+///////////////////////////////////////////
+
+void ui_cylinder(vec3 start, float radius, float depth, material_t material, color128 color) {
+	vec3   pos = start + (vec3{ radius, -radius, depth } / 2);
+	matrix mx  = matrix_trs(pos, quat_identity, {radius, radius, depth});
+	matrix_mul(mx, skui_layers.back().transform, mx);
+
+	render_add_mesh(skui_cylinder, material, mx, color);
 }
 
 ///////////////////////////////////////////
@@ -346,6 +389,41 @@ bool32_t ui_button(const char *text) {
 	ui_nextline   ();
 
 	return ui_button_at(offset, size, text);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text) {
+	float         finger_offset;
+	button_state_ state = ui_button_behavior(window_relative_pos, {diameter,diameter}, text, finger_offset);
+
+	float time = 0;
+	for (size_t i = 0; i < handed_max; i++) {
+		if (skui_control_active_time[i] > time)
+			time = skui_control_active_time[i];
+	}
+
+	float flash = fminf(1,(time_getf() - time) * 8);
+	float blend = 1 - ((1 - flash) * (1 - flash) * ((10 + 1) * (1 - flash) - 10));
+
+	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_color_base * (state & button_state_down ? math_lerp(1, 1.5f, blend) : 1));
+	ui_cylinder(window_relative_pos + vec3{-mm2m, mm2m, 0}*1, diameter+mm2m*2*1,   mm2m*2, skui_mat, skui_color_border * (state & button_state_down ? 1.5f : 1));
+	ui_text    (window_relative_pos + vec3{ diameter/2, -diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
+
+	return state & button_state_just_down;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_button_round(const char *text, float diameter) {
+	vec3 offset;
+	vec2 size = diameter == 0 ? text_size(text, skui_font_style) : vec2{diameter, diameter};
+	size = vec2_one * fmaxf(size.x, size.y);
+	ui_layout_box (size, offset, size);
+	ui_reserve_box(size);
+	ui_nextline   ();
+
+	return ui_button_round_at(offset, size.x, text);
 }
 
 ///////////////////////////////////////////

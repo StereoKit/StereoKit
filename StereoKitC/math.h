@@ -51,5 +51,7 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 
 inline int32_t  maxi(int32_t  a, int32_t  b) { return a > b ? a : b; }
 inline uint32_t maxi(uint32_t a, uint32_t b) { return a > b ? a : b; }
+inline float math_lerp(float a, float b, float t) { return a + (b - a) * t; }
+inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fminf(1,t); }
 
 } // namespace sk

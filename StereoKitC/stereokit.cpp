@@ -88,7 +88,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, defaults_init, nullptr, defaults_shutdown);
 
 	const char *ui_deps[] = {"Defaults"};
-	systems_add("UI", ui_deps, _countof(ui_deps), nullptr, 0, ui_init, nullptr, nullptr);
+	systems_add("UI", ui_deps, _countof(ui_deps), nullptr, 0, ui_init, nullptr, ui_shutdown);
 
 	const char *platform_deps[] = {"Graphics", "Defaults"};
 	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);

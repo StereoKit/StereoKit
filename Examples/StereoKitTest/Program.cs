@@ -22,7 +22,7 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
-        Demos.SetActive(args.Length > 0 ? args[0] : "Select");
+        Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
         Demos.Initialize();
 
         while (StereoKitApp.Step(() =>
@@ -39,7 +39,7 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = new Material(Shader.Find("default/shader_pbr"));
+        Material floorMat = Material.Copy("default/material");// new Material(Shader.Find("default/shader_pbr"));
         floorMat["diffuse"  ] = new Tex2D(Program.Root + "test.png");
         floorMat["normal"   ] = new Tex2D(Program.Root + "test_normal.png");
         floorMat["tex_scale"] = 6;
@@ -66,7 +66,7 @@ class Program
             if (name.StartsWith("Demo"))
                 name = name.Substring("Demo".Length);
 
-            if (UI.Button(name))
+            if (UI.ButtonRound(name, 4*Units.cm2m))
                 Demos.SetActive(i);
             UI.SameLine();
         }

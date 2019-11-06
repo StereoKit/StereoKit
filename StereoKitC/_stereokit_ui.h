@@ -5,5 +5,6 @@
 namespace sk {
 
 bool ui_init();
+void ui_shutdown();
 
 }
