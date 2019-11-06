@@ -4,9 +4,9 @@ using StereoKit;
 class Program 
 {
 #if WINDOWS_UWP
-    public const string Root = "Assets/";
+    const string Root = "Assets/";
 #else
-    public const string Root = "../../../Examples/Assets/";
+    const string Root = "../../../Examples/Assets/";
 #endif
 
     static Model     floorMesh;
@@ -16,8 +16,8 @@ class Program
 
     static void Main(string[] args) 
     {
-        StereoKitApp.settings.shaderCache = Program.Root;
-        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
+        StereoKitApp.settings.assetsFolder = Program.Root;
+        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
         CommonInit();
 
@@ -40,8 +40,8 @@ class Program
     static void CommonInit()
     {
         Material floorMat = Material.Copy("default/material");// new Material(Shader.Find("default/shader_pbr"));
-        floorMat["diffuse"  ] = new Tex2D(Program.Root + "test.png");
-        floorMat["normal"   ] = new Tex2D(Program.Root + "test_normal.png");
+        floorMat["diffuse"  ] = new Tex2D("test.png");
+        floorMat["normal"   ] = new Tex2D("test_normal.png");
         floorMat["tex_scale"] = 6;
 
         floorMesh = new Model(Mesh.GenerateCube(Vec3.One), floorMat);

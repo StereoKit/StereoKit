@@ -19,7 +19,7 @@ void demo_sprites_init() {
 	material_release(font_mat);
 	font_release    (font);
 
-	sprite = sprite_create_file("../../../Examples/Assets/test.png");
+	sprite = sprite_create_file("test.png");
 }
 
 ///////////////////////////////////////////

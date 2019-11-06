@@ -22,11 +22,7 @@ model_t     gltf;
 void demo_basics_init() {
 
 	// Load a gltf model
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
-	gltf = model_create_file("Assets/DamagedHelmet.gltf");
-#else
-	gltf = model_create_file("../../../Examples/Assets/DamagedHelmet.gltf");
-#endif
+	gltf = model_create_file("DamagedHelmet.gltf");
 }
 
 ///////////////////////////////////////////

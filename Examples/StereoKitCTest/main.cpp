@@ -34,15 +34,9 @@ void common_update();
 void common_shutdown();
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
-const char* file_cache      = "Assets";
-const char* file_cubemap    = "Assets/Sky/sky.hdr";
-const char* file_tex        = "Assets/test.png";
-const char* file_tex_normal = "Assets/test_normal.png";
+const char* assets_folder = "Assets";
 #else
-const char* file_cache      = "../../../Examples/Assets";
-const char* file_cubemap    = "../../../Examples/Assets/Sky/sky.hdr";
-const char* file_tex        = "../../../Examples/Assets/test.png";
-const char* file_tex_normal = "../../../Examples/Assets/test_normal.png";
+const char* assets_folder = "../../../Examples/Assets";
 #endif
 
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
@@ -53,7 +47,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 int main() {
 #endif
 	settings_t settings = {};
-	sprintf_s(settings.shader_cache, file_cache);
+	sprintf_s(settings.assets_folder, assets_folder);
 	sk_set_settings(settings);
 
 	if (!sk_init("StereoKit C", runtime_flatscreen))
@@ -76,8 +70,8 @@ int main() {
 
 void common_init() {
 	// Create a PBR floor material
-	tex2d_t tex_color = tex2d_create_file(file_tex);
-	tex2d_t tex_norm  = tex2d_create_file(file_tex_normal);
+	tex2d_t tex_color = tex2d_create_file("test.png");
+	tex2d_t tex_norm  = tex2d_create_file("test_normal.png");
 	floor_mat = material_copy_id("default/material");
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);

@@ -17,7 +17,7 @@ namespace StereoKit
         public int flatscreenWidth;
         public int flatscreenHeight;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string shaderCache;
+        public string assetsFolder;
     }
 
     [Flags]

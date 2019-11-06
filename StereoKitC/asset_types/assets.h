@@ -33,5 +33,6 @@ void  assets_unique_name(const char *root_name, char *dest, int dest_size);
 void  assets_addref     (asset_header_t &asset);
 void  assets_releaseref (asset_header_t &asset);
 void  assets_shutdown_check();
+const char *assets_file(const char *file_name);
 
 } // namespace sk

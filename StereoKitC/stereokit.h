@@ -51,7 +51,7 @@ struct settings_t {
 	/// <summary>If using runtime_flatscreen, the size of the window on the screen.</summary>
 	int32_t flatscreen_height;
 	/// <summary>Where to look for cached shaders. Final path will look like '[shader_cache]/cache/[hash].blob'</summary>
-	char shader_cache[128];
+	char assets_folder[128];
 };
 
 enum display_ {

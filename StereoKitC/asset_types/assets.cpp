@@ -1,4 +1,5 @@
 #include "assets.h"
+#include "../_stereokit.h"
 
 #include "mesh.h"
 #include "texture.h"
@@ -9,6 +10,7 @@
 #include "sprite.h"
 #include "../libraries/stref.h"
 
+#include <stdio.h>
 #include <assert.h>
 #include <vector>
 using namespace std;
@@ -144,6 +146,24 @@ void  assets_shutdown_check() {
 	if (assets.size() > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", (int)assets.size());
 	}
+}
+
+///////////////////////////////////////////
+
+char assets_file_buffer[1024];
+const char *assets_file(const char *file_name) {
+	
+	const char *ch = file_name;
+	bool full_path = false;
+	while (*ch != '\0') {
+		if (*ch == ':') {
+			return file_name;
+		}
+		ch++;
+	}
+
+	sprintf_s(assets_file_buffer, "%s/%s", sk_settings.assets_folder, file_name);
+	return assets_file_buffer;
 }
 
 } // namespace sk

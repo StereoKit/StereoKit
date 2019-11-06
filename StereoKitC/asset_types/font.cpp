@@ -30,7 +30,7 @@ font_t font_create(const char *file) {
 	assets_set_id(result->header, file);
 
 	FILE *fp;
-	if (fopen_s(&fp, file, "rb") != 0 || fp == nullptr)
+	if (fopen_s(&fp, assets_file(file), "rb") != 0 || fp == nullptr)
 		return nullptr;
 
 	// Get length of file

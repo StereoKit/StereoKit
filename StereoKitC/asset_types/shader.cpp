@@ -57,16 +57,14 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 
 shader_blob_t load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
 	uint64_t hash = string_hash(hlsl);
-	char folder_name[128];
-	sprintf_s(folder_name, "%s/cache", sk_settings.shader_cache);
 	char cache_name[128];
-	sprintf_s(cache_name, "%s/cache/%I64u.%s.blob", sk_settings.shader_cache, hash, entrypoint);
+	sprintf_s(cache_name, "/cache/%I64u.%s.blob", hash, entrypoint);
 	char target[16];
 	sprintf_s(target, "%s_5_0", entrypoint);
 
 	shader_blob_t result = {};
 	FILE         *fp     = nullptr;
-	if (fopen_s(&fp, cache_name, "rb") == 0 && fp != nullptr) {
+	if (fopen_s(&fp, assets_file(cache_name), "rb") == 0 && fp != nullptr) {
 		fseek(fp, 0, SEEK_END);
 		long length = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
@@ -78,7 +76,7 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 #ifdef SK_NO_RUNTIME_SHADER_COMPILE
 		log_errf("Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
 #else
-		ID3DBlob *blob = compile_shader(filename, hlsl, entrypoint, target);
+		ID3DBlob *blob = compile_shader(assets_file(filename), hlsl, entrypoint, target);
 		if (blob == nullptr)
 			return result;
 		result.size = blob->GetBufferSize();
@@ -88,12 +86,13 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 
 		// Ensure cache folder is present
 		struct stat st = { 0 };
+		const char *folder_name = assets_file("/cache");
 		if (stat(folder_name, &st) == -1) {
 			_mkdir(folder_name);
 		}
 
 		// Write the blob to file for future use.
-		if (fopen_s(&fp, cache_name, "wb") == 0 && fp != nullptr) {
+		if (fopen_s(&fp, assets_file("/cache"), "wb") == 0 && fp != nullptr) {
 			fwrite(result.data, result.size, 1, fp);
 			fclose(fp);
 		}
@@ -326,7 +325,7 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 bool32_t shader_set_codefile(shader_t shader, const char *filename) {
 	// Open file
 	FILE *fp;
-	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr)
+	if (fopen_s(&fp, assets_file(filename), "rb") != 0 || fp == nullptr)
 		return false;
 
 	// Get length of file

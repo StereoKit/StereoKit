@@ -391,9 +391,10 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 bool modelfmt_gltf(model_t model, const char *filename) {
 	cgltf_options options = {};
 	cgltf_data*   data    = NULL;
-	if (cgltf_parse_file(&options, filename, &data) != cgltf_result_success)
+	const char *model_file = assets_file(filename);
+	if (cgltf_parse_file(&options, model_file, &data) != cgltf_result_success)
 		return false;
-	if (cgltf_load_buffers(&options, data, filename) != cgltf_result_success) {
+	if (cgltf_load_buffers(&options, data, model_file) != cgltf_result_success) {
 		cgltf_free(data);
 		return true;
 	}

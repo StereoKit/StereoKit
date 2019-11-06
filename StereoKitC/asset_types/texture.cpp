@@ -64,7 +64,7 @@ tex2d_t tex2d_create_file(const char *file) {
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *data     = stbi_load(file, &width, &height, &channels, 4);
+	uint8_t *data     = stbi_load(assets_file(file), &width, &height, &channels, 4);
 
 	if (data == nullptr) {
 		log_warnf("Couldn't load image file: %s", file);
@@ -149,7 +149,7 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 		int channels = 0;
 		int width    = 0;
 		int height   = 0;
-		data[i] = stbi_load(cube_face_file_xxyyzz[i], &width, &height, &channels, 4);
+		data[i] = stbi_load(assets_file(cube_face_file_xxyyzz[i]), &width, &height, &channels, 4);
 
 		// Check if there were issues, or one of the images is the wrong size!
 		if (data[i] == nullptr || 

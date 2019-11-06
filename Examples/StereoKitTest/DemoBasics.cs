@@ -10,7 +10,7 @@ class DemoBasics : IDemo
 
     public void Initialize()
     {
-        gltf    = new Model(Program.Root + "DamagedHelmet.gltf");
+        gltf    = new Model("DamagedHelmet.gltf");
         solidTr = new Transform(Vec3.Zero, Vec3.One * 0.25f);
     }
 
