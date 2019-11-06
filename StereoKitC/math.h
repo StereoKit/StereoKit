@@ -51,7 +51,11 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 
 inline int32_t  maxi(int32_t  a, int32_t  b) { return a > b ? a : b; }
 inline uint32_t maxi(uint32_t a, uint32_t b) { return a > b ? a : b; }
-inline float math_lerp(float a, float b, float t) { return a + (b - a) * t; }
+
+inline float math_lerp   (float a, float b, float t) { return a + (b - a) * t; }
 inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fminf(1,t); }
+
+inline float math_ease_overshoot(float a, float b, float overshoot, float t) { t = 1 - t; return math_lerp(a,b, 1-(t*t * ((overshoot + 1) * t - overshoot))); }
+inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*3.14159f); }
 
 } // namespace sk
