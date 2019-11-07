@@ -20,6 +20,16 @@ namespace StereoKit
         public string assetsFolder;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct UISettings
+    {
+        public float padding;
+        public float gutter;
+        public float depth;
+        public float backplateDepth;
+        public float backplateBorder;
+    };
+
     [Flags]
     public enum TexType
     {

@@ -18,10 +18,6 @@ namespace StereoKit
         /// <returns>Returns true if all systems are successfully initialized!</returns>
         public static bool Initialize(string name, Runtime runtimePreference, bool fallback = true)
         {
-            // Selects appropriate DLL for the platform, must be called first, and before
-            // any StereoKit native calls
-            NativeLib.LoadDll();
-
             IsInitialized = InitializeCall(name, runtimePreference, fallback);
             return IsInitialized;
         }
@@ -44,7 +40,6 @@ namespace StereoKit
             if (IsInitialized)
             {
                 NativeAPI.sk_shutdown();
-                NativeLib.UnloadDLL();
             }
         }
 

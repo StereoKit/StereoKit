@@ -4,6 +4,16 @@
 
 namespace sk {
 
+struct ui_settings_t {
+	float padding;
+	float gutter;
+	float depth;
+	float backplate_depth;
+	float backplate_border;
+};
+
+SK_API ui_settings_t &ui_settings();
+
 SK_API void     ui_nextline    ();
 SK_API void     ui_sameline    ();
 SK_API void     ui_reserve_box (vec2 size);
