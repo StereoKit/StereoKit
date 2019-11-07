@@ -75,13 +75,13 @@ namespace StereoKit
         Mirror,
     }
 
-    public enum AlphaMode
+    public enum Transparency
     {
         None = 1,
         Blend,
-        Test,
+        Clip,
     }
-    public enum CullMode
+    public enum Cull
     {
         Ccw = 0,
         Cw,

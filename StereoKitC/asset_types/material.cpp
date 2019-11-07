@@ -58,9 +58,9 @@ material_t material_create(shader_t shader) {
 
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
-	result->cull          = material_cull_ccw;
-	result->mode          = material_alpha_none;
-	result->shader        = shader;
+	result->cull   = cull_ccw;
+	result->mode   = transparency_none;
+	result->shader = shader;
 	
 	material_create_arg_defaults(result, shader);
 
@@ -198,13 +198,13 @@ shader_t material_get_shader(material_t material) {
 
 ///////////////////////////////////////////
 
-void material_set_alpha_mode(material_t material, material_alpha_ mode) {
+void material_set_trasparency(material_t material, transparency_ mode) {
 	if (material->blend_state != nullptr)
 		material->blend_state->Release();
 	D3D11_BLEND_DESC desc_blend = {};
 	desc_blend.AlphaToCoverageEnable  = false;
 	desc_blend.IndependentBlendEnable = false;
-	desc_blend.RenderTarget[0].BlendEnable = mode == material_alpha_blend;
+	desc_blend.RenderTarget[0].BlendEnable = mode == transparency_blend;
 	desc_blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	desc_blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
 	desc_blend.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
@@ -219,13 +219,13 @@ void material_set_alpha_mode(material_t material, material_alpha_ mode) {
 
 ///////////////////////////////////////////
 
-void material_set_cull(material_t material, material_cull_ mode) {
+void material_set_cull(material_t material, cull_ mode) {
 	if (material->rasterizer_state != nullptr)
 		material->rasterizer_state->Release();
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
 	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
-	desc_rasterizer.CullMode = mode == material_cull_none ? D3D11_CULL_NONE : D3D11_CULL_BACK;
-	desc_rasterizer.FrontCounterClockwise = mode == material_cull_ccw;
+	desc_rasterizer.CullMode = mode == cull_none ? D3D11_CULL_NONE : D3D11_CULL_BACK;
+	desc_rasterizer.FrontCounterClockwise = mode == cull_ccw;
 
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &material->rasterizer_state);
 	material->cull = mode;

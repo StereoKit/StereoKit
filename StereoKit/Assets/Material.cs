@@ -2,13 +2,20 @@
 
 namespace StereoKit
 {
+    /// <summary>A Material describes the surface of anything drawn on the graphics 
+    /// card! It is typically composed of a Shader, and shader properties like colors,
+    /// textures, transparency info, etc.
+    /// 
+    /// Items drawn with the same Material can be batched together into a single, fast
+    /// operation on the graphics card, so re-using materials can be extremely beneficial 
+    /// for performance!</summary>
     public class Material
     {
         internal IntPtr _materialInst;
 
-        public AlphaMode Alpha       { set { NativeAPI.material_set_alpha_mode  (_materialInst, value); } }
-        public CullMode  Cull        { set { NativeAPI.material_set_cull        (_materialInst, value); } }
-        public int       QueueOffset { set { NativeAPI.material_set_queue_offset(_materialInst, value); } }
+        public Transparency Transparency { set { NativeAPI.material_set_transparency(_materialInst, value); } }
+        public Cull         FaceCull     { set { NativeAPI.material_set_cull        (_materialInst, value); } }
+        public int          QueueOffset  { set { NativeAPI.material_set_queue_offset(_materialInst, value); } }
 
         public Material(Shader shader)
         {
@@ -19,7 +26,7 @@ namespace StereoKit
             _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
             NativeAPI.material_set_id(_materialInst, name);
         }
-        private Material(IntPtr material)
+        internal Material(IntPtr material)
         {
             _materialInst = material;
             if (_materialInst == IntPtr.Zero)

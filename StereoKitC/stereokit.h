@@ -317,15 +317,15 @@ SK_API void     shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
 
-enum material_alpha_ {
-	material_alpha_none = 1,
-	material_alpha_blend,
-	material_alpha_test,
+enum transparency_ {
+	transparency_none = 1,
+	transparency_blend,
+	transparency_clip,
 };
-enum material_cull_ {
-	material_cull_ccw = 0,
-	material_cull_cw,
-	material_cull_none,
+enum cull_ {
+	cull_ccw = 0,
+	cull_cw,
+	cull_none,
 };
 enum material_param_ {
 	material_param_float = 0,
@@ -343,8 +343,8 @@ SK_API material_t material_copy            (material_t material);
 SK_API material_t material_copy_id         (const char *id);
 SK_API void       material_set_id          (material_t material, const char *id);
 SK_API void       material_release         (material_t material);
-SK_API void       material_set_alpha_mode  (material_t material, material_alpha_ mode);
-SK_API void       material_set_cull        (material_t material, material_cull_ mode);
+SK_API void       material_set_alpha_mode  (material_t material, transparency_ mode);
+SK_API void       material_set_cull        (material_t material, cull_ mode);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
 SK_API void       material_set_float       (material_t material, const char *name, float    value);
 SK_API void       material_set_color       (material_t material, const char *name, color128 value);
