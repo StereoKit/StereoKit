@@ -388,7 +388,7 @@ bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 	float color_blend = 1;
 	if (state & button_state_down) {
 		float t = fminf(1, active_time * 12);
-		back_size   = math_ease_hop(back_size, back_size*2.f, t);
+		back_size   = math_ease_hop(back_size, fmaxf(mm2m*2, back_size*2.f), t);
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
@@ -422,7 +422,7 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 	float color_blend = 1;
 	if (state & button_state_down) {
 		float t = fminf(1, active_time * 12);
-		back_size   = math_ease_hop(back_size, back_size*2.f, t);
+		back_size   = math_ease_hop(back_size, fmaxf(mm2m*2, back_size*2.f), t);
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
@@ -525,7 +525,7 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 	float color = 1;
 
 	for (size_t i = 0; i < handed_max; i++) {
-		if (ui_in_box(skui_fingergrip[i], at, size)) {
+		if (ui_in_box(skui_fingertip[i], at - vec3{skui_settings.padding, -skui_settings.padding, skui_settings.padding*3}, size + vec3{skui_settings.padding, skui_settings.padding, skui_settings.padding*3} * 2)) {
 			skui_control_focused[i] = id;
 			color = 0.75f;
 		} else if (skui_control_focused[i] == id) {
@@ -535,10 +535,8 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 		if (skui_control_focused[i] == id || skui_control_active[i] == id) {
 			static vec3 start_aff_pos = vec3_zero;
 			static quat start_aff_rot = quat_identity;
-			static vec3 start_aff_ang = vec3_zero;
 			static vec3 start_tip_pos = vec3_zero;
 			static quat start_tip_rot = quat_identity;
-			static vec3 start_tip_ang = vec3_zero;
 			vec3 grip_pos = matrix_mul_point(skui_layers.back().transform, skui_fingergrip[i]);
 
 			const hand_t &hand = input_hand((handed_)i);
@@ -546,32 +544,17 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 				skui_control_active[i] = id;
 				start_aff_pos = movement.position;
 				start_aff_rot = movement.orientation;
-				start_aff_ang = quat_to_euler(start_aff_rot);
 				start_tip_pos = input_hand((handed_)i).root.position;
 				start_tip_rot = input_hand((handed_)i).root.orientation;
-				start_tip_ang = quat_to_euler(start_tip_rot);
-
-				log_infof("%.2f,%.2f,%.2f,%.2f", start_aff_rot.i, start_aff_rot.j, start_aff_rot.k, start_aff_rot.a);
-				log_infof("%.2f,%.2f,%.2f", start_aff_ang.x, start_aff_ang.y, start_aff_ang.z);
-
-				start_aff_rot = quat_euler(start_aff_ang);
-				log_infof("%.2f,%.2f,%.2f,%.2f", start_aff_rot.i, start_aff_rot.j, start_aff_rot.k, start_aff_rot.a);
 			}
 			if (skui_control_active[i] == id) {
-				color  = 0.5f;
+				color = 0.5f;
 				result = true;
 
-				vec3 ang = quat_to_euler(input_hand((handed_)i).root.orientation);
-				vec3 ang_delta = ang - start_tip_ang;
-				ang_delta.x = 0;
-				ang_delta.z = 0;
+				quat rot = quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation);
 
-				quat rot = quat_euler(ang_delta);
-
-				//movement.position = start_aff_pos + (input_hand((handed_)i).root.position - start_tip_pos);
-				movement.position = input_hand((handed_)i).root.position + rot*(start_aff_pos - start_tip_pos);
-				movement.orientation = rot * start_aff_rot;
-				//movement.orientation = quat_mul(start_aff_rot, quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation));
+				movement.position    = input_hand((handed_)i).root.position + rot*(start_aff_pos - start_tip_pos);
+				movement.orientation = start_aff_rot*rot;
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
 				}

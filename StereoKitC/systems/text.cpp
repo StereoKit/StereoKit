@@ -136,9 +136,10 @@ vec2 text_size(const char *text, text_style_t style) {
 ///////////////////////////////////////////
 
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	_text_style_t &style_data = text_styles[style == -1 ? 0 : style];
+	text_style_t   styleId    = style == -1 ? 0 : style;
+	_text_style_t &style_data = text_styles[styleId];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
-	vec2           size       = text_size(text, style);
+	vec2           size       = text_size(text, styleId);
 
 	// Resize array if we need more room for this text
 	size_t length = strlen(text);
@@ -146,7 +147,7 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 	
 	vec3    normal  = matrix_mul_direction(transform, -vec3_forward);
 	const char*curr = text;
-	vec2    line_sz = text_line_size(style, curr);
+	vec2    line_sz = text_line_size(styleId, curr);
 	float   start_x = off_x;
 	float   y       = off_y - style_data.height;
 	if (position & text_align_y_center) y += (size.y / 2.f);
@@ -168,7 +169,7 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 		case '\t': x += style_data.font->characters[(int)' '].xadvance * 4 * style_data.height; continue;
 		case ' ':  x += ch.xadvance * style_data.height; continue;
 		case '\n': {
-			line_sz = text_line_size(style, curr);
+			line_sz = text_line_size(styleId, curr);
 			align_x = 0;
 			if (align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 			if (align & text_align_x_right)  align_x = -line_sz.x;
