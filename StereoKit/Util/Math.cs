@@ -97,7 +97,8 @@ namespace StereoKit
 
         public static readonly Quat Identity = new Quat(0, 0, 0, 1);
 
-        public static Quat Lookat(Vec3 from, Vec3 to) { return NativeAPI.quat_lookat(from, to); }
+        public static Quat LookAt(Vec3 from, Vec3 to) { return NativeAPI.quat_lookat(from, to); }
+        public static Quat LookDir(Vec3 direction)    { return NativeAPI.quat_lookat(Vec3.Zero, direction); }
     }
 
     [StructLayout(LayoutKind.Sequential)]

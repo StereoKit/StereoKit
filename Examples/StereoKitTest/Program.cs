@@ -51,7 +51,7 @@ class Program
         floorSolid.AddBox(floorTr.Scale);
 
         demoSelectPose.position    = new Vec3(0, 0, -0.25f);
-        demoSelectPose.orientation = Quat.Lookat(demoSelectPose.position, Vec3.Zero);
+        demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
     }
     static void CommonUpdate()
     {

@@ -4,6 +4,9 @@
 #include "systems/d3d.h"
 #include "systems/render.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 using namespace DirectX;
 
 namespace sk {
@@ -46,8 +49,56 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 ///////////////////////////////////////////
 
 quat quat_euler(const vec3 &euler_degrees) {
-	XMVECTOR result = XMQuaternionRotationRollPitchYaw(euler_degrees.x * -deg2rad, euler_degrees.y * -deg2rad, euler_degrees.z * -deg2rad);
+	XMVECTOR result = XMQuaternionRotationRollPitchYaw(euler_degrees.x * deg2rad, euler_degrees.y * deg2rad, euler_degrees.z * deg2rad);
 	return math_fast_to_quat(result);
+}
+
+///////////////////////////////////////////
+
+vec3 quat_to_euler(const quat &q) {
+	/*vec3 angles;
+
+	// roll (x-axis rotation)
+	float sinr_cosp = 2 * (q.a * q.i + q.j * q.k);
+	float cosr_cosp = 1 - 2 * (q.i * q.i + q.j * q.j);
+	angles.x = atan2(sinr_cosp, cosr_cosp);
+
+	// pitch (y-axis rotation)
+	float sinp = 2 * (q.a * q.j - q.k * q.i);
+	if (fabsf(sinp) >= 1)
+		angles.y = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+	else
+		angles.y = asin(sinp);
+
+	// yaw (z-axis rotation)
+	float siny_cosp = 2 * (q.a * q.k + q.i * q.j);
+	float cosy_cosp = 1 - 2 * (q.j * q.j + q.k * q.k);
+	angles.z = atan2(siny_cosp, cosy_cosp);
+
+	return angles * rad2deg;*/
+
+	vec3 angles;
+	float test = q.i*q.j + q.k*q.a;
+	if (test > 0.499) { // singularity at north pole
+		angles.y = 2 * atan2(q.i,q.a);
+		angles.z = M_PI/2;
+		angles.x = 0;
+		return angles * rad2deg;
+	}
+	if (test < -0.499) { // singularity at south pole
+		angles.y = -2 * atan2(q.i,q.a);
+		angles.z = - M_PI/2;
+		angles.x = 0;
+		return angles * rad2deg;
+	}
+	float sqx = q.i*q.i;
+	float sqy = q.j*q.j;
+	float sqz = q.k*q.k;
+	angles.y = atan2(2*q.j*q.a-2*q.i*q.k , 1 - 2*sqy - 2*sqz);
+	angles.z = asin(2*test);
+	angles.x = atan2(2*q.i*q.a-2*q.j*q.k , 1 - 2*sqx - 2*sqz);
+
+	return angles * rad2deg;
 }
 
 ///////////////////////////////////////////

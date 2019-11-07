@@ -4,8 +4,8 @@ class DemoUI : IDemo
 {
     float  slider1 = 0.5f;
     float  slider2 = 0.5f;
-    Pose   windowPose   = new Pose(new Vec3(0, 0, -.15f), Quat.Lookat(new Vec3(0,0,-.25f), Vec3.Zero));
-    Pose   settingsPose = new Pose(new Vec3(.25f, 0, 0), Quat.Lookat(new Vec3(.25f, 0, 0), Vec3.Zero));
+    Pose   windowPose   = new Pose(new Vec3(0, 0, -.15f), Quat.LookAt(new Vec3(0,0,-.25f), Vec3.Zero));
+    Pose   settingsPose = new Pose(new Vec3(.25f, 0, 0), Quat.LookAt(new Vec3(.25f, 0, 0), Vec3.Zero));
 
     public void Initialize() { }
     public void Shutdown  () { }
