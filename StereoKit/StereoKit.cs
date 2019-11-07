@@ -2,9 +2,7 @@
 
 namespace StereoKit
 {
-    /// <summary>
-    /// This class contains functions for running the StereoKit library!
-    /// </summary>
+    /// <summary>This class contains functions for running the StereoKit library!</summary>
     public static class StereoKitApp
     {
         public static Settings settings;
@@ -32,9 +30,7 @@ namespace StereoKit
             return NativeAPI.sk_init(name, runtime, fallback?1:0) > 0;
         }
 
-        /// <summary>
-        /// Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.
-        /// </summary>
+        /// <summary>Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.</summary>
         public static void Shutdown()
         {
             if (IsInitialized)
@@ -43,9 +39,7 @@ namespace StereoKit
             }
         }
 
-        /// <summary>
-        /// Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
-        /// </summary>
+        /// <summary> Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. </summary>
         /// <param name="onStep">A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.</param>
         /// <returns>If an exit message is received from the platform, this function will return false.</returns>
         public static bool Step(Action onStep)

@@ -3,19 +3,28 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
+    /// <summary>Specifies details about how StereoKit should start up!</summary>
     public enum Runtime
     {
+        /// <summary>Creates a flat, Win32 window, and simulates some MR functionality. Great for debugging.</summary>
         Flatscreen   = 0,
+        /// <summary>Creates an OpenXR instance, and drives display/input through that.</summary>
         MixedReality = 1
     }
 
+    /// <summary>StereoKit miscellaneous initialization settings! Setup StereoKit.settings with your data before calling StereoKitApp.Initialize.</summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct Settings
     {
+        /// <summary>If using Runtime.Flatscreen, the pixel position of the window on the screen.</summary>
         public int flatscreenPosX;
+        /// <summary>If using Runtime.Flatscreen, the pixel position of the window on the screen.</summary>
         public int flatscreenPosY;
+        /// <summary>If using Runtime.Flatscreen, the pixel size of the window on the screen.</summary>
         public int flatscreenWidth;
+        /// <summary>If using Runtime.Flatscreen, the pixel size of the window on the screen.</summary>
         public int flatscreenHeight;
+        /// <summary>Where to look for assets when loading files! Final path will look like '[assetsFolder]/[file]', so a trailing '/' is unnecessary.</summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string assetsFolder;
     }
