@@ -2,53 +2,56 @@
 
 A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!
 
-The future of development is coming, and we need better tools! StereoKit aims to be forward thinking in its design, take advantage of more modern hardware features common to Mixed Reality devices, and be much easier to use for general computing tasks! (ie. not necessarily games) Here's some features, most of which are already present:
-- Rendering
-  - Physically based rendering, metal workflow.
-  - Hardware instancing for speed, by default!
-  - An extendable shader framework.
-- Runtime everything, including asset pipeline!
-  - GLTF file support
-  - OBJ file support
-  - Procedural mesh API!
-- Physics
-  - Rigid bodies and joints
-  - Physically based UI!
-  - Hand-centric user input
-- OpenXR support
-  - StereoKit will eventually run on every Mixed Reality device!
+StereoKit is still early in development, but an initial version is coming soon! Check out [this Twitter thread](https://twitter.com/koujaku/status/1163977987705860097) for development news and gifs.
+
+The future of development is coming, and we need better tools! StereoKit aims to be forward thinking in its design, keep its interface simple, take advantage of more modern hardware features common to Mixed Reality devices, and be much easier to use for general computing tasks! (ie. not necessarily games)
 
 ![Screenshot](/Documentation/img/SKScreenshot1.jpg)
 
-
-## Motivation
-
-As [SharpDX](http://sharpdx.org/) and many other render libraries for C# are sadly deprecated and no longer in development, there are plenty of engines and interfaces out there for rendering in C / CPP, but much less for creating 3D projects with C#. StereoKit tries to fill that gap.
-
+StereoKit Features:
+- Model formats: .gltf, .glb, .obj, procedural
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
+- Runtime asset loading
+- Platforms: HoloLens 2, Windows Mixed Reality, eventually everywhere OpenXR is!
+- Less than 10 second total build/deploy/load time for HoloLens 2
+- Input: Hands, Pointers, Keyboard/Mouse
+- Physics
+- Easy but powerful UI and Interactions
+- Performance-by-default render pipeline
+- Flexible shader/material system
+- [Documentation](https://maluoi.github.io/StereoKit) as unit testing
 
 ## Getting started
 
-While StereoKit is still in development, you can totally try it out already! The lower level APIs are easy to use, and already fairly well established.
+While StereoKit is still in development, you can totally try it out already! The core is fairly well established, and everything should be fairly easy to use! Check out the [getting started](https://maluoi.github.io/StereoKit/Pages/Guides/Getting-Started.html) guide on the docs site for in-depth documentation, or check out the [demo project](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest) in the repository! But we'll do a quick guide right here too.
 
-Have a look at the [Getting started documentation](Documentation/StartingWithStereoKit.md) and the [examples](https://github.com/maluoi/StereoKit/tree/master/Examples) to get started!
+Setting up to use StereoKit is a simple as installing the [StereoKit Templates](https://github.com/maluoi/StereoKit/raw/master/Documentation/SKTemplates.vsix) for Visual Studio and creating a new StereoKit project! (Some Visual Studio pre-reqs may be needed too, I'll make a list of that later)
 
+Saying hello world after that is pretty trivial, check out the code!
 
-## Tested platforms
+```csharp
+using System;
+using StereoKit;
 
-The following platforms have been used during development and are regularly tested to assure compatibility:
+class Program
+{
+    static void Main(string[] args)
+    {
+        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
+            Environment.Exit(1);
 
-- Windows Mixed Reality Headsets (VR)
-- Microsoft HoloLens 2
-- Windows 10 Desktop
+        Model model = new Model("Assets/DamagedHelmet.gltf");
 
+        while (StereoKitApp.Step(() =>
+        {
+            Renderer.Add(model, Matrix.Identity, Color.White);
+        }));
 
-## Components
+        StereoKitApp.Shutdown();
+    }
+}
+```
 
-- **StereoKitC**: The StereoKit core, written in C / CPP.
-- **StereoKit**: CSharp bindings for StereoKit.
+Pretty straightforward, right? That'll give you alll of this right away, lighting, hands, everything!
 
-
-## Examples
-
-- **StereoKitCTest**: A test application for StereoKitC.
-- **StereoKitTest**: The test application as CSharp variant.
+![Hello World](/Documentation/img/StereoKitMin.gif)
