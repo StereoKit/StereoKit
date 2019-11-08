@@ -40,9 +40,9 @@ material_t sprite_create_material(int index_id) {
 	char id[64];
 	sprintf_s(id, 64, "render/sprite_mat_%d", index_id);
 	material_t result = material_create(shader_find("default/shader_unlit"));
-	material_set_id        (result, id);
-	material_set_alpha_mode(result, material_alpha_blend);
-	material_set_cull      (result, material_cull_none);
+	material_set_id          (result, id);
+	material_set_transparency(result, transparency_blend);
+	material_set_cull        (result, cull_none);
 
 	return result;
 }

@@ -97,7 +97,7 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 	transform_t *tr;
 	render_get_cam(&cam, &tr);
 	vec3 offset = { 0,-0.25f,-0.15f };
-	quat rot    = quat_euler(vec3{ 0,180,-90 });
+	quat rot    = quat_from_angles(0,180,-90);
 
 	for (size_t f = 0; f < 5; f++) {
 		LEAP_BONE &bone = hand.digits[f].bones[0];

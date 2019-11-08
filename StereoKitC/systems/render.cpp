@@ -84,7 +84,7 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 ///////////////////////////////////////////
 
 inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
-	return ((uint64_t)(material->mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
+	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
 }
 
 ///////////////////////////////////////////
@@ -298,7 +298,7 @@ bool render_initialize() {
 	render_sky_mat  = material_create(sky_shader);
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
-	material_set_cull        (render_sky_mat, material_cull_none);
+	material_set_cull        (render_sky_mat, cull_none);
 	shader_release(sky_shader);
 
 	render_default_tex = tex2d_find("default/tex2d");
@@ -404,7 +404,7 @@ void render_set_material(material_t material) {
 		d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
 	}
 
-	if (material->mode == material_alpha_none) {
+	if (material->alpha_mode == transparency_none) {
 		d3d_context->OMSetBlendState(0,0, 0xFFFFFFFF);
 	} else {
 		d3d_context->OMSetBlendState(material->blend_state, nullptr, 0xFFFFFFFF);

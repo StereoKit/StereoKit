@@ -79,29 +79,6 @@ namespace StereoKit
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct Quat
-    {
-        public float i, j, k, a;
-
-        public Quat(float i, float j, float k, float a)
-        {
-            this.i = i;
-            this.j = j;
-            this.k = k;
-            this.a = a;
-        }
-        public override string ToString()
-        {
-            return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}>", i, j, k, a);
-        }
-
-        public static readonly Quat Identity = new Quat(0, 0, 0, 1);
-
-        public static Quat LookAt(Vec3 from, Vec3 to) { return NativeAPI.quat_lookat(from, to); }
-        public static Quat LookDir(Vec3 direction)    { return NativeAPI.quat_lookat(Vec3.Zero, direction); }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix
     {
         public Vec4 row1;

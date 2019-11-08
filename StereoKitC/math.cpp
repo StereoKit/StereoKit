@@ -49,8 +49,8 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 
 ///////////////////////////////////////////
 
-quat quat_euler(const vec3 &euler_degrees) {
-	XMVECTOR result = XMQuaternionRotationRollPitchYaw(euler_degrees.x * deg2rad, euler_degrees.y * deg2rad, euler_degrees.z * deg2rad);
+quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg) {
+	XMVECTOR result = XMQuaternionRotationRollPitchYaw(pitch_x_deg * deg2rad, yaw_y_deg * deg2rad, roll_z_deg * deg2rad);
 	return math_fast_to_quat(result);
 }
 

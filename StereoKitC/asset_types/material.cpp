@@ -58,9 +58,9 @@ material_t material_create(shader_t shader) {
 
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
-	result->cull   = cull_ccw;
-	result->mode   = transparency_none;
-	result->shader = shader;
+	result->cull       = cull_ccw;
+	result->alpha_mode = transparency_none;
+	result->shader     = shader;
 	
 	material_create_arg_defaults(result, shader);
 
@@ -198,7 +198,7 @@ shader_t material_get_shader(material_t material) {
 
 ///////////////////////////////////////////
 
-void material_set_trasparency(material_t material, transparency_ mode) {
+void material_set_transparency(material_t material, transparency_ mode) {
 	if (material->blend_state != nullptr)
 		material->blend_state->Release();
 	D3D11_BLEND_DESC desc_blend = {};
@@ -214,7 +214,7 @@ void material_set_trasparency(material_t material, transparency_ mode) {
 	desc_blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 
 	d3d_device->CreateBlendState(&desc_blend, &material->blend_state);
-	material->mode = mode;
+	material->alpha_mode = mode;
 }
 
 ///////////////////////////////////////////

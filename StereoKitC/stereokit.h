@@ -153,13 +153,13 @@ static inline vec2  vec2_lerp        (const vec2 &a, const vec2 &b, float t) { r
 
 SK_API vec3 vec3_cross(const vec3 &a, const vec3 &b);
 
-SK_API quat quat_difference(const quat &a, const quat &b);
-SK_API quat quat_lookat    (const vec3 &from, const vec3 &at);
-SK_API quat quat_euler     (const vec3 &euler_degrees);
-SK_API quat quat_lerp      (const quat &a, const quat &b, float t);
-SK_API quat quat_normalize (const quat &a);
-SK_API quat quat_mul       (const quat &a, const quat &b);
-SK_API vec3 quat_mul_vec   (const quat &a, const vec3 &b);
+SK_API quat quat_difference (const quat &a, const quat &b);
+SK_API quat quat_lookat     (const vec3 &from, const vec3 &at);
+SK_API quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg);
+SK_API quat quat_lerp       (const quat &a, const quat &b, float t);
+SK_API quat quat_normalize  (const quat &a);
+SK_API quat quat_mul        (const quat &a, const quat &b);
+SK_API vec3 quat_mul_vec    (const quat &a, const vec3 &b);
 
 SK_API matrix pose_matrix    (const pose_t &pose);
 SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result);
@@ -343,7 +343,7 @@ SK_API material_t material_copy            (material_t material);
 SK_API material_t material_copy_id         (const char *id);
 SK_API void       material_set_id          (material_t material, const char *id);
 SK_API void       material_release         (material_t material);
-SK_API void       material_set_alpha_mode  (material_t material, transparency_ mode);
+SK_API void       material_set_transparency(material_t material, transparency_ mode);
 SK_API void       material_set_cull        (material_t material, cull_ mode);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
 SK_API void       material_set_float       (material_t material, const char *name, float    value);
