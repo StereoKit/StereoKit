@@ -117,7 +117,7 @@ void win32_mouse_hand() {
 	ray_t ray = {};
 	if (ray_from_mouse(input_mouse_data.pos, ray)) {
 		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.00025f);
-		hand_rot     = quat_euler({ 40,30,90 }) * quat_lookat(vec3_zero, ray.dir);
+		hand_rot     = quat_from_angles(40,30,90) * quat_lookat(vec3_zero, ray.dir);
 		hand_tracked = true;
 		l_pressed    = input_key(key_mouse_left ) & button_state_down;
 		r_pressed    = input_key(key_mouse_right) & button_state_down;

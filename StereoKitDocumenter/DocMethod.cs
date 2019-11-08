@@ -35,17 +35,28 @@ namespace StereoKitDocumenter
 
         public override string ToString()
         {
+            if (name=="#ctor")
+                return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
+
             Vec3 vec;
             Type t = Type.GetType("StereoKit."+parent.name+", StereoKit");
-            MethodInfo m = t.GetMethod(name);
-            List<ParameterInfo> param = new List<ParameterInfo>(m.GetParameters());
+            MethodInfo m = null;
+            foreach (MethodInfo method in t.GetMethods())
+            {
+                if (method.Name == name)
+                { 
+                    m = method;
+                    break;
+                }
+            }
+            List<ParameterInfo> param = m==null?new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
 
             string paramList = string.Join(", ", param.Select(a=> $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}" ));
             string signature = (m.IsStatic ? "static " : "")+$"{StringHelper.TypeName(m.ReturnType.Name)} {m.Name}({paramList})";
 
             string paramText = "";
             if (parameters.Count > 0 || m.ReturnType != typeof(void)) {
-                paramText += "\n## Parameters\n\n|  |  |\n|--|--|\n";
+                paramText += "\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++) {
                     
                     ParameterInfo p = param.Find(a => a.Name == parameters[i].name);
@@ -73,10 +84,9 @@ description: {StringHelper.CleanForDescription(summary)}
 <div class='signature' markdown='1'>
 {signature}
 </div>
+{summary}
 {paramText}
 
-## Description
-{summary}
 {exampleText}
 ";
 

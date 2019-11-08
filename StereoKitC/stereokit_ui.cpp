@@ -129,7 +129,7 @@ void ui_push_pose(pose_t pose, vec2 size) {
 	// of having a 'forward facing' UI.
 	// TODO: Review this later, see how it turns out over time.
 	if (skui_layers.size() == 0)
-		trs = matrix_trs(vec3_zero, quat_euler({ 0, 180, 0 }), vec3_one) * trs;
+		trs = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one) * trs;
 	else
 		trs = skui_layers.back().transform * trs;
 

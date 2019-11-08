@@ -31,7 +31,7 @@ function nameValid(name) {
     
 }
 function renderFolder(folder, parent) {
-    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox'/><span></span><a href='{{site.url}}/"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
+    var result = parent == "" ? "<ul>" : "<li class='tree-branch'><input type='checkbox' "+(parent=="Pages"?"":"checked")+" /><span></span><a href='{{site.url}}/"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
     if (parent != "") parent += "/";
     parent += folder.name.replace(" ", "-");
 
