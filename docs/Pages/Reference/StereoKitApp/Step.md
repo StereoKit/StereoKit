@@ -5,17 +5,14 @@ description: Steps all StereoKit systems, and inserts user code via callback bet
 ---
 # [StereoKitApp]({{site.url}}/Pages/Reference/StereoKitApp.html).Step
 <div class='signature' markdown='1'>
-static Boolean Step(Action onStep)
+static bool Step(Action onStep)
 </div>
-
-## Parameters
+Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
 
 |  |  |
 |--|--|
 |Action onStep|A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.|
-|RETURNS: Boolean|If an exit message is received from the platform, this function will return false.|
+|RETURNS: bool|If an exit message is received from the platform, this function will return false.|
 
 
-## Description
-Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.
 

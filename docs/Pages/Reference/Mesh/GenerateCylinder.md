@@ -7,8 +7,9 @@ description: Generates a cylinder mesh, pre-sized to the given diameter and dept
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float diameter, float depth, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction, int subdivisions)
 </div>
-
-## Parameters
+Generates a cylinder mesh, pre-sized to the given diameter and depth,
+UV coordinates are from a flattened top view right now. Additional development is needed for
+making better UVs for the edges.
 
 |  |  |
 |--|--|
@@ -19,10 +20,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float dia
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|Returns a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now.|
 
 
-## Description
-Generates a cylinder mesh, pre-sized to the given diameter and depth,
-UV coordinates are from a flattened top view right now. Additional development is needed for
-making better UVs for the edges.
 
 
 ## Examples
@@ -31,7 +28,7 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.8f, 0.8f, Vec3.Up);
-Model cylinderModel = new Model(cylinderMesh, Material.Copy("default/material"));
+Model cylinderModel = new Model(cylinderMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,

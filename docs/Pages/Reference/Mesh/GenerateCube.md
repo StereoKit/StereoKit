@@ -7,8 +7,8 @@ description: Generates a flat-shaded cube mesh, pre-sized to the given dimension
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCube([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, int subdivisions)
 </div>
-
-## Parameters
+Generates a flat-shaded cube mesh, pre-sized to the given
+dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.
 
 |  |  |
 |--|--|
@@ -17,9 +17,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCube([Vec3]({{site
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A flat-shaded cube mesh, pre-sized to the given dimensions.|
 
 
-## Description
-Generates a flat-shaded cube mesh, pre-sized to the given
-dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.
 
 
 ## Examples
@@ -28,7 +25,7 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.8f);
-Model cubeModel = new Model(cubeMesh, Material.Copy("default/material"));
+Model cubeModel = new Model(cubeMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,

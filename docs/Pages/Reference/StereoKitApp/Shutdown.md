@@ -5,10 +5,9 @@ description: Shuts down all StereoKit initialized systems. Release your own Ster
 ---
 # [StereoKitApp]({{site.url}}/Pages/Reference/StereoKitApp.html).Shutdown
 <div class='signature' markdown='1'>
-static Void Shutdown()
+static void Shutdown()
 </div>
-
-
-## Description
 Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.
+
+
 

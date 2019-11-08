@@ -7,8 +7,8 @@ description: Finds the Mesh with the matching id, and returns a reference to it.
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Find(string id)
 </div>
-
-## Parameters
+Finds the Mesh with the matching id, and returns a reference to it. If no Mesh it found,
+it returns null.
 
 |  |  |
 |--|--|
@@ -16,7 +16,4 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Find(string id)
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A Mesh with a matching id, or null if none is found.|
 
 
-## Description
-Finds the Mesh with the matching id, and returns a reference to it. If no Mesh it found,
-it returns null.
 

@@ -7,8 +7,9 @@ description: Generates a sphere mesh, pre-sized to the given diameter, created b
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diameter, int subdivisions)
 </div>
-
-## Parameters
+Generates a sphere mesh, pre-sized to the given diameter, created
+by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified
+cube.
 
 |  |  |
 |--|--|
@@ -17,10 +18,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diame
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.|
 
 
-## Description
-Generates a sphere mesh, pre-sized to the given diameter, created
-by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified
-cube.
 
 
 ## Examples
@@ -29,7 +26,7 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  sphereMesh  = Mesh.GenerateSphere(0.8f);
-Model sphereModel = new Model(sphereMesh, Material.Copy("default/material"));
+Model sphereModel = new Model(sphereMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
