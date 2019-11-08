@@ -37,7 +37,8 @@ namespace StereoKitDocumenter
                 case "Single" : return "float";
                 case "Int32" : return "int";
                 case "String": return "string";
-                case "bool": return "bool";
+                case "Boolean": return "bool";
+                case "Void": return "void";
                 default: {
                     DocClass typeDoc = Program.GetClass(type);
                     return typeDoc != null ? $"[{type}]({typeDoc.UrlName})" : type;
