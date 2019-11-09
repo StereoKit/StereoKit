@@ -28,17 +28,17 @@ namespace StereoKit
         public void AddSphere(float diameter, float kilograms = 1, Vec3 ?offset = null)
         {
             Vec3 off = offset ?? Vec3.Zero;
-            NativeAPI.solid_add_sphere(_solidInst, diameter, kilograms, ref off);
+            NativeAPI.solid_add_sphere(_solidInst, diameter, kilograms, off);
         }
         public void AddBox(Vec3 dimensions, float kilograms = 1, Vec3? offset = null)
         {
             Vec3 off = offset ?? Vec3.Zero;
-            NativeAPI.solid_add_box(_solidInst, ref dimensions, kilograms, ref off);
+            NativeAPI.solid_add_box(_solidInst, dimensions, kilograms, off);
         }
         public void AddCapsule(float diameter, float height, float kilograms = 1, Vec3? offset = null)
         {
             Vec3 off = offset ?? Vec3.Zero;
-            NativeAPI.solid_add_capsule(_solidInst, diameter, height, kilograms, ref off);
+            NativeAPI.solid_add_capsule(_solidInst, diameter, height, kilograms, off);
         }
         public void SetType(SolidType type)
         {
@@ -50,19 +50,19 @@ namespace StereoKit
         }
         public void Move(Vec3 position, Quat rotation)
         {
-            NativeAPI.solid_move(_solidInst, ref position, ref rotation);
+            NativeAPI.solid_move(_solidInst, position, rotation);
         }
         public void Teleport(Vec3 position, Quat rotation)
         {
-            NativeAPI.solid_teleport(_solidInst, ref position, ref rotation);
+            NativeAPI.solid_teleport(_solidInst, position, rotation);
         }
         public void SetVelocity(Vec3 metersPerSecond)
         {
-            NativeAPI.solid_set_velocity(_solidInst, ref metersPerSecond);
+            NativeAPI.solid_set_velocity(_solidInst, metersPerSecond);
         }
         public void SetAngularVelocity(Vec3 radiansPerSecond)
         {
-            NativeAPI.solid_set_velocity_ang(_solidInst, ref radiansPerSecond);
+            NativeAPI.solid_set_velocity_ang(_solidInst, radiansPerSecond);
         }
         public Pose GetPose()
         {
