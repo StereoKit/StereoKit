@@ -64,9 +64,15 @@ namespace StereoKit
         {
             NativeAPI.solid_set_velocity_ang(_solidInst, ref radiansPerSecond);
         }
-        public void GetTransform(ref Transform transform)
+        public Pose GetPose()
         {
-            NativeAPI.solid_get_transform(_solidInst, transform._transformInst);
+            Pose result;
+            NativeAPI.solid_get_pose(_solidInst, out result);
+            return result;
+        }
+        public void GetPose(out Pose pose)
+        {
+            NativeAPI.solid_get_pose(_solidInst, out pose);
         }
     }
 }

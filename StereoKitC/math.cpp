@@ -69,14 +69,14 @@ quat quat_normalize(const quat &a) {
 
 ///////////////////////////////////////////
 
-void pose_matrix_out(const pose_t &pose, matrix &out_result) {
-	matrix_trs_out(out_result, pose.position, pose.orientation);
+void pose_matrix_out(const pose_t &pose, matrix &out_result, vec3 scale) {
+	matrix_trs_out(out_result, pose.position, pose.orientation, scale);
 }
 
 ///////////////////////////////////////////
 
-matrix pose_matrix(const pose_t &pose) {
-	return matrix_trs(pose.position, pose.orientation);
+matrix pose_matrix(const pose_t &pose, vec3 scale) {
+	return matrix_trs(pose.position, pose.orientation, scale);
 }
 
 ///////////////////////////////////////////

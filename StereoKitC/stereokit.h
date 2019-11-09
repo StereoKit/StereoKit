@@ -161,8 +161,8 @@ SK_API quat quat_normalize  (const quat &a);
 SK_API quat quat_mul        (const quat &a, const quat &b);
 SK_API vec3 quat_mul_vec    (const quat &a, const vec3 &b);
 
-SK_API matrix pose_matrix    (const pose_t &pose);
-SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result);
+SK_API matrix pose_matrix(const pose_t &pose, vec3 scale = {1,1,1});
+SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result, vec3 scale = {1,1,1});
 
 SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
 SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
@@ -363,36 +363,6 @@ SK_API shader_t   material_get_shader      (material_t material);
 
 ///////////////////////////////////////////
 
-struct transform_t {
-	vec3 _position;
-	vec3 _scale;
-	quat _rotation;
-
-	bool32_t _dirty;
-	matrix   _transform;
-};
-
-SK_API void transform_initialize  (transform_t &transform);
-SK_API void transform_set         (transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation );
-SK_API void transform_set_position(transform_t &transform, const vec3 &position);
-SK_API vec3 transform_get_position(transform_t &transform);
-SK_API void transform_set_scale   (transform_t &transform, const vec3 &scale);
-SK_API vec3 transform_get_scale   (transform_t &transform);
-SK_API void transform_set_rotation(transform_t &transform, const quat &rotation);
-SK_API quat transform_get_rotation(transform_t &transform);
-SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
-SK_API vec3 transform_forward     (transform_t &transform);
-
-SK_API void   transform_update    (transform_t &transform);
-SK_API void   transform_matrix_out(transform_t &transform, matrix &result);
-SK_API matrix transform_matrix    (transform_t &transform);
-SK_API vec3   transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
-SK_API vec3   transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
-SK_API vec3   transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
-SK_API vec3   transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
-
-///////////////////////////////////////////
-
 enum text_align_ {
 	text_align_x_left   = 0,
 	text_align_y_top    = 0,
@@ -431,7 +401,7 @@ SK_API void    solid_move         (solid_t solid, const vec3 &position, const qu
 SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
 SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
-SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
+SK_API void    solid_get_pose     (const solid_t solid, pose_t &out_pose);
 
 ///////////////////////////////////////////
 

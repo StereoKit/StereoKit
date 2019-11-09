@@ -136,6 +136,15 @@ namespace StereoKit
         {
             this.position    = position;
             this.orientation = orientation;
-        }   
+        }
+        
+        public Matrix ToMatrix(Vec3 scale)
+        {
+            return NativeAPI.pose_matrix(this, scale);
+        }
+        public Matrix ToMatrix()
+        {
+            return NativeAPI.pose_matrix(this, Vec3.One);
+        }
     };
 }

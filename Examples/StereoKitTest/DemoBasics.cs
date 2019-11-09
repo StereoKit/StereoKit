@@ -5,13 +5,11 @@ using System.Linq;
 class DemoBasics : IDemo
 {
     Model       gltf;
-    Transform   solidTr;
     List<Solid> objects = new List<Solid>();
 
     public void Initialize()
     {
-        gltf    = new Model("DamagedHelmet.gltf");
-        solidTr = new Transform(Vec3.Zero, Vec3.One * 0.25f);
+        gltf = new Model("DamagedHelmet.gltf");
     }
 
     public void Update()
@@ -23,10 +21,11 @@ class DemoBasics : IDemo
             objects.Last().AddBox(Vec3.One * .35f, 40);
         }
 
+        Pose solidPose;
         for (int i = 0; i < objects.Count; i++)
         {
-            objects[i].GetTransform(ref solidTr);
-            Renderer.Add(gltf, Matrix.TRS(solidTr.Position, solidTr.Rotation, Vec3.One*0.25f), Color.White);
+            objects[i].GetPose(out solidPose);
+            Renderer.Add(gltf, solidPose.ToMatrix(Vec3.One*0.25f), Color.White);
         }
     }
 
