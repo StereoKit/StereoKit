@@ -17,7 +17,7 @@ struct sprite_inst_t {
 
 struct spritemap_t {
 	uint64_t   id;
-	tex2d_t    texture;
+	tex_t      texture;
 	material_t material;
 	sprite_t  *sprites;
 	int32_t    sprite_count;
@@ -49,7 +49,7 @@ material_t sprite_create_material(int index_id) {
 
 ///////////////////////////////////////////
 
-sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
+sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	assets_addref(image->header);
 	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
@@ -106,9 +106,9 @@ sprite_t sprite_create(tex2d_t image, sprite_type_ type, const char *atlas_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id) {
-	tex2d_t  image  = tex2d_create_file(filename);
+	tex_t    image  = tex_create_file(filename);
 	sprite_t result = sprite_create(image, type, atlas_id);
-	tex2d_release(image);
+	tex_release(image);
 	return result;
 }
 
@@ -129,7 +129,7 @@ float sprite_get_aspect(sprite_t sprite) {
 ///////////////////////////////////////////
 
 void sprite_destroy(sprite_t sprite) {
-	tex2d_release   (sprite->texture);
+	tex_release     (sprite->texture);
 	material_release(sprite->material);
 	*sprite = {};
 }

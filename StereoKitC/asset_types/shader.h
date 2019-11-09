@@ -10,8 +10,8 @@ namespace sk {
 extern const size_t shaderarg_size[];
 
 struct shaderargs_data_t {
-	void    *buffer;
-	tex2d_t *textures;
+	void  *buffer;
+	tex_t *textures;
 };
 
 struct shaderargs_t {
@@ -39,7 +39,7 @@ struct shaderargs_desc_t {
 struct shader_tex_slots_item_t {
 	uint64_t id;
 	int      slot;
-	tex2d_t  default_tex;
+	tex_t    default_tex;
 };
 
 struct shader_tex_slots_t {

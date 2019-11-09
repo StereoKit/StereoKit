@@ -2,44 +2,44 @@
 
 namespace StereoKit
 {
-    public class Tex2D
+    public class Tex
     {
         internal IntPtr _texInst;
-        public Tex2D()
+        public Tex()
         {
-            _texInst = NativeAPI.tex2d_create(TexType.Image, TexFormat.Rgba32);
+            _texInst = NativeAPI.tex_create(TexType.Image, TexFormat.Rgba32);
         }
-        private Tex2D(IntPtr tex)
+        private Tex(IntPtr tex)
         {
             _texInst = tex;
             if (_texInst == IntPtr.Zero)
                 Log.Write(LogLevel.Warning, "Received an empty texture!");
         }
-        public Tex2D(string file)
+        public Tex(string file)
         {
-            _texInst = NativeAPI.tex2d_create_file(file);
+            _texInst = NativeAPI.tex_create_file(file);
         }
-        public Tex2D(string[] cubeFaceFiles_xxyyzz)
+        public Tex(string[] cubeFaceFiles_xxyyzz)
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)
                 Log.Write(LogLevel.Error, "To create a cubemap, you must have exactly 6 images!");
-            _texInst = NativeAPI.tex2d_create_cubemap_files(cubeFaceFiles_xxyyzz);
+            _texInst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz);
         }
-        ~Tex2D()
+        ~Tex()
         {
             if (_texInst != IntPtr.Zero)
-                NativeAPI.tex2d_release(_texInst);
+                NativeAPI.tex_release(_texInst);
         }
 
-        public static Tex2D Find(string id)
+        public static Tex Find(string id)
         {
-            IntPtr tex = NativeAPI.tex2d_find(id);
-            return tex == IntPtr.Zero ? null : new Tex2D(tex);
+            IntPtr tex = NativeAPI.tex_find(id);
+            return tex == IntPtr.Zero ? null : new Tex(tex);
         }
-        public static Tex2D FromEquirectangular(string equirectangularCubemap)
+        public static Tex FromEquirectangular(string equirectangularCubemap)
         {
-            IntPtr tex = NativeAPI.tex2d_create_cubemap_file(equirectangularCubemap);
-            return tex == IntPtr.Zero ? null : new Tex2D(tex);
+            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap);
+            return tex == IntPtr.Zero ? null : new Tex(tex);
         }
     }
 }

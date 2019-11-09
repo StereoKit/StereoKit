@@ -19,7 +19,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 HWND             win32_window    = nullptr;
-tex2d_t          win32_target    = {};
+tex_t            win32_target    = {};
 IDXGISwapChain1 *win32_swapchain = {};
 float            win32_scroll    = 0;
 
@@ -39,11 +39,11 @@ void win32_resize(int width, int height) {
 	log_infof("Resized to: %d<~BLK>x<~clr>%d", width, height);
 
 	if (win32_swapchain != nullptr) {
-		tex2d_releasesurface(win32_target);
+		tex_releasesurface(win32_target);
 		win32_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-		tex2d_setsurface(win32_target, back_buffer);
+		tex_setsurface(win32_target, back_buffer);
 	}
 }
 
@@ -122,10 +122,10 @@ bool win32_init(const char *app_name) {
 	ID3D11Texture2D *back_buffer;
 	win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 
-	win32_target = tex2d_create(tex_type_rendertarget);
-	tex2d_set_id     (win32_target, "stereokit/system/rendertarget");
-	tex2d_setsurface (win32_target, back_buffer);
-	tex2d_add_zbuffer(win32_target);
+	win32_target = tex_create(tex_type_rendertarget);
+	tex_set_id     (win32_target, "stereokit/system/rendertarget");
+	tex_setsurface (win32_target, back_buffer);
+	tex_add_zbuffer(win32_target);
 
 	dxgi_factory->Release();
 	dxgi_adapter->Release();
@@ -140,7 +140,7 @@ bool win32_init(const char *app_name) {
 
 void win32_shutdown() {
 	win32_input_shutdown();
-	tex2d_release(win32_target);
+	tex_release(win32_target);
 	win32_swapchain->Release();
 }
 
@@ -163,8 +163,8 @@ void win32_step_end() {
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex2d_rtarget_clear(win32_target, {0,0,0,255});
-	tex2d_rtarget_set_active(win32_target);
+	tex_rtarget_clear(win32_target, {0,0,0,255});
+	tex_rtarget_set_active(win32_target);
 
 	render_draw();
 	render_clear();

@@ -57,7 +57,7 @@ void *assets_allocate(asset_type_ type) {
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
 	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
-	case asset_type_texture:  size = sizeof(_tex2d_t);    break;
+	case asset_type_texture:  size = sizeof(_tex_t);      break;
 	case asset_type_shader:   size = sizeof(_shader_t);   break;
 	case asset_type_material: size = sizeof(_material_t); break;
 	case asset_type_model:    size = sizeof(_model_t);    break;
@@ -116,7 +116,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	// Call asset specific destroy function
 	switch(asset.type) {
 	case asset_type_mesh:     mesh_destroy    ((mesh_t    )&asset); break;
-	case asset_type_texture:  tex2d_destroy   ((tex2d_t   )&asset); break;
+	case asset_type_texture:  tex_destroy     ((tex_t     )&asset); break;
 	case asset_type_shader:   shader_destroy  ((shader_t  )&asset); break;
 	case asset_type_material: material_destroy((material_t)&asset); break;
 	case asset_type_model:    model_destroy   ((model_t   )&asset); break;

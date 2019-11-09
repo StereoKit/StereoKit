@@ -303,11 +303,11 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 
 ///////////////////////////////////////////
 
-tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
 	// Check if we've already loaded this image
 	char id[512];
 	gltf_imagename(data, image, filename, id, 512);
-	tex2d_t result = (tex2d_t)assets_find(id);
+	tex_t result = (tex_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
@@ -316,8 +316,8 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
 		image->buffer_view->buffer->data;
-		result = tex2d_create_mem(image->buffer_view->buffer->data, image->buffer_view->buffer->size);
-		tex2d_set_id(result, id);
+		result = tex_create_mem(image->buffer_view->buffer->data, image->buffer_view->buffer->size);
+		tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
 		void         *buffer = nullptr;
@@ -329,13 +329,13 @@ tex2d_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *file
 		cgltf_load_buffer_base64(&options, size, start, &buffer);
 
 		if (buffer != nullptr) {
-			result = tex2d_create_mem(buffer, size);
-			tex2d_set_id(result, id);
+			result = tex_create_mem(buffer, size);
+			tex_set_id(result, id);
 			free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex2d_create_file(id);
+		result = tex_create_file(id);
 	}
 	return result;
 }

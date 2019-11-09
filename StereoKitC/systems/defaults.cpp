@@ -8,36 +8,36 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-tex2d_t    sk_default_tex;
-tex2d_t    sk_default_tex_black;
-tex2d_t    sk_default_tex_gray;
-tex2d_t    sk_default_tex_flat;
-tex2d_t    sk_default_tex_rough;
-tex2d_t    sk_default_cubemap;
-mesh_t     sk_default_quad;
-shader_t   sk_default_shader;
-shader_t   sk_default_shader_pbr;
-shader_t   sk_default_shader_unlit;
-shader_t   sk_default_shader_font;
-shader_t   sk_default_shader_equirect;
-material_t sk_default_material;
-material_t sk_default_material_equirect;
-material_t sk_default_material_font;
-font_t     sk_default_font;
+tex_t        sk_default_tex;
+tex_t        sk_default_tex_black;
+tex_t        sk_default_tex_gray;
+tex_t        sk_default_tex_flat;
+tex_t        sk_default_tex_rough;
+tex_t        sk_default_cubemap;
+mesh_t       sk_default_quad;
+shader_t     sk_default_shader;
+shader_t     sk_default_shader_pbr;
+shader_t     sk_default_shader_unlit;
+shader_t     sk_default_shader_font;
+shader_t     sk_default_shader_equirect;
+material_t   sk_default_material;
+material_t   sk_default_material_equirect;
+material_t   sk_default_material_font;
+font_t       sk_default_font;
 text_style_t sk_default_text_style;
 
 ///////////////////////////////////////////
 
-tex2d_t defaults_texture(const char *id, color32 color) {
-	tex2d_t result = tex2d_create();
+tex_t defaults_texture(const char *id, color32 color) {
+	tex_t result = tex_create();
 	if (result == nullptr) {
 		return nullptr;
 	}
 	color32 tex_colors[2*2];
 	for (size_t i = 0; i < 2 * 2; i++) 
 		tex_colors[i] = color;
-	tex2d_set_id    (result, id);
-	tex2d_set_colors(result, 2, 2, tex_colors);
+	tex_set_id    (result, id);
+	tex_set_colors(result, 2, 2, tex_colors);
 
 	return result;
 }
@@ -46,11 +46,11 @@ tex2d_t defaults_texture(const char *id, color32 color) {
 
 bool defaults_init() {
 	// Textures
-	sk_default_tex       = defaults_texture("default/tex2d",       {255,255,255,255});
-	sk_default_tex_black = defaults_texture("default/tex2d_black", {0,0,0,255}      );
-	sk_default_tex_gray  = defaults_texture("default/tex2d_gray",  {128,128,128,255});
-	sk_default_tex_flat  = defaults_texture("default/tex2d_flat",  {128,128,255,255}); // Default for normal maps
-	sk_default_tex_rough = defaults_texture("default/tex2d_rough", {0,0,255,255}    ); // Default for metal/roughness maps
+	sk_default_tex       = defaults_texture("default/tex",       {255,255,255,255});
+	sk_default_tex_black = defaults_texture("default/tex_black", {0,0,0,255}      );
+	sk_default_tex_gray  = defaults_texture("default/tex_gray",  {128,128,128,255});
+	sk_default_tex_flat  = defaults_texture("default/tex_flat",  {128,128,255,255}); // Default for normal maps
+	sk_default_tex_rough = defaults_texture("default/tex_rough", {0,0,255,255}    ); // Default for metal/roughness maps
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||
@@ -61,8 +61,8 @@ bool defaults_init() {
 
 	// Cubemap
 	color32 gradient[3] = { { 45,30,37,255 }, { 141,216,255,255 }, {255, 254, 241, 255} }; 
-	sk_default_cubemap = tex2d_gen_cubemap(gradient, 3, {1,2,1.5f});
-	tex2d_set_id(sk_default_cubemap, "default/cubemap");
+	sk_default_cubemap = tex_gen_cubemap(gradient, 3, {1,2,1.5f});
+	tex_set_id(sk_default_cubemap, "default/cubemap");
 	render_set_skytex(sk_default_cubemap, true);
 
 	// Default rendering quad
@@ -126,19 +126,21 @@ bool defaults_init() {
 ///////////////////////////////////////////
 
 void defaults_shutdown() {
+	font_release    (sk_default_font);
 	material_release(sk_default_material_equirect);
 	material_release(sk_default_material);
+	material_release(sk_default_material_font);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
 	mesh_release    (sk_default_quad);
-	tex2d_release   (sk_default_tex);
-	tex2d_release   (sk_default_tex_black);
-	tex2d_release   (sk_default_tex_gray);
-	tex2d_release   (sk_default_tex_flat);
-	tex2d_release   (sk_default_tex_rough);
+	tex_release     (sk_default_tex);
+	tex_release     (sk_default_tex_black);
+	tex_release     (sk_default_tex_gray);
+	tex_release     (sk_default_tex_flat);
+	tex_release     (sk_default_tex_rough);
 }
 
 } // namespace sk

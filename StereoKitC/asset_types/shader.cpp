@@ -193,14 +193,14 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 
 			// Find a default texture for this slot, in case it isn't used!
 			if (stref_nextword(curr, word)) {
-				if      (stref_equals(word, "white")) item.default_tex = tex2d_find("default/tex2d");
-				else if (stref_equals(word, "black")) item.default_tex = tex2d_find("default/tex2d_black");
-				else if (stref_equals(word, "gray" )) item.default_tex = tex2d_find("default/tex2d_gray");
-				else if (stref_equals(word, "flat" )) item.default_tex = tex2d_find("default/tex2d_flat");
-				else if (stref_equals(word, "rough")) item.default_tex = tex2d_find("default/tex2d_rough");
-				else                                  item.default_tex = tex2d_find("default/tex2d");
+				if      (stref_equals(word, "white")) item.default_tex = tex_find("default/tex");
+				else if (stref_equals(word, "black")) item.default_tex = tex_find("default/tex_black");
+				else if (stref_equals(word, "gray" )) item.default_tex = tex_find("default/tex_gray");
+				else if (stref_equals(word, "flat" )) item.default_tex = tex_find("default/tex_flat");
+				else if (stref_equals(word, "rough")) item.default_tex = tex_find("default/tex_rough");
+				else                                  item.default_tex = tex_find("default/tex");
 			} else {
-				item.default_tex = tex2d_find("default/tex2d");
+				item.default_tex = tex_find("default/tex");
 			}
 
 			tex_items.emplace_back(item);
@@ -375,7 +375,7 @@ void shader_destroy(shader_t shader) {
 	shader_destroy_parsedata(shader);
 
 	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
-		tex2d_release(shader->tex_slots.tex[i].default_tex);
+		tex_release(shader->tex_slots.tex[i].default_tex);
 	}
 	free(shader->tex_slots.tex );
 	

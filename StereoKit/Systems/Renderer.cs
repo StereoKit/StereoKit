@@ -19,10 +19,10 @@ namespace StereoKit
         public static void SetView(Matrix cameraTransform)
             => NativeAPI.render_set_view(cameraTransform);
         
-        public static void SetSkytex(Tex2D skyTexture, bool showSky = true)
+        public static void SetSkytex(Tex skyTexture, bool showSky = true)
             => NativeAPI.render_set_skytex(skyTexture._texInst, showSky?1:0);
         
-        public static void Blit(Tex2D toRendertarget, Material material)
+        public static void Blit(Tex toRendertarget, Material material)
             => NativeAPI.render_blit(toRendertarget._texInst, material._materialInst);
         
     }

@@ -30,7 +30,7 @@ struct swapchain_t {
 	int32_t     width;
 	int32_t     height;
 	vector<XrSwapchainImageD3D11KHR> surface_images;
-	vector<tex2d_t>                  surface_data;
+	vector<tex_t>                    surface_data;
 };
 struct xr_input_t {
 	XrActionSet action_set;
@@ -206,10 +206,10 @@ bool openxr_init(const char *app_name) {
 		for (uint32_t s = 0; s < surface_count; s++) {
 			char name[64];
 			sprintf_s(name, 64, "stereokit/system/rendertarget_%d_%d", i, s);
-			swapchain.surface_data[s] = tex2d_create(tex_type_rendertarget, tex_format_rgba32);
-			tex2d_set_id     (swapchain.surface_data[s], name);
-			tex2d_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
-			tex2d_add_zbuffer(swapchain.surface_data[s]);
+			swapchain.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
+			tex_set_id     (swapchain.surface_data[s], name);
+			tex_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
+			tex_add_zbuffer(swapchain.surface_data[s]);
 		}
 		xr_swapchains.push_back(swapchain);
 	}
@@ -226,7 +226,7 @@ void openxr_shutdown() {
 	// give it a chance to release anythig here!
 	for (size_t i = 0; i < xr_swapchains.size(); i++) {
 	for (size_t s = 0; s < xr_swapchains[i].surface_data.size(); s++) {
-		tex2d_release(xr_swapchains[i].surface_data[s]);
+		tex_release(xr_swapchains[i].surface_data[s]);
 	} }
 	xr_swapchains.clear();
 }
@@ -381,9 +381,9 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		views[i].subImage.imageRect.extent = { xr_swapchains[i].width, xr_swapchains[i].height };
 
 		// Call the rendering callback with our view and swapchain info
-		tex2d_t target = xr_swapchains[i].surface_data[img_id];
-		tex2d_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
-		tex2d_rtarget_set_active(target);
+		tex_t target = xr_swapchains[i].surface_data[img_id];
+		tex_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
+		tex_rtarget_set_active(target);
 		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(
 			(float)views[i].subImage.imageRect.offset.x, 
 			(float)views[i].subImage.imageRect.offset.y, 

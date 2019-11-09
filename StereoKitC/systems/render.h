@@ -23,7 +23,7 @@ void render_shutdown();
 
 void render_set_material(material_t material);
 void render_set_shader  (shader_t   shader);
-void render_set_texture (tex2d_t    texture, int slot);
+void render_set_texture (tex_t      texture, int slot);
 void render_set_mesh    (mesh_t     mesh);
 void render_draw_item   (int count);
 

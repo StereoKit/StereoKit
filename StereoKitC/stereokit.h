@@ -18,11 +18,11 @@
 
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 #define SK_MakeFlag(enumType) \
-inline enumType  operator| (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) | static_cast<int>(b));} \
+inline enumType  operator| (enumType  a, enumType b)        { return static_cast<enumType>(static_cast<int>(a) | static_cast<int>(b)); } \
 inline enumType &operator|=(enumType& a, const enumType& b) { a = a | b; return a; } \
-inline enumType  operator& (enumType  a, enumType b) {return static_cast<enumType>(static_cast<int>(a) & static_cast<int>(b));} \
+inline enumType  operator& (enumType  a, enumType b)        { return static_cast<enumType>(static_cast<int>(a) & static_cast<int>(b)); } \
 inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return a; } \
-inline enumType  operator~ (const enumType& a) { return static_cast<enumType>(~static_cast<int>(a)); }
+inline enumType  operator~ (const enumType& a)              { return static_cast<enumType>(~static_cast<int>(a)); }
 
 #include <stdint.h>
 #include <math.h>
@@ -56,9 +56,9 @@ struct system_info_t {
 	display_ display_type;
 };
 
-SK_API bool32_t sk_init      (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
-SK_API void     sk_shutdown  ();
-SK_API bool32_t sk_step      (void (*app_update)(void));
+SK_API bool32_t sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
+SK_API void     sk_shutdown      ();
+SK_API bool32_t sk_step          (void (*app_update)(void));
 SK_API runtime_ sk_active_runtime();
 SK_API void     sk_set_settings  (settings_t& settings);
 SK_API const system_info_t &sk_get_info();
@@ -273,47 +273,47 @@ enum tex_address_ {
 	tex_address_mirror,
 };
 
-SK_DeclarePrivateType(tex2d_t);
+SK_DeclarePrivateType(tex_t);
 
-SK_API tex2d_t tex2d_find       (const char *id);
-SK_API tex2d_t tex2d_create     (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
-SK_API tex2d_t tex2d_create_file(const char *file);
-SK_API tex2d_t tex2d_create_cubemap_file (const char *equirectangular_file);
-SK_API tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz);
-SK_API void    tex2d_set_id     (tex2d_t texture, const char *id);
-SK_API void    tex2d_release    (tex2d_t texture);
-SK_API void    tex2d_set_colors (tex2d_t texture, int32_t width, int32_t height, void *data);
-SK_API void    tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
-SK_API void    tex2d_set_options(tex2d_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
-SK_API void    tex2d_add_zbuffer(tex2d_t texture, tex_format_ format = tex_format_depthstencil);
-SK_API void    tex2d_rtarget_clear     (tex2d_t render_target, color32 color);
-SK_API void    tex2d_rtarget_set_active(tex2d_t render_target);
-SK_API void    tex2d_get_data   (tex2d_t texture, void *out_data, size_t out_data_size);
-SK_API void   *tex2d_get_resource(tex2d_t texture);
-SK_API tex2d_t tex2d_gen_cubemap(const color32 *gradient, int32_t gradient_count, vec3 gradient_dir);
+SK_API tex_t tex_find                (const char *id);
+SK_API tex_t tex_create              (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
+SK_API tex_t tex_create_file         (const char *file);
+SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file);
+SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz);
+SK_API void  tex_set_id              (tex_t texture, const char *id);
+SK_API void  tex_release             (tex_t texture);
+SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
+SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
+SK_API void  tex_set_options         (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
+SK_API void  tex_add_zbuffer         (tex_t texture, tex_format_ format = tex_format_depthstencil);
+SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
+SK_API void  tex_rtarget_set_active  (tex_t render_target);
+SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
+SK_API void *tex_get_resource        (tex_t texture);
+SK_API tex_t tex_gen_cubemap         (const color32 *gradient, int32_t gradient_count, vec3 gradient_dir);
 
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(font_t);
 
-SK_API font_t  font_find   (const char *id);
-SK_API font_t  font_create (const char *file);
-SK_API void    font_set_id(font_t font, const char* id);
-SK_API void    font_release(font_t font);
-SK_API tex2d_t font_get_tex(font_t font);
+SK_API font_t font_find   (const char *id);
+SK_API font_t font_create (const char *file);
+SK_API void   font_set_id (font_t font, const char* id);
+SK_API void   font_release(font_t font);
+SK_API tex_t  font_get_tex(font_t font);
 
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(shader_t);
 
-SK_API shader_t shader_find        (const char *id);
-SK_API shader_t shader_create      (const char *hlsl);
-SK_API shader_t shader_create_file (const char *filename);
-SK_API void     shader_set_id      (shader_t shader, const char *id);
-SK_API const char *shader_get_name (shader_t shader);
-SK_API bool32_t shader_set_code    (shader_t shader, const char *hlsl, const char *filename = nullptr);
-SK_API bool32_t shader_set_codefile(shader_t shader, const char *filename);
-SK_API void     shader_release     (shader_t shader);
+SK_API shader_t    shader_find        (const char *id);
+SK_API shader_t    shader_create      (const char *hlsl);
+SK_API shader_t    shader_create_file (const char *filename);
+SK_API void        shader_set_id      (shader_t shader, const char *id);
+SK_API const char *shader_get_name    (shader_t shader);
+SK_API bool32_t    shader_set_code    (shader_t shader, const char *hlsl, const char *filename = nullptr);
+SK_API bool32_t    shader_set_codefile(shader_t shader, const char *filename);
+SK_API void        shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
 
@@ -350,8 +350,8 @@ SK_API void       material_set_float       (material_t material, const char *nam
 SK_API void       material_set_color       (material_t material, const char *name, color128 value);
 SK_API void       material_set_vector      (material_t material, const char *name, vec4     value);
 SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
-SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex2d_t  value);
-SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex2d_t  value);
+SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex_t    value);
+SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
 SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
 SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
 SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
@@ -390,18 +390,18 @@ enum solid_type_ {
 
 typedef void* solid_t;
 
-SK_API solid_t solid_create       (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
-SK_API void    solid_release      (solid_t solid);
-SK_API void    solid_add_sphere   (solid_t solid, float diameter = 1,           float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions,       float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_add_capsule  (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
-SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
-SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
-SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
-SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API solid_t solid_create          (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
+SK_API void    solid_release         (solid_t solid);
+SK_API void    solid_add_sphere      (solid_t solid, float diameter = 1,           float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_box         (solid_t solid, const vec3 &dimensions,       float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_add_capsule     (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
+SK_API void    solid_set_type        (solid_t solid, solid_type_ type);
+SK_API void    solid_set_enabled     (solid_t solid, bool32_t enabled);
+SK_API void    solid_move            (solid_t solid, const vec3 &position, const quat &rotation);
+SK_API void    solid_teleport        (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
 SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
-SK_API void    solid_get_pose     (const solid_t solid, pose_t &out_pose);
+SK_API void    solid_get_pose        (const solid_t solid, pose_t &out_pose);
 
 ///////////////////////////////////////////
 
@@ -424,7 +424,7 @@ enum sprite_type_ {
 	sprite_type_single
 };
 
-SK_API sprite_t sprite_create     (tex2d_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API sprite_t sprite_create     (tex_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API void     sprite_set_id     (sprite_t sprite, const char *id);
 SK_API void     sprite_release    (sprite_t sprite);
@@ -449,10 +449,10 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 SK_API void render_set_clip   (float near_plane=0.01f, float far_plane=50);
 SK_API void render_set_view   (const matrix &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
-SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
+SK_API void render_set_skytex (tex_t sky_texture, bool32_t show_sky);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
 SK_API void render_add_model  (model_t model, const matrix &transform, color128 color = {1,1,1,1});
-SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
+SK_API void render_blit       (tex_t to_rendertarget, material_t material);
 SK_API void render_get_device (void **device, void **context);
 
 ///////////////////////////////////////////

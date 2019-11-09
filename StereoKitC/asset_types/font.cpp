@@ -78,8 +78,8 @@ font_t font_create(const char *file) {
 	for (size_t i = 0; i < w*h; i++) {
 		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}
-	result->font_tex = tex2d_create(tex_type_image);
-	tex2d_set_colors(result->font_tex, w, h, colors);
+	result->font_tex = tex_create(tex_type_image);
+	tex_set_colors(result->font_tex, w, h, colors);
 
 	free(bitmap);
 	free(colors);
@@ -104,13 +104,13 @@ void font_release(font_t font) {
 ///////////////////////////////////////////
 
 void font_destroy(font_t font) {
-	tex2d_release(font->font_tex);
+	tex_release(font->font_tex);
 	*font = {};
 }
 
 ///////////////////////////////////////////
 
-tex2d_t font_get_tex(font_t font) {
+tex_t font_get_tex(font_t font) {
 	return font->font_tex;
 }
 

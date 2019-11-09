@@ -32,7 +32,7 @@ inline size_t material_param_size(material_param_ type) {
 	case material_param_color128: return sizeof(color128);
 	case material_param_vector:   return sizeof(vec4);
 	case material_param_matrix:   return sizeof(matrix);
-	case material_param_texture:  return sizeof(tex2d_t);
+	case material_param_texture:  return sizeof(tex_t);
 	default: log_err("Bad material param type"); return 0;
 	}
 }
@@ -41,9 +41,9 @@ inline size_t material_param_size(material_param_ type) {
 
 void material_create_arg_defaults(material_t material, shader_t shader) {
 	material->args.buffer   = malloc(shader->args.buffer_size);
-	material->args.textures = (tex2d_t*)malloc(sizeof(tex2d_t)*shader->tex_slots.tex_count);
+	material->args.textures = (tex_t*)malloc(sizeof(tex_t)*shader->tex_slots.tex_count);
 	memset(material->args.buffer,   0, shader->args.buffer_size);
-	memset(material->args.textures, 0, sizeof(tex2d_t) * shader->tex_slots.tex_count);
+	memset(material->args.textures, 0, sizeof(tex_t) * shader->tex_slots.tex_count);
 
 	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
 		shaderargs_desc_item_t &item = shader->args_desc.item[i];
@@ -74,7 +74,7 @@ material_t material_copy(material_t material) {
 	material_t result = material_create(material->shader);
 	// Store allocated memory temporarily
 	void          *tmp_buffer   = result->args.buffer;
-	tex2d_t       *tmp_textures = result->args.textures;
+	tex_t       *tmp_textures = result->args.textures;
 	asset_header_t tmp_header   = result->header;
 
 	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
@@ -83,7 +83,7 @@ material_t material_copy(material_t material) {
 	result->args.buffer   = tmp_buffer;
 	result->args.textures = tmp_textures;
 	memcpy(result->args.buffer,   material->args.buffer,   material->shader->args.buffer_size);
-	memcpy(result->args.textures, material->args.textures, sizeof(tex2d_t) * material->shader->tex_slots.tex_count);
+	memcpy(result->args.textures, material->args.textures, sizeof(tex_t) * material->shader->tex_slots.tex_count);
 
 	// Add references to all the other material's assets
 	assets_addref(result->shader->header);
@@ -119,7 +119,7 @@ void material_release(material_t material) {
 void material_destroy(material_t material) {
 	for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
 		if (material->args.textures[i] != nullptr)
-			tex2d_release(material->args.textures[i]);
+			tex_release(material->args.textures[i]);
 	}
 	shader_release(material->shader);
 	if (material->blend_state != nullptr) material->blend_state->Release();
@@ -159,7 +159,7 @@ void material_set_shader(material_t material, shader_t shader) {
 	if (material->shader != nullptr && shader != nullptr) {
 		shader_t old_shader   = material->shader;
 		void    *old_buffer   = material->args.buffer;
-		tex2d_t *old_textures = material->args.textures;
+		tex_t *old_textures = material->args.textures;
 		material_create_arg_defaults(material, shader);
 
 		// Copy old param values
@@ -174,7 +174,7 @@ void material_set_shader(material_t material, shader_t shader) {
 		// Do the same for textures
 		for (size_t i = 0; i < old_shader->tex_slots.tex_count; i++) {
 			material_set_texture_id(material, old_shader->tex_slots.tex[i].id, old_textures[i]);
-			tex2d_release(old_textures[i]);
+			tex_release(old_textures[i]);
 		}
 
 		free(old_buffer);
@@ -279,13 +279,13 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 ///////////////////////////////////////////
 
-bool32_t material_set_texture_id(material_t material, uint64_t id, tex2d_t value) {
+bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
 	for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
 		if (material->shader->tex_slots.tex[i].id == id) {
 			int slot = material->shader->tex_slots.tex[i].slot;
 			if (material->args.textures[slot] != value) {
 				if (material->args.textures[slot] != nullptr)
-					tex2d_release(material->args.textures[slot]);
+					tex_release(material->args.textures[slot]);
 				material->args.textures[slot] = value;
 				if (value != nullptr)
 					assets_addref(value->header);
@@ -298,7 +298,7 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex2d_t value
 
 ///////////////////////////////////////////
 
-bool32_t material_set_texture(material_t material, const char *name, tex2d_t value) {
+bool32_t material_set_texture(material_t material, const char *name, tex_t value) {
 	uint64_t id = string_hash(name);
 	return material_set_texture_id(material, id, value);
 }
@@ -313,7 +313,7 @@ void material_set_param(material_t material, const char *name, material_param_ t
 
 void material_set_param_id(material_t material, uint64_t id, material_param_ type, const void *value) {
 	if (type == material_param_texture) {
-		material_set_texture_id(material, id, (tex2d_t)value);
+		material_set_texture_id(material, id, (tex_t)value);
 	} else {
 		shaderargs_desc_item_t *desc = find_desc(material->shader, id);
 		if (desc != nullptr) {
@@ -335,7 +335,7 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 	if (type == material_param_texture) {
 		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
 			if (material->shader->tex_slots.tex[i].id == id) {
-				memcpy(out_value, material->args.textures[material->shader->tex_slots.tex[i].slot], sizeof(tex2d_t));
+				memcpy(out_value, material->args.textures[material->shader->tex_slots.tex[i].slot], sizeof(tex_t));
 				return true;
 			}
 		}

@@ -70,8 +70,8 @@ int main() {
 
 void common_init() {
 	// Create a PBR floor material
-	tex2d_t tex_color = tex2d_create_file("test.png");
-	tex2d_t tex_norm  = tex2d_create_file("test_normal.png");
+	tex_t tex_color = tex_create_file("test.png");
+	tex_t tex_norm  = tex_create_file("test_normal.png");
 	floor_mat = material_copy_id("default/material");
 	material_set_texture(floor_mat, "diffuse", tex_color);
 	material_set_texture(floor_mat, "normal",  tex_norm);
@@ -79,8 +79,8 @@ void common_init() {
 	material_set_float  (floor_mat, "roughness", 1.0f);
 	material_set_float  (floor_mat, "metallic", 0.5f);
 	material_set_queue_offset(floor_mat, 1);
-	if (tex_color != nullptr) tex2d_release(tex_color);
-	if (tex_norm  != nullptr) tex2d_release(tex_norm);
+	if (tex_color != nullptr) tex_release(tex_color);
+	if (tex_norm  != nullptr) tex_release(tex_norm);
 
 	// Procedurally create a cube model
 	mesh_t mesh_cube = mesh_gen_cube(vec3_one, 0);

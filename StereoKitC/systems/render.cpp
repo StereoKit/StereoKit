@@ -65,11 +65,11 @@ vec2                   render_clip_planes = {0.01f, 50};
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
-tex2d_t                render_default_tex;
+tex_t                  render_default_tex;
 
 mesh_t     render_sky_mesh = nullptr;
 material_t render_sky_mat = nullptr;
-tex2d_t    render_sky_cubemap = nullptr;
+tex_t      render_sky_cubemap = nullptr;
 bool32_t   render_sky_show = false;
 
 material_t render_last_material;
@@ -113,9 +113,9 @@ void render_set_light(const vec3 &direction, float intensity, const color128 &co
 
 ///////////////////////////////////////////
 
-void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
+void render_set_skytex(tex_t sky_texture, bool32_t show_sky) {
 	if (render_sky_cubemap != nullptr)
-		tex2d_release(render_sky_cubemap);
+		tex_release(render_sky_cubemap);
 
 	render_sky_show    = show_sky;
 	render_sky_cubemap = sky_texture;
@@ -276,7 +276,7 @@ bool render_initialize() {
 	material_set_cull        (render_sky_mat, cull_cw);
 	shader_release(sky_shader);
 
-	render_default_tex = tex2d_find("default/tex2d");
+	render_default_tex = tex_find("default/tex");
 
 	return true;
 }
@@ -294,8 +294,8 @@ void render_update() {
 void render_shutdown() {
 	material_release(render_sky_mat);
 	mesh_release    (render_sky_mesh);
-	tex2d_release   (render_sky_cubemap);
-	tex2d_release   (render_default_tex);
+	tex_release   (render_sky_cubemap);
+	tex_release   (render_default_tex);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		shaderargs_destroy(render_instance_buffers[i].buffer);
@@ -308,14 +308,14 @@ void render_shutdown() {
 
 ///////////////////////////////////////////
 
-void render_blit(tex2d_t to, material_t material) {
+void render_blit(tex_t to, material_t material) {
 	// Set up where on the render target we want to draw, the view has a 
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)to->width, (float)to->height);
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex2d_rtarget_clear(to, { 0,0,0,0 });
-	tex2d_rtarget_set_active(to);
+	tex_rtarget_clear(to, { 0,0,0,0 });
+	tex_rtarget_set_active(to);
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
@@ -333,7 +333,7 @@ void render_blit(tex2d_t to, material_t material) {
 	// And draw to it!
 	render_draw_item(1);
 
-	tex2d_rtarget_set_active(nullptr);
+	tex_rtarget_set_active(nullptr);
 
 	render_last_material = nullptr;
 	render_last_mesh = nullptr;
@@ -360,7 +360,7 @@ void render_set_material(material_t material) {
 	// Use a texture from the material, or use the default! But don't
 	// leave any empty, or we can get overflow from previous renders.
 	for (int i = 0; i < material->shader->tex_slots.tex_count; i++) {
-		tex2d_t tex = material->args.textures[i];
+		tex_t tex = material->args.textures[i];
 		if (tex == nullptr)
 			tex = material->shader->tex_slots.tex[i].default_tex;
 

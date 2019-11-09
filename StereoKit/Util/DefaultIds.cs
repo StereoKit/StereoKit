@@ -22,20 +22,20 @@ namespace StereoKit {
 
         /// <summary>Default 2x2 white opaque texture, this is the texture referred to as 'white'
         /// in the shader texture defaults.</summary>
-        public const string tex2d      = "default/tex2d";
+        public const string tex      = "default/tex";
         /// <summary>Default 2x2 black opaque texture, this is the texture referred to as 'black'
         /// in the shader texture defaults.</summary>
-        public const string tex2dBlack = "default/tex2d_black";
+        public const string texBlack = "default/tex_black";
         /// <summary>Default 2x2 middle gray (0.5,0.5,0.5) opaque texture, this is the texture 
         /// referred to as 'gray' in the shader texture defaults.</summary>
-	    public const string tex2dGray  = "default/tex2d_gray";
+	    public const string texGray  = "default/tex_gray";
         /// <summary>Default 2x2 flat normal texture, this is a normal that faces out from the,
         /// face, and has a color value of (0.5,0.5,1). this is the texture referred to as 'flat'
         /// in the shader texture defaults.</summary>
-	    public const string tex2dFlat  = "default/tex2d_flat";
+	    public const string texFlat  = "default/tex_flat";
         /// <summary>Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough'
         /// in the shader texture defaults.</summary>
-	    public const string tex2dRough = "default/tex2d_rough";
+	    public const string texRough = "default/tex_rough";
 
         /// <summary>The default font asset used by the UI and text. This is currently Segoe!</summary>
         public const string font = "default/font";

@@ -8,7 +8,7 @@ namespace StereoKit
 
         public float Aspect { get{ return NativeAPI.sprite_get_aspect(_spriteInst); } }
         
-        public Sprite(Tex2D image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+        public Sprite(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
         {
             _spriteInst = NativeAPI.sprite_create(image._texInst, type, atlasId);
             if (_spriteInst == IntPtr.Zero)

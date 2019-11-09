@@ -14,8 +14,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_create(tex_type_ type, tex_format_ format) {
-	tex2d_t result = (tex2d_t)assets_allocate(asset_type_texture);
+tex_t tex_create(tex_type_ type, tex_format_ format) {
+	tex_t result = (tex_t)assets_allocate(asset_type_texture);
 	result->type   = type;
 	result->format = format;
 	return result;
@@ -23,7 +23,7 @@ tex2d_t tex2d_create(tex_type_ type, tex_format_ format) {
 
 ///////////////////////////////////////////
 
-void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
+void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err("Can't add a zbuffer to a non-rendertarget texture!");
 		return;
@@ -31,17 +31,17 @@ void tex2d_add_zbuffer(tex2d_t texture, tex_format_ format) {
 
 	char id[64];
 	assets_unique_name("zbuffer/", id, sizeof(id));
-	texture->depth_buffer = tex2d_create(tex_type_depth, format);
-	tex2d_set_id(texture->depth_buffer, id);
+	texture->depth_buffer = tex_create(tex_type_depth, format);
+	tex_set_id(texture->depth_buffer, id);
 	if (texture->texture != nullptr) {
-		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
+		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
 }
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_find(const char *id) {
-	tex2d_t result = (tex2d_t)assets_find(id);
+tex_t tex_find(const char *id) {
+	tex_t result = (tex_t)assets_find(id);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
@@ -51,14 +51,14 @@ tex2d_t tex2d_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void tex2d_set_id(tex2d_t mesh, const char *id) {
+void tex_set_id(tex_t mesh, const char *id) {
 	assets_set_id(mesh->header, id);
 }
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_create_file(const char *file) {
-	tex2d_t result = tex2d_find(file);
+tex_t tex_create_file(const char *file) {
+	tex_t result = tex_find(file);
 	if (result != nullptr)
 		return result;
 
@@ -71,21 +71,21 @@ tex2d_t tex2d_create_file(const char *file) {
 		log_warnf("Couldn't load image file: %s", file);
 		return nullptr;
 	}
-	result = tex2d_create(tex_type_image);
-	tex2d_set_id(result, file);
+	result = tex_create(tex_type_image);
+	tex_set_id(result, file);
 
-	tex2d_set_colors(result, width, height, data);
+	tex_set_colors(result, width, height, data);
 	free(data);
 
-	DX11ResName(result->resource, "tex2d_view", file);
-	DX11ResName(result->texture,  "tex2d_src", file);
+	DX11ResName(result->resource, "tex_view", file);
+	DX11ResName(result->texture,  "tex_src", file);
 	return result;
 }
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
-	tex2d_t result = tex2d_find(equirectangular_file);
+tex_t tex_create_cubemap_file(const char *equirectangular_file) {
+	tex_t result = tex_find(equirectangular_file);
 	if (result != nullptr)
 		return result;
 
@@ -93,7 +93,7 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
-	tex2d_t equirect = tex2d_create_file(equirectangular_file);
+	tex_t equirect = tex_create_file(equirectangular_file);
 	if (equirect == nullptr)
 		return nullptr;
 	equirect->header.id = string_hash("temp/equirectid");
@@ -101,12 +101,12 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 
 	material_set_texture( convert_material, "source", equirect );
 
-	tex2d_t  face    = tex2d_create(tex_type_rendertarget, equirect->format);
+	tex_t  face    = tex_create(tex_type_rendertarget, equirect->format);
 	color32 *data[6] = {};
 	int      width   = equirect->height / 2;
 	int      height  = width;
-	size_t   size    = (size_t)width*(size_t)height*tex2d_format_size(equirect->format);
-	tex2d_set_colors(face, width, height, nullptr);
+	size_t   size    = (size_t)width*(size_t)height*tex_format_size(equirect->format);
+	tex_set_colors(face, width, height, nullptr);
 	for (size_t i = 0; i < 6; i++) {
 		material_set_vector(convert_material, "up",      { up[i].x, up[i].y, up[i].z, 0 });
 		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
@@ -114,16 +114,16 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 
 		render_blit   (face, convert_material);
 		data[i] = (color32*)malloc(size);
-		tex2d_get_data(face, data[i], size);
+		tex_get_data(face, data[i], size);
 	}
 
-	result = tex2d_create(tex_type_image | tex_type_cubemap, equirect->format);
-	tex2d_set_id       (result, equirectangular_file);
-	tex2d_set_color_arr(result, width, height, (void**)&data, 6);
+	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
+	tex_set_id       (result, equirectangular_file);
+	tex_set_color_arr(result, width, height, (void**)&data, 6);
 
 	material_release(convert_material);
-	tex2d_release(equirect);
-	tex2d_release(face);
+	tex_release(equirect);
+	tex_release(face);
 
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
@@ -136,8 +136,8 @@ tex2d_t tex2d_create_cubemap_file(const char *equirectangular_file) {
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
-	tex2d_t result = tex2d_find(cube_face_file_xxyyzz[0]);
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz) {
+	tex_t result = tex_find(cube_face_file_xxyyzz[0]);
 	if (result != nullptr)
 		return result;
 
@@ -173,9 +173,9 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	}
 
 	// Create with the data we have
-	result = tex2d_create(tex_type_image | tex_type_cubemap);
-	tex2d_set_id       (result, cube_face_file_xxyyzz[0]);
-	tex2d_set_color_arr(result, final_width, final_height, (void**)&data, 6);
+	result = tex_create(tex_type_image | tex_type_cubemap);
+	tex_set_id       (result, cube_face_file_xxyyzz[0]);
+	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -187,7 +187,7 @@ tex2d_t tex2d_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_create_mem(void *data, size_t data_size) {
+tex_t tex_create_mem(void *data, size_t data_size) {
 
 	int      channels = 0;
 	int      width    = 0;
@@ -197,19 +197,19 @@ tex2d_t tex2d_create_mem(void *data, size_t data_size) {
 	if (col_data == nullptr) {
 		return nullptr;
 	}
-	tex2d_t result = tex2d_create();
+	tex_t result = tex_create();
 
-	tex2d_set_colors(result, width, height, col_data);
+	tex_set_colors(result, width, height, col_data);
 	free(col_data);
 
-	DX11ResType(result->resource, "tex2d_view");
-	DX11ResType(result->texture,  "tex2d_src" );
+	DX11ResType(result->resource, "tex_view");
+	DX11ResType(result->texture,  "tex_src" );
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void tex2d_release(tex2d_t texture) {
+void tex_release(tex_t texture) {
 	if (texture == nullptr)
 		return;
 	assets_releaseref(texture->header);
@@ -217,17 +217,17 @@ void tex2d_release(tex2d_t texture) {
 
 ///////////////////////////////////////////
 
-void tex2d_destroy(tex2d_t tex) {
-	tex2d_releasesurface(tex);
+void tex_destroy(tex_t tex) {
+	tex_releasesurface(tex);
 	if (tex->sampler      != nullptr) tex->sampler->Release();
-	if (tex->depth_buffer != nullptr) tex2d_release(tex->depth_buffer);
+	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
 	*tex = {};
 }
 
 ///////////////////////////////////////////
 
-void tex2d_releasesurface(tex2d_t tex) {
+void tex_releasesurface(tex_t tex) {
 	if (tex->resource    != nullptr) tex->resource   ->Release();
 	if (tex->target_view != nullptr) tex->target_view->Release();
 	if (tex->texture     != nullptr) tex->texture    ->Release();
@@ -240,22 +240,22 @@ void tex2d_releasesurface(tex2d_t tex) {
 
 ///////////////////////////////////////////
 
-void tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height;
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
 	if (texture->texture == nullptr || different_size) {
-		tex2d_releasesurface(texture);
+		tex_releasesurface(texture);
 		
 		texture->width  = width;
 		texture->height = height;
 
-		bool result = tex2d_create_surface(texture, data, data_count);
+		bool result = tex_create_surface(texture, data, data_count);
 		if (result)
-			result = tex2d_create_views  (texture);
+			result = tex_create_views  (texture);
 		if (result && texture->depth_buffer != nullptr)
-			tex2d_set_colors(texture->depth_buffer, width, height, nullptr);
+			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
 		D3D11_MAPPED_SUBRESOURCE tex_mem = {};
 		if (FAILED(d3d_context->Map(texture->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &tex_mem))) {
@@ -263,7 +263,7 @@ void tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void **
 			return;
 		}
 
-		size_t   color_size = tex2d_format_size(texture->format);
+		size_t   color_size = tex_format_size(texture->format);
 		uint8_t *dest_line  = (uint8_t *)tex_mem.pData;
 		uint8_t *src_line   = (uint8_t *)data[0];
 		for (int i = 0; i < height; i++) {
@@ -279,14 +279,14 @@ void tex2d_set_color_arr(tex2d_t texture, int32_t width, int32_t height, void **
 
 ///////////////////////////////////////////
 
-void tex2d_set_colors(tex2d_t texture, int32_t width, int32_t height, void *data) {
+void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 	void *data_arr[1] = { data };
-	tex2d_set_color_arr(texture, width, height, data_arr, 1);
+	tex_set_color_arr(texture, width, height, data_arr, 1);
 }
 
 ///////////////////////////////////////////
 
-void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
 	if (texture->sampler != nullptr)
 		texture->sampler->Release();
 
@@ -322,7 +322,7 @@ void tex2d_set_options(tex2d_t texture, tex_sample_ sample, tex_address_ address
 
 ///////////////////////////////////////////
 
-void tex2d_set_active(tex2d_t texture, int slot) {
+void tex_set_active(tex_t texture, int slot) {
 	if (texture != nullptr) {
 		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
 		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
@@ -333,7 +333,7 @@ void tex2d_set_active(tex2d_t texture, int slot) {
 
 ///////////////////////////////////////////
 
-bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
+bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 	bool mips    = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
@@ -345,7 +345,7 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 	desc.MipLevels        = (UINT)(mips ? log2(texture->width) + 1 : 1);
 	desc.ArraySize        = data_count;
 	desc.SampleDesc.Count = 1;
-	desc.Format           = tex2d_get_native_format(texture->format);
+	desc.Format           = tex_get_native_format(texture->format);
 	desc.BindFlags        = depth   ? D3D11_BIND_DEPTH_STENCIL : D3D11_BIND_SHADER_RESOURCE;
 	desc.Usage            = dynamic ? D3D11_USAGE_DYNAMIC      : D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags   = dynamic ? D3D11_CPU_ACCESS_WRITE   : 0;
@@ -359,7 +359,7 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 		void *curr_data = data[i];
 		
 		tex_mem[i*desc.MipLevels].pSysMem     = curr_data;
-		tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * texture->width);
+		tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex_format_size(texture->format) * texture->width);
 
 		if (mips) {
 			color32 *mip_data   = (color32*)curr_data;
@@ -367,9 +367,9 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 			int32_t  mip_height = texture->height;
 			for (uint32_t m = 1; m < desc.MipLevels; m++) {
 				uint32_t index = i*desc.MipLevels + m;
-				tex2d_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
+				tex_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
 				mip_data = (color32*)tex_mem[index].pSysMem;
-				tex_mem[index].SysMemPitch = (UINT)(tex2d_format_size(texture->format) * mip_width);
+				tex_mem[index].SysMemPitch = (UINT)(tex_format_size(texture->format) * mip_width);
 			}
 		}
 	}
@@ -394,8 +394,8 @@ bool tex2d_create_surface(tex2d_t texture, void **data, int32_t data_count) {
 
 ///////////////////////////////////////////
 
-void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
-	tex2d_releasesurface(texture);
+void tex_setsurface(tex_t texture, ID3D11Texture2D *source) {
+	tex_releasesurface(texture);
 	texture->texture = source;
 
 	int old_width  = texture->width;
@@ -405,17 +405,17 @@ void tex2d_setsurface(tex2d_t texture, ID3D11Texture2D *source) {
 	texture->width  = color_desc.Width;
 	texture->height = color_desc.Height;
 
-	bool created_views      = tex2d_create_views(texture);
+	bool created_views      = tex_create_views(texture);
 	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
 	if (created_views && resolution_changed && texture->depth_buffer != nullptr) {
-		tex2d_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
+		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
 }
 
 ///////////////////////////////////////////
 
-bool tex2d_create_views(tex2d_t texture) {
-	DXGI_FORMAT format = tex2d_get_native_format(texture->format);
+bool tex_create_views(tex_t texture) {
+	DXGI_FORMAT format = tex_get_native_format(texture->format);
 	bool        mips   = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 
 	if (!(texture->type & tex_type_depth)) {
@@ -450,14 +450,14 @@ bool tex2d_create_views(tex2d_t texture) {
 	}
 
 	if (texture->sampler == nullptr)
-		tex2d_set_options(texture);
+		tex_set_options(texture);
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-DXGI_FORMAT tex2d_get_native_format(tex_format_ format) {
+DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	switch (format) {
 	case tex_format_rgba32:  return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case tex_format_rgba64:  return DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -471,7 +471,7 @@ DXGI_FORMAT tex2d_get_native_format(tex_format_ format) {
 
 ///////////////////////////////////////////
 
-size_t tex2d_format_size(tex_format_ format) {
+size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
 	case tex_format_depthstencil:
@@ -485,7 +485,7 @@ size_t tex2d_format_size(tex_format_ format) {
 
 ///////////////////////////////////////////
 
-void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
+void tex_rtarget_clear(tex_t render_target, color32 color) {
 	assert(render_target->type & tex_type_rendertarget);
 
 	if (render_target->target_view != nullptr) {
@@ -503,7 +503,7 @@ void tex2d_rtarget_clear(tex2d_t render_target, color32 color) {
 
 ///////////////////////////////////////////
 
-void tex2d_rtarget_set_active(tex2d_t render_target) {
+void tex_rtarget_set_active(tex_t render_target) {
 	if (render_target == nullptr) {
 		ID3D11RenderTargetView* null_rtv = nullptr;
 		d3d_context->OMSetRenderTargets(1, &null_rtv, nullptr);
@@ -520,9 +520,9 @@ void tex2d_rtarget_set_active(tex2d_t render_target) {
 
 ///////////////////////////////////////////
 
-void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
+void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 	// Make sure we've been provided enough memory to hold this texture
-	size_t format_size = tex2d_format_size(texture->format);
+	size_t format_size = tex_format_size(texture->format);
 	assert(out_data_size == (size_t)texture->width * (size_t)texture->height * format_size);
 
 	D3D11_TEXTURE2D_DESC desc             = {};
@@ -533,7 +533,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 	// Make sure copy_tex is a texture that we can read from!
 	if (desc.SampleDesc.Count > 1) {
 		// Not gonna bother with MSAA stuff
-		log_warn("tex2d_get_data AA surfaces not implemented");
+		log_warn("tex_get_data AA surfaces not implemented");
 		return;
 	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
 		// Handle case where the source is already a staging texture we can use directly
@@ -577,7 +577,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 
 ///////////////////////////////////////////
 
-void *tex2d_get_resource(tex2d_t texture) {
+void *tex_get_resource(tex_t texture) {
 	return texture->resource;
 }
 
@@ -600,8 +600,8 @@ vec3 cubemap_corner(int i) {
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count, vec3 gradient_dir) {
-	tex2d_t result = tex2d_create(tex_type_image | tex_type_cubemap);
+tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count, vec3 gradient_dir) {
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -658,7 +658,7 @@ tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_c
 		}
 	}
 
-	tex2d_set_color_arr(result, size, size, (void**)data, 6);
+	tex_set_color_arr(result, size, size, (void**)data, 6);
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -668,7 +668,7 @@ tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_c
 
 ///////////////////////////////////////////
 
-bool tex2d_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
+bool tex_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);
 	int h = (int32_t)log2(height);
 	w = (1 << w)  >> 1;

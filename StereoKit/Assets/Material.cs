@@ -61,7 +61,7 @@ namespace StereoKit
                 case Color   c128: SetColor  (parameterName, c128); break;
                 case Vec4    v:    SetVector (parameterName, v); break;
                 case Matrix  m:    SetMatrix (parameterName, m); break;
-                case Tex2D   t:    SetTexture(parameterName, t); break;
+                case Tex     t:    SetTexture(parameterName, t); break;
                 default: Log.Write(LogLevel.Error, "Invalid material parameter type: {0}", value.GetType().ToString()); break;
             }
         } }
@@ -118,7 +118,7 @@ namespace StereoKit
         /// is found, nothing happens, and the value is not set!</summary>
         /// <param name="name">Name of the shader parameter.</param>
         /// <param name="value">New value for the parameter.</param>
-        public void SetTexture(string name, Tex2D value)
+        public void SetTexture(string name, Tex value)
         {
             NativeAPI.material_set_texture(_materialInst, name, value._texInst);
         }
