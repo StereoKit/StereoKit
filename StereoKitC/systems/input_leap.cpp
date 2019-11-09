@@ -93,11 +93,12 @@ void input_leap_thread(void *arg) {
 ///////////////////////////////////////////
 
 void copy_hand(pose_t *dest, LEAP_HAND &hand) {
-	camera_t    *cam;
-	transform_t *tr;
-	render_get_cam(&cam, &tr);
 	vec3 offset = { 0,-0.25f,-0.15f };
 	quat rot    = quat_from_angles(0,180,-90);
+
+	const pose_t &head     = input_head();
+	matrix        to_world = pose_matrix(head);
+	matrix_inverse(to_world, to_world);
 
 	for (size_t f = 0; f < 5; f++) {
 		LEAP_BONE &bone = hand.digits[f].bones[0];
@@ -105,8 +106,8 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 
 		memcpy(&pose->orientation, &bone.rotation,   sizeof(quat));
 		memcpy(&pose->position,    &bone.prev_joint, sizeof(vec3));
-		pose->position = transform_local_to_world(*tr, (pose->position * mm2m) + offset);
-		pose->orientation = (rot * pose->orientation) * tr->_rotation;
+		pose->position    = matrix_mul_point( to_world, (pose->position * mm2m) + offset);
+		pose->orientation = (rot * pose->orientation) * head.orientation;
 	}
 	for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 4; j++) {
@@ -115,8 +116,8 @@ void copy_hand(pose_t *dest, LEAP_HAND &hand) {
 
 			memcpy(&pose->orientation, &bone.rotation,   sizeof(quat));
 			memcpy(&pose->position,    &bone.next_joint, sizeof(vec3));
-			pose->position = transform_local_to_world(*tr, (pose->position * mm2m) + offset);
-			pose->orientation = (rot * pose->orientation) * tr->_rotation;
+			pose->position = matrix_mul_point(to_world, (pose->position * mm2m) + offset);
+			pose->orientation = (rot * pose->orientation) * head.orientation;
 		}
 	}
 }

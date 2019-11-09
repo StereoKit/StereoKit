@@ -12,17 +12,14 @@ struct render_stats_t {
 	int draw_calls;
 };
 
-void render_draw       ();
-void render_draw_from  (camera_t &cam, transform_t &cam_transform);
-void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform);
-void render_clear();
+void render_draw        ();
+void render_draw_matrix (const matrix &view, const matrix &proj);
+void render_clear       ();
+vec3 render_unproject_pt(vec3 normalized_screen_pt);
 
 bool render_initialize();
 void render_update();
 void render_shutdown();
-
-// don't like this function much
-void render_get_cam(camera_t **cam, transform_t **cam_transform);
 
 void render_set_material(material_t material);
 void render_set_shader  (shader_t   shader);

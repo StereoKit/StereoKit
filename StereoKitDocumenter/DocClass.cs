@@ -64,7 +64,6 @@ description: {StringHelper.CleanForDescription(summary)}
 ---
 # {name}
 
-## Description
 {summary}
 {fieldText}
 {memberText}

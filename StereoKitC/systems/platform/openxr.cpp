@@ -37,9 +37,13 @@ struct xr_input_t {
 	XrAction    poseAction;
 	XrAction    selectAction;
 	XrAction    gripAction;
+	XrAction    headAction;
 	XrPath   handSubactionPath[2];
 	XrSpace  handSpace[2];
 	XrPosef  handPose[2];
+	XrPath   headSubactionPath;
+	XrSpace  headSpace;
+	XrPosef  headPose;
 	XrBool32 renderHand[2];
 	XrBool32 handSelect[2];
 	int      pointer_ids[3];
@@ -389,8 +393,7 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		matrix xr_proj_m;
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
 		memcpy(&xr_proj_m, xr_projection, sizeof(float) * 16);
-		transform_t cam_transform;
-		transform_set(cam_transform, (vec3&)views[i].pose.position, vec3_one, (quat&)views[i].pose.orientation);
+		matrix cam_transform = matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one);
 		render_draw_matrix(xr_proj_m, cam_transform);
 
 		// And tell OpenXR we're done with rendering to this one!
@@ -436,14 +439,21 @@ void openxr_make_actions() {
 	strcpy_s(action_info.localizedActionName, "Grip");
 	xrCreateAction(xr_input.action_set, &action_info, &xr_input.gripAction);
 
+	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
+	strcpy_s(action_info.actionName,          "head");
+	strcpy_s(action_info.localizedActionName, "Head");
+	xrCreateAction(xr_input.action_set, &action_info, &xr_input.headAction);
+
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
 	// preferences. For example, if the runtime allows you to remap buttons, or provides input
 	// accessibility settings.
 	XrPath profile_path;
+	XrPath head_path;
 	XrPath pose_path  [2];
 	XrPath select_path[2];
 	XrPath grip_path  [2];
+	xrStringToPath(xr_instance, "/user/head/input/aim/pose",            &head_path);
 	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",       &pose_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",      &pose_path[1]);
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
@@ -457,7 +467,8 @@ void openxr_make_actions() {
 		XrActionSuggestedBinding bindings[] = {
 			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
 			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
-			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] }
+			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] },
+			{ xr_input.poseAction,   head_path },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
@@ -474,6 +485,7 @@ void openxr_make_actions() {
 		XrActionSuggestedBinding bindings[] = {
 			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
 			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
+			{ xr_input.poseAction,   head_path },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
@@ -490,6 +502,13 @@ void openxr_make_actions() {
 		action_space_info.subactionPath     = xr_input.handSubactionPath[i];
 		action_space_info.action            = xr_input.poseAction;
 		xrCreateActionSpace(xr_session, &action_space_info, &xr_input.handSpace[i]);
+	}
+	{
+		XrActionSpaceCreateInfo action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
+		action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
+		action_space_info.subactionPath     = xr_input.headSubactionPath;
+		action_space_info.action            = xr_input.headAction;
+		xrCreateActionSpace(xr_session, &action_space_info, &xr_input.headSpace);
 	}
 
 	// Attach the action set we just made to the session
@@ -553,6 +572,14 @@ void openxr_poll_actions() {
 		openxr_pose_to_pointer(space_location.pose, pointer);
 
 		input_hand_sim((handed_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
+
+		// Find the head pose
+		space_location = { XR_TYPE_SPACE_LOCATION };
+		res            = xrLocateSpace(xr_input.headSpace, xr_app_space, select_state.lastChangeTime, &space_location);
+		if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
+			memcpy(&input_head_pose.position,    &space_location.pose.position,    sizeof(vec3));
+			memcpy(&input_head_pose.orientation, &space_location.pose.orientation, sizeof(quat));
+		}
 
 		// Get event poses, and fire our own events for them
 		const hand_t &curr_hand = input_hand((handed_)hand);

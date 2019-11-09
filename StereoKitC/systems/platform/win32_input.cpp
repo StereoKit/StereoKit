@@ -37,6 +37,9 @@ void win32_input_init() {
 #ifndef SK_NO_LEAP_MOTION
 	win32_use_leap = input_leap_init();
 #endif
+
+	input_head_pose = { vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero) };
+	render_set_view(pose_matrix(input_head_pose));
 }
 
 ///////////////////////////////////////////
@@ -64,15 +67,11 @@ void win32_input_update() {
 #endif
 
 	pointer_t   *pointer_head = input_get_pointer(win32_input_pointers[1]);
-	camera_t    *cam    = nullptr;
-	transform_t *cam_tr = nullptr;
-	render_get_cam(&cam, &cam_tr);
+	pose_t       head         = input_head();
 
-	if (cam != nullptr) {
-		pointer_head->state   = pointer_state_available;
-		pointer_head->ray.pos = cam_tr->_position;
-		pointer_head->ray.dir = transform_forward(*cam_tr);
-	}
+	pointer_head->state   = pointer_state_available;
+	pointer_head->ray.pos = head.position;
+	pointer_head->ray.dir = head.orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////

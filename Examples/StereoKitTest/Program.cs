@@ -9,10 +9,10 @@ class Program
     const string Root = "../../../Examples/Assets/";
 #endif
 
-    static Model     floorMesh;
-    static Transform floorTr;
-    static Solid     floorSolid;
-    static Pose      demoSelectPose = new Pose();
+    static Model  floorMesh;
+    static Matrix floorTr;
+    static Solid  floorSolid;
+    static Pose   demoSelectPose = new Pose();
 
     static void Main(string[] args) 
     {
@@ -45,10 +45,10 @@ class Program
         floorMat["tex_scale"] = 6;
 
         floorMesh = new Model(Mesh.GenerateCube(Vec3.One), floorMat);
-        floorTr   = new Transform(new Vec3(0, -1.5f, 0), new Vec3(5, 1, 5));
+        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(5, 1, 5));
 
-        floorSolid = new Solid(floorTr.Position, floorTr.Rotation, SolidType.Immovable);
-        floorSolid.AddBox(floorTr.Scale);
+        floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
+        floorSolid.AddBox(new Vec3(5, 1, 5));
 
         demoSelectPose.position    = new Vec3(0, 0, -0.25f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);

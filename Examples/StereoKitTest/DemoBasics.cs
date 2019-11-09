@@ -26,7 +26,7 @@ class DemoBasics : IDemo
         for (int i = 0; i < objects.Count; i++)
         {
             objects[i].GetTransform(ref solidTr);
-            Renderer.Add(gltf, solidTr, Color.White);
+            Renderer.Add(gltf, Matrix.TRS(solidTr.Position, solidTr.Rotation, Vec3.One*0.25f), Color.White);
         }
     }
 

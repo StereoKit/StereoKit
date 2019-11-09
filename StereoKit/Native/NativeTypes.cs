@@ -143,14 +143,6 @@ namespace StereoKit
         Single
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct camera_t
-    {
-        float fov;
-        float clip_near;
-        float clip_far;
-    }
-
     [Flags]
     public enum InputSource
     {
