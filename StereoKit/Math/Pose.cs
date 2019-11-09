@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -14,7 +15,10 @@ namespace StereoKit
             this.orientation = orientation;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix ToMatrix(Vec3 scale) => NativeAPI.pose_matrix(this, scale);
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix ToMatrix()           => NativeAPI.pose_matrix(this, Vec3.One);
 
     };

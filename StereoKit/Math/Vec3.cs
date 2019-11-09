@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -35,5 +36,12 @@ namespace StereoKit
         public static Vec3 operator -(Vec3 a)          { return new Vec3(-a.x, -a.y, -a.z); }
         public static Vec3 operator *(Vec3 a, float b) { return new Vec3(a.x * b, a.y * b, a.z * b); }
         public static Vec3 operator /(Vec3 a, float b) { return new Vec3(a.x / b, a.y / b, a.z / b); }
+
+        public static float Dot(in Vec3 a, in Vec3 b)
+            => a.x*b.x + a.y*b.y + a.z*b.z;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vec3 Cross(in Vec3 a, in Vec3 b)
+            => NativeAPI.vec3_cross(a, b);
     }
 }

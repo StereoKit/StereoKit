@@ -44,7 +44,7 @@ namespace StereoKit
         /// <returns>If an exit message is received from the platform, this function will return false.</returns>
         public static bool Step(Action onStep)
         {
-            return NativeAPI.sk_step(onStep) > 0;
+            return NativeAPI.sk_step(onStep);
         }
     }
 }

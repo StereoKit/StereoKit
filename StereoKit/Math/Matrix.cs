@@ -12,16 +12,14 @@ namespace StereoKit
 
         public Matrix Inverse() 
         {
-            Matrix result; 
-            NativeAPI.matrix_inverse(this, out result); 
+            NativeAPI.matrix_inverse(this, out Matrix result); 
             return result;
         }
         public Vec3 TransformPoint    (Vec3 point)     => NativeAPI.matrix_mul_point    (this, point);
         public Vec3 TransformDirection(Vec3 direction) => NativeAPI.matrix_mul_direction(this, direction);
 
         public static Matrix operator *(Matrix a, Matrix b) { 
-            Matrix result;
-            NativeAPI.matrix_mul(a, b, out result);
+            NativeAPI.matrix_mul(a, b, out Matrix result);
             return result;
         }
         public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(a, b);
