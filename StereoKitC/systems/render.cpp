@@ -273,7 +273,7 @@ bool render_initialize() {
 	render_sky_mat  = material_create(sky_shader);
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
-	material_set_cull        (render_sky_mat, cull_none);
+	material_set_cull        (render_sky_mat, cull_cw);
 	shader_release(sky_shader);
 
 	render_default_tex = tex2d_find("default/tex2d");

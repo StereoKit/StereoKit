@@ -22,26 +22,30 @@ TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
 
 cbuffer ParamBuffer : register(b2) {
-	// [param] float blur 0.8
+	// [param] float blur 0.0
 	float blur;
 };
-struct InOut {
+struct vsIn {
 	float4 pos  : SV_POSITION;
-	float3 norm : NORMAL;
+	float3 norm : NORMAL0;
+};
+struct psIn {
+	float4 pos  : SV_POSITION;
+	float3 norm : NORMAL0;
 };
 struct psOut {
     float4 color : SV_Target;
     float  depth : SV_Depth;
 };
 
-InOut vs(InOut input, uint id : SV_InstanceID) {
-	InOut output;
+psIn vs(vsIn input, uint id : SV_InstanceID) {
+	psIn output;
 	output.pos  = mul(float4(input.pos.xyz, 0), sk_viewproj);
-	output.norm = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
+	output.norm = input.norm;
 	return output;
 }
 
-psOut ps(InOut input) {
+psOut ps(vsIn input) {
 	psOut result;
 
 	float w, h;

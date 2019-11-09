@@ -290,7 +290,7 @@ SK_API void    tex2d_rtarget_clear     (tex2d_t render_target, color32 color);
 SK_API void    tex2d_rtarget_set_active(tex2d_t render_target);
 SK_API void    tex2d_get_data   (tex2d_t texture, void *out_data, size_t out_data_size);
 SK_API void   *tex2d_get_resource(tex2d_t texture);
-SK_API tex2d_t tex2d_gen_cubemap(const color32 *gradient, int32_t gradient_count);
+SK_API tex2d_t tex2d_gen_cubemap(const color32 *gradient, int32_t gradient_count, vec3 gradient_dir);
 
 ///////////////////////////////////////////
 
