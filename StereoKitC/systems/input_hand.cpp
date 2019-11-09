@@ -36,7 +36,6 @@ hand_state_t hand_state[2];
 
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
-transform_t hand_transform;
 
 ///////////////////////////////////////////
 
@@ -47,11 +46,9 @@ const hand_t &input_hand(handed_ hand) {
 ///////////////////////////////////////////
 
 void input_hand_init() {
-	transform_initialize(hand_transform);
-
 	// Initialize the hands!
 	for (size_t i = 0; i < handed_max; i++) {
-		hand_state[i].visible = true;
+		hand_state[i].visible  = true;
 		hand_state[i].material = material_find("default/material");
 
 		hand_state[i].info.root.orientation = quat_identity;
@@ -90,7 +87,7 @@ void input_hand_update() {
 		bool tracked = hand_state[i].info.state & input_state_tracked;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
-			render_add_mesh_tr(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
+			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
 		}
 
 		// Update hand physics

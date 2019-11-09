@@ -55,6 +55,7 @@ XrSession      xr_session       = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running         = false;
 XrSpace        xr_app_space     = {};
+XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrEnvironmentBlendMode xr_blend;
 xr_input_t     xr_input = {};
@@ -161,6 +162,11 @@ bool openxr_init(const char *app_name) {
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_LOCAL;
 	xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 
+	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
+	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
+	xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
+	
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
 	uint32_t view_count = 0;
@@ -389,9 +395,9 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		matrix xr_proj_m;
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
 		memcpy(&xr_proj_m, xr_projection, sizeof(float) * 16);
-		transform_t cam_transform;
-		transform_set(cam_transform, (vec3&)views[i].pose.position, vec3_one, (quat&)views[i].pose.orientation);
-		render_draw_matrix(xr_proj_m, cam_transform);
+		matrix cam_transform;
+		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), cam_transform);
+		render_draw_matrix(cam_transform, xr_proj_m);
 
 		// And tell OpenXR we're done with rendering to this one!
 		XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
@@ -457,7 +463,7 @@ void openxr_make_actions() {
 		XrActionSuggestedBinding bindings[] = {
 			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
 			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
-			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] }
+			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
@@ -519,6 +525,14 @@ void openxr_poll_actions() {
 	sync_info.countActiveActionSets = 1;
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
+
+	// Track the head location
+	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res           = xrLocateSpace(xr_head_space, xr_app_space, xr_time, &head_location);
+	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(head_location)) {
+		memcpy(&input_head_pose.position,    &head_location.pose.position,    sizeof(vec3));
+		memcpy(&input_head_pose.orientation, &head_location.pose.orientation, sizeof(quat));
+	}
 
 	// Now we'll get the current states of our actions, and store them for later use
 	for (uint32_t hand = 0; hand < handed_max; hand++) {

@@ -24,6 +24,7 @@ vector<input_event_t> input_listeners;
 vector<pointer_t>     input_pointers;
 mouse_t               input_mouse_data = {};
 keyboard_t            input_key_data   = {};
+pose_t                input_head_pose  = { vec3_zero, quat_identity };
 
 ///////////////////////////////////////////
 
@@ -130,6 +131,10 @@ const mouse_t &input_mouse() {
 
 button_state_ input_key(key_ key) {
 	return (button_state_)input_key_data.keys[key];
+}
+
+const pose_t &input_head() {
+	return input_head_pose;
 }
 
 } // namespace sk {

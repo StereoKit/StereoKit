@@ -59,10 +59,9 @@ render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 
 vector<render_item_t>  render_queue;
 shaderargs_t           render_shader_globals;
 shaderargs_t           render_shader_blit;
-transform_t           *render_camera_transform = nullptr;
-camera_t              *render_camera = nullptr;
-transform_t            render_default_camera_tr;
-camera_t               render_default_camera;
+matrix                 render_default_camera_tr;
+matrix                 render_default_camera_proj;
+vec2                   render_clip_planes = {0.01f, 50};
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
@@ -89,14 +88,19 @@ inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void render_set_camera(camera_t &cam) {
-	render_camera = &cam;
+void render_set_clip(float near_plane, float far_plane) {
+	render_clip_planes = { near_plane, far_plane };
+	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
+		90 * deg2rad, 
+		(float)d3d_screen_width/d3d_screen_height, 
+		near_plane, 
+		far_plane), &render_default_camera_proj);
 }
 
 ///////////////////////////////////////////
 
-void render_set_view(transform_t &cam_transform) {
-	render_camera_transform = &cam_transform;
+void render_set_view(const matrix &cam_transform) {
+	matrix_inverse(cam_transform, render_default_camera_tr);
 }
 
 ///////////////////////////////////////////
@@ -123,13 +127,6 @@ void render_set_skytex(tex2d_t sky_texture, bool32_t show_sky) {
 
 ///////////////////////////////////////////
 
-void render_add_mesh_tr(mesh_t mesh, material_t material, transform_t &transform, color128 color) {
-	transform_update(transform);
-	render_add_mesh(mesh, material, transform._transform, color);
-}
-
-///////////////////////////////////////////
-
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color) {
 	render_item_t item;
 	item.mesh     = mesh;
@@ -138,13 +135,6 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	item.sort_id  = render_queue_id(material, mesh);
 	math_matrix_to_fast(transform, &item.transform);
 	render_queue.emplace_back(item);
-}
-
-///////////////////////////////////////////
-
-void render_add_model_tr(model_t model, transform_t &transform, color128 color) {
-	transform_update(transform);
-	render_add_model(model, transform._transform, color);
 }
 
 ///////////////////////////////////////////
@@ -231,26 +221,13 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 ///////////////////////////////////////////
 
 void render_draw() {
-	if (render_camera != nullptr && render_camera_transform != nullptr)
-		render_draw_from(*render_camera, *render_camera_transform);
+	render_draw_queue(render_default_camera_tr, render_default_camera_proj);
 }
 
 ///////////////////////////////////////////
 
-void render_draw_from(camera_t &cam, transform_t &cam_transform) {
-	matrix view, proj;
-	camera_view(cam_transform, view);
-	camera_proj(cam, proj);
+void render_draw_matrix(const matrix &view, const matrix &proj) {
 	render_draw_queue(view, proj);
-}
-
-///////////////////////////////////////////
-
-void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
-	matrix view;
-	camera_view(cam_transform, view);
-
-	render_draw_queue(view, cam_matrix);
 }
 
 ///////////////////////////////////////////
@@ -276,10 +253,8 @@ bool render_initialize() {
 	}
 
 	// Setup a default camera
-	camera_initialize(render_default_camera, 90, 0.01f, 50);
-	transform_set    (render_default_camera_tr, vec3{ 0,0.2f,0.4f }, vec3_one, quat_lookat({ 0,0.2f,0.4f }, vec3_zero));
-	render_set_camera(render_default_camera);
-	render_set_view  (render_default_camera_tr);
+	render_set_clip(render_clip_planes.x, render_clip_planes.y);
+	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero), vec3_one));
 
 	// Set default lighting
 	vec3 dir = { -1,-2,-1 };
@@ -329,13 +304,6 @@ void render_shutdown() {
 	shaderargs_destroy(render_shader_blit);
 	shaderargs_destroy(render_shader_globals);
 	mesh_release(render_blit_quad);
-}
-
-///////////////////////////////////////////
-
-void render_get_cam(camera_t **cam, transform_t **cam_transform) {
-	*cam = render_camera;
-	*cam_transform = render_camera_transform;
 }
 
 ///////////////////////////////////////////
@@ -485,9 +453,11 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 
 ///////////////////////////////////////////
 
-void render_get_device(void **device, void **context) {
-	*device  = d3d_device;
-	*context = d3d_context;
+vec3 render_unproject_pt(vec3 normalized_screen_pt) {
+	matrix mat;
+	matrix_mul(render_default_camera_tr, render_default_camera_proj, mat);
+	matrix_inverse(mat, mat);
+	return matrix_mul_point(mat, normalized_screen_pt);
 }
 
 } // namespace sk

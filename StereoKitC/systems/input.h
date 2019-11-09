@@ -10,6 +10,7 @@ struct keyboard_t {
 
 extern mouse_t    input_mouse_data;
 extern keyboard_t input_key_data;
+extern pose_t     input_head_pose;
 
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int id);

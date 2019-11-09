@@ -97,17 +97,6 @@ namespace StereoKit
         Texture,
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct transform_t
-    {
-        Vec3 _position;
-        Vec3 _scale;
-        Quat _rotation;
-
-        int _dirty;
-        Matrix _transform;
-    }
-
     [Flags]
     public enum TextAlign
     {
@@ -141,14 +130,6 @@ namespace StereoKit
     {
         Atlased = 0,
         Single
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct camera_t
-    {
-        float fov;
-        float clip_near;
-        float clip_far;
     }
 
     [Flags]

@@ -26,9 +26,9 @@ namespace StereoKit
                 NativeAPI.sprite_release(_spriteInst);
         }
 
-        public void Draw(ref Matrix transform, Color32 color)
+        public void Draw(in Matrix transform, Color32 color)
         {
-            NativeAPI.sprite_draw(_spriteInst, ref transform, color);
+            NativeAPI.sprite_draw(_spriteInst, transform, color);
         }
     }
 }

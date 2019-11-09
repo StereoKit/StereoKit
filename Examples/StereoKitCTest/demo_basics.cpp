@@ -14,8 +14,8 @@ struct phys_obj_t {
 };
 vector<phys_obj_t> phys_objs;
 
-transform_t tr;
-model_t     gltf;
+pose_t  tr;
+model_t gltf;
 
 ///////////////////////////////////////////
 
@@ -61,9 +61,8 @@ void demo_basics_update() {
 
 	// Render solid helmets
 	for (size_t i = 0; i < phys_objs.size(); i++) {
-		solid_get_transform(phys_objs[i].solid, tr);
-		transform_set_scale(tr, vec3_one * phys_objs[i].scale);
-		render_add_model   (gltf, transform_matrix(tr));
+		solid_get_pose  (phys_objs[i].solid, tr);
+		render_add_model(gltf, pose_matrix(tr, vec3_one*0.25f));
 	}
 }
 

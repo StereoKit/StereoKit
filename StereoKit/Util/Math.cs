@@ -89,20 +89,20 @@ namespace StereoKit
         public Matrix Inverse() 
         {
             Matrix result; 
-            NativeAPI.matrix_inverse(ref this, out result); 
+            NativeAPI.matrix_inverse(this, out result); 
             return result;
         }
-        public Vec3 TransformPoint    (Vec3 point)     => NativeAPI.matrix_mul_point    (ref this, ref point);
-        public Vec3 TransformDirection(Vec3 direction) => NativeAPI.matrix_mul_direction(ref this, ref direction);
+        public Vec3 TransformPoint    (Vec3 point)     => NativeAPI.matrix_mul_point    (this, point);
+        public Vec3 TransformDirection(Vec3 direction) => NativeAPI.matrix_mul_direction(this, direction);
 
         public static Matrix operator *(Matrix a, Matrix b) { 
             Matrix result;
-            NativeAPI.matrix_mul(ref a, ref b, out result);
+            NativeAPI.matrix_mul(a, b, out result);
             return result;
         }
-        public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(ref a, ref b);
+        public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(a, b);
 
-        public static Matrix TRS(Vec3 position, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(ref position, ref rotation, ref scale);
+        public static Matrix TRS(Vec3 position, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(position, rotation, scale);
         public static Matrix Identity { get{
             return new Matrix { 
                 row1 = new Vec4(1,0,0,0),
@@ -136,6 +136,10 @@ namespace StereoKit
         {
             this.position    = position;
             this.orientation = orientation;
-        }   
+        }
+        
+        public Matrix ToMatrix(Vec3 scale) => NativeAPI.pose_matrix(this, scale);
+        public Matrix ToMatrix() => NativeAPI.pose_matrix(this, Vec3.One);
+        
     };
 }

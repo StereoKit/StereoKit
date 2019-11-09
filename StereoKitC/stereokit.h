@@ -161,8 +161,8 @@ SK_API quat quat_normalize  (const quat &a);
 SK_API quat quat_mul        (const quat &a, const quat &b);
 SK_API vec3 quat_mul_vec    (const quat &a, const vec3 &b);
 
-SK_API matrix pose_matrix    (const pose_t &pose);
-SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result);
+SK_API matrix pose_matrix(const pose_t &pose, vec3 scale = {1,1,1});
+SK_API void   pose_matrix_out(const pose_t &pose, matrix &out_result, vec3 scale = {1,1,1});
 
 SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
 SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
@@ -363,36 +363,6 @@ SK_API shader_t   material_get_shader      (material_t material);
 
 ///////////////////////////////////////////
 
-struct transform_t {
-	vec3 _position;
-	vec3 _scale;
-	quat _rotation;
-
-	bool32_t _dirty;
-	matrix   _transform;
-};
-
-SK_API void transform_initialize  (transform_t &transform);
-SK_API void transform_set         (transform_t &transform, const vec3 &position, const vec3 &scale, const quat &rotation );
-SK_API void transform_set_position(transform_t &transform, const vec3 &position);
-SK_API vec3 transform_get_position(transform_t &transform);
-SK_API void transform_set_scale   (transform_t &transform, const vec3 &scale);
-SK_API vec3 transform_get_scale   (transform_t &transform);
-SK_API void transform_set_rotation(transform_t &transform, const quat &rotation);
-SK_API quat transform_get_rotation(transform_t &transform);
-SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
-SK_API vec3 transform_forward     (transform_t &transform);
-
-SK_API void   transform_update    (transform_t &transform);
-SK_API void   transform_matrix_out(transform_t &transform, matrix &result);
-SK_API matrix transform_matrix    (transform_t &transform);
-SK_API vec3   transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
-SK_API vec3   transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
-SK_API vec3   transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
-SK_API vec3   transform_local_to_world_dir(transform_t &transform, const vec3 &local_direction);
-
-///////////////////////////////////////////
-
 enum text_align_ {
 	text_align_x_left   = 0,
 	text_align_y_top    = 0,
@@ -431,7 +401,7 @@ SK_API void    solid_move         (solid_t solid, const vec3 &position, const qu
 SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
 SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
-SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
+SK_API void    solid_get_pose     (const solid_t solid, pose_t &out_pose);
 
 ///////////////////////////////////////////
 
@@ -476,28 +446,14 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
-struct camera_t {
-	float fov;
-	float clip_near;
-	float clip_far;
-};
-
-SK_API void camera_initialize(camera_t &cam, float fov, float clip_near, float clip_far);
-SK_API void camera_view      (transform_t &cam_transform, matrix &result);
-SK_API void camera_proj      (camera_t    &cam,           matrix &result);
-
-///////////////////////////////////////////
-
-SK_API void render_set_camera  (camera_t &cam);
-SK_API void render_set_view    (transform_t &cam_transform);
-SK_API void render_set_light   (const vec3 &direction, float intensity, const color128 &color);
-SK_API void render_set_skytex  (tex2d_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh    (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
-SK_API void render_add_mesh_tr (mesh_t mesh, material_t material, transform_t &transform, color128 color = {1,1,1,1});
-SK_API void render_add_model   (model_t model, const matrix &transform, color128 color = {1,1,1,1});
-SK_API void render_add_model_tr(model_t model, transform_t &transform, color128 color = {1,1,1,1});
-SK_API void render_blit        (tex2d_t to_rendertarget, material_t material);
-SK_API void render_get_device  (void **device, void **context);
+SK_API void render_set_clip   (float near_plane=0.01f, float far_plane=50);
+SK_API void render_set_view   (const matrix &cam_transform);
+SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
+SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
+SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
+SK_API void render_add_model  (model_t model, const matrix &transform, color128 color = {1,1,1,1});
+SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
+SK_API void render_get_device (void **device, void **context);
 
 ///////////////////////////////////////////
 
@@ -596,6 +552,7 @@ enum key_ {
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
+SK_API const pose_t &input_head         ();
 SK_API const mouse_t&input_mouse        ();
 SK_API button_state_ input_key          (key_ key);
 SK_API void          input_hand_visible (handed_ hand, bool32_t visible);

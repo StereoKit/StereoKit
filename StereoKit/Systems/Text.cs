@@ -24,7 +24,7 @@
         /// <param name="offY">An additional offset on the Y axis.</param>
         /// <param name="offZ">An additional offset on the Z axis.</param>
         public static void Add(string text, Matrix transform, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX=0, float offY=0, float offZ=0) 
-            => NativeAPI.text_add_at(text, ref transform, style.id, position, align, offX, offY, offZ);
+            => NativeAPI.text_add_at(text, transform, style.id, position, align, offX, offY, offZ);
 
         /// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
         /// <param name="text">What text should be drawn?</param>
@@ -35,7 +35,7 @@
         /// <param name="offY">An additional offset on the Y axis.</param>
         /// <param name="offZ">An additional offset on the Z axis.</param>
         public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-            => NativeAPI.text_add_at(text, ref transform, -1, position, align, offX, offY, offZ);
+            => NativeAPI.text_add_at(text, transform, -1, position, align, offX, offY, offZ);
 
         /// <summary>Sometimes you just need to know how much room some text takes up! This finds
         /// the size of the text in meters, when using the indicated style!</summary>

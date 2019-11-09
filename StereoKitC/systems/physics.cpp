@@ -199,11 +199,10 @@ void solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second) {
 
 ///////////////////////////////////////////
 
-void solid_get_transform(const solid_t solid, transform_t &out_transform) {
+void solid_get_pose(const solid_t solid, pose_t &out_pose) {
 	const Transform &solid_tr = ((RigidBody *)solid)->getTransform();
-	memcpy(&out_transform._position, &solid_tr.getPosition   ().x, sizeof(vec3));
-	memcpy(&out_transform._rotation, &solid_tr.getOrientation().x, sizeof(quat));
-	out_transform._dirty = true;
+	memcpy(&out_pose.position,    &solid_tr.getPosition   ().x, sizeof(vec3));
+	memcpy(&out_pose.orientation, &solid_tr.getOrientation().x, sizeof(quat));
 }
 
 } // namespace sk
