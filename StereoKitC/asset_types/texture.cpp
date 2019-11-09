@@ -101,7 +101,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file) {
 
 	material_set_texture( convert_material, "source", equirect );
 
-	tex_t  face    = tex_create(tex_type_rendertarget, equirect->format);
+	tex_t    face    = tex_create(tex_type_rendertarget, equirect->format);
 	color32 *data[6] = {};
 	int      width   = equirect->height / 2;
 	int      height  = width;
@@ -607,14 +607,14 @@ tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count
 	}
 	gradient_dir = vec3_normalize(gradient_dir);
 
-	size_t  size  = gradient_count * 4;
+	int32_t size  = gradient_count * 4;
 	// make size a power of two
-	int32_t power = (int32_t)logf(size);
+	int32_t power = (int32_t)logf((float)size);
 	if (pow(2, power) < size)
 		power += 1;
-	size = pow(2, power);
+	size = (int32_t)pow(2, power);
 
-	size_t   size2 = size * size;
+	int32_t  size2 = size * size;
 	color32 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
 		data[i] = (color32 *)malloc(size2 * sizeof(color32));
@@ -645,7 +645,7 @@ tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count
 
 			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
 			color32 color_a = gradient_bot_to_top[(int32_t)(pct * (gradient_count-1))];
-			color32 color_b = gradient_bot_to_top[mini((pct * (gradient_count-1)) + 1, gradient_count)];
+			color32 color_b = gradient_bot_to_top[mini((int32_t)(pct * (gradient_count-1)) + 1, gradient_count)];
 			pct = pct * (gradient_count - 1);
 			pct = pct - (int32_t)pct;
 
@@ -658,7 +658,7 @@ tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count
 		}
 	}
 
-	tex_set_color_arr(result, size, size, (void**)data, 6);
+	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}

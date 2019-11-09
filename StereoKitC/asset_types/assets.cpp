@@ -156,7 +156,6 @@ const char *assets_file(const char *file_name) {
 		return file_name;
 
 	const char *ch = file_name;
-	bool full_path = false;
 	while (*ch != '\0') {
 		if (*ch == ':') {
 			return file_name;

@@ -557,7 +557,7 @@ void openxr_poll_actions() {
 
 		// If we have a select event, update the hand pose to match the event's timestamp
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
-		XrResult        res            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time, &space_location);
+		res                            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time, &space_location);
 		if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
 			xr_input.handPose[hand] = space_location.pose;
 		}

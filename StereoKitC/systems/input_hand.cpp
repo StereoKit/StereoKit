@@ -104,7 +104,6 @@ void input_hand_state_update(handed_ handedness) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// Update hand state based on inputs
-	bool was_tracked = hand.state & input_state_tracked;
 	bool was_trigger = hand.state & input_state_pinch;
 	bool was_gripped = hand.state & input_state_grip;
 	// Clear all except tracking state

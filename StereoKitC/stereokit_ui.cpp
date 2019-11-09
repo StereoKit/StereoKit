@@ -47,7 +47,7 @@ uint64_t skui_control_active [2] = {};
 float    skui_control_focused_time[2] = {};
 float    skui_control_active_time [2] = {};
 
-const color128 skui_color_base   = { .25,.25,.35,1 };
+const color128 skui_color_base   = { .25f,.25f,.35f, 1 };
 const color128 skui_color_border = { 1,1,1,1 };
 
 ///////////////////////////////////////////
@@ -615,8 +615,6 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 ///////////////////////////////////////////
 
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
-	uint64_t id = ui_hash(text);
-
 	if (window_size.x == 0) window_size.x = 1;
 
 	ui_push_pose(pose, window_size);

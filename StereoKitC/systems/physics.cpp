@@ -6,8 +6,12 @@
 
 #include <vector>
 using namespace std;
+
+#pragma warning(push)
+#pragma warning( disable: 4244 4267 4100 )
 #include <reactphysics3d.h>
 using namespace reactphysics3d;
+#pragma warning(pop)
 
 namespace sk {
 

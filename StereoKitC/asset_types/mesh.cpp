@@ -280,6 +280,7 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	dir = vec3_normalize(dir);
 	float radius = diameter / 2;
 
+	vind_t subd = (vind_t)subdivisions;
 	int vert_count = subdivisions * 4 + 2;
 	int ind_count  = subdivisions * 12;
 	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
@@ -291,10 +292,10 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	vec3 z_off  = dir * (depth / 2.f);
 	vind_t ind = 0;
 
-	for (vind_t i = 0; i < subdivisions; i++) {
-		float ang = ((float)i / subdivisions) * M_PI * 2;
-		float x = cos(ang);
-		float y = sin(ang);
+	for (vind_t i = 0; i < subd; i++) {
+		float ang = ((float)i / subd) * (float)M_PI * 2;
+		float x = cosf(ang);
+		float y = sinf(ang);
 		vec3 normal  = axis_x * x + axis_y * y;
 		vec3 top_pos = normal*radius + z_off;
 		vec3 bot_pos = normal*radius - z_off;
@@ -306,13 +307,13 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 		verts[i * 4+2] = { top_pos,  dir,    {x,y}, {255,255,255,255} };
 		verts[i * 4+3] = { bot_pos, -dir,    {x,y}, {255,255,255,255} };
 
-		vind_t in = (i + 1) % subdivisions;
+		vind_t in = (i + 1) % subd;
 		// Top slice
 		inds[ind++] = i  * 4 + 2;
 		inds[ind++] = in * 4 + 2;
-		inds[ind++] = subdivisions * 4;
+		inds[ind++] = subd * 4;
 		// Bottom slice
-		inds[ind++] = subdivisions * 4+1;
+		inds[ind++] = subd * 4+1;
 		inds[ind++] = in * 4 + 3;
 		inds[ind++] = i  * 4 + 3;
 		// Now edge strip quad
