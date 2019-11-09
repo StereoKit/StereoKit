@@ -393,8 +393,9 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		matrix xr_proj_m;
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
 		memcpy(&xr_proj_m, xr_projection, sizeof(float) * 16);
-		matrix cam_transform = matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one);
-		render_draw_matrix(xr_proj_m, cam_transform);
+		matrix cam_transform;
+		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), cam_transform);
+		render_draw_matrix(cam_transform, xr_proj_m);
 
 		// And tell OpenXR we're done with rendering to this one!
 		XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
