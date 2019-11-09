@@ -61,7 +61,7 @@ bool defaults_init() {
 
 	// Cubemap
 	color32 gradient[3] = { { 45,30,37,255 }, { 141,216,255,255 }, {255, 254, 241, 255} }; 
-	sk_default_cubemap = tex2d_gen_cubemap(gradient, 3);
+	sk_default_cubemap = tex2d_gen_cubemap(gradient, 3, {1,2,1.5f});
 	tex2d_set_id(sk_default_cubemap, "default/cubemap");
 	render_set_skytex(sk_default_cubemap, true);
 

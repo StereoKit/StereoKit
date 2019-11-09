@@ -2,6 +2,7 @@
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/d3d.h"
 #include "../libraries/stref.h"
+#include "../math.h"
 #include "texture.h"
 
 #pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
@@ -582,11 +583,29 @@ void *tex2d_get_resource(tex2d_t texture) {
 
 ///////////////////////////////////////////
 
-tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count) {
+vec3 cubemap_corner(int i) {
+	float neg = (float)((i / 4) % 2 ? -1 : 1);
+	int nx  = ((i+24) / 16) % 2;
+	int ny  = (i / 8)       % 2;
+	int nz  = (i / 16)      % 2;
+	int u   = ((i+1) / 2)   % 2; // U: 0,1,1,0
+	int v   = (i / 2)       % 2; // V: 0,0,1,1
+
+	return {
+		(nx ? neg : ny ? (u?-1:1)*neg : (u?1:-1)*neg),
+		(nx || nz ? (v?1:-1) : neg),
+		(nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
+	};
+}
+
+///////////////////////////////////////////
+
+tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count, vec3 gradient_dir) {
 	tex2d_t result = tex2d_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
 		return nullptr;
 	}
+	gradient_dir = vec3_normalize(gradient_dir);
 
 	size_t  size  = gradient_count * 4;
 	// make size a power of two
@@ -595,33 +614,54 @@ tex2d_t tex2d_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_c
 		power += 1;
 	size = pow(2, power);
 
-
 	size_t   size2 = size * size;
-	color32 *top  = (color32*)malloc(size2 * sizeof(color32));
-	color32 *bot  = (color32*)malloc(size2 * sizeof(color32));
-	color32 *side = (color32*)malloc(size2 * sizeof(color32));
-	for (int32_t i = 0; i < size2; i++) top[i] = gradient_bot_to_top[gradient_count-1];
-	for (int32_t i = 0; i < size2; i++) bot[i] = gradient_bot_to_top[0];
-	for (int32_t y = 0; y < size; y++) {
-		color32 color_a = gradient_bot_to_top[(int32_t)(y / 4.f)];
-		color32 color_b = gradient_bot_to_top[(int32_t)(y / 4.f) + 1];
-		float pct = (y%4)/4.f;
-		color32 col = {
-			(uint8_t)((color_b.r - color_a.r) * pct + color_a.r),
-			(uint8_t)((color_b.g - color_a.g) * pct + color_a.g),
-			(uint8_t)((color_b.b - color_a.b) * pct + color_a.b),
-			255 };
+	color32 *data[6];
+	for (int32_t i = 0; i < 6; i++) {
+		data[i] = (color32 *)malloc(size2 * sizeof(color32));
+		vec3 p1 = cubemap_corner(i * 4);
+		vec3 p2 = cubemap_corner(i * 4+1);
+		vec3 p3 = cubemap_corner(i * 4+2);
+		vec3 p4 = cubemap_corner(i * 4+3); 
+
+		for (int32_t y = 0; y < size; y++) {
+			float py = 1 - y / (float)(size-1);
+
+			// Top face is flipped on both axes
+			if (i == 2) {
+				py = 1 - py;
+			}
 		for (int32_t x = 0; x < size; x++) {
-			side[x + y * size] = col;
+			float px = x / (float)(size-1);
+
+			// Top face is flipped on both axes
+			if (i == 2) {
+				px = 1 - px;
+			}
+
+			vec3 pl = vec3_lerp(p1, p4, py);
+			vec3 pr = vec3_lerp(p2, p3, py);
+			vec3 pt = vec3_lerp(pl, pr, px);
+			pt = vec3_normalize(pt);
+
+			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
+			color32 color_a = gradient_bot_to_top[(int32_t)(pct * (gradient_count-1))];
+			color32 color_b = gradient_bot_to_top[mini((pct * (gradient_count-1)) + 1, gradient_count)];
+			pct = pct * (gradient_count - 1);
+			pct = pct - (int32_t)pct;
+
+			data[i][x+y*size] = {
+				(uint8_t)((color_b.r - color_a.r) * pct + color_a.r),
+				(uint8_t)((color_b.g - color_a.g) * pct + color_a.g),
+				(uint8_t)((color_b.b - color_a.b) * pct + color_a.b),
+				255 };
+		}
 		}
 	}
 
-	color32* data[] = { side, side, top, bot, side, side };
 	tex2d_set_color_arr(result, size, size, (void**)data, 6);
-
-	free(top);
-	free(bot);
-	free(side);
+	for (int32_t i = 0; i < 6; i++) {
+		free(data[i]);
+	}
 
 	return result;
 }
