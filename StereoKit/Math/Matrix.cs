@@ -2,6 +2,15 @@
 
 namespace StereoKit
 {
+    /// <summary>A Matrix in StereoKit is a 4x4 grid of numbers that is used to represent
+    /// a transformation for any sort of position or vector! This is an oversimplification
+    /// of what a matrix actually is, but it's accurate in this case.
+    /// 
+    /// Matrices are really useful for transforms because you can chain together all sorts
+    /// of transforms into a single Matrix! A Matrix transform really shines when applied to
+    /// many positions, as the more expensive operations get cached within the matrix values.
+    /// 
+    /// Matrices are prominently used within shaders for mesh transforms!</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix
     {
@@ -10,12 +19,24 @@ namespace StereoKit
         public Vec4 row3;
         public Vec4 row4;
 
+        /// <summary>Creates an inverse matrix! If the matrix takes a point from a -> b, then
+        /// its inverse takes the point from b -> a.</summary>
+        /// <returns>An inverse matrix of the current one.</returns>
         public Matrix Inverse() 
         {
             NativeAPI.matrix_inverse(this, out Matrix result); 
             return result;
         }
+        /// <summary>Transforms a point through the Matrix! This is basically just multiplying
+        /// a vector (x,y,z,1) with the Matrix.</summary>
+        /// <param name="point">The point to transform.</param>
+        /// <returns>The point transformed by the Matrix.</returns>
         public Vec3 TransformPoint    (Vec3 point)     => NativeAPI.matrix_mul_point    (this, point);
+        /// <summary> Transforms a point through the Matrix, but excluding translation! This is great
+        /// for transforming vectors that are -directions- rather than points in space. Use this to
+        /// transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.</summary>
+        /// <param name="direction">The direction to transform.</param>
+        /// <returns>The direction transformed by the Matrix.</returns>
         public Vec3 TransformDirection(Vec3 direction) => NativeAPI.matrix_mul_direction(this, direction);
 
         public static Matrix operator *(Matrix a, Matrix b) { 
@@ -24,6 +45,11 @@ namespace StereoKit
         }
         public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(a, b);
 
+        /// <summary>Transform, Rotate, Scale. Creates a transform Matrix using these components.</summary>
+        /// <param name="position">Translation</param>
+        /// <param name="rotation"></param>
+        /// <param name="scale"></param>
+        /// <returns></returns>
         public static Matrix TRS(Vec3 position, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(position, rotation, scale);
         public static Matrix Identity { get{
             return new Matrix { 

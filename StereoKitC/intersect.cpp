@@ -73,9 +73,9 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 	pt = vec3_abs(pt - bounds.center) * 2;
 	return
-		pt.x < bounds.dimensions.x &&
-		pt.y < bounds.dimensions.y &&
-		pt.z < bounds.dimensions.z;
+		pt.x <= bounds.dimensions.x &&
+		pt.y <= bounds.dimensions.y &&
+		pt.z <= bounds.dimensions.z;
 }
 
 }
