@@ -36,6 +36,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
     <FileVersion>0.1.0.0</FileVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|x64'">
     <PlatformTarget>AnyCPU</PlatformTarget>
