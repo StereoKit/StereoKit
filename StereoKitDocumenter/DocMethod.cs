@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,18 +10,23 @@ namespace StereoKitDocumenter
 {
     class DocMethod : IDocItem
     {
-        public string name;
-        public string summary;
-        public string returns;
+        public string   name;
         public DocClass parent;
-        public List<DocParam> parameters = new List<DocParam>();
-        public List<DocExample> examples = new List<DocExample>();
+        public List<DocExample>        examples  = new List<DocExample>();
+        public List<DocMethodOverload> overloads = new List<DocMethodOverload>();
 
         public DocMethod(DocClass aParent, string aName)
         {
             parent = aParent;
             name   = aName;
             parent.methods.Add(this);
+        }
+
+        public DocMethodOverload AddOverload(string aSignature)
+        {
+            DocMethodOverload result = new DocMethodOverload(this, aSignature);
+            overloads.Add(result);
+            return result;
         }
 
         public string Name { get { return $"{parent.name}.{name}"; } }
@@ -38,17 +44,7 @@ namespace StereoKitDocumenter
             if (name=="#ctor")
                 return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
 
-            Vec3 vec;
-            Type t = Type.GetType("StereoKit."+parent.name+", StereoKit");
-            MethodInfo m = null;
-            foreach (MethodInfo method in t.GetMethods())
-            {
-                if (method.Name == name)
-                { 
-                    m = method;
-                    break;
-                }
-            }
+            MethodInfo m = GetMethodInfo();
             List<ParameterInfo> param = m==null?new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
 
             string paramList = string.Join(", ", param.Select(a=> $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}" ));
@@ -91,5 +87,7 @@ description: {StringHelper.CleanForDescription(summary)}
 ";
 
         }
+
+        
     }
 }

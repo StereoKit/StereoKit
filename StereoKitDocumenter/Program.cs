@@ -112,10 +112,12 @@ namespace StereoKitDocumenter
             string nameSignature  = segs[0];
             string paramSignature = segs.Length>1?segs[1]:"";
             segs = nameSignature.Split('.');
+            if (paramSignature.Length > 0)
+                paramSignature = paramSignature.Substring(0, paramSignature.Length-1);
             if (segs.Length != 3)
                 Console.WriteLine("Unexpected signature length, " + signature);
 
-            DocMethod result = new DocMethod(GetClass(segs[1]), segs[2]);
+            DocMethod result = new DocMethod(GetClass(segs[1]), segs[2], paramSignature);
 
             // Read properties
             while (reader.Read())

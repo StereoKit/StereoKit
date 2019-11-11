@@ -86,7 +86,7 @@
     <Compile Include="Demos.cs" />
     <Compile Include="DemoText.cs" />
     <Compile Include="DemoUI.cs" />
-    <None Include="GuideGettingStarted.cs" />
+    <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IDemo.cs" />
