@@ -100,7 +100,6 @@
     </Content>
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\*.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
   <ItemGroup>
