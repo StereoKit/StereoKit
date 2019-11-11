@@ -45,12 +45,16 @@ namespace StereoKit
         }
         public static Vec3   operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(a, b);
 
-        /// <summary>Transform, Rotate, Scale. Creates a transform Matrix using these components.</summary>
-        /// <param name="position">Translation</param>
-        /// <param name="rotation"></param>
-        /// <param name="scale"></param>
-        /// <returns></returns>
-        public static Matrix TRS(Vec3 position, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(position, rotation, scale);
+        /// <summary>Transform, Rotate, Scale. Creates a transform Matrix using all these components!</summary>
+        /// <param name="translation">Move an object by this amount.</param>
+        /// <param name="rotation">A Quaternion describing the rotation for this transform.</param>
+        /// <param name="scale">How much larger or smaller this transform makes things. Vec3.One is a good
+        /// default, as Vec3.Zero will shrink it to nothing!</param>
+        /// <returns>A Matrix that combines translation, roatation, and scale information into a single Matrix!</returns>
+        public static Matrix TRS(Vec3 translation, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(translation, rotation, scale);
+        
+        /// <summary>An identity Matrix is the matrix equivalent of '1'! Transforming anything by this
+        /// will leave it at the exact same place.</summary>
         public static Matrix Identity { get{
             return new Matrix { 
                 row1 = new Vec4(1,0,0,0),

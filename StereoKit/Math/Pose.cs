@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
+    /// <summary>Pose represents a point and orientation in space.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Pose
     {

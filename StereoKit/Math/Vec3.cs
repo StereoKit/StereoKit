@@ -5,7 +5,10 @@ using System.Runtime.InteropServices;
 namespace StereoKit
 {
     /// <summary>A vector with 3 components: x, y, z. This can represent a point in space,
-    /// a directional vector, or any other sort of value with 3 dimensions to it!</summary>
+    /// a directional vector, or any other sort of value with 3 dimensions to it!
+    /// 
+    /// StereoKit uses a right-handed coordinate system, where +x is to the right, +y is
+    /// upwards, and -z is forward.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Vec3
     {
@@ -28,7 +31,7 @@ namespace StereoKit
         public static readonly Vec3 One     = new Vec3(1,1,1);
         /// <summary>A vector representing the up axis. In StereoKit, this is the same as `new Vec3(0,1,0)`.</summary>
         public static readonly Vec3 Up      = new Vec3(0,1,0);
-        /// <summary>StereoKit uses a right-handed coordinate system, which means that forwrd is 
+        /// <summary>StereoKit uses a right-handed coordinate system, which means that forward is 
         /// looking down the -Z axis! This value is the same as `new Vec3(0,0,-1)`</summary>
         public static readonly Vec3 Forward = new Vec3(0,0,-1);
         public static Vec3 operator +(Vec3 a, Vec3 b)  { return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
@@ -37,6 +40,7 @@ namespace StereoKit
         public static Vec3 operator *(Vec3 a, float b) { return new Vec3(a.x * b, a.y * b, a.z * b); }
         public static Vec3 operator /(Vec3 a, float b) { return new Vec3(a.x / b, a.y / b, a.z / b); }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Dot(in Vec3 a, in Vec3 b)
             => a.x*b.x + a.y*b.y + a.z*b.z;
 
