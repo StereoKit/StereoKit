@@ -23,7 +23,7 @@ dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.
 
 ## Examples
 
-![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
+![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp

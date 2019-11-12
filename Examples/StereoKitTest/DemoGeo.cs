@@ -18,7 +18,7 @@ class DemoGeo : IDemo
         defaultMaterial = Material.Find("default/material");
 
         /// :CodeSample: Mesh.GenerateCube
-        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
+        /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.8f);
@@ -28,7 +28,7 @@ class DemoGeo : IDemo
         demoCubeModel = cubeModel;
 
         /// :CodeSample: Mesh.GenerateRoundedCube
-        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
+        /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.8f, 0.2f);
@@ -38,7 +38,7 @@ class DemoGeo : IDemo
         demoRoundedCubeModel = roundedCubeModel;
 
         /// :CodeSample: Mesh.GenerateSphere
-        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
+        /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  sphereMesh  = Mesh.GenerateSphere(0.8f);
@@ -48,7 +48,7 @@ class DemoGeo : IDemo
         demoSphereModel = sphereModel;
 
         /// :CodeSample: Mesh.GenerateCylinder
-        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
+        /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.8f, 0.8f, Vec3.Up);
