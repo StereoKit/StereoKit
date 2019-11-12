@@ -29,20 +29,21 @@ namespace StereoKitDocumenter
             return result;
         }
 
-        public string Name { get { return $"{parent.name}.{name}"; } }
+        public string ShowName => name == "#ctor" ? parent.name : name;
+        public string Name { get { return $"{parent.name}.{ShowName}"; } }
         public string FileName { get{ 
-            return Path.Combine( Program.referenceOut, parent.name+"/"+name+".md");
+            return Path.Combine( Program.referenceOut, parent.name+"/"+ShowName+".md");
         } }
         public string UrlName { get{ 
-            return $"{{{{site.url}}}}/Pages/Reference/{parent.name}/{name}.html";
+            return $"{{{{site.url}}}}/Pages/Reference/{parent.name}/{ShowName}.html";
         } }
 
         public void AddExample(DocExample aExample) { examples.Add(aExample); }
 
         public override string ToString()
         {
-            if (name=="#ctor")
-                return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
+            //if (name=="#ctor")
+            //    return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
 
             string exampleText = "";
             if (examples.Count > 0) {
@@ -54,10 +55,10 @@ namespace StereoKitDocumenter
 
             return $@"---
 layout: default
-title: {parent.name}.{name}
+title: {parent.name}.{ShowName}
 description: {StringHelper.CleanForDescription(overloads[0].summary)}
 ---
-# [{parent.name}]({parent.UrlName}).{name}
+# [{parent.name}]({parent.UrlName}).{ShowName}
 
 {string.Join("",overloads.Select(a=>a.ToString()).ToArray())}
 

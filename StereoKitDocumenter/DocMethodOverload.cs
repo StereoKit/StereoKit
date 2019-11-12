@@ -24,17 +24,17 @@ namespace StereoKitDocumenter
 
         public override string ToString()
         {
-            if (rootMethod.name == "#ctor")
-                return "# Constructors not implmented yet.\n";
-
-            MethodInfo m = GetMethodInfo();
+            MethodBase m = GetMethodInfo();
+            Type   returnType = m is MethodInfo ? ((MethodInfo)m).ReturnType : typeof(void);
+            string methodName = rootMethod.ShowName;
+            string returnName = m is MethodInfo ? StringHelper.TypeName(returnType.Name) : "";
             List<ParameterInfo> param = m == null ? new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
 
             string paramList = string.Join(", ", param.Select(a => $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}"));
-            string signature = (m.IsStatic ? "static " : "") + $"{StringHelper.TypeName(m.ReturnType.Name)} {m.Name}({paramList})";
+            string signature = (m.IsStatic ? "static " : "") + $"{returnName} {methodName}({paramList})";
 
             string paramText = "";
-            if (parameters.Count > 0 || m.ReturnType != typeof(void))
+            if (parameters.Count > 0 || returnType != typeof(void))
             {
                 paramText += "\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++)
@@ -45,8 +45,8 @@ namespace StereoKitDocumenter
                     paramText += $"|{StringHelper.TypeName(p.ParameterType.Name)} {parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
                 }
 
-                if (m.ReturnType != typeof(void))
-                    paramText += $"|RETURNS: {StringHelper.TypeName(m.ReturnType.Name)}|{StringHelper.CleanForTable(returns)}|\n";
+                if (returnType != typeof(void))
+                    paramText += $"|RETURNS: {returnName}|{StringHelper.CleanForTable(returns)}|\n";
             }
 
             return $@"<div class='signature' markdown='1'>
@@ -61,7 +61,7 @@ namespace StereoKitDocumenter
         {
             return Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
         }
-        private MethodInfo GetMethodInfo()
+        private MethodBase GetMethodInfo()
         {
             Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : signature
                 .Split(',')
@@ -78,7 +78,9 @@ namespace StereoKitDocumenter
                 .ToArray();
 
             Type parent = GetParentType();
-            MethodInfo result = parent.GetMethod(rootMethod.name, paramTypes);
+            MethodBase result = rootMethod.name == "#ctor" ?
+                (MethodBase)parent.GetConstructor(paramTypes) :
+                (MethodBase)parent.GetMethod     (rootMethod.name, paramTypes);
 
             if (result == null)
                 throw new Exception("Can't find info for method " + rootMethod.name);

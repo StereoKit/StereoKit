@@ -162,7 +162,7 @@ namespace StereoKitDocumenter
 
                 for (int m = 0; m < classes[i].methods.Count; m++)
                 {
-                    classFolder.pages.Add(classes[i].methods[m].name);
+                    classFolder.pages.Add(classes[i].methods[m].ShowName);
                 }
             }
 
