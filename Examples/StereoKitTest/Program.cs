@@ -13,8 +13,6 @@ class Program
     static Matrix floorTr;
     static Solid  floorSolid;
     static Pose   demoSelectPose = new Pose();
-    static bool   demoTestMode = false;
-    static int    demoTestIndex = 0;
 
     static void Main(string[] args) 
     {

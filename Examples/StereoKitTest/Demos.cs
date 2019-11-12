@@ -1,5 +1,4 @@
-﻿
-using StereoKit;
+﻿using StereoKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,6 +65,7 @@ public static class Demos
     public static void SetActive(int index)
     {
         ActiveScene = demos[index];
+        Log.Write(LogLevel.Info, "Starting Scene: " + demos[index].Name);
     }
     public static void SetActive(string name)
     {

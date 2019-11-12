@@ -22,39 +22,70 @@ namespace StereoKitDocumenter
 
         static void Main(string[] args)
         {
-            XmlReader reader = XmlReader.Create(xmlDocs);
-            while(reader.ReadToFollowing("member"))
-            {
-                string    name = reader.GetAttribute("name");
-                XmlReader member = reader.ReadSubtree();
-                string    type = name[0].ToString();
-                string    signature = name.Substring(2);
+            RunSKTests();
+            ScrapeData();
+            WriteDocsToFile();
+        }
 
-                if (type == "T") {
-                    ReadClass(signature, reader.ReadSubtree());
-                } else if (type == "M") {
-                    ReadMethod(signature, reader.ReadSubtree());
-                } else if (type == "F" || type == "P") {
-                    ReadField(signature, reader.ReadSubtree());
-                }
-            }
-
-            DocExampleFinder.FindExamples(samplesProj);
-
+        private static void WriteDocsToFile()
+        {
             for (int i = 0; i < items.Count; i++)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(items[i].FileName));
-                StreamWriter writer =  new StreamWriter(items[i].FileName);
+                StreamWriter writer = new StreamWriter(items[i].FileName);
                 writer.Write(items[i].ToString());
                 writer.Close();
             }
 
             classes.Sort((a, b) => a.name.CompareTo(b.name));
-            { 
-                StreamWriter writer = new StreamWriter(pagesOut+"data.js");
+            {
+                StreamWriter writer = new StreamWriter(pagesOut + "data.js");
                 writer.Write(WriteIndex());
                 writer.Close();
             }
+        }
+
+        private static void ScrapeData()
+        {
+            XmlReader reader = XmlReader.Create(xmlDocs);
+            while (reader.ReadToFollowing("member"))
+            {
+                string    name      = reader.GetAttribute("name");
+                XmlReader member    = reader.ReadSubtree();
+                string    type      = name[0].ToString();
+                string    signature = name.Substring(2);
+
+                if (type == "T")
+                {
+                    ReadClass(signature, reader.ReadSubtree());
+                }
+                else if (type == "M")
+                {
+                    ReadMethod(signature, reader.ReadSubtree());
+                }
+                else if (type == "F" || type == "P")
+                {
+                    ReadField(signature, reader.ReadSubtree());
+                }
+            }
+
+            DocExampleFinder.FindExamples(samplesProj);
+        }
+
+        private static void RunSKTests()
+        {
+            var testInfo = new System.Diagnostics.ProcessStartInfo();
+            testInfo.FileName         = "cmd.exe";
+            testInfo.Arguments        = "/C StereoKitTest.exe -test";
+            testInfo.UseShellExecute  = false;
+            #if DEBUG
+            testInfo.WorkingDirectory = "../../../bin/x64_Debug/StereoKitTest/";
+            #else
+            testInfo.WorkingDirectory = "../../../bin/x64_Release/StereoKitTest/";
+            #endif
+            var process = System.Diagnostics.Process.Start(testInfo);
+            process.WaitForExit();
+            Console.WriteLine("Ran StereoKit tests! Result: " + process.ExitCode);
         }
 
         static void ReadClass(string signature, XmlReader reader)
