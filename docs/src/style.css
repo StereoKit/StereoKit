@@ -75,15 +75,24 @@ h1:after
 }
 table {
     border-collapse: collapse;
+    width:100%;
 }
 td {
-    padding: 0.75em;
+    padding: 0.5em;
 }
 thead tr th {
-    border-bottom:1px solid #999;
+    
+    display:none;
 }
 tbody tr td {
+    border-top:1px solid #555;
     border-bottom:1px solid #555;
+}
+main img {
+    max-width: 100%;
+    max-height: 20em;
+    display: block;
+    padding: 1em;
 }
 
 /* Search styling */
@@ -145,7 +154,7 @@ tbody tr td {
 .signature { 
     background-color: #333; 
     font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
-    padding:1.5em; margin: 1em;
+    padding:1em;
 }
 .signature p { margin:0px; }
 
