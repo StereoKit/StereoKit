@@ -153,6 +153,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="asset_types\texture.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\stb_image.h" />
+    <ClInclude Include="libraries\stb_image_write.h" />
     <ClInclude Include="libraries\stb_rect_pack.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />

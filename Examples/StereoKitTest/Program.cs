@@ -22,9 +22,10 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
+        Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
         Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
         Demos.Initialize();
-
+        
         while (StereoKitApp.Step(() =>
         {
             Demos.Update();

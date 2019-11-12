@@ -49,6 +49,7 @@
     <Compile Include="DocField.cs" />
     <Compile Include="DocIndexFolder.cs" />
     <Compile Include="DocMethod.cs" />
+    <Compile Include="DocMethodOverload.cs" />
     <Compile Include="DocParam.cs" />
     <Compile Include="IDocItem.cs" />
     <Compile Include="Program.cs" />

@@ -18,6 +18,7 @@ class DemoGeo : IDemo
         defaultMaterial = Material.Find("default/material");
 
         /// :CodeSample: Mesh.GenerateCube
+        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.8f);
@@ -27,6 +28,7 @@ class DemoGeo : IDemo
         demoCubeModel = cubeModel;
 
         /// :CodeSample: Mesh.GenerateRoundedCube
+        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.8f, 0.2f);
@@ -36,6 +38,7 @@ class DemoGeo : IDemo
         demoRoundedCubeModel = roundedCubeModel;
 
         /// :CodeSample: Mesh.GenerateSphere
+        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  sphereMesh  = Mesh.GenerateSphere(0.8f);
@@ -45,6 +48,7 @@ class DemoGeo : IDemo
         demoSphereModel = sphereModel;
 
         /// :CodeSample: Mesh.GenerateCylinder
+        /// ![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.8f, 0.8f, Vec3.Up);
@@ -63,6 +67,9 @@ class DemoGeo : IDemo
         // Cube!
         Mesh  cubeMesh  = demoCubeMesh;
         Model cubeModel = demoCubeModel;
+
+        if (Demos.TestMode)
+            Renderer.Screenshot(new Vec3(0.25f,1.5f,2f), Vec3.Zero, "../../../docs/img/screenshots/ProceduralGeometry.jpg");
 
         /// :CodeSample: Mesh.GenerateCube
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 

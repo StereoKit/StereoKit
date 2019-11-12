@@ -29,6 +29,13 @@ namespace StereoKitDocumenter
             return $"{{{{site.url}}}}/Pages/Reference/{parent.name}/{name}.html";
         } }
 
+        public Type GetFieldType(Type classType) {
+            Type result = classType.GetField(name)?.FieldType;
+            if (result == null)
+                result = classType.GetProperty(name)?.PropertyType;
+            return result;
+        }
+
         public void AddExample(DocExample aExample) { examples.Add(aExample); }
 
         public override string ToString()

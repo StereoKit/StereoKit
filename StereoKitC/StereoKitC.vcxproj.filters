@@ -209,6 +209,9 @@
     <ClInclude Include="_stereokit_ui.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\stb_image_write.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

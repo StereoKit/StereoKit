@@ -39,6 +39,13 @@ namespace StereoKit
             }
         }
 
+        /// <summary>Lets StereoKit know it should quit! It'll finish the current frame, and after that Step
+        /// will return that it wants to exit.</summary>
+        public static void Quit()
+        {
+            NativeAPI.sk_quit();
+        }
+
         /// <summary> Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. </summary>
         /// <param name="onStep">A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.</param>
         /// <returns>If an exit message is received from the platform, this function will return false.</returns>
