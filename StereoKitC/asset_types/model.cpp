@@ -37,7 +37,7 @@ void model_set_id(model_t model, const char *id) {
 ///////////////////////////////////////////
 
 model_t model_find(const char *id) {
-	model_t result = (model_t)assets_find(id);
+	model_t result = (model_t)assets_find(id, asset_type_model);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
@@ -193,8 +193,7 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	model->subset_count = 1;
 	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t));
 	model->subsets[0].offset   = matrix_identity;
-	model->subsets[0].material = (material_t)assets_find("default/material");
-	assets_addref(model->subsets[0].material->header);
+	model->subsets[0].material = material_find("default/material");
 
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
@@ -216,9 +215,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 
 	char id[512];
 	sprintf_s(id, 512, "%s/%s", filename, m->name);
-	mesh_t result = (mesh_t)assets_find(id);
+	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
-		assets_addref(result->header);
 		return result;
 	}
 
@@ -307,9 +305,8 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 	// Check if we've already loaded this image
 	char id[512];
 	gltf_imagename(data, image, filename, id, 512);
-	tex_t result = (tex_t)assets_find(id);
+	tex_t result = tex_find(id);
 	if (result != nullptr) {
-		assets_addref(result->header);
 		return result;
 	}
 	
@@ -346,9 +343,8 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	// Check if we've already loaded this material
 	char id[512];
 	sprintf_s(id, 512, "%s/%s", filename, material->name);
-	material_t result = (material_t)assets_find(id);
+	material_t result = material_find(id);
 	if (result != nullptr) {
-		assets_addref(result->header);
 		return result;
 	}
 

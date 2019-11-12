@@ -10,7 +10,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 material_t material_find(const char *id) {
-	material_t result = (material_t)assets_find(id);
+	material_t result = (material_t)assets_find(id, asset_type_material);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;

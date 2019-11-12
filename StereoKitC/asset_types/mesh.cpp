@@ -70,7 +70,7 @@ void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 ///////////////////////////////////////////
 
 mesh_t mesh_find(const char *id) {
-	mesh_t result = (mesh_t)assets_find(id);
+	mesh_t result = (mesh_t)assets_find(id, asset_type_mesh);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;

@@ -30,7 +30,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	}
 
 	char id[64];
-	assets_unique_name("zbuffer/", id, sizeof(id));
+	assets_unique_name(asset_type_texture, "zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id(texture->depth_buffer, id);
 	if (texture->texture != nullptr) {
@@ -41,7 +41,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 ///////////////////////////////////////////
 
 tex_t tex_find(const char *id) {
-	tex_t result = (tex_t)assets_find(id);
+	tex_t result = (tex_t)assets_find(id, asset_type_texture);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;

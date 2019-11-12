@@ -237,7 +237,7 @@ void shader_parse_file(shader_t shader, const char *hlsl) {
 ///////////////////////////////////////////
 
 shader_t shader_find(const char *id) {
-	shader_t result = (shader_t)assets_find(id);
+	shader_t result = (shader_t)assets_find(id, asset_type_shader);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;

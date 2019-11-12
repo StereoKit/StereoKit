@@ -23,16 +23,16 @@ vector<asset_header_t *> assets;
 
 ///////////////////////////////////////////
 
-void *assets_find(const char *id) {
-	return assets_find(string_hash(id));
+void *assets_find(const char *id, asset_type_ type) {
+	return assets_find(string_hash(id), type);
 }
 
 ///////////////////////////////////////////
 
-void *assets_find(uint64_t id) {
+void *assets_find(uint64_t id, asset_type_ type) {
 	size_t count = assets.size();
 	for (size_t i = 0; i < count; i++) {
-		if (assets[i]->id == id)
+		if (assets[i]->id == id && assets[i]->type == type)
 			return assets[i];
 	}
 	return nullptr;
@@ -40,11 +40,11 @@ void *assets_find(uint64_t id) {
 
 ///////////////////////////////////////////
 
-void assets_unique_name(const char *root_name, char *dest, int dest_size) {
+void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
 	sprintf_s(dest, dest_size, "%s", root_name);
 	uint64_t id    = string_hash(dest);
 	int      count = 1;
-	while (assets_find(dest) != nullptr) {
+	while (assets_find(dest, type) != nullptr) {
 		sprintf_s(dest, dest_size, "%s%d", root_name, count);
 		id = string_hash(dest);
 		count += 1;
@@ -92,7 +92,7 @@ void assets_set_id(asset_header_t &header, const char *id) {
 
 void assets_set_id(asset_header_t &header, uint64_t id) {
 #if _DEBUG
-	assert(assets_find(id) == nullptr);
+	assert(assets_find(id, header.type) == nullptr);
 #endif
 	header.id = id;
 }

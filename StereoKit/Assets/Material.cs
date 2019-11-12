@@ -30,15 +30,19 @@ namespace StereoKit
         /// <summary>Gets a link to the Shader that the Material is currently using</summary>
         public Shader       Shader => new Shader(NativeAPI.material_get_shader(_materialInst));
 
-
+        /// <summary>Creates a material from a shader, and uses the shader's default settings. Uses an auto-generated id.</summary>
+        /// <param name="shader">Any valid shader.</param>
         public Material(Shader shader)
         {
             _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
         }
-        public Material(string name, Shader shader)
+        /// <summary>Creates a material from a shader, and uses the shader's default settings.</summary>
+        /// <param name="id">Set the material's id to this.</param>
+        /// <param name="shader">Any valid shader.</param>
+        public Material(string id, Shader shader)
         {
             _materialInst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._shaderInst);
-            NativeAPI.material_set_id(_materialInst, name);
+            NativeAPI.material_set_id(_materialInst, id);
         }
         internal Material(IntPtr material)
         {
@@ -123,13 +127,17 @@ namespace StereoKit
             NativeAPI.material_set_texture(_materialInst, name, value._texInst);
         }
 
-        public static Material Find(string id)
+        /// <summary>Looks for a Material asset that matches the given id!</summary>
+        /// <param name="materialId">Which Material are you looking for?</param>
+        /// <returns>A link to the Material matching 'id', null if none is found.</returns>
+        public static Material Find(string materialId)
         {
-            IntPtr material = NativeAPI.material_find(id);
+            IntPtr material = NativeAPI.material_find(materialId);
             return material == IntPtr.Zero ? null : new Material(material);
         }
         /// <summary>Creates a new Material asset with the same shader and properties! Draw calls with
         /// the new Material will not batch togethre with the source Material.</summary>
+        /// /// <param name="materialId">Which Material are you looking for?</param>
         /// <returns>A new Material asset with the same shader and properties. Returns null if no
         /// materials are found with the given id.</returns>
         public static Material Copy(string materialId)

@@ -12,7 +12,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 font_t font_find(const char *id) {
-	font_t result = (font_t)assets_find(id);
+	font_t result = (font_t)assets_find(id, asset_type_font);
 	if (result != nullptr) {
 		assets_addref(result->header);
 		return result;
