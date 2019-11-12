@@ -44,25 +44,6 @@ namespace StereoKitDocumenter
             if (name=="#ctor")
                 return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
 
-            MethodInfo m = GetMethodInfo();
-            List<ParameterInfo> param = m==null?new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
-
-            string paramList = string.Join(", ", param.Select(a=> $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}" ));
-            string signature = (m.IsStatic ? "static " : "")+$"{StringHelper.TypeName(m.ReturnType.Name)} {m.Name}({paramList})";
-
-            string paramText = "";
-            if (parameters.Count > 0 || m.ReturnType != typeof(void)) {
-                paramText += "\n|  |  |\n|--|--|\n";
-                for (int i = 0; i < parameters.Count; i++) {
-                    
-                    ParameterInfo p = param.Find(a => a.Name == parameters[i].name);
-                    paramText += $"|{StringHelper.TypeName(p.ParameterType.Name)} {parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
-                }
-
-                if (m.ReturnType != typeof(void))
-                    paramText += $"|RETURNS: {StringHelper.TypeName(m.ReturnType.Name)}|{StringHelper.CleanForTable(returns)}|\n";
-            }
-
             string exampleText = "";
             if (examples.Count > 0) {
                 exampleText = "\n\n## Examples\n\n";
@@ -74,14 +55,11 @@ namespace StereoKitDocumenter
             return $@"---
 layout: default
 title: {parent.name}.{name}
-description: {StringHelper.CleanForDescription(summary)}
+description: {StringHelper.CleanForDescription(overloads[0].summary)}
 ---
 # [{parent.name}]({parent.UrlName}).{name}
-<div class='signature' markdown='1'>
-{signature}
-</div>
-{summary}
-{paramText}
+
+{string.Join("",overloads.Select(a=>a.ToString()).ToArray())}
 
 {exampleText}
 ";

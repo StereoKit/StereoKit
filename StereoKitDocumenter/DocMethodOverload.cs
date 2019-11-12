@@ -25,7 +25,7 @@ namespace StereoKitDocumenter
         public override string ToString()
         {
             if (rootMethod.name == "#ctor")
-                return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
+                return "# Constructors not implmented yet.\n";
 
             MethodInfo m = GetMethodInfo();
             List<ParameterInfo> param = m == null ? new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
@@ -39,8 +39,9 @@ namespace StereoKitDocumenter
                 paramText += "\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < parameters.Count; i++)
                 {
-
                     ParameterInfo p = param.Find(a => a.Name == parameters[i].name);
+                    if (p == null)
+                        throw new Exception($"Can't find document paramter {parameters[i].name} in {rootMethod.name}");
                     paramText += $"|{StringHelper.TypeName(p.ParameterType.Name)} {parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
                 }
 
@@ -48,46 +49,39 @@ namespace StereoKitDocumenter
                     paramText += $"|RETURNS: {StringHelper.TypeName(m.ReturnType.Name)}|{StringHelper.CleanForTable(returns)}|\n";
             }
 
-            string exampleText = "";
-            if (examples.Count > 0)
-            {
-                exampleText = "\n\n## Examples\n\n";
-                for (int i = 0; i < examples.Count; i++)
-                {
-                    exampleText += examples[i].data;
-                }
-            }
-
-            return $@"---
-layout: default
-title: {parent.name}.{name}
-description: {StringHelper.CleanForDescription(summary)}
----
-# [{parent.name}]({parent.UrlName}).{name}
-<div class='signature' markdown='1'>
+            return $@"<div class='signature' markdown='1'>
 {signature}
 </div>
-{summary}
 {paramText}
-
-{exampleText}
+{summary}
 ";
         }
 
         private Type GetParentType()
         {
-            return Type.GetType("StereoKit." + parent.name + ", StereoKit");
+            return Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
         }
         private MethodInfo GetMethodInfo()
         {
-            Type[] paramTypes = signature
+            Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : signature
                 .Split(',')
                 .AsEnumerable()
-                .Select(a => Type.GetType(a))
+                .Select(a => {
+                    string cleanName = a.Replace("@", "");
+                    Type t = Type.GetType(cleanName);
+                    if (t == null)
+                        t = Type.GetType(cleanName + ", StereoKit");
+                    if (a.Contains("@"))
+                        t = t.MakeByRefType();
+                    return t;
+                    })
                 .ToArray();
 
             Type parent = GetParentType();
-            MethodInfo result = parent.GetMethod(name, paramTypes);
+            MethodInfo result = parent.GetMethod(rootMethod.name, paramTypes);
+
+            if (result == null)
+                throw new Exception("Can't find info for method " + rootMethod.name);
             return result;
         }
     }

@@ -117,26 +117,31 @@ namespace StereoKitDocumenter
             if (segs.Length != 3)
                 Console.WriteLine("Unexpected signature length, " + signature);
 
-            DocMethod result = new DocMethod(GetClass(segs[1]), segs[2], paramSignature);
+            DocMethod method = methods.Find(a => a.name == segs[2] && a.parent.name == segs[1]);
+            if (method == null)
+            {
+                method = new DocMethod(GetClass(segs[1]), segs[2]);
+                methods.Add(method);
+                items.Add(method);
+            }
+
+            DocMethodOverload variant = method.AddOverload(paramSignature);
 
             // Read properties
             while (reader.Read())
             {
                 switch(reader.Name.ToLower())
                 {
-                    case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
-                    case "returns": result.returns = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+                    case "summary": variant.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+                    case "returns": variant.returns = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
                     case "param": {
                         DocParam p = new DocParam();
                         p.name    = reader.GetAttribute("name");
                         p.summary = reader.ReadElementContentAsString().Trim();
-                        result.parameters.Add(p);
+                            variant.parameters.Add(p);
                     } break;
                 }
             }
-
-            methods.Add(result);
-            items.Add(result);
         }
 
         static string WriteIndex()

@@ -36,7 +36,7 @@ namespace StereoKitDocumenter
                 memberText = "\n\n## Methods\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < methods.Count; i++)
                 {
-                    memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{StringHelper.CleanForTable(methods[i].summary)}|\n";
+                    memberText += $"|[{methods[i].name}]({methods[i].UrlName})|{StringHelper.CleanForTable(methods[i].overloads[0].summary)}|\n";
                 }
             }
 
