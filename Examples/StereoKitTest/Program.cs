@@ -13,6 +13,8 @@ class Program
     static Matrix floorTr;
     static Solid  floorSolid;
     static Pose   demoSelectPose = new Pose();
+    static bool   demoTestMode = false;
+    static int    demoTestIndex = 0;
 
     static void Main(string[] args) 
     {
@@ -22,13 +24,30 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
-        Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
+        if (args.Length > 0 && args[0].ToLower() == "-test")
+        {
+            demoTestMode = true;
+            Demos.SetActive(demoTestIndex);
+            Log.Write(LogLevel.Info, "Starting StereoKit Demos in testing mode!");
+        } else { 
+            Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
+        }
         Demos.Initialize();
+        
 
         while (StereoKitApp.Step(() =>
         {
             Demos.Update();
             CommonUpdate();
+
+            if (demoTestMode)
+            {
+                demoTestIndex += 1;
+                if (demoTestIndex >= Demos.Count)
+                    StereoKitApp.Quit();
+                else
+                    Demos.SetActive(demoTestIndex);
+            }
         }));
 
         Demos.Shutdown();

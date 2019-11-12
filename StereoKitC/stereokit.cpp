@@ -157,6 +157,12 @@ void sk_shutdown() {
 
 ///////////////////////////////////////////
 
+void sk_quit() {
+	sk_run = false;
+}
+
+///////////////////////////////////////////
+
 bool32_t sk_step(void (*app_update)(void)) {
 	sk_app_update_func = app_update;
 	sk_update_timer();
