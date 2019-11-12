@@ -18,6 +18,8 @@ namespace StereoKit
     public class Mesh
     {
         internal IntPtr _meshInst;
+
+        /// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!</summary>
         public Mesh()
         {
             _meshInst = NativeAPI.mesh_create();
@@ -84,11 +86,11 @@ namespace StereoKit
         
         /// <summary>Finds the Mesh with the matching id, and returns a reference to it. If no Mesh it found,
         /// it returns null.</summary>
-        /// <param name="id">Id of the Mesh we're looking for.</param>
+        /// <param name="meshId">Id of the Mesh we're looking for.</param>
         /// <returns>A Mesh with a matching id, or null if none is found.</returns>
-        public static Mesh Find(string id)
+        public static Mesh Find(string meshId)
         {
-            IntPtr mesh = NativeAPI.mesh_find(id);
+            IntPtr mesh = NativeAPI.mesh_find(meshId);
             return mesh == IntPtr.Zero ? null : new Mesh(mesh);
         }
     }

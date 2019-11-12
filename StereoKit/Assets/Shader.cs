@@ -15,17 +15,23 @@ namespace StereoKit
         /// <summary>The name of the shader, provided in the shader file itself. Not the filename or id.</summary>
         public string Name => NativeAPI.shader_get_name(_shaderInst);
 
-        internal Shader(IntPtr shader)
-        {
-            _shaderInst = shader;
-            if (_shaderInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty shader!");
-        }
+        /// <summary>Loads and compiles a shader from an hlsl file! Technically, after loading the file,
+        /// StereoKit will hash it, and check to see if it has changed since the last time it cached a
+        /// compiled version. If there is no cache for the hash, it'll compile it, and save the compiled
+        /// shader to a cache folder in the asset path!</summary>
+        /// <param name="file">Path to a file with hlsl code in it. This gets prefixed with the asset path
+        /// in StereoKitApp.settings.</param>
         public Shader(string file)
         {
             _shaderInst = NativeAPI.shader_create_file(file);
             if (_shaderInst == IntPtr.Zero)
                 Log.Write(LogLevel.Warning, "Couldn't load shader file {0}!", file);
+        }
+        internal Shader(IntPtr shader)
+        {
+            _shaderInst = shader;
+            if (_shaderInst == IntPtr.Zero)
+                Log.Write(LogLevel.Warning, "Received an empty shader!");
         }
         ~Shader()
         {
@@ -45,12 +51,14 @@ namespace StereoKit
         {
             return new Shader(NativeAPI.shader_create(hlsl)); ;
         }
-        /// <summary>Finds a shader asset with a given id.</summary>
-        /// <param name="id">For shaders loaded from file, this'll be the file name!</param>
+        /// <summary>Looks for a Material asset that's already loaded, matching the given id! Unless
+        /// the id has been set manually, the id will be the same as the filename provided for
+        /// loading the shader.</summary>
+        /// <param name="shaderId">For shaders loaded from file, this'll be the file name!</param>
         /// <returns>Link to a shader asset!</returns>
-        public static Shader Find(string id)
+        public static Shader Find(string shaderId)
         {
-            IntPtr shader = NativeAPI.shader_find(id);
+            IntPtr shader = NativeAPI.shader_find(shaderId);
             return shader == IntPtr.Zero ? null : new Shader(shader);
         }
     }

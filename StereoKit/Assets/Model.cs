@@ -70,9 +70,12 @@ namespace StereoKit
         public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_modelInst, subsetIndex));
         #endregion
 
-        public static Model Find(string id)
+        /// <summary>Looks for a Model asset that's already loaded, matching the given id!</summary>
+        /// <param name="modelId">Which Model are you looking for?</param>
+        /// <returns>A link to the Model matching 'modelId', null if none is found.</returns>
+        public static Model Find(string modelId)
         {
-            IntPtr model = NativeAPI.model_find(id);
+            IntPtr model = NativeAPI.model_find(modelId);
             return model == IntPtr.Zero ? null : new Model(model);
         }
     }

@@ -127,7 +127,7 @@ namespace StereoKit
             NativeAPI.material_set_texture(_materialInst, name, value._texInst);
         }
 
-        /// <summary>Looks for a Material asset that matches the given id!</summary>
+        /// <summary>Looks for a Material asset that's already loaded, matching the given id!</summary>
         /// <param name="materialId">Which Material are you looking for?</param>
         /// <returns>A link to the Material matching 'id', null if none is found.</returns>
         public static Material Find(string materialId)
