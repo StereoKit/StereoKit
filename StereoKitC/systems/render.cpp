@@ -1,5 +1,6 @@
 #include "render.h"
 #include "d3d.h"
+#include "../libraries/stref.h"
 #include "../math.h"
 #include "../stereokit.h"
 #include "../asset_types/mesh.h"
@@ -8,6 +9,9 @@
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
 #include "../shaders_builtin/shader_builtin.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../libraries/stb_image_write.h"
 
 #include <vector>
 #include <algorithm>
@@ -50,6 +54,11 @@ struct render_inst_buffer {
 	size_t       max;
 	shaderargs_t buffer;
 };
+struct render_screenshot_t {
+	char *filename;
+	vec3  from;
+	vec3  at;
+};
 
 ///////////////////////////////////////////
 
@@ -67,6 +76,8 @@ mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
 tex_t                  render_default_tex;
 
+vector<render_screenshot_t>  render_screenshot_list;
+
 mesh_t     render_sky_mesh = nullptr;
 material_t render_sky_mat = nullptr;
 tex_t      render_sky_cubemap = nullptr;
@@ -79,6 +90,7 @@ mesh_t     render_last_mesh;
 ///////////////////////////////////////////
 
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
+void          render_check_screenshots();
 
 ///////////////////////////////////////////
 
@@ -221,13 +233,52 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 ///////////////////////////////////////////
 
 void render_draw() {
-	render_draw_queue(render_default_camera_tr, render_default_camera_proj);
+	render_draw_matrix(render_default_camera_tr, render_default_camera_proj);
 }
 
 ///////////////////////////////////////////
 
 void render_draw_matrix(const matrix &view, const matrix &proj) {
 	render_draw_queue(view, proj);
+	render_check_screenshots();
+}
+
+///////////////////////////////////////////
+
+void render_check_screenshots() {
+	for (size_t i = 0; i < render_screenshot_list.size(); i++) {
+		matrix view = matrix_trs(
+			render_screenshot_list[i].from,
+			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
+		matrix_inverse(view, view);
+
+		// Create the screenshot surface
+		int32_t  w = (int32_t)d3d_screen_width;
+		int32_t  h = (int32_t)d3d_screen_height;
+		size_t   size   = sizeof(color32) * w * h;
+		color32 *buffer = (color32*)malloc(size);
+		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+		tex_set_colors(render_capture_surface, w, h, buffer);
+		tex_add_zbuffer(render_capture_surface);
+
+		// Setup to render the screenshot
+		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)w, (float)h);
+		d3d_context->RSSetViewports(1, &viewport);
+		tex_rtarget_clear(render_capture_surface, color32{0,0,0,255});
+		tex_rtarget_set_active(render_capture_surface);
+		render_draw_queue(view, render_default_camera_proj);
+		tex_rtarget_set_active(nullptr);
+
+		// Render!
+		render_draw_queue(view, render_default_camera_proj);
+
+		// And save the screenshot to file
+		tex_get_data(render_capture_surface, buffer, size);
+		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 85);
+		free(buffer);
+		free(render_screenshot_list[i].filename);
+	}
+	render_screenshot_list.clear();
 }
 
 ///////////////////////////////////////////
@@ -338,6 +389,13 @@ void render_blit(tex_t to, material_t material) {
 	render_last_material = nullptr;
 	render_last_mesh = nullptr;
 	render_last_shader = nullptr;
+}
+
+///////////////////////////////////////////
+
+void render_screenshot(vec3 from_viewpt, vec3 at, const char *file) {
+	char *file_copy = string_copy(file);
+	render_screenshot_list.push_back( render_screenshot_t{ file_copy, from_viewpt, at });
 }
 
 ///////////////////////////////////////////

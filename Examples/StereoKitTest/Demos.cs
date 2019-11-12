@@ -10,8 +10,10 @@ public static class Demos
     static List<Type> demos = new List<Type>();
     static IDemo activeScene;
     static IDemo nextScene;
+    static int   testIndex = 0;
     static Type ActiveScene { set { nextScene = (IDemo)Activator.CreateInstance(value); } }
     public static int Count => demos.Count;
+    public static bool TestMode { get; set; }
 
     public static void FindDemos()
     {
@@ -23,10 +25,12 @@ public static class Demos
 
     public static void Initialize()
     {
+        if (TestMode)
+            nextScene = null;
         if (activeScene == null)
             activeScene = nextScene;
         if (activeScene == null)
-            activeScene = (IDemo)Activator.CreateInstance(demos[0]);
+            activeScene = (IDemo)Activator.CreateInstance(demos[testIndex]);
         activeScene.Initialize();
     }
     public static void Update()
@@ -39,6 +43,15 @@ public static class Demos
             nextScene   = null;
         }
         activeScene.Update();
+
+        if (TestMode)
+        {
+            testIndex += 1;
+            if (testIndex >= Count)
+                StereoKitApp.Quit();
+            else
+                SetActive(testIndex);
+        }
     }
     public static void Shutdown()
     {

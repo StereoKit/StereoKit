@@ -24,30 +24,14 @@ class Program
         CommonInit();
 
         Demos.FindDemos();
-        if (args.Length > 0 && args[0].ToLower() == "-test")
-        {
-            demoTestMode = true;
-            Demos.SetActive(demoTestIndex);
-            Log.Write(LogLevel.Info, "Starting StereoKit Demos in testing mode!");
-        } else { 
-            Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
-        }
+        Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
+        Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
         Demos.Initialize();
         
-
         while (StereoKitApp.Step(() =>
         {
             Demos.Update();
             CommonUpdate();
-
-            if (demoTestMode)
-            {
-                demoTestIndex += 1;
-                if (demoTestIndex >= Demos.Count)
-                    StereoKitApp.Quit();
-                else
-                    Demos.SetActive(demoTestIndex);
-            }
         }));
 
         Demos.Shutdown();

@@ -64,7 +64,11 @@ class DemoGeo : IDemo
         Mesh  cubeMesh  = demoCubeMesh;
         Model cubeModel = demoCubeModel;
 
+        if (Demos.TestMode)
+            Renderer.Screenshot(new Vec3(0.25f,1.5f,2f), Vec3.Zero, "../../../docs/img/screenshots/ProceduralGeometry.jpg");
+
         /// :CodeSample: Mesh.GenerateCube
+        /// ![Procedural Geometry Demo](/docs/img/screenshots/ProceduralGeometry.png)
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
