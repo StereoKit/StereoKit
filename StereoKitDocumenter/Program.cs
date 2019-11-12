@@ -34,7 +34,7 @@ namespace StereoKitDocumenter
                     ReadClass(signature, reader.ReadSubtree());
                 } else if (type == "M") {
                     ReadMethod(signature, reader.ReadSubtree());
-                } else if (type == "F") {
+                } else if (type == "F" || type == "P") {
                     ReadField(signature, reader.ReadSubtree());
                 }
             }

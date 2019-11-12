@@ -42,10 +42,10 @@ namespace StereoKitDocumenter
 
             string fieldText = "";
             if (fields.Count > 0) { 
-                fieldText = "\n\n## Fields\n\n|  |  |\n|--|--|\n";
+                fieldText = "\n\n## Fields and Properties\n\n|  |  |\n|--|--|\n";
                 for (int i = 0; i < fields.Count; i++)
                 {
-                    fieldText += $"|{StringHelper.TypeName(t.GetField(fields[i].name).FieldType.Name)} [{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
+                    fieldText += $"|{StringHelper.TypeName(fields[i].GetFieldType(t).Name)} [{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
                 }
             }
 
