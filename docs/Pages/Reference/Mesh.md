@@ -5,7 +5,6 @@ description: A Mesh is a single collection of triangular faces with extra surfac
 ---
 # Mesh
 
-## Description
 A Mesh is a single collection of triangular faces with extra surface information to enhance
 rendering! StereoKit meshes are composed of a list of vertices, and a list of indices to
 connect the vertices into faces. Nothing more than that is stored here, so typically meshes

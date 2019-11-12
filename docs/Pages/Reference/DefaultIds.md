@@ -5,12 +5,11 @@ description: The default StereoKit assets all have ids, and this class is a coll
 ---
 # DefaultIds
 
-## Description
 The default StereoKit assets all have ids, and this class is a collection
 of all of them in case you want to copy or use them!
 
 
-## Fields
+## Fields and Properties
 
 |  |  |
 |--|--|
@@ -25,11 +24,11 @@ of all of them in case you want to copy or use them!
 |string [shaderFont]({{site.url}}/Pages/Reference/DefaultIds/shaderFont.html)|A shader for text! Right now, this will render a font atlas texture, and perform alpha-testing for transparency. It also flips normals of the back-face of the surface, so backfaces get lit properly when backface culling is turned off, as it is by default for text.|
 |string [shaderPbr]({{site.url}}/Pages/Reference/DefaultIds/shaderPbr.html)|A physically based shader.|
 |string [shaderUnlit]({{site.url}}/Pages/Reference/DefaultIds/shaderUnlit.html)|Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all!|
-|string [tex2d]({{site.url}}/Pages/Reference/DefaultIds/tex2d.html)|Default 2x2 white opaque texture, this is the texture referred to as 'white' in the shader texture defaults.|
-|string [tex2dBlack]({{site.url}}/Pages/Reference/DefaultIds/tex2dBlack.html)|Default 2x2 black opaque texture, this is the texture referred to as 'black' in the shader texture defaults.|
-|string [tex2dFlat]({{site.url}}/Pages/Reference/DefaultIds/tex2dFlat.html)|Default 2x2 flat normal texture, this is a normal that faces out from the, face, and has a color value of (0.5,0.5,1). this is the texture referred to as 'flat' in the shader texture defaults.|
-|string [tex2dGray]({{site.url}}/Pages/Reference/DefaultIds/tex2dGray.html)|Default 2x2 middle gray (0.5,0.5,0.5) opaque texture, this is the texture referred to as 'gray' in the shader texture defaults.|
-|string [tex2dRough]({{site.url}}/Pages/Reference/DefaultIds/tex2dRough.html)|Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.|
+|string [tex]({{site.url}}/Pages/Reference/DefaultIds/tex.html)|Default 2x2 white opaque texture, this is the texture referred to as 'white' in the shader texture defaults.|
+|string [texBlack]({{site.url}}/Pages/Reference/DefaultIds/texBlack.html)|Default 2x2 black opaque texture, this is the texture referred to as 'black' in the shader texture defaults.|
+|string [texFlat]({{site.url}}/Pages/Reference/DefaultIds/texFlat.html)|Default 2x2 flat normal texture, this is a normal that faces out from the, face, and has a color value of (0.5,0.5,1). this is the texture referred to as 'flat' in the shader texture defaults.|
+|string [texGray]({{site.url}}/Pages/Reference/DefaultIds/texGray.html)|Default 2x2 middle gray (0.5,0.5,0.5) opaque texture, this is the texture referred to as 'gray' in the shader texture defaults.|
+|string [texRough]({{site.url}}/Pages/Reference/DefaultIds/texRough.html)|Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.|
 
 
 

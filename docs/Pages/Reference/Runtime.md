@@ -5,11 +5,10 @@ description: Specifies details about how StereoKit should start up!
 ---
 # Runtime
 
-## Description
 Specifies details about how StereoKit should start up!
 
 
-## Fields
+## Fields and Properties
 
 |  |  |
 |--|--|

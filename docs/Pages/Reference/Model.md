@@ -5,7 +5,6 @@ description: A Model is a collection of meshes, materials, and transforms that m
 ---
 # Model
 
-## Description
 A Model is a collection of meshes, materials, and transforms that
 make up a visual element! This is a great way to group together complex
 objects that have multiple parts in them, and in fact, most model formats
@@ -22,14 +21,19 @@ So if you need speed, and only have a single mesh with a precalculated transform
 matrix, it can be faster to render a Mesh instead of a Model!
 
 
+## Fields and Properties
+
+|  |  |
+|--|--|
+|int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
+
+
 
 ## Methods
 
 |  |  |
 |--|--|
-|[#ctor]({{site.url}}/Pages/Reference/Model/#ctor.html)|Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.|
-|[#ctor]({{site.url}}/Pages/Reference/Model/#ctor.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
-|[#ctor]({{site.url}}/Pages/Reference/Model/#ctor.html)|Creates a single mesh subset Model using the indicated Mesh and Material!|
+|[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.|
 |[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the mesh subset!|
 
 

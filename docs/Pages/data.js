@@ -12,16 +12,24 @@ var documents =
 		pages : [],
 		folders : [
 			{
+			name : 'Bounds',
+			pages : ['center','dimensions','Bounds','Contains','FromCorner','FromCorners','Intersect'],
+			},
+			{
 			name : 'DefaultIds',
-			pages : ['cubemap','font','material','materialEquirect','materialFont','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex2d','tex2dBlack','tex2dFlat','tex2dGray','tex2dRough'],
+			pages : ['cubemap','font','material','materialEquirect','materialFont','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex','texBlack','texFlat','texGray','texRough'],
 			},
 			{
 			name : 'Font',
-			pages : ['#ctor','Find'],
+			pages : ['Font','Find'],
 			},
 			{
 			name : 'Material',
-			pages : ['Copy','Copy','SetColor','SetColor','SetFloat','SetMatrix','SetTexture','SetVector'],
+			pages : ['FaceCull','ParamCount','QueueOffset','Shader','Transparency','Copy','SetColor','SetFloat','SetMatrix','SetTexture','SetVector'],
+			},
+			{
+			name : 'Matrix',
+			pages : ['Identity','Inverse','TransformDirection','TransformPoint','TRS'],
 			},
 			{
 			name : 'Mesh',
@@ -29,11 +37,23 @@ var documents =
 			},
 			{
 			name : 'Model',
-			pages : ['#ctor','#ctor','#ctor','GetMaterial'],
+			pages : ['SubsetCount','Model','GetMaterial'],
+			},
+			{
+			name : 'Plane',
+			pages : ['d','normal'],
+			},
+			{
+			name : 'Pose',
+			pages : [],
 			},
 			{
 			name : 'Quat',
 			pages : ['Identity','Difference','FromAngles','LookAt','LookDir'],
+			},
+			{
+			name : 'Renderer',
+			pages : ['Screenshot'],
 			},
 			{
 			name : 'Runtime',
@@ -45,15 +65,15 @@ var documents =
 			},
 			{
 			name : 'Shader',
-			pages : ['Find','FromHLSL'],
+			pages : ['Name','Find','FromHLSL'],
 			},
 			{
 			name : 'StereoKitApp',
-			pages : ['Initialize','Shutdown','Step'],
+			pages : ['Initialize','Quit','Shutdown','Step'],
 			},
 			{
 			name : 'Text',
-			pages : ['Add','Add','MakeStyle','Size','Size'],
+			pages : ['Add','MakeStyle','Size'],
 			},
 			{
 			name : 'TextStyle',
@@ -61,7 +81,7 @@ var documents =
 			},
 			{
 			name : 'Time',
-			pages : [],
+			pages : ['Elapsed','Elapsedf','Total','Totalf'],
 			},
 			{
 			name : 'Units',

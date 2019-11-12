@@ -4,12 +4,10 @@ title: Mesh.GenerateCylinder
 description: Generates a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now. Additional development is needed for making better UVs for the edges.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCylinder
+
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float diameter, float depth, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction, int subdivisions)
 </div>
-Generates a cylinder mesh, pre-sized to the given diameter and depth,
-UV coordinates are from a flattened top view right now. Additional development is needed for
-making better UVs for the edges.
 
 |  |  |
 |--|--|
@@ -19,11 +17,16 @@ making better UVs for the edges.
 |int subdivisions|How many vertices compose the edges of the cylinder? More is smoother,             but less performant.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|Returns a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now.|
 
+Generates a cylinder mesh, pre-sized to the given diameter and depth,
+UV coordinates are from a flattened top view right now. Additional development is needed for
+making better UVs for the edges.
+
 
 
 
 ## Examples
 
+![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp

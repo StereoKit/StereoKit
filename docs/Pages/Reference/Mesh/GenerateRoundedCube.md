@@ -4,12 +4,10 @@ title: Mesh.GenerateRoundedCube
 description: Generates a cube mesh with rounded corners, pre-sized to the given dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded corners.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateRoundedCube
+
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateRoundedCube([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, float edgeRadius, int subdivisions)
 </div>
-Generates a cube mesh with rounded corners, pre-sized to the given
-dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded
-corners.
 
 |  |  |
 |--|--|
@@ -18,11 +16,16 @@ corners.
 |int subdivisions|How many subdivisions should be used for creating the corners?              A larger value results in smoother corners, but can decrease performance.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A cube mesh with rounded corners, pre-sized to the given dimensions.|
 
+Generates a cube mesh with rounded corners, pre-sized to the given
+dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded
+corners.
+
 
 
 
 ## Examples
 
+![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp

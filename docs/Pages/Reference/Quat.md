@@ -5,7 +5,6 @@ description: Quaternions are efficient and robust mathematical objects for repre
 ---
 # Quat
 
-## Description
 Quaternions are efficient and robust mathematical objects for
 representing rotations! Understanding the details of how a quaterion works
 is not generally necessary for using them effectively, so don't worry too
@@ -15,7 +14,7 @@ If you're interested in learning the details though, 3Blue1Brown and Ben Eater
 have an [excellent interactive lesson](https://eater.net/quaternions) about them!
 
 
-## Fields
+## Fields and Properties
 
 |  |  |
 |--|--|

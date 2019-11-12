@@ -4,12 +4,10 @@ title: Mesh.GenerateSphere
 description: Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateSphere
+
 <div class='signature' markdown='1'>
 static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diameter, int subdivisions)
 </div>
-Generates a sphere mesh, pre-sized to the given diameter, created
-by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified
-cube.
 
 |  |  |
 |--|--|
@@ -17,11 +15,16 @@ cube.
 |int subdivisions|How many times should the initial cube be subdivided?|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.|
 
+Generates a sphere mesh, pre-sized to the given diameter, created
+by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified
+cube.
+
 
 
 
 ## Examples
 
+![Procedural Geometry Demo](/img/screenshots/ProceduralGeometry.jpg)
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp

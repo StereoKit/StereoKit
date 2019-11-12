@@ -5,11 +5,10 @@ description: StereoKit miscellaneous initialization settings! Setup StereoKit.se
 ---
 # Settings
 
-## Description
 StereoKit miscellaneous initialization settings! Setup StereoKit.settings with your data before calling StereoKitApp.Initialize.
 
 
-## Fields
+## Fields and Properties
 
 |  |  |
 |--|--|

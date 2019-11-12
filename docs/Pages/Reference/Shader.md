@@ -5,13 +5,19 @@ description: A shader is a piece of code that runs on the GPU, and determines ho
 ---
 # Shader
 
-## Description
 A shader is a piece of code that runs on the GPU, and determines
 how model data gets transformed into pixels on screen! It's more likely
 that you'll work more directly with Materials, which shaders are a subset of.
 
 With this particular class, you can mostly just look at it. It doesn't do
 a whole lot. Maybe you can swap out the shader code or something sometimes!
+
+
+## Fields and Properties
+
+|  |  |
+|--|--|
+|string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
 
 
 
