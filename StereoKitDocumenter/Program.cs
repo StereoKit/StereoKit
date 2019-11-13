@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -197,6 +197,7 @@ namespace StereoKitDocumenter
                 }
             }
 
+            DocExampleFinder.examples.Sort((a,b)=>a.info.CompareTo(b.info));
             for (int e = 0; e < DocExampleFinder.examples.Count; e++)
             {
                 DocExample ex = DocExampleFinder.examples[e];

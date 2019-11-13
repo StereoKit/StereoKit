@@ -5,7 +5,7 @@ var documents =
 	folders : [
 		{
 		name : 'Guides',
-		pages : ['User Interface','Getting Started'],
+		pages : ['Getting Started','User Interface'],
 		},
 		{
 		name : 'Reference',
