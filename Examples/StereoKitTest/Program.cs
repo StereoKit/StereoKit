@@ -16,13 +16,14 @@ class Program
 
     static void Main(string[] args) 
     {
+        Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
+
         StereoKitApp.settings.assetsFolder = Program.Root;
-        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
+        if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality, true))
             Environment.Exit(1);
         CommonInit();
 
         Demos.FindDemos();
-        Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
         Demos.SetActive(args.Length > 0 ? args[0] : "Geo");
         Demos.Initialize();
         
@@ -57,6 +58,10 @@ class Program
     static void CommonUpdate()
     {
         Renderer.Add(floorMesh, floorTr, Color.White);
+
+        // Skip selection window if we're in test mode
+        if (Demos.TestMode)
+            return;
 
         // Make a window for demo selection
         UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));

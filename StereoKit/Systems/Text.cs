@@ -1,7 +1,7 @@
 ﻿namespace StereoKit
 {
     /// <summary>A collection of functions for rendering and working with text.</summary>
-    class Text
+    public class Text
     {
         /// <summary>Create a text style for use with other text functions! A text style
         /// is a font plus size/color/material parameters, and are used to keep text looking
