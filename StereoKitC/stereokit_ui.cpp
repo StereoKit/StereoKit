@@ -34,7 +34,7 @@ ui_settings_t skui_settings = {
 	10 * mm2m,
 	20 * mm2m,
 	10 * mm2m,
-	4 * mm2m,
+	.4f,
 	0.5f * mm2m,
 };
 float skui_fontsize = 20*mm2m;
@@ -302,7 +302,7 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, const char
 			skui_control_active[hand] = 0;
 			result |= button_state_just_up;
 		}
-		finger_offset = fmaxf(skui_settings.backplate_depth + mm2m, finger_offset);
+		finger_offset = fmaxf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset);
 		active_time   = time_getf() - skui_control_active_time[hand];
 	} else if (focus & button_state_just_up && skui_control_active[hand] == id) {
 		skui_control_active[hand] = 0;
@@ -393,7 +393,7 @@ bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 	}
 
 	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
-	ui_box (window_relative_pos + vec3{-back_size, back_size, -mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_box (window_relative_pos + vec3{-back_size, back_size, -mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
 	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_just_down;
@@ -413,6 +413,45 @@ bool32_t ui_button(const char *text) {
 
 ///////////////////////////////////////////
 
+bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, bool32_t &pressed) {
+	float         finger_offset;
+	float         active_time;
+	button_state_ state = ui_button_behavior(window_relative_pos, size, text, finger_offset, active_time);
+
+	if (state & button_state_just_down) {
+		pressed = !pressed;
+	}
+	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
+
+	float back_size   = skui_settings.backplate_border;
+	float color_blend = pressed ? 1.5f : 1;
+	if (state & button_state_down) {
+		float t = fminf(1, active_time * 12);
+		back_size   = math_ease_hop(back_size, fmaxf(mm2m*2, back_size*2.f), t);
+		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
+	}
+
+	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
+	ui_box (window_relative_pos + vec3{-back_size, back_size, -mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
+
+	return state & button_state_changed;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_toggle(const char *text, bool32_t &pressed) {
+	vec3 offset;
+	vec2 size;
+	ui_layout_box (text_size(text, skui_font_style), offset, size);
+	ui_reserve_box(size);
+	ui_nextline   ();
+
+	return ui_toggle_at(offset, size, text, pressed);
+}
+
+///////////////////////////////////////////
+
 bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text) {
 	float         finger_offset;
 	float         active_time;
@@ -427,7 +466,7 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 	}
 
 	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_color_base * color_blend);
-	ui_cylinder(window_relative_pos + vec3{-back_size, back_size, -mm2m}, diameter+back_size*2, skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color_blend);
+	ui_cylinder(window_relative_pos + vec3{-back_size, back_size, -mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
 	ui_text    (window_relative_pos + vec3{ diameter/2, -diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_just_down;
@@ -590,7 +629,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_fingertip[i], box_start, box_size)) {
 			skui_control_focused[i] = id;
-			color = 0.5f;
+			color = 1.5f;
 			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
@@ -605,7 +644,9 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 	// Draw the UI
 	ui_reserve_box(size);
+	float back_size = skui_settings.backplate_border;
 	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth }, skui_mat, skui_color_border * color);
 	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
 	ui_nextline();
 	

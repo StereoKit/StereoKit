@@ -25,6 +25,8 @@ SK_API void     ui_label       (const char *text);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
 SK_API bool32_t ui_button_round(const char *text, float diameter = 0);
+SK_API bool32_t ui_toggle      (const char *text, bool32_t &pressed);
+//SK_API bool32_t ui_toggle_round(const char *text, bool32_t &pressed);
 SK_API void     ui_model       (model_t model, vec2 ui_size, float model_scale);
 SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_size);
 SK_API bool32_t ui_affordance  (const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw);

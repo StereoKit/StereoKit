@@ -2,6 +2,7 @@
 
 class DemoUI : IDemo
 {
+    bool   showSettings = false;
     float  slider1 = 0.5f;
     float  slider2 = 0.5f;
     Pose   windowPose   = new Pose(new Vec3(0, 0, -.15f), Quat.LookAt(new Vec3(0,0,-.25f), Vec3.Zero));
@@ -13,7 +14,9 @@ class DemoUI : IDemo
     public void Update()
     {
         WindowTest();
-        WindowSettings();
+
+        if (showSettings)
+            WindowSettings();
     }
 
     void WindowSettings()
@@ -31,7 +34,7 @@ class DemoUI : IDemo
 
         UI.Label("Backplate");
         UI.Label("Depth"); UI.SameLine();
-        UI.HSlider("sl_pl_depth", ref UI.Settings.backplateDepth, 0, UI.Settings.depth*0.99f, 0);
+        UI.HSlider("sl_pl_depth", ref UI.Settings.backplateDepth, 0, 0.99f, 0);
         UI.Label("Border"); UI.SameLine();
         UI.HSlider("sl_pl_border", ref UI.Settings.backplateBorder, 0, 10 * Units.mm2m, 0);
 
@@ -40,10 +43,10 @@ class DemoUI : IDemo
 
     void WindowTest()
     {
-        UI.WindowBegin("Main", ref windowPose, new Vec2(24, 0) * Units.cm2m);
+        UI.WindowBegin("Main", ref windowPose, new Vec2(20, 0) * Units.cm2m);
 
-        UI.Button("Testing!\nok"); UI.SameLine();
-        UI.Button("Another");
+        UI.Button("Testing!"); UI.SameLine();
+        UI.Toggle("Show\nSettings", ref showSettings);
         UI.HSlider("slider", ref slider1, 0, 1, 0.2f, 72 * Units.mm2m); UI.SameLine();
         UI.HSlider("slider2", ref slider2, 0, 1, 0, 72 * Units.mm2m);
         UI.Button("Press me!");
