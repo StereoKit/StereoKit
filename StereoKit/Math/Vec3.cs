@@ -34,6 +34,8 @@ namespace StereoKit
         /// <summary>StereoKit uses a right-handed coordinate system, which means that forward is 
         /// looking down the -Z axis! This value is the same as `new Vec3(0,0,-1)`</summary>
         public static readonly Vec3 Forward = new Vec3(0,0,-1);
+        /// <summary>When looking forward, this is the direction to the right! In StereoKit, this is the same as `new Vec3(1,0,0)`</summary>
+        public static readonly Vec3 Right   = new Vec3(1,0,0);
         public static Vec3 operator +(Vec3 a, Vec3 b)  { return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z); }
         public static Vec3 operator -(Vec3 a, Vec3 b)  { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
         public static Vec3 operator -(Vec3 a)          { return new Vec3(-a.x, -a.y, -a.z); }

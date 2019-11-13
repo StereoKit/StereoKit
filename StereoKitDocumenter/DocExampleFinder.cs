@@ -36,8 +36,12 @@ namespace StereoKitDocumenter
                         curr = new DocExample( ExampleType.CodeSample, lines[i].Substring(lines[i].LastIndexOf(':')).Trim());
                         examples.Add(curr);
                     } else if (trim.StartsWith("///") && lines[i].Contains(":CodeDoc:")) {
-                        curr = new DocExample(ExampleType.Document, lines[i].Substring(lines[i].LastIndexOf(':')+1).Trim());
-                        examples.Add(curr);
+                        string docName = lines[i].Substring(lines[i].LastIndexOf(':') + 1).Trim();
+                        curr = FindDoc(docName);
+                        if (curr == null) { 
+                            curr = new DocExample(ExampleType.Document, docName);
+                            examples.Add(curr);
+                        }
                     }
                 } else {
                     string trim = lines[i].Trim();
@@ -52,6 +56,21 @@ namespace StereoKitDocumenter
             }
             if (curr != null)
                 Console.WriteLine("Missing an :End: in documentation code sample!");
+        }
+
+        private static DocExample FindDoc(string docName)
+        {
+            int    split    = docName.IndexOf(' ');
+            string category = docName.Substring(0, split);
+            string info     = docName.Substring(split + 1);
+
+            for (int i = 0; i < examples.Count; i++)
+            {
+                if (examples[i].category == category &&
+                    examples[i].info == info)
+                    return examples[i];
+            }
+            return null;
         }
     }
 }

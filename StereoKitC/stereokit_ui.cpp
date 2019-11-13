@@ -33,7 +33,7 @@ vec3            skui_fingergrip[2];
 ui_settings_t skui_settings = {
 	10 * mm2m,
 	20 * mm2m,
-	10 * mm2m,
+	15 * mm2m,
 	.4f,
 	0.5f * mm2m,
 };
@@ -646,7 +646,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_reserve_box(size);
 	float back_size = skui_settings.backplate_border;
 	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
-	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth }, skui_mat, skui_color_border * color);
+	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z-mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
 	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
 	ui_nextline();
 	
@@ -655,21 +655,23 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-void ui_window_begin(const char *text, pose_t &pose, vec2 window_size) {
-	if (window_size.x == 0) window_size.x = 1;
+void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t show_header) {
+	if (window_size.x == 0) window_size.x = 32*cm2m;
 
 	ui_push_pose(pose, window_size);
 
-	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(text, skui_font_style);
-	vec3 box_start = vec3{ 0, 0, -skui_settings.depth };
-	vec3 box_size  = vec3{ window_size.x, size.y+ skui_settings.padding*2, skui_settings.depth };
+	if (show_header) {
+		vec3 offset = skui_layers.back().offset;
+		vec2 size   = text_size(text, skui_font_style);
+		vec3 box_start = vec3{ 0, 0, -skui_settings.depth };
+		vec3 box_size  = vec3{ window_size.x, size.y+ skui_settings.padding*2, skui_settings.depth };
 
-	ui_reserve_box(size);
-	ui_text(box_start + vec3{skui_settings.padding,-skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
-	ui_affordance(text, pose, box_start, box_size, true);
+		ui_reserve_box(size);
+		ui_text(box_start + vec3{skui_settings.padding,-skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
+		ui_affordance(text, pose, box_start, box_size, true);
 
-	ui_nextline();
+		ui_nextline();
+	}
 }
 
 ///////////////////////////////////////////

@@ -88,6 +88,7 @@ namespace StereoKitDocumenter
                 data += "```\n";
                 skipBlanks = true;
                 skipIndent = -1;
+                comments = true;
             }
         }
 
