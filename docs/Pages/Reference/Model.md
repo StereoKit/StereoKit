@@ -34,6 +34,7 @@ matrix, it can be faster to render a Mesh instead of a Model!
 |  |  |
 |--|--|
 |[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.|
+|[Find]({{site.url}}/Pages/Reference/Model/Find.html)|Looks for a Model asset that's already loaded, matching the given id!|
 |[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the mesh subset!|
 
 

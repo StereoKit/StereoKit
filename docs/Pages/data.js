@@ -5,7 +5,7 @@ var documents =
 	folders : [
 		{
 		name : 'Guides',
-		pages : ['Getting Started'],
+		pages : ['User Interface','Getting Started'],
 		},
 		{
 		name : 'Reference',
@@ -25,7 +25,7 @@ var documents =
 			},
 			{
 			name : 'Material',
-			pages : ['FaceCull','ParamCount','QueueOffset','Shader','Transparency','Copy','SetColor','SetFloat','SetMatrix','SetTexture','SetVector'],
+			pages : ['FaceCull','ParamCount','QueueOffset','Shader','Transparency','Material','Copy','Find','SetColor','SetFloat','SetMatrix','SetTexture','SetVector'],
 			},
 			{
 			name : 'Matrix',
@@ -33,11 +33,11 @@ var documents =
 			},
 			{
 			name : 'Mesh',
-			pages : ['Find','GenerateCube','GenerateCylinder','GenerateRoundedCube','GenerateSphere'],
+			pages : ['Mesh','Find','GenerateCube','GenerateCylinder','GenerateRoundedCube','GenerateSphere'],
 			},
 			{
 			name : 'Model',
-			pages : ['SubsetCount','Model','GetMaterial'],
+			pages : ['SubsetCount','Model','Find','GetMaterial'],
 			},
 			{
 			name : 'Plane',
@@ -65,7 +65,11 @@ var documents =
 			},
 			{
 			name : 'Shader',
-			pages : ['Name','Find','FromHLSL'],
+			pages : ['Name','Shader','Find','FromHLSL'],
+			},
+			{
+			name : 'Solid',
+			pages : ['Solid'],
 			},
 			{
 			name : 'StereoKitApp',
@@ -84,12 +88,16 @@ var documents =
 			pages : ['Elapsed','Elapsedf','Total','Totalf'],
 			},
 			{
+			name : 'UI',
+			pages : ['Button','ButtonRound','HSlider','Label','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			},
+			{
 			name : 'Units',
 			pages : ['cm2m','deg2rad','m2cm','m2mm','mm2m','rad2deg'],
 			},
 			{
 			name : 'Vec3',
-			pages : ['Forward','One','Up','Zero'],
+			pages : ['Forward','One','Right','Up','Zero'],
 			},
 		]
 		},

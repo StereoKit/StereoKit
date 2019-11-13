@@ -21,6 +21,7 @@ static [Material]({{site.url}}/Pages/Reference/Material.html) Copy(string materi
 
 |  |  |
 |--|--|
+|string materialId|Which Material are you looking for?|
 |RETURNS: [Material]({{site.url}}/Pages/Reference/Material.html)|A new Material asset with the same shader and properties. Returns null if no materials are found with the given id.|
 
 Creates a new Material asset with the same shader and properties! Draw calls with

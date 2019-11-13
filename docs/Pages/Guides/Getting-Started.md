@@ -50,5 +50,5 @@ namespace SKYourTemplate
 }
 ```
 
-Awesome! That's pretty easy, but what next? Let's build some UI! (guide coming soon)
+Awesome! That's pretty easy, but what next? [Let's build some UI]({{site.url}}/Pages/Guides/User-Interface.html)!
 

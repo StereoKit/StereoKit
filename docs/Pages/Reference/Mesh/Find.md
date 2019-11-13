@@ -6,12 +6,12 @@ description: Finds the Mesh with the matching id, and returns a reference to it.
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Find
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Find(string id)
+static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Find(string meshId)
 </div>
 
 |  |  |
 |--|--|
-|string id|Id of the Mesh we're looking for.|
+|string meshId|Id of the Mesh we're looking for.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A Mesh with a matching id, or null if none is found.|
 
 Finds the Mesh with the matching id, and returns a reference to it. If no Mesh it found,
