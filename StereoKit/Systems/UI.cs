@@ -12,7 +12,7 @@ namespace StereoKit
     /// same id, but a window cannot use the same id twice.</summary>
     public static class UI
     {
-        public static ref UISettings Settings => ref NativeAPI.ui_settings();
+        public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
 
         public static void NextLine   ()            { NativeAPI.ui_nextline(); }
         /// <summary>Moves the current layout position back to the end of the line that just finished,

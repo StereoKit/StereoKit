@@ -76,8 +76,13 @@ void ui_text     (vec3 start, const char *text, text_align_ position = text_alig
 
 ///////////////////////////////////////////
 
-ui_settings_t &ui_settings() {
-	return skui_settings;
+void ui_settings(ui_settings_t settings) {
+	if (settings.backplate_border == 0) settings.backplate_border = 0.5f * mm2m;
+	if (settings.backplate_depth  == 0) settings.backplate_depth  = 0.4f;
+	if (settings.depth            == 0) settings.depth   = 15 * mm2m;
+	if (settings.gutter           == 0) settings.gutter  = 20 * mm2m;
+	if (settings.padding          == 0) settings.padding = 10 * mm2m;
+	skui_settings = settings;
 }
 
 ///////////////////////////////////////////

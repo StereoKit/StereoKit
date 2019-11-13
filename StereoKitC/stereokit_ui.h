@@ -12,7 +12,7 @@ struct ui_settings_t {
 	float backplate_border;
 };
 
-SK_API ui_settings_t &ui_settings();
+SK_API void     ui_settings(ui_settings_t settings);
 
 SK_API void     ui_nextline    ();
 SK_API void     ui_sameline    ();
