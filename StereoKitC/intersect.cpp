@@ -41,15 +41,14 @@ bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
 	vec3  diff = sphere.center - ray.pos;
 	float dot  = vec3_dot(diff, ray.dir);
 
-	float dist2   = (dot*dot) - vec3_dot(diff,diff);
+	float dist2   = vec3_dot(diff,diff)-(dot*dot);
 	float radius2 = sphere.radius * sphere.radius;
 	if ( dot < 0.0 || dist2 > radius2) return false;
 
 	float dist = sqrtf( radius2 - dist2 );
 
-	//*out_pt = dot - dist;
-
-	log_warn("sphere_ray_intersect not implemented");
+	float t = fminf(dot-dist, dot+dist);
+	*out_pt = ray.pos + ray.dir * t;
 
 	return true;
 }
@@ -76,6 +75,13 @@ bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 		pt.x <= bounds.dimensions.x &&
 		pt.y <= bounds.dimensions.y &&
 		pt.z <= bounds.dimensions.z;
+}
+
+///////////////////////////////////////////
+
+vec3 ray_point_closest(ray_t ray, vec3 pt) {
+	float t = vec3_dot(pt - ray.pos, ray.dir);
+	return ray.pos + ray.dir * t;
 }
 
 }
