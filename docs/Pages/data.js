@@ -16,12 +16,20 @@ var documents =
 			pages : ['center','dimensions','Bounds','Contains','FromCorner','FromCorners','Intersect'],
 			},
 			{
+			name : 'Cull',
+			pages : [],
+			},
+			{
 			name : 'DefaultIds',
 			pages : ['cubemap','font','material','materialEquirect','materialFont','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex','texBlack','texFlat','texGray','texRough'],
 			},
 			{
 			name : 'Font',
 			pages : ['Font','Find'],
+			},
+			{
+			name : 'Log',
+			pages : ['Filter','Err','Info','Warn','Write'],
 			},
 			{
 			name : 'Material',
@@ -33,7 +41,7 @@ var documents =
 			},
 			{
 			name : 'Mesh',
-			pages : ['Mesh','Find','GenerateCube','GenerateCylinder','GenerateRoundedCube','GenerateSphere'],
+			pages : ['Mesh','Find','GenerateCube','GenerateCylinder','GeneratePlane','GenerateRoundedCube','GenerateSphere'],
 			},
 			{
 			name : 'Model',
@@ -76,6 +84,18 @@ var documents =
 			pages : ['Initialize','Quit','Shutdown','Step'],
 			},
 			{
+			name : 'TexAddress',
+			pages : ['Clamp','Mirror','Wrap'],
+			},
+			{
+			name : 'TexFormat',
+			pages : ['Depth16','Depth32','DepthStencil','Rgba128','Rgba32','Rgba64'],
+			},
+			{
+			name : 'TexSample',
+			pages : ['Anisotropic','Linear','Point'],
+			},
+			{
 			name : 'Text',
 			pages : ['Add','MakeStyle','Size'],
 			},
@@ -84,8 +104,16 @@ var documents =
 			pages : [],
 			},
 			{
+			name : 'TexType',
+			pages : ['Cubemap','Depth','Dynamic','Image','ImageNomips','Mips','Rendertarget'],
+			},
+			{
 			name : 'Time',
 			pages : ['Elapsed','Elapsedf','Total','Totalf'],
+			},
+			{
+			name : 'Transparency',
+			pages : ['Blend','Clip','None'],
 			},
 			{
 			name : 'UI',

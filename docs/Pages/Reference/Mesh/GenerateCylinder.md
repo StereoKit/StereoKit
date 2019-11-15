@@ -30,17 +30,17 @@ making better UVs for the edges.
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
-Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.8f, 0.8f, Vec3.Up);
+Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.4f, 0.4f, Vec3.Up);
 Model cylinderModel = new Model(cylinderMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix cylinderTransform = Matrix.TRS(new Vec3(1.5f, 0, 1), Quat.Identity, Vec3.One);
+Matrix cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, 1), Quat.Identity, Vec3.One);
 Renderer.Add(cylinderMesh, defaultMaterial, cylinderTransform);
 
-cylinderTransform = Matrix.TRS(new Vec3(1.5f, 0, -1), Quat.Identity, Vec3.One);
+cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, -1), Quat.Identity, Vec3.One);
 Renderer.Add(cylinderModel, cylinderTransform);
 ```
 

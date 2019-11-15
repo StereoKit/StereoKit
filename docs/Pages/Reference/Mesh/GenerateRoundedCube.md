@@ -29,7 +29,7 @@ corners.
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
-Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.8f, 0.2f);
+Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
 Model roundedCubeModel = new Model(roundedCubeMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
