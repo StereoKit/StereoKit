@@ -92,8 +92,12 @@ bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 ///////////////////////////////////////////
 
 bool32_t bounds_line_contains(bounds_t bounds, vec3 pt1, vec3 pt2) {
+	vec3  delta = pt2 - pt1;
+	if (vec3_dot(delta, delta) <= 0.0001f)
+		return bounds_point_contains(bounds, pt1);
+
 	vec3  rayRelative = pt1 - bounds.center;
-	vec3  m  = { 1.f / (pt2.x-pt1.x), 1.f / (pt2.y - pt1.y), 1.f / (pt2.z - pt1.z) };
+	vec3  m  = { 1.f / delta.x, 1.f / delta.y, 1.f / delta.z };
 	vec3  n  = m * rayRelative;
 	vec3  k  = vec3_abs(m) * bounds.dimensions / 2;
 	vec3  t1 = -n - k;

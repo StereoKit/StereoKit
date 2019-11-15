@@ -87,8 +87,12 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	const char *default_deps[] = {"Graphics"};
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, defaults_init, nullptr, defaults_shutdown);
 
-	const char *ui_deps[] = {"Defaults"};
-	systems_add("UI", ui_deps, _countof(ui_deps), nullptr, 0, ui_init, nullptr, ui_shutdown);
+	const char *ui_deps       [] = {"Defaults"};
+	const char *ui_update_deps[] = {"Input"};
+	systems_add("UI", 
+		ui_deps,        _countof(ui_deps), 
+		ui_update_deps, _countof(ui_update_deps), 
+		ui_init, ui_update, ui_shutdown);
 
 	const char *platform_deps[] = {"Graphics", "Defaults"};
 	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
@@ -135,7 +139,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		line_update_deps, _countof(line_update_deps), 
 		line_drawer_init, line_drawer_update, line_drawer_shutdown);
 
-	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer"};
+	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer", "UI"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
