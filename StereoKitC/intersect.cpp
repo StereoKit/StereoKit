@@ -37,20 +37,19 @@ vec3     plane_point_closest(plane_t plane, vec3 pt) {
 
 ///////////////////////////////////////////
 
+// From here: http://www.iquilezles.org/www/articles/intersectors/intersectors.htm
 bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
-	vec3  diff = sphere.center - ray.pos;
-	float dot  = vec3_dot(diff, ray.dir);
+	*out_pt = {};
 
-	float dist2   = vec3_dot(diff,diff)-(dot*dot);
-	float radius2 = sphere.radius * sphere.radius;
-	if ( dot < 0.0 || dist2 > radius2) return false;
-
-	float dist = sqrtf( radius2 - dist2 );
-
-	float t = fminf(dot-dist, dot+dist);
-	*out_pt = ray.pos + ray.dir * t;
-
+	vec3 oc = ray.pos - sphere.center;
+	float b = vec3_dot(oc, ray.dir);
+	float c = vec3_dot(oc, oc) - sphere.radius * sphere.radius;
+	float h = b * b - c;
+	if (h < 0.0) false; // no intersection
+	h = sqrt(h);
+	*out_pt = ray.pos + ray.dir * (-b + h);
 	return true;
+	//return vec2(-b - h, -b + h);
 }
 
 ///////////////////////////////////////////
@@ -62,9 +61,22 @@ bool32_t sphere_point_contains(sphere_t sphere, vec3 pt) {
 
 ///////////////////////////////////////////
 
+// From here: http://www.iquilezles.org/www/articles/intersectors/intersectors.htm
 bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
-	log_warn("bounds_ray_intersect not implemented");
-	return false; 
+	*out_pt = {};
+
+	vec3 rayRelative = ray.pos - bounds.center;
+	vec3 m = { 1.f / ray.dir.x, 1.f / ray.dir.y, 1.f / ray.dir.z };
+	vec3 n = m * rayRelative; 
+	vec3 k = vec3_abs(m) * bounds.dimensions/2;
+	vec3 t1 = -n - k;
+	vec3 t2 = -n + k;
+	float tN = fmaxf(fmaxf(t1.x, t1.y), t1.z);
+	float tF = fminf(fminf(t2.x, t2.y), t2.z);
+	if (tN > tF || tF < 0.0) return false;
+	
+	*out_pt = ray.pos + ray.dir * tN;
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -75,6 +87,20 @@ bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 		pt.x <= bounds.dimensions.x &&
 		pt.y <= bounds.dimensions.y &&
 		pt.z <= bounds.dimensions.z;
+}
+
+///////////////////////////////////////////
+
+bool32_t bounds_line_contains(bounds_t bounds, vec3 pt1, vec3 pt2) {
+	vec3  rayRelative = pt1 - bounds.center;
+	vec3  m  = { 1.f / (pt2.x-pt1.x), 1.f / (pt2.y - pt1.y), 1.f / (pt2.z - pt1.z) };
+	vec3  n  = m * rayRelative;
+	vec3  k  = vec3_abs(m) * bounds.dimensions / 2;
+	vec3  t1 = -n - k;
+	vec3  t2 = -n + k;
+	float tN = fmaxf(fmaxf(t1.x, t1.y), t1.z);
+	float tF = fminf(fminf(t2.x, t2.y), t2.z);
+	return tF >= 0 && tN < tF && (tF <= 1 || tN <= 1);
 }
 
 ///////////////////////////////////////////

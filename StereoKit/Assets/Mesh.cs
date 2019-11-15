@@ -93,5 +93,10 @@ namespace StereoKit
             IntPtr mesh = NativeAPI.mesh_find(meshId);
             return mesh == IntPtr.Zero ? null : new Mesh(mesh);
         }
+
+        public void Draw(Material material, Matrix transform, Color color)
+            =>NativeAPI.render_add_mesh(_meshInst, material._materialInst, transform, color);
+        public void Draw(Material material, Matrix transform)
+            => NativeAPI.render_add_mesh(_meshInst, material._materialInst, transform, Color.White);
     }
 }

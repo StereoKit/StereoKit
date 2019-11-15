@@ -68,6 +68,11 @@ namespace StereoKit
         /// <param name="subsetIndex">Index of the mesh subset to get the material for, should be less than SubsetCount.</param>
         /// <returns>A link to the Material asset used by the mesh subset at subsetIndex</returns>
         public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_modelInst, subsetIndex));
+        
+        public void Draw(Matrix transform, Color color)
+            => NativeAPI.render_add_model(_modelInst, transform, color);
+        public void Draw(Matrix transform)
+            => NativeAPI.render_add_model(_modelInst, transform, Color.White);
         #endregion
 
         /// <summary>Looks for a Model asset that's already loaded, matching the given id!</summary>

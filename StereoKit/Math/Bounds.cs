@@ -62,5 +62,13 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(Vec3 pt)
             => NativeAPI.bounds_point_contains(this, pt);
+
+        /// <summary>Does the Bounds contain or intersects with the given line?</summary>
+        /// <param name="linePt1">Start of the line</param>
+        /// <param name="linePt2">End of the line</param>
+        /// <returns>True if the line is in, or intersects with the bounds.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(Vec3 linePt1, Vec3 linePt2)
+            => NativeAPI.bounds_line_contains(this, linePt1, linePt2);
     }
 }

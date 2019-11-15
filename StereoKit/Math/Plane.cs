@@ -25,7 +25,7 @@ namespace StereoKit
         public Plane(Vec3 pointOnPlane, Vec3 planeNormal)
         {
             normal = planeNormal;
-            d = Vec3.Dot(pointOnPlane, -planeNormal);
+            d = Vec3.Dot(pointOnPlane, planeNormal);
         }
         public Plane(Vec3 pointOnPlane1, Vec3 pointOnPlane2, Vec3 pointOnPlane3)
         {

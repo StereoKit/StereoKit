@@ -209,6 +209,7 @@ SK_API bool32_t sphere_ray_intersect (sphere_t sphere, ray_t ray, vec3 *out_pt);
 SK_API bool32_t sphere_point_contains(sphere_t sphere, vec3 pt);
 SK_API bool32_t bounds_ray_intersect (bounds_t bounds, ray_t ray, vec3 *out_pt);
 SK_API bool32_t bounds_point_contains(bounds_t bounds, vec3 pt);
+SK_API bool32_t bounds_line_contains (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API vec3     ray_point_closest    (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////

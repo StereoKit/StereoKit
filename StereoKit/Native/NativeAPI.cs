@@ -48,6 +48,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern bool sphere_point_contains(Sphere sphere, Vec3 pt);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern bool bounds_ray_intersect (Bounds bounds, Ray ray, out Vec3 out_pt);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern bool bounds_point_contains(Bounds bounds, Vec3 pt);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern bool bounds_line_contains (Bounds bounds, Vec3 linePt1, Vec3 linePt2);
 
         ///////////////////////////////////////////
 
@@ -162,6 +163,13 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_release    (IntPtr sprite);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern float  sprite_get_aspect (IntPtr sprite);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   sprite_draw       (IntPtr sprite, in Matrix transform, Color32 color);
+
+        ///////////////////////////////////////////
+
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add(Vec3 start, Vec3 end, Color32 color, float thickness);
+        //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_addv(line_point_t start, line_point_t end);
+        //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add_list(const Vec3* points, int count, Color32 color, float thickness);
+        //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add_listv(const line_point_t* points, int32_t count);
 
         ///////////////////////////////////////////
 
