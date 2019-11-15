@@ -237,6 +237,7 @@ SK_API void   mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_c
 SK_API void   mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
 SK_API void   mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 
+SK_API mesh_t mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_sphere      (float diameter,  int32_t subdivisions = 4);
 SK_API mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);

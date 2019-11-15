@@ -128,6 +128,59 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
+mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+	vind_t subd   = (vind_t)subdivisions;
+	mesh_t result = mesh_create();
+
+	subd = max(0,subd) + 2;
+
+	int vert_count = subd*subd;
+	int ind_count  = 6*(subd-1)*(subd-1);
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
+
+	vec3 right = vec3_cross(plane_normal, plane_top_direction);
+	vec3 up    = vec3_cross(plane_normal, right);
+	vec2 size  = dimensions / 2;
+
+	// Make vertices
+	for (vind_t y = 0; y < subd; y++) {
+		float yp = y / (float)(subd-1);
+	for (vind_t x = 0; x < subd; x++) {
+		float xp = x / (float)(subd-1);
+
+		verts[x + y*subd] = vert_t{ 
+			right * ((xp - 0.5f) * dimensions.x) +
+			up    * ((yp - 0.5f) * dimensions.y), 
+			plane_normal, {xp,yp}, {255,255,255,255} };
+	} }
+
+	// make indices
+	int ind = 0;
+	for (vind_t y = 0; y < subd-1; y++) {
+	for (vind_t x = 0; x < subd-1; x++) {
+			inds[ind++] =  x    +  y    * subd;
+			inds[ind++] = (x+1) +  y    * subd;
+			inds[ind++] = (x+1) + (y+1) * subd;
+
+			inds[ind++] =  x    +  y    * subd;
+			inds[ind++] = (x+1) + (y+1) * subd;
+			inds[ind++] =  x    + (y+1) * subd;
+	} }
+
+	mesh_set_verts(result, verts, vert_count);
+	mesh_set_inds (result, inds,  ind_count);
+
+	free(verts);
+	free(inds);
+
+	DX11ResType(result->ind_buffer,  "inds_gen_plane" );
+	DX11ResType(result->vert_buffer, "verts_gen_plane");
+	return result;
+}
+
+///////////////////////////////////////////
+
 mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();

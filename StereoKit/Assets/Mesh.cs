@@ -38,6 +38,28 @@ namespace StereoKit
                 NativeAPI.mesh_release(_meshInst);
         }
 
+        /// <summary>Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given
+        /// dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!</summary>
+        /// <param name="dimensions">How large is this plane on the XZ axis, in meters?</param>
+        /// <param name="subdivisions">Use this to add extra slices of vertices across the plane. 
+        /// This can be useful for some types of vertex-based effects!</param>
+        /// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
+        public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0)
+            => new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions));
+
+        /// <summary>Generates a plane with an arbitrary orientation that is optionally subdivided, pre-sized to the given
+        /// dimensions. UV coordinates start at the top left indicated with 'planeTopDirection'.</summary>
+        /// <param name="dimensions">How large is this plane on the XZ axis, in meters?</param>
+        /// <param name="planeNormal">What is the normal of the surface this plane is generated on?</param>
+        /// <param name="planeTopDirection">A normal defines the plane, but this is technically a rectangle on the 
+        /// plane. So which direction is up? It's important for UVs, but doesn't need to be exact. This function takes
+        /// the planeNormal as law, and uses this vector to find the right and up vectors via cross-products.</param>
+        /// <param name="subdivisions">Use this to add extra slices of vertices across the plane. 
+        /// This can be useful for some types of vertex-based effects!</param>
+        /// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
+        public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0)
+            => new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions));
+
         /// <summary>Generates a flat-shaded cube mesh, pre-sized to the given
         /// dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1. </summary>
         /// <param name="dimensions">How large is this cube on each axis, in meters?</param>
