@@ -11,7 +11,7 @@ bool32_t plane_ray_intersect  (plane_t plane, ray_t ray, vec3 *out_pt) {
 	// t = -(Pi . N + d) / (V . N)
 	// Pf = Pi + tV
 	float t = 
-		(vec3_dot(ray.pos, plane.normal) + plane.d) / 
+		-(vec3_dot(ray.pos, plane.normal) + plane.d) / 
 		 vec3_dot(ray.dir, plane.normal);
 	*out_pt = ray.pos + ray.dir * t;
 	return t >= 0;
@@ -22,7 +22,7 @@ bool32_t plane_ray_intersect  (plane_t plane, ray_t ray, vec3 *out_pt) {
 bool32_t plane_line_intersect (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt) {
 	vec3 dir = p2 - p1;
 	float t = 
-		(vec3_dot(p1,  plane.normal) + plane.d) / 
+		-(vec3_dot(p1,  plane.normal) + plane.d) / 
 		 vec3_dot(dir, plane.normal);
 	*out_pt = p1 + dir * t;
 	return t >= 0 && t <= 1;

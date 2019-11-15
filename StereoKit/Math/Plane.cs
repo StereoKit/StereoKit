@@ -25,14 +25,14 @@ namespace StereoKit
         public Plane(Vec3 pointOnPlane, Vec3 planeNormal)
         {
             normal = planeNormal;
-            d = Vec3.Dot(pointOnPlane, planeNormal);
+            d = -Vec3.Dot(pointOnPlane, planeNormal);
         }
         public Plane(Vec3 pointOnPlane1, Vec3 pointOnPlane2, Vec3 pointOnPlane3)
         {
             Vec3 dir1 = pointOnPlane2 - pointOnPlane1;
             Vec3 dir2 = pointOnPlane2 - pointOnPlane3;
             normal = Vec3.Cross(dir1, dir2);
-            d      = Vec3.Dot(pointOnPlane2, -normal);
+            d      = -Vec3.Dot(pointOnPlane2, normal);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

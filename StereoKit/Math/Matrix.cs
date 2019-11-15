@@ -48,11 +48,33 @@ namespace StereoKit
         /// <summary>Transform, Rotate, Scale. Creates a transform Matrix using all these components!</summary>
         /// <param name="translation">Move an object by this amount.</param>
         /// <param name="rotation">A Quaternion describing the rotation for this transform.</param>
+        /// <param name="scale">How much larger or smaller this transform makes things. 1 is a good
+        /// default, as 0 will shrink it to nothing! This will expand to a scale vector of (size, size, size)</param>
+        /// <returns>A Matrix that combines translation, roatation, and scale information into a single Matrix!</returns>
+        public static Matrix TRS(Vec3 translation, Quat rotation, float scale) => NativeAPI.matrix_trs(translation, rotation, new Vec3(scale, scale, scale));
+
+        /// <summary>Transform, Rotate, Scale. Creates a transform Matrix using all these components!</summary>
+        /// <param name="translation">Move an object by this amount.</param>
+        /// <param name="rotation">A Quaternion describing the rotation for this transform.</param>
         /// <param name="scale">How much larger or smaller this transform makes things. Vec3.One is a good
         /// default, as Vec3.Zero will shrink it to nothing!</param>
         /// <returns>A Matrix that combines translation, roatation, and scale information into a single Matrix!</returns>
         public static Matrix TRS(Vec3 translation, Quat rotation, Vec3 scale) => NativeAPI.matrix_trs(translation, rotation, scale);
-        
+
+        /// <summary>Transform, Scale. Creates a transform Matrix using both these components!</summary>
+        /// <param name="translation">Move an object by this amount.</param>
+        /// <param name="scale">How much larger or smaller this transform makes things. Vec3.One is a good
+        /// default, as Vec3.Zero will shrink it to nothing!</param>
+        /// <returns>A Matrix that combines translation and scale information into a single Matrix!</returns>
+        public static Matrix TS(Vec3 translation, Vec3 scale) => NativeAPI.matrix_trs(translation, Quat.Identity, scale);
+
+        /// <summary>Transform, Scale. Creates a transform Matrix using both these components!</summary>
+        /// <param name="translation">Move an object by this amount.</param>
+        /// <param name="scale">How much larger or smaller this transform makes things. 1 is a good
+        /// default, as 0 will shrink it to nothing! This will expand to a scale vector of (size, size, size)</param>
+        /// <returns>A Matrix that combines translation and scale information into a single Matrix!</returns>
+        public static Matrix TS(Vec3 translation, float scale) => NativeAPI.matrix_trs(translation, Quat.Identity, new Vec3(scale, scale, scale));
+
         /// <summary>An identity Matrix is the matrix equivalent of '1'! Transforming anything by this
         /// will leave it at the exact same place.</summary>
         public static Matrix Identity { get{

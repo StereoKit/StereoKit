@@ -56,5 +56,11 @@ namespace StereoKit
             float mag = (float)Math.Sqrt(x*x+y*y+z*z);
             return new Vec3(x/mag, y/mag, z/mag);
         }
+
+        public static Vec3 AngleXZ(float angle, float y = 0)
+            => new Vec3(SKMath.Cos(angle), y, SKMath.Sin(angle));
+
+        public static Vec3 AngleXY(float angle, float z = 0)
+            => new Vec3(SKMath.Cos(angle), SKMath.Sin(angle), z);
     }
 }
