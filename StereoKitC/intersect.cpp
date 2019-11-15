@@ -45,9 +45,9 @@ bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
 	float b = vec3_dot(oc, ray.dir);
 	float c = vec3_dot(oc, oc) - sphere.radius * sphere.radius;
 	float h = b * b - c;
-	if (h < 0.0) false; // no intersection
+	if (h < 0.0) return false; // no intersection
 	h = sqrt(h);
-	*out_pt = ray.pos + ray.dir * (-b + h);
+	*out_pt = ray.pos + ray.dir * (-b - h);
 	return true;
 	//return vec2(-b - h, -b + h);
 }

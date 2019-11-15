@@ -23,14 +23,12 @@ class DemoMath : IDemo
 
         // Sphere and Ray
         Sphere sphere    = new Sphere(new Vec3(0,0,-0.5f), 0.25f);
-        Vec3   sphereDir = new Vec3((float)Math.Cos(Time.Total), (float)Math.Cos(Time.Total * 3) * 1.5f, (float)Math.Sin(Time.Total)) * 0.35f;
-        Ray    sphereRay = new Ray(sphere.center - sphereDir, sphereDir);
+        Vec3   sphereDir = new Vec3((float)Math.Cos(Time.Total), (float)Math.Cos(Time.Total * 3) * 1.5f+0.1f, (float)Math.Sin(Time.Total)).Normalized();
+        Ray    sphereRay = new Ray(sphere.center - sphereDir * 0.35f, sphereDir);
 
-        Lines.Add(sphereRay.position, sphere.center, new Color32(255, 0, 0, 255), 2 * Units.mm2m);
-        if (sphereRay.Intersect(sphere, out Vec3 sphereAt)) { 
+        Lines.Add(sphereRay.position, sphereRay.position + sphereRay.direction*0.1f, new Color32(255, 0, 0, 255), 2 * Units.mm2m);
+        if (sphereRay.Intersect(sphere, out Vec3 sphereAt))
             sphereMesh.Draw(material, Matrix.TRS(sphereAt, Quat.Identity, Vec3.One * 0.02f), new Color(1,0,0,1));
-            Log.Info(sphereAt.ToString());
-        }
         sphereMesh.Draw(material, Matrix.TRS(sphere.center, Quat.Identity, Vec3.One*0.25f));
 
         // Bounds and Ray

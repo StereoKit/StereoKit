@@ -100,7 +100,7 @@
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\StereoKitC.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\*.dll">
+    <Content Condition="'$(Platform)' == 'x64'" Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\LeapC.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

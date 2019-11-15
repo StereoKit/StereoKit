@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -49,5 +50,11 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vec3 Cross(in Vec3 a, in Vec3 b)
             => NativeAPI.vec3_cross(a, b);
+
+        public Vec3 Normalized()
+        {
+            float mag = (float)Math.Sqrt(x*x+y*y+z*z);
+            return new Vec3(x/mag, y/mag, z/mag);
+        }
     }
 }
