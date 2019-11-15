@@ -90,7 +90,7 @@ void ui_settings(ui_settings_t settings) {
 bool ui_init() {
 	skui_box      = mesh_gen_cube(vec3_one);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
-	skui_mat      = material_copy_id("default/material");
+	skui_mat      = material_find("default/material_ui");
 
 	skui_font_mat   = material_find("default/material_font");
 	skui_font       = font_find("default/font");

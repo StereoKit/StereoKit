@@ -9,6 +9,8 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_light_color;
 	float4   sk_camera_pos;
 	float4   sk_camera_dir;
+	float4   sk_fingertip[2];
+	float    sk_time;
 };
 struct Inst {
 	float4x4 world;

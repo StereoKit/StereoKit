@@ -109,6 +109,9 @@
     <ClCompile Include="intersect.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="shaders_builtin\shader_builtin_ui.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

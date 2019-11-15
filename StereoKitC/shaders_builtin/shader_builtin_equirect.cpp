@@ -10,6 +10,8 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_light_color;
 	float4   sk_camera_pos;
 	float4   sk_camera_dir;
+	float4   sk_fingertip[2];
+	float    sk_time;
 };
 cbuffer TransformBuffer : register(b1) {
 	float sk_width;

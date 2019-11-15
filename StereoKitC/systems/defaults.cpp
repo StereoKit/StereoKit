@@ -20,9 +20,11 @@ shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_unlit;
 shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
+shader_t     sk_default_shader_ui;
 material_t   sk_default_material;
 material_t   sk_default_material_equirect;
 material_t   sk_default_material_font;
+material_t   sk_default_material_ui;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
 
@@ -84,12 +86,14 @@ bool defaults_init() {
 	sk_default_shader_unlit    = shader_create(sk_shader_builtin_unlit);
 	sk_default_shader_font     = shader_create(sk_shader_builtin_font);
 	sk_default_shader_equirect = shader_create(sk_shader_builtin_equirect);
+	sk_default_shader_ui       = shader_create(sk_shader_builtin_ui);
 	
 	if (sk_default_shader          == nullptr ||
 		sk_default_shader_pbr      == nullptr ||
 		sk_default_shader_unlit    == nullptr ||
 		sk_default_shader_font     == nullptr ||
-		sk_default_shader_equirect == nullptr)
+		sk_default_shader_equirect == nullptr ||
+		sk_default_shader_ui       == nullptr)
 		return false;
 
 	shader_set_id(sk_default_shader,          "default/shader");
@@ -102,15 +106,18 @@ bool defaults_init() {
 	sk_default_material          = material_create(sk_default_shader);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
 	sk_default_material_font     = material_create(sk_default_shader_font);
+	sk_default_material_ui       = material_create(sk_default_shader_ui);
 
 	if (sk_default_material          == nullptr ||
 		sk_default_material_equirect == nullptr ||
-		sk_default_material_font     == nullptr)
+		sk_default_material_font     == nullptr ||
+		sk_default_material_ui       == nullptr)
 		return false;
 
 	material_set_id(sk_default_material,          "default/material");
 	material_set_id(sk_default_material_equirect, "default/equirect_convert");
 	material_set_id(sk_default_material_font,     "default/material_font");
+	material_set_id(sk_default_material_ui,       "default/material_ui");
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
@@ -130,11 +137,13 @@ void defaults_shutdown() {
 	material_release(sk_default_material_equirect);
 	material_release(sk_default_material);
 	material_release(sk_default_material_font);
+	material_release(sk_default_material_ui);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
+	shader_release  (sk_default_shader_ui);
 	mesh_release    (sk_default_quad);
 	tex_release     (sk_default_tex);
 	tex_release     (sk_default_tex_black);
