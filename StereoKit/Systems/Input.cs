@@ -55,6 +55,10 @@ namespace StereoKit
         {
             return Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
         }
+        public static Pose Head()
+        {
+            return NativeAPI.input_head();
+        }
         public static Mouse Mouse()
         {
             return Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
