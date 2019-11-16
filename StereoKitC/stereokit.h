@@ -73,12 +73,6 @@ SK_API double   time_elapsed ();
 
 ///////////////////////////////////////////
 
-struct color32 {
-	uint8_t r, g, b, a;
-};
-struct color128 {
-	float r, g, b, a;
-};
 struct vec2 {
 	float x, y;
 };
@@ -117,8 +111,6 @@ struct pose_t {
 	vec3 position;
 	quat orientation;
 };
-
-static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 
 static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
@@ -211,6 +203,20 @@ SK_API bool32_t bounds_ray_intersect (bounds_t bounds, ray_t ray, vec3 *out_pt);
 SK_API bool32_t bounds_point_contains(bounds_t bounds, vec3 pt);
 SK_API bool32_t bounds_line_contains (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API vec3     ray_point_closest    (ray_t ray, vec3 pt);
+
+///////////////////////////////////////////
+
+struct color32 {
+	uint8_t r, g, b, a;
+};
+struct color128 {
+	float r, g, b, a;
+};
+
+static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
+
+SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
+SK_API vec3     color_to_hsv(color128 color);
 
 ///////////////////////////////////////////
 
