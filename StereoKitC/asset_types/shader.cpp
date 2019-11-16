@@ -58,7 +58,7 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 shader_blob_t load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
 	uint64_t hash = string_hash(hlsl);
 	char cache_name[128];
-	sprintf_s(cache_name, "/cache/%I64u.%s.blob", hash, entrypoint);
+	sprintf_s(cache_name, "cache/%I64u.%s.blob", hash, entrypoint);
 	char target[16];
 	sprintf_s(target, "%s_5_0", entrypoint);
 
@@ -86,13 +86,13 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 
 		// Ensure cache folder is present
 		struct stat st = { 0 };
-		const char *folder_name = assets_file("/cache");
+		const char *folder_name = assets_file("cache");
 		if (stat(folder_name, &st) == -1) {
 			_mkdir(folder_name);
 		}
 
 		// Write the blob to file for future use.
-		if (fopen_s(&fp, assets_file("/cache"), "wb") == 0 && fp != nullptr) {
+		if (fopen_s(&fp, assets_file(cache_name), "wb") == 0 && fp != nullptr) {
 			fwrite(result.data, result.size, 1, fp);
 			fclose(fp);
 		}

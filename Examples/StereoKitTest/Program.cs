@@ -4,9 +4,9 @@ using StereoKit;
 class Program 
 {
 #if WINDOWS_UWP
-    const string Root = "Assets/";
+    const string Root = "Assets";
 #else
-    const string Root = "../../../Examples/Assets/";
+    const string Root = "../../../Examples/Assets";
 #endif
 
     static Model  floorMesh;
