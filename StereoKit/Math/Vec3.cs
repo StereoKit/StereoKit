@@ -47,20 +47,60 @@ namespace StereoKit
         public static float Dot(in Vec3 a, in Vec3 b)
             => a.x*b.x + a.y*b.y + a.z*b.z;
 
+        /// <summary>The cross product of two vectors!</summary>
+        /// <param name="a">First vector!</param>
+        /// <param name="b">Second vector!</param>
+        /// <returns>Result is -not- a unit vector, even if both 'a'
+        /// and 'b' are unit vectors.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vec3 Cross(in Vec3 a, in Vec3 b)
             => NativeAPI.vec3_cross(a, b);
 
+        /// <summary>Exactly the same as Vec3.Cross, but has some naming memnonics for getting the order
+        /// right when trying to find a perpendicular vector using the cross product. This'll also make it
+        /// mor obvious to read if that's what you're actually going for when crossing vectors!
+        /// 
+        /// If you consider a forward vector and an up vector, then the direction to the right is pretty
+        /// trivial to imagine in relation to those vectors!</summary>
+        /// <param name="forward">What way are you facing?</param>
+        /// <param name="up">What direction is up?</param>
+        /// <returns>Your direction to the right! Result is -not- a unit vector, even if both 'forward'
+        /// and 'up' are unit vectors.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vec3 PerpendicularRight(in Vec3 forward, in Vec3 up)
+            => NativeAPI.vec3_cross(forward, up);
+
+        /// <summary>Creates a normalized vector (vector with a length of 1) from the
+        /// current vector. Will not work properly if the vector has a length of zero.</summary>
+        /// <returns>The normalized (length of 1) vector!</returns>
         public Vec3 Normalized()
         {
             float mag = (float)Math.Sqrt(x*x+y*y+z*z);
             return new Vec3(x/mag, y/mag, z/mag);
         }
 
-        public static Vec3 AngleXZ(float angle, float y = 0)
-            => new Vec3(SKMath.Cos(angle), y, SKMath.Sin(angle));
+        /// <summary>Creates a vector that points out at the given 2D angle! This
+        /// creates the vector on the XZ plane, and allows you to specify a constant
+        /// y value.</summary>
+        /// <param name="angleDeg">Angle in degrees, starting from (1,0) at 0, and
+        /// continuing to (0,1) at 90.</param>
+        /// <param name="y">A constant value you can assign to the resulting vector's
+        /// y component.</param>
+        /// <returns>A Vector pointing at the given angle! If y is zero, this will be
+        /// a normalized vector (vector with a length of 1).</returns>
+        public static Vec3 AngleXZ(float angleDeg, float y = 0)
+            => new Vec3(SKMath.Cos(angleDeg*Units.deg2rad), y, SKMath.Sin(angleDeg*Units.deg2rad));
 
-        public static Vec3 AngleXY(float angle, float z = 0)
-            => new Vec3(SKMath.Cos(angle), SKMath.Sin(angle), z);
+        /// <summary>Creates a vector that points out at the given 2D angle! This
+        /// creates the vector on the XY plane, and allows you to specify a constant
+        /// z value.</summary>
+        /// <param name="angleDeg">Angle in degrees, starting from (1,0) at 0, and
+        /// continuing to (0,1) at 90.</param>
+        /// <param name="z">A constant value you can assign to the resulting vector's
+        /// z component.</param>
+        /// <returns>A vector pointing at the given angle! If z is zero, this will be
+        /// a normalized vector (vector with a length of 1).</returns>
+        public static Vec3 AngleXY(float angleDeg, float z = 0)
+            => new Vec3(SKMath.Cos(angleDeg*Units.deg2rad), SKMath.Sin(angleDeg*Units.deg2rad), z);
     }
 }

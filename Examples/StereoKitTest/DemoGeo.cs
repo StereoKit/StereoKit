@@ -81,7 +81,7 @@ class DemoGeo : IDemo
         Model cubeModel = demoCubeModel;
 
         if (Demos.TestMode)
-            Renderer.Screenshot(new Vec3(0.25f,1.5f,2f)*0.75f, Vec3.Zero, "../../../docs/img/screenshots/ProceduralGeometry.jpg");
+            Renderer.Screenshot(new Vec3(0.25f,1.5f,2f)*0.75f, Vec3.Zero, 600, 400, "../../../docs/img/screenshots/ProceduralGeometry.jpg");
 
         /// :CodeSample: Mesh.GenerateCube
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 

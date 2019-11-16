@@ -457,7 +457,7 @@ SK_API void render_set_skytex (tex_t sky_texture, bool32_t show_sky);
 SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
 SK_API void render_add_model  (model_t model, const matrix &transform, color128 color = {1,1,1,1});
 SK_API void render_blit       (tex_t to_rendertarget, material_t material);
-SK_API void render_screenshot (vec3 from_viewpt, vec3 at, const char *file);
+SK_API void render_screenshot (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
 SK_API void render_get_device (void **device, void **context);
 
 ///////////////////////////////////////////

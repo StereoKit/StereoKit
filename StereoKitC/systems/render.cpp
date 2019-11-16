@@ -60,6 +60,8 @@ struct render_screenshot_t {
 	char *filename;
 	vec3  from;
 	vec3  at;
+	int width;
+	int height;
 };
 
 ///////////////////////////////////////////
@@ -255,14 +257,23 @@ void render_draw_matrix(const matrix &view, const matrix &proj) {
 
 void render_check_screenshots() {
 	for (size_t i = 0; i < render_screenshot_list.size(); i++) {
+		int32_t  w = render_screenshot_list[i].width;
+		int32_t  h = render_screenshot_list[i].height;
+
 		matrix view = matrix_trs(
 			render_screenshot_list[i].from,
 			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
 		matrix_inverse(view, view);
 
+		matrix proj;
+		math_fast_to_matrix(XMMatrixPerspectiveFovRH(
+			90 * deg2rad, 
+			(float)w/h, 
+			render_clip_planes.x, 
+			render_clip_planes.y), &proj);
+
 		// Create the screenshot surface
-		int32_t  w = (int32_t)d3d_screen_width;
-		int32_t  h = (int32_t)d3d_screen_height;
+		
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
@@ -274,11 +285,11 @@ void render_check_screenshots() {
 		d3d_context->RSSetViewports(1, &viewport);
 		tex_rtarget_clear(render_capture_surface, color32{0,0,0,255});
 		tex_rtarget_set_active(render_capture_surface);
-		render_draw_queue(view, render_default_camera_proj);
+		render_draw_queue(view, proj);
 		tex_rtarget_set_active(nullptr);
 
 		// Render!
-		render_draw_queue(view, render_default_camera_proj);
+		render_draw_queue(view, proj);
 
 		// And save the screenshot to file
 		tex_get_data(render_capture_surface, buffer, size);
@@ -401,9 +412,9 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(vec3 from_viewpt, vec3 at, const char *file) {
+void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const char *file) {
 	char *file_copy = string_copy(file);
-	render_screenshot_list.push_back( render_screenshot_t{ file_copy, from_viewpt, at });
+	render_screenshot_list.push_back( render_screenshot_t{ file_copy, from_viewpt, at, width, height });
 }
 
 ///////////////////////////////////////////
