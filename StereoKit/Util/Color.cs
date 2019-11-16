@@ -78,5 +78,8 @@ namespace StereoKit
         /// <returns></returns>
         public static Color HSV(float hue, float saturation, float value, float opacity = 1)
             => NativeAPI.color_hsv(hue, saturation, value, opacity);
+
+        public static implicit operator Color32(Color c) 
+            => new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
     }
 }
