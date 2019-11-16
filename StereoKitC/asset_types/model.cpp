@@ -312,9 +312,11 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 	
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
-		image->buffer_view->buffer->data;
-		result = tex_create_mem(image->buffer_view->buffer->data, image->buffer_view->buffer->size);
-		tex_set_id(result, id);
+		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size);
+		if (result == nullptr) 
+			log_warnf("Couldn't load %s texture for %s!", image->name, filename);
+		else
+			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
 		void         *buffer = nullptr;
@@ -332,7 +334,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex_create_file(id);
+		result = tex_create_file(image->uri);
 	}
 	return result;
 }
