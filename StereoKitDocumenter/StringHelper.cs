@@ -35,6 +35,7 @@ namespace StereoKitDocumenter
             switch(type)
             {
                 case "Single" : return "float";
+                case "Double": return "double";
                 case "Int32" : return "int";
                 case "String": return "string";
                 case "Boolean": return "bool";

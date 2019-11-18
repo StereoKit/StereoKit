@@ -6,7 +6,7 @@ description: Schedules a screenshot for the end of the frame! The view will be r
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).Screenshot
 
 <div class='signature' markdown='1'>
-static void Screenshot([Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) at, string filename)
+static void Screenshot([Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) at, int width, int height, string filename)
 </div>
 
 |  |  |

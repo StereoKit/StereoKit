@@ -16,6 +16,10 @@ var documents =
 			pages : ['center','dimensions','Bounds','Contains','FromCorner','FromCorners','Intersect'],
 			},
 			{
+			name : 'Color',
+			pages : ['a','b','Black','BlackTransparent','g','r','White','Color','HSV','ToHSV'],
+			},
+			{
 			name : 'Cull',
 			pages : [],
 			},
@@ -37,7 +41,7 @@ var documents =
 			},
 			{
 			name : 'Matrix',
-			pages : ['Identity','Inverse','TransformDirection','TransformPoint','TRS'],
+			pages : ['Identity','Inverse','TransformDirection','TransformPoint','TRS','TS'],
 			},
 			{
 			name : 'Mesh',
@@ -125,7 +129,7 @@ var documents =
 			},
 			{
 			name : 'Vec3',
-			pages : ['Forward','One','Right','Up','Zero'],
+			pages : ['Forward','One','Right','Up','Zero','AngleXY','AngleXZ','Cross','Normalized','PerpendicularRight'],
 			},
 		]
 		},
