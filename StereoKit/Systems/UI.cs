@@ -14,6 +14,9 @@ namespace StereoKit
     {
         public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
 
+        public static void LayoutArea(Vec3 start, Vec2 dimensions)
+            => NativeAPI.ui_layout_area(start, dimensions);
+
         public static void NextLine   ()            { NativeAPI.ui_nextline(); }
         /// <summary>Moves the current layout position back to the end of the line that just finished,
         /// so it can continue on the same line as the last element!</summary>
@@ -54,7 +57,8 @@ namespace StereoKit
         /// on, and false means it's toggled off.</param>
         /// <returns>Will return true any time the toggle value changes!</returns>
         public static bool Toggle     (string text, ref bool value) => NativeAPI.ui_toggle(text, ref value);
-        public static bool Affordance (string text, ref Pose movement, Vec3 at, Vec3 size) { return NativeAPI.ui_affordance(text, ref movement, at, size); }
+        public static bool AffordanceBegin (string text, ref Pose movement, Vec3 at, Vec3 size, bool draw = false) { return NativeAPI.ui_affordance_begin(text, ref movement, at, size, draw); }
+        public static bool AffordanceEnd   () { return NativeAPI.ui_affordance_end(); }
         /// <summary>A horizontal slider element! You can stick your finger in it, and slide the
         /// value up and down.</summary>
         /// <param name="id">A per-window unique id for tracking element state.</param>

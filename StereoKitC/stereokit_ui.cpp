@@ -14,6 +14,7 @@ namespace sk {
 struct layer_t {
 	matrix transform;
 	matrix inverse;
+	vec3   offset_initial;
 	vec3   offset;
 	vec2   size;
 	float  line_height;
@@ -58,7 +59,7 @@ const color128 skui_color_border = { 1,1,1,1 };
 uint64_t ui_hash(const char *string);
 
 // Layout
-void ui_push_pose  (pose_t pose, vec2 size);
+void ui_push_pose  (pose_t pose, vec3 offset, vec2 size);
 void ui_pop_pose   ();
 void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size);
 void ui_reserve_box(vec2 size);
@@ -141,6 +142,11 @@ void ui_update() {
 	skui_fingertip_world_prev[handed_left ] = skui_fingertip_world[handed_left];
 	skui_fingertip_world[handed_right] = input_hand(handed_right).fingers[1][4].position;
 	skui_fingertip_world[handed_left ] = input_hand(handed_left ).fingers[1][4].position;
+
+	skui_fingertip[handed_right] = skui_fingertip_world[handed_right];
+	skui_fingertip[handed_left ] = skui_fingertip_world[handed_left];
+	skui_fingertip_prev[handed_right] = skui_fingertip_world_prev[handed_right];
+	skui_fingertip_prev[handed_left ] = skui_fingertip_world_prev[handed_left];
 }
 
 ///////////////////////////////////////////
@@ -168,9 +174,9 @@ uint64_t ui_hash(const char *string) {
 //////////////   Layout!   ////////////////
 ///////////////////////////////////////////
 
-void ui_push_pose(pose_t pose, vec2 size) {
-	vec3   right = pose.orientation * vec3_right; // Use the position as the center of the window.
-	matrix trs = matrix_trs(pose.position + right*(size.x/2), pose.orientation);
+void ui_push_pose(pose_t pose, vec3 offset) {
+	vec3   right = pose.orientation * vec3_right;
+	matrix trs   = matrix_trs(pose.position + right*offset, pose.orientation);
 
 	// In a right-handed coordinate system, a forward (0,0,-1) facing UI would start at 1,1 in the top left
 	// and -1,-1 in the bottom right. This feels profoundly wrong to me, so I set the root of all UI windows 
@@ -187,7 +193,8 @@ void ui_push_pose(pose_t pose, vec2 size) {
 
 	skui_layers.push_back(layer_t{
 		trs, trs_inverse,
-		vec3{skui_settings.padding, -skui_settings.padding}, size, 0, 0
+		vec3{skui_settings.padding, -skui_settings.padding}, 
+		vec3{skui_settings.padding, -skui_settings.padding}, {0,0}, 0, 0
 		});
 
 	for (size_t i = 0; i < handed_max; i++) {
@@ -201,6 +208,17 @@ void ui_push_pose(pose_t pose, vec2 size) {
 
 void ui_pop_pose() {
 	skui_layers.pop_back();
+}
+
+///////////////////////////////////////////
+
+void ui_layout_area(vec3 start, vec2 dimensions) {
+	layer_t &layer = skui_layers.back();
+	layer.offset_initial = start + vec3{skui_settings.padding, -skui_settings.padding};
+	layer.offset         = layer.offset_initial;
+	layer.size           = dimensions;
+	layer.max_x          = 0;
+	layer.line_height    = 0;
 }
 
 ///////////////////////////////////////////
@@ -234,11 +252,13 @@ void ui_reserve_box(vec2 size) {
 ///////////////////////////////////////////
 
 void ui_nextline() {
+	if (skui_layers.size() <= 0)
+		return;
 	layer_t &layer = skui_layers.back();
 	skui_prev_offset      = layer.offset;
 	skui_prev_line_height = layer.line_height;
 
-	layer.offset.x    = skui_settings.padding;
+	layer.offset.x    = skui_layers.back().offset_initial.x + skui_settings.padding;
 	layer.offset.y   -= skui_layers.back().line_height + skui_settings.gutter;
 	layer.line_height = 0;
 }
@@ -356,7 +376,8 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t i
 void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 	vec3   pos = start + (vec3{ size.x, -size.y, size.z } / 2);
 	matrix mx  = matrix_trs(pos, quat_identity, size);
-	matrix_mul(mx, skui_layers.back().transform, mx);
+	if (skui_layers.size() > 0)
+		matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_box, material, mx, color);
 }
@@ -600,15 +621,69 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
+bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
+	uint64_t   id     = ui_hash(name);
+	bool       result = false;
+	float      color  = 1;
+	vec3       offset = skui_layers.back().offset;
+
+	// Find sizes of slider elements
+	if (width == 0)
+		width = skui_layers.back().size.x == 0 ? 0.1f : (skui_layers.back().size.x - skui_settings.padding) - skui_layers.back().offset.x;
+	vec2 size = { width, skui_fontsize };
+	float rule_size = size.y / 6.f;
+
+	// Interaction code
+	vec3     box_start = offset + vec3{ 0, 0, -skui_settings.depth };
+	vec3     box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
+	bounds_t box       = ui_size_box(box_start, box_size);
+	for (size_t i = 0; i < handed_max; i++) {
+		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
+			skui_control_focused[i] = id;
+			color = 1.5f;
+			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
+			if (step != 0) {
+				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
+			}
+			result = value != new_val;
+			value  = new_val;
+
+			if (result)
+				skui_control_active[i] = id;
+		} else if (skui_control_focused[i] == id) {
+			skui_control_focused[i] = 0;
+		}
+	}
+
+	// Draw the UI
+	ui_reserve_box(size);
+	float back_size = skui_settings.backplate_border;
+	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z-mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
+	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
+	ui_nextline();
+	
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
 	uint64_t id = ui_hash(text);
 	bool result = false;
 	float color = 1;
 
+	ui_push_pose(movement, vec3{ 0,0,0 });
+
 	vec3     box_start = at   - vec3{ skui_settings.padding, -skui_settings.padding, skui_settings.padding * 3 };
 	vec3     box_size  = size + vec3{ skui_settings.padding,  skui_settings.padding, skui_settings.padding * 3 } *2;
 	bounds_t box       = ui_size_box(box_start, box_size);
+	
 	for (size_t i = 0; i < handed_max; i++) {
+		// Skip this if something else has some focus!
+		if (skui_control_focused[i] != 0 && skui_control_focused[i] != id)
+			continue;
+
 		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
 			skui_control_focused[i] = id;
 			color = 0.75f;
@@ -641,6 +716,8 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
 				}
+				ui_pop_pose();
+				ui_push_pose(movement, vec3{ 0,0,0 });
 			}
 		}
 	}
@@ -649,53 +726,13 @@ bool32_t ui_affordance(const char *text, pose_t &movement, vec3 at, vec3 size, b
 		ui_box(at, size, skui_mat, skui_color_base * color);
 		ui_nextline();
 	}
-
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
-	uint64_t   id     = ui_hash(name);
-	bool       result = false;
-	float      color  = 1;
-	vec3       offset = skui_layers.back().offset;
-
-	// Find sizes of slider elements
-	if (width == 0)
-		width = skui_layers.back().size.x == 0 ? 0.1f : (skui_layers.back().size.x - skui_settings.padding) - skui_layers.back().offset.x;
-	vec2 size = { width, skui_fontsize };
-	float rule_size = size.y / 6.f;
-
-	// Interaction code
-	vec3     box_start = offset + vec3{ 0, 0, -skui_settings.depth };
-	vec3     box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
-	bounds_t box       = ui_size_box(box_start, box_size);
-	for (size_t i = 0; i < handed_max; i++) {
-		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
-			skui_control_focused[i] = id;
-			color = 1.5f;
-			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
-			if (step != 0) {
-				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
-			}
-			result = value != new_val;
-			value  = new_val;
-
-			if (result)
-				skui_control_active[i] = id;
-		}
-	}
-
-	// Draw the UI
-	ui_reserve_box(size);
-	float back_size = skui_settings.backplate_border;
-	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
-	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z-mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
-	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
-	ui_nextline();
-	
-	return result;
+void ui_affordance_end() {
+	ui_pop_pose();
 }
 
 ///////////////////////////////////////////
@@ -703,19 +740,21 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t show_header) {
 	if (window_size.x == 0) window_size.x = 32*cm2m;
 
-	ui_push_pose(pose, window_size);
-
 	if (show_header) {
-		vec3 offset = skui_layers.back().offset;
+		vec3 offset = skui_layers.size() > 0 ? skui_layers.back().offset : vec3_zero;
 		vec2 size   = text_size(text, skui_font_style);
-		vec3 box_start = vec3{ 0, 0, -skui_settings.depth };
+		vec3 box_start = vec3{ -window_size.x/2, 0, -skui_settings.depth };
 		vec3 box_size  = vec3{ window_size.x, size.y+ skui_settings.padding*2, skui_settings.depth };
+		ui_affordance_begin(text, pose, box_start, box_size, true);
+		ui_layout_area({ -window_size.x / 2,0,0 }, window_size);
 
 		ui_reserve_box(size);
 		ui_text(box_start + vec3{skui_settings.padding,-skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
-		ui_affordance(text, pose, box_start, box_size, true);
-
+		
 		ui_nextline();
+	} else {
+		ui_push_pose(pose, { -window_size.x / 2,0,0 });
+		ui_layout_area(vec3_zero, window_size);
 	}
 }
 

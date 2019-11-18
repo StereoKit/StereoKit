@@ -41,10 +41,9 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = Material.Copy(DefaultIds.material);// new Material(Shader.Find("default/shader_pbr"));
-        floorMat["diffuse"  ] = new Tex("test.png");
-        floorMat["normal"   ] = new Tex("test_normal.png");
-        floorMat["tex_scale"] = 6;
+        Material floorMat = Material.Copy(DefaultIds.material);
+        floorMat["diffuse"  ] = new Tex("Floor.png");
+        floorMat["tex_scale"] = 4;
 
         floorMesh = new Model(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(5, 1, 5));
