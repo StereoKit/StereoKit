@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#include "../math.h"
 #include "model.h"
 #include "mesh.h"
 #include "material.h"
@@ -50,14 +51,7 @@ model_t model_find(const char *id) {
 model_t model_create_mesh(mesh_t mesh, material_t material) {
 	model_t result = model_create();
 
-	result->subset_count        = 1;
-	result->subsets             = (model_subset_t*)malloc(sizeof(model_subset_t));
-	result->subsets[0].offset   = matrix_identity;
-	result->subsets[0].material = material;
-	assets_addref(result->subsets[0].material->header);
-
-	result->subsets[0].mesh = mesh;
-	assets_addref(result->subsets[0].mesh->header);
+	model_add_subset(result, mesh, material, matrix_identity);
 
 	return result;
 }
@@ -88,8 +82,42 @@ material_t model_get_material(model_t model, int32_t subset) {
 
 ///////////////////////////////////////////
 
-int32_t    model_subset_count(model_t model) {
+int32_t model_subset_count(model_t model) {
 	return model->subset_count;
+}
+
+///////////////////////////////////////////
+
+int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const matrix &transform) {
+	model->subsets                      = (model_subset_t *)realloc(model->subsets, sizeof(model_subset_t) * (model->subset_count + 1));
+	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
+	assets_addref(mesh->header);
+	assets_addref(material->header);
+
+	// Get initial size
+	vec3 min, max;
+	if (model->subset_count > 0) {
+		min = mesh->bounds.center - mesh->bounds.dimensions / 2;
+		max = mesh->bounds.center + mesh->bounds.dimensions / 2;
+	} else {
+		min = max = bounds_corner(mesh->bounds, 0);
+	}
+
+	// Add the size of this subset
+	for (int32_t i = 1; i < 8; i += 1) {
+		vec3 pt = matrix_mul_point( transform, bounds_corner(mesh->bounds, i) );
+		min.x = fminf(pt.x, min.x);
+		min.y = fminf(pt.y, min.y);
+		min.z = fminf(pt.z, min.z);
+
+		max.x = fmaxf(pt.x, max.x);
+		max.y = fmaxf(pt.y, max.y);
+		max.z = fmaxf(pt.z, max.z);
+	}
+	model->bounds = bounds_t{ min / 2 + max / 2, max - min };
+
+	model->subset_count += 1;
+	return model->subset_count - 1;
 }
 
 ///////////////////////////////////////////
@@ -97,7 +125,20 @@ int32_t    model_subset_count(model_t model) {
 void model_release(model_t model) {
 	if (model == nullptr)
 		return;
+
 	assets_releaseref(model->header);
+}
+
+///////////////////////////////////////////
+
+void model_set_bounds(model_t model, const bounds_t &bounds) {
+	model->bounds = bounds;
+}
+
+///////////////////////////////////////////
+
+bounds_t model_get_bounds(model_t model) {
+	return model->bounds;
 }
 
 ///////////////////////////////////////////
@@ -190,18 +231,16 @@ bool modelfmt_obj(model_t model, const char *filename) {
 		line += read;
 	}
 
-	model->subset_count = 1;
-	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t));
-	model->subsets[0].offset   = matrix_identity;
-	model->subsets[0].material = material_find("default/material");
-
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
-	model->subsets[0].mesh = mesh_create();
-	mesh_set_id   (model->subsets[0].mesh, id);
-	mesh_set_verts(model->subsets[0].mesh, &verts[0], (int32_t)verts.size());
-	mesh_set_inds (model->subsets[0].mesh, &faces[0], (int32_t)faces.size());
+	mesh_t mesh = mesh_create();
+	mesh_set_id   (mesh, id);
+	mesh_set_verts(mesh, &verts[0], (int32_t)verts.size());
+	mesh_set_inds (mesh, &faces[0], (int32_t)faces.size());
 
+	model_add_subset(model, mesh, material_find("default/material"), matrix_identity);
+
+	mesh_release(mesh);
 	free(data);
 
 	return true;
@@ -396,32 +435,25 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		cgltf_free(data);
 		return true;
 	}
-	
-	// Count the number of non-empty subsets
-	model->subset_count = 0;
-	for (size_t i = 0; i < data->nodes_count; i++) {
-		if (data->nodes[i].mesh == nullptr)
-			continue;
-		model->subset_count += 1;
-	}
 
 	// Load each subset
-	model->subsets = (model_subset_t*)malloc(sizeof(model_subset_t) * model->subset_count);
-	int curr_subset = 0;
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
 		if (n->mesh == nullptr)
 			continue;
 
-		model->subsets[curr_subset].mesh     = gltf_parsemesh    (n->mesh, filename);
-		model->subsets[curr_subset].material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
+		mesh_t     mesh     = gltf_parsemesh    (n->mesh, filename);
+		material_t material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
 
 		vec3 pos   = { n->translation[0], n->translation[1], n->translation[2] };
 		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
 		quat rot   = { n->rotation   [0], n->rotation   [1], n->rotation   [2], n->rotation[3] };
-		model->subsets[curr_subset].offset = matrix_trs(pos, rot, scale);
+		matrix offset = matrix_trs(pos, rot, scale);
 
-		curr_subset += 1;
+		model_add_subset(model, mesh, material, offset);
+
+		mesh_release    (mesh);
+		material_release(material);
 	}
 	cgltf_free(data);
 	return true;

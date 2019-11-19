@@ -16,7 +16,7 @@ ID3D11InputLayout *vert_t_layout = nullptr;
 
 ///////////////////////////////////////////
 
-void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
+void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
 	if (mesh->vert_buffer != nullptr) { 
 		// Here would be a good place to not release stuff if doing dynamic meshes
 		mesh->vert_buffer->Release();
@@ -32,6 +32,22 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count) {
 		DX11ResType(mesh->vert_buffer, "verts");
 	} else {
 		log_err("mesh_set_verts: We don't support dynamic meshes quite yet.");
+	}
+
+	// Calculate the bounds for this mesh by searching it for min and max values!
+	if (calculate_bounds && vertex_count > 0) {
+		vec3 min = vertices[0].pos;
+		vec3 max = vertices[0].pos;
+		for (int32_t i = 1; i < vertex_count; i++) {
+			min.x = fminf(vertices[i].pos.x, min.x);
+			min.y = fminf(vertices[i].pos.y, min.y);
+			min.z = fminf(vertices[i].pos.z, min.z);
+
+			max.x = fmaxf(vertices[i].pos.x, max.x);
+			max.y = fmaxf(vertices[i].pos.y, max.y);
+			max.z = fmaxf(vertices[i].pos.z, max.z);
+		}
+		mesh->bounds = bounds_t{ min / 2 + max / 2, max - min };
 	}
 }
 
@@ -65,6 +81,18 @@ void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 		log_warn("mesh_set_draw_inds: Can't render more indices than the mesh has! Capping...");
 	}
 	mesh->ind_draw  = index_count;
+}
+
+///////////////////////////////////////////
+
+void mesh_set_bounds(mesh_t mesh, const bounds_t &bounds) {
+	mesh->bounds = bounds;
+}
+
+///////////////////////////////////////////
+
+bounds_t mesh_get_bounds(mesh_t mesh) {
+	return mesh->bounds;
 }
 
 ///////////////////////////////////////////

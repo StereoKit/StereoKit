@@ -60,4 +60,6 @@ inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fmin
 inline float math_ease_overshoot(float a, float b, float overshoot, float t) { t = 1 - t; return math_lerp(a,b, 1-(t*t * ((overshoot + 1) * t - overshoot))); }
 inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*3.14159f); }
 
+vec3 bounds_corner(const bounds_t &bounds, int32_t index8);
+
 } // namespace sk

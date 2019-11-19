@@ -235,13 +235,15 @@ typedef uint16_t vind_t;
 
 SK_DeclarePrivateType(mesh_t);
 
-SK_API mesh_t mesh_find         (const char *name);
-SK_API mesh_t mesh_create       ();
-SK_API void   mesh_set_id       (mesh_t mesh, const char *id);
-SK_API void   mesh_release      (mesh_t mesh);
-SK_API void   mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_count);
-SK_API void   mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
-SK_API void   mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
+SK_API mesh_t   mesh_find         (const char *name);
+SK_API mesh_t   mesh_create       ();
+SK_API void     mesh_set_id       (mesh_t mesh, const char *id);
+SK_API void     mesh_release      (mesh_t mesh);
+SK_API void     mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds = true);
+SK_API void     mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
+SK_API void     mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
+SK_API void     mesh_set_bounds   (mesh_t mesh, const bounds_t &bounds);
+SK_API bounds_t mesh_get_bounds   (mesh_t mesh);
 
 SK_API mesh_t mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);
@@ -422,8 +424,11 @@ SK_API model_t    model_create_mesh (mesh_t mesh, material_t material);
 SK_API model_t    model_create_file (const char *filename);
 SK_API void       model_set_id      (model_t model, const char *id);
 SK_API material_t model_get_material(model_t model, int32_t subset);
+SK_API int32_t    model_add_subset  (model_t model, mesh_t mesh, material_t material, const matrix &transform);
 SK_API int32_t    model_subset_count(model_t model);
 SK_API void       model_release     (model_t model);
+SK_API void       model_set_bounds  (model_t model, const bounds_t &bounds);
+SK_API bounds_t   model_get_bounds  (model_t model);
 
 ///////////////////////////////////////////
 
