@@ -138,6 +138,14 @@ void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix)
 
 ///////////////////////////////////////////
 
+void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &out_matrix) {
+	XMMATRIX mat_a;
+	math_matrix_to_fast(a, &mat_a);
+	out_matrix = mat_a * b;
+}
+
+///////////////////////////////////////////
+
 vec3 matrix_mul_point(const matrix &transform, const vec3 &point) {
 	XMMATRIX mat;
 	math_matrix_to_fast(transform, &mat);

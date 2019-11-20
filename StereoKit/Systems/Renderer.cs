@@ -39,5 +39,16 @@ namespace StereoKit
         /// .jpg regardless of what file extension you use right now.</param>
         public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
             => NativeAPI.render_screenshot(from, at, width, height, filename);
+
+
+        public static void StackBegin(in Matrix transform)
+            => NativeAPI.render_stack_begin(transform);
+        public static void StackEnd()
+            => NativeAPI.render_stack_end();
+        
+        public static bool StackEnabled {
+            get => NativeAPI.render_stack_is_enabled();
+            set => NativeAPI.render_stack_set_enabled(value);
+        }
     }
 }

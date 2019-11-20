@@ -24,6 +24,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+struct render_stack_item_t {
+	matrix transform;
+	matrix transform_inv;
+	bool32_t has_inverse;
+};
 struct render_item_t {
 	XMMATRIX    transform;
 	color128    color;
@@ -91,6 +96,10 @@ material_t render_last_material;
 shader_t   render_last_shader;
 mesh_t     render_last_mesh;
 
+vector<render_stack_item_t> render_transform_stack;
+bool32_t                    render_transform_enabled = false;
+bool32_t                    render_transform_userenabled = true;
+
 ///////////////////////////////////////////
 
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
@@ -149,20 +158,31 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	item.material = material;
 	item.color    = color;
 	item.sort_id  = render_queue_id(material, mesh);
-	math_matrix_to_fast(transform, &item.transform);
+	if (render_transform_enabled) {
+		matrix_mul(transform, render_transform_stack.back().transform, item.transform);
+	} else {
+		math_matrix_to_fast(transform, &item.transform);
+	}
 	render_queue.emplace_back(item);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, const matrix &transform, color128 color) {
+	XMMATRIX root;
+	if (render_transform_enabled) {
+		matrix_mul(transform, render_transform_stack.back().transform, root);
+	} else {
+		math_matrix_to_fast(transform, &root);
+	}
+
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = model->subsets[i].mesh;
 		item.material = model->subsets[i].material;
 		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, item.mesh);
-		matrix_mul(model->subsets[i].offset, transform, item.transform);
+		matrix_mul(model->subsets[i].offset, root, item.transform);
 		render_queue.emplace_back(item);
 	}
 }
@@ -354,6 +374,9 @@ bool render_initialize() {
 ///////////////////////////////////////////
 
 void render_update() {
+	if (render_transform_stack.size() > 0)
+		log_err("Render transform stack doesn't have matching begin/end calls!");
+
 	if (render_sky_show && sk_get_info().display_type == display_opaque) {
 		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
 	}
@@ -535,6 +558,57 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	matrix_mul(render_default_camera_tr, render_default_camera_proj, mat);
 	matrix_inverse(mat, mat);
 	return matrix_mul_point(mat, normalized_screen_pt);
+}
+
+///////////////////////////////////////////
+
+void render_stack_begin(const matrix &transform) {
+	render_transform_stack.push_back(render_stack_item_t{transform, matrix_identity, false});
+	render_transform_enabled = render_transform_userenabled;
+
+	int32_t size = render_transform_stack.size();
+	if (size > 1)
+		matrix_mul(render_transform_stack[size - 1].transform, render_transform_stack[size - 2].transform, render_transform_stack[size - 1].transform);
+}
+
+///////////////////////////////////////////
+
+void render_stack_end() {
+	render_transform_stack.pop_back();
+	if (render_transform_stack.size() == 0)
+		render_transform_enabled = false;
+}
+
+///////////////////////////////////////////
+
+void render_stack_set_enabled(bool32_t enabled) {
+	render_transform_userenabled = enabled;
+	render_transform_enabled = render_transform_stack.size() != 0 && render_transform_userenabled;
+}
+
+///////////////////////////////////////////
+
+bool32_t render_stack_is_enabled() {
+	return render_transform_userenabled;
+}
+
+///////////////////////////////////////////
+
+const matrix &render_stack_to_world() {
+	return render_transform_enabled ? render_transform_stack.back().transform : matrix_identity;
+}
+
+///////////////////////////////////////////
+
+const matrix &render_stack_to_local() {
+	if (render_transform_enabled) {
+		render_stack_item_t &item = render_transform_stack.back();
+		if (!item.has_inverse)
+			matrix_inverse(item.transform, item.transform_inv);
+		return item.transform_inv;
+	} else {
+		return matrix_identity;
+	}
 }
 
 } // namespace sk

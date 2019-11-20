@@ -6,6 +6,7 @@
 namespace sk {
 
 void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
+void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &out_matrix);
 
 ///////////////////////////////////////////
 
