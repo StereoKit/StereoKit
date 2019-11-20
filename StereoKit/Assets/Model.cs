@@ -23,6 +23,14 @@ namespace StereoKit
         /// <summary>The number of mesh subsets attached to this model.</summary>
         public int SubsetCount => NativeAPI.model_subset_count(_modelInst);
 
+        /// <summary>This is a bounding box that encapsulates the Model and all its subsets! It's used 
+        /// for collision, visibility testing, UI layout, and probably other things. While it's normally
+        /// cacluated from the mesh bounds, you can also override this to suit your needs.</summary>
+        public Bounds Bounds {
+            get => NativeAPI.model_get_bounds(_modelInst);
+            set => NativeAPI.model_set_bounds(_modelInst, value);
+        }
+
         #region Constructors
         /// <summary>Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.</summary>
         /// <param name="file">Name of the file to load! This gets prefixed with the StereoKit asset

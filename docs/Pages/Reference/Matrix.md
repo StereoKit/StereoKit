@@ -32,5 +32,6 @@ Matrices are prominently used within shaders for mesh transforms!
 |[TransformDirection]({{site.url}}/Pages/Reference/Matrix/TransformDirection.html)|Transforms a point through the Matrix, but excluding translation! This is great for transforming vectors that are -directions- rather than points in space. Use this to transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.|
 |[TransformPoint]({{site.url}}/Pages/Reference/Matrix/TransformPoint.html)|Transforms a point through the Matrix! This is basically just multiplying a vector (x,y,z,1) with the Matrix.|
 |[TRS]({{site.url}}/Pages/Reference/Matrix/TRS.html)|Transform, Rotate, Scale. Creates a transform Matrix using all these components!|
+|[TS]({{site.url}}/Pages/Reference/Matrix/TS.html)|Transform, Scale. Creates a transform Matrix using both these components!|
 
 

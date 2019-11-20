@@ -17,13 +17,13 @@ void SetColor(string name, Color32 value)
 Sets a shader parameter with the given name to the provided value. If no parameter
 is found, nothing happens, and the value is not set!
 <div class='signature' markdown='1'>
-void SetColor(string name, Color value)
+void SetColor(string name, [Color]({{site.url}}/Pages/Reference/Color.html) value)
 </div>
 
 |  |  |
 |--|--|
 |string name|Name of the shader parameter.|
-|Color value|New value for the parameter.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) value|New value for the parameter.|
 
 Sets a shader parameter with the given name to the provided value. If no parameter
 is found, nothing happens, and the value is not set!

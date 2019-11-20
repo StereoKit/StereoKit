@@ -15,6 +15,7 @@ struct _model_t {
 	asset_header_t  header;
 	model_subset_t *subsets;
 	int             subset_count;
+	bounds_t        bounds;
 };
 
 void model_destroy(model_t model);

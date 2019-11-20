@@ -9,6 +9,7 @@
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
 #include "../shaders_builtin/shader_builtin.h"
+#include "../systems/input.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libraries/stb_image_write.h"
@@ -126,6 +127,10 @@ void render_set_clip(float near_plane, float far_plane) {
 
 void render_set_view(const matrix &cam_transform) {
 	matrix_inverse(cam_transform, render_default_camera_tr);
+
+	vec3 pos = matrix_mul_point    (cam_transform, vec3_zero);
+	vec3 dir = matrix_mul_direction(cam_transform, vec3_forward);
+	input_head_pose = {pos, quat_lookat(pos, dir)};
 }
 
 ///////////////////////////////////////////

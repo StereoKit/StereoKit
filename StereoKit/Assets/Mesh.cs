@@ -19,6 +19,14 @@ namespace StereoKit
     {
         internal IntPtr _meshInst;
 
+        /// <summary>This is a bounding box that encapsulates the Mesh! It's used for collision, visibility
+        /// testing, UI layout, and probably other things. While it's normally cacluated from the mesh
+        /// vertices, you can also override this to suit your needs.</summary>
+        public Bounds Bounds { 
+            get => NativeAPI.mesh_get_bounds(_meshInst);
+            set => NativeAPI.mesh_set_bounds(_meshInst, value);
+        }
+
         /// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!</summary>
         public Mesh()
         {

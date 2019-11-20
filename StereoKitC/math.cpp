@@ -182,4 +182,21 @@ void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orient
 	math_fast_to_matrix(mat, &out_result);
 }
 
+///////////////////////////////////////////
+
+vec3 bounds_corner(const bounds_t &bounds, int32_t index8) {
+	// Sign generates a pattern like this:
+	// -1, -1, -1
+	// -1, -1,  1
+	// -1,  1, -1
+	// -1,  1,  1
+	//  1, -1, -1
+	//  1, -1,  1
+	//  1,  1, -1
+	//  1,  1,  1
+	vec3 sign = { (index8/4) * 2 - 1, ((index8/2) % 2)  * 2 - 1, (index8 % 2) * 2 - 1};
+	vec3 half = bounds.dimensions / 2;
+	return bounds.center + half * sign;
+}
+
 } // namespace sk
