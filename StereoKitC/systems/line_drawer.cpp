@@ -2,6 +2,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../math.h"
+#include "../hierarchy.h"
 
 #include <stdlib.h>
 
@@ -78,8 +79,16 @@ void line_add(vec3 start, vec3 end, color32 color, float thickness) {
 
 void line_addv(line_point_t start, line_point_t end) {
 	line_ensure_cap(4, 6);
+
+	if (hierarchy_enabled) {
+		matrix &transform = hierarchy_stack.back().transform;
+		start.pt = matrix_mul_point(transform, start.pt);
+		end  .pt = matrix_mul_point(transform, end.pt);
+	}
+
 	vind_t start_vert = (vind_t)line_vert_ct;
 	vec3   dir        = vec3_normalize(end.pt - start.pt);
+
 	line_verts[line_vert_ct+0] = vert_t{ start.pt, dir* start.thickness, {0,0}, start.color };
 	line_verts[line_vert_ct+1] = vert_t{ start.pt, dir*-start.thickness, {0,1}, start.color };
 	line_verts[line_vert_ct+2] = vert_t{ end  .pt, dir* end.thickness,   {1,0}, end  .color };

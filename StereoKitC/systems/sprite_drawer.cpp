@@ -4,8 +4,14 @@
 #include "../asset_types/mesh.h"
 #include "../asset_types/assets.h"
 
+#include "../hierarchy.h"
+#include "../math.h"
+
 #include <vector>
 using namespace std;
+
+#include <directxmath.h> // Matrix math functions and objects
+using namespace DirectX;
 
 namespace sk {
 
@@ -68,14 +74,22 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 	// Resize array if we need more room for this
 	sprite_buffer_ensure_capacity(buffer);
+
+	// Get the heirarchy based transform
+	XMMATRIX tr;
+	if (hierarchy_enabled) {
+		matrix_mul(hierarchy_stack.back().transform, at, tr);
+	} else {
+		math_matrix_to_fast(at, &tr);
+	}
 	
 	// Add a sprite quad
 	size_t offset = buffer.vert_count;
 	vec3   normal = vec3_normalize( matrix_mul_direction(at, vec3_forward) );
-	buffer.verts[offset + 0] = { matrix_mul_point(at, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
-	buffer.verts[offset + 1] = { matrix_mul_point(at, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
-	buffer.verts[offset + 2] = { matrix_mul_point(at, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };
-	buffer.verts[offset + 3] = { matrix_mul_point(at, vec3{0,     height, 0}), normal, vec2{sprite->uvs[0].x, sprite->uvs[1].y}, color };
+	buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
+	buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
+	buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };
+	buffer.verts[offset + 3] = { matrix_mul_point(tr, vec3{0,     height, 0}), normal, vec2{sprite->uvs[0].x, sprite->uvs[1].y}, color };
 
 	buffer.vert_count += 4;
 }

@@ -115,6 +115,9 @@
     <ClCompile Include="color.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="hierarchy.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -220,6 +223,9 @@
     </ClInclude>
     <ClInclude Include="libraries\stb_image_write.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="hierarchy.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

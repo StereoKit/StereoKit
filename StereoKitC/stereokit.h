@@ -471,12 +471,14 @@ SK_API void render_blit       (tex_t to_rendertarget, material_t material);
 SK_API void render_screenshot (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
 SK_API void render_get_device (void **device, void **context);
 
-SK_API void     render_stack_begin      (const matrix &transform);
-SK_API void     render_stack_end        ();
-SK_API void     render_stack_set_enabled(bool32_t enabled);
-SK_API bool32_t render_stack_is_enabled ();
-SK_API const matrix &render_stack_to_world();
-SK_API const matrix &render_stack_to_local();
+///////////////////////////////////////////
+
+SK_API void     hierarchy_push       (const matrix &transform);
+SK_API void     hierarchy_pop        ();
+SK_API void     hierarchy_set_enabled(bool32_t enabled);
+SK_API bool32_t hierarchy_is_enabled ();
+SK_API const matrix &hierarchy_to_world();
+SK_API const matrix &hierarchy_to_local();
 
 ///////////////////////////////////////////
 

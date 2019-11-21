@@ -115,6 +115,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
     <ClCompile Include="color.cpp" />
+    <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
@@ -154,6 +155,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="asset_types\shader.h" />
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
+    <ClInclude Include="hierarchy.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />

@@ -154,10 +154,22 @@ vec3 matrix_mul_point(const matrix &transform, const vec3 &point) {
 
 ///////////////////////////////////////////
 
+vec3 matrix_mul_point(const XMMATRIX &transform, const vec3 &point) {
+	return math_fast_to_vec3( XMVector3Transform(math_vec3_to_fast(point), transform) );
+}
+
+///////////////////////////////////////////
+
 vec3 matrix_mul_direction(const matrix &transform, const vec3 &direction) {
 	XMMATRIX mat;
 	math_matrix_to_fast(transform, &mat);
 	return math_fast_to_vec3( XMVector3TransformNormal(math_vec3_to_fast(direction), mat) );
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_mul_direction(const XMMATRIX &transform, const vec3 &direction) {
+	return math_fast_to_vec3( XMVector3TransformNormal(math_vec3_to_fast(direction), transform) );
 }
 
 ///////////////////////////////////////////
