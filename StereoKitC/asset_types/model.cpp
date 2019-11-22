@@ -436,6 +436,10 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		return true;
 	}
 
+	// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 
+	// rotate the gltf matrices so that they use -Z as forward, simplifying lookat math
+	matrix orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
+
 	// Load each subset
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
@@ -449,6 +453,7 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
 		quat rot   = { n->rotation   [0], n->rotation   [1], n->rotation   [2], n->rotation[3] };
 		matrix offset = matrix_trs(pos, rot, scale);
+		offset = offset * orientation_correction;
 
 		model_add_subset(model, mesh, material, offset);
 
