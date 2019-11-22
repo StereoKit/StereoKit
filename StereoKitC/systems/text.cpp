@@ -75,7 +75,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 
 		material_set_texture     (material, "diffuse", font_get_tex(font));
 		material_set_cull        (material, cull_none);
-		material_set_transparency(material, transparency_clip);
+		material_set_transparency(material, transparency_blend);
 	}
 
 	// Create the style
