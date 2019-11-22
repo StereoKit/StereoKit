@@ -87,10 +87,10 @@ class DemoGeo : IDemo
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
-        Matrix cubeTransform = Matrix.TRS(new Vec3(-1.0f, 0, 1), Quat.Identity, Vec3.One);
+        Matrix cubeTransform = Matrix.T(-1.0f, 0, 1);
         Renderer.Add(cubeMesh, defaultMaterial, cubeTransform);
 
-        cubeTransform = Matrix.TRS(new Vec3(-1.0f, 0, -1), Quat.Identity, Vec3.One);
+        cubeTransform = Matrix.T(-1.0f, 0, -1);
         Renderer.Add(cubeModel, cubeTransform);
         /// :End:
         
@@ -103,10 +103,10 @@ class DemoGeo : IDemo
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
-        Matrix roundedCubeTransform = Matrix.TRS(new Vec3(-0.5f, 0, 1), Quat.Identity, Vec3.One);
+        Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
         Renderer.Add(roundedCubeMesh, defaultMaterial, roundedCubeTransform);
 
-        roundedCubeTransform = Matrix.TRS(new Vec3(-0.5f, 0, -1), Quat.Identity, Vec3.One);
+        roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
         Renderer.Add(roundedCubeModel, roundedCubeTransform);
         /// :End:
 
@@ -119,10 +119,10 @@ class DemoGeo : IDemo
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
-        Matrix sphereTransform = Matrix.TRS(new Vec3(0.0f, 0, 1), Quat.Identity, Vec3.One);
+        Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
         Renderer.Add(sphereMesh, defaultMaterial, sphereTransform);
 
-        sphereTransform = Matrix.TRS(new Vec3(0.0f, 0, -1), Quat.Identity, Vec3.One);
+        sphereTransform = Matrix.T(0.0f, 0, -1);
         Renderer.Add(sphereModel, sphereTransform);
         /// :End:
 
@@ -135,10 +135,10 @@ class DemoGeo : IDemo
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
-        Matrix cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, 1), Quat.Identity, Vec3.One);
+        Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
         Renderer.Add(cylinderMesh, defaultMaterial, cylinderTransform);
 
-        cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, -1), Quat.Identity, Vec3.One);
+        cylinderTransform = Matrix.T(0.5f, 0, -1);
         Renderer.Add(cylinderModel, cylinderTransform);
         /// :End:
         /// 
@@ -152,12 +152,11 @@ class DemoGeo : IDemo
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
-        Matrix planeTransform = Matrix.TRS(new Vec3(1.0f, 0, 1), Quat.Identity, Vec3.One);
+        Matrix planeTransform = Matrix.T(1.0f, 0, 1);
         Renderer.Add(planeMesh, defaultMaterial, planeTransform);
 
-        planeTransform = Matrix.TRS(new Vec3(1.0f, 0, -1), Quat.Identity, Vec3.One);
+        planeTransform = Matrix.T(1.0f, 0, -1);
         Renderer.Add(planeModel, planeTransform);
         /// :End:
-
     }
 }

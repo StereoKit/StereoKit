@@ -25,7 +25,7 @@ class DemoBasics : IDemo
         for (int i = 0; i < objects.Count; i++)
         {
             objects[i].GetPose(out solidPose);
-            Renderer.Add(gltf, solidPose.ToMatrix(Vec3.One*0.25f), Color.White);
+            Renderer.Add(gltf, solidPose.ToMatrix(0.25f), Color.White);
         }
     }
 

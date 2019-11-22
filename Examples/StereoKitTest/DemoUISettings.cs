@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 class DemoUISettings : IDemo
 {
-    Pose       settingsPose = new Pose(new Vec3(.25f, 0, 0), Quat.LookDir(-Vec3.Right));
+    Pose       settingsPose = new Pose(.25f, 0, 0, Quat.LookDir(-Vec3.Right));
     UISettings settings;
 
     public void Update()

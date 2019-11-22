@@ -32,14 +32,14 @@ class DemoUI : IDemo
     /// probably do that one way or another anyhow. Here we've got a Pose for
     /// the window, off to the left and facing to the right, as well as a boolean
     /// for a toggle, and a float that we'll use as a slider!
-    Pose  windowPose = new Pose(new Vec3(-.25f, 0, 0), Quat.LookDir(Vec3.Right));
+    Pose  windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1,0,1));
     
     bool  showHeader = true;
     float slider     = 0.5f;
     /// :End:
 
     Model clipboard     = new Model("Clipboard.glb");
-    Pose  clipboardPose = new Pose(new Vec3(.25f,0,0), Quat.LookDir(-Vec3.Right));
+    Pose  clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  subtitles;
     bool  clipButts;
     float clipSlider;
