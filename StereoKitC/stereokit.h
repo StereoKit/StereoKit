@@ -461,15 +461,18 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
-SK_API void render_set_clip   (float near_plane=0.01f, float far_plane=50);
-SK_API void render_set_view   (const matrix &cam_transform);
-SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
-SK_API void render_set_skytex (tex_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh   (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
-SK_API void render_add_model  (model_t model, const matrix &transform, color128 color = {1,1,1,1});
-SK_API void render_blit       (tex_t to_rendertarget, material_t material);
-SK_API void render_screenshot (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
-SK_API void render_get_device (void **device, void **context);
+SK_API void     render_set_clip      (float near_plane=0.01f, float far_plane=50);
+SK_API void     render_set_view      (const matrix &cam_transform);
+SK_API void     render_set_light     (const vec3 &direction, float intensity, const color128 &color);
+SK_API void     render_set_skytex    (tex_t sky_texture);
+SK_API tex_t    render_get_skytex    ();
+SK_API void     render_enable_skytex (bool32_t show_sky);
+SK_API bool32_t render_enabled_skytex();
+SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});
+SK_API void     render_add_model     (model_t model, const matrix &transform, color128 color = {1,1,1,1});
+SK_API void     render_blit          (tex_t to_rendertarget, material_t material);
+SK_API void     render_screenshot    (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
+SK_API void     render_get_device    (void **device, void **context);
 
 ///////////////////////////////////////////
 

@@ -1,4 +1,4 @@
-﻿
+
 namespace StereoKit
 {
     /// <summary>Do you need to draw something? Well, you're probably in the right place!
@@ -7,6 +7,24 @@ namespace StereoKit
     /// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
     public class Renderer
     {
+        /// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
+        /// displays, since transparent displays have the real world behind them already! StereoKit has a
+        /// a default procedurally generated skybox. You can load one with Tex.FromEquirectangular, or 
+        /// the Tex constructor that takes the cubeFaceFiles_xxyyzz parameter.</summary>
+        public static Tex SkyTex
+        {
+            get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
+            set => NativeAPI.render_set_skytex(value._texInst);
+        }
+
+        /// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque
+        /// displays, and completely unavailable for transparent displays.</summary>
+        public static bool EnableSky
+        {
+            get => NativeAPI.render_enabled_skytex();
+            set => NativeAPI.render_enable_skytex(value);
+        }
+
         public static void Add(Mesh mesh, Material material, Matrix transform)
             => NativeAPI.render_add_mesh(mesh._meshInst, material._materialInst, transform, Color.White);
         public static void Add(Mesh mesh, Material material, Matrix transform, Color color)
@@ -22,10 +40,7 @@ namespace StereoKit
         
         public static void SetView(Matrix cameraTransform)
             => NativeAPI.render_set_view(cameraTransform);
-        
-        public static void SetSkytex(Tex skyTexture, bool showSky = true)
-            => NativeAPI.render_set_skytex(skyTexture._texInst, showSky?1:0);
-        
+
         public static void Blit(Tex toRendertarget, Material material)
             => NativeAPI.render_blit(toRendertarget._texInst, material._materialInst);
 

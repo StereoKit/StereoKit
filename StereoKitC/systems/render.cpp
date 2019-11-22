@@ -108,6 +108,9 @@ inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
 ///////////////////////////////////////////
 
 void render_set_clip(float near_plane, float far_plane) {
+	// near_plane will throw divide by zero errors if it's zero! So we'll clamp it :)
+	near_plane = fmaxf(0.0001f, near_plane);
+
 	render_clip_planes = { near_plane, far_plane };
 	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
 		90 * deg2rad, 
@@ -136,16 +139,38 @@ void render_set_light(const vec3 &direction, float intensity, const color128 &co
 
 ///////////////////////////////////////////
 
-void render_set_skytex(tex_t sky_texture, bool32_t show_sky) {
+void render_set_skytex(tex_t sky_texture) {
+	if (sky_texture != nullptr && !(sky_texture->type & tex_type_cubemap)) {
+		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
+		return;
+	}
+
 	if (render_sky_cubemap != nullptr)
 		tex_release(render_sky_cubemap);
 
-	render_sky_show    = show_sky;
 	render_sky_cubemap = sky_texture;
 	if (render_sky_cubemap == nullptr)
 		return;
 
 	assets_addref(render_sky_cubemap->header);
+}
+
+///////////////////////////////////////////
+
+tex_t render_get_skytex() {
+	return render_sky_cubemap;
+}
+
+///////////////////////////////////////////
+
+void render_enable_skytex(bool32_t show_sky) {
+	render_sky_show = show_sky;
+}
+
+///////////////////////////////////////////
+
+bool32_t render_enabled_skytex() {
+	return render_sky_show;
 }
 
 ///////////////////////////////////////////

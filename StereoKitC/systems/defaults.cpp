@@ -65,7 +65,8 @@ bool defaults_init() {
 	color32 gradient[3] = { { 45,30,37,255 }, { 141,216,255,255 }, {255, 254, 241, 255} }; 
 	sk_default_cubemap = tex_gen_cubemap(gradient, 3, {1,2,1.5f});
 	tex_set_id(sk_default_cubemap, "default/cubemap");
-	render_set_skytex(sk_default_cubemap, true);
+	render_set_skytex(sk_default_cubemap);
+	render_enable_skytex(true);
 
 	// Default rendering quad
 	sk_default_quad = mesh_create();

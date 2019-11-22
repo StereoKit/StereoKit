@@ -56,7 +56,7 @@ bool32_t sphere_ray_intersect(sphere_t sphere, ray_t ray, vec3 *out_pt) {
 
 bool32_t sphere_point_contains(sphere_t sphere, vec3 pt) {
 	vec3 diff = pt - sphere.center; 
-	return vec3_dot(diff, diff) < (sphere.radius * sphere.radius);
+	return vec3_dot(diff, diff) <= (sphere.radius * sphere.radius);
 }
 
 ///////////////////////////////////////////

@@ -9,7 +9,7 @@ namespace StereoKit
         {
             _texInst = NativeAPI.tex_create(TexType.Image, TexFormat.Rgba32);
         }
-        private Tex(IntPtr tex)
+        internal Tex(IntPtr tex)
         {
             _texInst = tex;
             if (_texInst == IntPtr.Zero)
