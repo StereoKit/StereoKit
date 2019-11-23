@@ -59,11 +59,12 @@ font_t font_create(const char *file) {
 	stbtt_PackFontRange(&pc, data, 0, size, start_char, 95, chars);
 	stbtt_PackEnd(&pc);
 	free(data);
-
+	
 	// convert characters
 	float convert_w = 1.0f / w;
 	float convert_h = 1.0f / h;
-	for (size_t i = 0; i < _countof(chars)-start_char; i++) {
+	result->character_height = 0;
+	for (size_t i = 0; i < _countof(chars)-(start_char+1); i++) {
 		result->characters[i+start_char] = {
 			chars[i].xoff/size,  -chars[i].yoff/size,
 			chars[i].xoff2/size, -chars[i].yoff2/size,
@@ -71,6 +72,10 @@ font_t font_create(const char *file) {
 			chars[i].x1*convert_w, chars[i].y1*convert_h,
 			chars[i].xadvance/size,
 		};
+
+		float height = fabsf(chars[i].yoff/size);
+		if (result->character_height < height)
+			result->character_height = height;
 	}
 
 	// Convert to color data

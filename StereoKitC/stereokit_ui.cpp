@@ -59,7 +59,7 @@ const color128 skui_color_border = { 1,1,1,1 };
 uint64_t ui_hash(const char *string);
 
 // Layout
-void ui_push_pose  (pose_t pose, vec3 offset, vec2 size);
+void ui_push_pose  (pose_t pose, vec3 offset);
 void ui_pop_pose   ();
 void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size);
 void ui_reserve_box(vec2 size);
@@ -132,6 +132,8 @@ bool ui_init() {
 	skui_font       = font_find("default/font");
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color32{255,255,255,255});
 	
+	skui_layers.push_back({});
+
 	return true;
 }
 
@@ -143,10 +145,18 @@ void ui_update() {
 	skui_fingertip_world[handed_right] = input_hand(handed_right).fingers[1][4].position;
 	skui_fingertip_world[handed_left ] = input_hand(handed_left ).fingers[1][4].position;
 
-	skui_fingertip[handed_right] = skui_fingertip_world[handed_right];
-	skui_fingertip[handed_left ] = skui_fingertip_world[handed_left];
-	skui_fingertip_prev[handed_right] = skui_fingertip_world_prev[handed_right];
-	skui_fingertip_prev[handed_left ] = skui_fingertip_world_prev[handed_left];
+	if (skui_layers.size() > 1 || skui_layers.size() == 0)
+		log_err("ui: Mismatching number of Begin/End calls!");
+
+	skui_layers[0] = {};
+	skui_layers[0].transform = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one);
+	matrix_inverse(skui_layers[0].transform, skui_layers[0].inverse);
+
+	for (size_t i = 0; i < handed_max; i++) {
+		const hand_t &hand = input_hand((handed_)i);
+		skui_fingertip     [i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world[i]);
+		skui_fingertip_prev[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world_prev[i]);
+	}
 }
 
 ///////////////////////////////////////////
@@ -177,16 +187,7 @@ uint64_t ui_hash(const char *string) {
 void ui_push_pose(pose_t pose, vec3 offset) {
 	vec3   right = pose.orientation * vec3_right;
 	matrix trs   = matrix_trs(pose.position + right*offset, pose.orientation);
-
-	// In a right-handed coordinate system, a forward (0,0,-1) facing UI would start at 1,1 in the top left
-	// and -1,-1 in the bottom right. This feels profoundly wrong to me, so I set the root of all UI windows 
-	// to a 180 rotation on the Y axis to switch it to -1,1 -> 1,-1 instead, yet still retain the benefit
-	// of having a 'forward facing' UI.
-	// TODO: Review this later, see how it turns out over time.
-	if (skui_layers.size() == 0)
-		trs = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one) * trs;
-	else
-		trs = skui_layers.back().transform * trs;
+	trs = skui_layers.back().transform * trs;
 
 	matrix trs_inverse;
 	matrix_inverse(trs, trs_inverse);
@@ -252,8 +253,6 @@ void ui_reserve_box(vec2 size) {
 ///////////////////////////////////////////
 
 void ui_nextline() {
-	if (skui_layers.size() <= 0)
-		return;
 	layer_t &layer = skui_layers.back();
 	skui_prev_offset      = layer.offset;
 	skui_prev_line_height = layer.line_height;
@@ -376,8 +375,7 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t i
 void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 	vec3   pos = start + (vec3{ size.x, -size.y, size.z } / 2);
 	matrix mx  = matrix_trs(pos, quat_identity, size);
-	if (skui_layers.size() > 0)
-		matrix_mul(mx, skui_layers.back().transform, mx);
+	matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_box, material, mx, color);
 }
@@ -741,7 +739,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 	if (window_size.x == 0) window_size.x = 32*cm2m;
 
 	if (show_header) {
-		vec3 offset = skui_layers.size() > 0 ? skui_layers.back().offset : vec3_zero;
+		vec3 offset = skui_layers.back().offset;
 		vec2 size   = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ -window_size.x/2, 0, -skui_settings.depth };
 		vec3 box_size  = vec3{ window_size.x, size.y+ skui_settings.padding*2, skui_settings.depth };

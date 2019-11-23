@@ -376,12 +376,12 @@ SK_API shader_t   material_get_shader      (material_t material);
 ///////////////////////////////////////////
 
 enum text_align_ {
-	text_align_x_left   = 0,
-	text_align_y_top    = 0,
-	text_align_x_center = 1 << 1,
-	text_align_y_center = 1 << 2,
-	text_align_x_right  = 1 << 3,
-	text_align_y_bottom = 1 << 4,
+	text_align_x_left   = 1 << 0,
+	text_align_y_top    = 1 << 1,
+	text_align_x_center = 1 << 2,
+	text_align_y_center = 1 << 3,
+	text_align_x_right  = 1 << 4,
+	text_align_y_bottom = 1 << 5,
 	text_align_center   = text_align_x_center | text_align_y_center,
 };
 SK_MakeFlag(text_align_);

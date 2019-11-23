@@ -80,10 +80,11 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 
 	// Create the style
 	_text_style_t style;
-	style.font         = font;
-	style.buffer_index = (uint32_t)index;
-	style.color        = color;
-	style.height       = character_height;
+	style.font            = font;
+	style.buffer_index    = (uint32_t)index;
+	style.color           = color;
+	style.size          = character_height;
+	style.line_spacing    = character_height * 0.1f;
 	text_styles.push_back(style);
 
 	return (text_style_t)(text_styles.size() - 1);
@@ -106,7 +107,7 @@ vec2 text_line_size(text_style_t style, const char *text) {
 		}
 		curr += 1;
 	}
-	return vec2{ x, 1 } * text_styles[style].height;
+	return vec2{ x, font->character_height } * text_styles[style].size;
 }
 
 ///////////////////////////////////////////
@@ -115,27 +116,22 @@ vec2 text_size(const char *text, text_style_t style) {
 	font_t font = text_styles[style == -1 ? 0 : style].font;
 	const char *curr = text;
 	float x = 0;
-	float y = 0;
+	int   y = 1;
 	float max_x = 0;
-	int line_ct = 0;
 	while (*curr != '\0') {
 		char currch = *curr;
 		curr += 1;
-		line_ct += 1;
 		font_char_t &ch = font->characters[(int)currch];
 
 		// Do spacing for whitespace characters
 		switch (currch) {
 		case '\t': x += font->characters[(int)' '].xadvance * 4; break;
-		case '\n': if (x > max_x) max_x = x; x = 0; y -= 1; line_ct = 0; break;
+		case '\n': if (x > max_x) max_x = x; x = 0; y += 1; break;
 		default:   x += ch.xadvance; break;
 		}
 	}
 	if (x > max_x) max_x = x;
-	if (line_ct > 0)
-		y -= 1;
-	y = fminf(-1, y);
-	return vec2{ max_x, fabsf(y) } * text_styles[style].height;
+	return vec2{ max_x, y * font->character_height + (y-1)*font->character_height*text_styles[style].line_spacing } * text_styles[style].size;
 }
 
 ///////////////////////////////////////////
@@ -143,7 +139,7 @@ vec2 text_size(const char *text, text_style_t style) {
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.back().transform, transform, tr);
+		matrix_mul(transform, hierarchy_stack.back().transform, tr);
 	} else {
 		math_matrix_to_fast(transform, &tr);
 	}
@@ -152,6 +148,7 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 	_text_style_t &style_data = text_styles[styleId];
 	text_buffer_t &buffer     = text_buffers[style_data.buffer_index];
 	vec2           size       = text_size(text, styleId);
+	float          ch_height  = style_data.font->character_height;
 
 	// Resize array if we need more room for this text
 	size_t length = strlen(text);
@@ -161,7 +158,7 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 	const char*curr = text;
 	vec2    line_sz = text_line_size(styleId, curr);
 	float   start_x = off_x;
-	float   y       = off_y - style_data.height;
+	float   y       = off_y - ch_height * style_data.size;
 	if (position & text_align_y_center) y += (size.y / 2.f);
 	if (position & text_align_y_bottom) y += size.y;
 	if (position & text_align_x_center) start_x -= size.x / 2.f;
@@ -171,6 +168,7 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 	if (align & text_align_x_right)  align_x = -line_sz.x;
 	float x = start_x + align_x;
 	size_t  offset  = buffer.vert_count;
+
 	while (*curr != '\0') {
 		char currch = *curr;
 		curr += 1;
@@ -178,27 +176,27 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += style_data.font->characters[(int)' '].xadvance * 4 * style_data.height; continue;
-		case ' ':  x += ch.xadvance * style_data.height; continue;
+		case '\t': x += style_data.font->characters[(int)' '].xadvance * 4 * style_data.size; continue;
+		case ' ':  x += ch.xadvance * style_data.size; continue;
 		case '\n': {
 			line_sz = text_line_size(styleId, curr);
 			align_x = 0;
 			if (align & text_align_x_center) align_x = -(line_sz.x / 2.f);
 			if (align & text_align_x_right)  align_x = -line_sz.x;
 			x = start_x + align_x;
-			y -= style_data.height;
+			y -= (style_data.size + style_data.line_spacing) * ch_height ;
 		} continue;
 		default:break;
 		}
 		
 		// Add a character quad
-		buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{x + ch.x0 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v0}, style_data.color };
-		buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{x + ch.x1 * style_data.height, y + ch.y0 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v0}, style_data.color };
-		buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{x + ch.x1 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u1, ch.v1}, style_data.color };
-		buffer.verts[offset + 3] = { matrix_mul_point(tr, vec3{x + ch.x0 * style_data.height, y + ch.y1 * style_data.height, off_z}), normal, vec2{ch.u0, ch.v1}, style_data.color };
+		buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{x + ch.x0 * style_data.size, y + ch.y0 * style_data.size, off_z}), normal, vec2{ch.u0, ch.v0}, style_data.color };
+		buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{x + ch.x1 * style_data.size, y + ch.y0 * style_data.size, off_z}), normal, vec2{ch.u1, ch.v0}, style_data.color };
+		buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{x + ch.x1 * style_data.size, y + ch.y1 * style_data.size, off_z}), normal, vec2{ch.u1, ch.v1}, style_data.color };
+		buffer.verts[offset + 3] = { matrix_mul_point(tr, vec3{x + ch.x0 * style_data.size, y + ch.y1 * style_data.size, off_z}), normal, vec2{ch.u0, ch.v1}, style_data.color };
 
 		buffer.vert_count += 4;
-		x += ch.xadvance * style_data.height;
+		x += ch.xadvance * style_data.size;
 		offset += 4;
 	}
 }

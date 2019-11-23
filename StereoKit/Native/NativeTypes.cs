@@ -167,12 +167,12 @@ namespace StereoKit
     [Flags]
     public enum TextAlign
     {
-        XLeft   = 0,
-        YTop    = 0,
-        XCenter = 1 << 1,
-        YCenter = 1 << 2,
-        XRight  = 1 << 3,
-        YBottom = 1 << 4,
+        XLeft   = 1 << 0,
+        YTop    = 1 << 1,
+        XCenter = 1 << 2,
+        YCenter = 1 << 3,
+        XRight  = 1 << 4,
+        YBottom = 1 << 5,
         Center  = XCenter | YCenter,
     }
 

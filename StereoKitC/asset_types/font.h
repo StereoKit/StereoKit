@@ -13,8 +13,9 @@ struct font_char_t {
 };
 struct _font_t {
 	asset_header_t header;
-	tex_t font_tex;
+	tex_t       font_tex;
 	font_char_t characters[128];
+	float       character_height;
 };
 
 void font_destroy(font_t font);

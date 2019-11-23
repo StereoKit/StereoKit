@@ -9,7 +9,8 @@ struct _text_style_t {
 	font_t      font;
 	uint32_t    buffer_index;
 	color32     color;
-	float       height;
+	float       size;
+	float       line_spacing;
 };
 struct text_buffer_t {
 	font_t     font;
