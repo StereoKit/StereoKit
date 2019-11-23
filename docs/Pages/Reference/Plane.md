@@ -21,3 +21,12 @@ normal is a,b,c, and the d is, well, d.
 
 
 
+## Methods
+
+|  |  |
+|--|--|
+|[Plane]({{site.url}}/Pages/Reference/Plane/Plane.html)|Creates a Plane directly from the ax + by + cz + d = 0 formula!|
+|[Closest]({{site.url}}/Pages/Reference/Plane/Closest.html)|Finds the closest point on this plane to the given point!|
+|[Intersect]({{site.url}}/Pages/Reference/Plane/Intersect.html)|Checks the intersection of a ray with this plane!|
+
+

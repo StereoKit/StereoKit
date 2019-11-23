@@ -34,10 +34,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix cubeTransform = Matrix.TRS(new Vec3(-1.0f, 0, 1), Quat.Identity, Vec3.One);
+Matrix cubeTransform = Matrix.T(-1.0f, 0, 1);
 Renderer.Add(cubeMesh, defaultMaterial, cubeTransform);
 
-cubeTransform = Matrix.TRS(new Vec3(-1.0f, 0, -1), Quat.Identity, Vec3.One);
+cubeTransform = Matrix.T(-1.0f, 0, -1);
 Renderer.Add(cubeModel, cubeTransform);
 ```
 

@@ -6,14 +6,14 @@ description: Begins a new window! This will push a pose onto the transform stack
 # [UI]({{site.url}}/Pages/Reference/UI.html).WindowBegin
 
 <div class='signature' markdown='1'>
-static void WindowBegin(string text, Pose& pose, Vec2 size, bool showHeader)
+static void WindowBegin(string text, Pose& pose, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) size, bool showHeader)
 </div>
 
 |  |  |
 |--|--|
 |string text|Text to display on the window title, should be unique as it              will be used as the window's id.|
 |Pose& pose|The pose state for the window! If showHeader is true, the user             will be able to grab this header and move it around.|
-|Vec2 size|Physical size of the window! Should be set to a non-zero value, otherwise             it'll default to 32mm. If y is zero, it'll expand to contain all elements within it.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|Physical size of the window! Should be set to a non-zero value, otherwise             it'll default to 32mm. If y is zero, it'll expand to contain all elements within it.|
 |bool showHeader|Should the window show a header bar? Header bar includes a title,             and is grabbable when it's visible.|
 
 Begins a new window! This will push a pose onto the transform stack, and all UI

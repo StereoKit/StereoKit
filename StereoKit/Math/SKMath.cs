@@ -10,8 +10,10 @@ namespace StereoKit
     public static class SKMath
     {
         /// <summary>Same as Math.Cos</summary>
+        /// <returns>Same as Math.Cos</returns>
         public static float Cos(float f) => (float)Math.Cos(f);
         /// <summary>Same as Math.Sin</summary>
+        /// <returns>Same as Math.Sin</returns>
         public static float Sin(float f) => (float)Math.Sin(f);
     }
 }

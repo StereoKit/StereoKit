@@ -32,6 +32,14 @@ var documents =
 			pages : ['Font','Find'],
 			},
 			{
+			name : 'Hierarchy',
+			pages : ['Enabled','Pop','Push'],
+			},
+			{
+			name : 'Lines',
+			pages : ['Add'],
+			},
+			{
 			name : 'Log',
 			pages : ['Filter','Err','Info','Warn','Write'],
 			},
@@ -41,31 +49,35 @@ var documents =
 			},
 			{
 			name : 'Matrix',
-			pages : ['Identity','Inverse','TransformDirection','TransformPoint','TRS','TS'],
+			pages : ['Identity','Inverse','T','TransformDirection','TransformPoint','TRS','TS'],
 			},
 			{
 			name : 'Mesh',
-			pages : ['Mesh','Find','GenerateCube','GenerateCylinder','GeneratePlane','GenerateRoundedCube','GenerateSphere'],
+			pages : ['Bounds','Mesh','Find','GenerateCube','GenerateCylinder','GeneratePlane','GenerateRoundedCube','GenerateSphere'],
 			},
 			{
 			name : 'Model',
-			pages : ['SubsetCount','Model','Find','GetMaterial'],
+			pages : ['Bounds','SubsetCount','Model','Find','GetMaterial'],
 			},
 			{
 			name : 'Plane',
-			pages : ['d','normal'],
+			pages : ['d','normal','Plane','Closest','Intersect'],
 			},
 			{
 			name : 'Pose',
-			pages : [],
+			pages : ['orientation','position','Pose','ToMatrix'],
 			},
 			{
 			name : 'Quat',
 			pages : ['Identity','Difference','FromAngles','LookAt','LookDir'],
 			},
 			{
+			name : 'Ray',
+			pages : ['direction','position','Ray','Intersect'],
+			},
+			{
 			name : 'Renderer',
-			pages : ['Screenshot'],
+			pages : ['EnableSky','SkyTex','Screenshot','SetClip','SetView'],
 			},
 			{
 			name : 'Runtime',
@@ -80,8 +92,16 @@ var documents =
 			pages : ['Name','Shader','Find','FromHLSL'],
 			},
 			{
+			name : 'SKMath',
+			pages : ['Cos','Sin'],
+			},
+			{
 			name : 'Solid',
 			pages : ['Solid'],
+			},
+			{
+			name : 'Sphere',
+			pages : ['center','Diameter','radius','Sphere','Contains','Intersect'],
 			},
 			{
 			name : 'StereoKitApp',
@@ -126,6 +146,10 @@ var documents =
 			{
 			name : 'Units',
 			pages : ['cm2m','deg2rad','m2cm','m2mm','mm2m','rad2deg'],
+			},
+			{
+			name : 'Vec2',
+			pages : [],
 			},
 			{
 			name : 'Vec3',

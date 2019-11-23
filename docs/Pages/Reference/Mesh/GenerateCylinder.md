@@ -37,10 +37,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, 1), Quat.Identity, Vec3.One);
+Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
 Renderer.Add(cylinderMesh, defaultMaterial, cylinderTransform);
 
-cylinderTransform = Matrix.TRS(new Vec3(0.5f, 0, -1), Quat.Identity, Vec3.One);
+cylinderTransform = Matrix.T(0.5f, 0, -1);
 Renderer.Add(cylinderModel, cylinderTransform);
 ```
 

@@ -18,6 +18,13 @@ Mesh indices are stored as unsigned shorts, so they cap out at 65,535. This limi
 65,535 vertices. I may change this to integers later, now that I think about it...
 
 
+## Fields and Properties
+
+|  |  |
+|--|--|
+|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Mesh/Bounds.html)|This is a bounding box that encapsulates the Mesh! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh vertices, you can also override this to suit your needs.|
+
+
 
 ## Methods
 

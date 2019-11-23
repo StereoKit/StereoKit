@@ -13,6 +13,8 @@ static void Screenshot([Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) from|Viewpoint location.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) at|Direction the viewpoint is looking at.|
+|int width|Size of the screenshot horizontally, in pixels.|
+|int height|Size of the screenshot vertically, in pixels.|
 |string filename|Filename to write the screenshot to! Note this'll be a              .jpg regardless of what file extension you use right now.|
 
 Schedules a screenshot for the end of the frame! The view will be
