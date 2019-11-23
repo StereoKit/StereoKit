@@ -39,8 +39,9 @@ class DemoUI : IDemo
     float slider     = 0.5f;
     /// :End:
 
-    Model clipboard     = new Model("Clipboard.glb");
-    Pose  clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+    Model  clipboard     = new Model("Clipboard.glb");
+    Sprite sprite        = new Sprite("Floor.png", SpriteType.Single);
+    Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  subtitles;
     bool  clipButts;
     float clipSlider;
@@ -97,12 +98,13 @@ class DemoUI : IDemo
         /// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
         /// :End:
 
-        UI.AffordanceBegin("Clip", ref clipboardPose, new Vec3(-15, 20, 0) * Units.cm2m, new Vec3(30, 40, 5) * Units.cm2m, false);
-        UI.LayoutArea(new Vec3(-12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
+        UI.AffordanceBegin("Clip", ref clipboardPose, new Vec3(15, 20, 0) * Units.cm2m, new Vec3(30, 40, 5) * Units.cm2m, false);
+        UI.LayoutArea(new Vec3(12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
         UI.Label("Application 'Settings'");
         UI.Toggle("Subtitles", ref subtitles); UI.SameLine();
         UI.Toggle("Butts", ref clipButts);
         UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
+        UI.Image(sprite, Vec2.One * Units.cm2m);
         UI.ButtonRound("Press");
         UI.Button("Squeeze");
         UI.AffordanceEnd();

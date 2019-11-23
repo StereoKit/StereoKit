@@ -325,10 +325,9 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 ///////////////////////////////////////////
 
 bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) { 
-	hierarchy_push(skui_layers.back().transform);
-	render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
-	hierarchy_pop();
-
+	//hierarchy_push(skui_layers.back().transform);
+	//render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
+	//hierarchy_pop();
 	return bounds_line_contains(box, pt, pt_prev);
 }
 
@@ -433,12 +432,13 @@ void ui_image(sprite_t image, vec2 size) {
 		size.x==0 ? size.y/aspect : size.x, 
 		size.y==0 ? size.x*aspect : size.y };
 
+	ui_layout_box (final_size, offset, final_size);
 	ui_reserve_box(final_size);
+	ui_nextline();
 	
 	matrix result;
-	matrix_mul(matrix_trs(offset- vec3{ 0, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
+	matrix_mul(matrix_trs(offset - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
 	sprite_draw(image, result);
-	ui_nextline();
 }
 
 ///////////////////////////////////////////
