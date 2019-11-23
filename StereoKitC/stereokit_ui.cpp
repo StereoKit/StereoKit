@@ -25,6 +25,7 @@ vector<layer_t> skui_layers;
 mesh_t          skui_box;
 mesh_t          skui_cylinder;
 material_t      skui_mat;
+material_t      skui_mat_dbg;
 font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
@@ -81,7 +82,7 @@ void ui_text     (vec3 start, const char *text, text_align_ position = text_alig
 ///////////////////////////////////////////
 
 inline bounds_t ui_size_box(vec3 top_left, vec3 dimensions) {
-	return { top_left + vec3{dimensions.x / 2, dimensions.y / -2, dimensions.z / 2}, dimensions };
+	return { top_left - dimensions/2, dimensions };
 }
 
 ///////////////////////////////////////////
@@ -127,6 +128,9 @@ bool ui_init() {
 	skui_box      = mesh_gen_cube(vec3_one);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find("default/material_ui");
+	skui_mat_dbg  = material_copy(skui_mat);
+	material_set_transparency(skui_mat_dbg, transparency_blend);
+	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
 
 	skui_font_mat   = material_find("default/material_font");
 	skui_font       = font_find("default/font");
@@ -149,8 +153,8 @@ void ui_update() {
 		log_err("ui: Mismatching number of Begin/End calls!");
 
 	skui_layers[0] = {};
-	skui_layers[0].transform = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one);
-	matrix_inverse(skui_layers[0].transform, skui_layers[0].inverse);
+	skui_layers[0].transform = matrix_identity; // matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one);
+	skui_layers[0].inverse   = matrix_identity; // matrix_inverse(skui_layers[0].transform, skui_layers[0].inverse);
 
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
@@ -215,7 +219,7 @@ void ui_pop_pose() {
 
 void ui_layout_area(vec3 start, vec2 dimensions) {
 	layer_t &layer = skui_layers.back();
-	layer.offset_initial = start + vec3{skui_settings.padding, -skui_settings.padding};
+	layer.offset_initial = start - vec3{skui_settings.padding, skui_settings.padding};
 	layer.offset         = layer.offset_initial;
 	layer.size           = dimensions;
 	layer.max_x          = 0;
@@ -230,9 +234,9 @@ void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size) 
 	out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
 
 	// If this is not the first element, and it goes outside the active window
-	if (out_position.x            != skui_settings.padding &&
-		skui_layers.back().size.x != 0                     && 
-		out_position.x + out_final_size.x > skui_layers.back().size.x - skui_settings.padding)
+	if (out_position.x            != -skui_settings.padding &&
+		skui_layers.back().size.x != 0                      &&
+		out_position.x - out_final_size.x < skui_layers.back().offset.x - skui_layers.back().size.x)
 	{
 		ui_nextline();
 		out_position = skui_layers.back().offset;
@@ -242,12 +246,12 @@ void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size) 
 ///////////////////////////////////////////
 
 void ui_reserve_box(vec2 size) {
-	if (skui_layers.back().max_x < skui_layers.back().offset.x + size.x + skui_settings.padding)
-		skui_layers.back().max_x = skui_layers.back().offset.x + size.x + skui_settings.padding;
+	if (skui_layers.back().max_x > skui_layers.back().offset.x - size.x - skui_settings.padding)
+		skui_layers.back().max_x = skui_layers.back().offset.x - size.x - skui_settings.padding;
 	if (skui_layers.back().line_height < size.y)
 		skui_layers.back().line_height = size.y;
 
-	skui_layers.back().offset += vec3{ size.x + skui_settings.gutter, 0, 0 };
+	skui_layers.back().offset -= vec3{ size.x + skui_settings.gutter, 0, 0 };
 }
 
 ///////////////////////////////////////////
@@ -320,7 +324,11 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 
 ///////////////////////////////////////////
 
-bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
+bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) { 
+	hierarchy_push(skui_layers.back().transform);
+	render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
+	hierarchy_pop();
+
 	return bounds_line_contains(box, pt, pt_prev);
 }
 
@@ -336,19 +344,19 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t i
 	// front, to a good distance through the button's back. This is to help when the user's
 	// finger inevitably goes completely through the button. May consider expanding the volume 
 	// a bit too on the X/Y axes later.
-	vec3    box_start = window_relative_pos + vec3{ 0, 0, skui_settings.depth/2.f };
+	vec3    box_start = window_relative_pos + vec3{ 0, 0, -skui_settings.depth/2.f };
 	vec3    box_size  = vec3{ size.x, size.y, skui_settings.depth/2.f };
 	button_state_ focus;
 	int32_t hand = ui_box_interaction_1h(id,
 		box_start, box_size,
-		box_start + vec3{ 0,0,-skui_settings.depth * 4 },
+		box_start + vec3{ 0,0, skui_settings.depth * 4 },
 		box_size  + vec3{ 0,0, skui_settings.depth * 4 },
 		&focus);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	finger_offset = skui_settings.depth;
 	if (hand != -1) {
-		finger_offset = skui_fingertip[hand].z - window_relative_pos.z;
+		finger_offset = -skui_fingertip[hand].z - window_relative_pos.z;
 		if (finger_offset < skui_settings.depth / 2) {
 			result = button_state_down;
 			if (skui_control_active[hand] != id) {
@@ -373,7 +381,7 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t i
 ///////////////////////////////////////////
 
 void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
-	vec3   pos = start + (vec3{ size.x, -size.y, size.z } / 2);
+	vec3   pos = start - size / 2;
 	matrix mx  = matrix_trs(pos, quat_identity, size);
 	matrix_mul(mx, skui_layers.back().transform, mx);
 
@@ -383,7 +391,7 @@ void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 ///////////////////////////////////////////
 
 void ui_cylinder(vec3 start, float radius, float depth, material_t material, color128 color) {
-	vec3   pos = start + (vec3{ radius, -radius, depth } / 2);
+	vec3   pos = start - (vec3{ radius, radius, depth } / 2);
 	matrix mx  = matrix_trs(pos, quat_identity, {radius, radius, depth});
 	matrix_mul(mx, skui_layers.back().transform, mx);
 
@@ -412,7 +420,7 @@ void ui_label(const char *text) {
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(text, skui_font_style);
 	ui_reserve_box(size);
-	ui_text(offset + vec3{ 0, 0, 2*mm2m }, text);
+	ui_text(offset - vec3{ 0, 0, 2*mm2m }, text);
 	ui_nextline();
 }
 
@@ -428,7 +436,7 @@ void ui_image(sprite_t image, vec2 size) {
 	ui_reserve_box(final_size);
 	
 	matrix result;
-	matrix_mul(matrix_trs(offset, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
+	matrix_mul(matrix_trs(offset- vec3{ 0, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
 	sprite_draw(image, result);
 	ui_nextline();
 }
@@ -450,9 +458,9 @@ bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
-	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
-	ui_box (window_relative_pos + vec3{-back_size, back_size, -mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
+	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
+	ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_just_down;
 }
@@ -492,8 +500,8 @@ bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, boo
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
 	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
-	ui_box (window_relative_pos + vec3{-back_size, back_size, -mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos + vec3{ size.x/2, -size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
+	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_changed;
 }
@@ -528,8 +536,8 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 	}
 
 	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_color_base * color_blend);
-	ui_cylinder(window_relative_pos + vec3{-back_size, back_size, -mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
-	ui_text    (window_relative_pos + vec3{ diameter/2, -diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
+	ui_cylinder(window_relative_pos + vec3{back_size, back_size, mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
+	ui_text    (window_relative_pos - vec3{ diameter/2, diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
 
 	return state & button_state_just_down;
 }
@@ -632,14 +640,14 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	float rule_size = size.y / 6.f;
 
 	// Interaction code
-	vec3     box_start = offset + vec3{ 0, 0, -skui_settings.depth };
+	vec3     box_start = offset + vec3{ 0, 0, skui_settings.depth };
 	vec3     box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
 	bounds_t box       = ui_size_box(box_start, box_size);
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
 			skui_control_focused[i] = id;
 			color = 1.5f;
-			float new_val = min + ((skui_fingertip[i].x - offset.x) / size.x) * (max - min);
+			float new_val = min + (fabsf(skui_fingertip[i].x - offset.x) / size.x) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
 			}
@@ -656,9 +664,11 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	// Draw the UI
 	ui_reserve_box(size);
 	float back_size = skui_settings.backplate_border;
+	// Slide line
 	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
-	ui_box(vec3{ offset.x-back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z-mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
-	ui_box(vec3{ offset.x + ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x+back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z+mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
+	// Slide handle
+	ui_box(vec3{ offset.x - ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
 	ui_nextline();
 	
 	return result;
@@ -673,8 +683,8 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 at, vec3 s
 
 	ui_push_pose(movement, vec3{ 0,0,0 });
 
-	vec3     box_start = at   - vec3{ skui_settings.padding, -skui_settings.padding, skui_settings.padding * 3 };
-	vec3     box_size  = size + vec3{ skui_settings.padding,  skui_settings.padding, skui_settings.padding * 3 } *2;
+	vec3     box_start = at   + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding * 3 };
+	vec3     box_size  = size + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding * 3 } *2;
 	bounds_t box       = ui_size_box(box_start, box_size);
 	
 	for (size_t i = 0; i < handed_max; i++) {
@@ -741,17 +751,17 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 	if (show_header) {
 		vec3 offset = skui_layers.back().offset;
 		vec2 size   = text_size(text, skui_font_style);
-		vec3 box_start = vec3{ -window_size.x/2, 0, -skui_settings.depth };
-		vec3 box_size  = vec3{ window_size.x, size.y+ skui_settings.padding*2, skui_settings.depth };
+		vec3 box_start = vec3{ window_size.x/2, 0, skui_settings.depth };
+		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
 		ui_affordance_begin(text, pose, box_start, box_size, true);
-		ui_layout_area({ -window_size.x / 2,0,0 }, window_size);
+		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 
 		ui_reserve_box(size);
-		ui_text(box_start + vec3{skui_settings.padding,-skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
+		ui_text(box_start - vec3{skui_settings.padding,skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
 		
 		ui_nextline();
 	} else {
-		ui_push_pose(pose, { -window_size.x / 2,0,0 });
+		ui_push_pose(pose, { window_size.x / 2,0,0 });
 		ui_layout_area(vec3_zero, window_size);
 	}
 }
