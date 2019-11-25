@@ -248,12 +248,15 @@ bool modelfmt_obj(model_t model, const char *filename) {
 
 ///////////////////////////////////////////
 
-mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
+mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[0];
 
+	if (p->type != cgltf_primitive_type_triangles)
+		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
+
 	char id[512];
-	sprintf_s(id, 512, "%s/%s", filename, m->name);
+	sprintf_s(id, 512, "%s/node_%d_%s", filename, node_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -263,8 +266,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	int     vert_count = 0;
 
 	for (size_t a = 0; a < p->attributes_count; a++) {
-		cgltf_attribute   *attr = &p->attributes[a];
-		cgltf_buffer_view *buff = attr->data->buffer_view;
+		cgltf_attribute   *attr   = &p->attributes[a];
+		cgltf_buffer_view *buff   = attr->data->buffer_view;
+		size_t             offset = buff->offset + attr->data->offset;
 
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
@@ -275,22 +279,22 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 		// Check what info is in this attribute, and copy it over to our mesh
 		if (attr->type == cgltf_attribute_type_position) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
+				vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
 				verts[v].pos = *pos;
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + buff->offset);
+				vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
 				verts[v].norm = *norm;
 			}
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + buff->offset);
+				vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
 				verts[v].uv = *uv;
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + buff->offset);
+				color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
 				memcpy(&verts[v].col, col, sizeof(color32));
 			}
 		}
@@ -300,10 +304,22 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, const char *filename) {
 	int ind_count = (int)p->indices->count;
 	vind_t *inds = (vind_t *)malloc(sizeof(vind_t) * ind_count);
 	if (p->indices->component_type == cgltf_component_type_r_16u) {
-		cgltf_buffer_view *buff = p->indices->buffer_view;
+		cgltf_buffer_view *buff   = p->indices->buffer_view;
+		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + buff->offset);
+			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + offset);
 			inds[v] = *ind;
+		}
+	} else if (p->indices->component_type == cgltf_component_type_r_32u) {
+		cgltf_buffer_view *buff   = p->indices->buffer_view;
+		size_t             offset = buff->offset + p->indices->offset;
+		for (size_t v = 0; v < ind_count; v++) {
+			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint32_t) * v) + offset);
+#ifdef SK_32BIT_INDICES
+			inds[v] = *ind;
+#else
+			inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
+#endif
 		}
 	}
 
@@ -373,7 +389,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex_create_file(image->uri);
+		result = tex_create_file(id);
 	}
 	return result;
 }
@@ -388,7 +404,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (result != nullptr) {
 		return result;
 	}
-
+	
 	result = material_copy_id("default/material");
 	material_set_id(result, id);
 	cgltf_texture *tex = nullptr;
@@ -407,6 +423,8 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
 		material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
 	}
+	if (material->double_sided)
+		material_set_cull(result, cull_none);
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr)
@@ -421,6 +439,24 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename));
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
+	if (curr->parent != nullptr) {
+		gltf_build_node_matrix(curr->parent, result);
+	}
+	matrix mat;
+	if (!curr->has_matrix) {
+		vec3   pos   = curr->has_translation ? vec3{ curr->translation[0], curr->translation[1], curr->translation[2] } : vec3_zero;
+		vec3   scale = curr->has_scale       ? vec3{ curr->scale      [0], curr->scale      [1], curr->scale      [2] } : vec3_one;
+		quat   rot   = curr->has_rotation    ? quat{ curr->rotation   [0], curr->rotation   [1], curr->rotation   [2], curr->rotation[3] } : quat_identity;
+		mat = matrix_trs(pos, rot, scale);
+	} else {
+		memcpy(&mat, curr->matrix, sizeof(matrix));
+	}
+	matrix_mul(mat, result, result);
 }
 
 ///////////////////////////////////////////
@@ -446,14 +482,11 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		if (n->mesh == nullptr)
 			continue;
 
-		mesh_t     mesh     = gltf_parsemesh    (n->mesh, filename);
+		matrix transform = matrix_identity;
+		gltf_build_node_matrix(n, transform);
+		matrix     offset   = transform * orientation_correction;
+		mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, filename);
 		material_t material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
-
-		vec3 pos   = { n->translation[0], n->translation[1], n->translation[2] };
-		vec3 scale = { n->scale      [0], n->scale      [1], n->scale      [2] };
-		quat rot   = { n->rotation   [0], n->rotation   [1], n->rotation   [2], n->rotation[3] };
-		matrix offset = matrix_trs(pos, rot, scale);
-		offset = offset * orientation_correction;
 
 		model_add_subset(model, mesh, material, offset);
 
