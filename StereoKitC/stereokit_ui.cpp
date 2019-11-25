@@ -12,8 +12,6 @@ using namespace std;
 namespace sk {
 
 struct layer_t {
-	matrix transform;
-	matrix inverse;
 	vec3   offset_initial;
 	vec3   offset;
 	vec2   size;
@@ -41,7 +39,7 @@ ui_settings_t skui_settings = {
 	.4f,
 	0.5f * mm2m,
 };
-float skui_fontsize = 20*mm2m;
+float skui_fontsize = 15*mm2m;
 
 vec3  skui_prev_offset;
 float skui_prev_line_height;
@@ -153,13 +151,11 @@ void ui_update() {
 		log_err("ui: Mismatching number of Begin/End calls!");
 
 	skui_layers[0] = {};
-	skui_layers[0].transform = matrix_identity; // matrix_trs(vec3_zero, quat_from_angles(0, 180, 0), vec3_one);
-	skui_layers[0].inverse   = matrix_identity; // matrix_inverse(skui_layers[0].transform, skui_layers[0].inverse);
 
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
-		skui_fingertip     [i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world[i]);
-		skui_fingertip_prev[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world_prev[i]);
+		skui_fingertip     [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world[i]);
+		skui_fingertip_prev[i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world_prev[i]);
 	}
 }
 
@@ -191,27 +187,24 @@ uint64_t ui_hash(const char *string) {
 void ui_push_pose(pose_t pose, vec3 offset) {
 	vec3   right = pose.orientation * vec3_right;
 	matrix trs   = matrix_trs(pose.position + right*offset, pose.orientation);
-	trs = skui_layers.back().transform * trs;
-
-	matrix trs_inverse;
-	matrix_inverse(trs, trs_inverse);
+	hierarchy_push(trs);
 
 	skui_layers.push_back(layer_t{
-		trs, trs_inverse,
 		vec3{skui_settings.padding, -skui_settings.padding}, 
 		vec3{skui_settings.padding, -skui_settings.padding}, {0,0}, 0, 0
 		});
 
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
-		skui_fingertip     [i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world[i]);
-		skui_fingertip_prev[i] = matrix_mul_point(skui_layers.back().inverse, skui_fingertip_world_prev[i]);
+		skui_fingertip     [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world[i]);
+		skui_fingertip_prev[i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world_prev[i]);
 	}
 }
 
 ///////////////////////////////////////////
 
 void ui_pop_pose() {
+	hierarchy_pop();
 	skui_layers.pop_back();
 }
 
@@ -331,10 +324,8 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 
 ///////////////////////////////////////////
 
-bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) { 
-	//hierarchy_push(skui_layers.back().transform);
+bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
 	//render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
-	//hierarchy_pop();
 	return bounds_line_contains(box, pt, pt_prev);
 }
 
@@ -389,7 +380,6 @@ button_state_ ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t i
 void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 	vec3   pos = start - size / 2;
 	matrix mx  = matrix_trs(pos, quat_identity, size);
-	matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_box, material, mx, color);
 }
@@ -399,7 +389,6 @@ void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 void ui_cylinder(vec3 start, float radius, float depth, material_t material, color128 color) {
 	vec3   pos = start - (vec3{ radius, radius, depth } / 2);
 	matrix mx  = matrix_trs(pos, quat_identity, {radius, radius, depth});
-	matrix_mul(mx, skui_layers.back().transform, mx);
 
 	render_add_mesh(skui_cylinder, material, mx, color);
 }
@@ -408,14 +397,13 @@ void ui_cylinder(vec3 start, float radius, float depth, material_t material, col
 
 void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 	matrix mx = matrix_trs(start, quat_identity, size);
-	matrix_mul(mx, skui_layers.back().transform, mx);
 	render_add_model(model, mx, color);
 }
 
 ///////////////////////////////////////////
 
 void ui_text(vec3 start, const char *text, text_align_ position) {
-	text_add_at(text, skui_layers.back().transform, skui_font_style, position, text_align_x_left | text_align_y_top, start.x, start.y, start.z);
+	text_add_at(text, matrix_identity, skui_font_style, position, text_align_x_left | text_align_y_top, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
@@ -445,9 +433,7 @@ void ui_image(sprite_t image, vec2 size) {
 	ui_reserve_box(final_size);
 	ui_nextline();
 	
-	matrix result;
-	matrix_mul(matrix_trs(offset - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }), skui_layers.back().transform, result);
-	sprite_draw(image, result);
+	sprite_draw(image, matrix_trs(offset - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }));
 }
 
 ///////////////////////////////////////////
@@ -685,16 +671,16 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw) {
+bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, vec3 dimensions, bool32_t draw) {
 	uint64_t id = ui_hash(text);
 	bool result = false;
 	float color = 1;
 
 	ui_push_pose(movement, vec3{ 0,0,0 });
 
-	vec3     box_start = at   + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding * 3 };
-	vec3     box_size  = size + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding * 3 } *2;
-	bounds_t box       = ui_size_box(box_start, box_size);
+	vec3     box_start = center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
+	vec3     box_size  = dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
+	bounds_t box       = bounds_t{center, box_size};
 	
 	for (size_t i = 0; i < handed_max; i++) {
 		// Skip this if something else has some focus!
@@ -740,10 +726,10 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 at, vec3 s
 	}
 
 	if (draw) {
-		ui_box(at, size, skui_mat, skui_color_base * color);
+		ui_box(center+dimensions/2, dimensions, skui_mat, skui_color_base * color);
 		ui_nextline();
 	}
-	return result;
+	return color < 1;
 }
 
 ///////////////////////////////////////////
@@ -760,13 +746,13 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 	if (show_header) {
 		vec3 offset = skui_layers.back().offset;
 		vec2 size   = text_size(text, skui_font_style);
-		vec3 box_start = vec3{ window_size.x/2, 0, skui_settings.depth };
+		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
 		ui_affordance_begin(text, pose, box_start, box_size, true);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 
 		ui_reserve_box(size);
-		ui_text(box_start - vec3{skui_settings.padding,skui_settings.padding, skui_settings.depth + 2*mm2m}, text);
+		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,skui_settings.padding, -skui_settings.depth - 2*mm2m}, text);
 		
 		ui_nextline();
 	} else {

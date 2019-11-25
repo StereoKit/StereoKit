@@ -98,7 +98,8 @@ class DemoUI : IDemo
         /// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
         /// :End:
 
-        UI.AffordanceBegin("Clip", ref clipboardPose, new Vec3(15, 20, 0) * Units.cm2m, new Vec3(30, 40, 5) * Units.cm2m, false);
+        UI.AffordanceBegin("Clip", ref clipboardPose, Vec3.Zero, new Vec3(30, 40, 2) * Units.cm2m, false);
+        clipboard.Draw(Matrix.Identity);
         UI.LayoutArea(new Vec3(12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
         UI.Label("Application 'Settings'");
         UI.Toggle("Subtitles", ref subtitles); UI.SameLine();
@@ -109,7 +110,7 @@ class DemoUI : IDemo
         UI.ButtonRound("Press", UI.LineHeight); UI.SameLine();
         UI.Button("Squeeze");
         UI.AffordanceEnd();
-        clipboard.Draw(clipboardPose.ToMatrix());
+        
     }
 
     public void Initialize() { }

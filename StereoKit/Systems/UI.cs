@@ -60,7 +60,7 @@ namespace StereoKit
         /// on, and false means it's toggled off.</param>
         /// <returns>Will return true any time the toggle value changes!</returns>
         public static bool Toggle     (string text, ref bool value) => NativeAPI.ui_toggle(text, ref value);
-        public static bool AffordanceBegin (string text, ref Pose movement, Vec3 at, Vec3 size, bool draw = false) { return NativeAPI.ui_affordance_begin(text, ref movement, at, size, draw); }
+        public static bool AffordanceBegin (string text, ref Pose movement, Vec3 center, Vec3 dimensions, bool draw = false) { return NativeAPI.ui_affordance_begin(text, ref movement, center, dimensions, draw); }
         public static bool AffordanceEnd   () { return NativeAPI.ui_affordance_end(); }
         /// <summary>A horizontal slider element! You can stick your finger in it, and slide the
         /// value up and down.</summary>
