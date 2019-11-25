@@ -66,6 +66,9 @@ namespace StereoKit
         public Vec3 ToHSV()
             => NativeAPI.color_to_hsv(this);
 
+        public Vec3 ToLAB()
+            => NativeAPI.color_to_lab(this);
+
         /// <summary>Creates a Red/Green/Blue color from Hue/Saturation/Value information.</summary>
         /// <param name="hue">Hue most directly relates to the color as we think of it! 0 is red,
         /// 0.1667 is yellow, 0.3333 is green, 0.5 is cyan, 0.6667 is blue, 0.8333 is magenta, and 1
@@ -78,6 +81,9 @@ namespace StereoKit
         /// <returns></returns>
         public static Color HSV(float hue, float saturation, float value, float opacity = 1)
             => NativeAPI.color_hsv(hue, saturation, value, opacity);
+
+        public static Color LAB(float l, float a, float b, float opacity = 1)
+            => NativeAPI.color_lab(l, a, b, opacity);
 
         public static implicit operator Color32(Color c) 
             => new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));

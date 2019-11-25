@@ -111,7 +111,26 @@ class DemoUI : IDemo
         UI.Button("Squeeze");
         UI.AffordanceEnd();
         
+        UI.WindowBegin("Color", ref colorPose, new Vec2(20,0)*Units.cm2m);
+        if (UI.Toggle("LAB Space", ref colorLab))
+        {
+            Color curr = colorLab ? 
+                Color.HSV(colorVal.x, colorVal.y, colorVal.z) : 
+                Color.LAB(colorVal.x, colorVal.y, colorVal.z);
+            colorVal = colorLab ? curr.ToLAB() : curr.ToHSV();
+        }
+        UI.HSlider("x", ref colorVal.x, 0, 1, 0, 20*Units.cm2m);
+        UI.HSlider("y", ref colorVal.y, 0, 1, 0, 20*Units.cm2m);
+        UI.HSlider("z", ref colorVal.z, 0, 1, 0, 20*Units.cm2m);
+        Color color = colorLab ? 
+            Color.LAB(colorVal.x, colorVal.y, colorVal.z) : 
+            Color.HSV(colorVal.x, colorVal.y, colorVal.z);
+        Lines.Add(new Vec3(10,-21,0)*Units.cm2m, new Vec3(-10,-21,0)*Units.cm2m, color, .01f);
+        UI.WindowEnd();
     }
+    static Pose colorPose=new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));
+    bool colorLab = false;
+    Vec3 colorVal = new Vec3(0,0.8f,0.5f);
 
     public void Initialize() { }
     public void Shutdown() { }

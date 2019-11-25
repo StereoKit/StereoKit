@@ -498,7 +498,7 @@ bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, boo
 	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
-	return state & button_state_changed;
+	return state & button_state_just_down;
 }
 
 ///////////////////////////////////////////
