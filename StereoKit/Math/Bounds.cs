@@ -70,5 +70,10 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(Vec3 linePt1, Vec3 linePt2)
             => NativeAPI.bounds_line_contains(this, linePt1, linePt2);
+
+        public override string ToString()
+        {
+            return string.Format("[center:{0} dimensions:{1}", center, dimensions);
+        }
     }
 }

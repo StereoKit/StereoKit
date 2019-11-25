@@ -15,6 +15,11 @@ namespace StereoKit
     {
         public float x, y, z;
 
+        public float Magnitude
+        { 
+            get => (float)Math.Sqrt(x*x + y*y + z*z);
+        }
+
         public Vec3(float x, float y, float z)
         {
             this.x = x;
@@ -78,6 +83,8 @@ namespace StereoKit
             float mag = (float)Math.Sqrt(x*x+y*y+z*z);
             return new Vec3(x/mag, y/mag, z/mag);
         }
+
+        
 
         /// <summary>Creates a vector that points out at the given 2D angle! This
         /// creates the vector on the XZ plane, and allows you to specify a constant

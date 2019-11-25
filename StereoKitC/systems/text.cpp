@@ -83,7 +83,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
 	style.color           = color;
-	style.size            = character_height;
+	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.25f;
 	text_styles.push_back(style);
 

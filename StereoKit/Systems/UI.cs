@@ -14,6 +14,9 @@ namespace StereoKit
     {
         public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
 
+        /// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
+        public static float LineHeight { get =>NativeAPI.ui_line_height(); }
+
         public static void LayoutArea(Vec3 start, Vec2 dimensions)
             => NativeAPI.ui_layout_area(start, dimensions);
 

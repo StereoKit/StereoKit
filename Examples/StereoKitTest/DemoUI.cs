@@ -104,8 +104,9 @@ class DemoUI : IDemo
         UI.Toggle("Subtitles", ref subtitles); UI.SameLine();
         UI.Toggle("Butts", ref clipButts);
         UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
-        UI.Image(sprite, Vec2.One * Units.cm2m);
-        UI.ButtonRound("Press");
+        UI.Image(sprite, Vec2.One * UI.LineHeight); UI.SameLine();
+        UI.Label("Test!");
+        UI.ButtonRound("Press", UI.LineHeight); UI.SameLine();
         UI.Button("Squeeze");
         UI.AffordanceEnd();
         clipboard.Draw(clipboardPose.ToMatrix());

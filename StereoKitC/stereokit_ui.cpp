@@ -62,7 +62,7 @@ uint64_t ui_hash(const char *string);
 // Layout
 void ui_push_pose  (pose_t pose, vec3 offset);
 void ui_pop_pose   ();
-void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size);
+void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t skip_content_padding = false);
 void ui_reserve_box(vec2 size);
 
 void ui_nextline    ();
@@ -228,10 +228,11 @@ void ui_layout_area(vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
-void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size) {
+void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t skip_content_padding) {
 	out_position   = skui_layers.back().offset;
 	out_final_size = content_size;
-	out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
+	if (!skip_content_padding)
+		out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
 
 	// If this is not the first element, and it goes outside the active window
 	if (out_position.x            != -skui_settings.padding &&
@@ -272,6 +273,12 @@ void ui_sameline() {
 	layer_t &layer = skui_layers.back();
 	layer.offset      = skui_prev_offset;
 	layer.line_height = skui_prev_line_height;
+}
+
+///////////////////////////////////////////
+
+float ui_line_height() {
+	return skui_settings.padding * 2 + skui_fontsize;
 }
 
 ///////////////////////////////////////////
@@ -418,6 +425,8 @@ void ui_text(vec3 start, const char *text, text_align_ position) {
 void ui_label(const char *text) {
 	vec3 offset = skui_layers.back().offset;
 	vec2 size   = text_size(text, skui_font_style);
+
+	ui_layout_box (size, offset, size);
 	ui_reserve_box(size);
 	ui_text(offset - vec3{ 0, 0, 2*mm2m }, text);
 	ui_nextline();
@@ -548,7 +557,7 @@ bool32_t ui_button_round(const char *text, float diameter) {
 	vec3 offset;
 	vec2 size = diameter == 0 ? text_size(text, skui_font_style) : vec2{diameter, diameter};
 	size = vec2_one * fmaxf(size.x, size.y);
-	ui_layout_box (size, offset, size);
+	ui_layout_box (size, offset, size, true);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
