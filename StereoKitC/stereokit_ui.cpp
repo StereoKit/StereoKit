@@ -32,6 +32,9 @@ vec3            skui_fingertip_prev[2];
 vec3            skui_fingertip_world[2];
 vec3            skui_fingertip_world_prev[2];
 bool            skui_hand_active[2];
+uint64_t        skui_control_focused_prev[2] = {};
+uint64_t        skui_control_focused[2] = {};
+uint64_t        skui_control_active[2] = {};
 
 ui_settings_t skui_settings = {
 	10 * mm2m,
@@ -44,9 +47,6 @@ float skui_fontsize = 15*mm2m;
 
 vec3  skui_prev_offset;
 float skui_prev_line_height;
-
-uint64_t skui_control_focused[2] = {};
-uint64_t skui_control_active [2] = {};
 
 uint64_t skui_anim_id;
 float    skui_anim_time;
@@ -143,11 +143,6 @@ bool ui_init() {
 ///////////////////////////////////////////
 
 void ui_update() {
-	skui_fingertip_world_prev[handed_right] = skui_fingertip_world[handed_right];
-	skui_fingertip_world_prev[handed_left ] = skui_fingertip_world[handed_left];
-	skui_fingertip_world[handed_right] = input_hand(handed_right).fingers[1][4].position;
-	skui_fingertip_world[handed_left ] = input_hand(handed_left ).fingers[1][4].position;
-
 	if (skui_layers.size() > 1 || skui_layers.size() == 0)
 		log_err("ui: Mismatching number of Begin/End calls!");
 
@@ -155,9 +150,15 @@ void ui_update() {
 
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t &hand = input_hand((handed_)i);
-		skui_fingertip     [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world[i]);
-		skui_fingertip_prev[i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world_prev[i]);
-		skui_hand_active   [i] = hand.state & input_state_tracked;
+
+		skui_fingertip_world_prev[i] = skui_fingertip_world[i];
+		skui_fingertip_world     [i] = hand.fingers[1][4].position;
+		skui_control_focused_prev[i] = skui_control_focused[i];
+
+		skui_control_focused[i] = 0;
+		skui_fingertip      [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world[i]);
+		skui_fingertip_prev [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world_prev[i]);
+		skui_hand_active    [i] = hand.state & input_state_tracked;
 	}
 }
 
@@ -294,7 +295,7 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 
 	for (int32_t i = 0; i < handed_max; i++) {
 		button_state_ focus_state = button_state_up;
-		bool focused   = skui_control_focused[i] == id;
+		bool focused   = skui_control_focused_prev[i] == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
 		if (focused) {
@@ -304,18 +305,13 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 		}
 
 		if (skui_hand_active[i] && ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], ui_size_box(box_start, box_size))) {
-			if (!focused) {
-				skui_control_focused[i] = id;
-				focus_state = button_state_down | button_state_just_down;
-			} else {
-				focus_state = button_state_down;
-			}
 			hand = i;
-		} else {
-			if (focused) {
-				skui_control_focused[i] = 0;
-				focus_state = button_state_up | button_state_just_up;
-			}
+			skui_control_focused[i] = id;
+			focus_state = button_state_down;
+			if (!focused)
+				focus_state |= button_state_just_down;
+		} else if (focused) {
+			focus_state = button_state_up | button_state_just_up;
 		}
 
 		if (hand == i && out_focus_state != nullptr)
@@ -578,9 +574,8 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], ui_size_box(offset, box_size))) {
 			skui_control_focused[i] = id_hash;
-		}
-		if (skui_control_focused[i] == id_hash)
 			focused = true;
+		}
 	}
 	if (focused) {
 		char add = '\0';
@@ -653,8 +648,6 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 			if (result)
 				skui_control_active[i] = id;
-		} else if (skui_control_focused[i] == id) {
-			skui_control_focused[i] = 0;
 		}
 	}
 
@@ -690,14 +683,12 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	static quat start_tip_rot[2] = { quat_identity,quat_identity };
 	for (size_t i = 0; i < handed_max; i++) {
 		// Skip this if something else has some focus!
-		if (!skui_hand_active[i] || (skui_control_focused[i] != 0 && skui_control_focused[i] != id))
+		if (!skui_hand_active[i] || (skui_control_focused_prev[i] != 0 && skui_control_focused_prev[i] != id))
 			continue;
 
 		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
 			skui_control_focused[i] = id;
 			color = 0.75f;
-		} else if (skui_control_focused[i] == id) {
-			skui_control_focused[i] = 0;
 		}
 
 		if (skui_control_focused[i] == id || skui_control_active[i] == id) {
