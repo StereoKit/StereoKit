@@ -1,4 +1,4 @@
-﻿using StereoKit;
+using StereoKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +35,7 @@ namespace StereoKitTest
                 if (picker.Show())
                     LoadModel(picker.SelectedFile);
             } else {
-                UI.AffordanceBegin("Model", ref modelPose, model.Bounds.center*modelScale*menuScale*2, model.Bounds.dimensions*modelScale*menuScale*2);
+                UI.AffordanceBegin("Model", ref modelPose, model.Bounds.center*modelScale*menuScale, model.Bounds.dimensions*modelScale*menuScale);
                 model.Draw(Matrix.TS(Vec3.Zero, modelScale*menuScale));
                 UI.AffordanceEnd();
             }

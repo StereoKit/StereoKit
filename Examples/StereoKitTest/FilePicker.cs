@@ -29,6 +29,7 @@ namespace StereoKitTest
         List<File>        activeFiles = new List<File>();
         int               selectedIndex = -1;
         string            path;
+        string            title;
         Pose              windowPose = new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));
         #endregion
 
@@ -38,10 +39,12 @@ namespace StereoKitTest
                 Path.Combine(path, activeFiles[selectedIndex].name + activeFiles[selectedIndex].extension);
         }
 
-        public FilePicker((string name, string filter)[] filters)
+        public FilePicker((string name, string filter)[] filters, string initialFolder=null)
         {
+            foreach (var s in filters)
+                this.title += s+"/";
             this.filters = filters;
-            UpdateFolder(Directory.GetCurrentDirectory());
+            UpdateFolder(initialFolder == null ? Directory.GetCurrentDirectory() : initialFolder);
         }
 
         void DirectoryUp()
@@ -90,9 +93,11 @@ namespace StereoKitTest
         {
             bool result = false;
 
-            UI.WindowBegin(path, ref windowPose, new Vec2(30,0) *Units.cm2m);
+            UI.WindowBegin(title, ref windowPose, new Vec2(30,0) *Units.cm2m);
             if (UI.Button("Up"))
                 DirectoryUp();
+            UI.SameLine();
+            UI.Label(path);
             for (int i = 0; i < activeFiles.Count; i++)
             {
                 if (UI.Button(activeFiles[i].name+"\n"+activeFiles[i].extension))
