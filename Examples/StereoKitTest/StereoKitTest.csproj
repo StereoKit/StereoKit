@@ -84,11 +84,13 @@
     <Compile Include="DemoBasics.cs" />
     <Compile Include="DemoGeo.cs" />
     <Compile Include="DemoMath.cs" />
+    <Compile Include="DemoPicker.cs" />
     <Compile Include="Demos.cs" />
     <Compile Include="DemoText.cs" />
     <Compile Include="DemoUI.cs" />
     <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="DemoUISettings.cs" />
+    <Compile Include="FilePicker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IDemo.cs" />

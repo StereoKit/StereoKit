@@ -230,7 +230,7 @@ void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, 
 	// If this is not the first element, and it goes outside the active window
 	if (out_position.x            != -skui_settings.padding &&
 		skui_layers.back().size.x != 0                      &&
-		out_position.x - out_final_size.x < skui_layers.back().offset.x - skui_layers.back().size.x)
+		out_position.x - out_final_size.x < skui_layers.back().offset_initial.x - skui_layers.back().size.x)
 	{
 		ui_nextline();
 		out_position = skui_layers.back().offset;
