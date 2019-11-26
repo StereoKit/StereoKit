@@ -97,10 +97,10 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 	// Get initial size
 	vec3 min, max;
 	if (model->subset_count > 0) {
-		min = mesh->bounds.center - mesh->bounds.dimensions / 2;
-		max = mesh->bounds.center + mesh->bounds.dimensions / 2;
+		min = model->bounds.center - model->bounds.dimensions / 2;
+		max = model->bounds.center + model->bounds.dimensions / 2;
 	} else {
-		min = max = bounds_corner(mesh->bounds, 0);
+		min = max = matrix_mul_point( transform, bounds_corner(mesh->bounds, 0) );
 	}
 
 	// Add the size of this subset
