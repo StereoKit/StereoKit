@@ -31,6 +31,7 @@ vec3            skui_fingertip[2];
 vec3            skui_fingertip_prev[2];
 vec3            skui_fingertip_world[2];
 vec3            skui_fingertip_world_prev[2];
+bool            skui_hand_active[2];
 
 ui_settings_t skui_settings = {
 	10 * mm2m,
@@ -156,6 +157,7 @@ void ui_update() {
 		const hand_t &hand = input_hand((handed_)i);
 		skui_fingertip     [i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world[i]);
 		skui_fingertip_prev[i] = matrix_mul_point(hierarchy_to_local(), skui_fingertip_world_prev[i]);
+		skui_hand_active   [i] = hand.state & input_state_tracked;
 	}
 }
 
@@ -301,7 +303,7 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 			box_size  = box_focused_size;
 		}
 
-		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], ui_size_box(box_start, box_size))) {
+		if (skui_hand_active[i] && ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], ui_size_box(box_start, box_size))) {
 			if (!focused) {
 				skui_control_focused[i] = id;
 				focus_state = button_state_down | button_state_just_down;
@@ -682,9 +684,13 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	vec3     box_size  = dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
 	bounds_t box       = bounds_t{center, box_size};
 	
+	static vec3 start_aff_pos[2] = {};
+	static quat start_aff_rot[2] = { quat_identity,quat_identity };
+	static vec3 start_tip_pos[2] = {};
+	static quat start_tip_rot[2] = { quat_identity,quat_identity };
 	for (size_t i = 0; i < handed_max; i++) {
 		// Skip this if something else has some focus!
-		if (skui_control_focused[i] != 0 && skui_control_focused[i] != id)
+		if (!skui_hand_active[i] || (skui_control_focused[i] != 0 && skui_control_focused[i] != id))
 			continue;
 
 		if (ui_in_box(skui_fingertip[i], skui_fingertip_prev[i], box)) {
@@ -695,27 +701,23 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 		}
 
 		if (skui_control_focused[i] == id || skui_control_active[i] == id) {
-			static vec3 start_aff_pos = vec3_zero;
-			static quat start_aff_rot = quat_identity;
-			static vec3 start_tip_pos = vec3_zero;
-			static quat start_tip_rot = quat_identity;
-
+			
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.state & input_state_justpinch) {
 				skui_control_active[i] = id;
-				start_aff_pos = movement.position;
-				start_aff_rot = movement.orientation;
-				start_tip_pos = input_hand((handed_)i).root.position;
-				start_tip_rot = input_hand((handed_)i).root.orientation;
+				start_aff_pos[i] = movement.position;
+				start_aff_rot[i] = movement.orientation;
+				start_tip_pos[i] = input_hand((handed_)i).root.position;
+				start_tip_rot[i] = input_hand((handed_)i).root.orientation;
 			}
 			if (skui_control_active[i] == id) {
 				color = 0.5f;
 				result = true;
 
-				quat rot = quat_difference(start_tip_rot, input_hand((handed_)i).root.orientation);
+				quat rot = quat_difference(start_tip_rot[i], input_hand((handed_)i).root.orientation);
 
-				movement.position    = input_hand((handed_)i).root.position + rot*(start_aff_pos - start_tip_pos);
-				movement.orientation = start_aff_rot*rot;
+				movement.position    = input_hand((handed_)i).root.position + rot*(start_aff_pos[i] - start_tip_pos[i]);
+				movement.orientation = start_aff_rot[i]*rot;
 				if (hand.state & input_state_unpinch) {
 					skui_control_active[i] = 0;
 				}
