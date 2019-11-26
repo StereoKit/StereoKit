@@ -49,7 +49,9 @@ namespace StereoKitTest
 
         void DirectoryUp()
         {
-            UpdateFolder(Directory.GetParent(path).FullName);
+            DirectoryInfo parent = Directory.GetParent(path);
+            if (parent != null)
+                UpdateFolder(parent.FullName);
         }
 
         bool Select(int index)
