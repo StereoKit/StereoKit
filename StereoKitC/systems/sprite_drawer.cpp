@@ -65,8 +65,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
-		//material_set_color32(sprite->material, "color", color);
-		render_add_mesh(sprite_quad, sprite->material, at);
+		render_add_mesh(sprite_quad, sprite->material, at, {color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f });
 		return;
 	}
 

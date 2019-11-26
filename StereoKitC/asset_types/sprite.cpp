@@ -57,6 +57,11 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
 	result->aspect = image->width / (float)image->height;
+
+	if (type == sprite_type_atlased) {
+		log_warn("sprite_create: Atlased sprites not implemented yet! Switching to single.");
+		type = sprite_type_single;
+	}
 	
 	if (type == sprite_type_single) {
 		result->size         = 1;
