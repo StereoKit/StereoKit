@@ -1,6 +1,6 @@
 #pragma once
 
-// #define SK_32BIT_INDICES
+#define SK_32BIT_INDICES
 // #define SK_NO_FLATSCREEN
 // #define SK_NO_LEAP_MOTION
 // #define SK_NO_RUNTIME_SHADER_COMPILE
@@ -217,6 +217,8 @@ static inline color128  operator*(const color128 &a, const float b) { return { a
 
 SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
 SK_API vec3     color_to_hsv(color128 color);
+SK_API color128 color_lab   (float l, float a, float b, float transparency);
+SK_API vec3     color_to_lab(color128 color);
 
 ///////////////////////////////////////////
 

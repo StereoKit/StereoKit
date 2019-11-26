@@ -110,13 +110,18 @@ inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
 void render_set_clip(float near_plane, float far_plane) {
 	// near_plane will throw divide by zero errors if it's zero! So we'll clamp it :)
 	near_plane = fmaxf(0.0001f, near_plane);
-
 	render_clip_planes = { near_plane, far_plane };
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void render_update_projection() {
 	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
 		90 * deg2rad, 
 		(float)d3d_screen_width/d3d_screen_height, 
-		near_plane, 
-		far_plane), &render_default_camera_proj);
+		render_clip_planes.x, 
+		render_clip_planes.y), &render_default_camera_proj);
 }
 
 ///////////////////////////////////////////

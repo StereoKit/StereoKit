@@ -17,6 +17,7 @@ SK_API void     ui_settings(ui_settings_t settings);
 SK_API void     ui_layout_area (vec3 start, vec2 dimensions);
 SK_API void     ui_nextline    ();
 SK_API void     ui_sameline    ();
+SK_API float    ui_line_height ();
 SK_API void     ui_reserve_box (vec2 size);
 SK_API void     ui_space       (float space);
 

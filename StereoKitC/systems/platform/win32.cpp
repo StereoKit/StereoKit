@@ -37,7 +37,7 @@ void win32_resize(int width, int height) {
 	d3d_screen_width  = width;
 	d3d_screen_height = height;
 	log_infof("Resized to: %d<~BLK>x<~clr>%d", width, height);
-
+	
 	if (win32_swapchain != nullptr) {
 		tex_releasesurface(win32_target);
 		win32_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
@@ -45,6 +45,8 @@ void win32_resize(int width, int height) {
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 		tex_setsurface(win32_target, back_buffer);
 	}
+
+	render_update_projection();
 }
 
 ///////////////////////////////////////////

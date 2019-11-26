@@ -24,23 +24,23 @@ class DemoText : IDemo
         UI.WindowEnd();
 
         Hierarchy.Push(Matrix.T(0.05f,0,0));
-        Text.Add("X Center", Matrix.TRS(new Vec3(0,.1f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.XCenter, align);
-        Text.Add("X Left",   Matrix.TRS(new Vec3(0,.15f,0.3f), Quat.LookDir(0,0,1)), TextAlign.XLeft,   align);
-        Text.Add("X Right",  Matrix.TRS(new Vec3(0,.2f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.XRight,  align);
+        Text.Add("X Center", Matrix.TRS(new Vec3(0,.1f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.XCenter|TextAlign.YCenter, align);
+        Text.Add("X Left",   Matrix.TRS(new Vec3(0,.15f,0.3f), Quat.LookDir(0,0,1)), TextAlign.XLeft  |TextAlign.YCenter, align);
+        Text.Add("X Right",  Matrix.TRS(new Vec3(0,.2f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.XRight |TextAlign.YCenter, align);
         Lines.Add(new Vec3(0,-1,0.3f), new Vec3(0,1,0.3f), new Color32(0,255,0,255), 0.001f);
         Hierarchy.Pop();
 
         Hierarchy.Push(Matrix.T(-0.05f,0,0));
-        Text.Add("Y Center", Matrix.TRS(new Vec3(0,.1f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.YCenter, align);
+        Text.Add("Y Center", Matrix.TRS(new Vec3(0,.1f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.YCenter|TextAlign.XCenter, align);
         Lines.Add(new Vec3(-0.05f, .1f, 0.3f), new Vec3(.05f, .1f, 0.3f), new Color32(0, 255, 0, 255), 0.001f);
 
-        Text.Add("Y Top",    Matrix.TRS(new Vec3(0,.15f,0.3f), Quat.LookDir(0,0,1)), TextAlign.YTop, align);
+        Text.Add("Y Top",    Matrix.TRS(new Vec3(0,.15f,0.3f), Quat.LookDir(0,0,1)), TextAlign.YTop|TextAlign.XCenter, align);
         Lines.Add(new Vec3(-0.05f, .15f, 0.3f), new Vec3(.05f, .15f, 0.3f), new Color32(0, 255, 0, 255), 0.001f);
 
-        Text.Add("Y Bottom", Matrix.TRS(new Vec3(0,.2f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.YBottom, align);
+        Text.Add("Y Bottom", Matrix.TRS(new Vec3(0,.2f, 0.3f), Quat.LookDir(0,0,1)), TextAlign.YBottom|TextAlign.XCenter, align);
         Lines.Add(new Vec3(-0.05f,.2f, 0.3f), new Vec3(.05f,.2f, 0.3f), new Color32(0,255,0,255), 0.001f);
         Hierarchy.Pop();
 
-        Text.Add("Here's\nSome\nMulti-line\nText!!", Matrix.TRS(new Vec3(0, 0, 0.1f), Quat.LookDir(0, 0, 1)));
+        Text.Add("Here's\nSome\nMulti-line\nText!!", Matrix.TRS(new Vec3(0, 0, 0.1f), Quat.LookDir(0, 0, 1)), TextAlign.Center, align);
     }
 }

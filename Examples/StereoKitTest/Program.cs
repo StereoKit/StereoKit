@@ -71,13 +71,32 @@ class Program
             if (name.StartsWith("Demo"))
                 name = name.Substring("Demo".Length);
 
-            if (UI.ButtonRound(name, 4*Units.cm2m))
+            if (UI.Button(name))
                 Demos.SetActive(i);
             UI.SameLine();
         }
         UI.WindowEnd();
+
+        RulerWindow();
     }
     static void CommonShutdown()
     {
+    }
+
+    static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
+    static void RulerWindow()
+    {
+        UI.AffordanceBegin("Ruler", ref demoRuler, Vec3.Zero, new Vec3(30,4,1)*Units.cm2m, true);
+        Color32 color = Color.HSV(.6f, 0.5f, 1);
+        Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f) * Units.cm2m, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+        for (int d = 0; d <= 60; d+=1)
+        {
+            float x = d/2.0f;
+            float size = d%2==0?1f:0.15f;
+            Lines.Add(new Vec3(15-x,2,-.6f)* Units.cm2m, new Vec3(15-x,2-size, -.6f) *Units.cm2m, color, Units.mm2m*0.5f);
+            if (d%2==0 && d/2 != 30)
+                Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f) * Units.cm2m, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+        }
+        UI.AffordanceEnd();
     }
 }

@@ -16,6 +16,7 @@ void render_draw        ();
 void render_draw_matrix (const matrix &view, const matrix &proj);
 void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
+void render_update_projection();
 
 bool render_initialize();
 void render_update();

@@ -39,8 +39,9 @@ class DemoUI : IDemo
     float slider     = 0.5f;
     /// :End:
 
-    Model clipboard     = new Model("Clipboard.glb");
-    Pose  clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+    Model  clipboard     = new Model("Clipboard.glb");
+    Sprite sprite        = new Sprite("Floor.png", SpriteType.Single);
+    Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  subtitles;
     bool  clipButts;
     float clipSlider;
@@ -97,17 +98,39 @@ class DemoUI : IDemo
         /// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
         /// :End:
 
-        UI.AffordanceBegin("Clip", ref clipboardPose, new Vec3(-15, 20, 0) * Units.cm2m, new Vec3(30, 40, 5) * Units.cm2m, false);
-        UI.LayoutArea(new Vec3(-12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
+        UI.AffordanceBegin("Clip", ref clipboardPose, Vec3.Zero, new Vec3(30, 40, 2) * Units.cm2m, false);
+        clipboard.Draw(Matrix.Identity);
+        UI.LayoutArea(new Vec3(12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
         UI.Label("Application 'Settings'");
         UI.Toggle("Subtitles", ref subtitles); UI.SameLine();
         UI.Toggle("Butts", ref clipButts);
         UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
-        UI.ButtonRound("Press");
+        UI.Image(sprite, Vec2.One * UI.LineHeight); UI.SameLine();
+        UI.Label("Test!");
+        UI.ButtonRound("Press", UI.LineHeight); UI.SameLine();
         UI.Button("Squeeze");
         UI.AffordanceEnd();
-        clipboard.Draw(clipboardPose.ToMatrix());
+        
+        UI.WindowBegin("Color", ref colorPose, new Vec2(20,0)*Units.cm2m);
+        if (UI.Toggle("LAB Space", ref colorLab))
+        {
+            Color curr = colorLab ? 
+                Color.HSV(colorVal.x, colorVal.y, colorVal.z) : 
+                Color.LAB(colorVal.x, colorVal.y, colorVal.z);
+            colorVal = colorLab ? curr.ToLAB() : curr.ToHSV();
+        }
+        UI.HSlider("x", ref colorVal.x, 0, 1, 0, 20*Units.cm2m);
+        UI.HSlider("y", ref colorVal.y, 0, 1, 0, 20*Units.cm2m);
+        UI.HSlider("z", ref colorVal.z, 0, 1, 0, 20*Units.cm2m);
+        Color color = colorLab ? 
+            Color.LAB(colorVal.x, colorVal.y, colorVal.z) : 
+            Color.HSV(colorVal.x, colorVal.y, colorVal.z);
+        Lines.Add(new Vec3(10,-21,0)*Units.cm2m, new Vec3(-10,-21,0)*Units.cm2m, color, .01f);
+        UI.WindowEnd();
     }
+    static Pose colorPose=new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));
+    bool colorLab = false;
+    Vec3 colorVal = new Vec3(0,0.8f,0.5f);
 
     public void Initialize() { }
     public void Shutdown() { }
