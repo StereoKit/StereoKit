@@ -57,9 +57,10 @@ bool           xr_running         = false;
 XrSpace        xr_app_space     = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
-XrEnvironmentBlendMode xr_blend;
 xr_input_t     xr_input = {};
 XrTime         xr_time;
+XrEnvironmentBlendMode xr_blend;
+XrReferenceSpaceType   xr_refspace;
 
 vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
@@ -69,7 +70,10 @@ vector<swapchain_t>             xr_swapchains;
 
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer);
-void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format);
+
+void                 openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format);
+XrReferenceSpaceType openxr_preferred_space();
+void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
 
 ///////////////////////////////////////////
 
@@ -82,9 +86,13 @@ inline bool openxr_loc_valid(XrSpaceLocation &loc) {
 ///////////////////////////////////////////
 
 bool openxr_init(const char *app_name) {
-	const char          *extensions[] = { XR_KHR_D3D11_ENABLE_EXTENSION_NAME };
+	uint32_t extension_count = 0;
+	openxr_preferred_extensions(extension_count, nullptr);
+	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
+	openxr_preferred_extensions(extension_count, extensions);
+
 	XrInstanceCreateInfo createInfo   = { XR_TYPE_INSTANCE_CREATE_INFO };
-	createInfo.enabledExtensionCount = _countof(extensions);
+	createInfo.enabledExtensionCount = extension_count;
 	createInfo.enabledExtensionNames = extensions;
 	createInfo.applicationInfo.applicationVersion = 1;
 	createInfo.applicationInfo.engineVersion      = SK_VERSION_ID;
@@ -92,6 +100,8 @@ bool openxr_init(const char *app_name) {
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
 	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
 	xrCreateInstance(&createInfo, &xr_instance);
+
+	free(extensions);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
@@ -155,12 +165,12 @@ bool openxr_init(const char *app_name) {
 		return false;
 	}
 
-	// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
-	// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
-	// would be relative to your device's starting location. HoloLens doesn't have a STAGE, so we'll use LOCAL.
+	// Create reference spaces! So we can find stuff relative to them :)
+	xr_refspace = openxr_preferred_space();
+
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
-	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_LOCAL;
+	ref_space.referenceSpaceType   = xr_refspace;
 	xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 
 	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
@@ -223,6 +233,78 @@ bool openxr_init(const char *app_name) {
 	openxr_make_actions();
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
+	const char *extensions[] = {
+		XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
+		XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+		XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME, };
+
+	// Find what extensions are available on this system!
+	uint32_t ext_count = 0;
+	xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr);
+	XrExtensionProperties *exts = (XrExtensionProperties *)malloc(sizeof(XrExtensionProperties) * ext_count);
+	for (int32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
+	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
+
+	// Count how many there are, and copy them out
+	out_extension_count = 0;
+	for (int32_t e = 0; e < _countof(extensions); e++) {
+		for (int32_t i = 0; i < ext_count; i++) {
+			if (strcmp(exts[i].extensionName, extensions[e]) == 0) {
+				if (out_extensions != nullptr)
+					out_extensions[out_extension_count] = extensions[e];
+				out_extension_count += 1;
+				break;
+			}
+		}
+	}
+
+	free(exts);
+}
+
+///////////////////////////////////////////
+
+XrReferenceSpaceType openxr_preferred_space() {
+
+	// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
+	// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
+	// would be relative to your device's starting location.
+
+	XrReferenceSpaceType refspace_priority[] = {
+		XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT,
+		XR_REFERENCE_SPACE_TYPE_LOCAL,
+		XR_REFERENCE_SPACE_TYPE_STAGE, };
+
+	// Find the spaces OpenXR has access to on this device
+	uint32_t refspace_count = 0;
+	xrEnumerateReferenceSpaces(xr_session, 0, &refspace_count, nullptr);
+	XrReferenceSpaceType *refspace_types = (XrReferenceSpaceType *)malloc(sizeof(XrReferenceSpaceType) * refspace_count);
+	xrEnumerateReferenceSpaces(xr_session, refspace_count, &refspace_count, refspace_types);
+
+	// Find which one we prefer!
+	XrReferenceSpaceType result = (XrReferenceSpaceType)0;
+	for (int32_t p = 0; p < _countof(refspace_priority); p++) {
+		for (uint32_t i = 0; i < refspace_count; i++) {
+			if (refspace_types[i] == refspace_priority[p]) {
+				result = refspace_types[i];
+				break;
+			}
+		}
+		if (result != 0)
+			break;
+	}
+
+	// TODO: UNBOUNDED_MSFT and STAGE have very different behaviout, but
+	// STAGE behavior is preferred. So it would be nice to make some considerations
+	// here to change that?
+
+	free(refspace_types);
+
+	return result;
 }
 
 ///////////////////////////////////////////
