@@ -31,6 +31,9 @@ namespace StereoKit
                 NativeAPI.tex_release(_texInst);
         }
 
+        public void SetOptions(TexSample sample = TexSample.Linear, TexAddress wrapMode = TexAddress.Wrap, int anisotropy = 4) 
+            => NativeAPI.tex_set_options(_texInst, sample, wrapMode, anisotropy);
+
         public static Tex Find(string id)
         {
             IntPtr tex = NativeAPI.tex_find(id);

@@ -274,6 +274,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
 			verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
+			for (size_t i = 0; i < vert_count; i++) {
+				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
+			}
 		}
 
 		// Check what info is in this attribute, and copy it over to our mesh

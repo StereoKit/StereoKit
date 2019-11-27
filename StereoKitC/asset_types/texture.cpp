@@ -317,7 +317,8 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 
 	// D3D will already return the same sampler when provided the same settings, so we
 	// can just lean on that to prevent sampler duplicates :)
-	d3d_device->CreateSamplerState(&desc_sampler, &texture->sampler);
+	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &texture->sampler)))
+		log_warnf("tex_set_options: failed to create sampler state!");
 }
 
 ///////////////////////////////////////////

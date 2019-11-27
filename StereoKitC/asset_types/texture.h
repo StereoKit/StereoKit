@@ -18,7 +18,7 @@ struct _tex_t {
 	ID3D11RenderTargetView   *target_view;
 	ID3D11DepthStencilView   *depth_view;
 	ID3D11Texture2D          *texture;
-	tex_t                   depth_buffer;
+	tex_t                     depth_buffer;
 };
 
 tex_t       tex_create_mem       (void *data, size_t data_size);

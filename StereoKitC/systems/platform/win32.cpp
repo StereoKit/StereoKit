@@ -43,7 +43,7 @@ void win32_resize(int width, int height) {
 		win32_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-		tex_setsurface(win32_target, back_buffer);
+		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_UNKNOWN);
 	}
 
 	render_update_projection();
@@ -126,7 +126,7 @@ bool win32_init(const char *app_name) {
 
 	win32_target = tex_create(tex_type_rendertarget);
 	tex_set_id     (win32_target, "stereokit/system/rendertarget");
-	tex_setsurface (win32_target, back_buffer);
+	tex_setsurface (win32_target, back_buffer, DXGI_FORMAT_UNKNOWN);
 	tex_add_zbuffer(win32_target, tex_format_depth16);
 
 	dxgi_factory->Release();
