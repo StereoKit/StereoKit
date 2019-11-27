@@ -127,7 +127,7 @@ bool win32_init(const char *app_name) {
 	win32_target = tex_create(tex_type_rendertarget);
 	tex_set_id     (win32_target, "stereokit/system/rendertarget");
 	tex_setsurface (win32_target, back_buffer);
-	tex_add_zbuffer(win32_target);
+	tex_add_zbuffer(win32_target, tex_format_depth16);
 
 	dxgi_factory->Release();
 	dxgi_adapter->Release();

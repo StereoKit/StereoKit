@@ -69,6 +69,7 @@ vector<swapchain_t>             xr_swapchains;
 
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer);
+void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format);
 
 ///////////////////////////////////////////
 
@@ -167,6 +168,11 @@ bool openxr_init(const char *app_name) {
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
 	xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	
+	// Get the surface format information before we create surfaces!
+	DXGI_FORMAT color_format;
+	tex_format_ depth_format;
+	openxr_preferred_format(color_format, depth_format);
+
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
 	uint32_t view_count = 0;
@@ -183,7 +189,7 @@ bool openxr_init(const char *app_name) {
 		swapchain_info.arraySize   = 1;
 		swapchain_info.mipCount    = 1;
 		swapchain_info.faceCount   = 1;
-		swapchain_info.format      = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapchain_info.format      = color_format;
 		swapchain_info.width       = view.recommendedImageRectWidth;
 		swapchain_info.height      = view.recommendedImageRectHeight;
 		swapchain_info.sampleCount = view.recommendedSwapchainSampleCount;
@@ -209,7 +215,7 @@ bool openxr_init(const char *app_name) {
 			swapchain.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
 			tex_set_id     (swapchain.surface_data[s], name);
 			tex_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
-			tex_add_zbuffer(swapchain.surface_data[s]);
+			tex_add_zbuffer(swapchain.surface_data[s], depth_format);
 		}
 		xr_swapchains.push_back(swapchain);
 	}
@@ -217,6 +223,63 @@ bool openxr_init(const char *app_name) {
 	openxr_make_actions();
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format) {
+	DXGI_FORMAT pixel_formats[] = {
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		DXGI_FORMAT_B8G8R8A8_UNORM,
+		DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+		DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,};
+	DXGI_FORMAT depth_formats[] = {
+		DXGI_FORMAT_D32_FLOAT,
+		DXGI_FORMAT_D16_UNORM,
+		DXGI_FORMAT_D24_UNORM_S8_UINT,};
+
+	// Get the list of formats OpenXR would like
+	uint32_t count = 0;
+	xrEnumerateSwapchainFormats(xr_session, 0, &count, nullptr);
+	int64_t *formats = (int64_t *)malloc(sizeof(int64_t) * count);
+	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
+
+	// Check those against our color formats
+	out_pixel_format = DXGI_FORMAT_UNKNOWN;
+	for (uint32_t i = 0; i < count; i++) {
+		for (int32_t f = 0; f < _countof(pixel_formats); f++) {
+			if (formats[i] == pixel_formats[f]) {
+				out_pixel_format = pixel_formats[f];
+				break;
+			}
+		}
+		if (out_pixel_format != DXGI_FORMAT_UNKNOWN)
+			break;
+	}
+
+	// Check those against our depth formats
+	DXGI_FORMAT depth_format = DXGI_FORMAT_UNKNOWN;
+	for (uint32_t i = 0; i < count; i++) {
+		for (int32_t f = 0; f < _countof(depth_formats); f++) {
+			if (formats[i] == depth_formats[f]) {
+				depth_format = depth_formats[f];
+				break;
+			}
+		}
+		if (depth_format != DXGI_FORMAT_UNKNOWN)
+			break;
+	}
+
+	// Depth maps directly to SK tex types, so we'll return that instead!
+	out_depth_format = tex_format_depth16;
+	switch (depth_format) {
+	case DXGI_FORMAT_D16_UNORM:         out_depth_format = tex_format_depth16; break;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT: out_depth_format = tex_format_depthstencil; break;
+	case DXGI_FORMAT_D32_FLOAT:         out_depth_format = tex_format_depth32; break;
+	}
+
+	// Release memory
+	free(formats);
 }
 
 ///////////////////////////////////////////
