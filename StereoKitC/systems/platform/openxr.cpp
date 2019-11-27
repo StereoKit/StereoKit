@@ -224,7 +224,7 @@ bool openxr_init(const char *app_name) {
 			sprintf_s(name, 64, "stereokit/system/rendertarget_%d_%d", i, s);
 			swapchain.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
 			tex_set_id     (swapchain.surface_data[s], name);
-			tex_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture);
+			tex_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture, color_format);
 			tex_add_zbuffer(swapchain.surface_data[s], depth_format);
 		}
 		xr_swapchains.push_back(swapchain);

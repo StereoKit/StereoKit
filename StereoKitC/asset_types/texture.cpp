@@ -253,7 +253,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 
 		bool result = tex_create_surface(texture, data, data_count);
 		if (result)
-			result = tex_create_views  (texture);
+			result = tex_create_views  (texture, DXGI_FORMAT_UNKNOWN);
 		if (result && texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
@@ -394,7 +394,7 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 
 ///////////////////////////////////////////
 
-void tex_setsurface(tex_t texture, ID3D11Texture2D *source) {
+void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_format) {
 	tex_releasesurface(texture);
 	texture->texture = source;
 
@@ -405,7 +405,7 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source) {
 	texture->width  = color_desc.Width;
 	texture->height = color_desc.Height;
 
-	bool created_views      = tex_create_views(texture);
+	bool created_views      = tex_create_views(texture, source_format);
 	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
 	if (created_views && resolution_changed && texture->depth_buffer != nullptr) {
 		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
@@ -414,8 +414,8 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source) {
 
 ///////////////////////////////////////////
 
-bool tex_create_views(tex_t texture) {
-	DXGI_FORMAT format = tex_get_native_format(texture->format);
+bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
+	DXGI_FORMAT format = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
 	bool        mips   = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
 
 	if (!(texture->type & tex_type_depth)) {
