@@ -549,9 +549,10 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 		xrReleaseSwapchainImage(xr_swapchains[i].handle, &release_info);
 	}
 
-	layer.space     = xr_app_space;
-	layer.viewCount = (uint32_t)views.size();
-	layer.views     = views.data();
+	layer.space      = xr_app_space;
+	layer.viewCount  = (uint32_t)views.size();
+	layer.views      = views.data();
+	layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 	return true;
 }
 
