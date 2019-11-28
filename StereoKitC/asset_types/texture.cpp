@@ -26,7 +26,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err("Can't add a zbuffer to a non-rendertarget texture!");
-		return;
+		return nullptr;
 	}
 
 	char id[64];

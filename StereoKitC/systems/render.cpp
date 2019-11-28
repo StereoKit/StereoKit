@@ -39,13 +39,13 @@ struct render_transform_buffer_t {
 	color128 color;
 };
 struct render_global_buffer_t {
-	XMMATRIX view;
-	XMMATRIX proj;
-	XMMATRIX viewproj;
+	XMMATRIX view[2];
+	XMMATRIX proj[2];
+	XMMATRIX viewproj[2];
 	vec4     light;
 	color128 light_color;
-	vec4     camera_pos;
-	vec4     camera_dir;
+	vec4     camera_pos[2];
+	vec4     camera_dir[2];
 	vec4     fingertip[2];
 	float    time;
 };
@@ -217,7 +217,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix &view, const matrix &projection) {
+void render_draw_queue(const matrix *views, const matrix *projections, int32_t count) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
 
@@ -226,21 +226,24 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 		return a.sort_id < b.sort_id;
 	});
 
-	XMMATRIX view_f, projection_f;
-	math_matrix_to_fast(view,       &view_f);
-	math_matrix_to_fast(projection, &projection_f);
-
 	// Copy camera information into the global buffer
-	XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
+	for (int32_t i = 0; i < count; i++) {
+		XMMATRIX view_f, projection_f;
+		math_matrix_to_fast(views[i],       &view_f);
+		math_matrix_to_fast(projections[i], &projection_f);
 
-	XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
-	XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
-	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos, cam_pos);
-	XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir, cam_dir);
+		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
 
-	render_global_buffer.view = XMMatrixTranspose(view_f);
-	render_global_buffer.proj = XMMatrixTranspose(projection_f);
-	render_global_buffer.viewproj = XMMatrixTranspose(view_f * projection_f);
+		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
+		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos[i], cam_pos);
+		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir[i], cam_dir);
+
+		render_global_buffer.view[i] = XMMatrixTranspose(view_f);
+		render_global_buffer.proj[i] = XMMatrixTranspose(projection_f);
+		render_global_buffer.viewproj[i] = XMMatrixTranspose(view_f * projection_f);
+	}
+	
 	render_global_buffer.time = time_getf();
 
 	vec3 tip = input_hand(handed_right).state & input_state_tracked ? input_hand(handed_right).fingers[1][4].position : vec3{0,-1000,0};
@@ -291,13 +294,13 @@ void render_draw_queue(const matrix &view, const matrix &projection) {
 ///////////////////////////////////////////
 
 void render_draw() {
-	render_draw_matrix(render_default_camera_tr, render_default_camera_proj);
+	render_draw_matrix(&render_default_camera_tr, &render_default_camera_proj, 1);
 }
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix &view, const matrix &proj) {
-	render_draw_queue(view, proj);
+void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count) {
+	render_draw_queue(views, projections, count);
 	render_check_screenshots();
 }
 
@@ -333,11 +336,10 @@ void render_check_screenshots() {
 		d3d_context->RSSetViewports(1, &viewport);
 		tex_rtarget_clear(render_capture_surface, color32{0,0,0,255});
 		tex_rtarget_set_active(render_capture_surface);
-		render_draw_queue(view, proj);
-		tex_rtarget_set_active(nullptr);
-
+		
 		// Render!
-		render_draw_queue(view, proj);
+		render_draw_queue(&view, &proj, 1);
+		tex_rtarget_set_active(nullptr);
 
 		// And save the screenshot to file
 		tex_get_data(render_capture_surface, buffer, size);

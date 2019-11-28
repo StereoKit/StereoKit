@@ -1,15 +1,13 @@
-#include "shader_builtin.h"
-
 const char* sk_shader_builtin_equirect = R"_(
 // [name] sk/blit/equirect_convert
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view;
-	float4x4 sk_proj;
-	float4x4 sk_viewproj;
+	float4x4 sk_view[2];
+	float4x4 sk_proj[2];
+	float4x4 sk_viewproj[2];
 	float4   sk_light;
 	float4   sk_light_color;
-	float4   sk_camera_pos;
-	float4   sk_camera_dir;
+	float4   sk_camera_pos[2];
+	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
 	float    sk_time;
 };

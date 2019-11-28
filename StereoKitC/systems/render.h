@@ -13,7 +13,7 @@ struct render_stats_t {
 };
 
 void render_draw        ();
-void render_draw_matrix (const matrix &view, const matrix &proj);
+void render_draw_matrix (const matrix *views, const matrix *projs, int32_t view_count);
 void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();

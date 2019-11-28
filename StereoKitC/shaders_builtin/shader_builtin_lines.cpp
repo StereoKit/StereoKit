@@ -1,15 +1,13 @@
-#include "shader_builtin.h"
-
 const char* sk_shader_builtin_lines = R"_(
 // [name] sk/lines
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view;
-	float4x4 sk_proj;
-	float4x4 sk_viewproj;
+	float4x4 sk_view[2];
+	float4x4 sk_proj[2];
+	float4x4 sk_viewproj[2];
 	float4   sk_light;
 	float4   sk_light_color;
-	float4   sk_camera_pos;
-	float4   sk_camera_dir;
+	float4   sk_camera_pos[2];
+	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
 	float    sk_time;
 };
@@ -40,12 +38,12 @@ struct psIn {
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
 	psIn output;
-	float4 view  = mul(float4(input.pos.xyz, 1), sk_viewproj);
-	float3 norm  = mul(float4(input.norm,0), sk_viewproj).xyz;
+	float4 view  = mul(float4(input.pos.xyz, 1), sk_viewproj[view_id]);
+	float3 norm  = mul(float4(input.norm,0), sk_viewproj[view_id]).xyz;
 	view.xy += float2(norm.y, -norm.x);
-	output.pos   = view;// mul(view, sk_proj);
+	output.pos   = view;// mul(view, sk_proj[view_id]);
 	output.uv    = input.uv;
 	output.color = input.col;
 	return output;

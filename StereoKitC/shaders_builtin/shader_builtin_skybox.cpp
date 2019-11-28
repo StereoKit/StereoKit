@@ -1,15 +1,13 @@
-#include "shader_builtin.h"
-
 extern const char* sk_shader_builtin_skybox = R"_(
 // [name] sk/skybox
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view;
-	float4x4 sk_proj;
-	float4x4 sk_viewproj;
+	float4x4 sk_view[2];
+	float4x4 sk_proj[2];
+	float4x4 sk_viewproj[2];
 	float4   sk_light;
 	float4   sk_light_color;
-	float4   sk_camera_pos;
-	float4   sk_camera_dir;
+	float4   sk_camera_pos[2];
+	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
 	float    sk_time;
 };
@@ -40,9 +38,9 @@ struct psOut {
     float  depth : SV_Depth;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
 	psIn output;
-	output.pos  = mul(float4(input.pos.xyz, 0), sk_viewproj);
+	output.pos  = mul(float4(input.pos.xyz, 0), sk_viewproj[view_id]);
 	output.norm = input.norm;
 	return output;
 }

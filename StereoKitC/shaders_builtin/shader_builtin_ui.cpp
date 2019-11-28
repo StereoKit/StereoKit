@@ -1,15 +1,13 @@
-#include "shader_builtin.h"
-
 const char* sk_shader_builtin_ui = R"_(
 // [name] sk/default_ui
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view;
-	float4x4 sk_proj;
-	float4x4 sk_viewproj;
+	float4x4 sk_view[2];
+	float4x4 sk_proj[2];
+	float4x4 sk_viewproj[2];
 	float4   sk_light;
 	float4   sk_light_color;
-	float4   sk_camera_pos;
-	float4   sk_camera_dir;
+	float4   sk_camera_pos[2];
+	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
 	float    sk_time;
 };
@@ -43,10 +41,10 @@ struct psIn {
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj);
+	output.pos   = mul(float4(output.world,  1), sk_viewproj[view_id]);
 
 	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 

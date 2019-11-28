@@ -32,6 +32,7 @@ struct swapchain_t {
 	vector<XrSwapchainImageD3D11KHR> surface_images;
 	vector<tex_t>                    surface_data;
 };
+
 struct xr_input_t {
 	XrActionSet action_set;
 	XrAction    poseAction;
@@ -43,6 +44,12 @@ struct xr_input_t {
 	XrBool32 renderHand[2];
 	XrBool32 handSelect[2];
 	int      pointer_ids[3];
+};
+
+struct xr_viewpt_t {
+	matrix view;
+	matrix proj;
+	XrView xr_view;
 };
 
 ///////////////////////////////////////////
@@ -63,9 +70,11 @@ bool           xr_depth_lsr = false;
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
 
+vector<matrix>                  xr_viewpt_view;
+vector<matrix>                  xr_viewpt_proj;
 vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
-vector<swapchain_t>             xr_swapchains;
+swapchain_t                     xr_swapchains;
 
 ///////////////////////////////////////////
 
@@ -190,47 +199,47 @@ bool openxr_init(const char *app_name) {
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, 0, &view_count, nullptr);
 	xr_config_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
 	xr_views       .resize(view_count, { XR_TYPE_VIEW });
+	xr_viewpt_view .resize(view_count, { });
+	xr_viewpt_proj .resize(view_count, { });
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, view_count, &view_count, xr_config_views.data());
-	for (uint32_t i = 0; i < view_count; i++) {
-		// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
-		// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
-		XrViewConfigurationView &view           = xr_config_views[i];
-		XrSwapchainCreateInfo    swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
-		XrSwapchain              handle;
-		swapchain_info.arraySize   = 1;
-		swapchain_info.mipCount    = 1;
-		swapchain_info.faceCount   = 1;
-		swapchain_info.format      = color_format;
-		swapchain_info.width       = view.recommendedImageRectWidth;
-		swapchain_info.height      = view.recommendedImageRectHeight;
-		swapchain_info.sampleCount = view.recommendedSwapchainSampleCount;
-		swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-		xrCreateSwapchain(xr_session, &swapchain_info, &handle);
 
-		// Find out how many textures were generated for the swapchain
-		uint32_t surface_count = 0;
-		xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr);
+	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
+	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
+	XrViewConfigurationView &view           = xr_config_views[0];
+	XrSwapchainCreateInfo    swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
+	XrSwapchain              handle;
+	swapchain_info.arraySize   = view_count;
+	swapchain_info.mipCount    = 1;
+	swapchain_info.faceCount   = 1;
+	swapchain_info.format      = color_format;
+	swapchain_info.width       = view.recommendedImageRectWidth;
+	swapchain_info.height      = view.recommendedImageRectHeight;
+	swapchain_info.sampleCount = view.recommendedSwapchainSampleCount;
+	swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+	xrCreateSwapchain(xr_session, &swapchain_info, &handle);
 
-		// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
-		// a depth buffer for each generated texture here as well with make_surfacedata.
-		swapchain_t swapchain = {};
-		swapchain.width  = swapchain_info.width;
-		swapchain.height = swapchain_info.height;
-		swapchain.handle = handle;
-		swapchain.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
-		swapchain.surface_data  .resize(surface_count, {});
-		xrEnumerateSwapchainImages(swapchain.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)swapchain.surface_images.data());
-		for (uint32_t s = 0; s < surface_count; s++) {
-			char name[64];
-			sprintf_s(name, 64, "stereokit/system/rendertarget_%d_%d", i, s);
-			swapchain.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
-			tex_set_id     (swapchain.surface_data[s], name);
-			tex_setsurface (swapchain.surface_data[s], swapchain.surface_images[s].texture, color_format);
-			tex_add_zbuffer(swapchain.surface_data[s], depth_format);
-		}
-		xr_swapchains.push_back(swapchain);
+	// Find out how many textures were generated for the swapchain
+	uint32_t surface_count = 0;
+	xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr);
+
+	// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
+	// a depth buffer for each generated texture here as well with make_surfacedata.
+	xr_swapchains = {};
+	xr_swapchains.width  = swapchain_info.width;
+	xr_swapchains.height = swapchain_info.height;
+	xr_swapchains.handle = handle;
+	xr_swapchains.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
+	xr_swapchains.surface_data  .resize(surface_count, {});
+	xrEnumerateSwapchainImages(xr_swapchains.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)xr_swapchains.surface_images.data());
+	for (uint32_t s = 0; s < surface_count; s++) {
+		char name[64];
+		sprintf_s(name, 64, "stereokit/system/rendertarget_%d", s);
+		xr_swapchains.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
+		tex_set_id     (xr_swapchains.surface_data[s], name);
+		tex_setsurface (xr_swapchains.surface_data[s], xr_swapchains.surface_images[s].texture, color_format);
+		tex_add_zbuffer(xr_swapchains.surface_data[s], depth_format);
 	}
-
+	
 	openxr_make_actions();
 
 	return true;
@@ -377,12 +386,10 @@ void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_dep
 
 void openxr_shutdown() {
 	// We used a graphics API to initialize the swapchain data, so we'll
-	// give it a chance to release anythig here!
-	for (size_t i = 0; i < xr_swapchains.size(); i++) {
-	for (size_t s = 0; s < xr_swapchains[i].surface_data.size(); s++) {
-		tex_release(xr_swapchains[i].surface_data[s]);
-	} }
-	xr_swapchains.clear();
+	// give it a chance to release anything here!
+	for (size_t s = 0; s < xr_swapchains.surface_data.size(); s++) {
+		tex_release(xr_swapchains.surface_data[s]);
+	}
 }
 
 ///////////////////////////////////////////
@@ -509,54 +516,48 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
 	xrLocateViews(xr_session, &locate_info, &view_state, (uint32_t)xr_views.size(), &view_count, xr_views.data());
-	views.resize(view_count);
+
+	// We need to ask which swapchain image to use for rendering! Which one will we get?
+	// Who knows! It's up to the runtime to decide.
+	uint32_t                    img_id;
+	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
+	xrAcquireSwapchainImage(xr_swapchains.handle, &acquire_info, &img_id);
+
+	// Wait until the image is available to render to. The compositor could still be
+	// reading from it.
+	XrSwapchainImageWaitInfo wait_info = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
+	wait_info.timeout = XR_INFINITE_DURATION;
+	xrWaitSwapchainImage(xr_swapchains.handle, &wait_info);
 
 	// And now we'll iterate through each viewpoint, and render it!
 	for (uint32_t i = 0; i < view_count; i++) {
-
-		// We need to ask which swapchain image to use for rendering! Which one will we get?
-		// Who knows! It's up to the runtime to decide.
-		uint32_t                    img_id;
-		XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-		xrAcquireSwapchainImage(xr_swapchains[i].handle, &acquire_info, &img_id);
-
-		// Wait until the image is available to render to. The compositor could still be
-		// reading from it.
-		XrSwapchainImageWaitInfo wait_info = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
-		wait_info.timeout = XR_INFINITE_DURATION;
-		xrWaitSwapchainImage(xr_swapchains[i].handle, &wait_info);
-
 		// Set up our rendering information for the viewpoint we're using right now!
 		views[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		views[i].pose = xr_views[i].pose;
 		views[i].fov  = xr_views[i].fov;
-		views[i].subImage.swapchain        = xr_swapchains[i].handle;
+		views[i].subImage.imageArrayIndex  = i;
+		views[i].subImage.swapchain        = xr_swapchains.handle;
 		views[i].subImage.imageRect.offset = { 0, 0 };
-		views[i].subImage.imageRect.extent = { xr_swapchains[i].width, xr_swapchains[i].height };
-
-		// Call the rendering callback with our view and swapchain info
-		tex_t target = xr_swapchains[i].surface_data[img_id];
-		tex_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
-		tex_rtarget_set_active(target);
-		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(
-			(float)views[i].subImage.imageRect.offset.x, 
-			(float)views[i].subImage.imageRect.offset.y, 
-			(float)views[i].subImage.imageRect.extent.width, 
-			(float)views[i].subImage.imageRect.extent.height);
-		d3d_context->RSSetViewports(1, &viewport);
+		views[i].subImage.imageRect.extent = { xr_swapchains.width, xr_swapchains.height };
 
 		float xr_projection[16];
-		matrix xr_proj_m;
 		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
-		memcpy(&xr_proj_m, xr_projection, sizeof(float) * 16);
-		matrix cam_transform;
-		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), cam_transform);
-		render_draw_matrix(cam_transform, xr_proj_m);
-
-		// And tell OpenXR we're done with rendering to this one!
-		XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
-		xrReleaseSwapchainImage(xr_swapchains[i].handle, &release_info);
+		memcpy(&xr_viewpt_proj[i], xr_projection, sizeof(float) * 16);
+		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), xr_viewpt_view[i]);
 	}
+
+	// Call the rendering callback with our view and swapchain info
+	tex_t target = xr_swapchains.surface_data[img_id];
+	tex_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
+	tex_rtarget_set_active(target);
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)xr_swapchains.width, (float)xr_swapchains.height);
+	d3d_context->RSSetViewports(1, &viewport);
+
+	render_draw_matrix(&xr_viewpt_view[0], &xr_viewpt_proj[0], view_count);
+
+	// And tell OpenXR we're done with rendering to this one!
+	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
+	xrReleaseSwapchainImage(xr_swapchains.handle, &release_info);
 
 	layer.space      = xr_app_space;
 	layer.viewCount  = (uint32_t)views.size();

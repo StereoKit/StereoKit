@@ -275,7 +275,10 @@ shader_t shader_create_file(const char *filename) {
 shader_t shader_create(const char *hlsl) {
 	shader_t result = (shader_t)assets_allocate(asset_type_shader);
 
-	shader_set_code(result, hlsl, nullptr);
+	if (!shader_set_code(result, hlsl, nullptr)) {
+		shader_release(result);
+		return false;
+	}
 	
 	return result;
 }
@@ -283,26 +286,29 @@ shader_t shader_create(const char *hlsl) {
 ///////////////////////////////////////////
 
 bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename) {
-	// Compile the shader code
-	shader_blob_t vert_shader_blob  = load_shader(filename, hlsl, "vs");
-	shader_blob_t pixel_shader_blob = load_shader(filename, hlsl, "ps");
-	if (vert_shader_blob.data == nullptr || pixel_shader_blob.data == nullptr)
-		return false;
-
-	// If the shader compiled fine, set up and send it to the GPU
-	if (shader->vshader != nullptr) shader->vshader->Release();
-	if (shader->pshader != nullptr) shader->pshader->Release();
-	if (FAILED(d3d_device->CreateVertexShader(vert_shader_blob.data, vert_shader_blob.size, nullptr, &shader->vshader)))
-		log_warnf("Issue creating vertex shader for %s", filename);
-	if (FAILED(d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader)))
-		log_warnf("Issue creating pixel shader for %s", filename);
-	DX11ResType(shader->vshader, "vertex_shader");
-	DX11ResType(shader->pshader, "pixel_shader");
 
 	// Check the parameters on this shader
 	shader_destroy_parsedata(shader);
 	shader_parse_file(shader, hlsl);
 	shaderargs_create(shader->args, shader->args_desc.buffer_size, 2);
+	if (filename == nullptr)
+		filename = shader->name;
+
+	// Compile the shader code
+	shader_blob_t vert_shader_blob  = load_shader(filename, hlsl, "vs");
+	if (vert_shader_blob.data == nullptr) return false;
+	shader_blob_t pixel_shader_blob = load_shader(filename, hlsl, "ps");
+	if (pixel_shader_blob.data == nullptr) return false;
+
+	// If the shader compiled fine, set up and send it to the GPU
+	if (shader->vshader != nullptr) shader->vshader->Release();
+	if (shader->pshader != nullptr) shader->pshader->Release();
+	if (FAILED(d3d_device->CreateVertexShader(vert_shader_blob.data, vert_shader_blob.size, nullptr, &shader->vshader)))
+		log_warnf("Issue creating vertex shader for %s", shader->name);
+	if (FAILED(d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader)))
+		log_warnf("Issue creating pixel shader for %s", shader->name);
+	DX11ResType(shader->vshader, "vertex_shader");
+	DX11ResType(shader->pshader, "pixel_shader");
 
 	// Describe how our mesh is laid out in memory
 	if (shader->vert_layout != nullptr) shader->vert_layout->Release();
@@ -310,7 +316,8 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 		{"SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},};
+		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"SV_RenderTargetArrayIndex" ,  0, DXGI_FORMAT_R32_UINT,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0} };
 	if (FAILED(d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob.data, vert_shader_blob.size, &shader->vert_layout)))
 		log_warnf("Issue creating vertex layout for %s", filename);
 

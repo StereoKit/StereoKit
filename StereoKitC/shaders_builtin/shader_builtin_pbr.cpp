@@ -1,14 +1,12 @@
-#include "shader_builtin.h"
-
 const char* sk_shader_builtin_pbr = R"_(// [name] sk/default_pbr
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view;
-	float4x4 sk_proj;
-	float4x4 sk_viewproj;
+	float4x4 sk_view[2];
+	float4x4 sk_proj[2];
+	float4x4 sk_viewproj[2];
 	float4   sk_light;
 	float4   sk_light_color;
-	float4   sk_camera_pos;
-	float4   sk_camera_dir;
+	float4   sk_camera_pos[2];
+	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
 	float    sk_time;
 };
@@ -44,6 +42,7 @@ struct psIn {
 	float3 normal : NORMAL;
 	float2 uv : TEXCOORD0;
 	float3 world : TEXCOORD1;
+	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
 // [texture] diffuse white
@@ -76,14 +75,15 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(float NdotL, float NdotV, float roughness);
 float3 FresnelSchlick(float NdotV, float3 surfaceColor, float metalness);
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj);
+	output.pos   = mul(float4(output.world,  1), sk_viewproj[view_id]);
 
 	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	output.uv     = input.uv * tex_scale;
 	output.color  = input.color * sk_inst[id].color.rgb * _color.rgb;
+	output.view_id = view_id;
 	return output;
 }
 
@@ -98,7 +98,7 @@ float4 ps(psIn input) : SV_TARGET{
 	float rough = max(1-(metal_rough.g * roughness), 0.001);
 
 	float3 normal = normalize(input.normal);
-	float3 view   = normalize(sk_camera_pos.xyz - input.world);
+	float3 view   = normalize(sk_camera_pos[input.view_id].xyz - input.world);
 	tex_norm = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
 	normal   = normalize(tex_norm);
 	float3 light    = -normalize(sk_light.xyz);

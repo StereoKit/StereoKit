@@ -299,7 +299,7 @@ SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
 SK_API void  tex_set_options         (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
-SK_API void  tex_add_zbuffer         (tex_t texture, tex_format_ format = tex_format_depthstencil);
+SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format = tex_format_depthstencil);
 SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
