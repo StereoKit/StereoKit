@@ -37,6 +37,7 @@ struct render_item_t {
 struct render_transform_buffer_t {
 	XMMATRIX world;
 	color128 color;
+	uint32_t view_id;
 };
 struct render_global_buffer_t {
 	XMMATRIX view[2];
@@ -70,7 +71,7 @@ struct render_screenshot_t {
 ///////////////////////////////////////////
 
 vector<render_transform_buffer_t> render_instance_list;
-render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 800 } };
+render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 682 } };
 
 vector<render_item_t>  render_queue;
 shaderargs_t           render_shader_globals;
@@ -217,7 +218,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, int32_t count) {
+void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
 
@@ -227,7 +228,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t c
 	});
 
 	// Copy camera information into the global buffer
-	for (int32_t i = 0; i < count; i++) {
+	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
 		math_matrix_to_fast(views[i],       &view_f);
 		math_matrix_to_fast(projections[i], &projection_f);
@@ -267,7 +268,10 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t c
 	mesh_t         last_mesh     = item->mesh;
 	
 	for (size_t i = 0; i < queue_size; i++) {
-		render_instance_list.emplace_back(render_transform_buffer_t { XMMatrixTranspose(item->transform), item->color } );
+		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+		for (uint32_t i = 0; i < view_count; i++) {
+			render_instance_list.emplace_back(render_transform_buffer_t { transpose, item->color, i } );
+		}
 
 		render_item_t *next = i+1>=queue_size?nullptr:&render_queue[i+1];
 		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {

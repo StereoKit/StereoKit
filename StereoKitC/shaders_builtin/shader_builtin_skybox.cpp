@@ -14,9 +14,10 @@ cbuffer GlobalBuffer : register(b0) {
 struct Inst {
 	float4x4 world;
 	float4   color;
+	uint     view_id;
 };
 cbuffer TransformBuffer : register(b1) {
-	Inst sk_inst[800];
+	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
@@ -32,16 +33,18 @@ struct vsIn {
 struct psIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL0;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 struct psOut {
     float4 color : SV_Target;
     float  depth : SV_Depth;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	output.pos  = mul(float4(input.pos.xyz, 0), sk_viewproj[view_id]);
-	output.norm = input.norm;
+	output.pos     = mul(float4(input.pos.xyz, 0), sk_viewproj[sk_inst[id].view_id]);
+	output.view_id = sk_inst[id].view_id;
+	output.norm    = input.norm;
 	return output;
 }
 

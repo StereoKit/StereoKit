@@ -14,9 +14,10 @@ cbuffer GlobalBuffer : register(b0) {
 struct Inst {
 	float4x4 world;
 	float4   color;
+	uint     view_id;
 };
 cbuffer TransformBuffer : register(b1) {
-	Inst sk_inst[800];
+	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
@@ -35,16 +36,17 @@ struct psIn {
 	float4 color : COLOR0;
 	float3 world : TEXCOORD1;
 	float3 normal: NORMAL;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 
 // [texture] diffuse white
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
-psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj[view_id]);
+	output.pos   = mul(float4(output.world,  1), sk_viewproj[sk_inst[id].view_id]);
 
 	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 
@@ -53,7 +55,8 @@ psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArray
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 	float4 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.9)*mip_levels);
 
-	output.color = _color * input.col * sk_inst[id].color * irradiance;
+	output.view_id = sk_inst[id].view_id;
+	output.color   = _color * input.col * sk_inst[id].color * irradiance;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {

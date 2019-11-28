@@ -11,6 +11,7 @@ struct _tex_t {
 	asset_header_t header;
 	tex_format_    format;
 	tex_type_      type;
+	int array_size;
 	int width;
 	int height;
 	ID3D11SamplerState       *sampler;

@@ -46,12 +46,6 @@ struct xr_input_t {
 	int      pointer_ids[3];
 };
 
-struct xr_viewpt_t {
-	matrix view;
-	matrix proj;
-	XrView xr_view;
-};
-
 ///////////////////////////////////////////
 
 XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
@@ -530,6 +524,7 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	xrWaitSwapchainImage(xr_swapchains.handle, &wait_info);
 
 	// And now we'll iterate through each viewpoint, and render it!
+	views.resize(view_count);
 	for (uint32_t i = 0; i < view_count; i++) {
 		// Set up our rendering information for the viewpoint we're using right now!
 		views[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };

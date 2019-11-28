@@ -34,7 +34,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id(texture->depth_buffer, id);
 	if (texture->texture != nullptr) {
-		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
+		tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->array_size);
 	}
 	return texture->depth_buffer;
 }
@@ -243,7 +243,7 @@ void tex_releasesurface(tex_t tex) {
 
 void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
 	bool dynamic        = texture->type & tex_type_dynamic;
-	bool different_size = texture->width != width || texture->height != height;
+	bool different_size = texture->width != width || texture->height != height || texture->array_size != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
 	if (texture->texture == nullptr || different_size) {
@@ -251,6 +251,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		
 		texture->width  = width;
 		texture->height = height;
+		texture->array_size = data_count;
 
 		bool result = tex_create_surface(texture, data, data_count);
 		if (result)
@@ -356,40 +357,46 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 	if (texture->type & tex_type_cubemap)
 		desc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-	D3D11_SUBRESOURCE_DATA *tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(data_count * desc.MipLevels * sizeof(D3D11_SUBRESOURCE_DATA));
-	for (int32_t i = 0; i < data_count; i++) {
-		void *curr_data = data[i];
+	// Generate mip-maps for the texture
+	D3D11_SUBRESOURCE_DATA *tex_mem = nullptr;
+	if (data != nullptr && data[0] != nullptr) {
+		tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(data_count * desc.MipLevels * sizeof(D3D11_SUBRESOURCE_DATA));
+		for (int32_t i = 0; i < data_count; i++) {
+			void *curr_data = data[i];
 		
-		tex_mem[i*desc.MipLevels].pSysMem     = curr_data;
-		tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex_format_size(texture->format) * texture->width);
+			tex_mem[i*desc.MipLevels].pSysMem     = curr_data;
+			tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex_format_size(texture->format) * texture->width);
 
-		if (mips) {
-			color32 *mip_data   = (color32*)curr_data;
-			int32_t  mip_width  = texture->width;
-			int32_t  mip_height = texture->height;
-			for (uint32_t m = 1; m < desc.MipLevels; m++) {
-				uint32_t index = i*desc.MipLevels + m;
-				tex_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
-				mip_data = (color32*)tex_mem[index].pSysMem;
-				tex_mem[index].SysMemPitch = (UINT)(tex_format_size(texture->format) * mip_width);
+			if (mips) {
+				color32 *mip_data   = (color32*)curr_data;
+				int32_t  mip_width  = texture->width;
+				int32_t  mip_height = texture->height;
+				for (uint32_t m = 1; m < desc.MipLevels; m++) {
+					uint32_t index = i*desc.MipLevels + m;
+					tex_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
+					mip_data = (color32*)tex_mem[index].pSysMem;
+					tex_mem[index].SysMemPitch = (UINT)(tex_format_size(texture->format) * mip_width);
+				}
 			}
 		}
 	}
 	
 	bool result = true;
-	if (FAILED(d3d_device->CreateTexture2D(&desc, data == nullptr || data[0] == nullptr ? nullptr : tex_mem, &texture->texture))) {
+	if (FAILED(d3d_device->CreateTexture2D(&desc, tex_mem, &texture->texture))) {
 		log_err("Create texture error!");
 		result = false;
 	}
 
 	// Free any mip-maps we've generated!
-	for (int32_t i = 0; i < data_count; i++) {
-		for (uint32_t m = 1; m < desc.MipLevels; m++) {
-			uint32_t index = i*desc.MipLevels + m;
-			free((void*)tex_mem[index].pSysMem);
-		} 
+	if (tex_mem != nullptr) {
+		for (int32_t i = 0; i < data_count; i++) {
+			for (uint32_t m = 1; m < desc.MipLevels; m++) {
+				uint32_t index = i*desc.MipLevels + m;
+				free((void*)tex_mem[index].pSysMem);
+			} 
+		}
+		free(tex_mem);
 	}
-	free(tex_mem);
 
 	return result;
 }
@@ -404,8 +411,9 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 	int old_height = texture->height;
 	D3D11_TEXTURE2D_DESC color_desc;
 	texture->texture->GetDesc(&color_desc);
-	texture->width  = color_desc.Width;
-	texture->height = color_desc.Height;
+	texture->width      = color_desc.Width;
+	texture->height     = color_desc.Height;
+	texture->array_size = color_desc.ArraySize;
 
 	bool created_views      = tex_create_views(texture, source_format);
 	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
@@ -417,14 +425,25 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 ///////////////////////////////////////////
 
 bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
-	DXGI_FORMAT format = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
-	bool        mips   = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
+	DXGI_FORMAT  format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
+	bool         mips      = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
+	unsigned int mip_count = (mips ? log2(texture->width) + 1 : 1);
 
 	if (!(texture->type & tex_type_depth)) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
 		res_desc.Format              = format;
-		res_desc.Texture2D.MipLevels = (UINT)(mips ? log2(texture->width) + 1 : 1);
-		res_desc.ViewDimension       = texture->type & tex_type_cubemap ? D3D11_SRV_DIMENSION_TEXTURECUBE : D3D11_SRV_DIMENSION_TEXTURE2D;
+		if (texture->type & tex_type_cubemap) {
+			res_desc.TextureCube.MipLevels = mip_count;
+			res_desc.ViewDimension         = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		} else if (texture->array_size > 1) {
+			res_desc.Texture2DArray.MipLevels = mip_count;
+			res_desc.Texture2DArray.ArraySize = texture->array_size;
+			res_desc.ViewDimension            = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		} else {
+			res_desc.Texture2D.MipLevels = mip_count;
+			res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
+		}
+		
 		if (FAILED(d3d_device->CreateShaderResourceView(texture->texture, &res_desc, &texture->resource))) {
 			log_err("Create Shader Resource View error!");
 			return false;
@@ -433,8 +452,14 @@ bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
 
 	if (texture->type & tex_type_rendertarget) {
 		D3D11_RENDER_TARGET_VIEW_DESC target_desc = {};
-		target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		target_desc.Format        = format;
+		target_desc.Format = format;
+		if (texture->type & tex_type_cubemap || texture->array_size > 1) {
+			target_desc.Texture2DArray.ArraySize = texture->array_size;
+			target_desc.ViewDimension            = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		} else {
+			target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		}
+
 		if (FAILED(d3d_device->CreateRenderTargetView(texture->texture, &target_desc, &texture->target_view))) {
 			log_err("Create Render Target View error!");
 			return false;
@@ -443,8 +468,13 @@ bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
 
 	if (texture->type & tex_type_depth) {
 		D3D11_DEPTH_STENCIL_VIEW_DESC stencil_desc = {};
-		stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-		stencil_desc.Format        = format;
+		stencil_desc.Format = format;
+		if (texture->type & tex_type_cubemap || texture->array_size > 1) {
+			stencil_desc.Texture2DArray.ArraySize = texture->array_size;
+			stencil_desc.ViewDimension            = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		} else {
+			stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		}
 		if (FAILED(d3d_device->CreateDepthStencilView(texture->texture, &stencil_desc, &texture->depth_view))) {
 			log_err("Create Depth Stencil View error!");
 			return false;

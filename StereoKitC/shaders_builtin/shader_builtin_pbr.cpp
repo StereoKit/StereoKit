@@ -13,9 +13,10 @@ cbuffer GlobalBuffer : register(b0) {
 struct Inst {
 	float4x4 world;
 	float4   color;
+	uint     view_id;
 };
 cbuffer TransformBuffer : register(b1) {
-	Inst sk_inst[800];
+	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
 SamplerState tex_cube_sampler;
@@ -75,15 +76,15 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(float NdotL, float NdotV, float roughness);
 float3 FresnelSchlick(float NdotV, float3 surfaceColor, float metalness);
 
-psIn vs(vsIn input, uint id : SV_InstanceID, uint view_id : SV_RenderTargetArrayIndex) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj[view_id]);
+	output.pos   = mul(float4(output.world,  1), sk_viewproj[sk_inst[id].view_id]);
 
-	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
-	output.uv     = input.uv * tex_scale;
-	output.color  = input.color * sk_inst[id].color.rgb * _color.rgb;
-	output.view_id = view_id;
+	output.view_id = sk_inst[id].view_id;
+	output.normal  = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
+	output.uv      = input.uv * tex_scale;
+	output.color   = input.color * sk_inst[id].color.rgb * _color.rgb;
 	return output;
 }
 
