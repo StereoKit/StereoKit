@@ -23,7 +23,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 
 ///////////////////////////////////////////
 
-void tex_add_zbuffer(tex_t texture, tex_format_ format) {
+tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err("Can't add a zbuffer to a non-rendertarget texture!");
 		return;
@@ -36,6 +36,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (texture->texture != nullptr) {
 		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
 	}
+	return texture->depth_buffer;
 }
 
 ///////////////////////////////////////////

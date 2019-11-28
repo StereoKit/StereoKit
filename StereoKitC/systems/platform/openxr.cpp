@@ -59,6 +59,7 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 xr_input_t     xr_input = {};
 XrTime         xr_time;
+bool           xr_depth_lsr = false;
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
 
@@ -260,6 +261,14 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 				out_extension_count += 1;
 				break;
 			}
+		}
+	}
+
+	// Flag any extensions the app will need to know about
+	if (out_extensions != nullptr) {
+		for (int32_t i = 0; i < out_extension_count; i++) {
+			if (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0)
+				xr_depth_lsr = true;
 		}
 	}
 
