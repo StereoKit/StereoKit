@@ -632,14 +632,14 @@ vec3 cubemap_corner(int i) {
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count, vec3 gradient_dir) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, int32_t resolution, vec3 gradient_dir) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
 		return nullptr;
 	}
 	gradient_dir = vec3_normalize(gradient_dir);
 
-	int32_t size  = gradient_count * 4;
+	int32_t size  = resolution;
 	// make size a power of two
 	int32_t power = (int32_t)logf((float)size);
 	if (pow(2, power) < size)
@@ -676,16 +676,7 @@ tex_t tex_gen_cubemap(const color32 *gradient_bot_to_top, int32_t gradient_count
 			pt = vec3_normalize(pt);
 
 			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
-			color32 color_a = gradient_bot_to_top[(int32_t)(pct * (gradient_count-1))];
-			color32 color_b = gradient_bot_to_top[mini((int32_t)(pct * (gradient_count-1)) + 1, gradient_count)];
-			pct = pct * (gradient_count - 1);
-			pct = pct - (int32_t)pct;
-
-			data[i][x+y*size] = {
-				(uint8_t)((color_b.r - color_a.r) * pct + color_a.r),
-				(uint8_t)((color_b.g - color_a.g) * pct + color_a.g),
-				(uint8_t)((color_b.b - color_a.b) * pct + color_a.b),
-				255 };
+			data[i][x + y * size] = gradient_get32(gradient_bot_to_top, pct);
 		}
 		}
 	}

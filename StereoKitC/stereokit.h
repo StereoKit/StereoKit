@@ -213,12 +213,27 @@ struct color128 {
 	float r, g, b, a;
 };
 
+struct gradient_key_t {
+	color128 color;
+	float    position;
+};
+
+SK_DeclarePrivateType(gradient_t);
+
 static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 
 SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
 SK_API vec3     color_to_hsv(color128 color);
 SK_API color128 color_lab   (float l, float a, float b, float transparency);
 SK_API vec3     color_to_lab(color128 color);
+inline color128 color_lerp  (color128 a, color128 b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
+
+SK_API gradient_t gradient_create ();
+SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
+SK_API void       gradient_add    (gradient_t gradient, color128 color, float position);
+SK_API color128   gradient_get    (gradient_t gradient, float at);
+SK_API color32    gradient_get32  (gradient_t gradient, float at);
+SK_API void       gradient_release(gradient_t gradient);
 
 ///////////////////////////////////////////
 
@@ -304,7 +319,7 @@ SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
-SK_API tex_t tex_gen_cubemap         (const color32 *gradient, int32_t gradient_count, vec3 gradient_dir);
+SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, int32_t resolution, vec3 gradient_dir);
 
 ///////////////////////////////////////////
 

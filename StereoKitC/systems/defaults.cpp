@@ -62,8 +62,12 @@ bool defaults_init() {
 		return false;
 
 	// Cubemap
-	color32 gradient[3] = { { 45,30,37,255 }, { 141,216,255,255 }, {255, 254, 241, 255} }; 
-	sk_default_cubemap = tex_gen_cubemap(gradient, 3, {1,2,1.5f});
+	gradient_key_t keys[] = { 
+		gradient_key_t { color128{45 /255.f, 30 /255.f, 37 /255.f, 255/255.f }, 0.0f},
+		gradient_key_t { color128{141/255.f, 216/255.f, 255/255.f, 255/255.f }, 0.75f},
+		gradient_key_t { color128{255/255.f, 254/255.f, 241/255.f, 255/255.f }, 1}};
+	gradient_t gradient = gradient_create_keys(keys, 3);
+	sk_default_cubemap = tex_gen_cubemap(gradient, 16, {1,2,1.5f});
 	tex_set_id(sk_default_cubemap, "default/cubemap");
 	render_set_skytex(sk_default_cubemap);
 	render_enable_skytex(true);

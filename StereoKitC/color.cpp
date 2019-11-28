@@ -5,6 +5,12 @@
 
 namespace sk {
 
+struct _gradient_t {
+	gradient_key_t *keys;
+	int32_t         count;
+	int32_t         capacity;
+};
+
 ///////////////////////////////////////////
 
 // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
@@ -96,4 +102,82 @@ vec3 color_to_lab(color128 color) {
 }
 
 ///////////////////////////////////////////
+
+gradient_t gradient_create() {
+	gradient_t result = (gradient_t)malloc(sizeof(_gradient_t));
+	*result = {};
+	return result;
+}
+
+///////////////////////////////////////////
+
+gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count) {
+	gradient_t result = gradient_create();
+	result->capacity = count;
+	result->keys     = (gradient_key_t*)malloc(sizeof(gradient_key_t) * count);
+	for (int32_t i = 0; i < count; i++) {
+		gradient_add(result, keys[i].color, keys[i].position);
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
+void gradient_add(gradient_t gradient, color128 color, float position) {
+	if (gradient->count + 1 >= gradient->capacity) {
+		gradient->capacity += 1;
+		gradient->keys = (gradient_key_t*)realloc(gradient->keys, sizeof(gradient_key_t) * gradient->capacity);
+	}
+
+	int index = gradient->count;
+	for (int32_t i = 0; i < gradient->count; i++) {
+		if (gradient->keys[i].position > position) {
+			index = i;
+			break;
+		}
+	}
+	for (int32_t i = gradient->count; i > index; i--) {
+		gradient->keys[i] = gradient->keys[i - 1];
+	}
+	gradient->keys[index] = { color,position };
+	gradient->count += 1;
+}
+
+///////////////////////////////////////////
+
+color128 gradient_get(gradient_t gradient, float at) {
+	if (gradient->count == 0)
+		return { 1,0,0,1 };
+	if (at < gradient->keys[0].position)
+		return gradient->keys[0].color;
+	if (at >= gradient->keys[gradient->count - 1].position)
+		return gradient->keys[gradient->count - 1].color;
+
+	for (int32_t i = 1; i < gradient->count; i++) {
+		if (gradient->keys[i].position >= at) {
+			float pct = (at - gradient->keys[i-1].position) / (gradient->keys[i].position - gradient->keys[i-1].position);
+			return color_lerp(gradient->keys[i-1].color, gradient->keys[i].color, pct);
+		}
+	}
+	return { 1,0,0,1 };
+}
+
+///////////////////////////////////////////
+
+color32 gradient_get32(gradient_t gradient, float at) {
+	color128 result = gradient_get(gradient, at);
+	return { 
+		(uint8_t)(result.r * 255.f), 
+		(uint8_t)(result.g * 255.f), 
+		(uint8_t)(result.b * 255.f), 
+		(uint8_t)(result.a * 255.f) };
+}
+
+///////////////////////////////////////////
+
+void gradient_release(gradient_t gradient) {
+	free(gradient->keys);
+	gradient = {};
+}
+
 }
