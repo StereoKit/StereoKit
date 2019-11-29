@@ -646,6 +646,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, int32_t resolution, 
 		power += 1;
 	size = (int32_t)pow(2, power);
 
+	float    half_px = 0.5f / size;
 	int32_t  size2 = size * size;
 	color32 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
@@ -656,14 +657,14 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, int32_t resolution, 
 		vec3 p4 = cubemap_corner(i * 4+3); 
 
 		for (int32_t y = 0; y < size; y++) {
-			float py = 1 - y / (float)(size-1);
+			float py = 1 - (y / (float)size + half_px);
 
 			// Top face is flipped on both axes
 			if (i == 2) {
 				py = 1 - py;
 			}
 		for (int32_t x = 0; x < size; x++) {
-			float px = x / (float)(size-1);
+			float px = x / (float)size + half_px;
 
 			// Top face is flipped on both axes
 			if (i == 2) {
