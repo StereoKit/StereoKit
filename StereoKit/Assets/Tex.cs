@@ -44,5 +44,10 @@ namespace StereoKit
             IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
+        public static Tex GenCubemap(Gradient gradient, int resolution, Vec3 gradientDirection)
+        {
+            IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, resolution, gradientDirection);
+            return tex == IntPtr.Zero ? null : new Tex(tex);
+        }
     }
 }

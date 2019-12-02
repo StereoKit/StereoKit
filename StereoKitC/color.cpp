@@ -1,5 +1,6 @@
 #include "stereokit.h"
 
+#include <string.h>
 #include <math.h>
 #include "math.h"
 
@@ -141,6 +142,26 @@ void gradient_add(gradient_t gradient, color128 color, float position) {
 	}
 	gradient->keys[index] = { color,position };
 	gradient->count += 1;
+}
+
+///////////////////////////////////////////
+
+void       gradient_set(gradient_t gradient, int32_t index, color128 color, float position) {
+	gradient->keys[index] = { color, position };
+}
+
+///////////////////////////////////////////
+
+void       gradient_remove(gradient_t gradient, int32_t index) {
+	memmove(&gradient->keys[index], &gradient->keys[index + 1], sizeof(gradient_key_t) * (gradient->count - (index + 1)));
+	gradient->capacity -= 1;
+	
+}
+
+///////////////////////////////////////////
+
+int32_t    gradient_count(gradient_t gradient) {
+	return gradient->count;
 }
 
 ///////////////////////////////////////////

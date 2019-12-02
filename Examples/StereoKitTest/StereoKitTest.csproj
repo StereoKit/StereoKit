@@ -86,6 +86,7 @@
     <Compile Include="DemoMath.cs" />
     <Compile Include="DemoPicker.cs" />
     <Compile Include="Demos.cs" />
+    <Compile Include="DemoSky.cs" />
     <Compile Include="DemoText.cs" />
     <Compile Include="DemoUI.cs" />
     <None Include="Guides\GuideGettingStarted.cs" />

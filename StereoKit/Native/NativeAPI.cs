@@ -58,6 +58,16 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern Color color_lab   (float l, float a, float b, float transparency);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern Vec3  color_to_lab(Color color);
 
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr  gradient_create ();
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr  gradient_create_keys([In] GradientKey[] keys, int count);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void    gradient_add    (IntPtr gradient, Color color, float position);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void    gradient_set    (IntPtr gradient, int index, Color color, float position);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void    gradient_remove (IntPtr gradient, int index);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern int     gradient_count  (IntPtr gradient);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern Color   gradient_get    (IntPtr gradient, float at);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern Color32 gradient_get32  (IntPtr gradient, float at);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void    gradient_release(IntPtr gradient);
+
         ///////////////////////////////////////////
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr mesh_find         (string id);
@@ -91,6 +101,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex_rtarget_clear       (IntPtr render_target, Color32 color);
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex_rtarget_set_active  (IntPtr render_target);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void   tex_get_data            (IntPtr texture, void* out_data, ulong out_data_size);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, int resolution, Vec3 gradient_dir);
 
         ///////////////////////////////////////////
 

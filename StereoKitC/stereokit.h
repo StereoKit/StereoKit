@@ -231,6 +231,9 @@ inline color128 color_lerp  (color128 a, color128 b, float t) { return {a.r + (b
 SK_API gradient_t gradient_create ();
 SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
 SK_API void       gradient_add    (gradient_t gradient, color128 color, float position);
+SK_API void       gradient_set    (gradient_t gradient, int32_t index, color128 color, float position);
+SK_API void       gradient_remove (gradient_t gradient, int32_t index);
+SK_API int32_t    gradient_count  (gradient_t gradient);
 SK_API color128   gradient_get    (gradient_t gradient, float at);
 SK_API color32    gradient_get32  (gradient_t gradient, float at);
 SK_API void       gradient_release(gradient_t gradient);
