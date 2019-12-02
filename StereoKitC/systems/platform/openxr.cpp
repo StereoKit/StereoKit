@@ -601,8 +601,8 @@ void openxr_make_actions() {
 	XrPath pose_path  [2];
 	XrPath select_path[2];
 	XrPath grip_path  [2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",       &pose_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",      &pose_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",       &pose_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose",      &pose_path[1]);
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
 
 	// microsoft / motion_controller

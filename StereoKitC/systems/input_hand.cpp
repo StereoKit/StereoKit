@@ -46,10 +46,28 @@ const hand_t &input_hand(handed_ hand) {
 ///////////////////////////////////////////
 
 void input_hand_init() {
+	material_t hand_mat = material_copy_id("default/material");
+	material_set_transparency(hand_mat, transparency_blend);
+
+	color32 gradient[16 * 16];
+	for (int32_t y = 0; y < 16; y++) {
+	for (int32_t x = 0; x < 16; x++) {
+		float pct = fminf((y / 10.0f), 1);
+		pct *= pct;
+		uint8_t a = (uint8_t)(pct * 255);
+		gradient[x + y * 16] = { 255, 255, 255, a };
+	} }
+	tex_t gradient_tex = tex_create();
+	tex_set_colors (gradient_tex, 16, 16, gradient);
+	tex_set_options(gradient_tex, tex_sample_linear, tex_address_clamp);
+	material_set_texture(hand_mat, "diffuse", gradient_tex);
+	material_set_queue_offset(hand_mat, -10);
+	
 	// Initialize the hands!
 	for (size_t i = 0; i < handed_max; i++) {
 		hand_state[i].visible  = true;
-		hand_state[i].material = material_find("default/material");
+		hand_state[i].material = hand_mat;
+		assets_addref(hand_state[i].material->header);
 
 		hand_state[i].info.root.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
@@ -59,6 +77,9 @@ void input_hand_init() {
 		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
 		solid_set_enabled(hand_state[i].solids[0], false);
 	}
+
+	tex_release(gradient_tex);
+	material_release(hand_mat);
 }
 
 ///////////////////////////////////////////
@@ -235,7 +256,9 @@ void input_hand_update_mesh(handed_ hand) {
 		int v = 0;
 		for (int f = 0; f < SK_FINGERS;      f++) {
 		for (int j = 0; j < SK_FINGERJOINTS; j++) {
-			float y = j / (float)(SK_FINGERJOINTS-1);
+			float y = f == 0 ?
+				(fmaxf(0,j-1) / (float)(SK_FINGERJOINTS-2)) :
+				(j / (float)(SK_FINGERJOINTS-1));
 			data.verts[v].uv  = { 0,y };
 			data.verts[v].col = { 255,255,255,255 };
 			v++;

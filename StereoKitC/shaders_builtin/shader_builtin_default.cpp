@@ -31,12 +31,12 @@ cbuffer ParamBuffer : register(b2) {
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
-	float3 col  : COLOR;
+	float4 col  : COLOR;
 	float2 uv   : TEXCOORD0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
-	float3 color : COLOR0;
+	float4 color : COLOR0;
 	float2 uv    : TEXCOORD0;
 	float3 world : TEXCOORD1;
 	float3 normal: NORMAL;
@@ -57,17 +57,14 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float w, h;
 	uint mip_levels;
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.9)*mip_levels).rgb;
+	float4 irradiance = float4(sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.9)*mip_levels).rgb, 1);
 
 	output.view_id = sk_inst[id].view_id;
 	output.uv      = input.uv * tex_scale;
-	output.color   = _color.rgb * input.col * sk_inst[id].color.rgb * irradiance;
+	output.color   = _color * input.col * sk_inst[id].color * irradiance;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float3 col = tex.Sample(tex_sampler, input.uv).rgb;
-
-	col = col * input.color;
-
-	return float4(col, _color.a); 
+	float4 col = tex.Sample(tex_sampler, input.uv);
+	return col * input.color;
 })_";

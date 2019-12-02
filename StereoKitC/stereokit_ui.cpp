@@ -135,6 +135,7 @@ bool ui_init() {
 	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
 
 	skui_font_mat   = material_find("default/material_font");
+	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find("default/font");
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color32{255,255,255,255});
 	
