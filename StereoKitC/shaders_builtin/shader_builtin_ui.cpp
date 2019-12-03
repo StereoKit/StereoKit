@@ -63,9 +63,11 @@ float4 ps(psIn input) : SV_TARGET {
 	float dist = 1;
 	for	(int i=0;i<2;i++) {
 		float3 delta = input.world - sk_fingertip[i].xyz;
-		dist = min( dist, dot(delta,delta) / (0.02 * 0.02));
+		dist = min( dist, dot(delta,delta) / (0.08 * 0.08));
 	}
-	float4 col = lerp(float4(0,0,0,0), input.color, dist);
+
+	float  pct = pow(1-dist, 5);
+	float4 col = float4(lerp(input.color.rgb, input.color.rgb*0.15f, pct), input.color.a * pct);
 
 	return col; 
 })_";
