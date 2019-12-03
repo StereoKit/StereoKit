@@ -108,6 +108,22 @@ main img {
     border: 1px solid #444;
 }
 
+#search-bar {
+    position: relative;
+}
+#search-bar span::before {
+    position: absolute;
+    display: block;
+    top: 16px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    content: "\1F5D9";
+    color: #444;
+    line-height: 10px;
+    cursor: pointer;
+}
+
 /* Tree customization styles */
 .tree-view {
     line-height: 160%;

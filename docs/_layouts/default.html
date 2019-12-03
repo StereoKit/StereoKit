@@ -1,6 +1,13 @@
 <!doctype html>
-<html lang="{{ site.lang | default: "en-US" }}">
+<html lang="{{ site.lang | default: 'en-US' }}">
     <head>
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-100580676-2"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'UA-100580676-2');
+		</script>
         {% seo %}
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -12,11 +19,12 @@
     <body>
 
         <header id="header">
-            <img src="{{site.url}}/img/StereoKitWideLight.svg" alt="StereoKit" height="100%"/>
+            <a href='{{site.url}}'><img src="{{site.url}}/img/StereoKitWideLight.svg" alt="StereoKit" height="100%"/></a>
         </header>
 
         <div id="search-bar">
-            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.."> 
+            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.." />
+            <span onclick="var input = document.getElementById('search'); input.value = ''; updateSearch(''); console.log(input);"></span>
         </div>
 
         <div id="breadcrumbs">
