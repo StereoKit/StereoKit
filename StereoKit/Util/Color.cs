@@ -13,6 +13,9 @@ namespace StereoKit
             this.b = b;
             this.a = a;
         }
+
+        /// <summary>Pure opaque white! Same as (255,255,255,255).</summary>
+        public static readonly Color32 White = new Color32(255, 255, 255, 255);
     }
 
     /// <summary>A color value stored as 4 floats with values that are generally between

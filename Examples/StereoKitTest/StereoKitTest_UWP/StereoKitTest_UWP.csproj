@@ -106,10 +106,10 @@
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+  <ItemGroup Condition="'$(UseDotNetNativeToolchain)' == 'true'">
     <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+  <ItemGroup Condition="'$(UseDotNetNativeToolchain)' == 'false'">
     <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>

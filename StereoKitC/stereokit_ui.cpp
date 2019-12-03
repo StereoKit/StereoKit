@@ -675,6 +675,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	bool result = false;
 	float color = 1;
 
+	matrix to_local = hierarchy_to_local();
 	ui_push_pose(movement, vec3{ 0,0,0 });
 
 	vec3     box_start = center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
@@ -702,16 +703,19 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_tip_pos[i] = input_hand((handed_)i).root.position;
-				start_tip_rot[i] = input_hand((handed_)i).root.orientation;
+				start_tip_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).root.position );
+				start_tip_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).root.orientation);
 			}
 			if (skui_hand[i].active == id) {
 				color = 0.5f;
 				result = true;
 
-				quat rot = quat_difference(start_tip_rot[i], input_hand((handed_)i).root.orientation);
+				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).root.position);
+				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).root.orientation);
 
-				movement.position    = input_hand((handed_)i).root.position + rot*(start_aff_pos[i] - start_tip_pos[i]);
+				quat rot = quat_difference(start_tip_rot[i], curr_rot);
+
+				movement.position    = curr_pos + rot*(start_aff_pos[i] - start_tip_pos[i]);
 				movement.orientation = start_aff_rot[i]*rot;
 				if (hand.state & input_state_unpinch) {
 					skui_hand[i].active = 0;

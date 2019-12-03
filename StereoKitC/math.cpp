@@ -174,6 +174,15 @@ vec3 matrix_mul_direction(const XMMATRIX &transform, const vec3 &direction) {
 
 ///////////////////////////////////////////
 
+quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
+	XMMATRIX mat = XMMatrixRotationQuaternion(math_quat_to_fast(orientation));
+	XMMATRIX fast_transform;
+	math_matrix_to_fast(transform, &fast_transform);
+	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixMultiply(mat, fast_transform)));
+}
+
+///////////////////////////////////////////
+
 matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &scale) {
 	XMMATRIX mat = XMMatrixAffineTransformation(
 		XMLoadFloat3((XMFLOAT3 *)& scale), DirectX::g_XMZero,

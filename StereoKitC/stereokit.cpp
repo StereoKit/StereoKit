@@ -52,9 +52,9 @@ void sk_set_settings(settings_t &settings) {
 
 	// Set some default values
 	if (sk_settings.flatscreen_width  == 0)
-		sk_settings.flatscreen_width  = 800;
+		sk_settings.flatscreen_width  = 1280;
 	if (sk_settings.flatscreen_height == 0)
-		sk_settings.flatscreen_height = 480;
+		sk_settings.flatscreen_height = 720;
 }
 
 ///////////////////////////////////////////

@@ -6,7 +6,8 @@ namespace StereoKitTest
     {
         static Gradient gradient = new Gradient(new GradientKey[] {
                 new GradientKey {color = Color.HSV(0.1f, 0.4f, 0.0f), position = 0},
-                new GradientKey {color = Color.HSV(0.7f, 0.6f, 0.5f), position = 0.5f},
+                new GradientKey {color = Color.HSV(0.7f, 0.6f, 0.4f), position = 0.33f},
+                new GradientKey {color = Color.HSV(0.7f, 0.6f, 0.6f), position = 0.67f},
                 new GradientKey {color = Color.HSV(0.3f, 0.4f, 0.8f), position = 1.0f} });
 
         static Pose dirPose = new Pose(new Vec3(0,0.1f,0), Quat.Identity);
@@ -30,13 +31,13 @@ namespace StereoKitTest
 
             UI.WindowBegin("Gradient", ref colorWinPose, new Vec2(20, 0)*Units.cm2m);
             UI.Label("Color Index"); UI.SameLine();
-            UI.HSlider("Index", ref index, 0, 2, 1, 10 * Units.cm2m);
-            Vec3 c = gradient.Get(index/2.0f).ToHSV();
+            UI.HSlider("Index", ref index, 0, 3, 1, 10 * Units.cm2m);
+            Vec3 c = gradient.Get(index/3.0f).ToHSV();
             bool colorDirty =     UI.HSlider("H", ref c.x, 0, 1, 0, 20 * Units.cm2m);
             colorDirty = UI.HSlider("S", ref c.y, 0, 1, 0, 20 * Units.cm2m) || colorDirty;
             colorDirty = UI.HSlider("V", ref c.z, 0, 1, 0, 20 * Units.cm2m) || colorDirty;
             if (colorDirty) {
-                gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/2.0f);
+                gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/3.0f);
             }
             if (colorDirty || dirChanged)
             {

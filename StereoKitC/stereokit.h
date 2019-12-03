@@ -161,6 +161,7 @@ SK_API void   matrix_inverse      (const matrix &a, matrix &out_matrix);
 SK_API void   matrix_mul          (const matrix &a, const matrix &b, matrix &out_matrix);
 SK_API vec3   matrix_mul_point    (const matrix &transform, const vec3 &point);
 SK_API vec3   matrix_mul_direction(const matrix &transform, const vec3 &direction);
+SK_API quat   matrix_mul_rotation (const matrix& transform, const quat &orientation);
 SK_API matrix matrix_trs          (const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 SK_API void   matrix_trs_out      (matrix &out_result, const vec3 &position, const quat &orientation = quat{0,0,0,1}, const vec3 &scale = vec3{1,1,1});
 
@@ -502,6 +503,12 @@ SK_API void     hierarchy_set_enabled(bool32_t enabled);
 SK_API bool32_t hierarchy_is_enabled ();
 SK_API const matrix &hierarchy_to_world();
 SK_API const matrix &hierarchy_to_local();
+SK_API vec3     hierarchy_to_local_point    (const vec3 &world_pt);
+SK_API vec3     hierarchy_to_local_direction(const vec3 &world_dir);
+SK_API quat     hierarchy_to_local_rotation (const quat &world_orientation);
+SK_API vec3     hierarchy_to_world_point    (const vec3 &local_pt);
+SK_API vec3     hierarchy_to_world_direction(const vec3 &local_dir);
+SK_API quat     hierarchy_to_world_rotation (const quat &local_orientation);
 
 ///////////////////////////////////////////
 
