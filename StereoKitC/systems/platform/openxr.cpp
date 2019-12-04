@@ -43,6 +43,8 @@ struct xr_input_t {
 	XrPosef  handPose[2];
 	XrBool32 renderHand[2];
 	XrBool32 handSelect[2];
+	quat     offset_rot[2];
+	vec3     offset_pos[2];
 	int      pointer_ids[3];
 };
 
@@ -655,6 +657,19 @@ void openxr_make_actions() {
 	attach_info.actionSets      = &xr_input.action_set;
 	xrAttachSessionActionSets(xr_session, &attach_info);
 
+	// Temporary orientation fix for WMR vs. HoloLens controllers
+	if (sk_info.display_type == display_opaque) {
+		xr_input.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
+		xr_input.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
+		xr_input.offset_pos[handed_left]  = { 0.01f, -0.01f, 0.015f };
+		xr_input.offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
+	} else {
+		xr_input.offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
+		xr_input.offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
+		xr_input.offset_pos[handed_left]  = { 0, 0.005f, 0 };
+		xr_input.offset_pos[handed_right] = { 0, 0.005f, 0 };
+	}
+
 	for (int32_t i = 1; i >= 0; i--) {
 		input_source_ hand = i == 0 ? input_source_hand_left : input_source_hand_right;
 		xr_input.pointer_ids[i] = input_add_pointer(input_source_can_press | input_source_hand | hand);
@@ -716,6 +731,8 @@ void openxr_poll_actions() {
 		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
 		pointer->state = pose_state.isActive ? pointer_state_available : pointer_state_none;
 		openxr_pose_to_pointer(space_location.pose, pointer);
+		pointer->orientation = xr_input.offset_rot[hand] * pointer->orientation;
+		pointer->ray.pos += pointer->orientation * xr_input.offset_pos[hand];
 
 		input_hand_sim((handed_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
 
