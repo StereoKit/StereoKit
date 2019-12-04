@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -15,17 +13,39 @@ namespace StereoKit
     {
         public float x, y, z;
 
+        /// <summary>Magnitude is the length of the vector! Or the distance from the origin
+        /// to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.</summary>
         public float Magnitude
         { 
-            get => (float)Math.Sqrt(x*x + y*y + z*z);
+            get => SKMath.Sqrt(x*x + y*y + z*z);
+        }
+        /// <summary>This is the squared magnitude of the vector! It skips the Sqrt call, and
+        /// just gives you the squared version for speedy calculations that can work with it squared.</summary>
+        public float MagnitudeSq {
+            get => x*x + y*y + z*z;
         }
 
+        /// <summary>Creates a vector from x, y, and z values! StereoKit uses a right-handed metric
+        /// coordinate system, where +x is to the right, +y is upwards, and -z is forward.</summary>
+        /// <param name="x">The x axis.</param>
+        /// <param name="y">The y axis.</param>
+        /// <param name="z">The z axis.</param>
         public Vec3(float x, float y, float z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
         }
+
+        /// <summary>Creates a normalized vector (vector with a length of 1) from the
+        /// current vector. Will not work properly if the vector has a length of zero.</summary>
+        /// <returns>The normalized (length of 1) vector!</returns>
+        public Vec3 Normalized()
+        {
+            float mag = SKMath.Sqrt(x*x+y*y+z*z);
+            return new Vec3(x/mag, y/mag, z/mag);
+        }
+
         public override string ToString()
         {
             return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}>", x, y, z);
@@ -48,6 +68,31 @@ namespace StereoKit
         public static Vec3 operator *(Vec3 a, float b) { return new Vec3(a.x * b, a.y * b, a.z * b); }
         public static Vec3 operator /(Vec3 a, float b) { return new Vec3(a.x / b, a.y / b, a.z / b); }
 
+        /// <summary>Calculates the distance between two points in space! Make sure they're in the
+        /// same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.</summary>
+        /// <param name="a">The first point/</param>
+        /// <param name="b">And the second point!</param>
+        /// <returns>Distance between the two points.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Distance(in Vec3 a, in Vec3 b)
+            => SKMath.Sqrt(a.x*b.x + a.y*b.y + a.z*b.z);
+
+        /// <summary>Calculates the distance between two points in space, but leaves them squared! Make 
+        /// sure they're in the same coordinate space! This is a fast function :)</summary>
+        /// <param name="a">The first point/</param>
+        /// <param name="b">And the second point!</param>
+        /// <returns>Distance between the two points, but squared!</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceSq(in Vec3 a, in Vec3 b)
+            => a.x*b.x + a.y*b.y + a.z*b.z;
+
+        /// <summary>The dot product is an extremely useful operation! One major use is to determine
+        /// how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then 
+        /// the result will be 1 if the vectors are the same, -1 if they're opposite, and a gradient 
+        /// in-between with 0 being perpendicular.</summary>
+        /// <param name="a">First vector.</param>
+        /// <param name="b">Second vector.</param>
+        /// <returns>The dot product!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Dot(in Vec3 a, in Vec3 b)
             => a.x*b.x + a.y*b.y + a.z*b.z;
@@ -74,17 +119,6 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vec3 PerpendicularRight(in Vec3 forward, in Vec3 up)
             => NativeAPI.vec3_cross(forward, up);
-
-        /// <summary>Creates a normalized vector (vector with a length of 1) from the
-        /// current vector. Will not work properly if the vector has a length of zero.</summary>
-        /// <returns>The normalized (length of 1) vector!</returns>
-        public Vec3 Normalized()
-        {
-            float mag = (float)Math.Sqrt(x*x+y*y+z*z);
-            return new Vec3(x/mag, y/mag, z/mag);
-        }
-
-        
 
         /// <summary>Creates a vector that points out at the given 2D angle! This
         /// creates the vector on the XZ plane, and allows you to specify a constant
