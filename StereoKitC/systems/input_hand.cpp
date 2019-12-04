@@ -45,7 +45,18 @@ const hand_t &input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
+void modify(pose_t *pose) {
+	for (size_t i = 0; i < 25; i++) {
+		pose[i].position *= 1.15f;
+	}
+}
+
 void input_hand_init() {
+	modify(&input_pose_fist   [0][0]);
+	modify(&input_pose_neutral[0][0]);
+	modify(&input_pose_point  [0][0]);
+	modify(&input_pose_pinch  [0][0]);
+
 	material_t hand_mat = material_copy_id("default/material");
 	material_set_transparency(hand_mat, transparency_blend);
 
