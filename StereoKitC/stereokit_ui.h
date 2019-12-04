@@ -12,7 +12,8 @@ struct ui_settings_t {
 	float backplate_border;
 };
 
-SK_API void     ui_settings(ui_settings_t settings);
+SK_API void     ui_settings (ui_settings_t settings);
+SK_API void     ui_set_color(color128 color);
 
 SK_API void     ui_layout_area (vec3 start, vec2 dimensions);
 SK_API void     ui_nextline    ();
@@ -23,7 +24,7 @@ SK_API void     ui_space       (float space);
 
 SK_API void     ui_model_at    (model_t model, vec3 start, vec3 size, color128 color);
 
-SK_API void     ui_label       (const char *text);
+SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
 SK_API bool32_t ui_button_round(const char *text, float diameter = 0);

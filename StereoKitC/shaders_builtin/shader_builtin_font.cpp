@@ -86,6 +86,6 @@ float4 ps(psIn input, bool frontface : SV_IsFrontFace) : SV_TARGET{
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, 0.8*mip_levels).rgb; // This should be Spherical Harmonics eventually
 
-	return float4(albedo * irradiance, text_value);
+	return float4(albedo, text_value);
 }
 )_";

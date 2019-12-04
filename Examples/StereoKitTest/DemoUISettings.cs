@@ -11,7 +11,7 @@ class DemoUISettings : IDemo
         backplateBorder = 0.5f * Units.mm2m,
         backplateDepth  = 0.4f,
         depth           = 15 * Units.mm2m,
-        gutter          = 20 * Units.mm2m,
+        gutter          = 10 * Units.mm2m,
         padding         = 10 * Units.mm2m
     };
 

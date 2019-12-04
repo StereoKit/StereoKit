@@ -19,7 +19,7 @@ class Program
         Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
 
         StereoKitApp.settings.assetsFolder = Program.Root;
-        if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality, true))
+        if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
         CommonInit();
 

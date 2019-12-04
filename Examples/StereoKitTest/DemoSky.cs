@@ -15,6 +15,9 @@ namespace StereoKitTest
         float index = 0;
         bool  prevState = false;
 
+        Mesh     lightProbeMesh = Mesh.GenerateSphere(0.1f);
+        Material lightProbeMat  = Material.Find(DefaultIds.material);
+
         public void Initialize() {
             Renderer.SkyTex = Tex.GenCubemap(gradient, dirPose.position);
         }
@@ -25,19 +28,22 @@ namespace StereoKitTest
         {
             bool moving = UI.AffordanceBegin("Direction", ref dirPose, Vec3.Zero, Vec3.One * 6 * Units.cm2m, true);
             UI.AffordanceEnd();
-            Lines.Add(Vec3.Zero, dirPose.position, Color.White, 0.01f);
+            Lines.Add(Vec3.Zero, dirPose.position, Color.White, 0.001f);
+            lightProbeMesh.Draw(lightProbeMat, Matrix.Identity);
             bool dirChanged = moving;// !moving && prevState;
             prevState = moving;
 
             UI.WindowBegin("Gradient", ref colorWinPose, new Vec2(20, 0)*Units.cm2m);
-            UI.Label("Color Index"); UI.SameLine();
-            UI.HSlider("Index", ref index, 0, 3, 1, 10 * Units.cm2m);
-            Vec3 c = gradient.Get(index/3.0f).ToHSV();
-            bool colorDirty =     UI.HSlider("H", ref c.x, 0, 1, 0, 20 * Units.cm2m);
-            colorDirty = UI.HSlider("S", ref c.y, 0, 1, 0, 20 * Units.cm2m) || colorDirty;
-            colorDirty = UI.HSlider("V", ref c.z, 0, 1, 0, 20 * Units.cm2m) || colorDirty;
+            UI.Label("Color Index");
+            UI.HSlider("Index", ref index, 0, gradient.Count, 1, 18 * Units.cm2m);
+            UI.Label("HSV Color");
+            Vec3 c = gradient.Get(index/gradient.Count).ToHSV();
+            bool colorDirty = UI.HSlider("H", ref c.x, 0, 1, 0, 18 * Units.cm2m);
+            colorDirty      = UI.HSlider("S", ref c.y, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
+            colorDirty      = UI.HSlider("V", ref c.z, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
+            Lines.Add(new Vec3(9, -23, 0) * Units.cm2m, new Vec3(-9, -23, 0) * Units.cm2m, Color.HSV(c.x, c.y, c.z), .01f);
             if (colorDirty) {
-                gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/3.0f);
+                gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/gradient.Count);
             }
             if (colorDirty || dirChanged)
             {

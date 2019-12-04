@@ -40,11 +40,11 @@ material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
 
 ui_settings_t skui_settings = {
-	10 * mm2m,
-	20 * mm2m,
-	15 * mm2m,
-	.4f,
-	0.5f * mm2m,
+	10 * mm2m, // padding
+	10 * mm2m, // gutter
+	15 * mm2m, // depth
+	.4f,       // backplate_depth
+	0.5f * mm2m, // backplate_border
 };
 float skui_fontsize = 15*mm2m;
 
@@ -54,8 +54,8 @@ float skui_prev_line_height;
 uint64_t skui_anim_id;
 float    skui_anim_time;
 
-const color128 skui_color_base   = { .25f,.25f,.35f, 1 };
 const color128 skui_color_border = { 1,1,1,1 };
+color128 skui_palette[5];
 
 ///////////////////////////////////////////
 
@@ -64,7 +64,7 @@ uint64_t ui_hash(const char *string);
 // Layout
 void ui_push_pose  (pose_t pose, vec3 offset);
 void ui_pop_pose   ();
-void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t skip_content_padding = false);
+void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding = true);
 void ui_reserve_box(vec2 size);
 
 void ui_nextline    ();
@@ -126,7 +126,21 @@ void ui_settings(ui_settings_t settings) {
 
 ///////////////////////////////////////////
 
+void ui_set_color(color128 color) {
+	vec3 hsv = color_to_hsv(color);
+	
+	skui_palette[0] = color;
+	skui_palette[1] = color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y,          hsv.z * 0.7f, color.a);
+	skui_palette[2] = color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.7f, color.a);
+	skui_palette[3] = color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.075f, hsv.z * 0.7f, color.a);
+	skui_palette[4] = color128{1, 1, 1, 1};
+}
+
+///////////////////////////////////////////
+
 bool ui_init() {
+	ui_set_color(color_hsv(0.07f, 0.8f, 0.5f, 1));
+
 	skui_box      = mesh_gen_cube(vec3_one);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find("default/material_ui");
@@ -137,7 +151,7 @@ bool ui_init() {
 	skui_font_mat   = material_find("default/material_font");
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find("default/font");
-	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color32{255,255,255,255});
+	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
 	
 	skui_layers.push_back({});
 
@@ -219,8 +233,8 @@ void ui_pop_pose() {
 
 void ui_layout_area(vec3 start, vec2 dimensions) {
 	layer_t &layer = skui_layers.back();
-	layer.offset_initial = start - vec3{skui_settings.padding, skui_settings.padding};
-	layer.offset         = layer.offset_initial;
+	layer.offset_initial = start;
+	layer.offset         = layer.offset_initial - vec3{ skui_settings.padding, -skui_settings.padding };
 	layer.size           = dimensions;
 	layer.max_x          = 0;
 	layer.line_height    = 0;
@@ -228,16 +242,16 @@ void ui_layout_area(vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
-void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t skip_content_padding) {
+void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding) {
 	out_position   = skui_layers.back().offset;
 	out_final_size = content_size;
-	if (!skip_content_padding)
+	if (use_content_padding)
 		out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
 
 	// If this is not the first element, and it goes outside the active window
 	if (out_position.x            != -skui_settings.padding &&
 		skui_layers.back().size.x != 0                      &&
-		out_position.x - out_final_size.x < skui_layers.back().offset_initial.x - skui_layers.back().size.x)
+		out_position.x - out_final_size.x < skui_layers.back().offset_initial.x - skui_layers.back().size.x + skui_settings.padding)
 	{
 		ui_nextline();
 		out_position = skui_layers.back().offset;
@@ -262,7 +276,7 @@ void ui_nextline() {
 	skui_prev_offset      = layer.offset;
 	skui_prev_line_height = layer.line_height;
 
-	layer.offset.x    = skui_layers.back().offset_initial.x + skui_settings.padding;
+	layer.offset.x    = skui_layers.back().offset_initial.x - skui_settings.padding;
 	layer.offset.y   -= skui_layers.back().line_height + skui_settings.gutter;
 	layer.line_height = 0;
 }
@@ -412,13 +426,14 @@ void ui_text(vec3 start, const char *text, text_align_ position) {
 ///////////   UI Components   /////////////
 ///////////////////////////////////////////
 
-void ui_label(const char *text) {
-	vec3 offset = skui_layers.back().offset;
-	vec2 size   = text_size(text, skui_font_style);
+void ui_label(const char *text, bool32_t use_padding) {
+	vec3  offset = skui_layers.back().offset;
+	vec2  size   = text_size(text, skui_font_style);
+	float pad    = use_padding ? skui_settings.padding : 0;
 
-	ui_layout_box (size, offset, size);
+	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
-	ui_text(offset - vec3{ 0, 0, 2*mm2m }, text);
+	ui_text(offset - vec3{pad, pad, 2*mm2m }, text);
 	ui_nextline();
 }
 
@@ -455,7 +470,7 @@ bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
-	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
+	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
@@ -496,7 +511,7 @@ bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, boo
 	}
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
-	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_color_base * color_blend);
+	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, text, text_align_center);
 
@@ -532,7 +547,7 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
-	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_color_base * color_blend);
+	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_palette[2] * color_blend);
 	ui_cylinder(window_relative_pos + vec3{back_size, back_size, mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
 	ui_text    (window_relative_pos - vec3{ diameter/2, diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
 
@@ -545,7 +560,7 @@ bool32_t ui_button_round(const char *text, float diameter) {
 	vec3 offset;
 	vec2 size = diameter == 0 ? text_size(text, skui_font_style) : vec2{diameter, diameter};
 	size = vec2_one * fmaxf(size.x, size.y);
-	ui_layout_box (size, offset, size, true);
+	ui_layout_box (size, offset, size, false);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
@@ -614,7 +629,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 	}
 
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_color_base * (focused ? 0.5f : 1.f) );
+	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_palette[2] * (focused ? 0.5f : 1.f) );
 	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_settings.depth/2 + 2*mm2m }, buffer, text_align_center);
 	ui_nextline();
 
@@ -659,10 +674,10 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_reserve_box(size);
 	float back_size = skui_settings.backplate_border;
 	// Slide line
-	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_palette[2] * color);
 	ui_box(vec3{ offset.x+back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z+mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
 	// Slide handle
-	ui_box(vec3{ offset.x - ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_color_base * color);
+	ui_box(vec3{ offset.x - ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_palette[2] * color);
 	ui_nextline();
 	
 	return result;
@@ -727,7 +742,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	}
 
 	if (draw) {
-		ui_box(center+dimensions/2, dimensions, skui_mat, skui_color_base * color);
+		ui_box(center+dimensions/2, dimensions, skui_mat, skui_palette[0] * color);
 		ui_nextline();
 	}
 	return color < 1;
@@ -745,15 +760,14 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 	if (window_size.x == 0) window_size.x = 32*cm2m;
 
 	if (show_header) {
-		vec3 offset = skui_layers.back().offset;
-		vec2 size   = text_size(text, skui_font_style);
+		vec2 size      = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
 		ui_affordance_begin(text, pose, box_start, box_size, true);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
+		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 
-		ui_reserve_box(size);
-		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,skui_settings.padding, -skui_settings.depth - 2*mm2m}, text);
+		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,box_size.y/2 - skui_settings.padding, -skui_settings.depth/2 - 2*mm2m}, text);
 		
 		ui_nextline();
 	} else {

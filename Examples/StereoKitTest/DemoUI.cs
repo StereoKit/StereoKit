@@ -42,8 +42,8 @@ class DemoUI : IDemo
     Model  clipboard     = new Model("Clipboard.glb");
     Sprite sprite        = new Sprite("Floor.png", SpriteType.Single);
     Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
-    bool  subtitles;
-    bool  clipButts;
+    bool  clipSubtitles;
+    bool  clipToggle;
     float clipSlider;
 
     public void Update()
@@ -102,8 +102,8 @@ class DemoUI : IDemo
         clipboard.Draw(Matrix.Identity);
         UI.LayoutArea(new Vec3(12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
         UI.Label("Application 'Settings'");
-        UI.Toggle("Subtitles", ref subtitles); UI.SameLine();
-        UI.Toggle("Butts", ref clipButts);
+        UI.Toggle("Subtitles", ref clipSubtitles); UI.SameLine();
+        UI.Toggle("Toggle", ref clipToggle);
         UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
         UI.Image(sprite, Vec2.One * UI.LineHeight); UI.SameLine();
         UI.Label("Test!");
@@ -119,13 +119,13 @@ class DemoUI : IDemo
                 Color.LAB(colorVal.x, colorVal.y, colorVal.z);
             colorVal = colorLab ? curr.ToLAB() : curr.ToHSV();
         }
-        UI.HSlider("x", ref colorVal.x, 0, 1, 0, 20*Units.cm2m);
-        UI.HSlider("y", ref colorVal.y, 0, 1, 0, 20*Units.cm2m);
-        UI.HSlider("z", ref colorVal.z, 0, 1, 0, 20*Units.cm2m);
+        UI.HSlider("x", ref colorVal.x, 0, 1, 0, 18*Units.cm2m);
+        UI.HSlider("y", ref colorVal.y, 0, 1, 0, 18*Units.cm2m);
+        UI.HSlider("z", ref colorVal.z, 0, 1, 0, 18*Units.cm2m);
         Color color = colorLab ? 
             Color.LAB(colorVal.x, colorVal.y, colorVal.z) : 
             Color.HSV(colorVal.x, colorVal.y, colorVal.z);
-        Lines.Add(new Vec3(10,-21,0)*Units.cm2m, new Vec3(-10,-21,0)*Units.cm2m, color, .01f);
+        Lines.Add(new Vec3(9,-16,0)*Units.cm2m, new Vec3(-9,-16,0)*Units.cm2m, color, .01f);
         UI.WindowEnd();
     }
     static Pose colorPose=new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));

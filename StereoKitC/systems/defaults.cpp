@@ -63,9 +63,9 @@ bool defaults_init() {
 
 	// Cubemap
 	gradient_key_t keys[] = { 
-		gradient_key_t { color128{45 /255.f, 30 /255.f, 37 /255.f, 255/255.f }, 0.0f},
-		gradient_key_t { color128{141/255.f, 216/255.f, 255/255.f, 255/255.f }, 0.75f},
-		gradient_key_t { color128{255/255.f, 254/255.f, 241/255.f, 255/255.f }, 1}};
+		gradient_key_t { color_hsv(0.1f, 0.05f, 0,   1), 0.0f},
+		gradient_key_t { color_hsv(0,    0,     .5f, 1), 0.5f},
+		gradient_key_t { color_hsv(0.6f, 0.05f, 1,   1), 1}};
 	gradient_t gradient = gradient_create_keys(keys, 3);
 	sk_default_cubemap = tex_gen_cubemap(gradient, {1,2,1.5f}, 16);
 	tex_set_id(sk_default_cubemap, "default/cubemap");

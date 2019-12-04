@@ -35,7 +35,9 @@ namespace StereoKit
         /// non-latin characters. Will advance layout to next line.</summary>
         /// <param name="text">Label text to display. Can contain newlines! May have trouble with
         /// non-latin characters. Doesn't use text as id, so it can be non-unique.</param>
-        public static void Label      (string text) => NativeAPI.ui_label(text);
+        /// <param name="usePadding">Should padding be included for positioning this text?
+        /// Sometimes you just want un-padded text!</param>
+        public static void Label      (string text, bool usePadding = true) => NativeAPI.ui_label(text, usePadding);
         public static void Image      (Sprite image, Vec2 size) { NativeAPI.ui_image(image._spriteInst, size); }
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
