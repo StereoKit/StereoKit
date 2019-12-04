@@ -386,6 +386,19 @@ void openxr_shutdown() {
 	for (size_t s = 0; s < xr_swapchains.surface_data.size(); s++) {
 		tex_release(xr_swapchains.surface_data[s]);
 	}
+	xrDestroySwapchain(xr_swapchains.handle);
+
+	// Release all the other OpenXR resources that we've created!
+	// What gets allocated, must get deallocated!
+	if (xr_input.action_set != XR_NULL_HANDLE) {
+		if (xr_input.handSpace[0] != XR_NULL_HANDLE) xrDestroySpace(xr_input.handSpace[0]);
+		if (xr_input.handSpace[1] != XR_NULL_HANDLE) xrDestroySpace(xr_input.handSpace[1]);
+		xrDestroyActionSet(xr_input.action_set);
+	}
+	if (xr_head_space != XR_NULL_HANDLE) xrDestroySpace   (xr_head_space);
+	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
+	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
+	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
 }
 
 ///////////////////////////////////////////
