@@ -18,6 +18,9 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	tex_t result = (tex_t)assets_allocate(asset_type_texture);
 	result->type   = type;
 	result->format = format;
+	result->address_mode = tex_address_wrap;
+	result->sample_mode  = tex_sample_linear;
+	result->anisotropy   = 4;
 	return result;
 }
 
@@ -289,6 +292,9 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 ///////////////////////////////////////////
 
 void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+	texture->address_mode = address_mode;
+	texture->anisotropy   = anisotropy_level;
+	texture->sample_mode  = sample;
 	if (texture->sampler != nullptr)
 		texture->sampler->Release();
 
@@ -321,6 +327,48 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 	// can just lean on that to prevent sampler duplicates :)
 	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &texture->sampler)))
 		log_warnf("tex_set_options: failed to create sampler state!");
+}
+
+///////////////////////////////////////////
+
+void tex_set_sample(tex_t texture, tex_sample_ sample) {
+	texture->sample_mode = sample;
+	if (texture->sampler != nullptr)
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+tex_sample_ tex_get_sample(tex_t texture) {
+	return texture->sample_mode;
+}
+
+///////////////////////////////////////////
+
+void tex_set_address(tex_t texture, tex_address_ address_mode) {
+	texture->address_mode = address_mode;
+	if (texture->sampler != nullptr)
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+tex_address_ tex_get_address(tex_t texture) {
+	return texture->address_mode;
+}
+
+///////////////////////////////////////////
+
+void tex_set_anisotropy(tex_t texture, int32_t anisotropy_level) {
+	texture->anisotropy = anisotropy_level;
+	if (texture->sampler != nullptr)
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+int32_t tex_get_anisotropy(tex_t texture) {
+	return texture->anisotropy;
 }
 
 ///////////////////////////////////////////
@@ -632,7 +680,7 @@ vec3 cubemap_corner(int i) {
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, int32_t resolution, vec3 gradient_dir) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
 		return nullptr;

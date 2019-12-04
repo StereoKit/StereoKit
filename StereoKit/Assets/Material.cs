@@ -124,7 +124,7 @@ namespace StereoKit
         /// <param name="value">New value for the parameter.</param>
         public void SetTexture(string name, Tex value)
         {
-            NativeAPI.material_set_texture(_materialInst, name, value._texInst);
+            NativeAPI.material_set_texture(_materialInst, name, value._inst);
         }
 
         /// <summary>Looks for a Material asset that's already loaded, matching the given id!</summary>

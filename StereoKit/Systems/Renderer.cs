@@ -16,7 +16,7 @@ namespace StereoKit
         public static Tex SkyTex
         {
             get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
-            set => NativeAPI.render_set_skytex(value._texInst);
+            set => NativeAPI.render_set_skytex(value._inst);
         }
 
         /// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque
@@ -60,7 +60,7 @@ namespace StereoKit
             => NativeAPI.render_set_view(cameraTransform);
 
         public static void Blit(Tex toRendertarget, Material material)
-            => NativeAPI.render_blit(toRendertarget._texInst, material._materialInst);
+            => NativeAPI.render_blit(toRendertarget._inst, material._materialInst);
 
         /// <summary>Schedules a screenshot for the end of the frame! The view will be
         /// rendered from the given position at the given point, with a resolution the same

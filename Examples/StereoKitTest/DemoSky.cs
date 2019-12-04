@@ -16,7 +16,7 @@ namespace StereoKitTest
         bool  prevState = false;
 
         public void Initialize() {
-            Renderer.SkyTex = Tex.GenCubemap(gradient, 16, dirPose.position);
+            Renderer.SkyTex = Tex.GenCubemap(gradient, dirPose.position);
         }
 
         public void Shutdown() { }
@@ -41,7 +41,7 @@ namespace StereoKitTest
             }
             if (colorDirty || dirChanged)
             {
-                Renderer.SkyTex = Tex.GenCubemap(gradient, 16, dirPose.position);
+                Renderer.SkyTex = Tex.GenCubemap(gradient, dirPose.position);
             }
             UI.WindowEnd();
         }

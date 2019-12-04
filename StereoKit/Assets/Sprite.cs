@@ -10,7 +10,7 @@ namespace StereoKit
         
         public Sprite(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
         {
-            _spriteInst = NativeAPI.sprite_create(image._texInst, type, atlasId);
+            _spriteInst = NativeAPI.sprite_create(image._inst, type, atlasId);
             if (_spriteInst == IntPtr.Zero)
                 Log.Write(LogLevel.Warning, "Couldn't create sprite!");
         }

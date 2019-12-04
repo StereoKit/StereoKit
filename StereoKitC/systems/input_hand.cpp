@@ -59,7 +59,7 @@ void input_hand_init() {
 	} }
 	tex_t gradient_tex = tex_create();
 	tex_set_colors (gradient_tex, 16, 16, gradient);
-	tex_set_options(gradient_tex, tex_sample_linear, tex_address_clamp);
+	tex_set_address(gradient_tex, tex_address_clamp);
 	material_set_texture(hand_mat, "diffuse", gradient_tex);
 	material_set_queue_offset(hand_mat, -10);
 	

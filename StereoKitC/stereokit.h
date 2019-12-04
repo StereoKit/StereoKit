@@ -317,13 +317,18 @@ SK_API void  tex_set_id              (tex_t texture, const char *id);
 SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
-SK_API void  tex_set_options         (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
 SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format = tex_format_depthstencil);
 SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
-SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, int32_t resolution, vec3 gradient_dir);
+SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
+SK_API void         tex_set_sample    (tex_t texture, tex_sample_ sample = tex_sample_linear);
+SK_API tex_sample_  tex_get_sample    (tex_t texture);
+SK_API void         tex_set_address   (tex_t texture, tex_address_ address_mode = tex_address_wrap);
+SK_API tex_address_ tex_get_address   (tex_t texture);
+SK_API void         tex_set_anisotropy(tex_t texture, int32_t anisotropy_level = 4);
+SK_API int32_t      tex_get_anisotropy(tex_t texture);
 
 ///////////////////////////////////////////
 
