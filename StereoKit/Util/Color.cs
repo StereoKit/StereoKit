@@ -69,6 +69,9 @@ namespace StereoKit
         public Vec3 ToHSV()
             => NativeAPI.color_to_hsv(this);
 
+        /// <summary>Converts the RGB color to a CIE LAB color space value! Conversion back and forth
+        /// from LAB space could be somewhat lossy.</summary>
+        /// <returns>An LAB vector where x=L, y=A, z=B.</returns>
         public Vec3 ToLAB()
             => NativeAPI.color_to_lab(this);
 
@@ -85,6 +88,16 @@ namespace StereoKit
         public static Color HSV(float hue, float saturation, float value, float opacity = 1)
             => NativeAPI.color_hsv(hue, saturation, value, opacity);
 
+        /// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
+        /// human perception, and has significantly more accurate to perception lightness values, so this is 
+        /// an excellent color space for color operations that wish to preserve color brightness properly. 
+        /// Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1
+        /// range. If you hate it, let me know why!</summary>
+        /// <param name="l">Lightness of the color! Range is 0-1.</param>
+        /// <param name="a">'a' is from red to green. Range is 0-1.</param>
+        /// <param name="b">'b' is from blue to yellow. Range is 0-1.</param>
+        /// <param name="opacity">The opacity copied into the final color!</param>
+        /// <returns>An RGBA color constructed from the LAB values.</returns>
         public static Color LAB(float l, float a, float b, float opacity = 1)
             => NativeAPI.color_lab(l, a, b, opacity);
 
