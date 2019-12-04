@@ -16,6 +16,13 @@ the id during runtime! Ids are also scoped per-window, so different windows can 
 same id, but a window cannot use the same id twice.
 
 
+## Fields and Properties
+
+|  |  |
+|--|--|
+|float [LineHeight]({{site.url}}/Pages/Reference/UI/LineHeight.html)|This is the height of a single line of text with padding in the UI's layout system!|
+
+
 
 ## Methods
 
