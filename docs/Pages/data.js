@@ -17,7 +17,11 @@ var documents =
 			},
 			{
 			name : 'Color',
-			pages : ['a','b','Black','BlackTransparent','g','r','White','Color','HSV','ToHSV'],
+			pages : ['a','b','Black','BlackTransparent','g','r','White','Color','HSV','LAB','ToHSV','ToLAB'],
+			},
+			{
+			name : 'Color32',
+			pages : ['White'],
 			},
 			{
 			name : 'Cull',
@@ -33,7 +37,7 @@ var documents =
 			},
 			{
 			name : 'Hierarchy',
-			pages : ['Enabled','Pop','Push'],
+			pages : ['Enabled','Pop','Push','ToLocal','ToLocalDirection','ToWorld','ToWorldDirection'],
 			},
 			{
 			name : 'Lines',
@@ -77,7 +81,7 @@ var documents =
 			},
 			{
 			name : 'Renderer',
-			pages : ['EnableSky','SkyTex','Screenshot','SetClip','SetView'],
+			pages : ['EnableSky','SkyTex','Add','Blit','Screenshot','SetClip','SetView'],
 			},
 			{
 			name : 'Runtime',
@@ -93,7 +97,7 @@ var documents =
 			},
 			{
 			name : 'SKMath',
-			pages : ['Cos','Sin'],
+			pages : ['Cos','Sin','Sqrt'],
 			},
 			{
 			name : 'Solid',
@@ -106,6 +110,10 @@ var documents =
 			{
 			name : 'StereoKitApp',
 			pages : ['Initialize','Quit','Shutdown','Step'],
+			},
+			{
+			name : 'Tex',
+			pages : ['AddressMode','Anisoptropy','Id','SampleMode','Tex','Find','FromEquirectangular','GenCubemap'],
 			},
 			{
 			name : 'TexAddress',
@@ -141,7 +149,7 @@ var documents =
 			},
 			{
 			name : 'UI',
-			pages : ['Button','ButtonRound','HSlider','Label','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			pages : ['LineHeight','Button','ButtonRound','HSlider','Label','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
 			},
 			{
 			name : 'Units',
@@ -153,7 +161,7 @@ var documents =
 			},
 			{
 			name : 'Vec3',
-			pages : ['Forward','One','Right','Up','Zero','AngleXY','AngleXZ','Cross','Normalized','PerpendicularRight'],
+			pages : ['Forward','Magnitude','MagnitudeSq','One','Right','Up','Zero','Vec3','AngleXY','AngleXZ','Cross','Distance','DistanceSq','Dot','Normalized','PerpendicularRight'],
 			},
 		]
 		},

@@ -31,5 +31,9 @@ matrix multiplication in that case :)
 |--|--|
 |[Pop]({{site.url}}/Pages/Reference/Hierarchy/Pop.html)|Removes the top Matrix from the stack!|
 |[Push]({{site.url}}/Pages/Reference/Hierarchy/Push.html)|Pushes a transform Matrix onto the stack, and combines it with the Matrix below it. Any draw operation's Matrix will now be combined with this Matrix to make it relative to the current hierarchy. Use Hierarchy.Pop to remove it from the Hierarchy stack! All Push calls must have an accompanying Pop call.|
+|[ToLocal]({{site.url}}/Pages/Reference/Hierarchy/ToLocal.html)|Converts a world space point into the local space of the current Hierarchy stack!|
+|[ToLocalDirection]({{site.url}}/Pages/Reference/Hierarchy/ToLocalDirection.html)|Converts a world space direction into the local space of the current Hierarchy stack! This excludes the translation component normally applied to vectors, so it's still a valid direction.|
+|[ToWorld]({{site.url}}/Pages/Reference/Hierarchy/ToWorld.html)|Converts a local point relative to the current hierarchy stack into world space!|
+|[ToWorldDirection]({{site.url}}/Pages/Reference/Hierarchy/ToWorldDirection.html)|Converts a local direction relative to the current hierarchy stack into world space! This excludes the translation component normally applied to vectors, so it's still a valid direction.|
 
 

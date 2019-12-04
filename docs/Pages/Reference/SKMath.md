@@ -17,5 +17,6 @@ and from using these methods.
 |--|--|
 |[Cos]({{site.url}}/Pages/Reference/SKMath/Cos.html)|Same as Math.Cos|
 |[Sin]({{site.url}}/Pages/Reference/SKMath/Sin.html)|Same as Math.Sin|
+|[Sqrt]({{site.url}}/Pages/Reference/SKMath/Sqrt.html)|Same as Math.Sqrt|
 
 

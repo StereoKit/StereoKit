@@ -35,6 +35,8 @@ try out the static Color.HSV method instead!
 |--|--|
 |[Color]({{site.url}}/Pages/Reference/Color/Color.html)|Try Color.HSV instead! But if you really need to create a color from RGB values, I suppose you're in the right place. All parameter values are generally in the range of 0-1.|
 |[HSV]({{site.url}}/Pages/Reference/Color/HSV.html)|Creates a Red/Green/Blue color from Hue/Saturation/Value information.|
+|[LAB]({{site.url}}/Pages/Reference/Color/LAB.html)|Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models human perception, and has significantly more accurate to perception lightness values, so this is an excellent color space for color operations that wish to preserve color brightness properly. Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1 range. If you hate it, let me know why!|
 |[ToHSV]({{site.url}}/Pages/Reference/Color/ToHSV.html)|Converts the color to a Hue/Saturation/Value format! Does not consider transparency when calculating the result.|
+|[ToLAB]({{site.url}}/Pages/Reference/Color/ToLAB.html)|Converts the RGB color to a CIE LAB color space value! Conversion back and forth from LAB space could be somewhat lossy.|
 
 

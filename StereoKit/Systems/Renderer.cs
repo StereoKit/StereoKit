@@ -27,13 +27,41 @@ namespace StereoKit
             set => NativeAPI.render_enable_skytex(value);
         }
 
+        /// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="mesh">A valid Mesh you wish to draw.</param>
+        /// <param name="material">A Material to apply to the Mesh.</param>
+        /// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
+        /// Hierarchy Space.</param>
         public static void Add(Mesh mesh, Material material, Matrix transform)
             => NativeAPI.render_add_mesh(mesh._meshInst, material._materialInst, transform, Color.White);
+        /// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="mesh">A valid Mesh you wish to draw.</param>
+        /// <param name="material">A Material to apply to the Mesh.</param>
+        /// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
+        /// Hierarchy Space.</param>
+        /// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
+        /// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
+        /// spot to pack in extra per-instance data for the shader!</param>
         public static void Add(Mesh mesh, Material material, Matrix transform, Color color)
             => NativeAPI.render_add_mesh(mesh._meshInst, material._materialInst, transform, color);
-        
+
+        /// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="model">A valid Model you wish to draw.</param>
+        /// <param name="transform">A Matrix that will transform the Model from Model Space into the current
+        /// Hierarchy Space.</param>
         public static void Add(Model model, Matrix transform)
             => NativeAPI.render_add_model(model._modelInst, transform, Color.White);
+        /// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="model">A valid Model you wish to draw.</param>
+        /// <param name="transform">A Matrix that will transform the Model from Model Space into the current
+        /// Hierarchy Space.</param>
+        /// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
+        /// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
+        /// spot to pack in extra per-instance data for the shader!</param>
         public static void Add(Model model, Matrix transform, Color color)
             => NativeAPI.render_add_model(model._modelInst, transform, color);
 
@@ -59,6 +87,11 @@ namespace StereoKit
         public static void SetView(Matrix cameraTransform)
             => NativeAPI.render_set_view(cameraTransform);
 
+        /// <summary>Renders a Material onto a rendertarget texture! StereoKit uses a 4 vert quad stretched
+        /// over the surface of the texture, and renders the material onto it to the texture.</summary>
+        /// <param name="toRendertarget">A texture that's been set up as a render target!</param>
+        /// <param name="material">This material is rendered onto the texture! Set it up like you would
+        /// if you were applying it to a plane, or quad mesh.</param>
         public static void Blit(Tex toRendertarget, Material material)
             => NativeAPI.render_blit(toRendertarget._inst, material._materialInst);
 
