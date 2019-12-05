@@ -111,7 +111,7 @@ void win32_mouse_hand() {
 
 	pointer_cursor->state = pointer_state_none;
 
-	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf() * 8;
+	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf_unscaled() * 8;
 
 	ray_t ray = {};
 	if (ray_from_mouse(input_mouse_data.pos, ray)) {

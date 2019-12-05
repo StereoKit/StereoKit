@@ -92,7 +92,7 @@ inline bounds_t ui_size_box(vec3 top_left, vec3 dimensions) {
 inline void ui_anim_start(uint64_t id) {
 	if (skui_anim_id != id) {
 		skui_anim_id = id;
-		skui_anim_time = time_getf();
+		skui_anim_time = time_getf_unscaled();
 	}
 }
 
@@ -100,7 +100,7 @@ inline void ui_anim_start(uint64_t id) {
 
 inline bool ui_anim_has(uint64_t id, float duration) {
 	if (id == skui_anim_id) {
-		if ((time_getf() - skui_anim_time) < duration)
+		if ((time_getf_unscaled() - skui_anim_time) < duration)
 			return true;
 		skui_anim_id = 0;
 	}
@@ -110,7 +110,7 @@ inline bool ui_anim_has(uint64_t id, float duration) {
 ///////////////////////////////////////////
 
 inline float ui_anim_elapsed(uint64_t id, float duration = 1, float max = 1) {
-	return skui_anim_id == id ? fminf(max, (time_getf() - skui_anim_time) / duration) : 0;
+	return skui_anim_id == id ? fminf(max, (time_getf_unscaled() - skui_anim_time) / duration) : 0;
 }
 
 ///////////////////////////////////////////

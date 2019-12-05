@@ -34,11 +34,16 @@ bool32_t      sk_run      = true;
 
 bool sk_initialized = false;
 
+double  sk_timev_scale = 1;
 float   sk_timevf = 0;
 double  sk_timev  = 0;
+float   sk_timevf_us = 0;
+double  sk_timev_us  = 0;
 double  sk_time_start     = 0;
 double  sk_timev_elapsed  = 0;
 float   sk_timev_elapsedf = 0;
+double  sk_timev_elapsed_us  = 0;
+float   sk_timev_elapsedf_us = 0;
 int64_t sk_timev_raw      = 0;
 
 ///////////////////////////////////////////
@@ -188,10 +193,14 @@ void sk_update_timer() {
 	if (sk_time_start == 0)
 		sk_time_start = time_curr;
 	double new_time = time_curr - sk_time_start;
-	sk_timev_elapsed  = new_time - sk_timev;
-	sk_timev          = new_time;
-	sk_timev_elapsedf = (float)sk_timev_elapsed;
-	sk_timevf         = (float)sk_timev;
+	sk_timev_elapsed_us  =  new_time - sk_timev_us;
+	sk_timev_elapsed     = (new_time - sk_timev_us) * sk_timev_scale;
+	sk_timev_us          = new_time;
+	sk_timev            += sk_timev_elapsed;
+	sk_timev_elapsedf_us = (float)sk_timev_elapsed_us;
+	sk_timev_elapsedf    = (float)sk_timev_elapsed;
+	sk_timevf_us         = (float)sk_timev_us;
+	sk_timevf            = (float)sk_timev;
 }
 
 ///////////////////////////////////////////
@@ -200,10 +209,14 @@ runtime_ sk_active_runtime() { return sk_runtime; }
 
 ///////////////////////////////////////////
 
-float  time_getf    (){ return sk_timevf; };
-double time_get     (){ return sk_timev; };
-float  time_elapsedf(){ return sk_timev_elapsedf; };
-double time_elapsed (){ return sk_timev_elapsed; };
-
+float  time_getf_unscaled    (){ return sk_timevf_us; };
+double time_get_unscaled     (){ return sk_timev_us; };
+float  time_getf             (){ return sk_timevf; };
+double time_get              (){ return sk_timev; };
+float  time_elapsedf_unscaled(){ return sk_timev_elapsedf_us; };
+double time_elapsed_unscaled (){ return sk_timev_elapsed_us; };
+float  time_elapsedf         (){ return sk_timev_elapsedf; };
+double time_elapsed          (){ return sk_timev_elapsed; };
+void   time_scale(double scale) { sk_timev_scale = scale; }
 
 } // namespace sk

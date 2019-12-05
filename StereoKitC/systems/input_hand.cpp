@@ -87,6 +87,8 @@ void input_hand_init() {
 		hand_state[i].solids[0] = solid_create(vec3_zero, quat_identity, solid_type_unaffected);
 		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
 		solid_set_enabled(hand_state[i].solids[0], false);
+
+		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 	}
 
 	tex_release(gradient_tex);
@@ -185,7 +187,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 
 		// Blend our active pose with our desired pose, for smooth transitions
 		// between poses
-		float delta = time_elapsedf() * 30;
+		float delta = time_elapsedf_unscaled() * 30;
 		delta = delta>1?1:delta;
 		for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 5; j++) {

@@ -66,10 +66,15 @@ SK_API const system_info_t &sk_get_info();
 
 ///////////////////////////////////////////
 
+SK_API float    time_getf_unscaled();
+SK_API double   time_get_unscaled ();
 SK_API float    time_getf();
 SK_API double   time_get ();
+SK_API float    time_elapsedf_unscaled();
+SK_API double   time_elapsed_unscaled ();
 SK_API float    time_elapsedf();
 SK_API double   time_elapsed ();
+SK_API void     time_scale(double scale);
 
 ///////////////////////////////////////////
 
