@@ -49,7 +49,7 @@ class DemoUI : IDemo
     public void Update()
     {
         if (Demos.TestMode)
-            Renderer.Screenshot(new Vec3(-0.325f,-0.025f,.075f), new Vec3(-.4f,-0.075f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterface.jpg");
+            Renderer.Screenshot(new Vec3(-0.325f,-0.00f,.075f), new Vec3(-.4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterface.jpg");
 
         /// :CodeDoc: Guides User Interface
         /// Then we'll move over to the application step where we'll do the rest of the UI code!

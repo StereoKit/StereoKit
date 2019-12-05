@@ -140,7 +140,7 @@ class DemoMath : IDemo
         UI.AffordanceEnd();
 
         if (Demos.TestMode)
-            Renderer.Screenshot(crossStart + new Vec3(0.075f, 0.1f, -0.15f), crossStart + new Vec3(0.075f,0,0), 400, 400, "../../../docs/img/screenshots/CrossProduct.jpg");
+            Renderer.Screenshot(poseCross.position + new Vec3(0.075f, 0.1f, 0.15f), poseCross.position + new Vec3(0.075f,0,0), 400, 400, "../../../docs/img/screenshots/CrossProduct.jpg");
     }
 
     public void Initialize() {
