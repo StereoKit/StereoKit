@@ -13,6 +13,7 @@ namespace StereoKit
     public static class UI
     {
         public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
+        public static Color      ColorScheme { set{ NativeAPI.ui_set_color(value); } }
 
         /// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
         public static float LineHeight { get =>NativeAPI.ui_line_height(); }
