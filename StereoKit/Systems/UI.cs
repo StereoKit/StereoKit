@@ -49,11 +49,9 @@ namespace StereoKit
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>
-        /// <param name="text">Text to display on the button, should be per-window unique as it
-        /// will be used as the element id.</param>
         /// <param name="diameter">The diameter of the button's visual.</param>
         /// <returns>Will return true only on the first frame it is pressed!</returns>
-        public static bool ButtonRound(string text, float diameter = 0) => NativeAPI.ui_button_round(text, diameter);
+        public static bool ButtonRound(string id, Sprite image, float diameter = 0) => NativeAPI.ui_button_round(id, image._spriteInst, diameter);
         /// <summary>A toggleable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true any time 
         /// the toggle value changes!</summary>

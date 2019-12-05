@@ -532,7 +532,7 @@ bool32_t ui_toggle(const char *text, bool32_t &pressed) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text) {
+bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text, sprite_t image) {
 	uint64_t      id = ui_hash(text);
 	float         finger_offset;
 	button_state_ state = ui_button_behavior(window_relative_pos, {diameter,diameter}, id, finger_offset);
@@ -549,22 +549,22 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 
 	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_palette[2] * color_blend);
 	ui_cylinder(window_relative_pos + vec3{back_size, back_size, mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
-	ui_text    (window_relative_pos - vec3{ diameter/2, diameter/2, finger_offset + 2*mm2m }, text, text_align_center);
+	sprite_draw(image, matrix_trs(window_relative_pos + vec3{ -diameter, 0, -(finger_offset + 2*mm2m) }, quat_identity, vec3{ diameter, diameter, 1 }));
 
 	return state & button_state_just_down;
 }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_round(const char *text, float diameter) {
+bool32_t ui_button_round(const char *id, sprite_t image, float diameter) {
 	vec3 offset;
-	vec2 size = diameter == 0 ? text_size(text, skui_font_style) : vec2{diameter, diameter};
+	vec2 size = diameter == 0 ? text_size(id, skui_font_style) : vec2{diameter, diameter};
 	size = vec2_one * fmaxf(size.x, size.y);
 	ui_layout_box (size, offset, size, false);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
-	return ui_button_round_at(offset, size.x, text);
+	return ui_button_round_at(offset, size.x, id, image);
 }
 
 ///////////////////////////////////////////

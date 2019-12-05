@@ -40,7 +40,7 @@ class DemoUI : IDemo
     /// :End:
 
     Model  clipboard     = new Model("Clipboard.glb");
-    Sprite sprite        = new Sprite("Floor.png", SpriteType.Single);
+    Sprite powerSprite   = new Sprite("power.png", SpriteType.Single);
     Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  clipSubtitles;
     bool  clipToggle;
@@ -83,7 +83,7 @@ class DemoUI : IDemo
 
         /// Here's how you use a simple button! Just check it with an 'if'. Any UI method
         /// will return true on the frame when their value or state has changed.
-        if (UI.ButtonRound("Exit"))
+        if (UI.ButtonRound("Exit", powerSprite))
             StereoKitApp.Quit();
 
         /// And for every begin, there must also be an end! StereoKit will log errors when this
@@ -105,9 +105,9 @@ class DemoUI : IDemo
         UI.Toggle("Subtitles", ref clipSubtitles); UI.SameLine();
         UI.Toggle("Toggle", ref clipToggle);
         UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
-        UI.Image(sprite, Vec2.One * UI.LineHeight); UI.SameLine();
+        UI.Image(powerSprite, Vec2.One * UI.LineHeight); UI.SameLine();
         UI.Label("Test!");
-        UI.ButtonRound("Press", UI.LineHeight); UI.SameLine();
+        UI.ButtonRound("Press", powerSprite, UI.LineHeight); UI.SameLine();
         UI.Button("Squeeze");
         UI.AffordanceEnd();
         
