@@ -61,13 +61,17 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float dist = 1;
+	float ring = 0;
 	for	(int i=0;i<2;i++) {
-		float3 delta = input.world - sk_fingertip[i].xyz;
-		dist = min( dist, dot(delta,delta) / (0.08 * 0.08));
+		float3 delta = sk_fingertip[i].xyz - input.world;
+		float3 norm = normalize(delta);
+		float d = dot(delta,delta) / (0.08 * 0.08);
+		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.5)*200*d) );
+		dist = min( dist, d );
 	}
 
 	float  pct = pow(1-dist, 5);
-	float4 col = float4(lerp(input.color.rgb, input.color.rgb*3, pct), input.color.a * (1-pct));
+	float4 col = float4(lerp(input.color.rgb, input.color.rgb*3, pct + (ring*pct)), input.color.a * (1-pct));
 
 	return col; 
 })_";
