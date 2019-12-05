@@ -125,7 +125,7 @@ class DemoUI : IDemo
         Color color = colorLab ? 
             Color.LAB(colorVal.x, colorVal.y, colorVal.z) : 
             Color.HSV(colorVal.x, colorVal.y, colorVal.z);
-        Lines.Add(new Vec3(9,-16,0)*Units.cm2m, new Vec3(-9,-16,0)*Units.cm2m, color, .01f);
+        Lines.Add(new Vec3(9,-21,0)*Units.cm2m, new Vec3(-9,-21,0)*Units.cm2m, color, .01f);
         UI.WindowEnd();
     }
     static Pose colorPose=new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));

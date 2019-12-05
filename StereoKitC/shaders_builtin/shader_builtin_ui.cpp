@@ -67,7 +67,7 @@ float4 ps(psIn input) : SV_TARGET {
 	}
 
 	float  pct = pow(1-dist, 5);
-	float4 col = float4(lerp(input.color.rgb, input.color.rgb*0.15f, pct), input.color.a * (1-pct));
+	float4 col = float4(lerp(input.color.rgb, input.color.rgb*3, pct), input.color.a * (1-pct));
 
 	return col; 
 })_";

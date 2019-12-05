@@ -37,8 +37,9 @@ namespace StereoKit
         }
         ~Solid()
         {
-            if (_inst != IntPtr.Zero)
-                NativeAPI.solid_release(_inst);
+            // TODO: Figure out how to shut this down properly
+            //if (_inst != IntPtr.Zero)
+            //    NativeAPI.solid_release(_inst);
         }
 
         /// <summary>Is the Solid enabled in the physics simulation? Set this to false if you 

@@ -31,18 +31,18 @@ class DemoUISettings : IDemo
         UI.WindowBegin("Settings", ref settingsPose, new Vec2(24, 0) * Units.cm2m);
 
         UI.Label("Spacing");
-        UI.Label("Padding", false); UI.SameLine();
+        UI.Label("Padding"); UI.SameLine();
         UI.HSlider("sl_padding", ref globalSettings.padding, 0, 40*Units.mm2m, 0);
-        UI.Label("Gutter", false); UI.SameLine();
+        UI.Label("Gutter"); UI.SameLine();
         UI.HSlider("sl_gutter", ref globalSettings.gutter, 0, 40*Units.mm2m, 0);
 
-        UI.Label("Depth", false); UI.SameLine();
+        UI.Label("Depth"); UI.SameLine();
         UI.HSlider("sl_depth", ref globalSettings.depth, 0, 40 * Units.mm2m, 0);
 
         UI.Label("Backplate");
-        UI.Label("Depth", false); UI.SameLine();
+        UI.Label("Depth"); UI.SameLine();
         UI.HSlider("sl_pl_depth", ref globalSettings.backplateDepth, 0, 0.99f, 0);
-        UI.Label("Border", false); UI.SameLine();
+        UI.Label("Border"); UI.SameLine();
         UI.HSlider("sl_pl_border", ref globalSettings.backplateBorder, 0, 10 * Units.mm2m, 0);
 
         UI.WindowEnd();

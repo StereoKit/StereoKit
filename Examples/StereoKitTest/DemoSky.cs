@@ -41,7 +41,7 @@ namespace StereoKitTest
             bool colorDirty = UI.HSlider("H", ref c.x, 0, 1, 0, 18 * Units.cm2m);
             colorDirty      = UI.HSlider("S", ref c.y, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
             colorDirty      = UI.HSlider("V", ref c.z, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
-            Lines.Add(new Vec3(9, -23, 0) * Units.cm2m, new Vec3(-9, -23, 0) * Units.cm2m, Color.HSV(c.x, c.y, c.z), .01f);
+            Lines.Add(new Vec3(9, -28, 0) * Units.cm2m, new Vec3(-9, -28, 0) * Units.cm2m, Color.HSV(c.x, c.y, c.z), .01f);
             if (colorDirty) {
                 gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/gradient.Count);
             }
