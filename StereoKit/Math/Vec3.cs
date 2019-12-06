@@ -11,20 +11,17 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Vec3
     {
+        /// <summary>Vector components.</summary>
         public float x, y, z;
 
         /// <summary>Magnitude is the length of the vector! Or the distance from the origin
         /// to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.</summary>
-        public float Magnitude
-        { 
-            get => SKMath.Sqrt(x*x + y*y + z*z);
-        }
+        public float Magnitude => SKMath.Sqrt(x*x + y*y + z*z);
+        
         /// <summary>This is the squared magnitude of the vector! It skips the Sqrt call, and
         /// just gives you the squared version for speedy calculations that can work with it squared.</summary>
-        public float MagnitudeSq {
-            get => x*x + y*y + z*z;
-        }
-
+        public float MagnitudeSq => x*x + y*y + z*z;
+        
         /// <summary>Creates a vector from x, y, and z values! StereoKit uses a right-handed metric
         /// coordinate system, where +x is to the right, +y is upwards, and -z is forward.</summary>
         /// <param name="x">The x axis.</param>
@@ -44,6 +41,17 @@ namespace StereoKit
         {
             float mag = SKMath.Sqrt(x*x+y*y+z*z);
             return new Vec3(x/mag, y/mag, z/mag);
+        }
+
+        /// <summary>Turns this vector into a normalized vector (vector with a length of 1) from the
+        /// current vector. Will not work properly if the vector has a length of zero.</summary>
+        /// <returns>The normalized (length of 1) vector!</returns>
+        public void Normalize()
+        {
+            float mag = SKMath.Sqrt(x*x+y*y+z*z);
+            x /= mag;
+            y /= mag;
+            z /= mag;
         }
 
         public override string ToString()
