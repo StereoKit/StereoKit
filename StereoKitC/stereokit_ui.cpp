@@ -663,7 +663,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
 			skui_hand[i].focused = id;
 			color = 1.5f;
-			float new_val = min + (fabsf(skui_hand[i].finger.x - offset.x) / size.x) * (max - min);
+			float new_val = min + fminf(1,fmaxf(0,(fabsf(skui_hand[i].finger.x - offset.x) / size.x))) * (max - min);
 			if (step != 0) {
 				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
 			}
@@ -682,7 +682,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_palette[2] * color);
 	ui_box(vec3{ offset.x+back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z+mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
 	// Slide handle
-	ui_box(vec3{ offset.x - ((value-min)/(max-min))*size.x - rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_palette[2] * color);
+	ui_box(vec3{ (offset.x - ((value-min)/(max-min))*size.x) + rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_palette[0] * color);
 	ui_nextline();
 	
 	return result;
@@ -750,7 +750,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 		ui_box(center+dimensions/2, dimensions, skui_mat, skui_palette[0] * color);
 		ui_nextline();
 	}
-	return color < 1;
+	return color > 1;
 }
 
 ///////////////////////////////////////////
