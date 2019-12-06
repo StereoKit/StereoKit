@@ -19,6 +19,12 @@ namespace StereoKit
         /// basically a default, no rotation quaternion.</summary>
         public static readonly Quat Identity = new Quat(0, 0, 0, 1);
 
+        /// <summary>You may want to use static creation methods, like Quat.LookAt, 
+        /// or Quat.Identity instead of this one! Unless you know what you're doing.</summary>
+        /// <param name="x">X component of the Quat.</param>
+        /// <param name="y">Y component of the Quat.</param>
+        /// <param name="z">Z component of the Quat.</param>
+        /// <param name="w">W component of the Quat.</param>
         public Quat(float x, float y, float z, float w)
         {
             this.x = x;
@@ -32,6 +38,7 @@ namespace StereoKit
             return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}>", x, y, z, w);
         }
 
+        /// <summary>A normalized quaternion has the same orientation, and a length of 1.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Normalize()
         {
@@ -87,8 +94,14 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat FromAngles(float pitchXDeg, float yawYDeg, float rollZDeg) => NativeAPI.quat_from_angles(pitchXDeg, yawYDeg, rollZDeg);
 
+        /// <summary>Spherical Linear intERPolation. Interpolates between two quaternions! Both
+        /// Quats should be normalized/unit quaternions, or you may get unexpected results.</summary>
+        /// <param name="a">Start quaternion, should be normalized/unit length.</param>
+        /// <param name="b">End quaternion, should be normalized/unit length.</param>
+        /// <param name="slerp">The interpolation amount! This'll be a if 0, and b if 1. Unclamped.</param>
+        /// <returns>A blend between the two quaternions!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Quat Lerp(Quat a, Quat b, float lerp) => NativeAPI.quat_lerp(a, b, lerp);
+        public static Quat Slerp(Quat a, Quat b, float slerp) => NativeAPI.quat_slerp(a, b, slerp);
 
     }
 }

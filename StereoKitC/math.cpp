@@ -56,7 +56,7 @@ quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg) {
 
 ///////////////////////////////////////////
 
-quat quat_lerp(const quat &a, const quat &b, float t) {
+quat quat_slerp(const quat &a, const quat &b, float t) {
 	XMVECTOR blend = XMQuaternionSlerp(XMLoadFloat4((XMFLOAT4 *)& a), XMLoadFloat4((XMFLOAT4 *)& b), t);
 	return math_fast_to_quat(blend);
 }

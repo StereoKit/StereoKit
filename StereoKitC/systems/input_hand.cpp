@@ -192,8 +192,8 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 		for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 5; j++) {
 			pose_t *p = &hand_state[handedness].pose_blend[f][j];
-			p->position    = vec3_lerp(p->position,    dest_pose[f * 5 + j].position,    delta);
-			p->orientation = quat_lerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
+			p->position    = vec3_lerp (p->position,    dest_pose[f * 5 + j].position,    delta);
+			p->orientation = quat_slerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
 		} }
 	
 		for (size_t f = 0; f < 5; f++) {
