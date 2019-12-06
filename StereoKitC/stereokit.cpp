@@ -64,7 +64,7 @@ void sk_set_settings(settings_t &settings) {
 
 ///////////////////////////////////////////
 
-const system_info_t& sk_get_info() {
+system_info_t sk_system_info() {
 	return sk_info;
 }
 

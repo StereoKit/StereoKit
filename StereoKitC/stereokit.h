@@ -56,13 +56,13 @@ struct system_info_t {
 	display_ display_type;
 };
 
-SK_API bool32_t sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
-SK_API void     sk_shutdown      ();
-SK_API void     sk_quit          ();
-SK_API bool32_t sk_step          (void (*app_update)(void));
-SK_API runtime_ sk_active_runtime();
-SK_API void     sk_set_settings  (settings_t& settings);
-SK_API const system_info_t &sk_get_info();
+SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
+SK_API void          sk_shutdown      ();
+SK_API void          sk_quit          ();
+SK_API bool32_t      sk_step          (void (*app_update)(void));
+SK_API runtime_      sk_active_runtime();
+SK_API void          sk_set_settings  (settings_t& settings);
+SK_API system_info_t sk_system_info   ();
 
 ///////////////////////////////////////////
 

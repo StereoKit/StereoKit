@@ -57,7 +57,9 @@ class Program
     }
     static void CommonUpdate()
     {
-        Renderer.Add(floorMesh, floorTr, Color.White);
+        // If we can't see the world, we'll draw a floor!
+        if (StereoKitApp.System.displayType == Display.Opaque)
+            Renderer.Add(floorMesh, floorTr, Color.White);
 
         // Skip selection window if we're in test mode
         if (Demos.TestMode)

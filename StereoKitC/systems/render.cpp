@@ -411,7 +411,7 @@ void render_update() {
 	if (hierarchy_stack.size() > 0)
 		log_err("Render transform stack doesn't have matching begin/end calls!");
 
-	if (render_sky_show && sk_get_info().display_type == display_opaque) {
+	if (render_sky_show && sk_system_info().display_type == display_opaque) {
 		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
 	}
 }

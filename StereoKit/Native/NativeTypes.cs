@@ -29,6 +29,19 @@ namespace StereoKit
         public string assetsFolder;
     }
 
+    public enum Display
+    {
+        Opaque = 0,
+        Additive,
+        Passthrough,
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct SystemInfo
+    {
+        public Display displayType;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct UISettings
     {

@@ -5,12 +5,25 @@ namespace StereoKit
     /// <summary>This class contains functions for running the StereoKit library!</summary>
     public static class StereoKitApp
     {
-        public static Settings settings;
-        public static bool     IsInitialized { get; private set; }
-        public static Runtime  ActiveRuntime { get { return NativeAPI.sk_active_runtime(); } }
+        private static SystemInfo _system;
 
-        /// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling this function, if defaults need changed!</summary>
-        /// <param name="name">Name of the application, this shows up an the top of the Win32 window, and is submitted to OpenXR. OpenXR caps this at 128 characters.</param>
+        /// <summary>Settings for more detailed initialization of StereoKit! Set these before calling Initialize,
+        /// otherwise they'll be ignored.</summary>
+        public static Settings   settings;
+        /// <summary>Has StereoKit been successfully initialized already? If initialization was attempted and 
+        /// failed, this value will be false.</summary>
+        public static bool       IsInitialized { get; private set; }
+        /// <summary>Since we can fallback to a different Runtime, this lets you check to see which Runtime
+        /// was successfully initialized.</summary>
+        public static Runtime    ActiveRuntime => NativeAPI.sk_active_runtime();
+        /// <summary>This structure contains information about the current system and its capabilites. There's a 
+        /// lot of different MR devices, so it's nice to have code for systems with particular characteristics!</summary>
+        public static SystemInfo System => _system;
+
+        /// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling 
+        /// this function, if defaults need changed!</summary>
+        /// <param name="name">Name of the application, this shows up an the top of the Win32 window, and is 
+        /// submitted to OpenXR. OpenXR caps this at 128 characters.</param>
         /// <param name="runtimePreference">Which runtime should we try to load?</param>
         /// <param name="fallback">If the preferred runtime fails, should we fall back to flatscreen?</param>
         /// <returns>Returns true if all systems are successfully initialized!</returns>
@@ -27,7 +40,13 @@ namespace StereoKit
             // DllImport finds the function at the beginning of the function call,
             // so this needs to be in a separate function from NativeLib.LoadDll
             NativeAPI.sk_set_settings(settings);
-            return NativeAPI.sk_init(name, runtime, fallback?1:0) > 0;
+            bool result = NativeAPI.sk_init(name, runtime, fallback ? 1 : 0) > 0;
+
+            // Get system information
+            if (result)
+                _system = NativeAPI.sk_system_info();
+
+            return result;
         }
 
         /// <summary>Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.</summary>
