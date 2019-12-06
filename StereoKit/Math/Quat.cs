@@ -13,23 +13,23 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Quat
     {
-        public float i, j, k, a;
+        public float x, y, z, w;
 
         /// <summary>This is the 'multiply by one!' of the quaternion rotation world. It's 
         /// basically a default, no rotation quaternion.</summary>
         public static readonly Quat Identity = new Quat(0, 0, 0, 1);
 
-        public Quat(float i, float j, float k, float a)
+        public Quat(float x, float y, float z, float w)
         {
-            this.i = i;
-            this.j = j;
-            this.k = k;
-            this.a = a;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.w = w;
         }
 
         public override string ToString()
         {
-            return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}>", i, j, k, a);
+            return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}>", x, y, z, w);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

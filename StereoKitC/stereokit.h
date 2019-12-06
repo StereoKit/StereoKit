@@ -91,7 +91,7 @@ struct rect {
 	float x, y, w, h;
 };
 struct quat {
-	float i, j, k, a;
+	float x, y, z, w;
 };
 struct matrix {
 	vec4 row[4];

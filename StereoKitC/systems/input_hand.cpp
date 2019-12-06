@@ -204,8 +204,8 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			if (handedness == handed_right) {
 				// mirror along x axis, our pose data is for left hand
 				pos.x = -pos.x;
-				rot.j = -rot.j;
-				rot.k = -rot.k;
+				rot.y = -rot.y;
+				rot.z = -rot.z;
 			}
 			hand.fingers[f][j].position    = orientation * pos + hand_pos;
 			hand.fingers[f][j].orientation = rot * orientation;

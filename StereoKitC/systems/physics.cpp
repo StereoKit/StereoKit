@@ -184,7 +184,7 @@ void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
 
 void solid_move(solid_t solid, const vec3 &position, const quat &rotation) {
 	RigidBody *body = (RigidBody *)solid;
-	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.i, rotation.j, rotation.k, rotation.a)});
+	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)});
 }
 
 ///////////////////////////////////////////
