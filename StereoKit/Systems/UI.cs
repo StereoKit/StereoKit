@@ -39,7 +39,7 @@ namespace StereoKit
         /// <param name="usePadding">Should padding be included for positioning this text?
         /// Sometimes you just want un-padded text!</param>
         public static void Label      (string text, bool usePadding = true) => NativeAPI.ui_label(text, usePadding);
-        public static void Image      (Sprite image, Vec2 size) { NativeAPI.ui_image(image._spriteInst, size); }
+        public static void Image      (Sprite image, Vec2 size) { NativeAPI.ui_image(image._inst, size); }
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>
@@ -51,7 +51,7 @@ namespace StereoKit
         /// the first frame it is pressed!</summary>
         /// <param name="diameter">The diameter of the button's visual.</param>
         /// <returns>Will return true only on the first frame it is pressed!</returns>
-        public static bool ButtonRound(string id, Sprite image, float diameter = 0) => NativeAPI.ui_button_round(id, image._spriteInst, diameter);
+        public static bool ButtonRound(string id, Sprite image, float diameter = 0) => NativeAPI.ui_button_round(id, image._inst, diameter);
         /// <summary>A toggleable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true any time 
         /// the toggle value changes!</summary>

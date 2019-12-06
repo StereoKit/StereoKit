@@ -329,6 +329,8 @@ SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
 SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
+SK_API int32_t      tex_get_width     (tex_t texture);
+SK_API int32_t      tex_get_height    (tex_t texture);
 SK_API void         tex_set_sample    (tex_t texture, tex_sample_ sample = tex_sample_linear);
 SK_API tex_sample_  tex_get_sample    (tex_t texture);
 SK_API void         tex_set_address   (tex_t texture, tex_address_ address_mode = tex_address_wrap);
@@ -471,11 +473,14 @@ enum sprite_type_ {
 	sprite_type_single
 };
 
-SK_API sprite_t sprite_create     (tex_t     sprite,   sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
+SK_API sprite_t sprite_create     (tex_t    sprite,      sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type = sprite_type_atlased, const char *atlas_id = "default");
 SK_API void     sprite_set_id     (sprite_t sprite, const char *id);
 SK_API void     sprite_release    (sprite_t sprite);
 SK_API float    sprite_get_aspect (sprite_t sprite);
+SK_API int32_t  sprite_get_width  (sprite_t sprite);
+SK_API int32_t  sprite_get_height (sprite_t sprite);
+SK_API vec2     sprite_get_dimensions_normalized(sprite_t sprite);
 SK_API void     sprite_draw       (sprite_t sprite, const matrix &transform, color32 color = {255,255,255,255});
 
 ///////////////////////////////////////////

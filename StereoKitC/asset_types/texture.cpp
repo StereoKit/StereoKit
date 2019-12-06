@@ -331,6 +331,18 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 
 ///////////////////////////////////////////
 
+int32_t tex_get_width(tex_t texture) {
+	return texture->width;
+}
+
+///////////////////////////////////////////
+
+int32_t tex_get_height(tex_t texture) {
+	return texture->height;
+}
+
+///////////////////////////////////////////
+
 void tex_set_sample(tex_t texture, tex_sample_ sample) {
 	texture->sample_mode = sample;
 	if (texture->sampler != nullptr)

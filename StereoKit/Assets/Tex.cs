@@ -15,6 +15,11 @@ namespace StereoKit
         /// <summary>Allows you to set the Id of the texture to a specific Id.</summary>
         public string Id { set => NativeAPI.tex_set_id(_inst, value); }
 
+        /// <summary> The width of the texture, in pixels. </summary>
+        public int Width => NativeAPI.tex_get_width(_inst);
+        /// <summary> The height of the texture, in pixels. </summary>
+        public int Height => NativeAPI.tex_get_height(_inst);
+
         /// <summary>When looking at a UV texture coordinate on this texture, how do we handle values larger
         /// than 1, or less than zero? Do we Wrap to the other side? Clamp it between 0-1, or just keep
         /// Mirroring back and forth? Wrap is the default.</summary>
