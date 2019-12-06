@@ -12,7 +12,7 @@
         /// <param name="material">Which material should be used to render the text with?</param>
         /// <param name="color">The color of the text style. This will be embedded in the vertex color of the text mesh.</param>
         public static void MakeStyle(Font font, float characterHeight, Material material, Color32 color)
-            => NativeAPI.text_make_style(font._fontInst, characterHeight, material._materialInst, color);
+            => NativeAPI.text_make_style(font._fontInst, characterHeight, material._inst, color);
 
         /// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
         /// <param name="text">What text should be drawn?</param>

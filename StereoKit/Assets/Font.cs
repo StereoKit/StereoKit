@@ -11,17 +11,11 @@ namespace StereoKit {
     {
         internal IntPtr _fontInst;
 
-        /// <summary>Loads a font and creates a font asset from it.</summary>
-        /// <param name="fontFile">A file address for the font! For example: 'C:/Windows/Fonts/segoeui.ttf'</param>
-        public Font(string fontFile)
-        {
-            _fontInst = NativeAPI.font_create(fontFile);
-        }
         private Font(IntPtr font)
         {
             _fontInst = font;
             if (_fontInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty font!");
+                Log.Err("Received an empty font!");
         }
         ~Font()
         {
@@ -42,6 +36,14 @@ namespace StereoKit {
                 return null;
             }
             return new Font(fontInst);
+        }
+
+        /// <summary>Loads a font and creates a font asset from it.</summary>
+        /// <param name="fontFile">A file address for the font! For example: 'C:/Windows/Fonts/segoeui.ttf'</param>
+        public static Font FromFile(string fontFile)
+        {
+            IntPtr inst = NativeAPI.font_create(fontFile);
+            return inst == IntPtr.Zero ? null : new Font(inst);
         }
     }
 }

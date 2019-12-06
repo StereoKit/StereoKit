@@ -50,28 +50,11 @@ namespace StereoKit
         {
             _inst = NativeAPI.tex_create(textureType, textureFormat);
         }
-        /// <summary>Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
-        /// hdr, pic. Asset Id will be the same as the filename.</summary>
-        /// <param name="file">An absolute filename, or a filename relative to the assets folder. Supports jpg, png, tga,
-        /// bmp, psd, gif, hdr, pic</param>
-        public Tex(string file)
-        {
-            _inst = NativeAPI.tex_create_file(file);
-        }
-        /// <summary>Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use 
-        /// Tex.FromEquirectangular instead. Asset Id will be the first filename.</summary>
-        /// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of +X, -X, +Y, -Y, +Z, -Z.</param>
-        public Tex(string[] cubeFaceFiles_xxyyzz)
-        {
-            if (cubeFaceFiles_xxyyzz.Length != 6)
-                Log.Write(LogLevel.Error, "To create a cubemap, you must have exactly 6 images!");
-            _inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz);
-        }
         internal Tex(IntPtr tex)
         {
             _inst = tex;
             if (_inst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty texture!");
+                Log.Err("Received an empty texture!");
         }
         ~Tex()
         {
@@ -97,10 +80,29 @@ namespace StereoKit
         /// and texture blitting to create 6 faces from the equirectangular image.</summary>
         /// <param name="equirectangularCubemap">Filename of the equirectangular image.</param>
         /// <returns>A Cubemap texture asset!</returns>
-        public static Tex FromEquirectangular(string equirectangularCubemap)
+        public static Tex FromCubemapEquirectangular(string equirectangularCubemap)
         {
             IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap);
             return tex == IntPtr.Zero ? null : new Tex(tex);
+        }
+        /// <summary>Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
+        /// hdr, pic. Asset Id will be the same as the filename.</summary>
+        /// <param name="file">An absolute filename, or a filename relative to the assets folder. Supports jpg, png, tga,
+        /// bmp, psd, gif, hdr, pic</param>
+        public static Tex FromFile(string file)
+        {
+            IntPtr inst = NativeAPI.tex_create_file(file);
+            return inst == IntPtr.Zero ? null : new Tex(inst);
+        }
+        /// <summary>Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use 
+        /// Tex.FromEquirectangular instead. Asset Id will be the first filename.</summary>
+        /// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of +X, -X, +Y, -Y, +Z, -Z.</param>
+        public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz)
+        {
+            if (cubeFaceFiles_xxyyzz.Length != 6)
+                Log.Err("To create a cubemap, you must have exactly 6 images!");
+            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz);
+            return inst == IntPtr.Zero ? null : new Tex(inst);
         }
         /// <summary>Generates a cubemap texture from a gradient and a direction! These are entirely suitable for
         /// skyboxes, which you can set via Renderer.SkyTex.</summary>

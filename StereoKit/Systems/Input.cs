@@ -25,7 +25,7 @@ namespace StereoKit
         public bool IsJustTracked   { get { return (state & InputState.JustTracked) > 0; } }
         public bool IsJustUntracked { get { return (state & InputState.Untracked)   > 0; } }
 
-        public Material Material { set { NativeAPI.input_hand_material(handedness, value._materialInst); } }
+        public Material Material { set { NativeAPI.input_hand_material(handedness, value._inst); } }
         public bool     Visible  { set { NativeAPI.input_hand_visible (handedness, value ? 1 : 0); } }
         public bool     Solid    { set { NativeAPI.input_hand_solid   (handedness, value ? 1 : 0); } }
     }
@@ -73,7 +73,7 @@ namespace StereoKit
         }
         public static void HandMaterial(Handed hand, Material material)
         {
-            NativeAPI.input_hand_material(hand, material._materialInst);
+            NativeAPI.input_hand_material(hand, material._inst);
         }
         public static BtnState Key(Key key)
         {

@@ -9,7 +9,7 @@ class DemoBasics : IDemo
 
     public void Initialize()
     {
-        gltf = new Model("DamagedHelmet.gltf");
+        gltf = Model.FromFile("DamagedHelmet.gltf");
     }
 
     public void Update()

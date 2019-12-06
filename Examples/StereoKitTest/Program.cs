@@ -43,10 +43,10 @@ class Program
     static void CommonInit()
     {
         Material floorMat = Material.Copy(DefaultIds.material);
-        floorMat["diffuse"  ] = new Tex("Floor.png");
+        floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
         floorMat["tex_scale"] = 4;
 
-        floorMesh = new Model(Mesh.GenerateCube(Vec3.One), floorMat);
+        floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(5, 1, 5));
 
         floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);

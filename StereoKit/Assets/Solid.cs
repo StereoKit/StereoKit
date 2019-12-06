@@ -27,13 +27,13 @@ namespace StereoKit
         {
             _inst = NativeAPI.solid_create(ref position, ref rotation, type);
             if (_inst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't create solid!");
+                Log.Err("Couldn't create solid!");
         }
         private Solid(IntPtr solid)
         {
             _inst = solid;
             if (_inst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty solid!");
+                Log.Err("Received an empty solid!");
         }
         ~Solid()
         {

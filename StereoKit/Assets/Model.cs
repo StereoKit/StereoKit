@@ -18,56 +18,51 @@ namespace StereoKit
     /// matrix, it can be faster to render a Mesh instead of a Model!</summary>
     public class Model
     {
-        internal IntPtr _modelInst;
+        internal IntPtr _inst;
 
         /// <summary>The number of mesh subsets attached to this model.</summary>
-        public int SubsetCount => NativeAPI.model_subset_count(_modelInst);
+        public int SubsetCount => NativeAPI.model_subset_count(_inst);
 
         /// <summary>This is a bounding box that encapsulates the Model and all its subsets! It's used 
         /// for collision, visibility testing, UI layout, and probably other things. While it's normally
         /// cacluated from the mesh bounds, you can also override this to suit your needs.</summary>
         public Bounds Bounds {
-            get => NativeAPI.model_get_bounds(_modelInst);
-            set => NativeAPI.model_set_bounds(_modelInst, value);
+            get => NativeAPI.model_get_bounds(_inst);
+            set => NativeAPI.model_set_bounds(_inst, value);
         }
 
         #region Constructors
-        /// <summary>Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.</summary>
-        /// <param name="file">Name of the file to load! This gets prefixed with the StereoKit asset
-        /// folder if no drive letter is specified in the path.</param>
-        public Model(string file)
-        {
-            _modelInst = NativeAPI.model_create_file(file);
-            if (_modelInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't load {0}!", file);
-        }
         /// <summary>Creates a single mesh subset Model using the indicated Mesh and Material! An
         /// id will be automatically generated for this asset.</summary>
         /// <param name="mesh">Any Mesh asset.</param>
         /// <param name="material">Any Material asset.</param>
         public Model(Mesh mesh, Material material)
         {
-            _modelInst = NativeAPI.model_create_mesh(mesh._meshInst, material._materialInst);
+            _inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
         }
+
         /// <summary>Creates a single mesh subset Model using the indicated Mesh and Material!</summary>
         /// <param name="id">Uses this as the id, so you can Find it later.</param>
         /// <param name="mesh">Any Mesh asset.</param>
         /// <param name="material">Any Material asset.</param>
         public Model(string id, Mesh mesh, Material material)
         {
-            _modelInst = NativeAPI.model_create_mesh(mesh._meshInst, material._materialInst);
-            NativeAPI.material_set_id(_modelInst, id);
+            _inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+            if (_inst != IntPtr.Zero)
+            {
+                NativeAPI.material_set_id(_inst, id);
+            }
         }
         private Model(IntPtr model)
         {
-            _modelInst = model;
-            if (_modelInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty model!");
+            _inst = model;
+            if (_inst == IntPtr.Zero)
+                Log.Err("Received an empty model!");
         }
         ~Model()
         {
-            if (_modelInst != IntPtr.Zero)
-                NativeAPI.model_release(_modelInst);
+            if (_inst != IntPtr.Zero)
+                NativeAPI.model_release(_inst);
         }
         #endregion
 
@@ -75,12 +70,12 @@ namespace StereoKit
         /// <summary>Gets a link to the Material asset used by the mesh subset!</summary>
         /// <param name="subsetIndex">Index of the mesh subset to get the material for, should be less than SubsetCount.</param>
         /// <returns>A link to the Material asset used by the mesh subset at subsetIndex</returns>
-        public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_modelInst, subsetIndex));
+        public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_inst, subsetIndex));
         
         public void Draw(Matrix transform, Color color)
-            => NativeAPI.render_add_model(_modelInst, transform, color);
+            => NativeAPI.render_add_model(_inst, transform, color);
         public void Draw(Matrix transform)
-            => NativeAPI.render_add_model(_modelInst, transform, Color.White);
+            => NativeAPI.render_add_model(_inst, transform, Color.White);
         #endregion
 
         /// <summary>Looks for a Model asset that's already loaded, matching the given id!</summary>
@@ -90,6 +85,40 @@ namespace StereoKit
         {
             IntPtr model = NativeAPI.model_find(modelId);
             return model == IntPtr.Zero ? null : new Model(model);
+        }
+
+        /// <summary>Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.</summary>
+        /// <param name="file">Name of the file to load! This gets prefixed with the StereoKit asset
+        /// folder if no drive letter is specified in the path.</param>
+        public static Model FromFile(string file)
+        {
+            IntPtr inst = NativeAPI.model_create_file(file);
+            return inst == IntPtr.Zero ? null : new Model(inst);
+        }
+
+        /// <summary>Creates a single mesh subset Model using the indicated Mesh and Material! An
+        /// id will be automatically generated for this asset.</summary>
+        /// <param name="mesh">Any Mesh asset.</param>
+        /// <param name="material">Any Material asset.</param>
+        public static Model FromMesh(Mesh mesh, Material material)
+        {
+            IntPtr inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+            return inst == IntPtr.Zero ? null : new Model(inst);
+        }
+
+        /// <summary>Creates a single mesh subset Model using the indicated Mesh and Material!</summary>
+        /// <param name="id">Uses this as the id, so you can Find it later.</param>
+        /// <param name="mesh">Any Mesh asset.</param>
+        /// <param name="material">Any Material asset.</param>
+        public static Model FromMesh(string id, Mesh mesh, Material material)
+        {
+            IntPtr inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+            if (inst != IntPtr.Zero)
+            {
+                NativeAPI.material_set_id(inst, id);
+                return new Model(inst);
+            }
+            return null;
         }
     }
 }

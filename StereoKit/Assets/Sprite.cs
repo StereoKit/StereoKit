@@ -33,35 +33,11 @@ namespace StereoKit
         /// <summary>Width and height of the sprite, normalized so the maximum value is 1.</summary>
         public Vec2  NormalizedDimensions => NativeAPI.sprite_get_dimensions_normalized(_inst);
 
-        /// <summary>Create a sprite from a Texture object!</summary>
-        /// <param name="image">The texture to build a sprite from. Must be a valid, 2D image!</param>
-        /// <param name="type">Should this sprite be atlased, or an individual image? Adding this as
-        /// an atlased image is better for performance, but will cause the atlas to be rebuilt! Images
-        /// that take up too much space on the atlas, or might be loaded or unloaded during runtime may
-        /// be better as Single rather than Atlased!</param>
-        /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
-        /// relevant if the SpriteType is Atlased.</param>
-        public Sprite(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+        internal Sprite(IntPtr inst)
         {
-            _inst = NativeAPI.sprite_create(image._inst, type, atlasId);
+            _inst = inst;
             if (_inst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't create sprite!");
-        }
-        /// <summary>Create a sprite from an image file! This loads a Texture from file, and then
-        /// uses that Texture as the source for the Sprite.</summary>
-        /// <param name="file">The filename of the image, an absolute filename, or a filename relative
-        /// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr, pic.</param>
-        /// <param name="type">Should this sprite be atlased, or an individual image? Adding this as
-        /// an atlased image is better for performance, but will cause the atlas to be rebuilt! Images
-        /// that take up too much space on the atlas, or might be loaded or unloaded during runtime may
-        /// be better as Single rather than Atlased!</param>
-        /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
-        /// relevant if the SpriteType is Atlased.</param>
-        public Sprite(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
-        {
-            _inst = NativeAPI.sprite_create_file(file, type, atlasId);
-            if (_inst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't create sprite! {0}", file);
+                Log.Err("Received an empty sprite!");
         }
         ~Sprite()
         {
@@ -75,6 +51,36 @@ namespace StereoKit
         public void Draw(in Matrix transform, Color32 color)
         {
             NativeAPI.sprite_draw(_inst, transform, color);
+        }
+
+        /// <summary>Create a sprite from an image file! This loads a Texture from file, and then
+        /// uses that Texture as the source for the Sprite.</summary>
+        /// <param name="file">The filename of the image, an absolute filename, or a filename relative
+        /// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr, pic.</param>
+        /// <param name="type">Should this sprite be atlased, or an individual image? Adding this as
+        /// an atlased image is better for performance, but will cause the atlas to be rebuilt! Images
+        /// that take up too much space on the atlas, or might be loaded or unloaded during runtime may
+        /// be better as Single rather than Atlased!</param>
+        /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
+        /// relevant if the SpriteType is Atlased.</param>
+        public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+        {
+            IntPtr inst = NativeAPI.sprite_create_file(file, type, atlasId);
+            return inst == IntPtr.Zero ? null : new Sprite(inst);
+        }
+
+        /// <summary>Create a sprite from a Texture object!</summary>
+        /// <param name="image">The texture to build a sprite from. Must be a valid, 2D image!</param>
+        /// <param name="type">Should this sprite be atlased, or an individual image? Adding this as
+        /// an atlased image is better for performance, but will cause the atlas to be rebuilt! Images
+        /// that take up too much space on the atlas, or might be loaded or unloaded during runtime may
+        /// be better as Single rather than Atlased!</param>
+        /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
+        /// relevant if the SpriteType is Atlased.</param>
+        public static Sprite FromTex(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+        {
+            IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);
+            return inst == IntPtr.Zero ? null : new Sprite(inst);
         }
     }
 }

@@ -17,33 +17,33 @@ namespace StereoKit
     /// </summary>
     public class Mesh
     {
-        internal IntPtr _meshInst;
+        internal IntPtr _inst;
 
         /// <summary>This is a bounding box that encapsulates the Mesh! It's used for collision, visibility
         /// testing, UI layout, and probably other things. While it's normally cacluated from the mesh
         /// vertices, you can also override this to suit your needs.</summary>
         public Bounds Bounds { 
-            get => NativeAPI.mesh_get_bounds(_meshInst);
-            set => NativeAPI.mesh_set_bounds(_meshInst, value);
+            get => NativeAPI.mesh_get_bounds(_inst);
+            set => NativeAPI.mesh_set_bounds(_inst, value);
         }
 
         /// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!</summary>
         public Mesh()
         {
-            _meshInst = NativeAPI.mesh_create();
-            if (_meshInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Couldn't create empty mesh!");
+            _inst = NativeAPI.mesh_create();
+            if (_inst == IntPtr.Zero)
+                Log.Err("Couldn't create empty mesh!");
         }
         private Mesh(IntPtr mesh)
         {
-            _meshInst = mesh;
-            if (_meshInst == IntPtr.Zero)
-                Log.Write(LogLevel.Warning, "Received an empty mesh!");
+            _inst = mesh;
+            if (_inst == IntPtr.Zero)
+                Log.Err("Received an empty mesh!");
         }
         ~Mesh()
         {
-            if (_meshInst == IntPtr.Zero)
-                NativeAPI.mesh_release(_meshInst);
+            if (_inst == IntPtr.Zero)
+                NativeAPI.mesh_release(_inst);
         }
 
         /// <summary>Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given
@@ -124,9 +124,23 @@ namespace StereoKit
             return mesh == IntPtr.Zero ? null : new Mesh(mesh);
         }
 
+        /// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="material">A Material to apply to the Mesh.</param>
+        /// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
+        /// Hierarchy Space.</param>
+        /// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
+        /// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
+        /// spot to pack in extra per-instance data for the shader!</param>
         public void Draw(Material material, Matrix transform, Color color)
-            =>NativeAPI.render_add_mesh(_meshInst, material._materialInst, transform, color);
+            =>NativeAPI.render_add_mesh(_inst, material._inst, transform, color);
+
+        /// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="material">A Material to apply to the Mesh.</param>
+        /// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
+        /// Hierarchy Space.</param>
         public void Draw(Material material, Matrix transform)
-            => NativeAPI.render_add_mesh(_meshInst, material._materialInst, transform, Color.White);
+            => NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White);
     }
 }

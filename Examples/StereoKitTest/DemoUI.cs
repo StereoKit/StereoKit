@@ -39,8 +39,8 @@ class DemoUI : IDemo
     float slider     = 0.5f;
     /// :End:
 
-    Model  clipboard     = new Model("Clipboard.glb");
-    Sprite powerSprite   = new Sprite("power.png", SpriteType.Single);
+    Model  clipboard     = Model.FromFile("Clipboard.glb");
+    Sprite powerSprite   = Sprite.FromFile("power.png", SpriteType.Single);
     Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  clipSubtitles;
     bool  clipToggle;
