@@ -369,8 +369,8 @@ enum transparency_ {
 	transparency_clip,
 };
 enum cull_ {
-	cull_ccw = 0,
-	cull_cw,
+	cull_back = 0,
+	cull_front,
 	cull_none,
 };
 enum material_param_ {

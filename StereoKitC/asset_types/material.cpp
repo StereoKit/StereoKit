@@ -58,7 +58,7 @@ material_t material_create(shader_t shader) {
 
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
-	result->cull       = cull_ccw;
+	result->cull       = cull_back;
 	result->alpha_mode = transparency_none;
 	result->shader     = shader;
 	
@@ -224,8 +224,12 @@ void material_set_cull(material_t material, cull_ mode) {
 		material->rasterizer_state->Release();
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
 	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
-	desc_rasterizer.CullMode = mode == cull_none ? D3D11_CULL_NONE : D3D11_CULL_BACK;
-	desc_rasterizer.FrontCounterClockwise = mode == cull_ccw;
+	switch (mode) {
+	case cull_none:  desc_rasterizer.CullMode = D3D11_CULL_NONE;  break;
+	case cull_front: desc_rasterizer.CullMode = D3D11_CULL_FRONT; break;
+	case cull_back:  desc_rasterizer.CullMode = D3D11_CULL_BACK;  break;
+	}
+	desc_rasterizer.FrontCounterClockwise = true;
 
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &material->rasterizer_state);
 	material->cull = mode;
