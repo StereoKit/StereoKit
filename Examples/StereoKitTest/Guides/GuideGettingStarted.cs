@@ -49,10 +49,12 @@ namespace SKYourTemplate
     {
         static void Main(string[] args)
         {
-            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
+            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality))
                 Environment.Exit(1);
 
-            Model cube = new Model(Mesh.GenerateRoundedCube(Vec3.One, 0.1f), Material.Find("default/material"));
+            Model cube = new Model(
+                Mesh.GenerateRoundedCube(Vec3.One, 0.1f), 
+                Material.Find("default/material"));
 
             while (StereoKitApp.Step(() =>
             {

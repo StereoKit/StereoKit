@@ -141,7 +141,6 @@ class DemoGeo : IDemo
         cylinderTransform = Matrix.T(0.5f, 0, -1);
         Renderer.Add(cylinderModel, cylinderTransform);
         /// :End:
-        /// 
 
 
         // Plane!
