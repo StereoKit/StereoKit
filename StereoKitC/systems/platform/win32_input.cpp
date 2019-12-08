@@ -2,10 +2,14 @@
 
 #include "win32_input.h"
 
+#if WINDOWS_UWP
+#else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
 
 #include "win32.h"
+#include "uwp.h"
 #include "../input.h"
 #include "../input_hand.h"
 #include "../input_leap.h"
@@ -54,6 +58,20 @@ void win32_input_shutdown() {
 ///////////////////////////////////////////
 
 void win32_input_update() {
+#if WINDOWS_UWP
+	for (int32_t i = 0; i < key_MAX; i++) {
+		input_key_data.keys[i] = button_make_state(
+			input_key_data.keys[i] & button_state_down,
+			uwp_key_down(i));
+	}
+#else
+	for (int32_t i = 0; i < key_MAX; i++) {
+		input_key_data.keys[i] = button_make_state(
+			input_key_data.keys[i] & button_state_down,
+			GetKeyState(i) & 0x8000);
+	}
+#endif
+
 	win32_mouse_update();
 
 #ifndef SK_NO_LEAP_MOTION
@@ -77,18 +95,37 @@ void win32_input_update() {
 ///////////////////////////////////////////
 
 void win32_mouse_update() {
-	// Mouse scroll
-	input_mouse_data.scroll_change = win32_scroll - input_mouse_data.scroll;
-	input_mouse_data.scroll        = win32_scroll;
-	// Mouse position and on-screen
+	input_mouse_data.available = false;
+	vec2  mouse_pos = {};
+	float mouse_scroll = 0;
+
+#if WINDOWS_UWP
+	input_mouse_data.available = true;
+
+	int x, y, s;
+	uwp_get_mouse(x,y,s);
+	mouse_pos.x = (float)x;
+	mouse_pos.y = (float)y;
+	mouse_scroll = s;
+
+	log_infof("%d,%d", x, y);
+#else
+	mouse_scroll = win32_scroll;
+	
 	POINT cursor_pos;
-	if (GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos)) {
-		vec2 new_pos = vec2{ (float)cursor_pos.x, (float)cursor_pos.y };
-		input_mouse_data.pos_change = new_pos - input_mouse_data.pos;
-		input_mouse_data.pos        = new_pos;
+	input_mouse_data.available = GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos);
+	mouse_pos.x = (float)cursor_pos.x;
+	mouse_pos.y = (float)cursor_pos.y;
+#endif
+	// Mouse scroll
+	input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
+	input_mouse_data.scroll        = mouse_scroll;
+
+	// Mouse position and on-screen
+	if (input_mouse_data.available) {
+		input_mouse_data.pos_change = mouse_pos - input_mouse_data.pos;
+		input_mouse_data.pos        = mouse_pos;
 		input_mouse_data.available  = true;
-	} else {
-		input_mouse_data.available = false;
 	}
 }
 

@@ -118,6 +118,9 @@
     <ClCompile Include="hierarchy.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\uwp.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -226,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="hierarchy.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\platform\uwp.h">
+      <Filter>systems\platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

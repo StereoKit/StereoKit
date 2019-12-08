@@ -109,9 +109,9 @@
   <ItemGroup Condition="'$(UseDotNetNativeToolchain)' == 'true'">
     <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll" />
   </ItemGroup>
-  <ItemGroup Condition="'$(UseDotNetNativeToolchain)' == 'false'">
+  <ItemGroup Condition="'$(UseDotNetNativeToolchain)' == 'false' Or '$(UseDotNetNativeToolchain)' == ''">
     <Content Include="..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\StereoKitC.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>

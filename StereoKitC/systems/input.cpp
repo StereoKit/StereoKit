@@ -110,14 +110,6 @@ void input_shutdown() {
 ///////////////////////////////////////////
 
 void input_update() {
-#ifndef SK_NO_FLATSCREEN
-	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = button_make_state(
-			input_key_data.keys[i] & button_state_down,
-			GetKeyState(i) & 0x8000);
-	}
-#endif
-
 	input_hand_update();
 }
 

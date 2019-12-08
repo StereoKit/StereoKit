@@ -7,14 +7,16 @@ namespace SKTemplate_UWP
     {
         static void Main(string[] args)
         {
-            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
+            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality))
                 Environment.Exit(1);
 
-            Model cube = new Model(Mesh.GenerateRoundedCube(Vec3.One, 0.1f), Material.Find("default/material"));
+            Model cube = Model.FromMesh(
+                Mesh    .GenerateRoundedCube(Vec3.One*0.1f, 0.1f), 
+                Material.Find(DefaultIds.material));
 
             while (StereoKitApp.Step(() =>
             {
-                Renderer.Add(cube, Matrix.Identity, Color.White);
+                cube.Draw(Matrix.Identity, Color.White);
             }));
 
             StereoKitApp.Shutdown();

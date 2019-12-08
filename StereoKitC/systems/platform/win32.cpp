@@ -1,4 +1,5 @@
 #ifndef SK_NO_FLATSCREEN
+#ifndef WINDOWS_UWP
 
 #include "win32.h"
 #include "win32_input.h"
@@ -6,6 +7,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dxgi1_2.h>
+
+
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -180,4 +183,5 @@ void win32_vsync() {
 
 } // namespace sk
 
+#endif // WINDOWS_UWP
 #endif // SK_NO_FLATSCREEN

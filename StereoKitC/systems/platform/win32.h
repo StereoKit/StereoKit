@@ -1,6 +1,7 @@
 #pragma once
 
 #ifndef SK_NO_FLATSCREEN
+#ifndef WINDOWS_UWP
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -18,4 +19,5 @@ void win32_vsync();
 
 } // namespace sk
 
+#endif // WINDOWS_UWP
 #endif // SK_NO_FLATSCREEN
