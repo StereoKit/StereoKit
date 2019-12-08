@@ -18,9 +18,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StereoKit", "StereoKit\Ster
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitC_UWP", "StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj", "{45AF7827-11CA-4691-A063-8C78FB0BE1EC}"
-	ProjectSection(ProjectDependencies) = postProject
-		{95B47C8E-3A66-483C-ABEE-950E6C2F621A} = {95B47C8E-3A66-483C-ABEE-950E6C2F621A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitCTest_UWP", "Examples\StereoKitCTest\StereoKitCTest_UWP\StereoKitCTest_UWP.vcxproj", "{0362B3F9-F256-4DA7-8F36-01DA3B7776D5}"
 	ProjectSection(ProjectDependencies) = postProject

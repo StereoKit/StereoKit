@@ -107,8 +107,6 @@ void win32_mouse_update() {
 	mouse_pos.x = (float)x;
 	mouse_pos.y = (float)y;
 	mouse_scroll = s;
-
-	log_infof("%d,%d", x, y);
 #else
 	mouse_scroll = win32_scroll;
 	
