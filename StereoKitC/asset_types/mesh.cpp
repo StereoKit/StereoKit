@@ -17,22 +17,39 @@ ID3D11InputLayout *vert_t_layout = nullptr;
 ///////////////////////////////////////////
 
 void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
-	if (mesh->vert_buffer != nullptr) { 
-		// Here would be a good place to not release stuff if doing dynamic meshes
-		mesh->vert_buffer->Release();
-		mesh->vert_buffer = nullptr; 
-	}
-	mesh->vert_count = vertex_count;
-
 	if (mesh->vert_buffer == nullptr) {
+		// Create a static vertex buffer the first time we call this function!
+		mesh->vert_dynamic = false;
+
 		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
 		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, D3D11_BIND_VERTEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
 		DX11ResType(mesh->vert_buffer, "verts");
+	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_count) {
+		// If they call this a second time, or they need more verts than will
+		// fit in this buffer, lets make a new dynamic buffer!
+		mesh->vert_buffer->Release();
+		mesh->vert_dynamic = true;
+
+		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
+		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, 
+			D3D11_BIND_VERTEX_BUFFER, 
+			D3D11_USAGE_DYNAMIC, 
+			D3D11_CPU_ACCESS_WRITE);
+		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
+			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
+		DX11ResType(mesh->vert_buffer, "verts_dyn");
 	} else {
-		log_err("mesh_set_verts: We don't support dynamic meshes quite yet.");
+		// And if they call this a third time, or their verts fit in the same
+		// buffer, just copy things over!
+		D3D11_MAPPED_SUBRESOURCE resource;
+		d3d_context->Map(mesh->vert_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+		memcpy(resource.pData, vertices, sizeof(vert_t) * vertex_count);
+		d3d_context->Unmap(mesh->vert_buffer, 0);
 	}
+
+	mesh->vert_count = vertex_count;
 
 	// Calculate the bounds for this mesh by searching it for min and max values!
 	if (calculate_bounds && vertex_count > 0) {
@@ -54,23 +71,40 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 ///////////////////////////////////////////
 
 void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
-	if (mesh->ind_buffer != nullptr) { 
-		// Here would be a good place to not release stuff if doing dynamic meshes
-		mesh->ind_buffer->Release();
-		mesh->ind_buffer = nullptr; 
-	}
-	mesh->ind_count = index_count;
-	mesh->ind_draw  = index_count;
-
 	if (mesh->ind_buffer == nullptr) {
+		// Create a static vertex buffer the first time we call this function!
+		mesh->ind_dynamic = false;
+
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
 		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, D3D11_BIND_INDEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
 			log_err("mesh_set_inds: Failed to create index buffer");
 		DX11ResType(mesh->ind_buffer,  "inds");
+	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_count) {
+		// If they call this a second time, or they need more inds than will
+		// fit in this buffer, lets make a new dynamic buffer!
+		mesh->ind_buffer->Release();
+		mesh->ind_dynamic = true;
+
+		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
+		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, 
+			D3D11_BIND_INDEX_BUFFER,
+			D3D11_USAGE_DYNAMIC,
+			D3D11_CPU_ACCESS_WRITE);
+		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
+			log_err("mesh_set_inds: Failed to create dynamic index buffer");
+		DX11ResType(mesh->ind_buffer, "inds_dyn");
 	} else {
-		log_err("mesh_set_inds: We don't support dynamic meshes quite yet.");
+		// And if they call this a third time, or their inds fit in the same
+		// buffer, just copy things over!
+		D3D11_MAPPED_SUBRESOURCE resource;
+		d3d_context->Map(mesh->ind_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+		memcpy(resource.pData, indices, sizeof(vind_t) * index_count);
+		d3d_context->Unmap(mesh->ind_buffer, 0);
 	}
+
+	mesh->ind_count = index_count;
+	mesh->ind_draw  = index_count;
 }
 
 ///////////////////////////////////////////

@@ -39,7 +39,7 @@ void line_drawer_update() {
 	if (line_ind_ct <= 0)
 		return;
 
-	mesh_set_verts    (line_mesh, line_verts, line_vert_cap);
+	mesh_set_verts    (line_mesh, line_verts, line_vert_cap, false);
 	mesh_set_inds     (line_mesh, line_inds,  line_ind_cap);
 	mesh_set_draw_inds(line_mesh, line_ind_ct);
 	render_add_mesh(line_mesh, line_material, matrix_identity);

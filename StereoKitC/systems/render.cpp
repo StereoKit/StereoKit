@@ -504,6 +504,8 @@ void render_set_material(material_t material) {
 	if (material->shader->tex_slots.tex_count != 0) {
 		d3d_context->PSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
 		d3d_context->PSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
+		d3d_context->VSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
+		d3d_context->VSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
 	}
 
 	if (material->alpha_mode == transparency_none) {

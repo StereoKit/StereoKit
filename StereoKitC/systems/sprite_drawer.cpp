@@ -107,7 +107,7 @@ bool sprite_drawer_init() {
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id   (sprite_quad, "render/sprite_quad");
-	mesh_set_verts(sprite_quad, verts, 4);
+	mesh_set_verts(sprite_quad, verts, 4, false);
 	mesh_set_inds (sprite_quad, inds,  6);
 
 	return true;
@@ -121,7 +121,7 @@ void sprite_drawer_update() {
 		if (buffer.vert_count <= 0)
 			continue;
 
-		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count);
+		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count, false);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
 		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
