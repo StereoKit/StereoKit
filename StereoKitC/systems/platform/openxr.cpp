@@ -419,11 +419,7 @@ void openxr_step_end() {
 ///////////////////////////////////////////
 
 void openxr_poll_events() {
-	// This object is pretty large, making it static so we only need to create it once
-	static XrEventDataBuffer event_buffer;
-	// Only the data header needs cleared out each time
-	event_buffer.type = XR_TYPE_EVENT_DATA_BUFFER;
-	event_buffer.next = nullptr;
+	XrEventDataBuffer event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 
 	while (xrPollEvent(xr_instance, &event_buffer) == XR_SUCCESS) {
 		switch (event_buffer.type) {
@@ -447,6 +443,7 @@ void openxr_poll_events() {
 		} break;
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
 		}
+		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
 }
 
