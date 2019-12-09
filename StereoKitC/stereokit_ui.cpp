@@ -749,6 +749,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 
 	if (draw) {
 		ui_box(center+dimensions/2, dimensions, skui_mat, skui_palette[0] * color);
+		ui_box(center + dimensions / 2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -dimensions.z/4 }, vec3{ dimensions.x+skui_settings.backplate_border*2, dimensions.y +skui_settings.backplate_border*2, dimensions.z / 2 }, skui_mat, skui_color_border * color);
 		ui_nextline();
 	}
 	return color > 1;
