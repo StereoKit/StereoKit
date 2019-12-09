@@ -682,7 +682,8 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_palette[2] * color);
 	ui_box(vec3{ offset.x+back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z+mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
 	// Slide handle
-	ui_box(vec3{ (offset.x - ((value-min)/(max-min))*size.x) + rule_size/2.f, offset.y, offset.z}, vec3{rule_size, size.y, skui_settings.depth}, skui_mat, skui_palette[0] * color);
+	ui_cylinder(vec3{ (offset.x - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4, offset.z}, size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0] * color);
+	ui_cylinder(vec3{ (offset.x+back_size - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4 + back_size, offset.z+mm2m}, size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color);
 	ui_nextline();
 	
 	return result;
