@@ -154,9 +154,10 @@ void log_write(log_ level, const char *text) {
 
 	const char *tag = "";
 	switch (level) {
-	case log_inform:  tag = "<~cyn>info<~clr>";    break;
-	case log_warning: tag = "<~ylw>warning<~clr>"; break;
-	case log_error:   tag = "<~red>error<~clr>";   break;
+	case log_diagnostic: tag = "<~blu>diagnostic<~clr>"; break;
+	case log_inform:     tag = "<~cyn>info<~clr>";       break;
+	case log_warning:    tag = "<~ylw>warning<~clr>";    break;
+	case log_error:      tag = "<~red>error<~clr>";      break;
 	default:
 		break;
 	}
@@ -201,9 +202,16 @@ void log_writef(log_ level, const char *text, ...) {
 
 ///////////////////////////////////////////
 
-void log_info(const char* text) { log_write(log_inform,  text); }
-void log_warn(const char* text) { log_write(log_warning, text); }
-void log_err (const char* text) { log_write(log_error,   text); }
+void log_diag(const char* text) { log_write(log_diagnostic, text); }
+void log_info(const char* text) { log_write(log_inform,     text); }
+void log_warn(const char* text) { log_write(log_warning,    text); }
+void log_err (const char* text) { log_write(log_error,      text); }
+void log_diagf(const char* text, ...) {
+	va_list args;
+	va_start(args, text);
+	_log_writef(log_diagnostic, text, args);
+	va_end(args);
+}
 void log_infof(const char* text, ...) {
 	va_list args;
 	va_start(args, text);

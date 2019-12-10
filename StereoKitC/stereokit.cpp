@@ -94,6 +94,8 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
 
+	log_diagf("Initializing StereoKit v%s...", sk_version_name());
+
 	// Make sure settings get their default values
 	sk_set_settings(sk_settings);
 

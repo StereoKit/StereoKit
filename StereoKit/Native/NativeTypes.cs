@@ -430,8 +430,11 @@ namespace StereoKit
     /// <summary>Severity of a log item.</summary>
     public enum LogLevel
     {
+        /// <summary>This is for diagnostic information, where you need to know details about what -exactly-
+        /// is going on in the system. This info doesn't surface by default.</summary>
+        Diagnostic = 0,
         /// <summary>This is non-critical information, just to let you know what's going on.</summary>
-        Info = 0,
+        Info,
         /// <summary>Something bad has happened, but it's still within the realm of what's expected.</summary>
         Warning,
         /// <summary>Danger Will Robinson! Something really bad just happened and needs fixing!</summary>
