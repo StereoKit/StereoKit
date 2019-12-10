@@ -128,11 +128,11 @@ void render_update_projection() {
 ///////////////////////////////////////////
 
 void render_set_view(const matrix &cam_transform) {
-	matrix_inverse(cam_transform, render_default_camera_tr);
-
 	vec3 pos = matrix_mul_point    (cam_transform, vec3_zero);
 	vec3 dir = matrix_mul_direction(cam_transform, vec3_forward);
-	input_head_pose = {pos, quat_lookat(pos, dir)};
+	input_head_pose = {pos, quat_lookat(pos, pos+dir)};
+	
+	matrix_inverse(cam_transform, render_default_camera_tr);
 }
 
 ///////////////////////////////////////////

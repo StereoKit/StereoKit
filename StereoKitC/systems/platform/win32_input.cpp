@@ -133,8 +133,8 @@ void win32_mouse_hand() {
 	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
 
 	const hand_t &hand = input_hand(handed_right);
-	vec3 hand_pos     = hand.root.position;
-	quat hand_rot     = hand.root.orientation;
+	vec3 hand_pos     = hand.palm.position;
+	quat hand_rot     = hand.palm.orientation;
 	bool l_pressed    = false;
 	bool r_pressed    = false;
 	bool hand_tracked = false;

@@ -85,7 +85,7 @@ void input_hand_init() {
 		hand_state[i].material = hand_mat;
 		assets_addref(hand_state[i].material->header);
 
-		hand_state[i].info.root.orientation = quat_identity;
+		hand_state[i].info.palm.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
 
@@ -132,7 +132,7 @@ void input_hand_update() {
 		// Update hand physics
 		solid_set_enabled(hand_state[i].solids[0], tracked);
 		if (tracked) {
-			solid_move(hand_state[i].solids[0], hand_state[i].info.root.position, hand_state[i].info.root.orientation);
+			solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
 		}
 	}
 }
@@ -148,7 +148,8 @@ void input_hand_state_update(handed_ handedness) {
 	// Clear all except tracking state
 	hand.state &= input_state_tracked | input_state_untracked | input_state_justtracked;
 	
-	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < ((2.f * cm2m) * (2.f * cm2m));
+	float finger_dist = 2 * cm2m + hand.fingers[hand_finger_index][hand_joint_tip].size + hand.fingers[hand_finger_thumb][hand_joint_tip].size;
+	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < (finger_dist * finger_dist);
 	bool is_grip =
 		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
 		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m));
@@ -161,7 +162,7 @@ void input_hand_state_update(handed_ handedness) {
 
 ///////////////////////////////////////////
 
-pose_t *input_hand_get_pose_buffer(handed_ hand) {
+hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
 }
 
@@ -169,8 +170,8 @@ pose_t *input_hand_get_pose_buffer(handed_ hand) {
 
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
-	hand.root.position    = hand_pos;
-	hand.root.orientation = orientation;
+	hand.palm.position    = hand_pos;
+	hand.palm.orientation = orientation;
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.state & input_state_tracked;
@@ -214,6 +215,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			}
 			hand.fingers[f][j].position    = orientation * pos + hand_pos;
 			hand.fingers[f][j].orientation = rot * orientation;
+			hand.fingers[f][j].size        = hand_finger_size[f] * hand_joint_size[j] * 0.25f;
 		} }
 	}
 }
@@ -302,14 +304,14 @@ void input_hand_update_mesh(handed_ hand) {
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
-		const pose_t &pose = hand_state[hand].info.fingers[f][j];
+		const hand_joint_t &pose = hand_state[hand].info.fingers[f][j];
 
 		// Make local right and up axis vectors
 		vec3  right = pose.orientation * vec3_right;
 		vec3  up    = pose.orientation * vec3_up;
 
 		// Find the scale for this joint
-		float scale = hand_finger_size[f] * hand_joint_size[j] * 0.25f;
+		float scale = pose.size;
 		if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
 
 		// Use the local axis to create a ring of verts

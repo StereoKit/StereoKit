@@ -588,10 +588,16 @@ struct pointer_t {
 	quat           orientation;
 };
 
+struct hand_joint_t {
+	vec3  position;
+	quat  orientation;
+	float size;
+};
+
 struct hand_t {
-	pose_t  fingers[5][5];
+	hand_joint_t fingers[5][5];
 	pose_t  wrist;
-	pose_t  root;
+	pose_t  palm;
 	handed_ handedness;
 	input_state_ state;
 };

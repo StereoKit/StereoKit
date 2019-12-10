@@ -724,15 +724,15 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_tip_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).root.position );
-				start_tip_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).root.orientation);
+				start_tip_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).palm.position );
+				start_tip_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).palm.orientation);
 			}
 			if (skui_hand[i].active == id) {
 				color = 1.5f;
 				result = true;
 
-				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).root.position);
-				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).root.orientation);
+				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).palm.position);
+				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
 
 				quat rot = quat_difference(start_tip_rot[i], curr_rot);
 

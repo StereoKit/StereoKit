@@ -12,7 +12,8 @@ namespace StereoKit
         MixedReality = 1
     }
 
-    /// <summary>StereoKit miscellaneous initialization settings! Setup StereoKit.settings with your data before calling StereoKitApp.Initialize.</summary>
+    /// <summary>StereoKit miscellaneous initialization settings! Setup StereoKit.settings with
+    /// your data before calling StereoKitApp.Initialize.</summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct Settings
     {
@@ -24,7 +25,8 @@ namespace StereoKit
         public int flatscreenWidth;
         /// <summary>If using Runtime.Flatscreen, the pixel size of the window on the screen.</summary>
         public int flatscreenHeight;
-        /// <summary>Where to look for assets when loading files! Final path will look like '[assetsFolder]/[file]', so a trailing '/' is unnecessary.</summary>
+        /// <summary>Where to look for assets when loading files! Final path will look like
+        /// '[assetsFolder]/[file]', so a trailing '/' is unnecessary.</summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string assetsFolder;
     }
@@ -439,5 +441,40 @@ namespace StereoKit
         Warning,
         /// <summary>Danger Will Robinson! Something really bad just happened and needs fixing!</summary>
         Error
+    }
+
+    /// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
+    public enum Finger
+    {
+        /// <summary>Finger 0.</summary>
+        Thumb  = 0,
+        /// <summary>The primary index/pointer finger! Finger 1.</summary>
+        Index  = 1,
+        /// <summary>Finger 2, next to the index finger.</summary>
+        Middle = 2,
+        /// <summary>Finger 3! What does one do with this finger? I guess... wear
+        /// rings on it?</summary>
+        Ring   = 3,
+        /// <summary>Finger 4, the smallest little finger! AKA, The Pinky.</summary>
+        Little = 4
+    }
+
+    /// <summary>Here's where hands get crazy! Technical terms, and watch out for
+    /// the thumbs!</summary>
+    public enum FingerJoint
+    {
+        /// <summary>Joint 0. This is at the base of the hand, right above the wrist. For 
+        /// the thumb, Metacarpal and Proximal have the same value.</summary>
+        Metacarpal   = 0,
+        /// <summary>Joint 1. These are the knuckles at the top of the palm! For 
+        /// the thumb, Metacarpal and Proximal have the same value.</summary>
+        Proximal     = 1,
+        /// <summary>Joint 2. These are the knuckles in the middle of the finger! First
+        /// joints on the fingers themselves.</summary>
+        Intermediate = 2,
+        /// <summary>Joint 3. The joints right below the fingertip!</summary>
+        Distal       = 3,
+        /// <summary>Joint 4. The end/tip of each finger!</summary>
+        Tip          = 4
     }
 }
