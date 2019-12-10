@@ -40,7 +40,7 @@ font_t font_create(const char *file) {
 
 	// Read the data
 	unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) *length);
-	if (data == nullptr) { fclose(fp); return false; }
+	if (data == nullptr) { fclose(fp); return nullptr; }
 	fread(data, 1, length, fp);
 	fclose(fp);
 

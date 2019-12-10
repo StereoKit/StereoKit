@@ -277,7 +277,7 @@ shader_t shader_create(const char *hlsl) {
 
 	if (!shader_set_code(result, hlsl, nullptr)) {
 		shader_release(result);
-		return false;
+		return nullptr;
 	}
 	
 	return result;
