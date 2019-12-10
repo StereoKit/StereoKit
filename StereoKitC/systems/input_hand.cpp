@@ -60,14 +60,19 @@ void input_hand_init() {
 	material_t hand_mat = material_copy_id("default/material");
 	material_set_transparency(hand_mat, transparency_blend);
 
+	gradient_t color_grad = gradient_create();
+	gradient_add(color_grad, color128{ 1,1,1,0 }, 0);
+	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.2f);
+	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
+
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
+		color32 col = gradient_get32(color_grad, y/15.f);
 	for (int32_t x = 0; x < 16; x++) {
-		float pct = fminf((y / 10.0f), 1);
-		pct *= pct;
-		uint8_t a = (uint8_t)(pct * 255);
-		gradient[x + y * 16] = { 255, 255, 255, a };
+		gradient[x + y * 16] = col;
 	} }
+	gradient_release(color_grad);
+
 	tex_t gradient_tex = tex_create();
 	tex_set_colors (gradient_tex, 16, 16, gradient);
 	tex_set_address(gradient_tex, tex_address_clamp);
