@@ -53,7 +53,7 @@ public:
 	bool initialized = false;
 	bool valid       = false;
 	const CoreWindow *core_window;
-	Point mouse_point;
+	vec2  mouse_point;
 	float mouse_scroll = 0;
 	bool  mouse_down[2];
 	uint8_t key_state[255];
@@ -243,7 +243,10 @@ protected:
 		key_state[0x02] = args.CurrentPoint().Properties().IsRightButtonPressed();
 	}
 	void OnMouseChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		mouse_point = args.CurrentPoint().RawPosition();
+		Point p = args.CurrentPoint().RawPosition();
+		mouse_point = { 
+			(float)ConvertDipsToPixels(p.X),
+			(float)ConvertDipsToPixels(p.Y) };
 	}
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
@@ -374,9 +377,8 @@ void window_thread(void *data) {
 }
 
 void uwp_get_mouse(int &out_x, int &out_y, int &out_scroll) {
-	Point p = ViewProvider::inst->mouse_point;
-	out_x = p.X;
-	out_y = p.Y;
+	out_x = (int)ViewProvider::inst->mouse_point.x;
+	out_y = (int)ViewProvider::inst->mouse_point.y;
 	out_scroll = ViewProvider::inst->mouse_scroll;
 }
 bool uwp_mouse_button(int button) {
