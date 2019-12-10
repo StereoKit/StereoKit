@@ -5,8 +5,10 @@
 // #define SK_NO_LEAP_MOTION
 // #define SK_NO_RUNTIME_SHADER_COMPILE
 
-#define SK_VERSION "0.1"
-#define SK_VERSION_ID 000001
+#define SK_VERSION "0.1.0"
+#define SK_VERSION_ID 0x0000000100000000
+//                      MMMMiiiiPPPPrrrr
+// In order of Major.mInor.Patch.pre-Release
 
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)
@@ -63,6 +65,8 @@ SK_API bool32_t      sk_step          (void (*app_update)(void));
 SK_API runtime_      sk_active_runtime();
 SK_API void          sk_set_settings  (settings_t& settings);
 SK_API system_info_t sk_system_info   ();
+SK_API const char   *sk_version_name  ();
+SK_API uint64_t      sk_version_id    ();
 
 ///////////////////////////////////////////
 

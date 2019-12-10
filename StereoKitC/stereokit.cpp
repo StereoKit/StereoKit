@@ -70,6 +70,18 @@ system_info_t sk_system_info() {
 
 ///////////////////////////////////////////
 
+const char *sk_version_name() {
+	return SK_VERSION;
+}
+
+///////////////////////////////////////////
+
+uint64_t sk_version_id() {
+	return SK_VERSION_ID;
+}
+
+///////////////////////////////////////////
+
 void sk_app_update() {
 	if (sk_app_update_func != nullptr)
 		sk_app_update_func();

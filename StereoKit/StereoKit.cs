@@ -20,6 +20,12 @@ namespace StereoKit
         /// lot of different MR devices, so it's nice to have code for systems with particular characteristics!</summary>
         public static SystemInfo System => _system;
 
+        /// <summary>Human-readable version name embedded in the StereoKitC DLL.</summary>
+        public static string VersionName => NativeAPI.sk_version_name();
+        /// <summary>An integer version Id! This is defined using a hex value with this format: </summary>
+        /// `0xMMMMiiiiPPPPrrrr` in order of Major.mInor.Patch.pre-Release
+        public static ulong VersionId => NativeAPI.sk_version_id();
+
         /// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling 
         /// this function, if defaults need changed!</summary>
         /// <param name="name">Name of the application, this shows up an the top of the Win32 window, and is 
