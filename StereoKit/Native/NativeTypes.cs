@@ -444,7 +444,7 @@ namespace StereoKit
     }
 
     /// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
-    public enum Finger
+    public enum FingerId
     {
         /// <summary>Finger 0.</summary>
         Thumb  = 0,
@@ -461,7 +461,7 @@ namespace StereoKit
 
     /// <summary>Here's where hands get crazy! Technical terms, and watch out for
     /// the thumbs!</summary>
-    public enum FingerJoint
+    public enum JointId
     {
         /// <summary>Joint 0. This is at the base of the hand, right above the wrist. For 
         /// the thumb, Metacarpal and Proximal have the same value.</summary>

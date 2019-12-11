@@ -171,7 +171,7 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
-	hand.palm.orientation = orientation;
+	hand.palm.orientation = quat_from_angles(0,handedness == handed_right ? 90 : -90, handedness == handed_right ? -90 : 90) * orientation;
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.state & input_state_tracked;
@@ -336,12 +336,24 @@ void input_hand_update_mesh(handed_ hand) {
 ///////////////////////////////////////////
 
 void input_hand_visible(handed_ hand, bool32_t visible) {
+	if (hand == handed_max) {
+		input_hand_visible(handed_left,  visible);
+		input_hand_visible(handed_right, visible);
+		return;
+	}
+
 	hand_state[hand].visible = visible;
 }
 
 ///////////////////////////////////////////
 
 void input_hand_solid(handed_ hand, bool32_t solid) {
+	if (hand == handed_max) {
+		input_hand_solid(handed_left,  solid);
+		input_hand_solid(handed_right, solid);
+		return;
+	}
+
 	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}
@@ -350,6 +362,12 @@ void input_hand_solid(handed_ hand, bool32_t solid) {
 ///////////////////////////////////////////
 
 void input_hand_material(handed_ hand, material_t material) {
+	if (hand == handed_max) {
+		input_hand_material(handed_left,  material);
+		input_hand_material(handed_right, material);
+		return;
+	}
+
 	material_release(hand_state[hand].material);
 	
 	if (material != nullptr)

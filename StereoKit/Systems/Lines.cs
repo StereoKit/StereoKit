@@ -16,5 +16,12 @@ namespace StereoKit
         /// <param name="thickness">Thickness of the line in meters.</param>
         public static void Add(Vec3 start, Vec3 end, Color32 color, float thickness)
             =>NativeAPI.line_add(start, end, color, thickness);
+
+        public static void AddAxis(Pose atPose, float size = Units.cm2m)
+        {
+            Lines.Add(atPose.position, atPose.position + (atPose.orientation * Vec3.Forward) * size, new Color32(0, 0, 255, 255), size*0.1f);
+            Lines.Add(atPose.position, atPose.position + (atPose.orientation * Vec3.Right) * size, new Color32(255, 0, 0, 255), size*0.1f);
+            Lines.Add(atPose.position, atPose.position + (atPose.orientation * Vec3.Up) * size, new Color32(0, 255, 0, 255), size*0.1f);
+        }
     }
 }

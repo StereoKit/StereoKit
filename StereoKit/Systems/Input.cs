@@ -7,10 +7,10 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct HandJoint
     {
-        Vec3 position;
-        Quat orientation;
-        float size;
-    };
+        public Vec3 position;
+        public Quat orientation;
+        public float size;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Hand {
@@ -21,8 +21,8 @@ namespace StereoKit
         public  Handed      handedness;
         public  InputState  state;
 
-        public HandJoint this[Finger finger, FingerJoint joint] => fingers[(int)finger + (int)joint * 5];
-        public HandJoint this[int    finger, int         joint] => fingers[finger + joint * 5];
+        public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger + (int)joint * 5];
+        public HandJoint this[int      finger, int     joint] => fingers[finger + joint * 5];
 
         public bool IsPinched       { get { return (state & InputState.Pinch)     > 0; } }
         public bool IsJustPinched   { get { return (state & InputState.JustPinch) > 0; } }
@@ -66,10 +66,8 @@ namespace StereoKit
         {
             return Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
         }
-        public static Pose Head()
-        {
-            return NativeAPI.input_head();
-        }
+        public static Pose Head => NativeAPI.input_head();
+
         public static Mouse Mouse()
         {
             return Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
