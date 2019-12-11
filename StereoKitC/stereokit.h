@@ -557,27 +557,12 @@ enum handed_ {
 	handed_max   = 2,
 };
 
-enum input_state_ {
-	input_state_none        = 0,
-	input_state_any         = 0x7FFFFFFF,
-	input_state_tracked     = 1 << 0,
-	input_state_justtracked = 1 << 1,
-	input_state_untracked   = 1 << 2,
-	input_state_pinch       = 1 << 3,
-	input_state_justpinch   = 1 << 4,
-	input_state_unpinch     = 1 << 5,
-	input_state_grip        = 1 << 6,
-	input_state_justgrip    = 1 << 7,
-	input_state_ungrip      = 1 << 8,
-};
-SK_MakeFlag(input_state_);
-
 enum button_state_ {
-	button_state_up        = 0,
-	button_state_down      = 1 << 0,
-	button_state_just_up   = 1 << 1,
-	button_state_just_down = 1 << 2,
-	button_state_changed   = button_state_just_up | button_state_just_down,
+	button_state_inactive      = 0,
+	button_state_active        = 1 << 0,
+	button_state_just_inactive = 1 << 1,
+	button_state_just_active   = 1 << 2,
+	button_state_changed       = button_state_just_inactive | button_state_just_active,
 };
 SK_MakeFlag(button_state_);
 
@@ -599,7 +584,9 @@ struct hand_t {
 	pose_t  wrist;
 	pose_t  palm;
 	handed_ handedness;
-	input_state_ state;
+	button_state_ tracked_state;
+	button_state_ pinch_state;
+	button_state_ grip_state;
 };
 
 struct mouse_t {
@@ -640,9 +627,9 @@ SK_API void          input_hand_visible (handed_ hand, bool32_t visible);
 SK_API void          input_hand_solid   (handed_ hand, bool32_t solid);
 SK_API void          input_hand_material(handed_ hand, material_t material);
 
-SK_API void input_subscribe  (input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
-SK_API void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer));
-SK_API void input_fire_event (input_source_ source, input_state_ event, const pointer_t &pointer);
+SK_API void input_subscribe  (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer));
+SK_API void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer));
+SK_API void input_fire_event (input_source_ source, button_state_ event, const pointer_t &pointer);
 
 ///////////////////////////////////////////
 

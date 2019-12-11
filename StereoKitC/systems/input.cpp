@@ -16,8 +16,8 @@ namespace sk {
 
 struct input_event_t {
 	input_source_ source;
-	input_state_  event;
-	void (*event_callback)(input_source_ source, input_state_ evt, const pointer_t &pointer);
+	button_state_ event;
+	void (*event_callback)(input_source_ source, button_state_ evt, const pointer_t &pointer);
 };
 
 vector<input_event_t> input_listeners;
@@ -66,13 +66,13 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 
 ///////////////////////////////////////////
 
-void input_subscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
+void input_subscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
 	input_listeners.push_back({ source, event, event_callback });
 }
 
 ///////////////////////////////////////////
 
-void input_unsubscribe(input_source_ source, input_state_ event, void (*event_callback)(input_source_ source, input_state_ event, const pointer_t &pointer)) {
+void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
 	for (int i = (int)input_listeners.size()-1; i >= 0; i--) {
 		if (input_listeners[i].source         == source && 
 			input_listeners[i].event          == event  && 
@@ -84,7 +84,7 @@ void input_unsubscribe(input_source_ source, input_state_ event, void (*event_ca
 
 ///////////////////////////////////////////
 
-void input_fire_event(input_source_ source, input_state_ event, const pointer_t &pointer) {
+void input_fire_event(input_source_ source, button_state_ event, const pointer_t &pointer) {
 	for (size_t i = 0; i < input_listeners.size(); i++) {
 		if (input_listeners[i].source & source && input_listeners[i].event & event) {
 			input_listeners[i].event_callback(source, event, pointer);

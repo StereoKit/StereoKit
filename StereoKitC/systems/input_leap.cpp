@@ -84,7 +84,7 @@ void input_leap_thread(void *arg) {
 					hand_joint_t *pose   = input_hand_get_pose_buffer(handed);
 
 					hand_t &inp_hand = (hand_t &)input_hand(handed);
-					inp_hand.state = inp_hand.state | input_state_tracked;
+					inp_hand.tracked_state = button_state_active;
 					copy_hand(inp_hand, &leap_hands[handed][0][0], hand);
 				}
 				leap_has_new_hands = true;

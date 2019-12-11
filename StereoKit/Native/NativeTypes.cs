@@ -309,44 +309,23 @@ namespace StereoKit
         Available   = 1 << 0,
     }
 
-    /// <summary>A bit-flag that tracks the state of an input!</summary>
-    [Flags]
-    public enum InputState
-    {
-        /// <summary>A default none state.</summary>
-        None        = 0,
-        /// <summary>Matches with any input state!</summary>
-        Any         = 0x7FFFFFFF,
-        /// <summary>Matches with input states that are currently tracked.</summary>
-        Tracked     = 1 << 0,
-        /// <summary>Matches with input states that have just become tracked! This 
-        /// is only true for a single frame at a time.</summary>
-        JustTracked = 1 << 1,
-        /// <summary>Matches with input states that have just stopped being tracked.
-        /// is only true for a single frame at a time.</summary>
-        Untracked   = 1 << 2,
-        Pinch       = 1 << 3,
-        JustPinch   = 1 << 4,
-        Unpinch     = 1 << 5,
-        Grip        = 1 << 6,
-        JustGrip    = 1 << 7,
-        Ungrip      = 1 << 8,
-    }
-
     /// <summary>A bit-flag for the current state of a button input.</summary>
     [Flags]
     public enum BtnState
     {
         /// <summary>Is the button currently up, unpressed?</summary>
-        Up       = 0,
+        Inactive     = 0,
         /// <summary>Is the button currently down, pressed?</summary>
-        Down     = 1 << 0,
+        Active       = 1 << 0,
         /// <summary>Has the button just been released? Only true for a single frame.</summary>
-        JustUp   = 1 << 1,
+        JustInactive = 1 << 1,
         /// <summary>Has the button just been pressed? Only true for a single frame.</summary>
-        JustDown = 1 << 2,
+        JustActive   = 1 << 2,
         /// <summary>Has the button just changed state this frame?</summary>
-        Changed  = JustUp | JustDown,
+        Changed      = JustInactive | JustActive,
+        /// <summary>Matches with all states!</summary>
+        Any          = 0x7FFFFFFF,
+
     }
 
     /// <summary>A collection of extension methods for the BtnState enum that makes
@@ -355,17 +334,17 @@ namespace StereoKit
     {
         /// <summary>Is the button pressed?</summary>
         /// <returns>True if pressed, false if not.</returns>
-        public static bool IsPressed     (this BtnState state) => (state & BtnState.Down    ) > 0;
+        public static bool IsPressed     (this BtnState state) => (state & BtnState.Active    ) > 0;
         /// <summary>Has the button just been pressed this frame?</summary>
         /// <returns>True if pressed, false if not.</returns>
-        public static bool IsJustPressed (this BtnState state) => (state & BtnState.JustDown) > 0;
+        public static bool IsJustPressed (this BtnState state) => (state & BtnState.JustActive) > 0;
         /// <summary>Has the button just been released this frame?</summary>
         /// <returns>True if released, false if not.</returns>
-        public static bool IsJustReleased(this BtnState state) => (state & BtnState.JustUp  ) > 0;
+        public static bool IsJustReleased(this BtnState state) => (state & BtnState.JustInactive  ) > 0;
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void InputEventCallback(InputSource source, InputState type, IntPtr pointer);
+    public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Pointer

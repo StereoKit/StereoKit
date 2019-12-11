@@ -247,9 +247,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 	
 	render_global_buffer.time = time_getf();
 
-	vec3 tip = input_hand(handed_right).state & input_state_tracked ? input_hand(handed_right).fingers[1][4].position : vec3{0,-1000,0};
+	vec3 tip = input_hand(handed_right).tracked_state & button_state_active ? input_hand(handed_right).fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
-	tip = input_hand(handed_left).state & input_state_tracked ? input_hand(handed_left).fingers[1][4].position : vec3{0,-1000,0};
+	tip = input_hand(handed_left).tracked_state & button_state_active ? input_hand(handed_left).fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
 
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);

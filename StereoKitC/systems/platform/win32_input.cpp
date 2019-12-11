@@ -61,13 +61,13 @@ void win32_input_update() {
 #if WINDOWS_UWP
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = button_make_state(
-			input_key_data.keys[i] & button_state_down,
+			input_key_data.keys[i] & button_state_active,
 			uwp_key_down(i));
 	}
 #else
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = button_make_state(
-			input_key_data.keys[i] & button_state_down,
+			input_key_data.keys[i] & button_state_active,
 			GetKeyState(i) & 0x8000);
 	}
 #endif
@@ -140,9 +140,9 @@ void win32_mouse_hand() {
 	bool hand_tracked = false;
 	vec3 pointer_dir  = pointer_cursor->ray.dir;
 
-	bool was_tracked   = hand.state & input_state_tracked;
-	bool was_l_pressed = hand.state & input_state_pinch;
-	bool was_r_pressed = hand.state & input_state_grip;
+	bool was_tracked   = hand.tracked_state & button_state_active;
+	bool was_l_pressed = hand.pinch_state   & button_state_active;
+	bool was_r_pressed = hand.grip_state    & button_state_active;
 
 	pointer_cursor->state = pointer_state_none;
 
@@ -153,8 +153,8 @@ void win32_mouse_hand() {
 		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.00025f);
 		hand_rot     = quat_from_angles(40,30,90) * quat_lookat(vec3_zero, ray.dir);
 		hand_tracked = true;
-		l_pressed    = input_key(key_mouse_left ) & button_state_down;
-		r_pressed    = input_key(key_mouse_right) & button_state_down;
+		l_pressed    = input_key(key_mouse_left ) & button_state_active;
+		r_pressed    = input_key(key_mouse_right) & button_state_active;
 
 		pointer_cursor->state |= pointer_state_available;
 		pointer_cursor->ray.dir     = ray.dir;
@@ -166,9 +166,9 @@ void win32_mouse_hand() {
 	input_hand_sim(handed_left,  vec3_zero, quat_identity, false, false, false);
 
 	input_source_ src = input_source_hand | input_source_hand_right;
-	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? input_state_justtracked : input_state_untracked, *pointer_cursor);
-	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? input_state_justpinch   : input_state_unpinch,   *pointer_cursor);
-	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? input_state_justgrip    : input_state_ungrip,    *pointer_cursor);
+	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
+	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
+	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 }
 
 } // namespace sk

@@ -30,7 +30,7 @@ namespace StereoKitTest
         int               selectedIndex = -1;
         string            path;
         string            title;
-        Pose              windowPose = new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));
+        Pose              windowPose = new Pose(new Vec3(-10,0,0)*Units.cm2m, Quat.LookDir(-Vec3.Forward));
         #endregion
 
         public string SelectedFile { 
@@ -95,7 +95,7 @@ namespace StereoKitTest
         {
             bool result = false;
 
-            UI.WindowBegin(title, ref windowPose, new Vec2(30,0) *Units.cm2m);
+            UI.WindowBegin(title, ref windowPose, new Vec2(40,0) *Units.cm2m);
             if (UI.Button("Up"))
                 DirectoryUp();
             UI.SameLine();

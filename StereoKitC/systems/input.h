@@ -20,11 +20,11 @@ void input_shutdown();
 void input_update  ();
 
 inline button_state_ button_make_state(bool32_t was, bool32_t is) { 
-	button_state_ result = is ? button_state_down : button_state_up;
+	button_state_ result = is ? button_state_active : button_state_inactive;
 	if (was && !is)
-		result |= button_state_just_up;
+		result |= button_state_just_inactive;
 	if (is && !was)
-		result |= button_state_just_down;
+		result |= button_state_just_active;
 	return result;
 }
 

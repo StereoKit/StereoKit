@@ -748,7 +748,7 @@ void openxr_poll_actions() {
 
 		// Get event poses, and fire our own events for them
 		const hand_t &curr_hand = input_hand((handed_)hand);
-		if ((curr_hand.state & input_state_justpinch) || (curr_hand.state & input_state_unpinch)) {
+		if ((curr_hand.pinch_state & button_state_just_active) || (curr_hand.pinch_state & button_state_just_inactive)) {
 			space_location = { XR_TYPE_SPACE_LOCATION };
 			res            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &space_location);
 			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
@@ -757,11 +757,11 @@ void openxr_poll_actions() {
 
 				input_fire_event(
 					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right), 
-					curr_hand.state & input_state_pinch ? input_state_justpinch : input_state_unpinch, 
+					curr_hand.pinch_state & button_state_active ? button_state_just_active : button_state_just_inactive, 
 					event_pointer);
 			}
 		}
-		if ((curr_hand.state & input_state_justgrip) || (curr_hand.state & input_state_ungrip)) {
+		if ((curr_hand.grip_state & button_state_just_active) || (curr_hand.grip_state & button_state_just_inactive)) {
 			space_location = { XR_TYPE_SPACE_LOCATION };
 			res            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, grip_state.lastChangeTime, &space_location);
 			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
@@ -770,20 +770,20 @@ void openxr_poll_actions() {
 
 				input_fire_event(
 					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-					curr_hand.state & input_state_grip ? input_state_justgrip : input_state_ungrip, 
+					curr_hand.grip_state & button_state_active ? button_state_just_active : button_state_just_inactive, 
 					event_pointer);
 			}
 		}
-		if (curr_hand.state & input_state_justtracked) {
+		if (curr_hand.tracked_state & button_state_just_active) {
 			input_fire_event(
 				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-				input_state_justtracked, 
+				button_state_just_active, 
 				*pointer);
 		}
-		if (curr_hand.state & input_state_untracked) {
+		if (curr_hand.tracked_state & button_state_just_inactive) {
 			input_fire_event(
 				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-				input_state_untracked, 
+				button_state_just_inactive, 
 				*pointer);
 		}
 	}

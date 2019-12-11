@@ -123,7 +123,7 @@ void input_hand_update() {
 		input_hand_state_update((handed_)i);
 
 		// Update hand meshes
-		bool tracked = hand_state[i].info.state & input_state_tracked;
+		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
@@ -143,10 +143,11 @@ void input_hand_state_update(handed_ handedness) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// Update hand state based on inputs
-	bool was_trigger = hand.state & input_state_pinch;
-	bool was_gripped = hand.state & input_state_grip;
+	bool was_trigger = hand.pinch_state & button_state_active;
+	bool was_gripped = hand.grip_state  & button_state_active;
 	// Clear all except tracking state
-	hand.state &= input_state_tracked | input_state_untracked | input_state_justtracked;
+	hand.pinch_state = button_state_inactive;
+	hand.grip_state  = button_state_inactive;
 	
 	float finger_dist = 2 * cm2m + hand.fingers[hand_finger_index][hand_joint_tip].size + hand.fingers[hand_finger_thumb][hand_joint_tip].size;
 	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < (finger_dist * finger_dist);
@@ -154,10 +155,10 @@ void input_hand_state_update(handed_ handedness) {
 		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
 		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m));
 
-	if (was_trigger != is_trigger) hand.state |= is_trigger ? input_state_justpinch   : input_state_unpinch;
-	if (was_gripped != is_grip)    hand.state |= is_grip    ? input_state_justgrip    : input_state_ungrip;
-	if (is_trigger) hand.state |= input_state_pinch;
-	if (is_grip)    hand.state |= input_state_grip;
+	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
+	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
+	if (is_trigger) hand.pinch_state |= button_state_active;
+	if (is_grip)    hand.grip_state  |= button_state_active;
 }
 
 ///////////////////////////////////////////
@@ -174,9 +175,9 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	hand.palm.orientation = quat_from_angles(0,handedness == handed_right ? 90 : -90, handedness == handed_right ? -90 : 90) * orientation;
 	
 	// Update hand state based on inputs
-	bool was_tracked = hand.state & input_state_tracked;
-	if (was_tracked != tracked) hand.state |= tracked ? input_state_justtracked : input_state_untracked;
-	if (tracked)                hand.state |= input_state_tracked;
+	bool was_tracked = hand.tracked_state & button_state_active;
+	if (was_tracked != tracked) hand.tracked_state |= tracked ? button_state_just_active : button_state_just_inactive;
+	if (tracked)                hand.tracked_state |= button_state_active;
 
 	// only sim it if it's tracked
 	if (tracked) {

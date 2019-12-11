@@ -257,9 +257,9 @@ namespace StereoKit
 
         ///////////////////////////////////////////
         
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_subscribe  (InputSource source, InputState evt, InputEventCallback event_callback);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_unsubscribe(InputSource source, InputState evt, InputEventCallback event_callback);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_fire_event (InputSource source, InputState evt, IntPtr pointer);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_unsubscribe(InputSource source, BtnState evt, InputEventCallback event_callback);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void input_fire_event (InputSource source, BtnState evt, IntPtr pointer);
 
         ///////////////////////////////////////////
             

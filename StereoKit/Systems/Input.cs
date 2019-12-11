@@ -19,22 +19,25 @@ namespace StereoKit
         public  Pose        wrist;
         public  Pose        palm;
         public  Handed      handedness;
-        public  InputState  state;
+        public  BtnState    trackedState;
+        public  BtnState    pinchState;
+        public  BtnState    gripState;
+
 
         public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger + (int)joint * 5];
         public HandJoint this[int      finger, int     joint] => fingers[finger + joint * 5];
 
-        public bool IsPinched       { get { return (state & InputState.Pinch)     > 0; } }
-        public bool IsJustPinched   { get { return (state & InputState.JustPinch) > 0; } }
-        public bool IsJustUnpinched { get { return (state & InputState.Unpinch)   > 0; } }
+        public bool IsPinched       { get { return (pinchState & BtnState.Active)       > 0; } }
+        public bool IsJustPinched   { get { return (pinchState & BtnState.JustActive)   > 0; } }
+        public bool IsJustUnpinched { get { return (pinchState & BtnState.JustInactive) > 0; } }
 
-        public bool IsGripped       { get { return (state & InputState.Grip)     > 0; } }
-        public bool IsJustGripped   { get { return (state & InputState.JustGrip) > 0; } }
-        public bool IsJustUngripped { get { return (state & InputState.Ungrip)   > 0; } }
+        public bool IsGripped       { get { return (gripState & BtnState.Active)       > 0; } }
+        public bool IsJustGripped   { get { return (gripState & BtnState.JustActive)   > 0; } }
+        public bool IsJustUngripped { get { return (gripState & BtnState.JustInactive) > 0; } }
 
-        public bool IsTracked       { get { return (state & InputState.Tracked)     > 0; } }
-        public bool IsJustTracked   { get { return (state & InputState.JustTracked) > 0; } }
-        public bool IsJustUntracked { get { return (state & InputState.Untracked)   > 0; } }
+        public bool IsTracked       { get { return (trackedState & BtnState.Active)       > 0; } }
+        public bool IsJustTracked   { get { return (trackedState & BtnState.JustActive)   > 0; } }
+        public bool IsJustUntracked { get { return (trackedState & BtnState.JustInactive) > 0; } }
 
         public Material Material { set { NativeAPI.input_hand_material(handedness, value._inst); } }
         public bool     Visible  { set { NativeAPI.input_hand_visible (handedness, value ? 1 : 0); } }
@@ -47,8 +50,8 @@ namespace StereoKit
         struct EventListener
         {
             public InputSource source;
-            public InputState type;
-            public Action<InputSource, InputState, Pointer> callback;
+            public BtnState type;
+            public Action<InputSource, BtnState, Pointer> callback;
         }
         static List<EventListener> listeners   = new List<EventListener>();
         static bool                initialized = false;
@@ -93,9 +96,9 @@ namespace StereoKit
         {
             initialized = true;
             callback    = OnEvent; // This is stored in a persistant variable to force the callback from getting garbage collected!
-            NativeAPI.input_subscribe(InputSource.Any, InputState.Any, callback);
+            NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
         }
-        static void OnEvent(InputSource source, InputState evt, IntPtr pointer)
+        static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)
         {
             Pointer ptr = Marshal.PtrToStructure<Pointer>(pointer);
             for (int i = 0; i < listeners.Count; i++)
@@ -108,7 +111,7 @@ namespace StereoKit
             }
         }
 
-        public static void Subscribe  (InputSource eventSource, InputState eventTypes, Action<InputSource, InputState, Pointer> onEvent)
+        public static void Subscribe  (InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
         {
             if (!initialized)
                 Initialize();
@@ -119,7 +122,7 @@ namespace StereoKit
             item.type     = eventTypes;
             listeners.Add(item);
         }
-        public static void Unsubscribe(InputSource eventSource, InputState eventTypes, Action<InputSource, InputState, Pointer> onEvent)
+        public static void Unsubscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
         {
             if (!initialized)
                 Initialize();
@@ -133,7 +136,7 @@ namespace StereoKit
                 }
             }
         }
-        public static void FireEvent  (InputSource eventSource, InputState eventTypes, Pointer pointer)
+        public static void FireEvent  (InputSource eventSource, BtnState eventTypes, Pointer pointer)
         {
             IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());
             Marshal.StructureToPtr(pointer, arg, false);
