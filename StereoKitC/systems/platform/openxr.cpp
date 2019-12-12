@@ -379,7 +379,7 @@ XrReferenceSpaceType openxr_preferred_space() {
 			break;
 	}
 
-	// TODO: UNBOUNDED_MSFT and STAGE have very different behaviout, but
+	// TODO: UNBOUNDED_MSFT and STAGE have very different behavior, but
 	// STAGE behavior is preferred. So it would be nice to make some considerations
 	// here to change that?
 
@@ -865,8 +865,9 @@ void openxr_poll_actions() {
 			inp_hand.tracked_state = button_state_active;
 			hand_joint_t* pose = input_hand_get_pose_buffer((handed_)i);
 			memcpy(pose, &xr_hand_data[i][0], sizeof(hand_joint_t) * 25);
-			inp_hand.palm = pose_t{ xr_hand_data[i][25].position, xr_hand_data[i][25].orientation };
-			inp_hand.palm = pose_t{ xr_hand_data[i][26].position, xr_hand_data[i][26].orientation };
+
+			inp_hand.palm  = pose_t{ xr_hand_data[i][25].position, quat_from_angles(-90,0,0) * xr_hand_data[i][25].orientation };
+			inp_hand.wrist = pose_t{ xr_hand_data[i][26].position, quat_from_angles(-90,0,0) * xr_hand_data[i][26].orientation };
 
 			xr_hand_data_ready[i] = false;
 		}

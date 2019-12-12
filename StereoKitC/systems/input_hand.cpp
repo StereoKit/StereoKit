@@ -46,8 +46,10 @@ const hand_t &input_hand(handed_ hand) {
 ///////////////////////////////////////////
 
 void modify(pose_t *pose) {
+	quat rot = quat_from_angles(0, 180, 0);
 	for (size_t i = 0; i < 25; i++) {
 		pose[i].position *= 1.15f;
+		pose[i].orientation = rot * pose[i].orientation;
 	}
 }
 
@@ -259,17 +261,17 @@ void input_hand_update_mesh(handed_ hand) {
 			vind_t end_vert   = (f+1) * (ring_count * SK_FINGERJOINTS + 1) - (ring_count + 1);
 
 			// start cap
-			data.inds[ind++] = start_vert+0;
-			data.inds[ind++] = start_vert+1;
 			data.inds[ind++] = start_vert+2;
+			data.inds[ind++] = start_vert+1;
+			data.inds[ind++] = start_vert+0;
 
-			data.inds[ind++] = start_vert+6;
+			data.inds[ind++] = start_vert+4;
 			data.inds[ind++] = start_vert+3;
-			data.inds[ind++] = start_vert+4;
-
 			data.inds[ind++] = start_vert+6;
-			data.inds[ind++] = start_vert+4;
+
 			data.inds[ind++] = start_vert+5;
+			data.inds[ind++] = start_vert+4;
+			data.inds[ind++] = start_vert+6;
 		
 			// tube faces
 			for (vind_t j = 0; j < SK_FINGERJOINTS-1; j++) {
@@ -279,35 +281,35 @@ void input_hand_update_mesh(handed_ hand) {
 				vind_t next1 = start_vert + (j+1) * ring_count + c;
 				vind_t curr2 = start_vert +  j    * ring_count + (c+1);
 				vind_t next2 = start_vert + (j+1) * ring_count + (c+1);
-				data.inds[ind++] = curr1;
+				data.inds[ind++] = next2;
 				data.inds[ind++] = next1;
-				data.inds[ind++] = next2;
-
 				data.inds[ind++] = curr1;
-				data.inds[ind++] = next2;
+
 				data.inds[ind++] = curr2;
+				data.inds[ind++] = next2;
+				data.inds[ind++] = curr1;
 			} }
 
 			// end cap
-			data.inds[ind++] = end_vert+7;
-			data.inds[ind++] = end_vert+1;
 			data.inds[ind++] = end_vert+0;
-
-			data.inds[ind++] = end_vert+7;
-			data.inds[ind++] = end_vert+2;
 			data.inds[ind++] = end_vert+1;
-
 			data.inds[ind++] = end_vert+7;
-			data.inds[ind++] = end_vert+4;
+
+			data.inds[ind++] = end_vert+1;
+			data.inds[ind++] = end_vert+2;
+			data.inds[ind++] = end_vert+7;
+
 			data.inds[ind++] = end_vert+3;
-
-			data.inds[ind++] = end_vert+7;
-			data.inds[ind++] = end_vert+5;
 			data.inds[ind++] = end_vert+4;
-
 			data.inds[ind++] = end_vert+7;
-			data.inds[ind++] = end_vert+6;
+
+			data.inds[ind++] = end_vert+4;
 			data.inds[ind++] = end_vert+5;
+			data.inds[ind++] = end_vert+7;
+
+			data.inds[ind++] = end_vert+5;
+			data.inds[ind++] = end_vert+6;
+			data.inds[ind++] = end_vert+7;
 		}
 
 		// Generate uvs and colors for the mesh

@@ -58,10 +58,10 @@ material_t material_create(shader_t shader) {
 
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
-	result->cull       = cull_back;
 	result->alpha_mode = transparency_none;
 	result->shader     = shader;
 	
+	material_set_cull(result, cull_back);
 	material_create_arg_defaults(result, shader);
 
 	return result;

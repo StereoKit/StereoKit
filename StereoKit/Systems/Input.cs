@@ -10,6 +10,8 @@ namespace StereoKit
         public Vec3 position;
         public Quat orientation;
         public float size;
+
+        public Pose Pose => new Pose(position, orientation);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -24,8 +26,8 @@ namespace StereoKit
         public  BtnState    gripState;
 
 
-        public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger + (int)joint * 5];
-        public HandJoint this[int      finger, int     joint] => fingers[finger + joint * 5];
+        public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
+        public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
 
         public bool IsPinched       { get { return (pinchState & BtnState.Active)       > 0; } }
         public bool IsJustPinched   { get { return (pinchState & BtnState.JustActive)   > 0; } }
