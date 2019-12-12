@@ -21,6 +21,24 @@
 
 using namespace std;
 
+#if WINDOWS_UWP
+#include "winrt/Windows.UI.Core.h" 
+#include "winrt/Windows.UI.Input.Spatial.h" 
+#include "winrt/Windows.Perception.People.h"
+#include "winrt/Windows.Perception.Spatial.h"
+#include "winrt/Windows.Foundation.Numerics.h"
+#include "winrt/Windows.ApplicationModel.Core.h"
+
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Input::Spatial;
+using namespace winrt::Windows::Perception::People;
+using namespace winrt::Windows::Perception::Spatial;
+using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Windows::ApplicationModel::Core;
+
+static SpatialStationaryFrameOfReference xr_spatial_stage = nullptr;
+#endif
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -63,6 +81,9 @@ XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 xr_input_t     xr_input = {};
 XrTime         xr_time;
 bool           xr_depth_lsr = false;
+bool           xr_hand_support = false;
+hand_joint_t   xr_hand_data[2][27] = {};
+bool           xr_hand_data_ready[2] = {};
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
 
@@ -237,6 +258,52 @@ bool openxr_init(const char *app_name) {
 	}
 	
 	openxr_make_actions();
+
+			
+#if WINDOWS_UWP
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+		xr_spatial_stage = SpatialLocator::GetDefault().CreateStationaryFrameOfReferenceAtCurrentLocation();
+
+		SpatialInteractionManager interactionManager = SpatialInteractionManager::GetForCurrentView();
+		xr_hand_support = interactionManager.IsSourceKindSupported(SpatialInteractionSourceKind::Hand);
+
+		interactionManager.SourceDetected([](auto&&, const SpatialInteractionSourceEventArgs &args) {
+			if (args.State().Source().Kind() == SpatialInteractionSourceKind::Hand)
+				log_info("Found hand!");
+		});
+		interactionManager.SourceLost    ([](auto&&, const SpatialInteractionSourceEventArgs &args) {});
+		interactionManager.SourceUpdated ([](auto&&, const SpatialInteractionSourceEventArgs &args) {
+			HandPose pose = args.State().TryGetHandPose();
+			if (pose && xr_spatial_stage) {
+				JointPose               poses[27];
+				SpatialCoordinateSystem coordinates = xr_spatial_stage.CoordinateSystem();
+				handed_                 handed = args.State().Source().Handedness() == SpatialInteractionSourceHandedness::Left ? handed_left : handed_right;
+				bool gotJoints = pose.TryGetJoints(
+					coordinates,
+					{
+						HandJointKind::ThumbMetacarpal,  HandJointKind::ThumbMetacarpal,  HandJointKind::ThumbProximal,      HandJointKind::ThumbDistal,  HandJointKind::ThumbTip,
+						HandJointKind::IndexMetacarpal,  HandJointKind::IndexProximal,    HandJointKind::IndexIntermediate,  HandJointKind::IndexDistal,  HandJointKind::IndexTip,
+						HandJointKind::MiddleMetacarpal, HandJointKind::MiddleProximal,   HandJointKind::MiddleIntermediate, HandJointKind::MiddleDistal, HandJointKind::MiddleTip,
+						HandJointKind::RingMetacarpal,   HandJointKind::RingProximal,     HandJointKind::RingIntermediate,   HandJointKind::RingDistal,   HandJointKind::RingTip,
+						HandJointKind::LittleMetacarpal, HandJointKind::LittleProximal,   HandJointKind::LittleIntermediate, HandJointKind::LittleDistal, HandJointKind::LittleTip,
+						HandJointKind::Palm, HandJointKind::Wrist, },
+					poses);
+				if (gotJoints) {
+					for (size_t i = 0; i < 27; i++) {
+						memcpy(&xr_hand_data[handed][i].position,    &poses[i].Position,    sizeof(vec3));
+						memcpy(&xr_hand_data[handed][i].orientation, &poses[i].Orientation, sizeof(quat));
+						xr_hand_data[handed][i].size = (poses[i].Radius/2.0f) * 1.414f;
+					}
+					xr_hand_data_ready[handed] = true;
+				} else {
+					log_warn("Couldn't get hand joints!");
+				}
+			} else {
+				log_warn("Couldn't get hand pose!");
+			}
+		});
+	});
+#endif
 
 	return true;
 }
@@ -435,6 +502,7 @@ void openxr_poll_events() {
 				begin_info.primaryViewConfigurationType = app_config_view;
 				xrBeginSession(xr_session, &begin_info);
 				xr_running = true;
+				log_diag("OpenXR session begin.");
 			} break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
 			case XR_SESSION_STATE_EXITING:      sk_run = false;              break;
@@ -711,7 +779,7 @@ void openxr_poll_actions() {
 	}
 
 	// Now we'll get the current states of our actions, and store them for later use
-	for (uint32_t hand = 0; hand < handed_max; hand++) {
+	for (uint32_t hand = 0; hand < handed_max && !xr_hand_support; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xr_input.handSubactionPath[hand];
 
@@ -785,6 +853,22 @@ void openxr_poll_actions() {
 				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
 				button_state_just_inactive, 
 				*pointer);
+		}
+	}
+
+	if (xr_hand_support) {
+		for (size_t i = 0; i < handed_max; i++) {
+			if (!xr_hand_data_ready[i])
+				continue;
+
+			hand_t& inp_hand = (hand_t&)input_hand((handed_)i);
+			inp_hand.tracked_state = button_state_active;
+			hand_joint_t* pose = input_hand_get_pose_buffer((handed_)i);
+			memcpy(pose, &xr_hand_data[i][0], sizeof(hand_joint_t) * 25);
+			inp_hand.palm = pose_t{ xr_hand_data[i][25].position, xr_hand_data[i][25].orientation };
+			inp_hand.palm = pose_t{ xr_hand_data[i][26].position, xr_hand_data[i][26].orientation };
+
+			xr_hand_data_ready[i] = false;
 		}
 	}
 }
