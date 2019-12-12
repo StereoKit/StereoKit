@@ -151,7 +151,7 @@ void input_hand_state_update(handed_ handedness) {
 	hand.pinch_state = button_state_inactive;
 	hand.grip_state  = button_state_inactive;
 	
-	float finger_dist = 2 * cm2m + hand.fingers[hand_finger_index][hand_joint_tip].size + hand.fingers[hand_finger_thumb][hand_joint_tip].size;
+	float finger_dist = 2 * cm2m + hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < (finger_dist * finger_dist);
 	bool is_grip =
 		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
@@ -218,7 +218,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			}
 			hand.fingers[f][j].position    = orientation * pos + hand_pos;
 			hand.fingers[f][j].orientation = rot * orientation;
-			hand.fingers[f][j].size        = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
 		} }
 	}
 }
@@ -357,14 +357,16 @@ void input_hand_update_mesh(handed_ hand) {
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
+		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][max(0,j-1)];
 		const hand_joint_t &pose = hand_state[hand].info.fingers[f][j];
+		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
 		// Make local right and up axis vectors
-		vec3  right = pose.orientation * vec3_right;
-		vec3  up    = pose.orientation * vec3_up;
+		vec3  right = orientation * vec3_right;
+		vec3  up    = orientation * vec3_up;
 
 		// Find the scale for this joint
-		float scale = pose.size;
+		float scale = pose.radius;
 		if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
 
 		// Use the local axis to create a ring of verts
@@ -377,7 +379,7 @@ void input_hand_update_mesh(handed_ hand) {
 	const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-2];
 	const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
 	data.verts[v].norm = vec3_normalize(pose_last.position - pose_prev.position);
-	data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.size;
+	data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius;
 	v++;
 	}
 

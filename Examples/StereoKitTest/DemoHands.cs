@@ -67,7 +67,7 @@ namespace StereoKitTest
                 for (int f = 0; f < 5; f++) {
                 for (int j = 0; j < 5; j++) {
                     HandJoint joint = hand[f, j];
-                    jointMesh.Draw(jointMaterial, Matrix.TRS( joint.position, joint.orientation, joint.size/2));
+                    jointMesh.Draw(jointMaterial, Matrix.TRS( joint.position, joint.orientation, joint.radius/2));
                 } }
             }
         }

@@ -577,7 +577,7 @@ struct pointer_t {
 struct hand_joint_t {
 	vec3  position;
 	quat  orientation;
-	float size;
+	float radius;
 };
 
 struct hand_t {

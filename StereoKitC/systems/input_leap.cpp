@@ -121,7 +121,7 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 		memcpy(&pose->position,    &bone.prev_joint, sizeof(vec3));
 		pose->position    = matrix_mul_point( to_world, (pose->position * mm2m) + offset);
 		pose->orientation = pose->orientation * head.orientation;
-		pose->size        = leap_finger_size[f] * leap_joint_size[0] * 0.25f;
+		pose->radius      = leap_finger_size[f] * leap_joint_size[0] * 0.25f;
 	}
 	for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 4; j++) {
@@ -132,7 +132,7 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 			memcpy(&pose->position,    &bone.next_joint, sizeof(vec3));
 			pose->position    = matrix_mul_point(to_world, (pose->position * mm2m) + offset);
 			pose->orientation = pose->orientation * head.orientation;
-			pose->size        = leap_finger_size[f] * leap_joint_size[j+1] * 0.25f;
+			pose->radius      = leap_finger_size[f] * leap_joint_size[j+1] * 0.25f;
 		}
 	}
 }

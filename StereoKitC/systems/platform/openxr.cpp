@@ -292,7 +292,7 @@ bool openxr_init(const char *app_name) {
 					for (size_t i = 0; i < 27; i++) {
 						memcpy(&xr_hand_data[handed][i].position,    &poses[i].Position,    sizeof(vec3));
 						memcpy(&xr_hand_data[handed][i].orientation, &poses[i].Orientation, sizeof(quat));
-						xr_hand_data[handed][i].size = (poses[i].Radius/2.0f) * 1.414f;
+						xr_hand_data[handed][i].radius = (poses[i].Radius/2.0f) * 1.414f;
 					}
 					xr_hand_data_ready[handed] = true;
 				} else {

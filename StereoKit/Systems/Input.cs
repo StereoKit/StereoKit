@@ -7,9 +7,9 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct HandJoint
     {
-        public Vec3 position;
-        public Quat orientation;
-        public float size;
+        public Vec3  position;
+        public Quat  orientation;
+        public float radius;
 
         public Pose Pose => new Pose(position, orientation);
     }
@@ -29,21 +29,21 @@ namespace StereoKit
         public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
         public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
 
-        public bool IsPinched       { get { return (pinchState & BtnState.Active)       > 0; } }
-        public bool IsJustPinched   { get { return (pinchState & BtnState.JustActive)   > 0; } }
-        public bool IsJustUnpinched { get { return (pinchState & BtnState.JustInactive) > 0; } }
+        public bool IsPinched       => (pinchState & BtnState.Active)       > 0;
+        public bool IsJustPinched   => (pinchState & BtnState.JustActive)   > 0;
+        public bool IsJustUnpinched => (pinchState & BtnState.JustInactive) > 0;
 
-        public bool IsGripped       { get { return (gripState & BtnState.Active)       > 0; } }
-        public bool IsJustGripped   { get { return (gripState & BtnState.JustActive)   > 0; } }
-        public bool IsJustUngripped { get { return (gripState & BtnState.JustInactive) > 0; } }
+        public bool IsGripped       => (gripState & BtnState.Active)       > 0;
+        public bool IsJustGripped   => (gripState & BtnState.JustActive)   > 0;
+        public bool IsJustUngripped => (gripState & BtnState.JustInactive) > 0;
 
-        public bool IsTracked       { get { return (trackedState & BtnState.Active)       > 0; } }
-        public bool IsJustTracked   { get { return (trackedState & BtnState.JustActive)   > 0; } }
-        public bool IsJustUntracked { get { return (trackedState & BtnState.JustInactive) > 0; } }
+        public bool IsTracked       => (trackedState & BtnState.Active)       > 0;
+        public bool IsJustTracked   => (trackedState & BtnState.JustActive)   > 0;
+        public bool IsJustUntracked => (trackedState & BtnState.JustInactive) > 0;
 
         public Material Material { set { NativeAPI.input_hand_material(handedness, value._inst); } }
-        public bool     Visible  { set { NativeAPI.input_hand_visible (handedness, value ? 1 : 0); } }
-        public bool     Solid    { set { NativeAPI.input_hand_solid   (handedness, value ? 1 : 0); } }
+        public bool     Visible  { set { NativeAPI.input_hand_visible (handedness, value); } }
+        public bool     Solid    { set { NativeAPI.input_hand_solid   (handedness, value); } }
     }
 
     public static class Input
@@ -59,41 +59,24 @@ namespace StereoKit
         static bool                initialized = false;
         static InputEventCallback  callback;
 
-        public static int PointerCount(InputSource filter = InputSource.Any)
-        {
-            return NativeAPI.input_pointer_count(filter);
-        }
-        public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
-        {
-            return NativeAPI.input_pointer(index, filter);
-        }
-        public static Hand Hand(Handed handed)
-        {
-            return Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
-        }
         public static Pose Head => NativeAPI.input_head();
+        public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
 
-        public static Mouse Mouse()
-        {
-            return Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
-        }
+        public static int PointerCount(InputSource filter = InputSource.Any) 
+            => NativeAPI.input_pointer_count(filter);
+        public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
+            => NativeAPI.input_pointer(index, filter);
+        public static Hand Hand(Handed handed)
+            => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
         public static void HandVisible(Handed hand, bool visible)
-        {
-            NativeAPI.input_hand_visible(hand, visible?1:0);
-        }
+            => NativeAPI.input_hand_visible(hand, visible);
         public static void HandSolid(Handed hand, bool solid)
-        {
-            NativeAPI.input_hand_solid(hand, solid ? 1 : 0);
-        }
+            => NativeAPI.input_hand_solid(hand, solid);
         public static void HandMaterial(Handed hand, Material material)
-        {
-            NativeAPI.input_hand_material(hand, material._inst);
-        }
+            => NativeAPI.input_hand_material(hand, material._inst);
         public static BtnState Key(Key key)
-        {
-            return NativeAPI.input_key(key);
-        }
-
+            => NativeAPI.input_key(key);
+        
         static void Initialize()
         {
             initialized = true;
