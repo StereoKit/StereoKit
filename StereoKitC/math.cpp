@@ -49,6 +49,13 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 
 ///////////////////////////////////////////
 
+quat quat_lookat_up(const vec3 &from, const vec3 &at, const vec3 &up) {
+	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), math_vec3_to_fast(up));
+	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
+}
+
+///////////////////////////////////////////
+
 quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg) {
 	XMVECTOR result = XMQuaternionRotationRollPitchYaw(pitch_x_deg * deg2rad, yaw_y_deg * deg2rad, roll_z_deg * deg2rad);
 	return math_fast_to_quat(result);

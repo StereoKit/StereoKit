@@ -62,6 +62,17 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat LookAt    (Vec3 from, Vec3 to) => NativeAPI.quat_lookat(from, to);
 
+        /// <summary>Creates a rotation from a resting direction, to a direction indicated
+        /// by the direction of the two vectors provided to the function! This is a great
+        /// function for camera style rotation, when you know where a camera is, and where
+        /// you want to look at. This prevents roll on the Z axis, Up is always (0,1,0).</summary>
+        /// <param name="from">Where the object is.</param>
+        /// <param name="to">Where the object should be looking!</param>
+        /// <param name="up">Which direction is up from this perspective?</param>
+        /// <returns>A rotation from resting, to the look direction of the parameters.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quat LookAt(Vec3 from, Vec3 to, Vec3 up) => NativeAPI.quat_lookat_up(from, to, up);
+
         /// <summary>Creates a rotation from a resting direction, to the given direction! This 
         /// prevents roll on the Z axis, Up is always (0,1,0)</summary>
         /// <param name="direction">Direction the rotation should be looking. Doesn't need to be normalized.</param>

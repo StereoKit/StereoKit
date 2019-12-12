@@ -157,6 +157,7 @@ SK_API vec3 vec3_cross(const vec3 &a, const vec3 &b);
 
 SK_API quat quat_difference (const quat &a, const quat &b);
 SK_API quat quat_lookat     (const vec3 &from, const vec3 &at);
+SK_API quat quat_lookat_up  (const vec3 &from, const vec3 &at, const vec3 &up);
 SK_API quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg);
 SK_API quat quat_slerp      (const quat &a, const quat &b, float t);
 SK_API quat quat_normalize  (const quat &a);
