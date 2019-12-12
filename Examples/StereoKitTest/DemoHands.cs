@@ -37,20 +37,33 @@ namespace StereoKitTest
                 DrawJoints();
 
             if (showAxes)
-            {
-                if (Input.Hand(Handed.Right).IsTracked)
-                    Lines.AddAxis(Input.Hand(Handed.Right).palm);
-                if (Input.Hand(Handed.Left).IsTracked)
-                    Lines.AddAxis(Input.Hand(Handed.Left).palm);
-            }
+                DrawAxes();
 
             DrawHandMenu();
+        }
+
+        public void DrawAxes()
+        {
+            for (int i = 0; i < (int)Handed.Max; i++) {
+                Hand hand = Input.Hand((Handed)i);
+                if (!hand.IsTracked)
+                    continue;
+
+                for (int f = 0; f < 5; f++) {
+                for (int j = 0; j < 5; j++) {
+                    Lines.AddAxis(hand[f, j].Pose);
+                } }
+                Lines.AddAxis(hand.palm);
+            }
         }
 
         public void DrawJoints()
         {
             for (int i = 0; i < (int)Handed.Max; i++) {
                 Hand hand = Input.Hand((Handed)i);
+                if (!hand.IsTracked)
+                    continue;
+
                 for (int f = 0; f < 5; f++) {
                 for (int j = 0; j < 5; j++) {
                     HandJoint joint = hand[f, j];
