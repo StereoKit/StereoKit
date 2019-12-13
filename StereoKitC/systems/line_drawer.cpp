@@ -79,6 +79,8 @@ void line_add(vec3 start, vec3 end, color32 color, float thickness) {
 
 void line_addv(line_point_t start, line_point_t end) {
 	line_ensure_cap(4, 6);
+	start.thickness *= 0.5f;
+	end  .thickness *= 0.5f;
 
 	if (hierarchy_enabled) {
 		matrix &transform = hierarchy_stack.back().transform;
