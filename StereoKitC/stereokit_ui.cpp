@@ -29,6 +29,11 @@ struct ui_hand_t {
 	uint64_t        active = {};
 };
 
+struct ui_id_t {
+	uint64_t id;
+};
+
+vector<ui_id_t> skui_id_stack;
 vector<layer_t> skui_layers;
 mesh_t          skui_box;
 mesh_t          skui_cylinder;
@@ -59,7 +64,8 @@ color128 skui_palette[5];
 
 ///////////////////////////////////////////
 
-uint64_t ui_hash(const char *string);
+uint64_t ui_hash(const char *string, uint64_t start_hash = 14695981039346656037);
+uint64_t ui_stack_hash(const char *string);
 
 // Layout
 void ui_push_pose  (pose_t pose, vec3 offset);
@@ -154,6 +160,7 @@ bool ui_init() {
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
 	
 	skui_layers.push_back({});
+	skui_id_stack.push_back({14695981039346656037});
 
 	return true;
 }
@@ -163,6 +170,8 @@ bool ui_init() {
 void ui_update() {
 	if (skui_layers.size() > 1 || skui_layers.size() == 0)
 		log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack.size() > 1 || skui_id_stack.size() == 0)
+		log_err("ui: Mismatching number of id push/pop calls!");
 
 	skui_layers[0] = {};
 
@@ -192,13 +201,33 @@ void ui_shutdown() {
 
 ///////////////////////////////////////////
 
-// djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
-uint64_t ui_hash(const char *string) {
-	unsigned long hash = 5381;
-	int c;
+// FNV-1a hash (64bit): http://isthe.com/chongo/tech/comp/fnv/, start_hash = 14695981039346656037
+uint64_t  ui_hash(const char* string, uint64_t start_hash) {
+	uint64_t hash = start_hash;
+	uint8_t  c;
 	while (c = *string++)
-		hash = ((hash << 5) + hash) + c; // hash * 33 + c
+		hash = (hash ^ c) * 1099511628211;
 	return hash;
+}
+
+///////////////////////////////////////////
+
+uint64_t ui_stack_hash(const char *string) {
+	return ui_hash(string, skui_id_stack.back().id);
+}
+
+///////////////////////////////////////////
+
+uint64_t ui_push_id(const char *id) {
+	uint64_t result = ui_stack_hash(id);
+	skui_id_stack.push_back({ result });
+	return result;
+}
+
+///////////////////////////////////////////
+
+void ui_pop_id() {
+	skui_id_stack.pop_back();
 }
 
 ///////////////////////////////////////////
@@ -456,7 +485,7 @@ void ui_image(sprite_t image, vec2 size) {
 ///////////////////////////////////////////
 
 bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
-	uint64_t      id = ui_hash(text);
+	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -493,7 +522,7 @@ bool32_t ui_button(const char *text) {
 ///////////////////////////////////////////
 
 bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, bool32_t &pressed) {
-	uint64_t      id = ui_hash(text);
+	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -535,7 +564,7 @@ bool32_t ui_toggle(const char *text, bool32_t &pressed) {
 ///////////////////////////////////////////
 
 bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text, sprite_t image) {
-	uint64_t      id = ui_hash(text);
+	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
@@ -587,7 +616,7 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 ///////////////////////////////////////////
 
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
-	uint64_t id_hash= ui_hash(id);
+	uint64_t id_hash= ui_stack_hash(id);
 	bool     result = false;
 	bool     focused = false;
 	vec3     offset = skui_layers.back().offset;
@@ -644,7 +673,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 ///////////////////////////////////////////
 
 bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
-	uint64_t   id     = ui_hash(name);
+	uint64_t   id     = ui_stack_hash(name);
 	bool       result = false;
 	float      color  = 1;
 	vec3       offset = skui_layers.back().offset;
@@ -692,7 +721,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 ///////////////////////////////////////////
 
 bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, vec3 dimensions, bool32_t draw) {
-	uint64_t id = ui_hash(text);
+	uint64_t id = ui_push_id(text);
 	bool result = false;
 	float color = 1;
 
@@ -759,6 +788,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 
 void ui_affordance_end() {
 	ui_pop_pose();
+	ui_pop_id();
 }
 
 ///////////////////////////////////////////
@@ -779,6 +809,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		ui_nextline();
 	} else {
 		ui_push_pose(pose, { window_size.x / 2,0,0 });
+		ui_push_id(text);
 		ui_layout_area(vec3_zero, window_size);
 	}
 }
@@ -786,7 +817,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_pop_pose();
+	ui_affordance_end();
 }
 
 } // namespace sk

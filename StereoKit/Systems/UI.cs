@@ -21,6 +21,13 @@ namespace StereoKit
         public static void LayoutArea(Vec3 start, Vec2 dimensions)
             => NativeAPI.ui_layout_area(start, dimensions);
 
+        /// <summary>Adds a root id to the stack for the following UI elements! This id is combined 
+        /// when hashing any following ids, to prevent id collisions in separate groups.</summary>
+        /// <param name="rootId">The root id to use until the following PopId call.</param>
+        public static void PushId(string rootId) => NativeAPI.ui_push_id(rootId);
+        /// <summary>Removes the last root id from the stack, and moves up to the one before it!</summary>
+        public static void PopId() => NativeAPI.ui_pop_id();
+
         public static void NextLine   ()            { NativeAPI.ui_nextline(); }
         /// <summary>Moves the current layout position back to the end of the line that just finished,
         /// so it can continue on the same line as the last element!</summary>
