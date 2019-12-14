@@ -29,7 +29,7 @@ pose_t                input_head_pose  = { vec3_zero, quat_identity };
 ///////////////////////////////////////////
 
 int input_add_pointer(input_source_ source) {
-	input_pointers.push_back({ source, pointer_state_none });
+	input_pointers.push_back({ source, button_state_inactive });
 	return (int)input_pointers.size() - 1;
 }
 

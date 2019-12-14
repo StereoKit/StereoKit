@@ -87,7 +87,7 @@ void win32_input_update() {
 	pointer_t   *pointer_head = input_get_pointer(win32_input_pointers[1]);
 	pose_t       head         = input_head();
 
-	pointer_head->state   = pointer_state_available;
+	pointer_head->tracked = button_state_active;
 	pointer_head->ray.pos = head.position;
 	pointer_head->ray.dir = head.orientation * vec3_forward;
 }
@@ -144,23 +144,28 @@ void win32_mouse_hand() {
 	bool was_l_pressed = hand.pinch_state   & button_state_active;
 	bool was_r_pressed = hand.grip_state    & button_state_active;
 
-	pointer_cursor->state = pointer_state_none;
+	pointer_cursor->tracked = button_state_inactive;
 
 	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf_unscaled() * 8;
 
 	ray_t ray = {};
 	if (ray_from_mouse(input_mouse_data.pos, ray)) {
+		ray.dir = vec3_normalize(ray.dir);
+		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
+
 		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.00025f);
-		hand_rot     = quat_from_angles(40,30,90) * quat_lookat(vec3_zero, ray.dir);
+		hand_rot     = quat_from_angles(40,30,90) * pointer_rot;
 		hand_tracked = true;
 		l_pressed    = input_key(key_mouse_left ) & button_state_active;
 		r_pressed    = input_key(key_mouse_right) & button_state_active;
 
-		pointer_cursor->state |= pointer_state_available;
+		pointer_cursor->tracked     = button_state_active;
 		pointer_cursor->ray.dir     = ray.dir;
 		pointer_cursor->ray.pos     = hand_pos;
-		pointer_cursor->orientation = hand_rot;
+		pointer_cursor->orientation = pointer_rot;
 	}
+	if (was_tracked != hand_tracked) 
+		pointer_cursor->tracked |= hand_tracked ? button_state_just_active : button_state_just_inactive;
 
 	input_hand_sim(handed_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 	input_hand_sim(handed_left,  vec3_zero, quat_identity, false, false, false);

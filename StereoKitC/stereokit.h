@@ -546,12 +546,6 @@ enum input_source_ {
 };
 SK_MakeFlag(input_source_);
 
-enum pointer_state_ {
-	pointer_state_none      = 0,
-	pointer_state_available = 1 << 0,
-};
-SK_MakeFlag(pointer_state_);
-
 enum handed_ {
 	handed_left  = 0,
 	handed_right = 1,
@@ -568,10 +562,10 @@ enum button_state_ {
 SK_MakeFlag(button_state_);
 
 struct pointer_t {
-	input_source_  source;
-	pointer_state_ state;
-	ray_t          ray;
-	quat           orientation;
+	input_source_ source;
+	button_state_ tracked;
+	ray_t         ray;
+	quat          orientation;
 };
 
 struct hand_joint_t {

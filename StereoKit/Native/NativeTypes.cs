@@ -302,13 +302,6 @@ namespace StereoKit
         CanPress   = 1 << 8,
     }
 
-    [Flags]
-    public enum PointerState
-    {
-        None        = 0,
-        Available   = 1 << 0,
-    }
-
     /// <summary>A bit-flag for the current state of a button input.</summary>
     [Flags]
     public enum BtnState
@@ -349,10 +342,12 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Pointer
     {
-        public InputSource  source;
-        public PointerState state;
-        public Ray          ray;
-        public Quat         orientation;
+        public InputSource source;
+        public BtnState    tracked;
+        public Ray         ray;
+        public Quat        orientation;
+
+        public Pose Pose => new Pose(ray.position, orientation);
     }
 
     /// <summary>This stores information about the mouse! What's its state, where's

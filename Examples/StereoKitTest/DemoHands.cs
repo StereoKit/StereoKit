@@ -13,6 +13,7 @@ namespace StereoKitTest
         bool showHands = true;
         bool showJoints = false;
         bool showAxes = true;
+        bool showPointers = true;
 
         Mesh     jointMesh     = Mesh.GenerateSphere(1);
         Material jointMaterial = Material.Find(DefaultIds.material);
@@ -31,13 +32,13 @@ namespace StereoKitTest
             UI.Toggle("Joints", ref showJoints);
             UI.SameLine();
             UI.Toggle("Axes", ref showAxes);
+            UI.SameLine();
+            UI.Toggle("Pointers", ref showPointers);
             UI.WindowEnd();
 
-            if (showJoints)
-                DrawJoints();
-
-            if (showAxes)
-                DrawAxes();
+            if (showJoints)   DrawJoints();
+            if (showAxes)     DrawAxes();
+            if (showPointers) DrawPointers();
 
             DrawHandMenu();
         }
@@ -69,6 +70,17 @@ namespace StereoKitTest
                     HandJoint joint = hand[f, j];
                     jointMesh.Draw(jointMaterial, Matrix.TRS( joint.position, joint.orientation, joint.radius/2));
                 } }
+            }
+        }
+
+        public void DrawPointers()
+        {
+            int hands = Input.PointerCount(InputSource.Hand);
+            for (int i = 0; i < hands; i++)
+            {
+                Pointer pointer = Input.Pointer(i, InputSource.Hand);
+                Lines.Add(pointer.ray, 0.5f, Color.White, Units.mm2m);
+                Lines.AddAxis(pointer.Pose);
             }
         }
 

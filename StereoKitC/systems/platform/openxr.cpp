@@ -54,11 +54,14 @@ struct swapchain_t {
 struct xr_input_t {
 	XrActionSet action_set;
 	XrAction    poseAction;
+	XrAction    pointAction;
 	XrAction    selectAction;
 	XrAction    gripAction;
 	XrPath   handSubactionPath[2];
 	XrSpace  handSpace[2];
+	XrSpace  pointSpace[2];
 	XrPosef  handPose[2];
+	XrPosef  handPoint[2];
 	XrBool32 renderHand[2];
 	XrBool32 handSelect[2];
 	quat     offset_rot[2];
@@ -96,7 +99,7 @@ swapchain_t                     xr_swapchains;
 ///////////////////////////////////////////
 
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
-void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer);
+bool openxr_get_space(XrSpace space, XrTime time, pose_t &out_pose);
 
 void                 openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format);
 XrReferenceSpaceType openxr_preferred_space();
@@ -661,6 +664,12 @@ void openxr_make_actions() {
 	strcpy_s(action_info.localizedActionName, "Hand Pose");
 	xrCreateAction(xr_input.action_set, &action_info, &xr_input.poseAction);
 
+	// Create an action to track the pointing position and orientation!
+	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
+	strcpy_s(action_info.actionName,          "hand_point");
+	strcpy_s(action_info.localizedActionName, "Hand Point");
+	xrCreateAction(xr_input.action_set, &action_info, &xr_input.pointAction);
+
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
@@ -679,10 +688,13 @@ void openxr_make_actions() {
 	// accessibility settings.
 	XrPath profile_path;
 	XrPath pose_path  [2];
+	XrPath point_path  [2];
 	XrPath select_path[2];
 	XrPath grip_path  [2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",       &pose_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose",      &pose_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",  &pose_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose", &pose_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",   &point_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",  &point_path[1]);
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
 
 	// microsoft / motion_controller
@@ -693,6 +705,7 @@ void openxr_make_actions() {
 		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
+			{ xr_input.pointAction,  point_path [0] }, { xr_input.pointAction,  point_path [1] },
 			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
 			{ xr_input.gripAction,   grip_path  [0] }, { xr_input.gripAction,   grip_path  [1] },
 		};
@@ -710,6 +723,7 @@ void openxr_make_actions() {
 		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xr_input.poseAction,   pose_path  [0] }, { xr_input.poseAction,   pose_path  [1] },
+			{ xr_input.pointAction,  point_path [0] }, { xr_input.pointAction,  point_path [1] },
 			{ xr_input.selectAction, select_path[0] }, { xr_input.selectAction, select_path[1] },
 		};
 
@@ -727,6 +741,12 @@ void openxr_make_actions() {
 		action_space_info.subactionPath     = xr_input.handSubactionPath[i];
 		action_space_info.action            = xr_input.poseAction;
 		xrCreateActionSpace(xr_session, &action_space_info, &xr_input.handSpace[i]);
+
+		action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
+		action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
+		action_space_info.subactionPath     = xr_input.handSubactionPath[i];
+		action_space_info.action            = xr_input.pointAction;
+		xrCreateActionSpace(xr_session, &action_space_info, &xr_input.pointSpace[i]);
 	}
 
 	// Attach the action set we just made to the session
@@ -779,9 +799,14 @@ void openxr_poll_actions() {
 	}
 
 	// Now we'll get the current states of our actions, and store them for later use
-	for (uint32_t hand = 0; hand < handed_max && !xr_hand_support; hand++) {
+	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xr_input.handSubactionPath[hand];
+
+		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
+		get_info.action = xr_input.poseAction;
+		xrGetActionStatePose(xr_session, &get_info, &point_state);
+		bool has_point = point_state.isActive;
 
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xr_input.poseAction;
@@ -799,60 +824,51 @@ void openxr_poll_actions() {
 		get_info.action = xr_input.gripAction;
 		xrGetActionStateBoolean(xr_session, &get_info,  &grip_state);
 
-		// If we have a select event, update the hand pose to match the event's timestamp
-		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
-		res                            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, xr_time, &space_location);
-		if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
-			xr_input.handPose[hand] = space_location.pose;
+		// Update the hand point pose
+		pose_t     point_pose = {};
+		pointer_t *pointer    = input_get_pointer(xr_input.pointer_ids[hand]);
+		pointer->tracked = button_make_state( pointer->tracked & button_state_active, point_state.isActive);
+		if (openxr_get_space(xr_input.pointSpace[hand], xr_time, point_pose)) {
+			pointer->ray.pos     = point_pose.position;
+			pointer->ray.dir     = point_pose.orientation * vec3_forward;
+			pointer->orientation = point_pose.orientation;
 		}
 
-		pointer_t *pointer = input_get_pointer(xr_input.pointer_ids[hand]);
-		pointer->state = pose_state.isActive ? pointer_state_available : pointer_state_none;
-		openxr_pose_to_pointer(space_location.pose, pointer);
-		pointer->orientation = xr_input.offset_rot[hand] * pointer->orientation;
-		pointer->ray.pos += pointer->orientation * xr_input.offset_pos[hand];
-
-		input_hand_sim((handed_)hand, pointer->ray.pos, pointer->orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
+		// If we have a select event, update the hand pose to match the event's timestamp
+		pose_t hand_pose = {};
+		if (!xr_hand_support && openxr_get_space(xr_input.handSpace[hand], xr_time, hand_pose)) {
+			hand_pose.orientation = xr_input.offset_rot[hand] * hand_pose.orientation;
+			hand_pose.position   += hand_pose.orientation * xr_input.offset_pos[hand];
+			input_hand_sim((handed_)hand, hand_pose.position, hand_pose.orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
+		}
 
 		// Get event poses, and fire our own events for them
 		const hand_t &curr_hand = input_hand((handed_)hand);
-		if ((curr_hand.pinch_state & button_state_just_active) || (curr_hand.pinch_state & button_state_just_inactive)) {
-			space_location = { XR_TYPE_SPACE_LOCATION };
-			res            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, select_state.lastChangeTime, &space_location);
-			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
-				pointer_t event_pointer = *pointer;
-				openxr_pose_to_pointer(space_location.pose, &event_pointer);
+		pose_t pose = {};
+		if (curr_hand.pinch_state & button_state_changed &&
+			openxr_get_space(xr_input.pointSpace[hand], select_state.lastChangeTime, pose)) {
 
-				input_fire_event(
-					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right), 
-					curr_hand.pinch_state & button_state_active ? button_state_just_active : button_state_just_inactive, 
-					event_pointer);
-			}
-		}
-		if ((curr_hand.grip_state & button_state_just_active) || (curr_hand.grip_state & button_state_just_inactive)) {
-			space_location = { XR_TYPE_SPACE_LOCATION };
-			res            = xrLocateSpace(xr_input.handSpace[hand], xr_app_space, grip_state.lastChangeTime, &space_location);
-			if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
-				pointer_t event_pointer = *pointer;
-				openxr_pose_to_pointer(space_location.pose, &event_pointer);
+			pointer_t event_pointer = *pointer;
+			event_pointer.ray.pos     = pose.position;
+			event_pointer.ray.dir     = pose.orientation * vec3_forward;
+			event_pointer.orientation = pose.orientation;
 
-				input_fire_event(
-					input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-					curr_hand.grip_state & button_state_active ? button_state_just_active : button_state_just_inactive, 
-					event_pointer);
-			}
+			input_fire_event(event_pointer.source, curr_hand.pinch_state & ~button_state_active, event_pointer);
+			
 		}
-		if (curr_hand.tracked_state & button_state_just_active) {
-			input_fire_event(
-				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-				button_state_just_active, 
-				*pointer);
+		if (curr_hand.grip_state & button_state_changed &&
+			openxr_get_space(xr_input.pointSpace[hand], grip_state.lastChangeTime, pose)) {
+			
+			pointer_t event_pointer = *pointer;
+			event_pointer.ray.pos     = pose.position;
+			event_pointer.ray.dir     = pose.orientation * vec3_forward;
+			event_pointer.orientation = pose.orientation;
+
+			input_fire_event(event_pointer.source, curr_hand.grip_state & ~button_state_active, event_pointer);
+			
 		}
-		if (curr_hand.tracked_state & button_state_just_inactive) {
-			input_fire_event(
-				input_source_hand | (hand == handed_left ? input_source_hand_left :input_source_hand_right),
-				button_state_just_inactive, 
-				*pointer);
+		if (curr_hand.tracked_state & button_state_changed) {
+			input_fire_event(pointer->source, pointer->tracked & ~button_state_active, *pointer);
 		}
 	}
 
@@ -876,10 +892,15 @@ void openxr_poll_actions() {
 
 ///////////////////////////////////////////
 
-void openxr_pose_to_pointer(XrPosef &pose, pointer_t *pointer) {
-	memcpy(&pointer->ray.pos,     &pose.position,    sizeof(vec3));
-	memcpy(&pointer->orientation, &pose.orientation, sizeof(quat));
-	pointer->ray.dir = pointer->orientation * vec3_forward;
+bool openxr_get_space(XrSpace space, XrTime time, pose_t &out_pose) {
+	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res            = xrLocateSpace(space, xr_app_space, time, &space_location);
+	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
+		memcpy(&out_pose.position,    &space_location.pose.position,    sizeof(vec3));
+		memcpy(&out_pose.orientation, &space_location.pose.orientation, sizeof(quat));
+		return true;
+	}
+	return false;
 }
 
 } // namespace sk
