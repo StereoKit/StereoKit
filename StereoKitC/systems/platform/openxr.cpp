@@ -791,12 +791,7 @@ void openxr_poll_actions() {
 	xrSyncActions(xr_session, &sync_info);
 
 	// Track the head location
-	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
-	XrResult        res           = xrLocateSpace(xr_head_space, xr_app_space, xr_time, &head_location);
-	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(head_location)) {
-		memcpy(&input_head_pose.position,    &head_location.pose.position,    sizeof(vec3));
-		memcpy(&input_head_pose.orientation, &head_location.pose.orientation, sizeof(quat));
-	}
+	openxr_get_space(xr_head_space, xr_time, input_head_pose);
 
 	// Now we'll get the current states of our actions, and store them for later use
 	for (uint32_t hand = 0; hand < handed_max; hand++) {

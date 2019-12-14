@@ -1,4 +1,5 @@
 #include "../stereokit.h"
+#include "input.h"
 #include "input_hand.h"
 #include "input_hand_poses.h"
 
@@ -178,8 +179,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.tracked_state & button_state_active;
-	if (was_tracked != tracked) hand.tracked_state |= tracked ? button_state_just_active : button_state_just_inactive;
-	if (tracked)                hand.tracked_state |= button_state_active;
+	hand.tracked_state = button_make_state(was_tracked, tracked);
 
 	// only sim it if it's tracked
 	if (tracked) {

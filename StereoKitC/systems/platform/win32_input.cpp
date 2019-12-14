@@ -42,8 +42,7 @@ void win32_input_init() {
 	win32_use_leap = input_leap_init();
 #endif
 
-	input_head_pose = { vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero) };
-	render_set_view(pose_matrix(input_head_pose));
+	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero)));
 }
 
 ///////////////////////////////////////////
@@ -144,8 +143,6 @@ void win32_mouse_hand() {
 	bool was_l_pressed = hand.pinch_state   & button_state_active;
 	bool was_r_pressed = hand.grip_state    & button_state_active;
 
-	pointer_cursor->tracked = button_state_inactive;
-
 	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf_unscaled() * 8;
 
 	ray_t ray = {};
@@ -159,13 +156,11 @@ void win32_mouse_hand() {
 		l_pressed    = input_key(key_mouse_left ) & button_state_active;
 		r_pressed    = input_key(key_mouse_right) & button_state_active;
 
-		pointer_cursor->tracked     = button_state_active;
 		pointer_cursor->ray.dir     = ray.dir;
 		pointer_cursor->ray.pos     = hand_pos;
 		pointer_cursor->orientation = pointer_rot;
 	}
-	if (was_tracked != hand_tracked) 
-		pointer_cursor->tracked |= hand_tracked ? button_state_just_active : button_state_just_inactive;
+	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
 
 	input_hand_sim(handed_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 	input_hand_sim(handed_left,  vec3_zero, quat_identity, false, false, false);

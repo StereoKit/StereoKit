@@ -59,7 +59,7 @@ namespace StereoKit
         static bool                initialized = false;
         static InputEventCallback  callback;
 
-        public static Pose Head => NativeAPI.input_head();
+        public static Pose  Head  => Marshal.PtrToStructure<Pose>(NativeAPI.input_head());
         public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
 
         public static int PointerCount(InputSource filter = InputSource.Any) 
