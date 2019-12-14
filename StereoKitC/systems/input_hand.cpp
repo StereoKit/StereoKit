@@ -59,7 +59,8 @@ void input_hand_init() {
 	modify(&input_pose_fist   [0][0], {});
 	modify(&input_pose_neutral[0][0], {});
 	modify(&input_pose_point  [0][0], {});
-	modify(&input_pose_pinch  [0][0], vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f});
+	modify(&input_pose_pinch  [0][0], 
+		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_runtime() == runtime_flatscreen ? 1 : 0.5f));
 
 	material_t hand_mat = material_copy_id("default/material");
 	material_set_transparency(hand_mat, transparency_blend);
