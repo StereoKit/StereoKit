@@ -61,7 +61,7 @@ void tex_set_id(tex_t mesh, const char *id) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file(const char *file) {
+tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	tex_t result = tex_find(file);
 	if (result != nullptr)
 		return result;
@@ -75,7 +75,7 @@ tex_t tex_create_file(const char *file) {
 		log_warnf("Couldn't load image file: %s", file);
 		return nullptr;
 	}
-	result = tex_create(tex_type_image);
+	result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	tex_set_id(result, file);
 
 	tex_set_colors(result, width, height, data);
@@ -88,7 +88,7 @@ tex_t tex_create_file(const char *file) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_file(const char *equirectangular_file) {
+tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data) {
 	tex_t result = tex_find(equirectangular_file);
 	if (result != nullptr)
 		return result;
@@ -97,7 +97,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file) {
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
-	tex_t equirect = tex_create_file(equirectangular_file);
+	tex_t equirect = tex_create_file(equirectangular_file, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	if (equirect == nullptr)
 		return nullptr;
 	equirect->header.id = string_hash("temp/equirectid");
@@ -140,7 +140,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz) {
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data) {
 	tex_t result = tex_find(cube_face_file_xxyyzz[0]);
 	if (result != nullptr)
 		return result;
@@ -177,7 +177,7 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 	}
 
 	// Create with the data we have
-	result = tex_create(tex_type_image | tex_type_cubemap);
+	result = tex_create(tex_type_image | tex_type_cubemap, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	tex_set_id       (result, cube_face_file_xxyyzz[0]);
 	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6);
 	for (size_t i = 0; i < 6; i++) {
@@ -191,7 +191,7 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem(void *data, size_t data_size) {
+tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
 
 	int      channels = 0;
 	int      width    = 0;
@@ -201,7 +201,7 @@ tex_t tex_create_mem(void *data, size_t data_size) {
 	if (col_data == nullptr) {
 		return nullptr;
 	}
-	tex_t result = tex_create();
+	tex_t result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 
 	tex_set_colors(result, width, height, col_data);
 	free(col_data);
@@ -397,7 +397,7 @@ void tex_set_active(tex_t texture, int slot) {
 ///////////////////////////////////////////
 
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
-	bool mips    = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
+	bool mips    = texture->type & tex_type_mips && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear) && texture->width == texture->height;
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
 	bool rtarget = texture->type & tex_type_rendertarget;
@@ -474,6 +474,8 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 	texture->width      = color_desc.Width;
 	texture->height     = color_desc.Height;
 	texture->array_size = color_desc.ArraySize;
+	if (source_format == DXGI_FORMAT_UNKNOWN)
+		source_format = color_desc.Format;
 
 	bool created_views      = tex_create_views(texture, source_format);
 	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
@@ -486,7 +488,7 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 
 bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
 	DXGI_FORMAT  format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
-	bool         mips      = texture->type & tex_type_mips && texture->format == tex_format_rgba32 && texture->width == texture->height;
+	bool         mips      = texture->type & tex_type_mips && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear) && texture->width == texture->height;
 	unsigned int mip_count = (mips ? log2(texture->width) + 1 : 1);
 
 	if (!(texture->type & tex_type_depth)) {
@@ -551,13 +553,14 @@ bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
 
 DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	switch (format) {
-	case tex_format_rgba32:  return DXGI_FORMAT_R8G8B8A8_UNORM;
-	case tex_format_rgba64:  return DXGI_FORMAT_R16G16B16A16_FLOAT;
-	case tex_format_rgba128: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-	case tex_format_depth32: return DXGI_FORMAT_D32_FLOAT;
-	case tex_format_depth16: return DXGI_FORMAT_D16_UNORM;
-	case tex_format_depthstencil: return DXGI_FORMAT_D24_UNORM_S8_UINT;
-	default: return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case tex_format_rgba32:        return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	case tex_format_rgba32_linear: return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case tex_format_rgba64:        return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case tex_format_rgba128:       return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	case tex_format_depth32:       return DXGI_FORMAT_D32_FLOAT;
+	case tex_format_depth16:       return DXGI_FORMAT_D16_UNORM;
+	case tex_format_depthstencil:  return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	default: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
 }
 
@@ -567,10 +570,11 @@ size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
 	case tex_format_depthstencil:
-	case tex_format_rgba32:  return sizeof(color32);
-	case tex_format_rgba64:  return sizeof(uint16_t)*4;
-	case tex_format_rgba128: return sizeof(color128);
-	case tex_format_depth16: return sizeof(uint16_t);
+	case tex_format_rgba32:
+	case tex_format_rgba32_linear: return sizeof(color32);
+	case tex_format_rgba64:        return sizeof(uint16_t)*4;
+	case tex_format_rgba128:       return sizeof(color128);
+	case tex_format_depth16:       return sizeof(uint16_t);
 	default: return sizeof(color32);
 	}
 }

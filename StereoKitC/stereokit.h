@@ -298,6 +298,7 @@ SK_MakeFlag(tex_type_);
 
 enum tex_format_ {
 	tex_format_rgba32 = 0,
+	tex_format_rgba32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
 	tex_format_depthstencil,
@@ -321,9 +322,9 @@ SK_DeclarePrivateType(tex_t);
 
 SK_API tex_t tex_find                (const char *id);
 SK_API tex_t tex_create              (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
-SK_API tex_t tex_create_file         (const char *file);
-SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file);
-SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz);
+SK_API tex_t tex_create_file         (const char *file,                   bool32_t srgb_data = true);
+SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data = true);
+SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data = true);
 SK_API void  tex_set_id              (tex_t texture, const char *id);
 SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);

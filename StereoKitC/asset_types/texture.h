@@ -25,7 +25,7 @@ struct _tex_t {
 	tex_t                     depth_buffer;
 };
 
-tex_t       tex_create_mem       (void *data, size_t data_size);
+tex_t       tex_create_mem       (void *data, size_t data_size, bool32_t srgb_data);
 void        tex_set_active       (tex_t texture, int slot);
 void        tex_destroy          (tex_t texture);
 DXGI_FORMAT tex_get_native_format(tex_format_ format);

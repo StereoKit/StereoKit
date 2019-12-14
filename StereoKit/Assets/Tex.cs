@@ -79,29 +79,38 @@ namespace StereoKit
         /// look like an unwrapped globe with the poles all streetched out. It uses some fancy shaders
         /// and texture blitting to create 6 faces from the equirectangular image.</summary>
         /// <param name="equirectangularCubemap">Filename of the equirectangular image.</param>
+        /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
+        /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
+        /// card, so getting this right can have a big impact on visuals.</param>
         /// <returns>A Cubemap texture asset!</returns>
-        public static Tex FromCubemapEquirectangular(string equirectangularCubemap)
+        public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true)
         {
-            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap);
+            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
         /// <summary>Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
         /// hdr, pic. Asset Id will be the same as the filename.</summary>
         /// <param name="file">An absolute filename, or a filename relative to the assets folder. Supports jpg, png, tga,
         /// bmp, psd, gif, hdr, pic</param>
-        public static Tex FromFile(string file)
+        /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
+        /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
+        /// card, so getting this right can have a big impact on visuals.</param>
+        public static Tex FromFile(string file, bool sRGBData = true)
         {
-            IntPtr inst = NativeAPI.tex_create_file(file);
+            IntPtr inst = NativeAPI.tex_create_file(file, sRGBData);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
         /// <summary>Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use 
         /// Tex.FromEquirectangular instead. Asset Id will be the first filename.</summary>
         /// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of +X, -X, +Y, -Y, +Z, -Z.</param>
-        public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz)
+        /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
+        /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
+        /// card, so getting this right can have a big impact on visuals.</param>
+        public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, bool sRGBData = true)
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)
                 Log.Err("To create a cubemap, you must have exactly 6 images!");
-            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz);
+            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
         /// <summary>Generates a cubemap texture from a gradient and a direction! These are entirely suitable for

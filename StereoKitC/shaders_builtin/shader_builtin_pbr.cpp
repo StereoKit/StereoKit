@@ -89,11 +89,11 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float3 albedo      = sRGBToLinear(tex         .Sample(tex_sampler,       input.uv).rgb) * input.color.rgb;
-	float3 emissive    = sRGBToLinear(tex_emission.Sample(tex_e_sampler,     input.uv).rgb);
-	float3 metal_rough = sRGBToLinear(tex_metal   .Sample(tex_metal_sampler, input.uv).rgb); // b is metallic, rough is g
-	float3 tex_norm    = (tex_normal.Sample(tex_normal_sampler,input.uv).xyz) * 2 - 1;
-	//float  occlusion   = (tex_occ     .Sample(tex_occ_sampler,input.uv).r);
+	float3 albedo      = tex         .Sample(tex_sampler,       input.uv).rgb * input.color.rgb;
+	float3 emissive    = tex_emission.Sample(tex_e_sampler,     input.uv).rgb;
+	float3 metal_rough = tex_metal   .Sample(tex_metal_sampler, input.uv).rgb; // b is metallic, rough is g
+	float3 tex_norm    = tex_normal  .Sample(tex_normal_sampler,input.uv).xyz * 2 - 1;
+	//float  occlusion   = tex_occ     .Sample(tex_occ_sampler,input.uv).r;
 
 	float metal = metal_rough.b * metallic;
 	float rough = max(1-(metal_rough.g * roughness), 0.001);
@@ -112,8 +112,8 @@ float4 ps(psIn input) : SV_TARGET{
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 
 	float3 reflection = reflect(-view, normal);
-	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, (1-rough)*mip_levels).rgb; // This should be Spherical Harmonics eventually
-	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, (1-rough)*mip_levels).rgb;
+	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, mip_levels).rgb; // This should be Spherical Harmonics eventually
+	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, 2.5*(1-rough)*mip_levels).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
@@ -166,7 +166,7 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 diffuse = (albedo*irradiance);
 	float3 ambient = diffuse_contribution * diffuse + reflection_color*F;
 	float3 reflectance = ambient;// + (diffuse_contribution * albedo / 3.14159) * sk_light_color.rgb * saturate(NdotL);
-	return float4(LinearTosRGB(reflectance + emissive), _color.a);
+	return float4(reflectance + emissive, _color.a);
 }
 
 // From: http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html

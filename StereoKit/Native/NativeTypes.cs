@@ -100,9 +100,14 @@ namespace StereoKit
     /// here is Rgba32.</summary>
     public enum TexFormat
     {
-        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits per-channel. This is what you'll
-        /// want most of the time. Matches well with the Color32 struct!</summary>
+        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits per-channel in sRGB color space. 
+        /// This is what you'll want most of the time you're dealing with color images! Matches well with the 
+        /// Color32 struct! If you're storing normals, rough/metal, or anything else, use Rgba32Linear.</summary>
         Rgba32 = 0,
+        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits per-channel in linear color space. 
+        /// This is what you'll want most of the time you're dealing with color data! Matches well with the 
+        /// Color32 struct.</summary>
+        Rgba32Linear,
         /// <summary>Red/Green/Blue/Transparency data channels, at 16 bits per-channel! This is not
         /// common, but you might encounter it with raw photos, or HDR images.</summary>
         Rgba64,

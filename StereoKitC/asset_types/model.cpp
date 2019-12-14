@@ -359,7 +359,7 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 
 ///////////////////////////////////////////
 
-tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename) {
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename, bool srgb_data) {
 	// Check if we've already loaded this image
 	char id[512];
 	gltf_imagename(data, image, filename, id, 512);
@@ -370,7 +370,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 	
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
-		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size);
+		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size, srgb_data);
 		if (result == nullptr) 
 			log_warnf("Couldn't load %s texture for %s!", image->name, filename);
 		else
@@ -386,13 +386,13 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		cgltf_load_buffer_base64(&options, size, start, &buffer);
 
 		if (buffer != nullptr) {
-			result = tex_create_mem(buffer, size);
+			result = tex_create_mem(buffer, size, srgb_data);
 			tex_set_id(result, id);
 			free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex_create_file(id);
+		result = tex_create_file(id, srgb_data);
 	}
 	return result;
 }
@@ -414,11 +414,11 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr)
-			material_set_texture(result, "diffuse", gltf_parsetexture(data, tex->image, filename));
+			material_set_texture(result, "diffuse", gltf_parsetexture(data, tex->image, filename, true));
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr)
-			material_set_texture(result, "metal", gltf_parsetexture(data, tex->image, filename));
+			material_set_texture(result, "metal", gltf_parsetexture(data, tex->image, filename, false));
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
 		material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
@@ -428,18 +428,22 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
+	if (material->alpha_mode == cgltf_alpha_mode_blend)
+		material_set_transparency(result, transparency_blend);
+	if (material->alpha_mode == cgltf_alpha_mode_mask)
+		material_set_transparency(result, transparency_clip);
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr)
-		material_set_texture(result, "normal", gltf_parsetexture(data, tex->image, filename));
+		material_set_texture(result, "normal", gltf_parsetexture(data, tex->image, filename, false));
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr)
-		material_set_texture(result, "occlusion", gltf_parsetexture(data, tex->image, filename));
+		material_set_texture(result, "occlusion", gltf_parsetexture(data, tex->image, filename, false));
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr)
-		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename));
+		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename, true));
 
 	return result;
 }
