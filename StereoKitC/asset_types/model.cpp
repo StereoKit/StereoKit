@@ -19,8 +19,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj (model_t model, const char *filename);
-bool modelfmt_gltf(model_t model, const char *filename);
+bool modelfmt_obj (model_t model, const char *filename, shader_t shader);
+bool modelfmt_gltf(model_t model, const char *filename, shader_t shader);
 
 ///////////////////////////////////////////
 
@@ -58,15 +58,15 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_file(const char *filename) {
+model_t model_create_file(const char *filename, shader_t shader) {
 	model_t result = model_find(filename);
 	if (result != nullptr)
 		return result;
 	result = model_create();
 	model_set_id(result, filename);
 
-	if        (modelfmt_gltf(result, filename)) {
-	} else if (modelfmt_obj (result, filename)) {
+	if        (modelfmt_gltf(result, filename, shader)) {
+	} else if (modelfmt_obj (result, filename, shader)) {
 	} else {
 		log_errf("Can't load %s! File not found, or invalid format.", filename);
 	}
@@ -173,7 +173,7 @@ int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, ve
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename) {
+bool modelfmt_obj(model_t model, const char *filename, shader_t shader) {
 	// Open file
 	FILE *fp;
 	if (fopen_s(&fp, filename, "r") != 0 || fp == nullptr)
@@ -238,7 +238,7 @@ bool modelfmt_obj(model_t model, const char *filename) {
 	mesh_set_verts(mesh, &verts[0], (int32_t)verts.size());
 	mesh_set_inds (mesh, &faces[0], (int32_t)faces.size());
 
-	model_add_subset(model, mesh, material_find("default/material"), matrix_identity);
+	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
 	free(data);
@@ -399,7 +399,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 
 ///////////////////////////////////////////
 
-material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename) {
+material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader) {
 	// Check if we've already loaded this material
 	char id[512];
 	sprintf_s(id, 512, "%s/%s", filename, material->name);
@@ -408,7 +408,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		return result;
 	}
 	
-	result = material_copy_id("default/material");
+	result = shader == nullptr ? material_copy_id("default/material") : material_create(shader);
 	material_set_id(result, id);
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
@@ -464,7 +464,7 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 ///////////////////////////////////////////
 
-bool modelfmt_gltf(model_t model, const char *filename) {
+bool modelfmt_gltf(model_t model, const char *filename, shader_t shader) {
 	cgltf_options options = {};
 	cgltf_data*   data    = NULL;
 	const char *model_file = assets_file(filename);
@@ -489,7 +489,7 @@ bool modelfmt_gltf(model_t model, const char *filename) {
 		gltf_build_node_matrix(n, transform);
 		matrix     offset   = transform * orientation_correction;
 		mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, filename);
-		material_t material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename);
+		material_t material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename, shader);
 
 		model_add_subset(model, mesh, material, offset);
 

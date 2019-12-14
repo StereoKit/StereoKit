@@ -9,7 +9,7 @@ class DemoBasics : IDemo
 
     public void Initialize()
     {
-        gltf = Model.FromFile("DamagedHelmet.gltf");
+        gltf = Model.FromFile("DamagedHelmet.gltf", Shader.Find(DefaultIds.shaderPbr));
     }
 
     public void Update()

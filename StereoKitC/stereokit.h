@@ -460,7 +460,7 @@ SK_DeclarePrivateType(model_t);
 
 SK_API model_t    model_find        (const char *id);
 SK_API model_t    model_create_mesh (mesh_t mesh, material_t material);
-SK_API model_t    model_create_file (const char *filename);
+SK_API model_t    model_create_file (const char *filename, shader_t shader = nullptr);
 SK_API void       model_set_id      (model_t model, const char *id);
 SK_API material_t model_get_material(model_t model, int32_t subset);
 SK_API int32_t    model_add_subset  (model_t model, mesh_t mesh, material_t material, const matrix &transform);

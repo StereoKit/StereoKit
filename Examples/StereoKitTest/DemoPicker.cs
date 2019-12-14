@@ -43,7 +43,7 @@ namespace StereoKitTest
 
         private void LoadModel(string filename)
         {
-            model      = Model.FromFile(picker.SelectedFile);
+            model      = Model.FromFile(picker.SelectedFile, Shader.Find(DefaultIds.shaderPbr));
             modelScale = 1 / model.Bounds.dimensions.Magnitude;
         }
     }

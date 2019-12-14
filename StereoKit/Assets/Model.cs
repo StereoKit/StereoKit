@@ -90,9 +90,11 @@ namespace StereoKit
         /// <summary>Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.</summary>
         /// <param name="file">Name of the file to load! This gets prefixed with the StereoKit asset
         /// folder if no drive letter is specified in the path.</param>
-        public static Model FromFile(string file)
+        /// <param name="shader">The shader to use for the model's materials! If null, this will
+        /// automatically determine the best shader available to use.</param>
+        public static Model FromFile(string file, Shader shader = null)
         {
-            IntPtr inst = NativeAPI.model_create_file(file);
+            IntPtr inst = NativeAPI.model_create_file(file, shader == null ? IntPtr.Zero : shader._inst);
             return inst == IntPtr.Zero ? null : new Model(inst);
         }
 
