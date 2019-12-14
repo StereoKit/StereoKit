@@ -35,9 +35,9 @@ namespace StereoKitTest
 
             UI.WindowBegin("Gradient", ref colorWinPose, new Vec2(20, 0)*Units.cm2m);
             UI.Label("Color Index");
-            UI.HSlider("Index", ref index, 0, gradient.Count, 1, 18 * Units.cm2m);
+            UI.HSlider("Index", ref index, 0, gradient.Count-1, 1, 18 * Units.cm2m);
             UI.Label("HSV Color");
-            Vec3 c = gradient.Get(index/gradient.Count).ToHSV();
+            Vec3 c = gradient.Get(index/(gradient.Count-1)).ToHSV();
             bool colorDirty = UI.HSlider("H", ref c.x, 0, 1, 0, 18 * Units.cm2m);
             colorDirty      = UI.HSlider("S", ref c.y, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
             colorDirty      = UI.HSlider("V", ref c.z, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
