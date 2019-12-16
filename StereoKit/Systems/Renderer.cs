@@ -19,6 +19,11 @@ namespace StereoKit
             set => NativeAPI.render_set_skytex(value._inst);
         }
 
+        public static SphericalHarmonics SkyLight
+        {
+            set => NativeAPI.render_set_skylight(value);
+        }
+
         /// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque
         /// displays, and completely unavailable for transparent displays.</summary>
         public static bool EnableSky

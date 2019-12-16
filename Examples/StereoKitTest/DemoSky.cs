@@ -47,7 +47,8 @@ namespace StereoKitTest
             }
             if (colorDirty || dirChanged)
             {
-                Renderer.SkyTex = Tex.GenCubemap(gradient, dirPose.position);
+                Renderer.SkyTex = Tex.GenCubemap(gradient, out SphericalHarmonics light, dirPose.position);
+                Renderer.SkyLight = light;
             }
             UI.WindowEnd();
         }

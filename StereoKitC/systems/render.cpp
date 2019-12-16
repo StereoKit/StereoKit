@@ -162,14 +162,8 @@ tex_t render_get_skytex() {
 
 ///////////////////////////////////////////
 
-void render_set_skylight(spherical_harmonics_t light_info) {
-	for (size_t i = 0; i < 9; i++) {
-		render_lighting[i] = {
-			light_info.coefficients[i].x,
-			light_info.coefficients[i].y,
-			light_info.coefficients[i].z,
-			1 };
-	}
+void render_set_skylight(const spherical_harmonics_t &light_info) {
+	sh_to_fast(light_info, render_lighting);
 }
 
 ///////////////////////////////////////////

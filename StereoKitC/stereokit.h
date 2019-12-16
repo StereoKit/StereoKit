@@ -338,7 +338,7 @@ SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
-SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
+SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info = nullptr);
 SK_API int32_t      tex_get_width     (tex_t texture);
 SK_API int32_t      tex_get_height    (tex_t texture);
 SK_API void         tex_set_sample    (tex_t texture, tex_sample_ sample = tex_sample_linear);
@@ -512,7 +512,7 @@ SK_API void     render_set_clip      (float near_plane=0.01f, float far_plane=50
 SK_API void     render_set_view      (const matrix &cam_transform);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
-SK_API void     render_set_skylight  (spherical_harmonics_t light_info);
+SK_API void     render_set_skylight  (const spherical_harmonics_t &light_info);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
 SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});

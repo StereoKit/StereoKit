@@ -173,4 +173,26 @@ tex_t sh_to_tex(const spherical_harmonics_t &lookup, int32_t face_size) {
 	return result;
 }
 
+///////////////////////////////////////////
+
+inline vec4 to_vec4(const vec3& vec) { return { vec.x, vec.y, vec.z, 0 }; }
+
+void sh_to_fast(const spherical_harmonics_t& lookup, vec4* fast_9) {
+	static const float CosineA0 = 3.141592654;
+	static const float CosineA1 = (2.0f * CosineA0) / 3.0f;
+	static const float CosineA2 = CosineA0 * 0.25f;
+
+	fast_9[0] = to_vec4(lookup.coefficients[0] * (0.282095f * CosineA0));
+
+	fast_9[1] = to_vec4(lookup.coefficients[1] * (0.488603f * CosineA1));
+	fast_9[2] = to_vec4(lookup.coefficients[2] * (0.488603f * CosineA1));
+	fast_9[3] = to_vec4(lookup.coefficients[3] * (0.488603f * CosineA1));
+
+	fast_9[4] = to_vec4(lookup.coefficients[4] * (1.092548f * CosineA2));
+	fast_9[5] = to_vec4(lookup.coefficients[5] * (1.092548f * CosineA2));
+	fast_9[6] = to_vec4(lookup.coefficients[6] * (0.315392f * CosineA2));
+	fast_9[7] = to_vec4(lookup.coefficients[7] * (1.092548f * CosineA2));
+	fast_9[8] = to_vec4(lookup.coefficients[8] * (0.546274f * CosineA2));
+}
+
 }

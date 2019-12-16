@@ -33,7 +33,7 @@ struct vsIn {
 struct psIn {
 	float4 pos   : SV_POSITION;
 	float4 color : COLOR0;
-	float3 world : TEXCOORD1;
+	float4 world : TEXCOORD1;
 	float3 normal: NORMAL;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
@@ -42,27 +42,46 @@ struct psIn {
 Texture2D tex : register(t0);
 SamplerState tex_sampler;
 
+// A spherical harmonics lighting lookup!
+// Some calculations have been offloaded to 'sh_to_fast'
+// in StereoKitC
+float3 Lighting(float3 normal) {
+	// Band 0
+	float3 result = sk_lighting_sh[0].xyz;
+
+	// Band 1
+	result += sk_lighting_sh[1].xyz * normal.y;
+	result += sk_lighting_sh[2].xyz * normal.z;
+	result += sk_lighting_sh[3].xyz * normal.x;
+
+	// Band 2
+	float3 n  = normal.xyz * normal.yzx;
+	float3 n2 = normal * normal;
+	result += sk_lighting_sh[4].xyz * n.x;
+	result += sk_lighting_sh[5].xyz * n.y;
+	result += sk_lighting_sh[6].xyz * (3.0f * n2.z - 1.0f);
+	result += sk_lighting_sh[7].xyz * n.z;
+	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
+	return result;
+}
+
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj[sk_inst[id].view_id]);
+	output.world = mul(input .pos,   sk_inst[id].world);
+	output.pos   = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
 
-	output.normal = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
+	output.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
-	float w, h;
-	uint mip_levels;
-	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-	float4 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.9)*mip_levels);
-
-	output.view_id = sk_inst[id].view_id;
-	output.color   = _color * input.col * sk_inst[id].color * irradiance;
+	output.view_id    = sk_inst[id].view_id;
+	output.color      = _color * input.col * sk_inst[id].color;
+	output.color.rgb *= Lighting(output.normal);
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {
-		float3 delta = sk_fingertip[i].xyz - input.world;
+		float3 delta = sk_fingertip[i].xyz - input.world.xyz;
 		float3 norm = normalize(delta);
 		float d = dot(delta,delta) / (0.08 * 0.08);
 		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.5)*200*d) );

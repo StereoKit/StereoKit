@@ -75,6 +75,29 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(float NdotL, float NdotV, float roughness);
 float3 FresnelSchlick(float NdotV, float3 surfaceColor, float metalness);
 
+// A spherical harmonics lighting lookup!
+// Some calculations have been offloaded to 'sh_to_fast'
+// in StereoKitC
+float3 Lighting(float3 normal) {
+	// Band 0
+	float3 result = sk_lighting_sh[0].xyz;
+
+	// Band 1
+	result += sk_lighting_sh[1].xyz * normal.y;
+	result += sk_lighting_sh[2].xyz * normal.z;
+	result += sk_lighting_sh[3].xyz * normal.x;
+
+	// Band 2
+	float3 n  = normal.xyz * normal.yzx;
+	float3 n2 = normal * normal;
+	result += sk_lighting_sh[4].xyz * n.x;
+	result += sk_lighting_sh[5].xyz * n.y;
+	result += sk_lighting_sh[6].xyz * (3.0f * n2.z - 1.0f);
+	result += sk_lighting_sh[7].xyz * n.z;
+	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
+	return result;
+}
+
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
@@ -111,7 +134,7 @@ float4 ps(psIn input) : SV_TARGET{
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 
 	float3 reflection = reflect(-view, normal);
-	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, 0.7*mip_levels).rgb; // This should be Spherical Harmonics eventually
+	float3 irradiance = Lighting(normal);
 	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, 3*(1-rough)*mip_levels).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,

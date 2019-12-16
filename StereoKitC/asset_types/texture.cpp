@@ -404,6 +404,8 @@ void tex_set_active(tex_t texture, int slot) {
 ///////////////////////////////////////////
 
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
+	if (sh_lighting_info != nullptr) *sh_lighting_info = {};
+
 	bool mips    = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128);
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
@@ -701,7 +703,7 @@ void *tex_get_resource(tex_t texture) {
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
 		return nullptr;
@@ -751,7 +753,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 		}
 	}
 
-	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
+	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6, sh_lighting_info);
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
