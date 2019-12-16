@@ -327,7 +327,7 @@ float ui_line_height() {
 ///////////////////////////////////////////
 
 void ui_space(float space) {
-	if (skui_layers.back().offset.x == skui_settings.padding)
+	if (skui_layers.back().offset.x == skui_layers.back().offset_initial.x - skui_settings.padding)
 		skui_layers.back().offset.y -= space;
 	else
 		skui_layers.back().offset.x += space;

@@ -30,6 +30,7 @@ namespace StereoKitTest
         int               selectedIndex = -1;
         string            path;
         string            title;
+        string[]          separatedPath;
         Pose              windowPose = new Pose(new Vec3(-10,0,0)*Units.cm2m, Quat.LookDir(-Vec3.Forward));
         #endregion
 
@@ -42,16 +43,9 @@ namespace StereoKitTest
         public FilePicker((string name, string filter)[] filters, string initialFolder=null)
         {
             foreach (var s in filters)
-                this.title += s+"/";
+                this.title += s.name+"/";
             this.filters = filters;
             UpdateFolder(initialFolder == null ? Directory.GetCurrentDirectory() : initialFolder);
-        }
-
-        void DirectoryUp()
-        {
-            DirectoryInfo parent = Directory.GetParent(path);
-            if (parent != null)
-                UpdateFolder(parent.FullName);
         }
 
         bool Select(int index)
@@ -89,6 +83,12 @@ namespace StereoKitTest
                 type      = FileType.Folder, 
                 extension = "",
                 name      = Path.GetFileName(f)}));
+
+            // Parse the path for display
+            separatedPath = path.Split(new char[]{Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar}, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < separatedPath.Length; i++) {
+                separatedPath[i] += Path.DirectorySeparatorChar;
+            }
         }
 
         public bool Show()
@@ -96,10 +96,18 @@ namespace StereoKitTest
             bool result = false;
 
             UI.WindowBegin(title, ref windowPose, new Vec2(40,0) *Units.cm2m);
-            if (UI.Button("Up"))
-                DirectoryUp();
-            UI.SameLine();
-            UI.Label(path);
+            UI.Label("...\\");
+            for (int i = Math.Max(0,separatedPath.Length-3); i < separatedPath.Length; i++) {
+                UI.SameLine();
+                if (UI.Button(separatedPath[i])) {
+                    string newPath = "";
+                    for (int t = 0; t <= i; t++)
+                        newPath += separatedPath[t] + Path.DirectorySeparatorChar;
+                    UpdateFolder(newPath);
+                }
+            }
+            UI.Space(Units.cm2m * 1.5f);
+
             for (int i = 0; i < activeFiles.Count; i++)
             {
                 if (UI.Button(activeFiles[i].name+"\n"+activeFiles[i].extension))
