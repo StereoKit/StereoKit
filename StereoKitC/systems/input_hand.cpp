@@ -98,7 +98,23 @@ void input_hand_init() {
 		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
 		solid_set_enabled(hand_state[i].solids[0], false);
 
+		// Set up initial default hand pose, so we don't get any accidental pinch/grips on start
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
+		hand_t &hand = hand_state[i].info;
+		for (size_t f = 0; f < 5; f++) {
+		for (size_t j = 0; j < 5; j++) {
+			vec3 pos = input_pose_neutral[f][j].position;
+			quat rot = input_pose_neutral[f][j].orientation;
+			if (i == handed_right) {
+				// mirror along x axis, our pose data is for left hand
+				pos.x = -pos.x;
+				rot.y = -rot.y;
+				rot.z = -rot.z;
+			}
+			hand.fingers[f][j].position    = pos;
+			hand.fingers[f][j].orientation = rot;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
+		} }
 	}
 
 	tex_release(gradient_tex);
