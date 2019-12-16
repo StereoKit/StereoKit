@@ -128,6 +128,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="shaders_builtin\shader_builtin_skybox.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_ui.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_unlit.cpp" />
+    <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stereokit_ui.cpp" />
     <ClCompile Include="systems\d3d.cpp" />
@@ -165,6 +166,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\stref.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
+    <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stereokit_ui.h" />
     <ClInclude Include="systems\d3d.h" />

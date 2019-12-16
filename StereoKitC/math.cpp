@@ -227,4 +227,21 @@ vec3 bounds_corner(const bounds_t &bounds, int32_t index8) {
 	return bounds.center + half * sign;
 }
 
+///////////////////////////////////////////
+
+vec3 math_cubemap_corner(int i) {
+	float neg = (float)((i / 4) % 2 ? -1 : 1);
+	int nx  = ((i+24) / 16) % 2;
+	int ny  = (i / 8)       % 2;
+	int nz  = (i / 16)      % 2;
+	int u   = ((i+1) / 2)   % 2; // U: 0,1,1,0
+	int v   = (i / 2)       % 2; // V: 0,0,1,1
+
+	return {
+		(nx ? neg : ny ? (u?-1:1)*neg : (u?1:-1)*neg),
+		(nx || nz ? (v?1:-1) : neg),
+		(nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
+	};
+}
+
 } // namespace sk

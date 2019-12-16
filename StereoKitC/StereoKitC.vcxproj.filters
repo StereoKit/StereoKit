@@ -121,6 +121,9 @@
     <ClCompile Include="systems\platform\uwp.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
+    <ClCompile Include="spherical_harmonics.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -232,6 +235,9 @@
     </ClInclude>
     <ClInclude Include="systems\platform\uwp.h">
       <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="spherical_harmonics.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

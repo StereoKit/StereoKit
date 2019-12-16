@@ -679,23 +679,6 @@ void *tex_get_resource(tex_t texture) {
 
 ///////////////////////////////////////////
 
-vec3 cubemap_corner(int i) {
-	float neg = (float)((i / 4) % 2 ? -1 : 1);
-	int nx  = ((i+24) / 16) % 2;
-	int ny  = (i / 8)       % 2;
-	int nz  = (i / 16)      % 2;
-	int u   = ((i+1) / 2)   % 2; // U: 0,1,1,0
-	int v   = (i / 2)       % 2; // V: 0,0,1,1
-
-	return {
-		(nx ? neg : ny ? (u?-1:1)*neg : (u?1:-1)*neg),
-		(nx || nz ? (v?1:-1) : neg),
-		(nx ? (u?-1:1)*neg : ny ? (v?1:-1) : neg)
-	};
-}
-
-///////////////////////////////////////////
-
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
 	if (result == nullptr) {
@@ -715,10 +698,10 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	color32 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
 		data[i] = (color32 *)malloc(size2 * sizeof(color32));
-		vec3 p1 = cubemap_corner(i * 4);
-		vec3 p2 = cubemap_corner(i * 4+1);
-		vec3 p3 = cubemap_corner(i * 4+2);
-		vec3 p4 = cubemap_corner(i * 4+3); 
+		vec3 p1 = math_cubemap_corner(i * 4);
+		vec3 p2 = math_cubemap_corner(i * 4+1);
+		vec3 p3 = math_cubemap_corner(i * 4+2);
+		vec3 p4 = math_cubemap_corner(i * 4+3); 
 
 		for (int32_t y = 0; y < size; y++) {
 			float py = 1 - (y / (float)size + half_px);

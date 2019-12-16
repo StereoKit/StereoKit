@@ -4,7 +4,7 @@
 #include <DirectXMath.h>
 
 namespace sk {
-
+	
 void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
 void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &out_matrix);
 vec3 matrix_mul_point    (const DirectX::XMMATRIX &transform, const vec3 &point);
@@ -50,6 +50,7 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 	DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4 *)out_matrix, mat);
 }
 
+
 ///////////////////////////////////////////
 
 inline int32_t  maxi(int32_t  a, int32_t  b) { return a > b ? a : b; }
@@ -63,6 +64,9 @@ inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fmin
 inline float math_ease_overshoot(float a, float b, float overshoot, float t) { t = 1 - t; return math_lerp(a,b, 1-(t*t * ((overshoot + 1) * t - overshoot))); }
 inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*3.14159f); }
 
-vec3 bounds_corner(const bounds_t &bounds, int32_t index8);
+vec3 bounds_corner (const bounds_t &bounds, int32_t index8);
+vec3 math_cubemap_corner(int i);
+
+
 
 } // namespace sk
