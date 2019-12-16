@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -85,7 +86,15 @@ namespace StereoKit
         /// <returns>A Cubemap texture asset!</returns>
         public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true)
         {
-            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData);
+            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, IntPtr.Zero);
+            return tex == IntPtr.Zero ? null : new Tex(tex);
+        }
+        public static Tex FromCubemapEquirectangular(string equirectangularCubemap, ref SphericalHarmonics lighting_info, bool sRGBData = true)
+        {
+            IntPtr ptr = IntPtr.Zero;
+            Marshal.StructureToPtr(lighting_info, ptr, false);
+            IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, ptr);
+            lighting_info = Marshal.PtrToStructure<SphericalHarmonics>(ptr);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
         /// <summary>Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
@@ -110,7 +119,17 @@ namespace StereoKit
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)
                 Log.Err("To create a cubemap, you must have exactly 6 images!");
-            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData);
+            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero);
+            return inst == IntPtr.Zero ? null : new Tex(inst);
+        }
+        public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, ref SphericalHarmonics lighting_info, bool sRGBData = true)
+        {
+            if (cubeFaceFiles_xxyyzz.Length != 6)
+                Log.Err("To create a cubemap, you must have exactly 6 images!");
+            IntPtr ptr = IntPtr.Zero;
+            Marshal.StructureToPtr(lighting_info, ptr, false);
+            IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, ptr);
+            lighting_info = Marshal.PtrToStructure<SphericalHarmonics>(ptr);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
         /// <summary>Generates a cubemap texture from a gradient and a direction! These are entirely suitable for

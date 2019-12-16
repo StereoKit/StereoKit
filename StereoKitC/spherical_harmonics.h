@@ -4,10 +4,6 @@
 
 namespace sk {
 
-struct spherical_harmonics_t {
-	vec3 coefficients[9];
-};
-
 ///////////////////////////////////////////
 
 void                  sh_add      (spherical_harmonics_t &to, vec3 light_dir, color128 light_color);

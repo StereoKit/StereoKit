@@ -3,8 +3,7 @@ cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view[2];
 	float4x4 sk_proj[2];
 	float4x4 sk_viewproj[2];
-	float4   sk_light;
-	float4   sk_light_color;
+	float3   sk_lighting_sh[9];
 	float4   sk_camera_pos[2];
 	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];
@@ -102,7 +101,7 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 view   = normalize(sk_camera_pos[input.view_id].xyz - input.world);
 	tex_norm = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
 	normal   = normalize(tex_norm);
-	float3 light    = -normalize(sk_light.xyz);
+	float3 light    = float3(1,1,1);//-normalize(sk_light.xyz);
 	float3 half_vec =  normalize(light + normal);
 	float  NdotL    = (dot(normal,light));
 	float  NdotV    = (dot(normal,view));

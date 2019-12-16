@@ -162,6 +162,13 @@ namespace StereoKit
         Mirror,
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SphericalHarmonics
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
+        public Vec3[] coefficients;
+    }
+
     /// <summary>Also known as 'alpha' for those in the know. But there's actually more than
     /// one type of transparency in rendering! The horrors. We're keepin' it fairly simple for
     /// now, so you get three options!</summary>

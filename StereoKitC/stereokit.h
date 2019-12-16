@@ -318,17 +318,21 @@ enum tex_address_ {
 	tex_address_mirror,
 };
 
+struct spherical_harmonics_t {
+	vec3 coefficients[9];
+};
+
 SK_DeclarePrivateType(tex_t);
 
 SK_API tex_t tex_find                (const char *id);
 SK_API tex_t tex_create              (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
 SK_API tex_t tex_create_file         (const char *file,                   bool32_t srgb_data = true);
-SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data = true);
-SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data = true);
+SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
+SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
 SK_API void  tex_set_id              (tex_t texture, const char *id);
 SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count);
+SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *sh_lighting_info = nullptr);
 SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format = tex_format_depthstencil);
 SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
@@ -506,9 +510,9 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 SK_API void     render_set_clip      (float near_plane=0.01f, float far_plane=50);
 SK_API void     render_set_view      (const matrix &cam_transform);
-SK_API void     render_set_light     (const vec3 &direction, float intensity, const color128 &color);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
+SK_API void     render_set_skylight  (spherical_harmonics_t light_info);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
 SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const matrix &transform, color128 color = {1,1,1,1});

@@ -2,6 +2,7 @@
 #include "d3d.h"
 #include "../libraries/stref.h"
 #include "../math.h"
+#include "../spherical_harmonics.h"
 #include "../stereokit.h"
 #include "../hierarchy.h"
 #include "../asset_types/mesh.h"
@@ -43,8 +44,7 @@ struct render_global_buffer_t {
 	XMMATRIX view[2];
 	XMMATRIX proj[2];
 	XMMATRIX viewproj[2];
-	vec4     light;
-	color128 light_color;
+	vec4     lighting[9];
 	vec4     camera_pos[2];
 	vec4     camera_dir[2];
 	vec4     fingertip[2];
@@ -83,6 +83,7 @@ render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
 tex_t                  render_default_tex;
+vec4                   render_lighting[9] = {};
 
 vector<render_screenshot_t>  render_screenshot_list;
 
@@ -137,14 +138,6 @@ void render_set_view(const matrix &cam_transform) {
 
 ///////////////////////////////////////////
 
-void render_set_light(const vec3 &direction, float intensity, const color128 &color) {
-	vec3 dir = vec3_normalize(direction);
-	render_global_buffer.light       = { dir.x, dir.y, dir.z, intensity };
-	render_global_buffer.light_color = color;
-}
-
-///////////////////////////////////////////
-
 void render_set_skytex(tex_t sky_texture) {
 	if (sky_texture != nullptr && !(sky_texture->type & tex_type_cubemap)) {
 		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
@@ -165,6 +158,18 @@ void render_set_skytex(tex_t sky_texture) {
 
 tex_t render_get_skytex() {
 	return render_sky_cubemap;
+}
+
+///////////////////////////////////////////
+
+void render_set_skylight(spherical_harmonics_t light_info) {
+	for (size_t i = 0; i < 9; i++) {
+		render_lighting[i] = {
+			light_info.coefficients[i].x,
+			light_info.coefficients[i].y,
+			light_info.coefficients[i].z,
+			1 };
+	}
 }
 
 ///////////////////////////////////////////
@@ -244,7 +249,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		render_global_buffer.proj[i] = XMMatrixTranspose(projection_f);
 		render_global_buffer.viewproj[i] = XMMatrixTranspose(view_f * projection_f);
 	}
-	
+	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
 	render_global_buffer.time = time_getf();
 
 	vec3 tip = input_hand(handed_right).tracked_state & button_state_active ? input_hand(handed_right).fingers[1][4].position : vec3{0,-1000,0};
@@ -379,11 +384,6 @@ bool render_initialize() {
 	// Setup a default camera
 	render_set_clip(render_clip_planes.x, render_clip_planes.y);
 	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero), vec3_one));
-
-	// Set default lighting
-	vec3 dir = { -1,-2,-1 };
-	dir = vec3_normalize(dir);
-	render_set_light(dir, 3.14159f, { 1,1,1,1 });
 
 	// Set up resources for doing blit operations
 	render_blit_quad = mesh_find("default/quad");

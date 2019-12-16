@@ -4,8 +4,7 @@ cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view[2];
 	float4x4 sk_proj[2];
 	float4x4 sk_viewproj[2];
-	float4   sk_light;
-	float4   sk_light_color;
+	float3   sk_lighting_sh[9];
 	float4   sk_camera_pos[2];
 	float4   sk_camera_dir[2];
 	float4   sk_fingertip[2];

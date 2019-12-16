@@ -3,6 +3,7 @@
 #include "../systems/d3d.h"
 #include "../libraries/stref.h"
 #include "../math.h"
+#include "../spherical_harmonics.h"
 #include "texture.h"
 
 #pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
@@ -94,7 +95,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data) {
+tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
 	tex_t result = tex_find(equirectangular_file);
 	if (result != nullptr)
 		return result;
@@ -129,7 +130,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
 	tex_set_id       (result, equirectangular_file);
-	tex_set_color_arr(result, width, height, (void**)&data, 6);
+	tex_set_color_arr(result, width, height, (void**)&data, 6, sh_lighting_info);
 
 	material_release(convert_material);
 	tex_release(equirect);
@@ -146,7 +147,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data) {
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
 	tex_t result = tex_find(cube_face_file_xxyyzz[0]);
 	if (result != nullptr)
 		return result;
@@ -185,7 +186,7 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 	// Create with the data we have
 	result = tex_create(tex_type_image | tex_type_cubemap, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	tex_set_id       (result, cube_face_file_xxyyzz[0]);
-	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6);
+	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6, sh_lighting_info);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -250,7 +251,7 @@ void tex_releasesurface(tex_t tex) {
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count) {
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height || texture->array_size != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
@@ -262,7 +263,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		texture->height = height;
 		texture->array_size = data_count;
 
-		bool result = tex_create_surface(texture, data, data_count);
+		bool result = tex_create_surface(texture, data, data_count, sh_lighting_info);
 		if (result)
 			result = tex_create_views  (texture, DXGI_FORMAT_UNKNOWN);
 		if (result && texture->depth_buffer != nullptr)
@@ -402,7 +403,7 @@ void tex_set_active(tex_t texture, int slot) {
 
 ///////////////////////////////////////////
 
-bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
+bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
 	bool mips    = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128);
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
@@ -434,9 +435,9 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 			tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex_format_size(texture->format) * texture->width);
 
 			if (mips) {
-				void    *mip_data   = curr_data;
-				int32_t  mip_width  = texture->width;
-				int32_t  mip_height = texture->height;
+				void    *mip_data     = curr_data;
+				int32_t  mip_width    = texture->width;
+				int32_t  mip_height   = texture->height;
 				for (uint32_t m = 1; m < desc.MipLevels; m++) {
 					uint32_t index = i*desc.MipLevels + m;
 					if (texture->format == tex_format_rgba128)
@@ -445,8 +446,20 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 						tex_downsample    ((color32* )mip_data, mip_width, mip_height, (color32** )&tex_mem[index].pSysMem, &mip_width, &mip_height);
 					mip_data = (void*)tex_mem[index].pSysMem;
 					tex_mem[index].SysMemPitch = (UINT)(tex_format_size(texture->format) * mip_width);
+					
 				}
 			}
+		}
+		if (sh_lighting_info != nullptr) {
+			int32_t lighting_mip = maxi(0, (int32_t)desc.MipLevels-6);
+			void *mip_level[6] = { 
+				(void*)tex_mem[0 * desc.MipLevels + lighting_mip].pSysMem,
+				(void*)tex_mem[1 * desc.MipLevels + lighting_mip].pSysMem,
+				(void*)tex_mem[2 * desc.MipLevels + lighting_mip].pSysMem,
+				(void*)tex_mem[3 * desc.MipLevels + lighting_mip].pSysMem,
+				(void*)tex_mem[4 * desc.MipLevels + lighting_mip].pSysMem,
+				(void*)tex_mem[5 * desc.MipLevels + lighting_mip].pSysMem,};
+			*sh_lighting_info = sh_calculate(mip_level, texture->format, pow(2, desc.MipLevels - (lighting_mip+1)));
 		}
 	}
 	
