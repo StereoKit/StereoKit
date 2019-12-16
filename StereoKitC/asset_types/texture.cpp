@@ -66,16 +66,22 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	if (result != nullptr)
 		return result;
 
+	bool     is_hdr   = stbi_is_hdr(assets_file(file));
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *data     = stbi_load(assets_file(file), &width, &height, &channels, 4);
+	uint8_t *data     =  is_hdr ? 
+		(uint8_t *)stbi_loadf(assets_file(file), &width, &height, &channels, 4):
+		(uint8_t *)stbi_load (assets_file(file), &width, &height, &channels, 4);
 
 	if (data == nullptr) {
 		log_warnf("Couldn't load image file: %s", file);
 		return nullptr;
 	}
-	result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_format_ format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
+	if (is_hdr) format = tex_format_rgba128;
+
+	result = tex_create(tex_type_image, format);
 	tex_set_id(result, file);
 
 	tex_set_colors(result, width, height, data);
@@ -106,18 +112,18 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	material_set_texture( convert_material, "source", equirect );
 
 	tex_t    face    = tex_create(tex_type_rendertarget, equirect->format);
-	color32 *data[6] = {};
+	void    *data[6] = {};
 	int      width   = equirect->height / 2;
 	int      height  = width;
 	size_t   size    = (size_t)width*(size_t)height*tex_format_size(equirect->format);
 	tex_set_colors(face, width, height, nullptr);
 	for (size_t i = 0; i < 6; i++) {
-		material_set_vector(convert_material, "up",      { up[i].x, up[i].y, up[i].z, 0 });
+		material_set_vector(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
 		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
-		material_set_vector(convert_material, "forward", { fwd[i].x, fwd[i].y, fwd[i].z, 0 });
+		material_set_vector(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
 
-		render_blit   (face, convert_material);
-		data[i] = (color32*)malloc(size);
+		render_blit (face, convert_material);
+		data[i] = malloc(size);
 		tex_get_data(face, data[i], size);
 	}
 
@@ -397,7 +403,7 @@ void tex_set_active(tex_t texture, int slot) {
 ///////////////////////////////////////////
 
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
-	bool mips    = texture->type & tex_type_mips && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear) && texture->width == texture->height;
+	bool mips    = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128);
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
 	bool rtarget = texture->type & tex_type_rendertarget;
@@ -428,13 +434,16 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count) {
 			tex_mem[i*desc.MipLevels].SysMemPitch = (UINT)(tex_format_size(texture->format) * texture->width);
 
 			if (mips) {
-				color32 *mip_data   = (color32*)curr_data;
+				void    *mip_data   = curr_data;
 				int32_t  mip_width  = texture->width;
 				int32_t  mip_height = texture->height;
 				for (uint32_t m = 1; m < desc.MipLevels; m++) {
 					uint32_t index = i*desc.MipLevels + m;
-					tex_downsample(mip_data, mip_width, mip_height, (color32**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
-					mip_data = (color32*)tex_mem[index].pSysMem;
+					if (texture->format == tex_format_rgba128)
+						tex_downsample_128((color128*)mip_data, mip_width, mip_height, (color128**)&tex_mem[index].pSysMem, &mip_width, &mip_height);
+					else
+						tex_downsample    ((color32* )mip_data, mip_width, mip_height, (color32** )&tex_mem[index].pSysMem, &mip_width, &mip_height);
+					mip_data = (void*)tex_mem[index].pSysMem;
 					tex_mem[index].SysMemPitch = (UINT)(tex_format_size(texture->format) * mip_width);
 				}
 			}
@@ -488,7 +497,7 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 
 bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
 	DXGI_FORMAT  format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
-	bool         mips      = texture->type & tex_type_mips && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear) && texture->width == texture->height;
+	bool         mips      = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
 	unsigned int mip_count = (mips ? log2(texture->width) + 1 : 1);
 
 	if (!(texture->type & tex_type_depth)) {
@@ -765,6 +774,41 @@ bool tex_downsample(color32 *data, int32_t width, int32_t height, color32 **out_
 
 		result[dest] = cD;
 	}
+	}
+
+	*out_width   = w;
+	*out_height  = h;
+	return w > 1 && h > 1;
+}
+
+///////////////////////////////////////////
+
+bool tex_downsample_128(color128 *data, int32_t width, int32_t height, color128 **out_data, int32_t *out_width, int32_t *out_height) {
+	int w = (int32_t)log2(width);
+	int h = (int32_t)log2(height);
+	w = (1 << w)  >> 1;
+	h = (1 << h) >> 1;
+
+	*out_data = (color128*)malloc(w * h * sizeof(color128));
+	memset(*out_data, 0, w * h * sizeof(color128));
+	color128 *result = *out_data;
+
+	for (int32_t y = 0; y < height; y++) {
+		int32_t src_row_start  = y * width;
+		int32_t dest_row_start = (y / 2) * w;
+		for (int32_t x = 0; x < width;  x++) {
+			int src  = x + src_row_start;
+			int dest = (x / 2) + dest_row_start;
+			color128 cD = result[dest];
+			color128 cS = data  [src];
+
+			cD.r += cS.r / 4;
+			cD.g += cS.g / 4;
+			cD.b += cS.b / 4;
+			cD.a += cS.a / 4;
+
+			result[dest] = cD;
+		}
 	}
 
 	*out_width   = w;

@@ -57,7 +57,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float w, h;
 	uint mip_levels;
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-	float4 irradiance = float4(sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.9)*mip_levels).rgb, 1);
+	float4 irradiance = float4(sk_cubemap.SampleLevel(tex_cube_sampler, output.normal, (0.7)*mip_levels).rgb, 1);
 
 	output.view_id = sk_inst[id].view_id;
 	output.uv      = input.uv * tex_scale;

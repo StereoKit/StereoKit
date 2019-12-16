@@ -37,6 +37,7 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count);
 bool tex_create_views  (tex_t texture, DXGI_FORMAT source_format);
 void tex_set_options   (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
 
-bool tex_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height);
+bool tex_downsample    (color32  *data, int32_t width, int32_t height, color32  **out_data, int32_t *out_width, int32_t *out_height);
+bool tex_downsample_128(color128 *data, int32_t width, int32_t height, color128 **out_data, int32_t *out_width, int32_t *out_height);
 
 } // namespace sk
