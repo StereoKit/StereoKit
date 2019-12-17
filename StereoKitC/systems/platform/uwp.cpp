@@ -152,9 +152,9 @@ public:
 		ID3D11Texture2D *back_buffer;
 		uwp_swapchain->GetBuffer(0, __uuidof(**(&back_buffer)), reinterpret_cast<void **>(&back_buffer));
 
-		uwp_target = tex_create(tex_type_rendertarget);
+		uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32_linear);
 		tex_set_id     (uwp_target, "stereokit/system/rendertarget");
-		tex_setsurface (uwp_target, back_buffer, DXGI_FORMAT_UNKNOWN);
+		tex_setsurface (uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 		tex_add_zbuffer(uwp_target, tex_format_depth16);
 
 		dxgi_factory->Release();
