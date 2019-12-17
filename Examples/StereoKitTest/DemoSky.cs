@@ -1,56 +1,132 @@
 ﻿using StereoKit;
+using System;
+using System.Collections.Generic;
 
 namespace StereoKitTest
 {
+    class Light
+    {
+        public Pose pose;
+        public Vec3 color;
+    }
+    enum LightMode
+    {
+        Lights,
+        Image,
+    }
+
     class DemoSky : IDemo
     {
-        static Gradient gradient = new Gradient(new GradientKey[] {
-                new GradientKey {color = Color.HSV(0.1f, 0.4f, 0.0f), position = 0},
-                new GradientKey {color = Color.HSV(0.7f, 0.6f, 0.4f), position = 0.33f},
-                new GradientKey {color = Color.HSV(0.7f, 0.6f, 0.6f), position = 0.67f},
-                new GradientKey {color = Color.HSV(0.3f, 0.4f, 0.8f), position = 1.0f} });
+        static List<Light> lights     = new List<Light>();
+        static Pose        windowPose = new Pose(new Vec3(0,0.1f,-0.3f), Quat.LookDir(-Vec3.Forward));
+        static LightMode   mode       = LightMode.Lights;
+        static Tex         cubemap    = null;
 
-        static Pose dirPose = new Pose(new Vec3(0,0.1f,0), Quat.Identity);
-        static Pose colorWinPose = new Pose(new Vec3(0,0,-0.35f), Quat.LookDir(-Vec3.Forward));
-        float index = 0;
-        bool  prevState = false;
+        Mesh       lightMesh     = Mesh.GenerateSphere(1);
+        Material   lightProbeMat = Material.Find(DefaultIds.material);
+        Material   lightSrcMat   = new Material(Shader.Find(DefaultIds.shaderUnlit));
+        FilePicker hdrPicker     = new FilePicker(new (string, string)[]{("HDR","*.hdr")});
+        bool       showPicker    = false;
 
-        Mesh     lightProbeMesh = Mesh.GenerateSphere(0.1f);
-        Material lightProbeMat  = Material.Find(DefaultIds.material);
-
-        public void Initialize() {
-            Renderer.SkyTex = Tex.GenCubemap(gradient, dirPose.position);
-        }
-
+        public void Initialize() { }
         public void Shutdown() { }
-
         public void Update()
         {
-            bool moving = UI.AffordanceBegin("Direction", ref dirPose, Vec3.Zero, Vec3.One * 6 * Units.cm2m, true);
-            UI.AffordanceEnd();
-            Lines.Add(Vec3.Zero, dirPose.position, Color.White, 0.001f);
-            lightProbeMesh.Draw(lightProbeMat, Matrix.Identity);
-            bool dirChanged = moving;// !moving && prevState;
-            prevState = moving;
+            UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * Units.cm2m, 0));
+            UI.Label("Mode");
+            if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
+            UI.SameLine();
+            if (UI.Radio("Image",  mode == LightMode.Image))  mode = LightMode.Image;
 
-            UI.WindowBegin("Gradient", ref colorWinPose, new Vec2(20, 0)*Units.cm2m);
-            UI.Label("Color Index");
-            UI.HSlider("Index", ref index, 0, gradient.Count-1, 1, 18 * Units.cm2m);
-            UI.Label("HSV Color");
-            Vec3 c = gradient.Get(index/(gradient.Count-1)).ToHSV();
-            bool colorDirty = UI.HSlider("H", ref c.x, 0, 1, 0, 18 * Units.cm2m);
-            colorDirty      = UI.HSlider("S", ref c.y, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
-            colorDirty      = UI.HSlider("V", ref c.z, 0, 1, 0, 18 * Units.cm2m) || colorDirty;
-            Lines.Add(new Vec3(9, -28, 0) * Units.cm2m, new Vec3(-9, -28, 0) * Units.cm2m, Color.HSV(c.x, c.y, c.z), .01f);
-            if (colorDirty) {
-                gradient.Set((int)index, Color.HSV(c.x, c.y, c.z), index/(gradient.Count-1));
+            if (mode == LightMode.Lights)
+            { 
+                UI.Label("Lights");
+                if (UI.Button("Add"))
+                {
+                    lights.Add(new Light { 
+                        pose  = new Pose(Vec3.Up*Units.cm2m*25, Quat.LookDir(-Vec3.Forward)), 
+                        color = Vec3.One });
+                    UpdateLights();
+                }
+
+                UI.SameLine();
+                if (UI.Button("Remove") && lights.Count > 1)
+                { 
+                    lights.RemoveAt(lights.Count-1);
+                    UpdateLights();
+                }
             }
-            if (colorDirty || dirChanged)
+
+            if (mode == LightMode.Image)
             {
-                Renderer.SkyTex = Tex.GenCubemap(gradient, out SphericalHarmonics light, dirPose.position);
-                Renderer.SkyLight = light;
+                UI.Label("Image");
+                if (!showPicker && UI.Button("Open"))
+                    showPicker = true;
             }
+
             UI.WindowEnd();
+
+            lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
+
+            if (mode == LightMode.Lights)
+            { 
+                bool needsUpdate = false;
+                for (int i = 0; i < lights.Count; i++) {
+                    needsUpdate = LightHandle(i) || needsUpdate;
+                }
+                if (needsUpdate)
+                    UpdateLights();
+            }
+            if (mode == LightMode.Image)
+            {
+                if (showPicker && hdrPicker.Show()) { 
+                    cubemap    = Tex.FromCubemapEquirectangular( hdrPicker.SelectedFile, out SphericalHarmonics lighting );
+                    showPicker = false;
+
+                    Renderer.SkyTex   = cubemap;
+                    Renderer.SkyLight = lighting;
+                }
+            }
+        }
+
+        bool LightHandle(int i)
+        {
+            UI.PushId("window"+i);
+            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, Vec3.Zero, Vec3.One * 3 * Units.cm2m);
+            UI.LayoutArea(new Vec3(6,-3,0)*Units.cm2m, new Vec2(10, 0) * Units.cm2m);
+            if (lights[i].pose.position.Magnitude > 0.5f)
+                lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;
+
+            lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3*Units.cm2m), Color.HSV(lights[i].color));
+
+            dirty = UI.HSlider("H", ref lights[i].color.x, 0, 1, 0, 10 * Units.cm2m) || dirty;
+            dirty = UI.HSlider("S", ref lights[i].color.y, 0, 1, 0, 10 * Units.cm2m) || dirty;
+            dirty = UI.HSlider("V", ref lights[i].color.z, 0, 1, 0, 10 * Units.cm2m) || dirty;
+            
+            UI.AffordanceEnd();
+            Lines.Add(
+                lights[i].pose.position, Vec3.Zero, 
+                Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 
+                Units.mm2m);
+
+            UI.PopId();
+            return dirty;
+        }
+
+        void UpdateLights()
+        {
+            SphericalHarmonics lighting = SphericalHarmonics.FromLights(lights
+                .ConvertAll(a => new SHLight{ 
+                    directionTo = a.pose.position.Normalized(),
+                    color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
+                .ToArray());
+
+            Renderer.SkyTex   = Tex.GenCubemap(lighting);
+            Renderer.SkyLight = lighting;
+        }
+        float LightIntensity(Vec3 pos)
+        {
+            return Math.Max(0, 2 - pos.Magnitude * 4);
         }
     }
 }

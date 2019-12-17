@@ -147,6 +147,12 @@ namespace StereoKit
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
 
+        public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16)
+        {
+            IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution);
+            return tex == IntPtr.Zero ? null : new Tex(tex);
+        }
+
         #endregion
     }
 }

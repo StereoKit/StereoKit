@@ -92,6 +92,9 @@ namespace StereoKit
         public static Color HSV(float hue, float saturation, float value, float opacity = 1)
             => NativeAPI.color_hsv(hue, saturation, value, opacity);
 
+        public static Color HSV(Vec3 hsvColor, float opacity = 1)
+            => NativeAPI.color_hsv(hsvColor.x, hsvColor.y, hsvColor.z, opacity);
+
         /// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
         /// human perception, and has significantly more accurate to perception lightness values, so this is 
         /// an excellent color space for color operations that wish to preserve color brightness properly. 
@@ -107,5 +110,6 @@ namespace StereoKit
 
         public static implicit operator Color32(Color c) 
             => new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
+        public static Color operator *(Color a, float b) { return new Color(a.r * b, a.g * b, a.b * b, a.a * b); }
     }
 }

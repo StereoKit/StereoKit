@@ -224,13 +224,6 @@ struct color128 {
 	float r, g, b, a;
 };
 
-struct gradient_key_t {
-	color128 color;
-	float    position;
-};
-
-SK_DeclarePrivateType(gradient_t);
-
 static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 
 SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
@@ -239,6 +232,14 @@ SK_API color128 color_lab   (float l, float a, float b, float transparency);
 SK_API vec3     color_to_lab(color128 color);
 inline color128 color_lerp  (color128 a, color128 b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
 inline color32  color_to_32 (color128 a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
+
+///////////////////////////////////////////
+
+struct gradient_key_t {
+	color128 color;
+	float    position;
+};
+SK_DeclarePrivateType(gradient_t);
 
 SK_API gradient_t gradient_create ();
 SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
@@ -249,6 +250,19 @@ SK_API int32_t    gradient_count  (gradient_t gradient);
 SK_API color128   gradient_get    (gradient_t gradient, float at);
 SK_API color32    gradient_get32  (gradient_t gradient, float at);
 SK_API void       gradient_release(gradient_t gradient);
+
+///////////////////////////////////////////
+
+struct spherical_harmonics_t {
+	vec3 coefficients[9];
+};
+struct sh_light_t {
+	vec3     dir_to;
+	color128 color;
+};
+
+SK_API spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count);
+SK_API color128              sh_lookup(const spherical_harmonics_t& lookup, vec3 normal);
 
 ///////////////////////////////////////////
 
@@ -318,10 +332,6 @@ enum tex_address_ {
 	tex_address_mirror,
 };
 
-struct spherical_harmonics_t {
-	vec3 coefficients[9];
-};
-
 SK_DeclarePrivateType(tex_t);
 
 SK_API tex_t tex_find                (const char *id);
@@ -339,6 +349,7 @@ SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
 SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info = nullptr);
+SK_API tex_t tex_gen_cubemap_sh      (const spherical_harmonics_t& lookup, int32_t face_size);
 SK_API int32_t      tex_get_width     (tex_t texture);
 SK_API int32_t      tex_get_height    (tex_t texture);
 SK_API void         tex_set_sample    (tex_t texture, tex_sample_ sample = tex_sample_linear);

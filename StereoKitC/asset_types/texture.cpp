@@ -763,6 +763,64 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 ///////////////////////////////////////////
 
+tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size) {
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
+	if (result == nullptr) {
+		return nullptr;
+	}
+
+	int32_t size  = face_size;
+	// make size a power of two
+	int32_t power = (int32_t)logf((float)size);
+	if (pow(2, power) < size)
+		power += 1;
+	size = (int32_t)pow(2, power);
+
+	float    half_px = 0.5f / size;
+	int32_t  size2 = size * size;
+	color128 *data[6];
+	for (int32_t i = 0; i < 6; i++) {
+		data[i] = (color128 *)malloc(size2 * sizeof(color128));
+		vec3 p1 = math_cubemap_corner(i * 4);
+		vec3 p2 = math_cubemap_corner(i * 4+1);
+		vec3 p3 = math_cubemap_corner(i * 4+2);
+		vec3 p4 = math_cubemap_corner(i * 4+3); 
+
+		for (int32_t y = 0; y < size; y++) {
+			float py = 1 - (y / (float)size + half_px);
+
+			// Top face is flipped on both axes
+			if (i == 2) {
+				py = 1 - py;
+			}
+			for (int32_t x = 0; x < size; x++) {
+				float px = x / (float)size + half_px;
+
+				// Top face is flipped on both axes
+				if (i == 2) {
+					px = 1 - px;
+				}
+
+				vec3 pl = vec3_lerp(p1, p4, py);
+				vec3 pr = vec3_lerp(p2, p3, py);
+				vec3 pt = vec3_lerp(pl, pr, px);
+				pt = vec3_normalize(pt);
+
+				data[i][x + y * size] = sh_lookup(lookup, pt);
+			}
+		}
+	}
+
+	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
+	for (int32_t i = 0; i < 6; i++) {
+		free(data[i]);
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool tex_downsample(color32 *data, int32_t width, int32_t height, color32 **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2(width);
 	int h = (int32_t)log2(height);

@@ -53,6 +53,7 @@ namespace StereoKit
         /// <param name="text">Text to display on the button, should be per-window unique as it will be used as the element id.</param>
         /// <returns>Will return true only on the first frame it is pressed!</returns>
         public static bool Button     (string text) { return NativeAPI.ui_button(text); }
+        public static bool Radio      (string text, bool active) { return NativeAPI.ui_toggle(text, ref active) && active; }
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>

@@ -1,9 +1,4 @@
 using StereoKit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StereoKitTest
 {
@@ -13,12 +8,12 @@ namespace StereoKitTest
             ("GLTF", "*.gltf"),
             ("GLTF", "*.glb")});
 
-        Model model      = null;
-        float modelScale = 1;
+        static Model model      = null;
+        static float modelScale = 1;
+        static float menuScale  = 1;
         Pose  modelPose  = new Pose(-.3f,0,0, Quat.LookDir(-Vec3.Forward));
         Pose  menuPose   = new Pose(0.3f,0,0, Quat.LookDir(-Vec3.Forward));
-        float menuScale  = 1;
-
+        
         public void Initialize() { }
 
         public void Shutdown() { }
