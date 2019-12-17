@@ -743,7 +743,6 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
 			skui_hand[i].focused = id;
-			color = 1.25f;
 		}
 
 		if (skui_hand[i].focused == id || skui_hand[i].active == id) {
