@@ -9,7 +9,7 @@
 /// matter which one, so long as it's not VS 2017. Visual Studio Code also won't work, that's a totally
 /// separate product :)
 /// 
-/// Now, this also comes with some extra configuration! While installing Visual Studio, you'll need to pick a
+/// This also comes with some extra configuration! While installing Visual Studio, you'll need to pick a
 /// few workloads. Try '.NET Desktop development', 'Universal Windows Platform development' and '.NET Core 
 /// cross-platform development'. That should cover it, but I may refine this list later on!
 /// 
@@ -31,9 +31,8 @@
 /// ## The Template
 /// 
 /// There are two templates to pick from! One is for UWP, and one is for .NET Core. Choose the UWP one if you're deploying
-/// to HoloLens 2, and choose the .NET Core one if you're doing development on a Windows Mixed Reality headset! UWP doesn't
-/// support flatscreen mode for development and adds a lot of extra build time through the .Net Native compiler, so for now, 
-/// prefer the .Net Core template if possible.
+/// to HoloLens 2, and choose the .NET Core one if you're doing development on a Windows Mixed Reality headset! When using
+/// UWP, .Net Native is used for Release builds, and all ARM64 builds, so it can be faster to iterate in Debug/x64!
 /// 
 /// The starting code is pretty simple! Initialize StereoKit in Mixed Reality mode, create a 3D model that's a rounded
 /// cube with a default material, and then draw that model every step of the application!
@@ -49,16 +48,16 @@ namespace SKYourTemplate
     {
         static void Main(string[] args)
         {
-            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality))
+            if (!StereoKitApp.Initialize("SKYourTemplate", Runtime.MixedReality))
                 Environment.Exit(1);
 
-            Model cube = new Model(
-                Mesh.GenerateRoundedCube(Vec3.One, 0.1f), 
-                Material.Find("default/material"));
+            Model cube = Model.FromMesh(
+                Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
+                Material.Find(DefaultIds.material));
 
             while (StereoKitApp.Step(() =>
             {
-                Renderer.Add(cube, Matrix.Identity, Color.White);
+                cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
             }));
 
             StereoKitApp.Shutdown();
