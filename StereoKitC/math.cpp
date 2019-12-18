@@ -222,7 +222,10 @@ vec3 bounds_corner(const bounds_t &bounds, int32_t index8) {
 	//  1, -1,  1
 	//  1,  1, -1
 	//  1,  1,  1
-	vec3 sign = { (index8/4) * 2 - 1, ((index8/2) % 2)  * 2 - 1, (index8 % 2) * 2 - 1};
+	vec3 sign = {
+		(float)( (index8 / 4) * 2 - 1),
+		(float)(((index8 / 2) % 2) * 2 - 1),
+		(float)( (index8 % 2) * 2 - 1) };
 	vec3 half = bounds.dimensions / 2;
 	return bounds.center + half * sign;
 }

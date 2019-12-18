@@ -350,6 +350,9 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 
 ///////////////////////////////////////////
 
+#pragma warning(push)
+#pragma warning(disable: 4706)
+
 // FNV-1a hash (64bit): http://isthe.com/chongo/tech/comp/fnv/, start_hash = 14695981039346656037
 uint64_t  string_hash(const char* string, uint64_t start_hash) {
 	uint64_t hash = start_hash;
@@ -358,6 +361,8 @@ uint64_t  string_hash(const char* string, uint64_t start_hash) {
 		hash = (hash ^ c) * 1099511628211;
 	return hash;
 }
+
+#pragma warning(pop)
 
 ///////////////////////////////////////////
 

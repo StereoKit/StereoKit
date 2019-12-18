@@ -18,9 +18,9 @@ struct _gradient_t {
 color128 color_hsv(float hue, float saturation, float value, float transparency) {
 	const vec4 K = vec4{ 1.0f, 2.0f / 3.0f, 1.0f / 3.0f, 3.0f };
 	vec3 p = {
-		fabsf(((hue + K.x) - floor(hue + K.x)) * 6.0 - K.w),
-		fabsf(((hue + K.y) - floor(hue + K.y)) * 6.0 - K.w),
-		fabsf(((hue + K.z) - floor(hue + K.z)) * 6.0 - K.w) };
+		fabsf(((hue + K.x) - floorf(hue + K.x)) * 6.0f - K.w),
+		fabsf(((hue + K.y) - floorf(hue + K.y)) * 6.0f - K.w),
+		fabsf(((hue + K.z) - floorf(hue + K.z)) * 6.0f - K.w) };
 	return {
 		math_lerp(K.x, fmaxf(0,fminf(p.x - K.x, 1.0f)), saturation) * value,
 		math_lerp(K.x, fmaxf(0,fminf(p.y - K.x, 1.0f)), saturation) * value,
@@ -37,7 +37,7 @@ vec3 color_to_hsv(color128 col) {
 	vec4 q = col.r < p.x   ? vec4{ p.x, p.y, p.w, col.r }   : vec4{ col.r, p.y, p.z, p.x };
 
 	float d = q.x - fminf(q.w, q.y);
-	float e = 1.0e-10;
+	float e = 1.0e-10f;
 	return vec3{ fabsf(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x };
 }
 
@@ -64,9 +64,9 @@ color128 color_lab(float l, float a, float b, float transparency) {
 	col.g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
 	col.b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
 
-	col.r = (col.r > 0.0031308f) ? (1.055 * powf(col.r, 1/2.4f) - 0.055f) : 12.92f * col.r;
-	col.g = (col.g > 0.0031308f) ? (1.055 * powf(col.g, 1/2.4f) - 0.055f) : 12.92f * col.g;
-	col.b = (col.b > 0.0031308f) ? (1.055 * powf(col.b, 1/2.4f) - 0.055f) : 12.92f * col.b;
+	col.r = (col.r > 0.0031308f) ? (1.055f * powf(col.r, 1/2.4f) - 0.055f) : 12.92f * col.r;
+	col.g = (col.g > 0.0031308f) ? (1.055f * powf(col.g, 1/2.4f) - 0.055f) : 12.92f * col.g;
+	col.b = (col.b > 0.0031308f) ? (1.055f * powf(col.b, 1/2.4f) - 0.055f) : 12.92f * col.b;
 
 	return { 
 		fmaxf(0, fminf(1, col.r)),

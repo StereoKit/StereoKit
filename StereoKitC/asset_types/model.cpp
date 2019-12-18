@@ -484,7 +484,7 @@ bool modelfmt_gltf(model_t model, const char *filename, shader_t shader) {
 	matrix orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
 
 	// Load each subset
-	for (size_t i = 0; i < data->nodes_count; i++) {
+	for (int32_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
 		if (n->mesh == nullptr)
 			continue;

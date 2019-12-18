@@ -59,13 +59,13 @@ void win32_input_shutdown() {
 void win32_input_update() {
 #if WINDOWS_UWP
 	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = button_make_state(
+		input_key_data.keys[i] = (uint8_t)button_make_state(
 			input_key_data.keys[i] & button_state_active,
 			uwp_key_down(i));
 	}
 #else
 	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = button_make_state(
+		input_key_data.keys[i] = (uint8_t)button_make_state(
 			input_key_data.keys[i] & button_state_active,
 			GetKeyState(i) & 0x8000);
 	}
@@ -100,12 +100,7 @@ void win32_mouse_update() {
 
 #if WINDOWS_UWP
 	input_mouse_data.available = true;
-
-	int x, y, s;
-	uwp_get_mouse(x,y,s);
-	mouse_pos.x = (float)x;
-	mouse_pos.y = (float)y;
-	mouse_scroll = s;
+	uwp_get_mouse(mouse_pos.x, mouse_pos.y, mouse_scroll);
 #else
 	mouse_scroll = win32_scroll;
 	

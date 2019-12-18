@@ -268,8 +268,8 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 	
 	for (size_t i = 0; i < queue_size; i++) {
 		XMMATRIX transpose = XMMatrixTranspose(item->transform);
-		for (uint32_t i = 0; i < view_count; i++) {
-			render_instance_list.emplace_back(render_transform_buffer_t { transpose, item->color, i } );
+		for (int32_t v = 0; v < view_count; v++) {
+			render_instance_list.emplace_back(render_transform_buffer_t { transpose, item->color, (uint32_t)v } );
 		}
 
 		render_item_t *next = i+1>=queue_size?nullptr:&render_queue[i+1];

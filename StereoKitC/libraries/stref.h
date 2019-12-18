@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define STREF_HASH_START 14695981039346656037
+
 struct stref_t {
 	const char *start;
 	uint32_t    length;
@@ -15,7 +17,7 @@ char *string_make  (stref_t &ref);
 char *string_append(char *base, uint32_t count, ...);
 bool  string_eq    (const char *a, const char *b);
 bool  string_endswith(const char *a, const char *end);
-uint64_t string_hash(const char *string, uint64_t start_hash = 14695981039346656037);
+uint64_t string_hash(const char *string, uint64_t start_hash = STREF_HASH_START);
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);

@@ -125,7 +125,16 @@ bool openxr_init(const char *app_name) {
 	createInfo.enabledExtensionCount = extension_count;
 	createInfo.enabledExtensionNames = extensions;
 	createInfo.applicationInfo.applicationVersion = 1;
-	createInfo.applicationInfo.engineVersion      = SK_VERSION_ID;
+
+	// Translate from 64 bit 0xMMMMiiiiPPPPrrrr to 0xMMMiiPPP
+	uint32_t major = (SK_VERSION_ID & 0xFFFF000000000000) >> 48;
+	uint32_t minor = (SK_VERSION_ID & 0x0000FFFF00000000) >> 32;
+	uint32_t patch = (SK_VERSION_ID & 0x00000000FFFF0000) >> 16;
+	createInfo.applicationInfo.engineVersion = 
+		(major << 20)              |
+		(minor << 12 & 0x000FF000) |
+		(patch & 0x00000FFF);
+
 	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
 	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
@@ -274,7 +283,7 @@ bool openxr_init(const char *app_name) {
 			if (args.State().Source().Kind() == SpatialInteractionSourceKind::Hand)
 				log_info("Found hand!");
 		});
-		interactionManager.SourceLost    ([](auto&&, const SpatialInteractionSourceEventArgs &args) {});
+		interactionManager.SourceLost    ([](auto&&, const SpatialInteractionSourceEventArgs &) {});
 		interactionManager.SourceUpdated ([](auto&&, const SpatialInteractionSourceEventArgs &args) {
 			HandPose pose = args.State().TryGetHandPose();
 			if (pose && xr_spatial_stage) {
@@ -323,13 +332,13 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	uint32_t ext_count = 0;
 	xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr);
 	XrExtensionProperties *exts = (XrExtensionProperties *)malloc(sizeof(XrExtensionProperties) * ext_count);
-	for (int32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
+	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
 
 	// Count how many there are, and copy them out
 	out_extension_count = 0;
 	for (int32_t e = 0; e < _countof(extensions); e++) {
-		for (int32_t i = 0; i < ext_count; i++) {
+		for (uint32_t i = 0; i < ext_count; i++) {
 			if (strcmp(exts[i].extensionName, extensions[e]) == 0) {
 				if (out_extensions != nullptr)
 					out_extensions[out_extension_count] = extensions[e];
@@ -341,7 +350,7 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 
 	// Flag any extensions the app will need to know about
 	if (out_extensions != nullptr) {
-		for (int32_t i = 0; i < out_extension_count; i++) {
+		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0)
 				xr_depth_lsr = true;
 		}
@@ -801,7 +810,6 @@ void openxr_poll_actions() {
 		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xr_input.poseAction;
 		xrGetActionStatePose(xr_session, &get_info, &point_state);
-		bool has_point = point_state.isActive;
 
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xr_input.poseAction;

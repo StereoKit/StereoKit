@@ -1,6 +1,7 @@
 #include "stereokit_ui.h"
 #include "_stereokit_ui.h"
 #include "math.h"
+#include "libraries/stref.h"
 
 #include <DirectXMath.h>
 using namespace DirectX;
@@ -160,7 +161,7 @@ bool ui_init() {
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
 	
 	skui_layers.push_back({});
-	skui_id_stack.push_back({14695981039346656037});
+	skui_id_stack.push_back({ STREF_HASH_START });
 
 	return true;
 }
@@ -201,19 +202,8 @@ void ui_shutdown() {
 
 ///////////////////////////////////////////
 
-// FNV-1a hash (64bit): http://isthe.com/chongo/tech/comp/fnv/, start_hash = 14695981039346656037
-uint64_t  ui_hash(const char* string, uint64_t start_hash) {
-	uint64_t hash = start_hash;
-	uint8_t  c;
-	while (c = *string++)
-		hash = (hash ^ c) * 1099511628211;
-	return hash;
-}
-
-///////////////////////////////////////////
-
 uint64_t ui_stack_hash(const char *string) {
-	return ui_hash(string, skui_id_stack.back().id);
+	return string_hash(string, skui_id_stack.back().id);
 }
 
 ///////////////////////////////////////////
@@ -242,10 +232,9 @@ void ui_push_pose(pose_t pose, vec3 offset) {
 	skui_layers.push_back(layer_t{
 		vec3{skui_settings.padding, -skui_settings.padding}, 
 		vec3{skui_settings.padding, -skui_settings.padding}, {0,0}, 0, 0
-		});
+	});
 
 	for (size_t i = 0; i < handed_max; i++) {
-		const hand_t &hand = input_hand((handed_)i);
 		skui_hand[i].finger      = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
 		skui_hand[i].finger_prev = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
 	}
@@ -492,7 +481,7 @@ bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active || focus & button_state_active ? 1.5 : 1;
+	float color_blend = state & button_state_active || focus & button_state_active ? 1.5f : 1;
 	float back_size   = skui_settings.backplate_border;
 	if (ui_anim_has(id, .1f)) {
 		float t     = ui_anim_elapsed    (id, .1f);
@@ -529,7 +518,7 @@ bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, boo
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = pressed || focus & button_state_active ? 1.5 : 1;
+	float color_blend = pressed || focus & button_state_active ? 1.5f : 1;
 	float back_size   = skui_settings.backplate_border;
 	if (ui_anim_has(id, .1f)) {
 		float t     = ui_anim_elapsed    (id, .1f);
@@ -571,7 +560,7 @@ bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active || focus & button_state_active ? 1.5 : 1;
+	float color_blend = state & button_state_active || focus & button_state_active ? 1.5f : 1;
 	float back_size   = skui_settings.backplate_border;
 	if (ui_anim_has(id, .1f)) {
 		float t     = ui_anim_elapsed    (id, .1f);

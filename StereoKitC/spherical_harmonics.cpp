@@ -16,7 +16,7 @@ spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 		sh_add(result, vec3_normalize(lights[i].dir_to), lights[i].color);
 	}
 	for (size_t i = 0; i < 9; i++) {
-		result.coefficients[i] /= light_count;
+		result.coefficients[i] /= (float)light_count;
 	}
 	return result;
 }
@@ -93,7 +93,7 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 		}
 	}
 
-	float count = face_size * face_size * 6;
+	float count = face_size * face_size * 6.f;
 	for (size_t i = 0; i < 9; i++)
 		result.coefficients[i] /= count;
 
@@ -133,7 +133,7 @@ color128 sh_lookup(const spherical_harmonics_t &lookup, vec3 normal) {
 inline vec4 to_vec4(const vec3& vec) { return { vec.x, vec.y, vec.z, 0 }; }
 
 void sh_to_fast(const spherical_harmonics_t& lookup, vec4* fast_9) {
-	static const float CosineA0 = 3.141592654;
+	static const float CosineA0 = 3.141592654f;
 	static const float CosineA1 = (2.0f * CosineA0) / 3.0f;
 	static const float CosineA2 = CosineA0 * 0.25f;
 

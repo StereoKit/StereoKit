@@ -7,7 +7,7 @@ void uwp_step_end();
 void uwp_vsync();
 void uwp_shutdown();
 
-void uwp_get_mouse(int &out_x, int &out_y, int &out_scroll);
+void uwp_get_mouse(float &out_x, float &out_y, float &out_scroll);
 bool uwp_mouse_button(int button);
 bool uwp_key_down(int vk);
 }

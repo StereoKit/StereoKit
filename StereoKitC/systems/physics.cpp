@@ -141,7 +141,7 @@ void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3
 
 void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const vec3 *offset) {
 	RigidBody *body = (RigidBody*)solid;
-	BoxShape  *box  = new BoxShape((Vector3&)(dimensions/2));
+	BoxShape  *box  = new BoxShape(Vector3{ dimensions.x / 2, dimensions.y / 2,dimensions.z / 2 });
 	body->addCollisionShape(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 

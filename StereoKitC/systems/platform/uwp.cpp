@@ -212,7 +212,7 @@ protected:
 		view.TryResizeView(desiredSize);
 	}
 
-	void OnSuspending(IInspectable const & /*sender*/, SuspendingEventArgs const & args) {
+	void OnSuspending(IInspectable const & /*sender*/, SuspendingEventArgs const &) {
 		/*auto deferral = args.SuspendingOperation().GetDeferral();
 
 		auto f = std::async(std::launch::async, [this, deferral]()
@@ -371,14 +371,14 @@ public:
 namespace sk {
 
 IFrameworkViewSource viewProviderFactory;
-void window_thread(void *data) {
+void window_thread(void *) {
 	viewProviderFactory = winrt::make<ViewProviderFactory>();
 	CoreApplication::Run(viewProviderFactory);
 }
 
-void uwp_get_mouse(int &out_x, int &out_y, int &out_scroll) {
-	out_x = (int)ViewProvider::inst->mouse_point.x;
-	out_y = (int)ViewProvider::inst->mouse_point.y;
+void uwp_get_mouse(float &out_x, float &out_y, float &out_scroll) {
+	out_x      = ViewProvider::inst->mouse_point.x;
+	out_y      = ViewProvider::inst->mouse_point.y;
 	out_scroll = ViewProvider::inst->mouse_scroll;
 }
 bool uwp_mouse_button(int button) {
@@ -388,7 +388,7 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_init(const char *app_name) {
+bool uwp_init(const char *) {
 	d3d_screen_width  = sk_settings.flatscreen_width;
 	d3d_screen_height = sk_settings.flatscreen_height;
 	sk_info.display_type = display_opaque;

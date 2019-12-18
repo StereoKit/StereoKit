@@ -193,7 +193,7 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
-	hand.palm.orientation = quat_from_angles(0,handedness == handed_right ? 90 : -90, handedness == handed_right ? -90 : 90) * orientation;
+	hand.palm.orientation = quat_from_angles(0,handedness == handed_right ? 90.f : -90.f, handedness == handed_right ? -90.f : 90.f) * orientation;
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.tracked_state & button_state_active;
@@ -335,7 +335,7 @@ void input_hand_update_mesh(handed_ hand) {
 		for (int f = 0; f < SK_FINGERS;      f++) {
 		for (int j = 0; j < SK_FINGERJOINTS; j++) {
 			float y = f == 0 ?
-				(fmaxf(0,j-1) / (float)(SK_FINGERJOINTS-2)) :
+				(fmaxf(0,(float)j-1) / (float)(SK_FINGERJOINTS-2)) :
 				(j / (float)(SK_FINGERJOINTS-1));
 			data.verts[v].uv  = { 0,y };
 			data.verts[v].col = { 255,255,255,255 };
@@ -343,10 +343,10 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v].uv  = { .2f,y };
 			data.verts[v].col = { 255,255,255,255 };
 			v++;
-			data.verts[v].uv  = { .4,y };
+			data.verts[v].uv  = { .4f,y };
 			data.verts[v].col = { 255,255,255,255 };
 			v++;
-			data.verts[v].uv  = { .4,y };
+			data.verts[v].uv  = { .4f,y };
 			data.verts[v].col = { 200,200,200,255 };
 			v++;
 			data.verts[v].uv  = { .6f,y };

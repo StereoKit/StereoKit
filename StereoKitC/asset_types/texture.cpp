@@ -461,7 +461,7 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherica
 				(void*)tex_mem[3 * desc.MipLevels + lighting_mip].pSysMem,
 				(void*)tex_mem[4 * desc.MipLevels + lighting_mip].pSysMem,
 				(void*)tex_mem[5 * desc.MipLevels + lighting_mip].pSysMem,};
-			*sh_lighting_info = sh_calculate(mip_level, texture->format, pow(2, desc.MipLevels - (lighting_mip+1)));
+			*sh_lighting_info = sh_calculate(mip_level, texture->format, (int32_t)powf(2, (float)desc.MipLevels - (lighting_mip+1)));
 		}
 	}
 	
@@ -511,10 +511,10 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 ///////////////////////////////////////////
 
 bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
-	DXGI_FORMAT  format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
-	bool         mips      = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
-	unsigned int mip_count = (mips ? log2(texture->width) + 1 : 1);
-	bool         can_shader_view = source_format == DXGI_FORMAT_UNKNOWN || source_format == tex_get_native_format(texture->format);
+	DXGI_FORMAT format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
+	bool        mips      = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
+	uint32_t    mip_count = (uint32_t)(mips ? log2(texture->width) + 1 : 1);
+	bool        can_shader_view = source_format == DXGI_FORMAT_UNKNOWN || source_format == tex_get_native_format(texture->format);
 
 	if (!(texture->type & tex_type_depth) && can_shader_view) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
