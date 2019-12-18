@@ -1,22 +1,22 @@
 ﻿using System;
 using StereoKit;
 
-namespace SKTemplate_UWP
+namespace SKTemplate_UWP_Name
 {
     class Program
     {
         static void Main(string[] args)
         {
-            if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality))
+            if (!StereoKitApp.Initialize("SKTemplate_UWP_Name", Runtime.MixedReality))
                 Environment.Exit(1);
 
             Model cube = Model.FromMesh(
-                Mesh    .GenerateRoundedCube(Vec3.One*0.1f, 0.1f), 
+                Mesh.GenerateRoundedCube(Vec3.One, 0.2f), 
                 Material.Find(DefaultIds.material));
 
             while (StereoKitApp.Step(() =>
             {
-                cube.Draw(Matrix.Identity, Color.White);
+                cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
             }));
 
             StereoKitApp.Shutdown();

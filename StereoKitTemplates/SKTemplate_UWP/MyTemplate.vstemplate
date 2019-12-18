@@ -1,0 +1,42 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+  <TemplateData>
+    <Name>StereoKit UWP</Name>
+    <Description>A starter template for Mixed Reality projects using StereoKit and .Net with UWP!</Description>
+    <ProjectType>CSharp</ProjectType>
+    <ProjectSubType>
+    </ProjectSubType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>StereoKitProject</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <LanguageTag>csharp</LanguageTag>
+    <PlatformTag>windows</PlatformTag>
+    <ProjectTypeTag>uwp</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <PreviewImage>__PreviewImage.png</PreviewImage>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="SKTemplate_UWP.csproj" File="SKTemplate_UWP.csproj" ReplaceParameters="true">
+      <Folder Name="Assets" TargetFolderName="Assets">
+        <Folder Name="Logo" TargetFolderName="Logo">
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-150.png">Logo-150.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-16.png">Logo-16.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-310.png">Logo-310.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-44.png">Logo-44.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-50.png">Logo-50.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-71.png">Logo-71.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-Wide150.png">Logo-Wide150.png</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="Logo-Wide300.png">Logo-Wide300.png</ProjectItem>
+        </Folder>
+      </Folder>
+      <ProjectItem ReplaceParameters="false" TargetFileName="Package.appxmanifest">Package.appxmanifest</ProjectItem>
+      <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
+      <Folder Name="Properties" TargetFolderName="Properties">
+        <ProjectItem ReplaceParameters="true" TargetFileName="AssemblyInfo.cs">AssemblyInfo.cs</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="Default.rd.xml">Default.rd.xml</ProjectItem>
+      </Folder>
+    </Project>
+  </TemplateContent>
+</VSTemplate>

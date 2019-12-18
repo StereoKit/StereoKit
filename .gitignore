@@ -21,6 +21,7 @@
 x64/
 x86/
 bld/
+**/templatized/
 
 [Oo]bj/
 [Ll]og/
