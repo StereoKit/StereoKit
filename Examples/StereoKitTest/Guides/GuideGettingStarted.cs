@@ -32,7 +32,7 @@
 /// 
 /// There are two templates to pick from! One is for UWP, and one is for .NET Core. Choose the UWP one if you're deploying
 /// to HoloLens 2, and choose the .NET Core one if you're doing development on a Windows Mixed Reality headset! When using
-/// UWP, .Net Native is used for Release builds, and all ARM64 builds, so it can be faster to iterate in Debug/x64!
+/// UWP, .Net Native is used for Release builds and all ARM64 builds, so it can be faster to iterate in Debug/x64!
 /// 
 /// The starting code is pretty simple! Initialize StereoKit in Mixed Reality mode, create a 3D model that's a rounded
 /// cube with a default material, and then draw that model every step of the application!

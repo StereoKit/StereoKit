@@ -65,6 +65,10 @@ nav {
 main {
     padding:2em;
 }
+p {
+    max-width: 30em;
+    padding-left: 2em;
+}
 
 h1:after
 {
@@ -172,7 +176,7 @@ main img {
     font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
     padding:1em;
 }
-.signature p { margin:0px; }
+.signature p { margin:0px; padding-left:0em; max-width: 100%;}
 
 .highlight { background: #282828; color: #EEE; font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace; line-height: .9em; }
 .highlight pre { padding:1em; font-size: 1.2em; overflow-x: auto;}
