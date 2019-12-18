@@ -9,7 +9,9 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Color32
     {
+        /// <summary>Color components in the range of 0-255.</summary>
         public byte r, g, b, a;
+
         public Color32(byte r, byte g, byte b, byte a)
         {
             this.r = r;
@@ -88,10 +90,21 @@ namespace StereoKit
         /// <param name="value">The brightness of the color! 0 is always black.</param>
         /// <param name="opacity">Also known as alpha! This is does not affect the rgb components of the
         /// resulting color, it'll just get slotted into the colors opacity value.</param>
-        /// <returns></returns>
+        /// <returns>An RGB color!</returns>
         public static Color HSV(float hue, float saturation, float value, float opacity = 1)
             => NativeAPI.color_hsv(hue, saturation, value, opacity);
 
+        /// <summary>Creates a Red/Green/Blue color from Hue/Saturation/Value information.</summary>
+        /// <param name="hsvColor">For convenience, XYZ is HSV.
+        /// Hue most directly relates to the color as we think of it! 0 is red, 0.1667 is yellow, 
+        /// 0.3333 is green, 0.5 is cyan, 0.6667 is blue, 0.8333 is magenta, and 1
+        /// is red again!
+        /// Saturation is the vibrancy of the color, where 0 is straight up a shade of gray,
+        /// and 1 is 'poke you in the eye colorful'.
+        /// Value is the brightness of the color! 0 is always black.</param>
+        /// <param name="opacity">Also known as alpha! This is does not affect the rgb components of the
+        /// resulting color, it'll just get slotted into the colors opacity value.</param>
+        /// <returns>An RGB color!</returns>
         public static Color HSV(Vec3 hsvColor, float opacity = 1)
             => NativeAPI.color_hsv(hsvColor.x, hsvColor.y, hsvColor.z, opacity);
 

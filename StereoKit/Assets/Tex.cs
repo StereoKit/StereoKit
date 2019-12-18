@@ -76,6 +76,7 @@ namespace StereoKit
             IntPtr tex = NativeAPI.tex_find(id);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
+
         /// <summary>Creates a cubemap texture from a single equirectangular image! You know, the ones that
         /// look like an unwrapped globe with the poles all streetched out. It uses some fancy shaders
         /// and texture blitting to create 6 faces from the equirectangular image.</summary>
@@ -89,11 +90,23 @@ namespace StereoKit
             IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, IntPtr.Zero);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
+
+        /// <summary>Creates a cubemap texture from a single equirectangular image! You know, the ones that
+        /// look like an unwrapped globe with the poles all streetched out. It uses some fancy shaders
+        /// and texture blitting to create 6 faces from the equirectangular image.</summary>
+        /// <param name="equirectangularCubemap">Filename of the equirectangular image.</param>
+        /// <param name="lightingInfo">An out value that represents the lighting information 
+        /// scraped from the cubemap! This can then be passed to `Renderer.SkyLight`.</param>
+        /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
+        /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
+        /// card, so getting this right can have a big impact on visuals.</param>
+        /// <returns>A Cubemap texture asset!</returns>
         public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true)
         {
             IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, out lightingInfo);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
+
         /// <summary>Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
         /// hdr, pic. Asset Id will be the same as the filename.</summary>
         /// <param name="file">An absolute filename, or a filename relative to the assets folder. Supports jpg, png, tga,
@@ -106,6 +119,7 @@ namespace StereoKit
             IntPtr inst = NativeAPI.tex_create_file(file, sRGBData);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
+
         /// <summary>Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use 
         /// Tex.FromEquirectangular instead. Asset Id will be the first filename.</summary>
         /// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of +X, -X, +Y, -Y, +Z, -Z.</param>
@@ -119,6 +133,15 @@ namespace StereoKit
             IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
+
+        /// <summary>Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use 
+        /// Tex.FromEquirectangular instead. Asset Id will be the first filename.</summary>
+        /// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of +X, -X, +Y, -Y, +Z, -Z.</param>
+        /// <param name="lightingInfo">An out value that represents the lighting information 
+        /// scraped from the cubemap! This can then be passed to `Renderer.SkyLight`.</param>
+        /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
+        /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
+        /// card, so getting this right can have a big impact on visuals.</param>
         public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, out SphericalHarmonics lightingInfo, bool sRGBData = true)
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)
@@ -126,6 +149,7 @@ namespace StereoKit
             IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo);
             return inst == IntPtr.Zero ? null : new Tex(inst);
         }
+
         /// <summary>Generates a cubemap texture from a gradient and a direction! These are entirely suitable for
         /// skyboxes, which you can set via Renderer.SkyTex.</summary>
         /// <param name="gradient">A color gradient the generator will sample from! This looks at the 0-1
@@ -141,12 +165,29 @@ namespace StereoKit
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
 
+        /// <summary>Generates a cubemap texture from a gradient and a direction! These are entirely suitable for
+        /// skyboxes, which you can set via `Renderer.SkyTex`.</summary>
+        /// <param name="gradient">A color gradient the generator will sample from! This looks at the 0-1
+        /// range of the gradient.</param>
+        /// <param name="lightingInfo">An out value that represents the lighting information 
+        /// scraped from the cubemap! This can then be passed to `Renderer.SkyLight`.</param>
+        /// <param name="gradientDirection">This vector points to where the 'top' of the color gradient
+        /// will go. Conversely, the 'bottom' of the gradient will be opposite, and it'll blend along that axis.</param>
+        /// <param name="resolution">The square size in pixels of each cubemap face! This generally doesn't
+        /// need to be large, unless you have a really complicated gradient.</param>
+        /// <returns>A procedurally generated cubemap texture!</returns>
         public static Tex GenCubemap(Gradient gradient, out SphericalHarmonics lightingInfo, Vec3 gradientDirection, int resolution = 16)
         {
             IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution, out lightingInfo);
             return tex == IntPtr.Zero ? null : new Tex(tex);
         }
 
+        /// <summary>Creates a cubemap from SphericalHarmonics lookups! These are entirely 
+        /// suitable for skyboxes, which you can set via `Renderer.SkyTex`.</summary>
+        /// <param name="lighting">Lighting information stored in a SphericalHarmonics.</param>
+        /// <param name="resolution">The square size in pixels of each cubemap face! This generally doesn't
+        /// need to be large, as SphericalHarmonics typically contain pretty low frequency information.</param>
+        /// <returns>A procedurally generated cubemap texture!</returns>
         public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16)
         {
             IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution);

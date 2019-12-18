@@ -11,14 +11,17 @@ namespace StereoKit
     {
         /// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
         /// displays, since transparent displays have the real world behind them already! StereoKit has a
-        /// a default procedurally generated skybox. You can load one with Tex.FromEquirectangular, or 
-        /// the Tex constructor that takes the cubeFaceFiles_xxyyzz parameter.</summary>
+        /// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
+        /// `Tex.GenCubemap`. If you're trying to affect the lighting, see `Renderer.SkyLight`.</summary>
         public static Tex SkyTex
         {
             get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
             set => NativeAPI.render_set_skytex(value._inst);
         }
 
+        /// <summary>Sets the lighting information for the scene! You can build one through 
+        /// `SphericalHarmonics.FromLights`, or grab one from `Tex.FromEquirectangular` or 
+        /// `Tex.GenCubemap`</summary>
         public static SphericalHarmonics SkyLight
         {
             set => NativeAPI.render_set_skylight(value);

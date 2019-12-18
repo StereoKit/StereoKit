@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -14,10 +15,10 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix
     {
-        public Vec4 row1;
-        public Vec4 row2;
-        public Vec4 row3;
-        public Vec4 row4;
+        private Vec4 row1;
+        private Vec4 row2;
+        private Vec4 row3;
+        private Vec4 row4;
 
         /// <summary>Creates an inverse matrix! If the matrix takes a point from a -> b, then
         /// its inverse takes the point from b -> a.</summary>

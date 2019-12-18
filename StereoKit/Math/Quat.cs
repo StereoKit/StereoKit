@@ -13,6 +13,7 @@ namespace StereoKit
     [StructLayout(LayoutKind.Sequential)]
     public struct Quat
     {
+        /// <summary>Components of the quaternion equation: w + x*i + y*j + z*k</summary>
         public float x, y, z, w;
 
         /// <summary>This is the 'multiply by one!' of the quaternion rotation world. It's 

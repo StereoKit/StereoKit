@@ -71,9 +71,21 @@ namespace StereoKit
         /// <param name="subsetIndex">Index of the mesh subset to get the material for, should be less than SubsetCount.</param>
         /// <returns>A link to the Material asset used by the mesh subset at subsetIndex</returns>
         public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_inst, subsetIndex));
-        
+
+        /// <summary>Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="transform">A Matrix that will transform the Model from Model Space into the current
+        /// Hierarchy Space.</param>
+        /// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
+        /// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
+        /// spot to pack in extra per-instance data for the shader!</param>
         public void Draw(Matrix transform, Color color)
             => NativeAPI.render_add_model(_inst, transform, color);
+
+        /// <summary>Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it,
+        /// that transform is combined with the Matrix provided here.</summary>
+        /// <param name="transform">A Matrix that will transform the Model from Model Space into the current
+        /// Hierarchy Space.</param>
         public void Draw(Matrix transform)
             => NativeAPI.render_add_model(_inst, transform, Color.White);
         #endregion
