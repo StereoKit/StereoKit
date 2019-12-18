@@ -19,7 +19,7 @@
     <PreviewImage>__PreviewImage.png</PreviewImage>
   </TemplateData>
   <TemplateContent>
-    <Project TargetFileName="SKTest_Core.csproj" File="SKTest_Core.csproj" ReplaceParameters="true">
+    <Project TargetFileName="SKTemplate_NetCore.csproj" File="SKTemplate_NetCore.csproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
     </Project>
   </TemplateContent>

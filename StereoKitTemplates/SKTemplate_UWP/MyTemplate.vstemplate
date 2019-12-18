@@ -1,7 +1,7 @@
 <VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
   <TemplateData>
     <Name>StereoKit UWP</Name>
-    <Description>A starter template for Mixed Reality projects using StereoKit and .Net with UWP!</Description>
+    <Description>A starter template for Mixed Reality and HoloLens projects using StereoKit and .Net with UWP!</Description>
     <ProjectType>CSharp</ProjectType>
     <ProjectSubType>
     </ProjectSubType>

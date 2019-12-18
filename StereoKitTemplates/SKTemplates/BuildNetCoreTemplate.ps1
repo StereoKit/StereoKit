@@ -38,7 +38,7 @@ Foreach-Object {
 
 #...Assets shouldn't have any strings that need replaced
 $project = 'SKTemplate_UWP\Assets\'
-$out     = $folder+'SKTemplate_UWP\templatized\Assets\'
+$out     = $folder+'SKTemplate_UWP\templatized\'
 New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
 Copy-Item ($folder+$project) -Destination $out -Recurse -Force
 

@@ -14,7 +14,7 @@
   <mp:PhoneIdentity PhoneProductId="a1d049e3-609d-456e-a2a3-ea2e06f20b1d" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>SKTemplate_UWP</DisplayName>
+    <DisplayName>SKTemplate_UWP_Name</DisplayName>
     <PublisherDisplayName>StereoKit</PublisherDisplayName>
     <Logo>Assets\Logo\Logo-50.png</Logo>
   </Properties>
@@ -30,12 +30,12 @@
   <Applications>
     <Application Id="App"
       Executable="$targetnametoken$.exe"
-      EntryPoint="SKTemplate_UWP.App">
+      EntryPoint="SKTemplate_UWP_Name.App">
       <uap:VisualElements
         DisplayName="SKTemplate_UWP"
         Square150x150Logo="Assets\Logo\Logo-150.png"
         Square44x44Logo="Assets\Logo\Logo-44.png"
-        Description="SKTemplate_UWP"
+        Description="SKTemplate_UWP_Name"
         BackgroundColor="transparent">
         <uap:DefaultTile Wide310x150Logo="Assets\Logo\Logo-Wide150.png" Square71x71Logo="Assets\Logo\Logo-71.png" Square310x310Logo="Assets\Logo\Logo-310.png">
           <uap:ShowNameOnTiles>
