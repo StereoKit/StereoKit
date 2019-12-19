@@ -705,7 +705,7 @@ void *tex_get_resource(tex_t texture) {
 ///////////////////////////////////////////
 
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info) {
-	tex_t result = tex_create(tex_type_image | tex_type_cubemap);
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -720,9 +720,9 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 	float    half_px = 0.5f / size;
 	int32_t  size2 = size * size;
-	color32 *data[6];
+	color128*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = (color32 *)malloc(size2 * sizeof(color32));
+		data[i] = (color128 *)malloc(size2 * sizeof(color128));
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -749,7 +749,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 			pt = vec3_normalize(pt);
 
 			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
-			data[i][x + y * size] = gradient_get32(gradient_bot_to_top, pct);
+			data[i][x + y * size] = gradient_get(gradient_bot_to_top, pct);
 		}
 		}
 	}

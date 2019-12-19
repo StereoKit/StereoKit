@@ -62,13 +62,18 @@ bool defaults_init() {
 		return false;
 
 	// Cubemap
-	gradient_key_t keys[] = { 
-		gradient_key_t { color_hsv(0.1f, 0.05f, 0,   1), 0.0f},
-		gradient_key_t { color_hsv(0,    0,     .5f, 1), 0.5f},
-		gradient_key_t { color_hsv(0.6f, 0.05f, 1,   1), 1}};
-	gradient_t gradient = gradient_create_keys(keys, 3);
-	spherical_harmonics_t lighting = {};
-	sk_default_cubemap = tex_gen_cubemap(gradient, {1,2,1.5f}, 16, &lighting);
+	spherical_harmonics_t lighting = { {
+		{ 0.27f,  0.26f,  0.25f},
+		{ 0.07f,  0.09f,  0.11f},
+		{-0.06f, -0.06f, -0.04f},
+		{-0.06f, -0.04f, -0.01f},
+		{-0.04f, -0.05f, -0.06f},
+		{ 0.15f,  0.16f,  0.16f},
+		{-0.04f, -0.05f, -0.05f},
+		{ 0.05f,  0.05f,  0.04f},
+		{-0.11f, -0.13f, -0.13f},
+	} };
+	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16);
 	tex_set_id(sk_default_cubemap, "default/cubemap");
 	render_set_skytex(sk_default_cubemap);
 	render_set_skylight(lighting);
