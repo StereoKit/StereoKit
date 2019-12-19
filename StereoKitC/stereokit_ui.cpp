@@ -461,11 +461,12 @@ void ui_image(sprite_t image, vec2 size) {
 	float aspect     = sprite_get_aspect(image);
 	vec3  offset     = skui_layers.back().offset;
 	vec2  final_size = vec2{
-		size.x==0 ? size.y/aspect : size.x, 
-		size.y==0 ? size.x*aspect : size.y };
+		size.x==0 ? size.y*aspect : size.x, 
+		size.y==0 ? size.x/aspect : size.y };
 
-	ui_layout_box (final_size, offset, final_size);
-	ui_reserve_box(final_size);
+	vec2 layout_size;
+	ui_layout_box (final_size, offset, layout_size, false);
+	ui_reserve_box(layout_size);
 	ui_nextline();
 	
 	sprite_draw(image, matrix_trs(offset - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }));

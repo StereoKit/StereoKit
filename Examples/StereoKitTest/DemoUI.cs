@@ -37,19 +37,23 @@ class DemoUI : IDemo
     
     bool  showHeader = true;
     float slider     = 0.5f;
+
+    Sprite powerSprite = Sprite.FromFile("power.png", SpriteType.Single);
     /// :End:
 
     Model  clipboard     = Model.FromFile("Clipboard.glb");
-    Sprite powerSprite   = Sprite.FromFile("power.png", SpriteType.Single);
+    Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
     Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
-    bool  clipSubtitles;
     bool  clipToggle;
     float clipSlider;
+    int   clipOption = 1;
 
     public void Update()
     {
-        if (Demos.TestMode)
+        if (Demos.TestMode) { 
             Renderer.Screenshot(new Vec3(-0.325f,-0.00f,.075f), new Vec3(-.4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterface.jpg");
+            Renderer.Screenshot(new Vec3( 0.325f,-0.00f,.075f), new Vec3( .4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterfaceCustom.jpg");
+        }
 
         /// :CodeDoc: Guides User Interface
         /// Then we'll move over to the application step where we'll do the rest of the UI code!
@@ -61,8 +65,13 @@ class DemoUI : IDemo
         /// 
         /// We'll also use a toggle to turn the window's header on and off! The value from that toggle
         /// is passed in here via the showHeader field.
+        /// 
         UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * Units.cm2m, showHeader);
-
+        ///
+        /// When you begin a window, all visual elements are now relative to that window! UI takes advantage
+        /// of the Hierarchy class and pushes the window's pose onto the Hierarchy stack. Ending the window
+        /// will pop the pose off the hierarchy stack, and return things to normal!
+        /// 
         /// Here's that toggle button! You'll also notice our use of 'ref' values in a lot of the UI
         /// code. UI functions typically follow the pattern of returning true/false to indicate they've
         /// been interacted with during the frame, so you can nicely wrap them in 'if' statements to 
@@ -71,25 +80,79 @@ class DemoUI : IDemo
         /// Then with the 'ref' parameter, we let you pass in the current state of the UI element. The UI
         /// element will update that value for you based on user interaction, but you can also change it
         /// yourself whenever you want to!
+        /// 
         UI.Toggle("Show Header", ref showHeader);
-
+        /// 
         /// Here's an example slider! We start off with a label element, and tell the UI to 
         /// keep the next item on the same line. The slider clamps to the range [0,1], and 
         /// will step at intervals of 0.2. If you want it to slide continuously, you can just set
         /// the `step` value to 0!
+        /// 
         UI.Label("Slide");
         UI.SameLine();
         UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * Units.mm2m);
-
+        ///
         /// Here's how you use a simple button! Just check it with an 'if'. Any UI method
         /// will return true on the frame when their value or state has changed.
+        /// 
         if (UI.ButtonRound("Exit", powerSprite))
             StereoKitApp.Quit();
-
+        /// 
         /// And for every begin, there must also be an end! StereoKit will log errors when this
         /// occurs, so keep your eyes peeled for that!
+        /// 
         UI.WindowEnd();
+        /// 
+        /// ## Custom Windows
+        /// 
+        /// ![Simple UI]({{site.url}}/img/screenshots/GuideUserInterfaceCustom.jpg)
+        /// 
+        /// Mixed Reality also provides us with the opportunity to turn objects into interfaces!
+        /// Instead of using the old 'window' paradigm, we can create 3D models and apply UI
+        /// elements to their surface! StereoKit uses 'affordances' to accomplish this, a grabbable
+        /// area that behaves much like a window, but with a few more options for customizing
+        /// layout and size.
+        ///
+        /// We'll load up a clipboard, so we can attach an interface to that!
+        /// 
+        /// `Model clipboard = Model.FromFile("Clipboard.glb");`
+        /// 
+        /// And, similar to the window previously, here's how you would turn it into a grabbable 
+        /// interface! This behaves the same, except we're defining where the grabbable region is
+        /// specifically, and then drawing our own model instead of a plain bar. You'll also notice
+        /// we're drawing using an identity matrix. This takes advantage of how AffordanceBegin
+        /// pushes the affordance's pose onto the Hierarchy transform stack!
+        /// 
+        UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds.center, clipboard.Bounds.dimensions);
+        Renderer.Add(clipboard, Matrix.Identity);
+        ///
+        /// Once we've done that, we also need to define the layout area of the model, where UI 
+        /// elements will go. This is different for each model, so you'll need to plan this around
+        /// the size of your object!
+        /// 
+        UI.LayoutArea(new Vec3(12, 13, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
+        ///
+        /// Then after that? We can just add UI elements like normal!
+        /// 
+        UI.Image(logoSprite, new Vec2(22,0) * Units.cm2m);
 
+        UI.Toggle("Toggle", ref clipToggle);
+        UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
+        ///
+        /// And while we're at it, here's a quick example of doing a radio button group! Not much 
+        /// 'radio' actually happening, but it's still pretty simple. Pair it with an enum, or an
+        /// integer, and have fun!
+        ///
+        if (UI.Radio("Radio 1", clipOption == 1)) clipOption = 1;
+        UI.SameLine();
+        if (UI.Radio("Radio 2", clipOption == 2)) clipOption = 2;
+        UI.SameLine();
+        if (UI.Radio("Radio 3", clipOption == 3)) clipOption = 3;
+        ///
+        /// As with windows, Affordances need an End call.
+        /// 
+        UI.AffordanceEnd();
+        /// 
         /// And there you go! That's how UI works in StereoKit, pretty simple, huh?
         /// For further reference, and more UI methods, check out the 
         /// [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
@@ -97,40 +160,7 @@ class DemoUI : IDemo
         /// If you'd like to see the complete code for this sample, 
         /// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
         /// :End:
-
-        UI.AffordanceBegin("Clip", ref clipboardPose, Vec3.Zero, new Vec3(30, 40, 2) * Units.cm2m, false);
-        clipboard.Draw(Matrix.Identity);
-        UI.LayoutArea(new Vec3(12, 15, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
-        UI.Label("Application 'Settings'");
-        UI.Toggle("Subtitles", ref clipSubtitles); UI.SameLine();
-        UI.Toggle("Toggle", ref clipToggle);
-        UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
-        UI.Image(powerSprite, Vec2.One * UI.LineHeight); UI.SameLine();
-        UI.Label("Test!");
-        UI.ButtonRound("Press", powerSprite, UI.LineHeight); UI.SameLine();
-        UI.Button("Squeeze");
-        UI.AffordanceEnd();
-        
-        UI.WindowBegin("Color", ref colorPose, new Vec2(20,0)*Units.cm2m);
-        if (UI.Toggle("LAB Space", ref colorLab))
-        {
-            Color curr = colorLab ? 
-                Color.HSV(colorVal.x, colorVal.y, colorVal.z) : 
-                Color.LAB(colorVal.x, colorVal.y, colorVal.z);
-            colorVal = colorLab ? curr.ToLAB() : curr.ToHSV();
-        }
-        UI.HSlider("x", ref colorVal.x, 0, 1, 0, 18*Units.cm2m);
-        UI.HSlider("y", ref colorVal.y, 0, 1, 0, 18*Units.cm2m);
-        UI.HSlider("z", ref colorVal.z, 0, 1, 0, 18*Units.cm2m);
-        Color color = colorLab ? 
-            Color.LAB(colorVal.x, colorVal.y, colorVal.z) : 
-            Color.HSV(colorVal.x, colorVal.y, colorVal.z);
-        Lines.Add(new Vec3(9,-21,0)*Units.cm2m, new Vec3(-9,-21,0)*Units.cm2m, color, .01f);
-        UI.WindowEnd();
     }
-    static Pose colorPose=new Pose(Vec3.Zero, Quat.LookDir(-Vec3.Forward));
-    bool colorLab = false;
-    Vec3 colorVal = new Vec3(0,0.8f,0.5f);
 
     public void Initialize() { }
     public void Shutdown() { }

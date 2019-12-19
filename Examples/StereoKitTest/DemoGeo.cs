@@ -17,7 +17,7 @@ class DemoGeo : IDemo
 
     public void Initialize()
     {
-        defaultMaterial = Material.Find("default/material");
+        defaultMaterial = Material.Find(DefaultIds.material);
 
         /// :CodeSample: Mesh.GenerateCube
         /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
