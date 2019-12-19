@@ -68,11 +68,21 @@ namespace StereoKitDocumenter
                 .AsEnumerable()
                 .Select(a => {
                     string cleanName = a.Replace("@", "");
+                    bool   nullable  = a.Contains("System.Nullable");
+                    if (nullable)
+                    {
+                        int length = "System.Nullable{".Length;
+                        cleanName = cleanName.Substring(length, cleanName.Length-length-1);
+                    }
+
                     Type t = Type.GetType(cleanName);
                     if (t == null)
                         t = Type.GetType(cleanName + ", StereoKit");
                     if (a.Contains("@"))
                         t = t.MakeByRefType();
+                    if (nullable)
+                        t = typeof(Nullable<>).MakeGenericType(t);
+
                     return t;
                     })
                 .ToArray();

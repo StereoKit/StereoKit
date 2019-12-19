@@ -63,6 +63,7 @@ namespace StereoKit
         /// be better as Single rather than Atlased!</param>
         /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
         /// relevant if the SpriteType is Atlased.</param>
+        /// <returns>A Sprite asset, or null if the image failed to load!</returns>
         public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
         {
             IntPtr inst = NativeAPI.sprite_create_file(file, type, atlasId);
@@ -77,6 +78,7 @@ namespace StereoKit
         /// be better as Single rather than Atlased!</param>
         /// <param name="atlasId">The name of which atlas the sprite should belong to, this is only 
         /// relevant if the SpriteType is Atlased.</param>
+        /// <returns>A Sprite asset, or null if the image failed when adding to the sprite system!</returns>
         public static Sprite FromTex(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
         {
             IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);

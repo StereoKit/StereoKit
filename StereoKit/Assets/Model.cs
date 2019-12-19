@@ -104,6 +104,7 @@ namespace StereoKit
         /// folder if no drive letter is specified in the path.</param>
         /// <param name="shader">The shader to use for the model's materials! If null, this will
         /// automatically determine the best shader available to use.</param>
+        /// <returns>A Model created from the file, or null if the file failed to load!</returns>
         public static Model FromFile(string file, Shader shader = null)
         {
             IntPtr inst = NativeAPI.model_create_file(file, shader == null ? IntPtr.Zero : shader._inst);
@@ -114,6 +115,7 @@ namespace StereoKit
         /// id will be automatically generated for this asset.</summary>
         /// <param name="mesh">Any Mesh asset.</param>
         /// <param name="material">Any Material asset.</param>
+        /// <returns>A Model composed of a single mesh and Material.</returns>
         public static Model FromMesh(Mesh mesh, Material material)
         {
             IntPtr inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
@@ -124,6 +126,7 @@ namespace StereoKit
         /// <param name="id">Uses this as the id, so you can Find it later.</param>
         /// <param name="mesh">Any Mesh asset.</param>
         /// <param name="material">Any Material asset.</param>
+        /// <returns>A Model composed of a single mesh and Material.</returns>
         public static Model FromMesh(string id, Mesh mesh, Material material)
         {
             IntPtr inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);

@@ -46,7 +46,7 @@ bool input_leap_init() {
 
 	_beginthread(input_leap_thread, 0, nullptr);
 
-	log_diag("Using Leap Motion for hand control.");
+	log_diag("Leap Motion is installed on the system.");
 	return true;
 }
 
@@ -89,6 +89,7 @@ void input_leap_thread(void *arg) {
 				}
 				leap_has_new_hands = true;
 			} else if (msg.type == eLeapEventType_Device) {
+				log_diag("Connected to Leap Motion device!");
 				leap_has_device = true;
 			} else if (msg.type == eLeapEventType_DeviceLost) {
 				leap_has_device = false;

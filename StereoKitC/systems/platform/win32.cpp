@@ -39,7 +39,7 @@ void win32_resize(int width, int height) {
 		return;
 	d3d_screen_width  = width;
 	d3d_screen_height = height;
-	log_infof("Resized to: %d<~BLK>x<~clr>%d", width, height);
+	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
 	if (win32_swapchain != nullptr) {
 		tex_releasesurface(win32_target);

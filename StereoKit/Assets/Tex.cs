@@ -114,6 +114,7 @@ namespace StereoKit
         /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
         /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
         /// card, so getting this right can have a big impact on visuals.</param>
+        /// <returns>A Tex asset from the given file, or null if it failed to load.</returns>
         public static Tex FromFile(string file, bool sRGBData = true)
         {
             IntPtr inst = NativeAPI.tex_create_file(file, sRGBData);
@@ -126,6 +127,7 @@ namespace StereoKit
         /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
         /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
         /// card, so getting this right can have a big impact on visuals.</param>
+        /// <returns>A Tex asset from the given files, or null if any failed to load.</returns>
         public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, bool sRGBData = true)
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)
@@ -142,6 +144,7 @@ namespace StereoKit
         /// <param name="sRGBData">Is this image color data in sRGB format, or is it normal/metal/rough/data
         /// that's not for direct display? sRGB colors get converted to linear color space on the graphics
         /// card, so getting this right can have a big impact on visuals.</param>
+        /// <returns>A Tex asset from the given files, or null if any failed to load.</returns>
         public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, out SphericalHarmonics lightingInfo, bool sRGBData = true)
         {
             if (cubeFaceFiles_xxyyzz.Length != 6)

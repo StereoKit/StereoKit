@@ -34,7 +34,7 @@ namespace StereoKit
         /// again.</summary>
         /// <param name="hlsl">A vertex and pixel shader written in HLSL, check the shader
         /// guides for more on this later!</param>
-        /// <returns></returns>
+        /// <returns>A shader from the given code, or null if it failed to load/compile.</returns>
         public static Shader FromHLSL(string hlsl)
         {
             IntPtr inst = NativeAPI.shader_create(hlsl);
@@ -46,6 +46,7 @@ namespace StereoKit
         /// shader to a cache folder in the asset path!</summary>
         /// <param name="file">Path to a file with hlsl code in it. This gets prefixed with the asset path
         /// in StereoKitApp.settings.</param>
+        /// <returns>A shader from the given file, or null if it failed to load/compile.</returns>
         public static Shader FromFile(string file)
         {
             IntPtr inst = NativeAPI.shader_create_file(file);

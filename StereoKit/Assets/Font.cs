@@ -40,6 +40,7 @@ namespace StereoKit {
 
         /// <summary>Loads a font and creates a font asset from it.</summary>
         /// <param name="fontFile">A file address for the font! For example: 'C:/Windows/Fonts/segoeui.ttf'</param>
+        /// <returns>A font from the given file, or null if the file failed to load properly!</returns>
         public static Font FromFile(string fontFile)
         {
             IntPtr inst = NativeAPI.font_create(fontFile);

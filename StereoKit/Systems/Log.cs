@@ -96,7 +96,6 @@ namespace StereoKit
 
         /// <summary>Writes a formatted line to the log using a LogLevel.Error severity level!</summary>
         /// <param name="text">Formatted text with color tags! See the Log class docs for for guidance on color tags.</param>
-        /// <param name="items">Format arguments.</param>
         public static void Err(string text)
             => Write(LogLevel.Error, text);
     }
