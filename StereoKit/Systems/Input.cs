@@ -29,6 +29,9 @@ namespace StereoKit
         public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
         public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
 
+        public HandJoint Get(FingerId finger, JointId joint) => fingers[(int)finger * 5 + (int)joint];
+        public HandJoint Get(int      finger, int     joint) => fingers[finger * 5 + joint];
+
         public bool IsPinched       => (pinchState & BtnState.Active)       > 0;
         public bool IsJustPinched   => (pinchState & BtnState.JustActive)   > 0;
         public bool IsJustUnpinched => (pinchState & BtnState.JustInactive) > 0;

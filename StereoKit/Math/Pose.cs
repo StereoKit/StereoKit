@@ -12,6 +12,19 @@ namespace StereoKit
         /// <summary>Orientation of the pose, stored as a rotation from Vec3.Forward.</summary>
         public Quat orientation;
 
+        /// <summary>Calculates the forward direction from this pose. This is done by 
+        /// multiplying the orientation with Vec3.Forward. Remember that Forward points
+        /// down the -Z axis!</summary>
+        public Vec3 Forward => orientation * Vec3.Forward;
+
+        /// <summary>Calculates the right (+X) direction from this pose. This is done by 
+        /// multiplying the orientation with Vec3.Right.</summary>
+        public Vec3 Right => orientation * Vec3.Right;
+
+        /// <summary>Calculates the up (+Y) direction from this pose. This is done by 
+        /// multiplying the orientation with Vec3.Up.</summary>
+        public Vec3 Up => orientation * Vec3.Up;
+
         /// <summary>Basic initialization constructor! Just copies in the provided values directly.</summary>
         /// <param name="position">Location of the pose.</param>
         /// <param name="orientation">Orientation of the pose, stored as a rotation from Vec3.Forward.</param>

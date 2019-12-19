@@ -97,7 +97,8 @@ namespace StereoKit
         /// <summary>The dot product is an extremely useful operation! One major use is to determine
         /// how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then 
         /// the result will be 1 if the vectors are the same, -1 if they're opposite, and a gradient 
-        /// in-between with 0 being perpendicular.</summary>
+        /// in-between with 0 being perpendicular. See [Freya Holmer's excellent visualization](https://twitter.com/FreyaHolmer/status/1200807790580768768)
+        /// of this concept</summary>
         /// <param name="a">First vector.</param>
         /// <param name="b">Second vector.</param>
         /// <returns>The dot product!</returns>
