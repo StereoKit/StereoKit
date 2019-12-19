@@ -19,6 +19,10 @@ have an [excellent interactive lesson](https://eater.net/quaternions) about them
 |  |  |
 |--|--|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Identity]({{site.url}}/Pages/Reference/Quat/Identity.html)|This is the 'multiply by one!' of the quaternion rotation world. It's basically a default, no rotation quaternion.|
+|float [w]({{site.url}}/Pages/Reference/Quat/w.html)|Components of the quaternion equation: w + x*i + y*j + z*k|
+|float [x]({{site.url}}/Pages/Reference/Quat/x.html)|Components of the quaternion equation: w + x*i + y*j + z*k|
+|float [y]({{site.url}}/Pages/Reference/Quat/y.html)|Components of the quaternion equation: w + x*i + y*j + z*k|
+|float [z]({{site.url}}/Pages/Reference/Quat/z.html)|Components of the quaternion equation: w + x*i + y*j + z*k|
 
 
 
@@ -26,9 +30,12 @@ have an [excellent interactive lesson](https://eater.net/quaternions) about them
 
 |  |  |
 |--|--|
+|[Quat]({{site.url}}/Pages/Reference/Quat/Quat.html)|You may want to use static creation methods, like Quat.LookAt, or Quat.Identity instead of this one! Unless you know what you're doing.|
 |[Difference]({{site.url}}/Pages/Reference/Quat/Difference.html)|This gives a relative rotation between the first and second quaternion rotations. Remember that order is important here!|
 |[FromAngles]({{site.url}}/Pages/Reference/Quat/FromAngles.html)|Creates a Roll/Pitch/Yaw rotation from the provided angles in degrees!|
 |[LookAt]({{site.url}}/Pages/Reference/Quat/LookAt.html)|Creates a rotation from a resting direction, to a direction indicated by the direction of the two vectors provided to the function! This is a great function for camera style rotation, when you know where a camera is, and where you want to look at. This prevents roll on the Z axis, Up is always (0,1,0).|
 |[LookDir]({{site.url}}/Pages/Reference/Quat/LookDir.html)|Creates a rotation from a resting direction, to the given direction! This prevents roll on the Z axis, Up is always (0,1,0)|
+|[Normalize]({{site.url}}/Pages/Reference/Quat/Normalize.html)|A normalized quaternion has the same orientation, and a length of 1.|
+|[Slerp]({{site.url}}/Pages/Reference/Quat/Slerp.html)|Spherical Linear intERPolation. Interpolates between two quaternions! Both Quats should be normalized/unit quaternions, or you may get unexpected results.|
 
 

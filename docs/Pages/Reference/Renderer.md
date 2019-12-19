@@ -16,7 +16,8 @@ Even better, it's entirely a static class, so you can call it from anywhere :)
 |  |  |
 |--|--|
 |bool [EnableSky]({{site.url}}/Pages/Reference/Renderer/EnableSky.html)|Enables or disables rendering of the skybox texture! It's enabled by default on Opaque displays, and completely unavailable for transparent displays.|
-|[Tex]({{site.url}}/Pages/Reference/Tex.html) [SkyTex]({{site.url}}/Pages/Reference/Renderer/SkyTex.html)|Set a cubemap skybox texture for rendering a background! This is only visible on Opaque displays, since transparent displays have the real world behind them already! StereoKit has a a default procedurally generated skybox. You can load one with Tex.FromEquirectangular, or the Tex constructor that takes the cubeFaceFiles_xxyyzz parameter.|
+|[SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html) [SkyLight]({{site.url}}/Pages/Reference/Renderer/SkyLight.html)|Sets the lighting information for the scene! You can build one through `SphericalHarmonics.FromLights`, or grab one from `Tex.FromEquirectangular` or `Tex.GenCubemap`|
+|[Tex]({{site.url}}/Pages/Reference/Tex.html) [SkyTex]({{site.url}}/Pages/Reference/Renderer/SkyTex.html)|Set a cubemap skybox texture for rendering a background! This is only visible on Opaque displays, since transparent displays have the real world behind them already! StereoKit has a a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, `Tex.GenCubemap`. If you're trying to affect the lighting, see `Renderer.SkyLight`.|
 
 
 

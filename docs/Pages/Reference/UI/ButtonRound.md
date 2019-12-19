@@ -6,12 +6,11 @@ description: A pressable button! A button will expand to fit the text provided t
 # [UI]({{site.url}}/Pages/Reference/UI.html).ButtonRound
 
 <div class='signature' markdown='1'>
-static bool ButtonRound(string text, float diameter)
+static bool ButtonRound(string id, [Sprite]({{site.url}}/Pages/Reference/Sprite.html) image, float diameter)
 </div>
 
 |  |  |
 |--|--|
-|string text|Text to display on the button, should be per-window unique as it             will be used as the element id.|
 |float diameter|The diameter of the button's visual.|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 

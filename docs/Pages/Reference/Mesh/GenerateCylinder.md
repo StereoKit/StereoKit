@@ -31,7 +31,7 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.4f, 0.4f, Vec3.Up);
-Model cylinderModel = new Model(cylinderMesh, Material.Copy(DefaultIds.material));
+Model cylinderModel = Model.FromMesh(cylinderMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,

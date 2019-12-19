@@ -16,40 +16,88 @@ var documents =
 			pages : ['center','dimensions','Bounds','Contains','FromCorner','FromCorners','Intersect'],
 			},
 			{
+			name : 'BtnState',
+			pages : ['Active','Any','Changed','Inactive','JustActive','JustInactive'],
+			},
+			{
+			name : 'BtnStateExtensions',
+			pages : ['IsJustPressed','IsJustReleased','IsPressed'],
+			},
+			{
 			name : 'Color',
 			pages : ['a','b','Black','BlackTransparent','g','r','White','Color','HSV','LAB','ToHSV','ToLAB'],
 			},
 			{
 			name : 'Color32',
-			pages : ['White'],
+			pages : ['a','b','g','r','White'],
 			},
 			{
 			name : 'Cull',
-			pages : [],
+			pages : ['Back','Front','None'],
 			},
 			{
 			name : 'DefaultIds',
 			pages : ['cubemap','font','material','materialEquirect','materialFont','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex','texBlack','texFlat','texGray','texRough'],
 			},
 			{
+			name : 'Display',
+			pages : ['Additive','Opaque','Passthrough'],
+			},
+			{
+			name : 'FingerId',
+			pages : ['Index','Little','Middle','Ring','Thumb'],
+			},
+			{
 			name : 'Font',
-			pages : ['Font','Find'],
+			pages : ['Find','FromFile'],
+			},
+			{
+			name : 'Gradient',
+			pages : ['Count','Gradient','Add','Get','Get32','Remove','Set'],
+			},
+			{
+			name : 'GradientKey',
+			pages : ['color','position'],
+			},
+			{
+			name : 'Handed',
+			pages : ['Left','Max','Right'],
 			},
 			{
 			name : 'Hierarchy',
 			pages : ['Enabled','Pop','Push','ToLocal','ToLocalDirection','ToWorld','ToWorldDirection'],
 			},
 			{
+			name : 'InputSource',
+			pages : ['Any','CanPress','Gaze','GazeCursor','GazeEyes','GazeHead','Hand','HandLeft','HandRight'],
+			},
+			{
+			name : 'JointId',
+			pages : ['Distal','Intermediate','Metacarpal','Proximal','Tip'],
+			},
+			{
+			name : 'Key',
+			pages : ['A','Add','Alt','B','Backspace','C','Ctrl','D','Decimal','Del','Divide','Down','E','End','Esc','F','F1','F10','F11','F12','F2','F3','F4','F5','F6','F7','F8','F9','G','H','Home','I','Insert','J','K','L','LCmd','Left','M','MAX','MouseCenter','MouseLeft','MouseRight','Multiply','N','N0','N1','N2','N3','N4','N5','N6','N7','N8','N9','Num0','Num1','Num2','Num3','Num4','Num5','Num6','Num7','Num8','Num9','O','P','Printscreen','Q','R','RCmd','Return','Right','S','Shift','Space','Subtract','T','Tab','U','Up','V','W','X','Y','Z'],
+			},
+			{
 			name : 'Lines',
-			pages : ['Add'],
+			pages : ['Add','AddAxis'],
 			},
 			{
 			name : 'Log',
 			pages : ['Filter','Err','Info','Warn','Write'],
 			},
 			{
+			name : 'LogLevel',
+			pages : ['Diagnostic','Error','Info','Warning'],
+			},
+			{
 			name : 'Material',
 			pages : ['FaceCull','ParamCount','QueueOffset','Shader','Transparency','Material','Copy','Find','SetColor','SetFloat','SetMatrix','SetTexture','SetVector'],
+			},
+			{
+			name : 'MaterialParam',
+			pages : ['Color128','Float','Matrix','Texture','Vector'],
 			},
 			{
 			name : 'Matrix',
@@ -57,11 +105,15 @@ var documents =
 			},
 			{
 			name : 'Mesh',
-			pages : ['Bounds','Mesh','Find','GenerateCube','GenerateCylinder','GeneratePlane','GenerateRoundedCube','GenerateSphere'],
+			pages : ['Bounds','Mesh','Draw','Find','GenerateCube','GenerateCylinder','GeneratePlane','GenerateRoundedCube','GenerateSphere'],
 			},
 			{
 			name : 'Model',
-			pages : ['Bounds','SubsetCount','Model','Find','GetMaterial'],
+			pages : ['Bounds','SubsetCount','Model','Draw','Find','FromFile','FromMesh','GetMaterial'],
+			},
+			{
+			name : 'Mouse',
+			pages : ['available','pos','posChange','scroll','scrollChange'],
 			},
 			{
 			name : 'Plane',
@@ -73,7 +125,7 @@ var documents =
 			},
 			{
 			name : 'Quat',
-			pages : ['Identity','Difference','FromAngles','LookAt','LookDir'],
+			pages : ['Identity','w','x','y','z','Quat','Difference','FromAngles','LookAt','LookDir','Normalize','Slerp'],
 			},
 			{
 			name : 'Ray',
@@ -81,7 +133,7 @@ var documents =
 			},
 			{
 			name : 'Renderer',
-			pages : ['EnableSky','SkyTex','Add','Blit','Screenshot','SetClip','SetView'],
+			pages : ['EnableSky','SkyLight','SkyTex','Add','Blit','Screenshot','SetClip','SetView'],
 			},
 			{
 			name : 'Runtime',
@@ -93,27 +145,51 @@ var documents =
 			},
 			{
 			name : 'Shader',
-			pages : ['Name','Shader','Find','FromHLSL'],
+			pages : ['Name','Find','FromFile','FromHLSL'],
+			},
+			{
+			name : 'SHLight',
+			pages : ['color','directionTo'],
 			},
 			{
 			name : 'SKMath',
-			pages : ['Cos','Sin','Sqrt'],
+			pages : ['Pi','Tau','Cos','Sin','Sqrt'],
 			},
 			{
 			name : 'Solid',
-			pages : ['Solid'],
+			pages : ['Enabled','Solid','AddBox','AddCapsule','AddSphere','GetPose','Move','SetAngularVelocity','SetEnabled','SetType','SetVelocity','Teleport'],
+			},
+			{
+			name : 'SolidType',
+			pages : ['Immovable','Normal','Unaffected'],
 			},
 			{
 			name : 'Sphere',
 			pages : ['center','Diameter','radius','Sphere','Contains','Intersect'],
 			},
 			{
+			name : 'SphericalHarmonics',
+			pages : ['FromLights','Sample'],
+			},
+			{
+			name : 'Sprite',
+			pages : ['Aspect','Height','NormalizedDimensions','Width','Draw','FromFile','FromTex'],
+			},
+			{
+			name : 'SpriteType',
+			pages : ['Atlased','Single'],
+			},
+			{
 			name : 'StereoKitApp',
-			pages : ['Initialize','Quit','Shutdown','Step'],
+			pages : ['ActiveRuntime','IsInitialized','settings','System','VersionId','VersionName','Initialize','Quit','Shutdown','Step'],
+			},
+			{
+			name : 'SystemInfo',
+			pages : ['displayType'],
 			},
 			{
 			name : 'Tex',
-			pages : ['AddressMode','Anisoptropy','Id','SampleMode','Tex','Find','FromEquirectangular','GenCubemap'],
+			pages : ['AddressMode','Anisoptropy','Height','Id','SampleMode','Width','Tex','Find','FromCubemapEquirectangular','FromCubemapFile','FromFile','GenCubemap'],
 			},
 			{
 			name : 'TexAddress',
@@ -121,7 +197,7 @@ var documents =
 			},
 			{
 			name : 'TexFormat',
-			pages : ['Depth16','Depth32','DepthStencil','Rgba128','Rgba32','Rgba64'],
+			pages : ['Depth16','Depth32','DepthStencil','Rgba128','Rgba32','Rgba32Linear','Rgba64'],
 			},
 			{
 			name : 'TexSample',
@@ -130,6 +206,10 @@ var documents =
 			{
 			name : 'Text',
 			pages : ['Add','MakeStyle','Size'],
+			},
+			{
+			name : 'TextAlign',
+			pages : ['Center','XCenter','XLeft','XRight','YBottom','YCenter','YTop'],
 			},
 			{
 			name : 'TextStyle',
@@ -141,7 +221,7 @@ var documents =
 			},
 			{
 			name : 'Time',
-			pages : ['Elapsed','Elapsedf','Total','Totalf'],
+			pages : ['Elapsed','Elapsedf','ElapsedUnscaled','ElapsedUnscaledf','Scale','Total','Totalf','TotalUnscaled','TotalUnscaledf'],
 			},
 			{
 			name : 'Transparency',
@@ -149,7 +229,11 @@ var documents =
 			},
 			{
 			name : 'UI',
-			pages : ['LineHeight','Button','ButtonRound','HSlider','Label','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			pages : ['LineHeight','Button','ButtonRound','HSlider','Label','PopId','PushId','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			},
+			{
+			name : 'UISettings',
+			pages : ['backplateBorder','backplateDepth','depth','gutter','padding'],
 			},
 			{
 			name : 'Units',
@@ -157,11 +241,15 @@ var documents =
 			},
 			{
 			name : 'Vec2',
-			pages : [],
+			pages : ['Magnitude','MagnitudeSq','One','x','y','Zero','Vec2','Normalize','Normalized'],
 			},
 			{
 			name : 'Vec3',
-			pages : ['Forward','Magnitude','MagnitudeSq','One','Right','Up','Zero','Vec3','AngleXY','AngleXZ','Cross','Distance','DistanceSq','Dot','Normalized','PerpendicularRight'],
+			pages : ['Forward','Magnitude','MagnitudeSq','One','Right','Up','x','y','z','Zero','Vec3','AngleXY','AngleXZ','Cross','Distance','DistanceSq','Dot','Normalize','Normalized','PerpendicularRight'],
+			},
+			{
+			name : 'Vec4',
+			pages : ['w','x','y','z','Vec4'],
 			},
 		]
 		},

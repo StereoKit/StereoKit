@@ -28,7 +28,7 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.4f);
-Model cubeModel = new Model(cubeMesh, Material.Copy(DefaultIds.material));
+Model cubeModel = Model.FromMesh(cubeMesh, Material.Copy(DefaultIds.material));
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,

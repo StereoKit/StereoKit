@@ -15,7 +15,18 @@ static [Color]({{site.url}}/Pages/Reference/Color.html) HSV(float hue, float sat
 |float saturation|The vibrancy of the color, where 0 is straight up a shade of gray,             and 1 is 'poke you in the eye colorful'.|
 |float value|The brightness of the color! 0 is always black.|
 |float opacity|Also known as alpha! This is does not affect the rgb components of the             resulting color, it'll just get slotted into the colors opacity value.|
-|RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)||
+|RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|An RGB color!|
+
+Creates a Red/Green/Blue color from Hue/Saturation/Value information.
+<div class='signature' markdown='1'>
+static [Color]({{site.url}}/Pages/Reference/Color.html) HSV([Vec3]({{site.url}}/Pages/Reference/Vec3.html) hsvColor, float opacity)
+</div>
+
+|  |  |
+|--|--|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) hsvColor|For convenience, XYZ is HSV.             Hue most directly relates to the color as we think of it! 0 is red, 0.1667 is yellow,              0.3333 is green, 0.5 is cyan, 0.6667 is blue, 0.8333 is magenta, and 1             is red again!             Saturation is the vibrancy of the color, where 0 is straight up a shade of gray,             and 1 is 'poke you in the eye colorful'.             Value is the brightness of the color! 0 is always black.|
+|float opacity|Also known as alpha! This is does not affect the rgb components of the             resulting color, it'll just get slotted into the colors opacity value.|
+|RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|An RGB color!|
 
 Creates a Red/Green/Blue color from Hue/Saturation/Value information.
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Log
-description: A class for logging errors, warnings and information! Different levels of information can be filtered out, and supports coloration via <~[colorCode]> and <~clr> tags.  Text colors can be set with a tag, and reset back to default with <~clr>. Color codes are as follows.  | Dark | Bright | Decription | |------|--------|------------| | DARK | BRIGHT | DESCRIPTION | | blk | BLK | Black | | red | RED | Red | | grn | GRN | Green | | ylw | YLW | Yellow | | blu | BLU | Blue | | mag | MAG | Magenta | | cyn | cyn | Cyan | | grn | GRN | Green | | wht | WHT | White |
+description: A class for logging errors, warnings and information! Different levels of information can be filtered out, and supports coloration via <~[colorCode]> and <~clr> tags.  Text colors can be set with a tag, and reset back to default with <~clr>. Color codes are as follows.  | Dark | Bright | Decription  | |------|--------|-------------| | DARK | BRIGHT | DESCRIPTION | | blk  | BLK    | Black       | | red  | RED    | Red         | | grn  | GRN    | Green       | | ylw  | YLW    | Yellow      | | blu  | BLU    | Blue        | | mag  | MAG    | Magenta     | | cyn  | cyn    | Cyan        | | grn  | GRN    | Green       | | wht  | WHT    | White       |
 ---
 # Log
 
@@ -12,25 +12,25 @@ of information can be filtered out, and supports coloration via <~[colorCode]> a
 Text colors can be set with a tag, and reset back to default with <~clr>. Color
 codes are as follows:
 
-| Dark | Bright | Decription |
-|------|--------|------------|
+| Dark | Bright | Decription  |
+|------|--------|-------------|
 | DARK | BRIGHT | DESCRIPTION |
-| blk | BLK | Black |
-| red | RED | Red |
-| grn | GRN | Green |
-| ylw | YLW | Yellow |
-| blu | BLU | Blue |
-| mag | MAG | Magenta |
-| cyn | cyn | Cyan |
-| grn | GRN | Green |
-| wht | WHT | White |
+| blk  | BLK    | Black       |
+| red  | RED    | Red         |
+| grn  | GRN    | Green       |
+| ylw  | YLW    | Yellow      |
+| blu  | BLU    | Blue        |
+| mag  | MAG    | Magenta     |
+| cyn  | cyn    | Cyan        |
+| grn  | GRN    | Green       |
+| wht  | WHT    | White       |
 
 
 ## Fields and Properties
 
 |  |  |
 |--|--|
-|LogLevel [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info.|
+|[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info.|
 
 
 

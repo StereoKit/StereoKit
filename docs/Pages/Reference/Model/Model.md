@@ -1,19 +1,10 @@
 ---
 layout: default
 title: Model.Model
-description: Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.
+description: Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.
 ---
 # [Model]({{site.url}}/Pages/Reference/Model.html).Model
 
-<div class='signature' markdown='1'>
- Model(string file)
-</div>
-
-|  |  |
-|--|--|
-|string file|Name of the file to load! This gets prefixed with the StereoKit asset             folder if no drive letter is specified in the path.|
-
-Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.
 <div class='signature' markdown='1'>
  Model([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
 </div>

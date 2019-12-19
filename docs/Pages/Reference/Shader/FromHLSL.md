@@ -12,7 +12,7 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) FromHLSL(string hlsl)
 |  |  |
 |--|--|
 |string hlsl|A vertex and pixel shader written in HLSL, check the shader             guides for more on this later!|
-|RETURNS: [Shader]({{site.url}}/Pages/Reference/Shader.html)||
+|RETURNS: [Shader]({{site.url}}/Pages/Reference/Shader.html)|A shader from the given code, or null if it failed to load/compile.|
 
 Creates a shader from a piece of HLSL code! Shader stuff like this may
 change in the future, since HLSL may not be all that portable. Also, before

@@ -52,7 +52,7 @@ class DemoUI : IDemo
     {
         if (Demos.TestMode) { 
             Renderer.Screenshot(new Vec3(-0.325f,-0.00f,.075f), new Vec3(-.4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterface.jpg");
-            Renderer.Screenshot(new Vec3( 0.325f,-0.00f,.075f), new Vec3( .4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterfaceCustom.jpg");
+            Renderer.Screenshot(new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0), 400, 600, "../../../docs/img/screenshots/GuideUserInterfaceCustom.jpg");
         }
 
         /// :CodeDoc: Guides User Interface
