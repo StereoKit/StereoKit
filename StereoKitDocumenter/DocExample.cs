@@ -66,7 +66,10 @@ namespace StereoKitDocumenter
                 comments = true;
 
                 // Add text comments
-                data += text.Substring(text.IndexOf("///") + 3).Trim() + "\n";
+                string line = text.Substring(text.IndexOf("///") + 3).TrimEnd() + "\n";
+                if (line[0] == ' ')
+                    line = line.Substring(1);
+                data += line;
             } else {
                 // If we were in comments before, start up a code section
                 if (comments)

@@ -54,6 +54,9 @@ header {
     color: #111;
     padding:0.7em;
 }
+#breadcrumbs {
+    text-align: right;
+}
 nav {
     background-color: #181818;
     padding:10px;
