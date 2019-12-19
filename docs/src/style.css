@@ -96,7 +96,8 @@ main img {
     max-width: 100%;
     max-height: 20em;
     display: block;
-    padding: 1em;
+    padding-top: 1em;
+    padding-bottom: 1em;
 }
 
 /* Search styling */
