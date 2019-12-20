@@ -14,15 +14,9 @@ class DemoText : IDemo
         Hierarchy.Push(Matrix.T(0, 0, -0.3f));
 
         UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * Units.cm2m);
-        if (UI.Button("TL")) align = TextAlign.YTop | TextAlign.XLeft;   UI.SameLine();
-        if (UI.Button("TC")) align = TextAlign.YTop | TextAlign.XCenter; UI.SameLine();
-        if (UI.Button("TR")) align = TextAlign.YTop | TextAlign.XRight;
-        if (UI.Button("CL")) align = TextAlign.YCenter | TextAlign.XLeft;   UI.SameLine();
-        if (UI.Button("CC")) align = TextAlign.YCenter | TextAlign.XCenter; UI.SameLine();
-        if (UI.Button("CR")) align = TextAlign.YCenter | TextAlign.XRight;
-        if (UI.Button("BL")) align = TextAlign.YBottom | TextAlign.XLeft;   UI.SameLine();
-        if (UI.Button("BC")) align = TextAlign.YBottom | TextAlign.XCenter; UI.SameLine();
-        if (UI.Button("BR")) align = TextAlign.YBottom | TextAlign.XRight;
+        if (UI.Button("Left"  )) align = TextAlign.YCenter | TextAlign.XLeft;   UI.SameLine();
+        if (UI.Button("Center")) align = TextAlign.YCenter | TextAlign.XCenter; UI.SameLine();
+        if (UI.Button("Right" )) align = TextAlign.YCenter | TextAlign.XRight;
         UI.WindowEnd();
 
         Hierarchy.Push(Matrix.T(0.1f,0,0));
