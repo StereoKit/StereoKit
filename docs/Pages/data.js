@@ -21,7 +21,7 @@ var documents =
 			},
 			{
 			name : 'BtnStateExtensions',
-			pages : ['IsJustPressed','IsJustReleased','IsPressed'],
+			pages : ['IsActive','IsJustActive','IsJustInactive'],
 			},
 			{
 			name : 'Color',
@@ -60,8 +60,16 @@ var documents =
 			pages : ['color','position'],
 			},
 			{
+			name : 'Hand',
+			pages : ['grip','handed','IsGripped','IsJustGripped','IsJustPinched','IsJustTracked','IsJustUngripped','IsJustUnpinched','IsJustUntracked','IsPinched','IsTracked','Material','palm','pinch','Solid','tracked','Visible','wrist'],
+			},
+			{
 			name : 'Handed',
 			pages : ['Left','Max','Right'],
+			},
+			{
+			name : 'HandJoint',
+			pages : ['orientation','Pose','position','radius'],
 			},
 			{
 			name : 'Hierarchy',
@@ -118,6 +126,10 @@ var documents =
 			{
 			name : 'Plane',
 			pages : ['d','normal','Plane','Closest','Intersect'],
+			},
+			{
+			name : 'Pointer',
+			pages : ['orientation','Pose','ray','source','state','tracked'],
 			},
 			{
 			name : 'Pose',

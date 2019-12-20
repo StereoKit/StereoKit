@@ -11,6 +11,8 @@ static bool ButtonRound(string id, [Sprite]({{site.url}}/Pages/Reference/Sprite.
 
 |  |  |
 |--|--|
+|string id|A per-window unique id for tracking element state.|
+|[Sprite]({{site.url}}/Pages/Reference/Sprite.html) image|An image to display as the face of the button.|
 |float diameter|The diameter of the button's visual.|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 
