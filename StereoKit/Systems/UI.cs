@@ -12,31 +12,45 @@ namespace StereoKit
     /// same id, but a window cannot use the same id twice.</summary>
     public static class UI
     {
-        public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
-        public static Color      ColorScheme { set{ NativeAPI.ui_set_color(value); } }
+        /// <summary>UI sizing and layout settings. Set only for now</summary>
+        public static UISettings Settings    { set { NativeAPI.ui_settings(value); } }
+
+        /// <summary>StereoKit will generate a color palette from this color, and use it
+        /// to skin the UI!</summary>
+        public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
         /// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
-        public static float LineHeight { get =>NativeAPI.ui_line_height(); }
+        public static float      LineHeight => NativeAPI.ui_line_height();
 
+        /// <summary>Manually define what area is used for the UI layout. This is in
+        /// the current Hierarchy's coordinate space on the X/Y plane.</summary>
+        /// <param name="start">The top left of the layout area, relative to the current Hierarchy in local meters.</param>
+        /// <param name="dimensions">The size of the layout area from the top left, in local meters.</param>
         public static void LayoutArea(Vec3 start, Vec2 dimensions)
             => NativeAPI.ui_layout_area(start, dimensions);
 
-        /// <summary>Adds a root id to the stack for the following UI elements! This id is combined 
-        /// when hashing any following ids, to prevent id collisions in separate groups.</summary>
-        /// <param name="rootId">The root id to use until the following PopId call.</param>
-        public static void PushId(string rootId) => NativeAPI.ui_push_id(rootId);
-        /// <summary>Removes the last root id from the stack, and moves up to the one before it!</summary>
-        public static void PopId() => NativeAPI.ui_pop_id();
+        /// <summary>Reserves a box of space for an item in the current UI layout! This doesn't
+        /// advance to the next line after it, use UI.NextLine for that.</summary>
+        /// <param name="size">Size of the box in Hierarchy local meters.</param>
+        public static void ReserveBox(Vec2 size) 
+            => NativeAPI.ui_reserve_box(size);
 
-        public static void NextLine   ()            { NativeAPI.ui_nextline(); }
         /// <summary>Moves the current layout position back to the end of the line that just finished,
         /// so it can continue on the same line as the last element!</summary>
-        public static void SameLine   ()            { NativeAPI.ui_sameline(); }
-        public static void ReserveBox (Vec2  size)  { NativeAPI.ui_reserve_box(size); }
+        public static void SameLine() 
+            => NativeAPI.ui_sameline();
+
+        /// <summary>This will advance the layout to the next line. If there's nothing on the current
+        /// line, it'll advance to the start of the next on. But this won't have any affect on an
+        /// empty line, try UI.Space for that.</summary>
+        public static void NextLine() 
+            => NativeAPI.ui_nextline();
+
         /// <summary>Adds some space! If we're at the start of a new line, space is added vertically, 
         /// otherwise, space is added horizontally.</summary>
         /// <param name="space">Physical space to shift the layout by.</param>
-        public static void Space      (float space) { NativeAPI.ui_space(space); }
+        public static void Space (float space) 
+            => NativeAPI.ui_space(space);
 
         /// <summary>Adds some text to the layout! Text uses the UI's current font settings 
         /// (which are currently not exposed). Can contain newlines! May have trouble with
@@ -45,15 +59,37 @@ namespace StereoKit
         /// non-latin characters. Doesn't use text as id, so it can be non-unique.</param>
         /// <param name="usePadding">Should padding be included for positioning this text?
         /// Sometimes you just want un-padded text!</param>
-        public static void Label      (string text, bool usePadding = true) => NativeAPI.ui_label(text, usePadding);
-        public static void Image      (Sprite image, Vec2 size) { NativeAPI.ui_image(image._inst, size); }
+        public static void Label (string text, bool usePadding = true) 
+            => NativeAPI.ui_label(text, usePadding);
+        
+        /// <summary>Adds an image to the UI!</summary>
+        /// <param name="image">A valid sprite.</param>
+        /// <param name="size">Size in Hierarchy local meters. If one of the components is 0, 
+        /// it'll be automatically determined from the other component and the image's aspect
+        /// ratio.</param>
+        public static void Image (Sprite image, Vec2 size) 
+            => NativeAPI.ui_image(image._inst, size);
+        
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>
-        /// <param name="text">Text to display on the button, should be per-window unique as it will be used as the element id.</param>
+        /// <param name="text">Text to display on the button, should be per-window unique as 
+        /// it will be used as the element id.</param>
         /// <returns>Will return true only on the first frame it is pressed!</returns>
-        public static bool Button     (string text) { return NativeAPI.ui_button(text); }
-        public static bool Radio      (string text, bool active) { return NativeAPI.ui_toggle(text, ref active) && active; }
+        public static bool Button (string text) 
+            => NativeAPI.ui_button(text);
+
+        /// <summary>A Radio is similar to a button, except you can specify if it looks pressed
+        /// or not regardless of interaction. This can be useful for radio-like behavior! Check
+        /// an enum for a value, and use that as the 'active' state, Then switch to that enum 
+        /// value if Radio returns true.</summary>
+        /// <param name="text">Text to display on the radio, should be per-window unique as 
+        /// it will be used as the element id.</param>
+        /// <param name="active">Does this button look like it's pressed?</param>
+        /// <returns>Will return true only on the first frame it is pressed!</returns>
+        public static bool Radio (string text, bool active) 
+            => NativeAPI.ui_toggle(text, ref active) && active;
+        
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>
@@ -61,7 +97,9 @@ namespace StereoKit
         /// <param name="image">An image to display as the face of the button.</param>
         /// <param name="diameter">The diameter of the button's visual.</param>
         /// <returns>Will return true only on the first frame it is pressed!</returns>
-        public static bool ButtonRound(string id, Sprite image, float diameter = 0) => NativeAPI.ui_button_round(id, image._inst, diameter);
+        public static bool ButtonRound(string id, Sprite image, float diameter = 0)
+            => NativeAPI.ui_button_round(id, image._inst, diameter);
+        
         /// <summary>A toggleable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true any time 
         /// the toggle value changes!</summary>
@@ -70,9 +108,9 @@ namespace StereoKit
         /// <param name="value">The current state of the toggle button! True means it's toggled
         /// on, and false means it's toggled off.</param>
         /// <returns>Will return true any time the toggle value changes!</returns>
-        public static bool Toggle     (string text, ref bool value) => NativeAPI.ui_toggle(text, ref value);
-        public static bool AffordanceBegin (string text, ref Pose movement, Vec3 center, Vec3 dimensions, bool draw = false) { return NativeAPI.ui_affordance_begin(text, ref movement, center, dimensions, draw); }
-        public static bool AffordanceEnd   () { return NativeAPI.ui_affordance_end(); }
+        public static bool Toggle (string text, ref bool value)
+            => NativeAPI.ui_toggle(text, ref value);
+
         /// <summary>A horizontal slider element! You can stick your finger in it, and slide the
         /// value up and down.</summary>
         /// <param name="id">A per-window unique id for tracking element state.</param>
@@ -82,7 +120,28 @@ namespace StereoKit
         /// <param name="step">Locks the value to intervals of step. Starts at min, and increments by step.</param>
         /// <param name="width">Physical width of the slider on the window.</param>
         /// <returns>Returns true any time the value changes.</returns>
-        public static bool HSlider    (string id,   ref float value, float min, float max, float step, float width = 0) { return NativeAPI.ui_hslider(id, ref value, min, max, step, width); }
+        public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0) 
+            => NativeAPI.ui_hslider(id, ref value, min, max, step, width);
+
+        /// <summary>This begins a new UI group with its own layout! Much like a window, except
+        /// with a more flexible handle, and no header. You can draw the handle, but it will have
+        /// no text on it.</summary>
+        /// <param name="id">Id of the affordance group.</param>
+        /// <param name="pose">The pose state for the affordance! The user will be able to grab 
+        /// this affordance and move it around.</param>
+        /// <param name="handleCenter">Center of the affordance handle, relative to the pose.</param>
+        /// <param name="handleDimensions">Size of the affordance handle, in meters relative to the pose.</param>
+        /// <param name="drawHandle">Should this function draw the handle for you, or will you
+        /// draw that yourself?</param>
+        /// <returns>Returns true for every frame the user is grabbing the handle.</returns>
+        public static bool AffordanceBegin (string id, ref Pose pose, Vec3 handleCenter, Vec3 handleDimensions, bool drawHandle = false)
+            => NativeAPI.ui_affordance_begin(id, ref pose, handleCenter, handleDimensions, drawHandle);
+
+        /// <summary>Finishes an affordance! Must be called after UI.AffordanceBegin() and all elements
+        /// have been drawn.</summary>
+        public static void AffordanceEnd   ()
+            => NativeAPI.ui_affordance_end();
+        
         /// <summary>Begins a new window! This will push a pose onto the transform stack, and all UI 
         /// elements will be relative to that new pose. The pose is actually the top-center
         /// of the window. Must be finished with a call to UI.WindowEnd().</summary>
@@ -94,9 +153,22 @@ namespace StereoKit
         /// it'll default to 32mm. If y is zero, it'll expand to contain all elements within it.</param>
         /// <param name="showHeader">Should the window show a header bar? Header bar includes a title,
         /// and is grabbable when it's visible.</param>
-        public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true) => NativeAPI.ui_window_begin(text, ref pose, size, showHeader);
+        public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true)
+            => NativeAPI.ui_window_begin(text, ref pose, size, showHeader);
+        
         /// <summary>Finishes a window! Must be called after UI.WindowBegin() and all elements
         /// have been drawn.</summary>
-        public static void WindowEnd  () => NativeAPI.ui_window_end();
+        public static void WindowEnd()
+            => NativeAPI.ui_window_end();
+
+        /// <summary>Adds a root id to the stack for the following UI elements! This id is combined 
+        /// when hashing any following ids, to prevent id collisions in separate groups.</summary>
+        /// <param name="rootId">The root id to use until the following PopId call.</param>
+        public static void PushId(string rootId) 
+            => NativeAPI.ui_push_id(rootId);
+
+        /// <summary>Removes the last root id from the stack, and moves up to the one before it!</summary>
+        public static void PopId() 
+            => NativeAPI.ui_pop_id();
     }
 }
