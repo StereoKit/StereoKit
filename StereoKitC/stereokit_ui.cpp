@@ -710,7 +710,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, vec3 dimensions, bool32_t draw) {
+bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw) {
 	uint64_t id = ui_push_id(text);
 	bool result = false;
 	float color = 1;
@@ -718,9 +718,9 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	matrix to_local = hierarchy_to_local();
 	ui_push_pose(movement, vec3{ 0,0,0 });
 
-	vec3     box_start = center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
-	vec3     box_size  = dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
-	bounds_t box       = bounds_t{center, box_size};
+	vec3     box_start = handle.center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
+	vec3     box_size  = handle.dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
+	bounds_t box       = bounds_t{box_start, box_size};
 	
 	static vec3 start_aff_pos[2] = {};
 	static quat start_aff_rot[2] = { quat_identity,quat_identity };
@@ -766,8 +766,14 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 center, ve
 	}
 
 	if (draw) {
-		ui_box(center+dimensions/2, dimensions, skui_mat, skui_palette[0] * color);
-		ui_box(center + dimensions / 2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -dimensions.z/4 }, vec3{ dimensions.x+skui_settings.backplate_border*2, dimensions.y +skui_settings.backplate_border*2, dimensions.z / 2 }, skui_mat, skui_color_border * color);
+		ui_box(
+			handle.center+handle.dimensions/2, 
+			handle.dimensions, 
+			skui_mat, skui_palette[0] * color);
+		ui_box(
+			handle.center+handle.dimensions/2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -handle.dimensions.z/4 }, 
+			vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
+			skui_mat, skui_color_border * color);
 		ui_nextline();
 	}
 	return color > 1;
@@ -789,7 +795,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		vec2 size      = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
-		ui_affordance_begin(text, pose, box_start, box_size, true);
+		ui_affordance_begin(text, pose, { box_start, box_size }, true);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 
@@ -797,7 +803,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		
 		ui_nextline();
 	} else {
-		ui_affordance_begin(text, pose, vec3_zero, vec3_zero, false);
+		ui_affordance_begin(text, pose, { vec3_zero, vec3_zero }, false);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 	}
 }

@@ -21,11 +21,20 @@ namespace StereoKit
 
         /// <summary>Creates a bounding box object!</summary>
         /// <param name="center">The exact center of the box.</param>
-        /// <param name="totalDimensions">e total size of the box, from one end to the 
+        /// <param name="totalDimensions">The total size of the box, from one end to the 
         /// other. This is the width, height, and depth of the Bounds.</param>
         public Bounds(Vec3 center, Vec3 totalDimensions)
         {
             this.center = center;
+            dimensions = totalDimensions;
+        }
+
+        /// <summary>Creates a bounding box object centered around zero!</summary>
+        /// <param name="totalDimensions">The total size of the box, from one end to the 
+        /// other. This is the width, height, and depth of the Bounds.</param>
+        public Bounds(Vec3 totalDimensions)
+        {
+            this.center = Vec3.Zero;
             dimensions = totalDimensions;
         }
 
@@ -70,6 +79,8 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(Vec3 linePt1, Vec3 linePt2)
             => NativeAPI.bounds_line_contains(this, linePt1, linePt2);
+
+        public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }
 
         public override string ToString()
         {

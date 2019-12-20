@@ -129,13 +129,12 @@ namespace StereoKit
         /// <param name="id">Id of the affordance group.</param>
         /// <param name="pose">The pose state for the affordance! The user will be able to grab 
         /// this affordance and move it around.</param>
-        /// <param name="handleCenter">Center of the affordance handle, relative to the pose.</param>
-        /// <param name="handleDimensions">Size of the affordance handle, in meters relative to the pose.</param>
+        /// <param name="handle">Size and location of the affordance handle, relative to the pose.</param>
         /// <param name="drawHandle">Should this function draw the handle for you, or will you
         /// draw that yourself?</param>
         /// <returns>Returns true for every frame the user is grabbing the handle.</returns>
-        public static bool AffordanceBegin (string id, ref Pose pose, Vec3 handleCenter, Vec3 handleDimensions, bool drawHandle = false)
-            => NativeAPI.ui_affordance_begin(id, ref pose, handleCenter, handleDimensions, drawHandle);
+        public static bool AffordanceBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false)
+            => NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle);
 
         /// <summary>Finishes an affordance! Must be called after UI.AffordanceBegin() and all elements
         /// have been drawn.</summary>

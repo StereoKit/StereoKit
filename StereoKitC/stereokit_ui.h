@@ -35,7 +35,7 @@ SK_API bool32_t ui_toggle      (const char *text, bool32_t &pressed);
 SK_API void     ui_model       (model_t model, vec2 ui_size, float model_scale);
 SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_size);
 SK_API bool32_t ui_hslider     (const char *id, float &value, float min, float max, float step, float width = 0);
-SK_API bool32_t ui_affordance_begin(const char *text, pose_t &movement, vec3 at, vec3 size, bool32_t draw);
+SK_API bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw);
 SK_API void     ui_affordance_end  ();
 SK_API void     ui_window_begin(const char *text, pose_t &pose, vec2 size = vec2{ 0,0 }, bool32_t show_header=true);
 SK_API void     ui_window_end  ();
