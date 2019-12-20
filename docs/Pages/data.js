@@ -241,7 +241,7 @@ var documents =
 			},
 			{
 			name : 'UI',
-			pages : ['LineHeight','Button','ButtonRound','HSlider','Label','PopId','PushId','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			pages : ['ColorScheme','LineHeight','Settings','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
 			},
 			{
 			name : 'UISettings',
