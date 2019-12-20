@@ -116,7 +116,7 @@ we're drawing using an identity matrix. This takes advantage of how AffordanceBe
 pushes the affordance's pose onto the Hierarchy transform stack!
 
 ```csharp
-UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds.center, clipboard.Bounds.dimensions);
+UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds);
 Renderer.Add(clipboard, Matrix.Identity);
 ```
 
