@@ -797,9 +797,8 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		
 		ui_nextline();
 	} else {
-		ui_push_pose(pose, { window_size.x / 2,0,0 });
-		ui_push_id(text);
-		ui_layout_area(vec3_zero, window_size);
+		ui_affordance_begin(text, pose, vec3_zero, vec3_zero, false);
+		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 	}
 }
 
