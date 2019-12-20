@@ -5,7 +5,7 @@ var documents =
 	folders : [
 		{
 		name : 'Guides',
-		pages : ['Getting Started','User Interface'],
+		pages : ['Getting Started','User Interface','Using Hands'],
 		},
 		{
 		name : 'Reference',
@@ -121,7 +121,7 @@ var documents =
 			},
 			{
 			name : 'Pose',
-			pages : ['orientation','position','Pose','ToMatrix'],
+			pages : ['Forward','orientation','position','Right','Up','Pose','ToMatrix'],
 			},
 			{
 			name : 'Quat',

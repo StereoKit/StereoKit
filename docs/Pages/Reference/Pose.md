@@ -12,8 +12,11 @@ Pose represents a location and orientation in space, excluding scale!
 
 |  |  |
 |--|--|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Forward]({{site.url}}/Pages/Reference/Pose/Forward.html)|Calculates the forward direction from this pose. This is done by multiplying the orientation with Vec3.Forward. Remember that Forward points down the -Z axis!|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [orientation]({{site.url}}/Pages/Reference/Pose/orientation.html)|Orientation of the pose, stored as a rotation from Vec3.Forward.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [position]({{site.url}}/Pages/Reference/Pose/position.html)|Location of the pose.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Right]({{site.url}}/Pages/Reference/Pose/Right.html)|Calculates the right (+X) direction from this pose. This is done by multiplying the orientation with Vec3.Right.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Up]({{site.url}}/Pages/Reference/Pose/Up.html)|Calculates the up (+Y) direction from this pose. This is done by multiplying the orientation with Vec3.Up.|
 
 
 
