@@ -830,7 +830,8 @@ void openxr_poll_actions() {
 		// Update the hand point pose
 		pose_t     point_pose = {};
 		pointer_t *pointer    = input_get_pointer(xr_input.pointer_ids[hand]);
-		pointer->tracked = button_make_state( pointer->tracked & button_state_active, point_state.isActive);
+		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
+		pointer->state   = button_make_state(pointer->state   & button_state_active, select_state.currentState);
 		if (openxr_get_space(xr_input.pointSpace[hand], xr_time, point_pose)) {
 			pointer->ray.pos     = point_pose.position;
 			pointer->ray.dir     = point_pose.orientation * vec3_forward;

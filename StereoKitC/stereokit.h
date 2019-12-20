@@ -580,6 +580,7 @@ SK_MakeFlag(button_state_);
 struct pointer_t {
 	input_source_ source;
 	button_state_ tracked;
+	button_state_ state;
 	ray_t         ray;
 	quat          orientation;
 };

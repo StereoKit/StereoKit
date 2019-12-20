@@ -156,6 +156,7 @@ void win32_mouse_hand() {
 		pointer_cursor->orientation = pointer_rot;
 	}
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
+	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);
 
 	input_hand_sim(handed_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 	input_hand_sim(handed_left,  vec3_zero, quat_identity, false, false, false);

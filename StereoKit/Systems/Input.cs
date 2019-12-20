@@ -4,49 +4,78 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
+    /// <summary>Contains information to represents a joint on the hand.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct HandJoint
     {
+        /// <summary>The joint's world space location.</summary>
         public Vec3  position;
+        /// <summary>The joint's world space orientation, where Forward points 
+        /// to the next joint down the finger.</summary>
         public Quat  orientation;
+        /// <summary>The distance, in meters, to the surface of the hand from
+        /// this joint.</summary>
         public float radius;
 
+        /// <summary>A convenience property that wraps position and orientation
+        /// into a Pose.</summary>
         public Pose Pose => new Pose(position, orientation);
     }
 
+    /// <summary>Information about a hand!</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Hand {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
         private HandJoint[] fingers;
+        /// <summary>Pose of the wrist. TODO: Not populated right now.</summary>
         public  Pose        wrist;
+        /// <summary>The position and orientation at the center of the palm! Here,
+        /// Forward is the direction the palm is facing. X+ is to the outside of the 
+        /// right hand, and to the inside of the left hand.</summary>
         public  Pose        palm;
-        public  Handed      handedness;
-        public  BtnState    trackedState;
-        public  BtnState    pinchState;
-        public  BtnState    gripState;
-
+        /// <summary>Is this a right hand, or a left hand?</summary>
+        public  Handed      handed;
+        /// <summary>Is the hand being tracked by the sensors right now?</summary>
+        public  BtnState    tracked;
+        /// <summary>Is the hand making a pinch gesture right now? Finger and thumb together.</summary>
+        public  BtnState    pinch;
+        /// <summary>Is the hand making a grip gesture right now? Fingers next to the palm.</summary>
+        public  BtnState    grip;
 
         public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
         public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
-
-        public HandJoint Get(FingerId finger, JointId joint) => fingers[(int)finger * 5 + (int)joint];
+		
+		public HandJoint Get(FingerId finger, JointId joint) => fingers[(int)finger * 5 + (int)joint];
         public HandJoint Get(int      finger, int     joint) => fingers[finger * 5 + joint];
+		
+		/// <summary>Are the fingers currently pinched?</summary>
+        public bool IsPinched       => (pinch & BtnState.Active)       > 0;
+        /// <summary>Have the fingers just been pinched this frame?</summary>
+        public bool IsJustPinched   => (pinch & BtnState.JustActive)   > 0;
+        /// <summary>Have the fingers just stopped being pinched this frame?</summary>
+        public bool IsJustUnpinched => (pinch & BtnState.JustInactive) > 0;
 
-        public bool IsPinched       => (pinchState & BtnState.Active)       > 0;
-        public bool IsJustPinched   => (pinchState & BtnState.JustActive)   > 0;
-        public bool IsJustUnpinched => (pinchState & BtnState.JustInactive) > 0;
+        /// <summary>Are the fingers currently gripped?</summary>
+        public bool IsGripped       => (grip & BtnState.Active)       > 0;
+        /// <summary>Have the fingers just been gripped this frame?</summary>
+        public bool IsJustGripped   => (grip & BtnState.JustActive)   > 0;
+        /// <summary>Have the fingers just stopped being gripped this frame?</summary>
+        public bool IsJustUngripped => (grip & BtnState.JustInactive) > 0;
 
-        public bool IsGripped       => (gripState & BtnState.Active)       > 0;
-        public bool IsJustGripped   => (gripState & BtnState.JustActive)   > 0;
-        public bool IsJustUngripped => (gripState & BtnState.JustInactive) > 0;
+        /// <summary>Is the hand being tracked by the sensors right now?</summary>
+        public bool IsTracked       => (tracked & BtnState.Active)       > 0;
+        /// <summary>Has the hand just started being tracked this frame?</summary>
+        public bool IsJustTracked   => (tracked & BtnState.JustActive)   > 0;
+        /// <summary>Has the hand just stopped being tracked this frame?</summary>
+        public bool IsJustUntracked => (tracked & BtnState.JustInactive) > 0;
 
-        public bool IsTracked       => (trackedState & BtnState.Active)       > 0;
-        public bool IsJustTracked   => (trackedState & BtnState.JustActive)   > 0;
-        public bool IsJustUntracked => (trackedState & BtnState.JustInactive) > 0;
-
-        public Material Material { set { NativeAPI.input_hand_material(handedness, value._inst); } }
-        public bool     Visible  { set { NativeAPI.input_hand_visible (handedness, value); } }
-        public bool     Solid    { set { NativeAPI.input_hand_solid   (handedness, value); } }
+        /// <summary>Set the Material used to render the hand! The default material
+        /// uses an offset of -10 for optimization and transparency order.</summary>
+        public Material Material { set { NativeAPI.input_hand_material(handed, value._inst); } }
+        /// <summary>Should the hand be rendered?</summary>
+        public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
+        /// <summary>Should the hand be considered solid by the physics system?</summary>
+        public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
     }
 
     public static class Input

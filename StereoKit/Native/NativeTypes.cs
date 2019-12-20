@@ -332,26 +332,40 @@ namespace StereoKit
     {
         /// <summary>Is the button pressed?</summary>
         /// <returns>True if pressed, false if not.</returns>
-        public static bool IsPressed     (this BtnState state) => (state & BtnState.Active    ) > 0;
+        public static bool IsActive      (this BtnState state) => (state & BtnState.Active      ) > 0;
         /// <summary>Has the button just been pressed this frame?</summary>
         /// <returns>True if pressed, false if not.</returns>
-        public static bool IsJustPressed (this BtnState state) => (state & BtnState.JustActive) > 0;
+        public static bool IsJustActive  (this BtnState state) => (state & BtnState.JustActive  ) > 0;
         /// <summary>Has the button just been released this frame?</summary>
         /// <returns>True if released, false if not.</returns>
-        public static bool IsJustReleased(this BtnState state) => (state & BtnState.JustInactive  ) > 0;
+        public static bool IsJustInactive(this BtnState state) => (state & BtnState.JustInactive) > 0;
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
 
+    /// <summary>Pointer is an abstraction of a number of different input 
+    /// sources, and a way to surface input events!</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Pointer
     {
+        /// <summary>What input soure did this pointer come from? This is
+        /// a bit-flag that contains input family and capability
+        /// information.</summary>
         public InputSource source;
+        /// <summary>Is the pointer source being tracked right now?</summary>
         public BtnState    tracked;
+        /// <summary>What is the state of the input source's 'button', if it 
+        /// has one?</summary>
+        public BtnState    state;
+        /// <summary>A ray in the direction of the pointer.</summary>
         public Ray         ray;
+        /// <summary>Orientation of the pointer! Since a Ray has no concept
+        /// of 'up', this can be used to retrieve more orientation information.</summary>
         public Quat        orientation;
 
+        /// <summary>Convenience property that turns ray.position and orientation
+        /// into a Pose.</summary>
         public Pose Pose => new Pose(ray.position, orientation);
     }
 
