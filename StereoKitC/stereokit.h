@@ -161,6 +161,7 @@ SK_API quat quat_lookat_up  (const vec3 &from, const vec3 &at, const vec3 &up);
 SK_API quat quat_from_angles(float pitch_x_deg, float yaw_y_deg, float roll_z_deg);
 SK_API quat quat_slerp      (const quat &a, const quat &b, float t);
 SK_API quat quat_normalize  (const quat &a);
+SK_API quat quat_inverse    (const quat &a);
 SK_API quat quat_mul        (const quat &a, const quat &b);
 SK_API vec3 quat_mul_vec    (const quat &a, const vec3 &b);
 

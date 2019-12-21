@@ -42,9 +42,15 @@ namespace StereoKit
         /// <summary>A normalized quaternion has the same orientation, and a length of 1.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Normalize()
-        {
-            this = NativeAPI.quat_normalize(this);
-        }
+            => NativeAPI.quat_normalize(this);
+        
+        /// <summary>The reverse rotation! If this quat goes from A to B, the inverse will go
+        /// from B to A.</summary>
+        /// <returns>The inverse quaternion.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Quat Inverse()
+            => NativeAPI.quat_inverse(this);
+        
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat operator -(Quat a, Quat b) => NativeAPI.quat_difference(a,b);

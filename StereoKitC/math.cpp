@@ -76,6 +76,12 @@ quat quat_normalize(const quat &a) {
 
 ///////////////////////////////////////////
 
+quat quat_inverse(const quat &a) {
+	return math_fast_to_quat(XMQuaternionInverse(math_quat_to_fast(a)));
+}
+
+///////////////////////////////////////////
+
 void pose_matrix_out(const pose_t &pose, matrix &out_result, vec3 scale) {
 	matrix_trs_out(out_result, pose.position, pose.orientation, scale);
 }
