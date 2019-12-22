@@ -65,10 +65,11 @@ model_t model_create_file(const char *filename, shader_t shader) {
 	result = model_create();
 	model_set_id(result, filename);
 
+	const char *model_file = assets_file(filename);
 	// Open file
 	FILE *fp;
-	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
-		log_errf("Can't find file %s!", filename);
+	if (fopen_s(&fp, model_file, "rb") != 0 || fp == nullptr) {
+		log_errf("Can't find file %s!", model_file);
 		return nullptr;
 	}
 

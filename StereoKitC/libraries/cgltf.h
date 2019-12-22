@@ -835,7 +835,8 @@ cgltf_result cgltf_parse_file(const cgltf_options* options, const char* path, cg
 	void* (*memory_alloc)(void*, cgltf_size) = options->memory_alloc ? options->memory_alloc : &cgltf_default_alloc;
 	void (*memory_free)(void*, void*) = options->memory_free ? options->memory_free : &cgltf_default_free;
 
-	FILE* file = fopen(path, "rb");
+	FILE *file = nullptr;
+	fopen_s(&file, path, "rb");
 	if (!file)
 	{
 		return cgltf_result_file_not_found;
@@ -915,7 +916,8 @@ static cgltf_result cgltf_load_buffer_file(const cgltf_options* options, cgltf_s
 
 	cgltf_combine_paths(path, gltf_path, uri);
 
-	FILE* file = fopen(path, "rb");
+	FILE *file = nullptr;
+	fopen_s(&file, path, "rb");
 
 	memory_free(options->memory_user_data, path);
 

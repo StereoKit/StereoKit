@@ -152,7 +152,7 @@ void  assets_shutdown_check() {
 
 char assets_file_buffer[1024];
 const char *assets_file(const char *file_name) {
-	if (file_name == nullptr)
+	if (file_name == nullptr || sk_settings.assets_folder[0] == '\0')
 		return file_name;
 
 	const char *ch = file_name;
