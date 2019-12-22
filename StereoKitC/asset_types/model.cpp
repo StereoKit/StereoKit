@@ -19,8 +19,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj (model_t model, const char *filename, shader_t shader);
-bool modelfmt_gltf(model_t model, const char *filename, shader_t shader);
+bool modelfmt_obj (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
 
 ///////////////////////////////////////////
 
@@ -65,11 +65,32 @@ model_t model_create_file(const char *filename, shader_t shader) {
 	result = model_create();
 	model_set_id(result, filename);
 
-	if        (modelfmt_gltf(result, filename, shader)) {
-	} else if (modelfmt_obj (result, filename, shader)) {
-	} else {
-		log_errf("Can't load %s! File not found, or invalid format.", filename);
+	// Open file
+	FILE *fp;
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
+		log_errf("Can't find file %s!", filename);
+		return nullptr;
 	}
+
+	// Get length of file
+	fseek(fp, 0L, SEEK_END);
+	uint64_t length = ftell(fp);
+	rewind(fp);
+
+	// Read the data
+	uint8_t *data = (uint8_t *)malloc(sizeof(uint8_t) *length+1);
+	if (data == nullptr) { fclose(fp); return false; }
+	fread(data, 1, length, fp);
+	fclose(fp);
+	data[length] = '\0';
+
+	if        (modelfmt_gltf(result, filename, data, length, shader)) {
+	} else if (modelfmt_obj (result, filename, data, length, shader)) {
+	} else {
+		log_errf("Issue loading %s! Can't recognize the file format.", filename);
+	}
+
+	free(data);
 
 	return result;
 }
@@ -173,27 +194,11 @@ int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, ve
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, shader_t shader) {
-	// Open file
-	FILE *fp;
-	if (fopen_s(&fp, filename, "r") != 0 || fp == nullptr)
-		return false;
-
-	// Get length of file
-	fseek(fp, 0L, SEEK_END);
-	uint64_t length = ftell(fp);
-	rewind(fp);
-
-	// Read the data
-	uint8_t *data = (uint8_t *)malloc(sizeof(uint8_t) *length+1);
-	if (data == nullptr) { fclose(fp); return false; }
-	fread(data, 1, length, fp);
-	fclose(fp);
-	data[length] = '\0';
+bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
 
 	// Parse the file
-	size_t len = length;
-	const char *line = (const char *)data;
+	size_t len = file_length;
+	const char *line = (const char *)file_data;
 	int         read = 0;
 
 	vector<vec3> poss;
@@ -207,7 +212,7 @@ bool modelfmt_obj(model_t model, const char *filename, shader_t shader) {
 	vec3 in;
 	int inds[12];
 	int count = 0;
-	while ((size_t)(line-(const char *)data)+1 < len) {
+	while ((size_t)(line-(const char *)file_data)+1 < len) {
 		if        (sscanf_s(line, "v %f %f %f\n%n",  &in.x, &in.y, &in.z, &read) > 0) {
 			poss.push_back(in);
 		} else if (sscanf_s(line, "vn %f %f %f\n%n", &in.x, &in.y, &in.z, &read) > 0) {
@@ -241,7 +246,6 @@ bool modelfmt_obj(model_t model, const char *filename, shader_t shader) {
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
-	free(data);
 
 	return true;
 }
@@ -468,11 +472,11 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 ///////////////////////////////////////////
 
-bool modelfmt_gltf(model_t model, const char *filename, shader_t shader) {
+bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
 	cgltf_data*   data    = NULL;
 	const char *model_file = assets_file(filename);
-	if (cgltf_parse_file(&options, model_file, &data) != cgltf_result_success)
+	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
 		return false;
 	if (cgltf_load_buffers(&options, data, model_file) != cgltf_result_success) {
 		cgltf_free(data);
