@@ -30,7 +30,7 @@ namespace StereoKitTest
                 if (picker.Show())
                     LoadModel(picker.SelectedFile);
             } else {
-                UI.AffordanceBegin("Model", ref modelPose, model.Bounds.center*modelScale*menuScale, model.Bounds.dimensions*modelScale*menuScale);
+                UI.AffordanceBegin("Model", ref modelPose, model.Bounds*modelScale*menuScale);
                 model.Draw(Matrix.TS(Vec3.Zero, modelScale*menuScale));
                 UI.AffordanceEnd();
             }

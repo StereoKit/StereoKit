@@ -89,7 +89,7 @@ class Program
     static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
     static void RulerWindow()
     {
-        UI.AffordanceBegin("Ruler", ref demoRuler, Vec3.Zero, new Vec3(30,4,1)*Units.cm2m, true);
+        UI.AffordanceBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*Units.cm2m), true);
         Color32 color = Color.HSV(.6f, 0.5f, 1);
         Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f) * Units.cm2m, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
         for (int d = 0; d <= 60; d+=1)

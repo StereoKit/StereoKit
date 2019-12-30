@@ -30,7 +30,7 @@ class DemoMath : IDemo
         Color notActive    = new Color(1, 1, 1, 1);
 
         // Plane and Ray
-        bool planeRayActive = UI.AffordanceBegin("PlaneRay", ref posePlaneRay, Vec3.Zero, Vec3.One*0.4f);
+        bool planeRayActive = UI.AffordanceBegin("PlaneRay", ref posePlaneRay, new Bounds(Vec3.One*0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), planeRayActive ? active:notActive);
 
         Plane ground    = new Plane(Vec3.Zero, new Vec3(1,2,0));
@@ -47,7 +47,7 @@ class DemoMath : IDemo
             Renderer.Screenshot(posePlaneRay.position+new Vec3(0.0f,0.3f,0.15f), posePlaneRay.position + Vec3.Up*0.1f, 400, 400, "../../../docs/img/screenshots/RayIntersectPlane.jpg");
 
         // Line and Plane
-        bool linePlaneActive = UI.AffordanceBegin("LinePlane", ref poseLinePlane, Vec3.Zero, Vec3.One * 0.4f);
+        bool linePlaneActive = UI.AffordanceBegin("LinePlane", ref poseLinePlane, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), linePlaneActive ? active : notActive);
 
         Plane groundLinePlane   = new Plane(Vec3.Zero, new Vec3(1,2,0));
@@ -69,7 +69,7 @@ class DemoMath : IDemo
             Renderer.Screenshot(poseLinePlane.position + new Vec3(0.0f, 0.3f, 0.15f), poseLinePlane.position + Vec3.Up * 0.1f, 400, 400, "../../../docs/img/screenshots/LineIntersectPlane.jpg");
 
         // Sphere and Ray
-        bool sphereRayActive = UI.AffordanceBegin("SphereRay", ref poseSphereRay, Vec3.Zero, Vec3.One * 0.4f);
+        bool sphereRayActive = UI.AffordanceBegin("SphereRay", ref poseSphereRay, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), sphereRayActive ? active : notActive);
 
         Sphere sphere    = new Sphere(Vec3.Zero, 0.25f);
@@ -87,7 +87,7 @@ class DemoMath : IDemo
             Renderer.Screenshot(poseSphereRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseSphereRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectSphere.jpg");
 
         // Bounds and Ray
-        bool boundsRayActive = UI.AffordanceBegin("BoundsRay", ref poseBoundsRay, Vec3.Zero, Vec3.One * 0.4f);
+        bool boundsRayActive = UI.AffordanceBegin("BoundsRay", ref poseBoundsRay, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), boundsRayActive ? active : notActive);
 
         Bounds bounds    = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
@@ -105,7 +105,7 @@ class DemoMath : IDemo
             Renderer.Screenshot(poseBoundsRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectBounds.jpg");
 
         // Bounds and Line
-        bool boundsLineActive = UI.AffordanceBegin("BoundsLine", ref poseBoundsLine, Vec3.Zero, Vec3.One * 0.4f);
+        bool boundsLineActive = UI.AffordanceBegin("BoundsLine", ref poseBoundsLine, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), boundsLineActive ? active : notActive);
 
         Bounds boundsLine   = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
@@ -124,7 +124,7 @@ class DemoMath : IDemo
             Renderer.Screenshot(poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
 
         // Cross product
-        bool crossActive = UI.AffordanceBegin("Cross", ref poseCross, Vec3.Zero, Vec3.One * 0.4f);
+        bool crossActive = UI.AffordanceBegin("Cross", ref poseCross, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), crossActive ? active : notActive);
 
         Vec3 crossStart = Vec3.Zero;

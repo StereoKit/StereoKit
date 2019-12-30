@@ -92,7 +92,7 @@ namespace StereoKitTest
         bool LightHandle(int i)
         {
             UI.PushId("window"+i);
-            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, Vec3.Zero, Vec3.One * 3 * Units.cm2m);
+            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * Units.cm2m));
             UI.LayoutArea(new Vec3(6,-3,0)*Units.cm2m, new Vec2(10, 0) * Units.cm2m);
             if (lights[i].pose.position.Magnitude > 0.5f)
                 lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;

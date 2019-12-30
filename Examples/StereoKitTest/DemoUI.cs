@@ -115,7 +115,9 @@ class DemoUI : IDemo
         ///
         /// We'll load up a clipboard, so we can attach an interface to that!
         /// 
-        /// `Model clipboard = Model.FromFile("Clipboard.glb");`
+        /// ```cs
+        /// Model clipboard = Model.FromFile("Clipboard.glb");
+        /// ```
         /// 
         /// And, similar to the window previously, here's how you would turn it into a grabbable 
         /// interface! This behaves the same, except we're defining where the grabbable region is
@@ -123,7 +125,7 @@ class DemoUI : IDemo
         /// we're drawing using an identity matrix. This takes advantage of how AffordanceBegin
         /// pushes the affordance's pose onto the Hierarchy transform stack!
         /// 
-        UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds.center, clipboard.Bounds.dimensions);
+        UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds);
         Renderer.Add(clipboard, Matrix.Identity);
         ///
         /// Once we've done that, we also need to define the layout area of the model, where UI 
