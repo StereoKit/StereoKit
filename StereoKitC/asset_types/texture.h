@@ -34,7 +34,7 @@ size_t      tex_format_size      (tex_format_ format);
 void tex_releasesurface(tex_t texture);
 void tex_setsurface    (tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_format);
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info);
-bool tex_create_views  (tex_t texture, DXGI_FORMAT source_format);
+bool tex_create_views  (tex_t texture, DXGI_FORMAT source_format, bool create_shader_view);
 void tex_set_options   (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
 
 bool tex_downsample    (color32  *data, int32_t width, int32_t height, color32  **out_data, int32_t *out_width, int32_t *out_height);

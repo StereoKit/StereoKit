@@ -38,8 +38,8 @@ tex_t defaults_texture(const char *id, color32 color) {
 	color32 tex_colors[2*2];
 	for (size_t i = 0; i < 2 * 2; i++) 
 		tex_colors[i] = color;
-	tex_set_id    (result, id);
 	tex_set_colors(result, 2, 2, tex_colors);
+	tex_set_id    (result, id);
 
 	return result;
 }
@@ -88,9 +88,9 @@ bool defaults_init() {
 		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
 	};
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_id   (sk_default_quad, "default/quad");
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);
+	mesh_set_id   (sk_default_quad, "default/quad");
 
 	// Shaders
 	sk_default_shader          = shader_create(sk_shader_builtin_default);

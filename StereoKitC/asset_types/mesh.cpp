@@ -144,6 +144,11 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(mesh->header, id);
+
+	if (mesh->ind_buffer)
+		DX11ResName(mesh->ind_buffer, "mesh_inds", id);
+	if (mesh->vert_buffer)
+		DX11ResName(mesh->vert_buffer, "mesh_verts", id);
 }
 
 ///////////////////////////////////////////

@@ -56,8 +56,15 @@ tex_t tex_find(const char *id) {
 
 ///////////////////////////////////////////
 
-void tex_set_id(tex_t mesh, const char *id) {
-	assets_set_id(mesh->header, id);
+void tex_set_id(tex_t tex, const char *id) {
+	assets_set_id(tex->header, id);
+
+	if (tex->resource)
+		DX11ResName(tex->resource,    "tex_view", id);
+	if (tex->texture)
+		DX11ResName(tex->texture,     "tex_src", id);
+	if (tex->target_view)
+		DX11ResName(tex->target_view, "tex_target", id);
 }
 
 ///////////////////////////////////////////
@@ -83,13 +90,11 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	if (is_hdr) format = tex_format_rgba128;
 
 	result = tex_create(tex_type_image, format);
-	tex_set_id(result, file);
-
+	
 	tex_set_colors(result, width, height, data);
+	tex_set_id(result, file);
 	free(data);
 
-	DX11ResName(result->resource, "tex_view", file);
-	DX11ResName(result->texture,  "tex_src", file);
 	return result;
 }
 
@@ -129,8 +134,8 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	}
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
-	tex_set_id       (result, equirectangular_file);
 	tex_set_color_arr(result, width, height, (void**)&data, 6, sh_lighting_info);
+	tex_set_id       (result, equirectangular_file);
 
 	material_release(convert_material);
 	tex_release(equirect);
@@ -140,8 +145,6 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 		free(data[i]);
 	}
 
-	DX11ResName(result->resource, "cubemap_view", equirectangular_file);
-	DX11ResName(result->texture,  "cubemap_src", equirectangular_file);
 	return result;
 }
 
@@ -185,14 +188,12 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 
 	// Create with the data we have
 	result = tex_create(tex_type_image | tex_type_cubemap, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-	tex_set_id       (result, cube_face_file_xxyyzz[0]);
 	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6, sh_lighting_info);
+	tex_set_id       (result, cube_face_file_xxyyzz[0]);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
 
-	DX11ResName(result->resource, "cubemap_view", cube_face_file_xxyyzz[0]);
-	DX11ResName(result->texture,  "cubemap_src", cube_face_file_xxyyzz[0]);
 	return result;
 }
 
@@ -265,7 +266,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 
 		bool result = tex_create_surface(texture, data, data_count, sh_lighting_info);
 		if (result)
-			result = tex_create_views  (texture, DXGI_FORMAT_UNKNOWN);
+			result = tex_create_views  (texture, DXGI_FORMAT_UNKNOWN, true);
 		if (result && texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
@@ -500,8 +501,9 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 	texture->array_size = color_desc.ArraySize;
 	if (source_format == DXGI_FORMAT_UNKNOWN)
 		source_format = color_desc.Format;
+	bool create_view = color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE;
 
-	bool created_views      = tex_create_views(texture, source_format);
+	bool created_views      = tex_create_views(texture, source_format, create_view);
 	bool resolution_changed = (old_width != texture->width || old_height != texture->height);
 	if (created_views && resolution_changed && texture->depth_buffer != nullptr) {
 		tex_set_colors(texture->depth_buffer, texture->width, texture->height, nullptr);
@@ -510,13 +512,12 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 
 ///////////////////////////////////////////
 
-bool tex_create_views(tex_t texture, DXGI_FORMAT source_format) {
+bool tex_create_views(tex_t texture, DXGI_FORMAT source_format, bool create_shader_view) {
 	DXGI_FORMAT format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
 	bool        mips      = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
 	uint32_t    mip_count = (uint32_t)(mips ? log2(texture->width) + 1 : 1);
-	bool        can_shader_view = source_format == DXGI_FORMAT_UNKNOWN || source_format == tex_get_native_format(texture->format);
 
-	if (!(texture->type & tex_type_depth) && can_shader_view) {
+	if (!(texture->type & tex_type_depth) && create_shader_view) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
 		res_desc.Format              = format;
 		if (texture->type & tex_type_cubemap) {
@@ -700,6 +701,12 @@ void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 
 void *tex_get_resource(tex_t texture) {
 	return texture->resource;
+}
+
+///////////////////////////////////////////
+
+void tex_set_resource(tex_t texture, void *surface) {
+	tex_setsurface(texture, (ID3D11Texture2D*)surface, DXGI_FORMAT_UNKNOWN);
 }
 
 ///////////////////////////////////////////

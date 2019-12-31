@@ -46,7 +46,7 @@ void win32_resize(int width, int height) {
 		win32_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_UNKNOWN);
+		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 	}
 
 	render_update_projection();
@@ -115,7 +115,7 @@ bool win32_init(const char *app_name) {
 	sd.Width       = d3d_screen_width;
 	sd.Height      = d3d_screen_height;
 	sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	sd.SampleDesc.Count = 1;
 	

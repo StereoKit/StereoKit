@@ -249,6 +249,13 @@ shader_t shader_find(const char *id) {
 
 void shader_set_id(shader_t shader, const char *id) {
 	assets_set_id(shader->header, id);
+
+	if (shader->vshader)
+		DX11ResName(shader->vshader, "shader_vtx", id);
+	if (shader->pshader)
+		DX11ResName(shader->pshader, "shader_pix", id);
+	if (shader->args.const_buffer)
+		DX11ResName(shader->args.const_buffer, "shader_args", id);
 }
 
 ///////////////////////////////////////////

@@ -349,6 +349,7 @@ SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
 SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void *tex_get_resource        (tex_t texture);
+SK_API void  tex_set_resource        (tex_t texture, void *surface);
 SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info = nullptr);
 SK_API tex_t tex_gen_cubemap_sh      (const spherical_harmonics_t& lookup, int32_t face_size);
 SK_API int32_t      tex_get_width     (tex_t texture);

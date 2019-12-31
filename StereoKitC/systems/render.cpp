@@ -590,4 +590,11 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	return matrix_mul_point(mat, normalized_screen_pt);
 }
 
+///////////////////////////////////////////
+
+void render_get_device(void **device, void **context) {
+	*device  = d3d_device;
+	*context = d3d_context;
+}
+
 } // namespace sk
