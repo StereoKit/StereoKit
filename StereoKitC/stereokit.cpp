@@ -12,6 +12,7 @@
 #include "systems/line_drawer.h"
 #include "systems/defaults.h"
 #include "systems/platform/platform.h"
+#include "asset_types/sound.h"
 
 #include <thread> // sleep_for
 using namespace std;
@@ -129,6 +130,13 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		renderer_deps,        _countof(renderer_deps), 
 		renderer_update_deps, _countof(renderer_update_deps),
 		render_initialize, render_update, render_shutdown);
+
+	const char *sound_deps[] = {"Platform"};
+	const char *sound_update_deps[] = {"Platform"};
+	systems_add("Sound",  
+		sound_deps,        _countof(sound_deps), 
+		sound_update_deps, _countof(sound_update_deps),
+		sound_init, sound_update, sound_shutdown);
 
 	const char *input_deps[] = {"Platform", "Defaults"};
 	const char *input_update_deps[] = {"FrameBegin"};

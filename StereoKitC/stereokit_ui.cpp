@@ -45,6 +45,9 @@ text_style_t    skui_font_style;
 material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
 
+sound_t         skui_snd_interact;
+sound_t         skui_snd_uninteract;
+
 ui_settings_t skui_settings = {
 	10 * mm2m, // padding
 	10 * mm2m, // gutter
@@ -162,6 +165,26 @@ bool ui_init() {
 	
 	skui_layers.push_back({});
 	skui_id_stack.push_back({ STREF_HASH_START });
+
+	skui_snd_interact = sound_generate([](float t){
+		float x = t / 0.03f;
+		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+		float band4 = sinf(t*500)  * (x * powf(1 - x, 6)) / 0.03f;
+
+		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
+		}, .03f);
+
+	skui_snd_uninteract = sound_generate([](float t){
+		float x = t / 0.03f;
+		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+		float band4 = sinf(t*500)  * (x * powf(1 - x, 6)) / 0.03f;
+
+		return (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
+		}, .03f);
 
 	return true;
 }
@@ -405,6 +428,11 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 		skui_hand[hand].active = 0;
 		button_state |= button_state_just_inactive;
 	}
+	
+	if (button_state & button_state_just_active)
+		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
+	else if (button_state & button_state_just_inactive)
+		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
 }
 
 ///////////////////////////////////////////
@@ -680,6 +708,9 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	bounds_t box       = ui_size_box(box_start, box_size);
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
+			if (skui_hand[i].focused_prev != id) {
+				sound_play(skui_snd_interact, skui_hand[i].finger_world, 1);
+			}
 			skui_hand[i].focused = id;
 			color = 1.5f;
 			float new_val = min + fminf(1,fmaxf(0,(fabsf(skui_hand[i].finger.x - offset.x) / size.x))) * (max - min);
@@ -689,8 +720,12 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 			result = value != new_val;
 			value  = new_val;
 
-			if (result)
+			if (result && step != 0) {
 				skui_hand[i].active = id;
+				sound_play(skui_snd_interact, skui_hand[i].finger_world, 1);
+			}
+		} else if (skui_hand[i].focused_prev == id) {
+			sound_play(skui_snd_uninteract, skui_hand[i].finger_world, 1);
 		}
 	}
 

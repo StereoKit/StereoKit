@@ -124,6 +124,9 @@
     <ClCompile Include="spherical_harmonics.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\sound.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -238,6 +241,15 @@
     </ClInclude>
     <ClInclude Include="spherical_harmonics.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\miniaudio.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="asset_types\sound.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\dr_wav.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

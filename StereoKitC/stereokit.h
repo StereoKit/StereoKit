@@ -550,6 +550,17 @@ SK_API quat     hierarchy_to_world_rotation (const quat &local_orientation);
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(sound_t);
+
+SK_API sound_t sound_find    (const char *id);
+SK_API void    sound_set_id  (sound_t sound, const char *id);
+SK_API sound_t sound_create  (const char *filename);
+SK_API sound_t sound_generate(float (*function)(float), float duration);
+SK_API void    sound_play    (sound_t sound, vec3 at, float volume);
+SK_API void    sound_release (sound_t sound);
+
+///////////////////////////////////////////
+
 enum input_source_ {
 	input_source_any        = 0x7FFFFFFF,
 	input_source_hand       = 1 << 0,
