@@ -137,7 +137,7 @@ var documents =
 			},
 			{
 			name : 'Quat',
-			pages : ['Identity','w','x','y','z','Quat','Difference','FromAngles','LookAt','LookDir','Normalize','Slerp'],
+			pages : ['Identity','w','x','y','z','Quat','Difference','FromAngles','Inverse','LookAt','LookDir','Normalize','Slerp'],
 			},
 			{
 			name : 'Ray',
