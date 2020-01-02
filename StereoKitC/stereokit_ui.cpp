@@ -84,7 +84,7 @@ void ui_space       (float space);
 
 // Interaction
 bool32_t ui_in_box            (vec3 pt1, vec3 pt2, bounds_t box);
-int32_t  ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state);
+void     ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t &out_hand);
 void     ui_button_behavior   (vec3 window_relative_pos, vec2 size, uint64_t id, float& finger_offset, button_state_& button_state, button_state_& focus_state);
 
 // Base render types
@@ -349,18 +349,16 @@ void ui_space(float space) {
 ///////////   Interaction!   //////////////
 ///////////////////////////////////////////
 
-int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state) {
-	int32_t hand = -1;
+void ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t &hand) {
+	hand = -1;
 	if (out_focus_state != nullptr)
 		*out_focus_state = button_state_inactive;
 
 	for (int32_t i = 0; i < handed_max; i++) {
-		button_state_ focus_state = button_state_inactive;
-		bool focused   = skui_hand[i].focused_prev == id;
+		bool was_focused = skui_hand[i].focused_prev == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
-		if (focused) {
-			focus_state = button_state_active;
+		if (was_focused) {
 			box_start = box_focused_start;
 			box_size  = box_focused_size;
 		}
@@ -368,17 +366,19 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(box_start, box_size))) {
 			hand = i;
 			skui_hand[i].focused = id;
-			focus_state = button_state_active;
-			if (!focused)
+			button_state_ focus_state = button_state_active;
+			if (!was_focused)
 				focus_state |= button_state_just_active;
+
 			if (out_focus_state != nullptr)
 				*out_focus_state = focus_state;
-		} else if (focused) {
+			
+		} else if (was_focused) {
+			hand = i;
 			if (out_focus_state != nullptr)
 				*out_focus_state = button_state_inactive | button_state_just_inactive;
 		}
 	}
-	return hand;
 }
 
 ///////////////////////////////////////////
@@ -393,6 +393,7 @@ bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
 void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float &finger_offset, button_state_ &button_state, button_state_ &focus_state) {
 	button_state = button_state_inactive;
 	focus_state  = button_state_inactive;
+	int32_t hand = -1;
 
 	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
 	// or 'side' presses where the finger comes from the back or side.
@@ -403,15 +404,15 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 	// a bit too on the X/Y axes later.
 	vec3    box_start = window_relative_pos + vec3{ 0, 0, -skui_settings.depth/2.f };
 	vec3    box_size  = vec3{ size.x, size.y, skui_settings.depth/2.f };
-	int32_t hand = ui_box_interaction_1h(id,
+	ui_box_interaction_1h(id,
 		box_start, box_size,
 		box_start + vec3{ 0,0, skui_settings.depth * 4 },
 		box_size  + vec3{ 0,0, skui_settings.depth * 4 },
-		&focus_state);
+		&focus_state, hand);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	finger_offset = skui_settings.depth;
-	if (hand != -1) {
+	if (focus_state & button_state_active) {
 		finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
 		if (finger_offset < skui_settings.depth / 2) {
 			button_state = button_state_active;
@@ -425,11 +426,9 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 		}
 		finger_offset = fmaxf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset);
 	} else if (focus_state & button_state_just_inactive) {
-		for (int32_t i = 0; i < handed_max; i++) {
-			if (skui_hand[i].active == id) {
-				skui_hand[i].active = 0;
-				button_state |= button_state_just_inactive;
-			}
+		if (skui_hand[hand].active == id) {
+			skui_hand[hand].active = 0;
+			button_state |= button_state_just_inactive;
 		}
 	}
 	
@@ -712,13 +711,14 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	bounds_t box       = ui_size_box(box_start, box_size);
 
 	button_state_ focus_state;
-	int32_t hand = ui_box_interaction_1h(id,
+	int32_t hand = -1;
+	ui_box_interaction_1h(id,
 		box_start, box_size,
 		box_start + vec3{ 0.5f,0.5f,0.5f } * cm2m,
 		box_size  + vec3{ 1,1,1 } * cm2m,
-		&focus_state);
+		&focus_state, hand);
 
-	if (hand != -1) {
+	if (focus_state & button_state_active) {
 		float new_val = min + fminf(1, fmaxf(0, (fabsf(skui_hand[hand].finger.x - offset.x) / size.x))) * (max - min);
 		if (step != 0) {
 			new_val = ((int)(((new_val - min) / step) + 0.5f)) * step;
