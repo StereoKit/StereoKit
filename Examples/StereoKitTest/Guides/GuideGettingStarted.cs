@@ -5,7 +5,7 @@
 /// 
 /// Before we get started, you'll need some software! You may have some of this already, but here's the list!
 /// 
-/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - the Community version is great! Use these workloads:
+/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - not 2017, the Community version is great! Use these workloads:
 ///   - .NET Desktop development
 ///   - Universal Windows Platform development
 ///   - .NET Core cross-platform development

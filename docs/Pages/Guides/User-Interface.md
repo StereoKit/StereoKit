@@ -107,7 +107,9 @@ layout and size.
 
 We'll load up a clipboard, so we can attach an interface to that!
 
-`Model clipboard = Model.FromFile("Clipboard.glb");`
+```csharp
+Model clipboard = Model.FromFile("Clipboard.glb");
+```
 
 And, similar to the window previously, here's how you would turn it into a grabbable
 interface! This behaves the same, except we're defining where the grabbable region is

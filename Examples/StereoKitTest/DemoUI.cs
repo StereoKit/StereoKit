@@ -115,7 +115,7 @@ class DemoUI : IDemo
         ///
         /// We'll load up a clipboard, so we can attach an interface to that!
         /// 
-        /// ```cs
+        /// ```csharp
         /// Model clipboard = Model.FromFile("Clipboard.glb");
         /// ```
         /// 
