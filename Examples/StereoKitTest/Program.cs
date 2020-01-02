@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using StereoKit;
 
 class Program 
@@ -42,6 +43,8 @@ class Program
 
     static void CommonInit()
     {
+        Log.Subscribe(OnLog);
+
         Material floorMat = Material.Copy(DefaultIds.material);
         floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
         floorMat["tex_scale"] = 16;
@@ -81,6 +84,7 @@ class Program
         UI.WindowEnd();
 
         RulerWindow();
+        LogWindow();
     }
     static void CommonShutdown()
     {
@@ -101,5 +105,21 @@ class Program
                 Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f) * Units.cm2m, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
         }
         UI.AffordanceEnd();
+    }
+
+    static Pose demoLog = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+    static List<string> demoLogList = new List<string>();
+    static void OnLog(LogLevel level, string text)
+    {
+        if (demoLogList.Count > 10)
+            demoLogList.RemoveAt(demoLogList.Count-1);
+        demoLogList.Insert(0, text);
+    }
+    static void LogWindow()
+    {
+        UI.WindowBegin("Log", ref demoLog, new Vec2(40,0) * Units.cm2m);
+        for (int i = 0; i < demoLogList.Count; i++)
+            UI.Label(demoLogList[i]);
+        UI.WindowEnd();
     }
 }

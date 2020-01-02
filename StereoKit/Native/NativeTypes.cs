@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -415,6 +416,10 @@ namespace StereoKit
         /// <summary>Danger Will Robinson! Something really bad just happened and needs fixing!</summary>
         Error
     }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void LogCallback(LogLevel level, string text);
+
 
     /// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
     public enum FingerId

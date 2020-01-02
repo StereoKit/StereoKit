@@ -681,5 +681,7 @@ enum log_colors_ {
 SK_API void log_write     (log_ level, const char* text);
 SK_API void log_set_filter(log_ level);
 SK_API void log_set_colors(log_colors_ colors);
+SK_API void log_subscribe  (void (*on_log)(log_, const char*));
+SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
 
 } // namespace sk

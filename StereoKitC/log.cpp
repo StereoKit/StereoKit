@@ -9,9 +9,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <vector>
+using namespace std;
+
 namespace sk {
 
 ///////////////////////////////////////////
+
+vector<void(*)(log_, const char*)> log_listeners;
 
 log_        log_filter = log_inform;
 log_colors_ log_colors = log_colors_ansi;
@@ -174,6 +179,10 @@ void log_write(log_ level, const char *text) {
 		free(colored_text);
 		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
+	// Send the plain-text version out to the listeners as well
+	for (size_t i = 0; i < log_listeners.size(); i++) {
+		log_listeners[i](level, colored_text);
+	}
 	OutputDebugStringA(colored_text);
 	free(colored_text);
 	
@@ -241,6 +250,23 @@ void log_set_filter(log_ level) {
 
 void log_set_colors(log_colors_ colors) {
 	log_colors = colors;
+}
+
+///////////////////////////////////////////
+
+void log_subscribe(void (*on_log)(log_, const char*)) {
+	log_listeners.push_back(on_log);
+}
+
+///////////////////////////////////////////
+
+void log_unsubscribe(void (*on_log)(log_, const char*)) {
+	for (size_t i = 0; i < log_listeners.size(); i++) {
+		if (log_listeners[i] == on_log) {
+			log_listeners.erase(log_listeners.begin() + i);
+			break;
+		}
+	}
 }
 
 } // namespace sk

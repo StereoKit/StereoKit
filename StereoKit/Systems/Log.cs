@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -98,5 +99,17 @@ namespace StereoKit
         /// <param name="text">Formatted text with color tags! See the Log class docs for for guidance on color tags.</param>
         public static void Err(string text)
             => Write(LogLevel.Error, text);
+
+        static List<LogCallback> callbacks = new List<LogCallback>();
+        public static void Subscribe(LogCallback onLog) 
+        {
+            callbacks.Add(onLog); // This prevents the callback from getting GCed
+            NativeAPI.log_subscribe(onLog);
+        }
+        public static void Unsubscribe(LogCallback onLog)
+        { 
+            callbacks.Remove(onLog);
+            NativeAPI.log_unsubscribe(onLog);
+        }
     }
 }

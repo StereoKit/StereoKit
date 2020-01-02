@@ -371,12 +371,12 @@ int32_t ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_un
 			focus_state = button_state_active;
 			if (!focused)
 				focus_state |= button_state_just_active;
+			if (out_focus_state != nullptr)
+				*out_focus_state = focus_state;
 		} else if (focused) {
-			focus_state = button_state_inactive | button_state_just_inactive;
+			if (out_focus_state != nullptr)
+				*out_focus_state = button_state_inactive | button_state_just_inactive;
 		}
-
-		if (hand == i && out_focus_state != nullptr)
-			*out_focus_state = focus_state;
 	}
 	return hand;
 }
@@ -424,9 +424,13 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 			button_state |= button_state_just_inactive;
 		}
 		finger_offset = fmaxf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset);
-	} else if (focus_state & button_state_just_inactive && skui_hand[hand].active == id) {
-		skui_hand[hand].active = 0;
-		button_state |= button_state_just_inactive;
+	} else if (focus_state & button_state_just_inactive) {
+		for (int32_t i = 0; i < handed_max; i++) {
+			if (skui_hand[i].active == id) {
+				skui_hand[i].active = 0;
+				button_state |= button_state_just_inactive;
+			}
+		}
 	}
 	
 	if (button_state & button_state_just_active)
@@ -706,26 +710,24 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	vec3     box_start = offset + vec3{ 0, 0, skui_settings.depth };
 	vec3     box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
 	bounds_t box       = ui_size_box(box_start, box_size);
-	for (size_t i = 0; i < handed_max; i++) {
-		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
-			if (skui_hand[i].focused_prev != id) {
-				sound_play(skui_snd_interact, skui_hand[i].finger_world, 1);
-			}
-			skui_hand[i].focused = id;
-			color = 1.5f;
-			float new_val = min + fminf(1,fmaxf(0,(fabsf(skui_hand[i].finger.x - offset.x) / size.x))) * (max - min);
-			if (step != 0) {
-				new_val = ((int)(((new_val - min) / step)+0.5f)) * step;
-			}
-			result = value != new_val;
-			value  = new_val;
 
-			if (result && step != 0) {
-				skui_hand[i].active = id;
-				sound_play(skui_snd_interact, skui_hand[i].finger_world, 1);
-			}
-		} else if (skui_hand[i].focused_prev == id) {
-			sound_play(skui_snd_uninteract, skui_hand[i].finger_world, 1);
+	button_state_ focus_state;
+	int32_t hand = ui_box_interaction_1h(id,
+		box_start, box_size,
+		box_start + vec3{ 0.5f,0.5f,0.5f } * cm2m,
+		box_size  + vec3{ 1,1,1 } * cm2m,
+		&focus_state);
+
+	if (hand != -1) {
+		float new_val = min + fminf(1, fmaxf(0, (fabsf(skui_hand[hand].finger.x - offset.x) / size.x))) * (max - min);
+		if (step != 0) {
+			new_val = ((int)(((new_val - min) / step) + 0.5f)) * step;
+		}
+		result = value != new_val;
+		value = new_val;
+
+		if (result && step != 0) {
+			skui_hand[hand].active = id;
 		}
 	}
 
@@ -739,6 +741,11 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_cylinder(vec3{ (offset.x - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4, offset.z}, size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0] * color);
 	ui_cylinder(vec3{ (offset.x+back_size - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4 + back_size, offset.z+mm2m}, size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color);
 	ui_nextline();
+
+	if (focus_state & button_state_just_active)
+		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
+	else if (focus_state & button_state_just_inactive)
+		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
 	
 	return result;
 }

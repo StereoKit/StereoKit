@@ -275,8 +275,10 @@ namespace StereoKit
 
         ///////////////////////////////////////////
             
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_write     (LogLevel level, string text);
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_set_filter(LogLevel level);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_write      (LogLevel level, string text);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_set_filter (LogLevel level);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_subscribe  (LogCallback on_log);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void log_unsubscribe(LogCallback on_log);
 
         ///////////////////////////////////////////
 
