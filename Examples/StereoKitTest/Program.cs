@@ -85,7 +85,14 @@ class Program
 
         RulerWindow();
         LogWindow();
+
+        if (Input.Hand(Handed.Right).IsJustGripped)
+        {
+            Renderer.Screenshot(Input.Head.position, Input.Head.Forward, 1920*2, 1080*2, "Screenshot"+screenshotId+".jpg");
+            screenshotId += 1;
+        }
     }
+    static int screenshotId = 1; 
     static void CommonShutdown()
     {
     }
@@ -119,7 +126,7 @@ class Program
     {
         UI.WindowBegin("Log", ref demoLog, new Vec2(40,0) * Units.cm2m);
         for (int i = 0; i < demoLogList.Count; i++)
-            UI.Label(demoLogList[i]);
+            UI.Label(demoLogList[i], false);
         UI.WindowEnd();
     }
 }

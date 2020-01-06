@@ -170,11 +170,12 @@ void input_hand_state_update(handed_ handedness) {
 	hand.pinch_state = button_state_inactive;
 	hand.grip_state  = button_state_inactive;
 	
+	float grip_dist   = ((7.f * cm2m) * (7.f * cm2m));
 	float finger_dist = 2 * cm2m + hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	bool is_trigger = vec3_magnitude_sq((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) < (finger_dist * finger_dist);
 	bool is_grip =
-		vec3_magnitude_sq((hand.fingers[hand_finger_index ][hand_joint_tip].position - hand.fingers[hand_finger_index ][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m)) &&
-		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < ((4.f * cm2m) * (4.f * cm2m));
+		vec3_magnitude_sq((hand.fingers[hand_finger_pinky ][hand_joint_tip].position - hand.fingers[hand_finger_pinky ][hand_joint_metacarpal].position)) < grip_dist &&
+		vec3_magnitude_sq((hand.fingers[hand_finger_middle][hand_joint_tip].position - hand.fingers[hand_finger_middle][hand_joint_metacarpal].position)) < grip_dist;
 
 	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
 	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
