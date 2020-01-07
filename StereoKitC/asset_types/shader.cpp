@@ -40,7 +40,7 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 #ifdef _DEBUG
 	flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
 #else
-	flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+	flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
 	ID3DBlob *compiled, *errors;

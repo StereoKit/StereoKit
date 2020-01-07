@@ -1,6 +1,7 @@
 ﻿using StereoKit;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace StereoKitTest
 {
@@ -28,7 +29,11 @@ namespace StereoKitTest
         FilePicker hdrPicker     = new FilePicker(new (string, string)[]{("HDR","*.hdr")});
         bool       showPicker    = false;
 
-        public void Initialize() { }
+        public void Initialize() {
+            hdrPicker = new FilePicker(
+                new (string, string)[] { ("HDR", "*.hdr") },
+                Path.GetFullPath(StereoKitApp.settings.assetsFolder));
+        }
         public void Shutdown() { }
         public void Update()
         {

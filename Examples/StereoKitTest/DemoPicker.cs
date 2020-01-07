@@ -1,20 +1,24 @@
 using StereoKit;
+using System.IO;
 
 namespace StereoKitTest
 {
     class DemoPicker : IDemo
     {
-        FilePicker picker = new FilePicker(new (string,string)[]{ 
-            ("GLTF", "*.gltf"),
-            ("GLTF", "*.glb")});
-
         static Model model      = null;
         static float modelScale = 1;
         static float menuScale  = 1;
+        FilePicker picker;
         Pose  modelPose  = new Pose(-.3f,0,0, Quat.LookDir(-Vec3.Forward));
         Pose  menuPose   = new Pose(0.3f,0,0, Quat.LookDir(-Vec3.Forward));
         
-        public void Initialize() { }
+        public void Initialize() {
+            picker = new FilePicker(
+                new (string, string)[]{
+                    ("GLTF", "*.gltf"),
+                    ("GLB",  "*.glb") }, 
+                Path.GetFullPath(StereoKitApp.settings.assetsFolder));
+        }
 
         public void Shutdown() { }
 
@@ -38,7 +42,7 @@ namespace StereoKitTest
 
         private void LoadModel(string filename)
         {
-            model      = Model.FromFile(picker.SelectedFile, Shader.Find(DefaultIds.shaderPbr));
+            model      = Model.FromFile(picker.SelectedFile);
             modelScale = 1 / model.Bounds.dimensions.Magnitude;
         }
     }
