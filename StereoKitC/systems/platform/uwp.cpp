@@ -140,7 +140,7 @@ public:
 		sd.Width       = d3d_screen_width;
 		sd.Height      = d3d_screen_height;
 		sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
-		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		sd.SampleDesc.Count = 1;
 
