@@ -15,7 +15,7 @@ Before we get started, you'll need some software! You may have some of this alre
   - Universal Windows Platform development
   - .NET Core cross-platform development
 - [OpenXR Runtime](https://www.microsoft.com/store/productId/9n5cvvl23qbt) - Install *and enable* this on your desktop and device!
-- [StereoKit's Visual Studio Template](https://github.com/maluoi/StereoKit/raw/master/Documentation/SKTemplates.vsix) - The fastest way to set up a StereoKit project!
+- [StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates) - The fastest way to set up a StereoKit project!
   - You can also directly install the [NuGet package](https://www.nuget.org/packages/StereoKit) into your project of choice.
 
 The source for StereoKit is [available on Github](https://github.com/maluoi/StereoKit) if you're interested in peeking

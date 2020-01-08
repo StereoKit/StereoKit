@@ -32,7 +32,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="SKTemplate_UWP_Name.App">
       <uap:VisualElements
-        DisplayName="SKTemplate_UWP"
+        DisplayName="SKTemplate_UWP_Name"
         Square150x150Logo="Assets\Logo\Logo-150.png"
         Square44x44Logo="Assets\Logo\Logo-44.png"
         Description="SKTemplate_UWP_Name"

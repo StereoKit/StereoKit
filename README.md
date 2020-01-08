@@ -1,10 +1,12 @@
 ![StereoKit Logo](/Documentation/img/StereoKitWide.svg)
 
-A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!
+An easy-to-use mixed reality library for building HoloLens and VR applications with C# and OpenXR!
 
-StereoKit is still early in development, but an initial version is coming soon! Check out [this Twitter thread](https://twitter.com/koujaku/status/1163977987705860097) for development news and gifs.
+The getting started guide [can be found here](https://stereokit.net/Pages/Guides/Getting-Started.html)!
 
-The future of development is coming, and we need better tools! StereoKit aims to be forward thinking in its design, keep its interface simple, take advantage of more modern hardware features common to Mixed Reality devices, and be much easier to use for general computing tasks! (ie. not necessarily games)
+StereoKit is ready to use, but still early in its life! Check out [this Twitter thread](https://twitter.com/koujaku/status/1163977987705860097) for development news and gifs, or check [this blog](https://playdeck.net/project/stereokit) for more substantial updates!
+
+StereoKit is designed to solve issues that occur when using a game engine to create a Mixed Reality application or tool. Game engines are one of the few places you can currently go to get rendering functionality out of the box, but they lack features that would really streamline MR application development!
 
 ![Screenshot](/Documentation/img/SKScreenshot1.jpg)
 
@@ -13,45 +15,38 @@ StereoKit Features:
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Platforms: HoloLens 2, Windows Mixed Reality, eventually everywhere OpenXR is!
-- Less than 10 second total build/deploy/load time for HoloLens 2
-- Input: Hands, Pointers, Keyboard/Mouse
+- Builds your application in seconds, not minutes
+- Input: articulated hands, pointers, keyboard/mouse
 - Physics
-- Easy but powerful UI and Interactions
+- Easy but powerful UI and interactions
 - Performance-by-default render pipeline
 - Flexible shader/material system
-- [Documentation](https://maluoi.github.io/StereoKit) as unit testing
+- All of the [Documentation](https://stereokit.net/) is tested and generated from code, including screenshots
 
 ## Getting started
 
-While StereoKit is still in development, you can totally try it out already! The core is fairly well established, and everything should be fairly easy to use! Check out the [getting started](https://maluoi.github.io/StereoKit/Pages/Guides/Getting-Started.html) guide on the docs site for in-depth documentation, or check out the [demo project](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest) in the repository! But we'll do a quick guide right here too.
+Follow [this guide](https://stereokit.net/Pages/Guides/Getting-Started.html) for a detailed introduction! This repository is the raw source for those who wish to build StereoKit themselves, the Visul Studio templates and the NuGet packages referenced in the guide are how most people should build their applications! 
 
-Setting up to use StereoKit is a simple as installing the [StereoKit Templates](https://github.com/maluoi/StereoKit/raw/master/Documentation/SKTemplates.vsix) for Visual Studio and creating a new StereoKit project! (Some Visual Studio pre-reqs may be needed too, I'll make a list of that later)
-
-Saying hello world after that is pretty trivial, check out the code!
-
-```csharp
-using System;
-using StereoKit;
-
-class Program
-{
-    static void Main(string[] args)
-    {
-        if (!StereoKitApp.Initialize("StereoKit C#", Runtime.MixedReality, true))
-            Environment.Exit(1);
-
-        Model model = new Model("Assets/DamagedHelmet.gltf");
-
-        while (StereoKitApp.Step(() =>
-        {
-            Renderer.Add(model, Matrix.Identity, Color.White);
-        }));
-
-        StereoKitApp.Shutdown();
-    }
-}
-```
-
-Pretty straightforward, right? That'll give you alll of this right away, lighting, hands, everything!
+StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
 ![Hello World](/Documentation/img/StereoKitMin.gif)
+
+## Roadmap
+
+Where is StereoKit going next? That depends on you! What do you need? Is StereoKit missing something that it really should have? File an issue and let us know!
+
+In the short term, StereoKit will focus on the Core API, improving performance, and ensuring all basic features are present and work well! Some basic tooling, things like a visual shader editor might get built here. The Core of StereoKit is an Immediate Mode system that does not provide any framework or application state management.
+
+Long term, we'd love to add StereoKit Framework! Framework is a higher-level layer that manages application state, so more complicated functionality can be taken care of. Features such as automatic multi-user capabilities, component systems, WYSIWYG UI design tools, visual scene editors and code-free design environments will become possible.
+
+## Dependencies
+
+ Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
+
+ - [OpenXR](https://www.khronos.org/openxr/)
+ - DirectX 11
+ - [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
+ - [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
+ - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
+ - [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
+ - [dr_wav](https://mackron.github.io/dr_wav) - wav format support

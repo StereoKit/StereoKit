@@ -17,6 +17,10 @@ $from1 = 'SKTemplate_UWP_Name'
 $to1   = '$safeprojectname$'
 $from2 = 'EB50E752-CF5E-4E7D-B81D-26A67CFCC6F2'
 $to2   = '$guid1$'
+$from3 = 'a1d049e3-609d-456e-a2a3-ea2e06f20b1d'
+$to3   = '$guid2$'
+$from4 = 'CN=niklinge'
+$to4   = 'CN=$username$'
 
 #...Root project folder
 $project = 'SKTemplate_UWP\'
@@ -24,7 +28,7 @@ $out     = $folder+'SKTemplate_UWP\templatized\'
 New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
 Get-ChildItem ($folder+$project+"*.*") | 
 Foreach-Object {
-    ((Get-Content -path $_.FullName -Raw) -replace $from1,$to1 -replace $from2,$to2) | Set-Content -Path ($out+$_.Name)
+    ((Get-Content -path $_.FullName -Raw) -replace $from1,$to1 -replace $from2,$to2 -replace $from3,$to3 -replace $from4,$to4) | Set-Content -Path ($out+$_.Name)
 }
 
 #...Properties folder
