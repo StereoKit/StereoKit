@@ -5,8 +5,8 @@
 // #define SK_NO_LEAP_MOTION
 // #define SK_NO_RUNTIME_SHADER_COMPILE
 
-#define SK_VERSION "0.1.1"
-#define SK_VERSION_ID 0x0000000100010000
+#define SK_VERSION "0.1.2"
+#define SK_VERSION_ID 0x0000000100020000
 //                      MMMMiiiiPPPPrrrr
 // In order of Major.mInor.Patch.pre-Release
 

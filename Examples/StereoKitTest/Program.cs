@@ -86,7 +86,10 @@ class Program
         RulerWindow();
         LogWindow();
 
-        if (Input.Hand(Handed.Right).IsJustGripped)
+        // Take a screenshot on the first frame both hands are gripped
+        BtnState right = Input.Hand(Handed.Right).grip;
+        BtnState left  = Input.Hand(Handed.Left).grip;
+        if (left.IsActive() && right.IsActive() && (left.IsJustActive() || right.IsJustActive()))
         {
             Renderer.Screenshot(Input.Head.position, Input.Head.Forward, 1920*2, 1080*2, "Screenshot"+screenshotId+".jpg");
             screenshotId += 1;
@@ -97,6 +100,10 @@ class Program
     {
     }
 
+    //////////////////
+    // Ruler object //
+    //////////////////
+    
     static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
     static void RulerWindow()
     {
@@ -114,6 +121,10 @@ class Program
         UI.AffordanceEnd();
     }
 
+    //////////////////////
+    // Debug log window //
+    //////////////////////
+    
     static Pose demoLog = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
     static List<string> demoLogList = new List<string>();
     static void OnLog(LogLevel level, string text)
