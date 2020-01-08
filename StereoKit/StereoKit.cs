@@ -33,7 +33,7 @@ namespace StereoKit
         /// <param name="runtimePreference">Which runtime should we try to load?</param>
         /// <param name="fallback">If the preferred runtime fails, should we fall back to flatscreen?</param>
         /// <returns>Returns true if all systems are successfully initialized!</returns>
-        public static bool Initialize(string name, Runtime runtimePreference, bool fallback = true)
+        public static bool Initialize(string name, Runtime runtimePreference = Runtime.MixedReality, bool fallback = true)
         {
             IsInitialized = InitializeCall(name, runtimePreference, fallback);
             return IsInitialized;
