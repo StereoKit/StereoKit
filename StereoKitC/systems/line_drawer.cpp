@@ -71,8 +71,8 @@ void line_ensure_cap(int32_t verts, int32_t inds) {
 
 ///////////////////////////////////////////
 
-void line_add(vec3 start, vec3 end, color32 color, float thickness) {
-	line_addv({start, thickness, color}, {end, thickness, color});
+void line_add(vec3 start, vec3 end, color32 color_start, color32 color_end, float thickness) {
+	line_addv({start, thickness, color_start}, {end, thickness, color_end});
 }
 
 ///////////////////////////////////////////
@@ -113,10 +113,10 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 	line_ensure_cap(count*2, (count-2)*6);
 	thickness *= 0.5f;
 	
-	vec3 prev = hierarchy_to_world_point(points[0]);
-	vec3 dir  = vec3_normalize(hierarchy_to_world_point(points[1]) - prev);
+	vec3 prev = hierarchy_to_world_point(points[1]) - prev;
 	for (int32_t i = 0; i < count; i++) {
 		vec3 curr = hierarchy_to_world_point(points[i]);
+		vec3 dir  = vec3_normalize(curr - prev);
 		line_verts[line_vert_ct + 0] = vert_t{ curr, dir *  thickness, {0,0}, color };
 		line_verts[line_vert_ct + 1] = vert_t{ curr, dir * -thickness, {0,1}, color };
 
@@ -142,12 +142,12 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 	if (count < 2) return;
 	line_ensure_cap(count*2, (count-2)*6);
 	
-	vec3 prev = hierarchy_to_world_point(points[0].pt);
-	vec3 dir  = vec3_normalize(hierarchy_to_world_point(points[1].pt) - prev);
+	vec3 prev = hierarchy_to_world_point(points[1].pt) - prev;
 	for (int32_t i = 0; i < count; i++) {
 		vec3 curr = hierarchy_to_world_point(points[i].pt);
-		line_verts[line_vert_ct + 0] = vert_t{ curr, dir *  points[i].thickness, {0,0}, points[i].color };
-		line_verts[line_vert_ct + 1] = vert_t{ curr, dir * -points[i].thickness, {0,1}, points[i].color };
+		vec3 dir  = vec3_normalize(curr - prev);
+		line_verts[line_vert_ct + 0] = vert_t{ curr, dir *  points[i].thickness * 0.5f, {0,0}, points[i].color };
+		line_verts[line_vert_ct + 1] = vert_t{ curr, dir * -points[i].thickness * 0.5f, {0,1}, points[i].color };
 
 		if (i < count - 1) {
 			line_inds[line_ind_ct++] = line_vert_ct + 0;
@@ -156,8 +156,6 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 			line_inds[line_ind_ct++] = line_vert_ct + 0;
 			line_inds[line_ind_ct++] = line_vert_ct + 3;
 			line_inds[line_ind_ct++] = line_vert_ct + 1;
-
-			dir = vec3_normalize(curr - prev);
 		}
 
 		line_vert_ct += 2;

@@ -220,10 +220,10 @@ namespace StereoKit
 
         ///////////////////////////////////////////
 
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add(Vec3 start, Vec3 end, Color32 color, float thickness);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add(Vec3 start, Vec3 end, Color32 color_start, Color32 color_end, float thickness);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_addv(line_point_t start, line_point_t end);
         //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add_list(const Vec3* points, int count, Color32 color, float thickness);
-        //[DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add_listv(const line_point_t* points, int32_t count);
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)] public static extern void line_add_listv([In] LinePoint[] points, int count);
 
         ///////////////////////////////////////////
 

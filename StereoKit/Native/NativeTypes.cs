@@ -283,6 +283,26 @@ namespace StereoKit
         Single
     }
 
+    /// <summary>Used to represent lines for the line drawing functions! This is just a snapshot of
+    /// information about each individual point on a line.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LinePoint
+    {
+        /// <summary>Location of the line point</summary>
+        public Vec3    pt;
+        /// <summary>Total thickness of the line, in meters.</summary>
+        public float   thickness;
+        /// <summary>The vertex color for the line at this position.</summary>
+        public Color32 color;
+
+        public LinePoint(Vec3 point, Color32 color, float thickness)
+        {
+            this.pt        = point;
+            this.thickness = thickness;
+            this.color     = color;
+        }
+    }
+
     /// <summary>What type of device is the source of the pointer? This is a bit-flag that can 
     /// contain some input source family information.</summary>
     [Flags]

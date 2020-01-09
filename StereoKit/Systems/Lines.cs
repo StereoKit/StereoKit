@@ -15,7 +15,16 @@ namespace StereoKit
         /// <param name="color">Color for the line, this is embedded in the vertex color of the line.</param>
         /// <param name="thickness">Thickness of the line in meters.</param>
         public static void Add(Vec3 start, Vec3 end, Color32 color, float thickness)
-            =>NativeAPI.line_add(start, end, color, thickness);
+            =>NativeAPI.line_add(start, end, color, color, thickness);
+
+        /// <summary>Adds a line to the environment for the current frame.</summary>
+        /// <param name="start">Starting point of the line.</param>
+        /// <param name="end">End point of the line.</param>
+        /// <param name="colorStart">Color for the start of the line, this is embedded in the vertex color of the line.</param>
+        /// <param name="colorEnd">Color for the end of the line, this is embedded in the vertex color of the line.</param>
+        /// <param name="thickness">Thickness of the line in meters.</param>
+        public static void Add(Vec3 start, Vec3 end, Color32 colorStart, Color32 colorEnd, float thickness)
+            => NativeAPI.line_add(start, end, colorStart, colorEnd, thickness);
 
         /// <summary>Adds a line based on a ray to the environment for the current frame.</summary>
         /// <param name="ray">The ray we want to visualize!</param>
@@ -23,7 +32,10 @@ namespace StereoKit
         /// <param name="color">Color for the line, this is embedded in the vertex color of the line.</param>
         /// <param name="thickness">Thickness of the line in meters.</param>
         public static void Add(Ray ray, float length, Color32 color, float thickness)
-            => NativeAPI.line_add(ray.position, ray.position+ray.direction*length, color, thickness);
+            => NativeAPI.line_add(ray.position, ray.position+ray.direction*length, color, color, thickness);
+
+        public static void Add(in LinePoint[] points)
+            => NativeAPI.line_add_listv(points, points.Length);
 
         /// <summary>Displays an RGB/XYZ axis widget at the pose! Note that this draws lines
         /// along 'Forward' vectors for each axis, not necessarily in the axis positive direction.</summary>
