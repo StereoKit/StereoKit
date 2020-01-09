@@ -339,6 +339,12 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 
 ///////////////////////////////////////////
 
+tex_format_ tex_get_format(tex_t texture) {
+	return texture->format;
+}
+
+///////////////////////////////////////////
+
 int32_t tex_get_width(tex_t texture) {
 	return texture->width;
 }

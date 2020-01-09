@@ -20,6 +20,8 @@ namespace StereoKit
         public int Width => NativeAPI.tex_get_width(_inst);
         /// <summary> The height of the texture, in pixels. </summary>
         public int Height => NativeAPI.tex_get_height(_inst);
+        /// <summary> The StereoKit format this texture was initialized with.</summary>
+        public TexFormat Format => NativeAPI.tex_get_format(_inst);
 
         /// <summary>When looking at a UV texture coordinate on this texture, how do we handle values larger
         /// than 1, or less than zero? Do we Wrap to the other side? Clamp it between 0-1, or just keep
@@ -63,6 +65,29 @@ namespace StereoKit
                 NativeAPI.tex_release(_inst);
         }
 
+        #endregion
+
+        #region Methods
+        void SetColors(int width, int height, IntPtr data)
+            => NativeAPI.tex_set_colors(_inst, width, height, data);
+        void SetColors(int width, int height, in Color32[] data)
+        {
+            if (Format != TexFormat.Rgba32 && Format != TexFormat.Rgba32Linear)
+            { 
+                Log.Err("Can't set a {0} format texture from Color32 data!", Format);
+                return;
+            }
+            NativeAPI.tex_set_colors(_inst, width, height, data);
+        }
+        void SetColors(int width, int height, in Color[] data)
+        {
+            if (Format != TexFormat.Rgba128)
+            {
+                Log.Err("Can't set a {0} format texture from Color data!", Format);
+                return;
+            }
+            NativeAPI.tex_set_colors(_inst, width, height, data);
+        }
         #endregion
 
         #region Static Methods
