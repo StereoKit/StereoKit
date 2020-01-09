@@ -491,6 +491,7 @@ bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherica
 void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_format) {
 	tex_releasesurface(texture);
 	texture->texture = source;
+	source->AddRef();
 
 	int old_width  = texture->width;
 	int old_height = texture->height;
