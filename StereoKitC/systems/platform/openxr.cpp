@@ -146,13 +146,13 @@ bool openxr_init(const char *app_name) {
 	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
 	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
-	xrCreateInstance(&createInfo, &xr_instance);
+	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
 
 	free(extensions);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
-	if (xr_instance == XR_NULL_HANDLE) {
+	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
 		log_info("Couldn't create OpenXR instance, is OpenXR installed and set as the active runtime?");
 		return false;
 	}
@@ -160,21 +160,34 @@ bool openxr_init(const char *app_name) {
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	systemInfo.formFactor = app_config_form;
-	xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	if (XR_FAILED(result)) {
+		log_info("xrGetSystem failed");
+		return false;
+	}
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this must be called before xrCreateSession
 	// TODO: Figure out how to make sure we're using the correct LUID, and get it to the d3d device before initialization >.<
 	// see here for reference: https://github.com/microsoft/OpenXR-SDK-VisualStudio/blob/fce13c538839a7c1f185595d6490e8d227741356/samples/BasicXrApp/DxUtility.cpp#L22
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
-	xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
+	result = xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
+	if (XR_FAILED(result)) {
+		log_info("xrGetD3D11GraphicsRequirementsKHR failed");
+		return false;
+	}
 
 	// Check what blend mode is valid for this device (opaque vs transparent displays)
 	// We'll just take the first one available!
 	uint32_t                       blend_count = 0;
 	vector<XrEnvironmentBlendMode> blend_modes;
-	xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, 0, &blend_count, nullptr);
+	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, 0, &blend_count, nullptr);
 	blend_modes.resize(blend_count);
-	xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, blend_count, &blend_count, blend_modes.data());
+	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, blend_count, &blend_count, blend_modes.data());
+	if (XR_FAILED(result)) {
+		log_info("xrEnumerateEnvironmentBlendModes failed");
+		return false;
+	}
+
 	for (size_t i = 0; i < blend_count; i++) {
 		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
@@ -183,7 +196,7 @@ bool openxr_init(const char *app_name) {
 			break;
 		}
 	}
-
+	
 	// register dispay type with the system
 	switch (xr_blend) {
 	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE: {
@@ -207,7 +220,7 @@ bool openxr_init(const char *app_name) {
 	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
-	if (xr_session == XR_NULL_HANDLE) {
+	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_info("Couldn't create an OpenXR session, no MR device attached/ready?");
 		return false;
 	}
@@ -218,12 +231,20 @@ bool openxr_init(const char *app_name) {
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	ref_space.referenceSpaceType   = xr_refspace;
-	xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
+	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
+	if (XR_FAILED(result)) {
+		log_info("xrCreateReferenceSpace failed");
+		return false;
+	}
 
 	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
-	xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
+	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
+	if (XR_FAILED(result)) {
+		log_info("xrCreateReferenceSpace failed");
+		return false;
+	}
 	
 	// Get the surface format information before we create surfaces!
 	DXGI_FORMAT color_format;
@@ -238,13 +259,17 @@ bool openxr_init(const char *app_name) {
 	xr_views       .resize(view_count, { XR_TYPE_VIEW });
 	xr_viewpt_view .resize(view_count, { });
 	xr_viewpt_proj .resize(view_count, { });
-	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, view_count, &view_count, xr_config_views.data());
+	result = xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, view_count, &view_count, xr_config_views.data());
+	if (XR_FAILED(result)) {
+		log_info("xrEnumerateViewConfigurationViews failed");
+		return false;
+	}
 
 	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
 	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
 	XrViewConfigurationView &view           = xr_config_views[0];
 	XrSwapchainCreateInfo    swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
-	XrSwapchain              handle;
+	XrSwapchain              handle         = {};
 	swapchain_info.arraySize   = view_count;
 	swapchain_info.mipCount    = 1;
 	swapchain_info.faceCount   = 1;
@@ -252,8 +277,12 @@ bool openxr_init(const char *app_name) {
 	swapchain_info.width       = view.recommendedImageRectWidth;
 	swapchain_info.height      = view.recommendedImageRectHeight;
 	swapchain_info.sampleCount = view.recommendedSwapchainSampleCount;
-	swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-	xrCreateSwapchain(xr_session, &swapchain_info, &handle);
+	swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+	result = xrCreateSwapchain(xr_session, &swapchain_info, &handle);
+	if (XR_FAILED(result)) {
+		log_info("xrCreateSwapchain failed");
+		return false;
+	}
 
 	// Find out how many textures were generated for the swapchain
 	uint32_t surface_count = 0;
@@ -267,7 +296,12 @@ bool openxr_init(const char *app_name) {
 	xr_swapchains.handle = handle;
 	xr_swapchains.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
 	xr_swapchains.surface_data  .resize(surface_count, {});
-	xrEnumerateSwapchainImages(xr_swapchains.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)xr_swapchains.surface_images.data());
+	result = xrEnumerateSwapchainImages(xr_swapchains.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)xr_swapchains.surface_images.data());
+	if (XR_FAILED(result)) {
+		log_info("xrEnumerateSwapchainImages failed");
+		return false;
+	}
+
 	for (uint32_t s = 0; s < surface_count; s++) {
 		char name[64];
 		sprintf_s(name, 64, "stereokit/system/rendertarget_%d", s);
