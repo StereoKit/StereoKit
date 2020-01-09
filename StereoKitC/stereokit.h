@@ -5,10 +5,10 @@
 // #define SK_NO_LEAP_MOTION
 // #define SK_NO_RUNTIME_SHADER_COMPILE
 
-#define SK_VERSION "0.1.2"
-#define SK_VERSION_ID 0x0000000100020000
-//                      MMMMiiiiPPPPrrrr
-// In order of Major.mInor.Patch.pre-Release
+#define SK_VERSION_MAJOR 0
+#define SK_VERSION_MINOR 1
+#define SK_VERSION_PATCH 2
+#define SK_VERSION_PRERELEASE 0
 
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)
@@ -686,3 +686,20 @@ SK_API void log_subscribe  (void (*on_log)(log_, const char*));
 SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
 
 } // namespace sk
+
+///////////////////////////////////////////
+// Tools for creating the version information
+
+#define SK_STR2(x) #x
+#define SK_STR(x) SK_STR2(x)
+
+  // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
+#if SK_VERSION_PRERELEASE != 0
+#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-rc" SK_STR(SK_VERSION_PRERELEASE))
+#else
+#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
+#endif
+
+  // A version in hex looks like: 0xMMMMiiiiPPPPrrrr
+  // In order of Major.mInor.Patch.pre-Release
+#define SK_VERSION_ID ( ((uint64_t)SK_VERSION_MAJOR << 48) | ((uint64_t)SK_VERSION_MINOR << 32) | ((uint64_t)SK_VERSION_PATCH << 16) | (uint64_t)(SK_VERSION_PRERELEASE) )

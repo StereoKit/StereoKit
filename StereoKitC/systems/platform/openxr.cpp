@@ -134,14 +134,11 @@ bool openxr_init(const char *app_name) {
 	createInfo.enabledExtensionNames = extensions;
 	createInfo.applicationInfo.applicationVersion = 1;
 
-	// Translate from 64 bit 0xMMMMiiiiPPPPrrrr to 0xMMMiiPPP
-	uint32_t major = (SK_VERSION_ID & 0xFFFF000000000000) >> 48;
-	uint32_t minor = (SK_VERSION_ID & 0x0000FFFF00000000) >> 32;
-	uint32_t patch = (SK_VERSION_ID & 0x00000000FFFF0000) >> 16;
+	// Use a version Id formatted as 0xMMMiiPPP
 	createInfo.applicationInfo.engineVersion = 
-		(major << 20)              |
-		(minor << 12 & 0x000FF000) |
-		(patch & 0x00000FFF);
+		(SK_VERSION_MAJOR << 20)              |
+		(SK_VERSION_MINOR << 12 & 0x000FF000) |
+		(SK_VERSION_PATCH & 0x00000FFF);
 
 	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
