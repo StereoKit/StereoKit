@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StereoKit" Version="[0.1,1.0)" /> <!--Match any version before 1.0-->
+    <PackageReference Include="StereoKit" Version="[0.*,1.0)" /> <!--Match any version before 1.0-->
   </ItemGroup>
 
 </Project>

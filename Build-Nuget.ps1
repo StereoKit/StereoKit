@@ -1,5 +1,5 @@
 param(
-    [switch]$upload = $false,
+    [switch]$noupload = $false,
     [string]$key = ''
 )
 
@@ -77,13 +77,6 @@ Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packa
 Write-Output "Finished building: X64"
 
 if (-not $upload) {
-    $confirmation = Read-Host "Would you like to upload the package? [y/n]"
-    if ($confirmation -eq 'y') {
-        $upload = $true
-    }
-}
-
-if ($upload) {
     $key = Get-Key
     if ($key -ne '') {
         & dotnet nuget push "bin\StereoKit.$version.nupkg" -k $key -s https://api.nuget.org/v3/index.json
