@@ -68,9 +68,9 @@ namespace StereoKit
         #endregion
 
         #region Methods
-        void SetColors(int width, int height, IntPtr data)
+        public void SetColors(int width, int height, IntPtr data)
             => NativeAPI.tex_set_colors(_inst, width, height, data);
-        void SetColors(int width, int height, in Color32[] data)
+        public void SetColors(int width, int height, in Color32[] data)
         {
             if (Format != TexFormat.Rgba32 && Format != TexFormat.Rgba32Linear)
             { 
@@ -79,7 +79,7 @@ namespace StereoKit
             }
             NativeAPI.tex_set_colors(_inst, width, height, data);
         }
-        void SetColors(int width, int height, in Color[] data)
+        public void SetColors(int width, int height, in Color[] data)
         {
             if (Format != TexFormat.Rgba128)
             {

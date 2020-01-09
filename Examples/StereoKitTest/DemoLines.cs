@@ -1,6 +1,4 @@
-﻿
-
-using StereoKit;
+﻿using StereoKit;
 using System;
 using System.Collections.Generic;
 
