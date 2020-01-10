@@ -8,6 +8,7 @@
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/input_hand.h"
+#include "../../systems/input_leap.h"
 #include "../../asset_types/texture.h"
 
 #define XR_USE_PLATFORM_WIN32
@@ -317,6 +318,10 @@ bool openxr_init(const char *app_name) {
 		xr_interaction_manager = SpatialInteractionManager::GetForCurrentView();
 		xr_hand_support        = xr_interaction_manager.IsSourceKindSupported(SpatialInteractionSourceKind::Hand);
 	});
+#else	
+#ifndef SK_NO_LEAP_MOTION
+	xr_hand_support = input_leap_init();
+#endif
 #endif
 
 	return true;
@@ -324,10 +329,9 @@ bool openxr_init(const char *app_name) {
 
 
 void uwp_update_hands(XrTime prediction, bool update_mesh) {
-#if WINDOWS_UWP
 	if (!xr_hand_support)
 		return;
-
+#if WINDOWS_UWP
 	// Convert the time we're given into a format that Windows likes
 	LARGE_INTEGER time;
 	xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, prediction, &time);
@@ -396,6 +400,17 @@ void uwp_update_hands(XrTime prediction, bool update_mesh) {
 			log_warn("Couldn't get hand joints!");
 		}
 	}
+#else
+#ifndef SK_NO_LEAP_MOTION
+	if (xr_hand_support && leap_has_device) {
+		input_leap_update();
+
+		if (update_mesh) {
+			input_hand_update_mesh(handed_left);
+			input_hand_update_mesh(handed_right);
+		}
+	}
+#endif
 #endif
 }
 
@@ -558,6 +573,14 @@ void openxr_shutdown() {
 	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
 	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
+
+#if WINDOWS_UWP
+#else
+#ifndef SK_NO_LEAP_MOTION
+	if (xr_hand_support)
+		input_leap_shutdown();
+#endif
+#endif
 }
 
 ///////////////////////////////////////////

@@ -5,10 +5,11 @@
 namespace sk {
 
 extern bool leap_has_device;
+extern bool leap_lock;
 
 bool input_leap_init();
 void input_leap_shutdown();
-void input_leap_update();
+bool input_leap_update();
 
 } // namespace sk
 

@@ -12,7 +12,6 @@
 #include "uwp.h"
 #include "../input.h"
 #include "../input_hand.h"
-#include "../input_leap.h"
 #include "../render.h"
 #include "../d3d.h"
 
@@ -24,7 +23,6 @@ namespace sk {
 ///////////////////////////////////////////
 
 int   win32_input_pointers[2];
-bool  win32_use_leap    = true;
 float win32_hand_scroll = 0;
 
 ///////////////////////////////////////////
@@ -38,20 +36,12 @@ void win32_input_init() {
 	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
-#ifndef SK_NO_LEAP_MOTION
-	win32_use_leap = input_leap_init();
-#endif
-
 	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero)));
 }
 
 ///////////////////////////////////////////
 
 void win32_input_shutdown() {
-#ifndef SK_NO_LEAP_MOTION
-	if (win32_use_leap)
-		input_leap_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -72,16 +62,7 @@ void win32_input_update() {
 #endif
 
 	win32_mouse_update();
-
-#ifndef SK_NO_LEAP_MOTION
-	if (win32_use_leap && leap_has_device) {
-		input_leap_update();
-	} else {
-		win32_mouse_hand();
-	}
-#else
 	win32_mouse_hand();
-#endif
 
 	pointer_t   *pointer_head = input_get_pointer(win32_input_pointers[1]);
 	pose_t       head         = input_head();
