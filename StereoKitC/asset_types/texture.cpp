@@ -588,7 +588,7 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	switch (format) {
 	case tex_format_rgba32:        return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	case tex_format_rgba32_linear: return DXGI_FORMAT_R8G8B8A8_UNORM;
-	case tex_format_rgba64:        return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case tex_format_rgba64:        return DXGI_FORMAT_R16G16B16A16_UNORM;
 	case tex_format_rgba128:       return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case tex_format_depth32:       return DXGI_FORMAT_D32_FLOAT;
 	case tex_format_depth16:       return DXGI_FORMAT_D16_UNORM;
