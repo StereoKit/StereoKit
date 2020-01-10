@@ -31,11 +31,20 @@ namespace StereoKitTest
             /// :End:
             Hierarchy.Pop();
 
+            Pose p = new Pose(Vec3.Zero, Quat.Identity);
+            UI.WindowBegin("Settings", ref p, new Vec2(1,0));
+            if (UI.Button("Clear")) {
+                drawList.Clear();
+                drawPoints.Clear();
+            }
+            UI.WindowEnd();
+
             Draw(Handed.Right);
         }
 
         Vec3 prevTip;
         List<LinePoint> drawPoints = new List<LinePoint>();
+        List<LinePoint[]> drawList = new List<LinePoint[]>();
         void Draw(Handed handed)
         {
             Hand hand = Input.Hand(handed);
@@ -45,13 +54,15 @@ namespace StereoKitTest
             const float minDist = 2 * Units.cm2m;
 
             if (hand.IsJustPinched) { 
+                if (drawPoints.Count > 0)
+                    drawList.Add(drawPoints.ToArray());
                 drawPoints.Clear();
                 drawPoints.Add(new LinePoint(tip, Color.White, size));
                 drawPoints.Add(new LinePoint(tip, Color.White, size));
                 prevTip = tip;
             }
 
-            if (hand.IsPinched)
+            if (hand.IsPinched && drawPoints.Count > 1)
             {
                 Vec3  prev  = drawPoints[drawPoints.Count - 2].pt;
                 Vec3  dir   = (prev - (drawPoints.Count > 2 ? drawPoints[drawPoints.Count - 3].pt : drawPoints[drawPoints.Count - 1].pt)).Normalized();
@@ -60,12 +71,14 @@ namespace StereoKitTest
                 LinePoint here = new LinePoint(tip, Color.White, Math.Max(1-speed/0.0003f,0.1f) * size);
                 drawPoints[drawPoints.Count - 1]  = here;
                 
-                if ((Vec3.Dot( dir, (tip-prev).Normalized() ) < 0.99f && dist > 0.005f) || dist > 0.3f) { 
+                if ((Vec3.Dot( dir, (tip-prev).Normalized() ) < 0.99f && dist > 0.01f) || dist > 0.05f) { 
                     drawPoints.Add(here);
                 }
             }
 
             Lines.Add(drawPoints.ToArray());
+            for (int i = 0; i < drawList.Count; i++)
+                Lines.Add(drawList[i]);
             prevTip = tip;
         }
     }
