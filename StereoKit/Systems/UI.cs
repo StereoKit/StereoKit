@@ -22,6 +22,12 @@ namespace StereoKit
         /// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
         public static float      LineHeight => NativeAPI.ui_line_height();
 
+        /// <summary>How much space is available on the current layout! This is based on the current
+        /// layout position, so X will give you the amount remaining on the current line, and Y will
+        /// give you distance to the bottom of the layout, including the current line. These values
+        /// will be 0 if you're using 0 for the layout size on that axis.</summary>
+        public static Vec2       AreaRemaining => NativeAPI.ui_area_remaining();
+
         /// <summary>Manually define what area is used for the UI layout. This is in
         /// the current Hierarchy's coordinate space on the X/Y plane.</summary>
         /// <param name="start">The top left of the layout area, relative to the current Hierarchy in local meters.</param>
@@ -51,6 +57,13 @@ namespace StereoKit
         /// <param name="space">Physical space to shift the layout by.</param>
         public static void Space (float space) 
             => NativeAPI.ui_space(space);
+
+        /// <summary>An invisible volume that will trigger when a finger enters it!</summary>
+        /// <param name="id">A per-window unique id for tracking element state.</param>
+        /// <param name="bounds">Size and position of the volume, relative to the current Hierarchy.</param>
+        /// <returns>True on the first frame a finger has entered the volume, false otherwise.</returns>
+        public static bool VolumeAt(string id, Bounds bounds)
+            => NativeAPI.ui_volume_at(id, bounds);
 
         /// <summary>Adds some text to the layout! Text uses the UI's current font settings 
         /// (which are currently not exposed). Can contain newlines! May have trouble with

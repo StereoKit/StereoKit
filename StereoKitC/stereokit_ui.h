@@ -16,6 +16,7 @@ SK_API void     ui_settings (ui_settings_t settings);
 SK_API void     ui_set_color(color128 color);
 
 SK_API void     ui_layout_area (vec3 start, vec2 dimensions);
+SK_API vec2     ui_area_remaining();
 SK_API void     ui_nextline    ();
 SK_API void     ui_sameline    ();
 SK_API float    ui_line_height ();
@@ -25,6 +26,7 @@ SK_API uint64_t ui_push_id     (const char *id);
 SK_API void     ui_pop_id      ();
 
 SK_API void     ui_model_at    (model_t model, vec3 start, vec3 size, color128 color);
+SK_API bool32_t ui_volume_at   (const char *id, bounds_t bounds);
 
 SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
 SK_API void     ui_image       (sprite_t image, vec2 size);

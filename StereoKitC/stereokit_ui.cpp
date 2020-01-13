@@ -283,6 +283,16 @@ void ui_layout_area(vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
+vec2 ui_area_remaining() {
+	layer_t &layer = skui_layers.back();
+	return vec2{
+		fmaxf(0, layer.size.x - layer.offset.x),
+		fmaxf(0, layer.size.y - layer.offset.y)
+	};
+}
+
+///////////////////////////////////////////
+
 void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding) {
 	out_position   = skui_layers.back().offset;
 	out_final_size = content_size;
@@ -463,6 +473,29 @@ void ui_cylinder(vec3 start, float radius, float depth, material_t material, col
 void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 	matrix mx = matrix_trs(start, quat_identity, size);
 	render_add_model(model, mx, color);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_volume_at(const char *id, bounds_t bounds) {
+	uint64_t id_hash = ui_stack_hash(id);
+	bool     result  = false;
+
+	for (int32_t i = 0; i < handed_max; i++) {
+		bool     was_focused = skui_hand[i].focused_prev == id_hash;
+		bounds_t size        = bounds;
+		if (was_focused) {
+			size.dimensions = bounds.dimensions + vec3_one*skui_settings.padding;
+		}
+
+		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, size)) {
+			skui_hand[i].focused = id_hash;
+			if (!was_focused)
+				result = true;
+		}
+	}
+
+	return result;
 }
 
 ///////////////////////////////////////////
