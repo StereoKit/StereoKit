@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoDocDebug : IDemo
+class DocDebug : IDemo
 {
     public void Initialize()
     {

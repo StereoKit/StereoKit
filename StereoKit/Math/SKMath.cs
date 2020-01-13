@@ -24,5 +24,8 @@ namespace StereoKit
         /// <summary>Same as Math.Sqrt</summary>
         /// <returns>Same as Math.Sqrt</returns>
         public static float Sqrt(float f) => (float)Math.Sqrt(f);
+        /// <summary>Same as Math.Exp</summary>
+        /// <returns>Same as Math.Exp</returns>
+        public static float Exp(float f) => (float)Math.Exp(f);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -75,6 +76,17 @@ namespace StereoKit
         public static Vec3 operator -(Vec3 a)          { return new Vec3(-a.x, -a.y, -a.z); }
         public static Vec3 operator *(Vec3 a, float b) { return new Vec3(a.x * b, a.y * b, a.z * b); }
         public static Vec3 operator /(Vec3 a, float b) { return new Vec3(a.x / b, a.y / b, a.z / b); }
+
+        /// <summary>Blends (Linear Interpolation) between two vectors, based on a 'blend' value,
+        /// where 0 is a, and 1 is b. Doesn't clamp percent for you.</summary>
+        /// <param name="a">First item in the blend, or '0.0' blend.</param>
+        /// <param name="b">Second item in the blend, or '1.0' blend.</param>
+        /// <param name="blend">A blend value between 0 and 1. Can be outside this range, it'll just
+        /// interpolate outside of the a, b range.</param>
+        /// <returns>An unclamped blend of a and b.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vec3 Lerp(in Vec3 a, in Vec3 b, float blend)
+            => a+(b-a)*blend;
 
         /// <summary>Calculates the distance between two points in space! Make sure they're in the
         /// same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.</summary>
