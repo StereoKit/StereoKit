@@ -83,7 +83,7 @@ namespace StereoKit
         /// <returns>Distance between the two points.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Distance(in Vec3 a, in Vec3 b)
-            => SKMath.Sqrt(a.x*b.x + a.y*b.y + a.z*b.z);
+            {Vec3 d = b-a; return SKMath.Sqrt(d.x*d.x + d.y*d.y + d.z*d.z);}
 
         /// <summary>Calculates the distance between two points in space, but leaves them squared! Make 
         /// sure they're in the same coordinate space! This is a fast function :)</summary>
@@ -92,7 +92,8 @@ namespace StereoKit
         /// <returns>Distance between the two points, but squared!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DistanceSq(in Vec3 a, in Vec3 b)
-            => a.x*b.x + a.y*b.y + a.z*b.z;
+            {Vec3 d = b - a; return d.x*d.x + d.y*d.y + d.z*d.z;}
+    
 
         /// <summary>The dot product is an extremely useful operation! One major use is to determine
         /// how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then 
