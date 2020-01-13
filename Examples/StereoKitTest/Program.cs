@@ -72,8 +72,13 @@ class Program
         UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));
         for (int i = 0; i < Demos.Count; i++)
         {
-            // Chop off the "Demo" part of any demo name that has it
             string name = Demos.GetName(i);
+
+            // No Doc demos
+            if (name.StartsWith("Doc"))
+                continue;
+
+            // Chop off the "Demo" part of any demo name that has it
             if (name.StartsWith("Demo"))
                 name = name.Substring("Demo".Length);
 
