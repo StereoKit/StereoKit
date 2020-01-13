@@ -6,7 +6,7 @@ description: Create a text style for use with other text functions! A text style
 # [Text]({{site.url}}/Pages/Reference/Text.html).MakeStyle
 
 <div class='signature' markdown='1'>
-static void MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Material]({{site.url}}/Pages/Reference/Material.html) material, [Color32]({{site.url}}/Pages/Reference/Color32.html) color)
+static TextStyle MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Material]({{site.url}}/Pages/Reference/Material.html) material, [Color32]({{site.url}}/Pages/Reference/Color32.html) color)
 </div>
 
 |  |  |
