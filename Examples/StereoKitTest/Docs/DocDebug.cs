@@ -30,7 +30,7 @@ class DocDebug : IDemo
             Log.Err("Oh no! Frame time (<~red>{0}<~clr>) has exceeded 17ms! There's no way we'll hit even 60 frames per second!", Time.Elapsedf);
         /// :End:
 
-        /// :CodeSample: Log.Subscribe Log.Unsubscribe
+        /// :CodeSample: Log.Unsubscribe
         LogCallback onLog = (LogLevel level, string logText) 
             => Console.WriteLine(logText);
 

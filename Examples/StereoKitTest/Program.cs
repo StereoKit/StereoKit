@@ -15,6 +15,36 @@ class Program
     static Solid  floorSolid;
     static Pose   demoSelectPose = new Pose();
 
+    //////////////////////
+    // Debug log window //
+    //////////////////////
+
+    /// :CodeSample: Log.Subscribe Log
+    /// ### An in-application log window
+    /// Here's an example of using the Log.Subscribe method to build a 
+    /// simple logging window. This can be pretty handy to have around 
+    /// somewhere in your application!
+    /// 
+    /// Here's the code for the window, and log tracking.
+    static Pose         demoLog     = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+    static List<string> demoLogList = new List<string>();
+    static void OnLog(LogLevel level, string text)
+    {
+        if (demoLogList.Count > 10)
+            demoLogList.RemoveAt(demoLogList.Count - 1);
+        demoLogList.Insert(0, text);
+    }
+    static void LogWindow()
+    {
+        UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * Units.cm2m);
+        for (int i = 0; i < demoLogList.Count; i++)
+            UI.Label(demoLogList[i], false);
+        UI.WindowEnd();
+    }
+    /// :End:
+
+    //////////////////////
+
     static void Main(string[] args) 
     {
         Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
@@ -43,7 +73,11 @@ class Program
 
     static void CommonInit()
     {
+        /// :CodeSample: Log.Subscribe Log
+        /// Then you add the OnLog method into the log events like this in your initialization
+        /// code!
         Log.Subscribe(OnLog);
+        /// :End:
 
         Material floorMat = Material.Copy(DefaultIds.material);
         floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
@@ -89,7 +123,11 @@ class Program
         UI.WindowEnd();
 
         RulerWindow();
+        /// :CodeSample: Log.Subscribe Log
+        /// And in your Update loop, you can draw the window.
         LogWindow();
+        /// And that's it!
+        /// :End:
 
         // Take a screenshot on the first frame both hands are gripped
         BtnState right = Input.Hand(Handed.Right).grip;
@@ -124,25 +162,5 @@ class Program
                 Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f) * Units.cm2m, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
         }
         UI.AffordanceEnd();
-    }
-
-    //////////////////////
-    // Debug log window //
-    //////////////////////
-    
-    static Pose demoLog = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-    static List<string> demoLogList = new List<string>();
-    static void OnLog(LogLevel level, string text)
-    {
-        if (demoLogList.Count > 10)
-            demoLogList.RemoveAt(demoLogList.Count-1);
-        demoLogList.Insert(0, text);
-    }
-    static void LogWindow()
-    {
-        UI.WindowBegin("Log", ref demoLog, new Vec2(40,0) * Units.cm2m);
-        for (int i = 0; i < demoLogList.Count; i++)
-            UI.Label(demoLogList[i], false);
-        UI.WindowEnd();
     }
 }
