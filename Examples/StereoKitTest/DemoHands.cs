@@ -133,10 +133,10 @@ namespace StereoKitTest
                 if (!hand.IsTracked)
                     continue;
 
-                for (int f = 0; f < 5; f++) {
-                for (int j = 0; j < 5; j++) {
-                    Lines.AddAxis(hand[f, j].Pose);
-                } }
+                for (int finger = 0; finger < 5; finger++) {
+                for (int joint  = 0; joint  < 5; joint++ ) {
+                    Lines.AddAxis(hand[finger, joint].Pose);
+                }}
                 Lines.AddAxis(hand.palm);
             }
         }
@@ -148,10 +148,10 @@ namespace StereoKitTest
                 if (!hand.IsTracked)
                     continue;
 
-                for (int f = 0; f < 5; f++) {
-                for (int j = 0; j < 5; j++) {
-                    HandJoint joint = hand[f, j];
-                    jointMesh.Draw(jointMaterial, Matrix.TRS( joint.position, joint.orientation, joint.radius/2));
+                for (int finger = 0; finger < 5; finger++) {
+                for (int joint  = 0; joint  < 5; joint++ ) {
+                    HandJoint current = hand[finger, joint];
+                    jointMesh.Draw(jointMaterial, Matrix.TRS(current.position, current.orientation, current.radius/2));
                 } }
             }
         }

@@ -2,12 +2,29 @@
 
 class DemoText : IDemo
 {
-    public void Initialize() { }
+    TextAlign align       = TextAlign.YTop | TextAlign.XLeft;
+    Pose      alignWindow = new Pose(0.4f, 0, 0, Quat.LookDir(-1, 0, 1));
+
+    /// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
+    /// ### Drawing text with and without a TextStyle
+    /// ![Basic text]({{site.url}}/img/screenshots/BasicText.jpg)
+    /// We can use a TextStyle object to control how text gets displayed!
+    TextStyle style;
+    /// :End:
+    
+    public void Initialize() {
+        /// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
+        /// In initialization, we can create the style from a font, a size, a 
+        /// material, and a base color.
+        style = Text.MakeStyle(
+            Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
+            3 * Units.cm2m,
+            Material.Copy(DefaultIds.materialFont), 
+            Color.HSV(0.05f, 0.7f, 0.8f));
+        /// :End:
+    }
 
     public void Shutdown() { }
-
-    TextAlign align = TextAlign.YTop | TextAlign.XLeft;
-    Pose alignWindow = new Pose(0.25f, 0, 0, Quat.LookDir(-1,0,1));
 
     public void Update()
     {
@@ -36,8 +53,25 @@ class DemoText : IDemo
         Text.Add("Y Bottom", Matrix.TRS(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.YBottom|TextAlign.XCenter, align);
         Lines.Add(new Vec3(-0.05f,.2f, 0), new Vec3(.05f,.2f, 0), Color32.White, 0.001f);
         Hierarchy.Pop();
-        
-        Text.Add("Here's\nSome\nMulti-line\nText!!", Matrix.TRS(Vec3.Zero, Quat.LookDir(0, 0, 1)), TextAlign.Center, align);
+
+        Hierarchy.Push(Matrix.T(0, -0.1f, 0));
+        if (Demos.TestMode)
+            Renderer.Screenshot(Hierarchy.ToWorld(new Vec3(0, 0, 0.09f)), Hierarchy.ToWorld(Vec3.Zero), 600, 300, "../../../docs/img/screenshots/BasicText.jpg");
+        /// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
+        /// Then it's pretty trivial to just draw some text on the screen! Just call
+        /// Text.Add on update. If you don't have a TextStyle available, calling it 
+        /// without one will just fall back on the default style.
+        // Text with an explicit text style
+        Text.Add(
+            "Here's\nSome\nMulti-line\nText!!", 
+            Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)), 
+            style);
+        // Text using the default text style
+        Text.Add(
+            "Here's\nSome\nMulti-line\nText!!", 
+            Matrix.TRS(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
+        /// :End:
+        Hierarchy.Pop();
 
         Hierarchy.Pop();
     }

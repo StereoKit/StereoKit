@@ -93,6 +93,7 @@
     <Compile Include="DemoSky.cs" />
     <Compile Include="DemoText.cs" />
     <Compile Include="DemoUI.cs" />
+    <Compile Include="Docs\DocHand.cs" />
     <Compile Include="Tester.cs" />
     <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="DemoUISettings.cs" />
