@@ -90,7 +90,7 @@ namespace StereoKit
 
         /// <summary>Calculates the distance between two points in space! Make sure they're in the
         /// same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.</summary>
-        /// <param name="a">The first point/</param>
+        /// <param name="a">The first point.</param>
         /// <param name="b">And the second point!</param>
         /// <returns>Distance between the two points.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,7 +99,7 @@ namespace StereoKit
 
         /// <summary>Calculates the distance between two points in space, but leaves them squared! Make 
         /// sure they're in the same coordinate space! This is a fast function :)</summary>
-        /// <param name="a">The first point/</param>
+        /// <param name="a">The first point.</param>
         /// <param name="b">And the second point!</param>
         /// <returns>Distance between the two points, but squared!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

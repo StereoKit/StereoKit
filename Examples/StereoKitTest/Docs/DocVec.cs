@@ -16,22 +16,23 @@ class DocVec : IDemo
 
     static bool TestDistanceSq()
     {
-        /// :CodeSample: Vec3.Distance
+        /// :CodeSample: Vec3.DistanceSq
         Vec3 pointA = new Vec3(3, 2, 5);
         Vec3 pointB = new Vec3(3, 2, 8);
-        float distanceSq = Vec3.DistanceSq(pointA, pointB);
-        if (distanceSq < 4*4) { 
+
+        float distanceSquared = Vec3.DistanceSq(pointA, pointB);
+        if (distanceSquared < 4*4) { 
             Log.Info("Distance is less than 4");
         }
         /// :End:
         
-        Log.Info("DistanceSq: {0}, expected 9", distanceSq);
-        return distanceSq == 9;
+        Log.Info("DistanceSq: {0}, expected 9", distanceSquared);
+        return distanceSquared == 9;
     }
 
     static bool TestLerp()
     {
-        /// :CodeSample: Vec3.Distance
+        /// :CodeSample: Vec3.Lerp
         Vec3 position    = new Vec3(3, 2, 5);
         Vec3 destination = new Vec3(3, 2, 8);
         position = Vec3.Lerp(position, destination, 0.5f * Time.Elapsedf);

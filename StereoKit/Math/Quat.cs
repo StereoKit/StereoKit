@@ -104,11 +104,11 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat Difference(Quat a, Quat b) => NativeAPI.quat_difference(a, b);
 
-        /// <summary>Creates a Roll/Pitch/Yaw rotation from the provided angles in degrees!</summary>
+        /// <summary>Creates a Roll/Pitch/Yaw rotation (applied in that order) from the provided angles in degrees!</summary>
         /// <param name="pitchXDeg">Pitch is rotation around the x axis, measured in degrees.</param>
         /// <param name="yawYDeg">Yaw is rotation around the y axis, measured in degrees.</param>
         /// <param name="rollZDeg">Roll is rotation around the z axis, measured in degrees.</param>
-        /// <returns></returns>
+        /// <returns>A quaternion representing the given Roll/Pitch/Yaw roatation!</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quat FromAngles(float pitchXDeg, float yawYDeg, float rollZDeg) => NativeAPI.quat_from_angles(pitchXDeg, yawYDeg, rollZDeg);
 

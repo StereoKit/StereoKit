@@ -51,6 +51,8 @@ namespace StereoKit
         }
         #endregion
 
+        static List<LogCallback> callbacks = new List<LogCallback>();
+
         /// <summary>What's the lowest level of severity logs to display on the console? Default is LogLevel.Info.</summary>
         public static LogLevel Filter { set{ NativeAPI.log_set_filter(value); } }
 
@@ -100,12 +102,17 @@ namespace StereoKit
         public static void Err(string text)
             => Write(LogLevel.Error, text);
 
-        static List<LogCallback> callbacks = new List<LogCallback>();
+        
+        /// <summary>Allows you to listen in on log events! Any callback subscribed here will be called when 
+        /// something is logged. This does honor the Log.Filter, so filtered logs will not be received here.</summary>
+        /// <param name="onLog">The function to call when a log event occurs.</param>
         public static void Subscribe(LogCallback onLog) 
         {
             callbacks.Add(onLog); // This prevents the callback from getting GCed
             NativeAPI.log_subscribe(onLog);
         }
+        /// <summary>If you subscribed to the log callback, you can unsubscribe that callback here!</summary>
+        /// <param name="onLog">The subscribed callback to remove.</param>
         public static void Unsubscribe(LogCallback onLog)
         { 
             callbacks.Remove(onLog);

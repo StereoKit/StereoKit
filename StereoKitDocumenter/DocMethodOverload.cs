@@ -45,8 +45,11 @@ namespace StereoKitDocumenter
                     paramText += $"|{StringHelper.TypeName(p.ParameterType.Name)} {parameters[i].name}|{StringHelper.CleanForTable(parameters[i].summary)}|\n";
                 }
 
-                if (returnType != typeof(void))
+                if (returnType != typeof(void)) {
+                    if (string.IsNullOrEmpty( returns ))
+                        throw new Exception("Missing doc tag for the return value of " + methodName);
                     paramText += $"|RETURNS: {returnName}|{StringHelper.CleanForTable(returns)}|\n";
+                }
             }
 
             return $@"<div class='signature' markdown='1'>
