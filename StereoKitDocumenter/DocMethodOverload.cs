@@ -16,15 +16,20 @@ namespace StereoKitDocumenter
         public string returns;
         public List<DocParam> parameters = new List<DocParam>();
 
+        MethodBase methodInfo;
+
+        public bool IsStatic => methodInfo.IsStatic;
+
         public DocMethodOverload(DocMethod aRootMethod, string aSignature)
         {
             rootMethod = aRootMethod;
-            signature = aSignature;
+            signature  = aSignature;
+            methodInfo = GetMethodInfo(signature, rootMethod);
         }
 
         public override string ToString()
         {
-            MethodBase m = GetMethodInfo();
+            MethodBase m = methodInfo;
             Type   returnType = m is MethodInfo ? ((MethodInfo)m).ReturnType : typeof(void);
             string methodName = rootMethod.ShowName;
             string returnName = m is MethodInfo ? StringHelper.TypeName(returnType.Name) : "";
@@ -60,11 +65,11 @@ namespace StereoKitDocumenter
 ";
         }
 
-        private Type GetParentType()
+        private static Type GetParentType(DocMethod rootMethod)
         {
             return Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
         }
-        private MethodBase GetMethodInfo()
+        private static MethodBase GetMethodInfo(string signature, DocMethod rootMethod)
         {
             Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : signature
                 .Split(',')
@@ -90,7 +95,7 @@ namespace StereoKitDocumenter
                     })
                 .ToArray();
 
-            Type parent = GetParentType();
+            Type parent = GetParentType(rootMethod);
             MethodBase result = rootMethod.name == "#ctor" ?
                 (MethodBase)parent.GetConstructor(paramTypes) :
                 (MethodBase)parent.GetMethod     (rootMethod.name, paramTypes);

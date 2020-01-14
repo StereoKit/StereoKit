@@ -30,32 +30,37 @@ namespace StereoKitDocumenter
             Type t = Type.GetType("StereoKit." + name + ", StereoKit");
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
             fields .Sort((a,b)=>a.name.CompareTo(b.name));
+            List<DocMethod> methodsStatic   = methods.FindAll(a =>  a.IsStatic);
+            List<DocMethod> methodsInstance = methods.FindAll(a => !a.IsStatic);
+            List<DocField>  fieldsStatic    = fields.FindAll(a =>  a.GetStatic(t));
+            List<DocField>  fieldsInstance  = fields.FindAll(a => !a.GetStatic(t));
+            
+            Func<DocField,  string> fieldToString  = (f) => { return $"|{StringHelper.TypeName(f.GetFieldType(t).Name)} [{f.name}]({f.UrlName})|{StringHelper.CleanForTable(f.summary)}|"; };
+            Func<DocMethod, string> methodToString = (m) => { return $"|[{m.ShowName}]({m.UrlName})|{StringHelper.CleanForTable(m.overloads[0].summary)}|"; };
+            
+            string memberText = methodsInstance.Count == 0 ? 
+                "" : "\n\n## Instance Methods\n\n|  |  |\n|--|--|\n";
+            memberText += string.Join("\n", methodsInstance
+                .Select(methodToString));
 
-            string memberText = "";
-            if (methods.Count > 0) {
-                memberText = "\n\n## Methods\n\n|  |  |\n|--|--|\n";
-                for (int i = 0; i < methods.Count; i++)
-                {
-                    memberText += $"|[{methods[i].ShowName}]({methods[i].UrlName})|{StringHelper.CleanForTable(methods[i].overloads[0].summary)}|\n";
-                }
-            }
+            string fieldText = fieldsInstance.Count == 0 ? 
+                "" : "\n\n## Instance Fields and Properties\n\n|  |  |\n|--|--|\n";
+            fieldText += string.Join("\n", fieldsInstance
+                .Select(fieldToString));
 
-            string fieldText = "";
-            if (fields.Count > 0) { 
-                fieldText = "\n\n## Fields and Properties\n\n|  |  |\n|--|--|\n";
-                for (int i = 0; i < fields.Count; i++)
-                {
-                    fieldText += $"|{StringHelper.TypeName(fields[i].GetFieldType(t).Name)} [{fields[i].name}]({fields[i].UrlName})|{StringHelper.CleanForTable(fields[i].summary)}|\n";
-                }
-            }
+            string memberTextStatic = methodsStatic.Count == 0 ?
+                "" : "\n\n## Static Methods\n\n|  |  |\n|--|--|\n";
+            memberTextStatic += string.Join("\n", methodsStatic
+                .Select(methodToString));
 
-            string exampleText = "";
-            if (examples.Count > 0) {
-                exampleText = "\n\n## Examples\n\n";
-                for (int i = 0; i < examples.Count; i++) {
-                    exampleText += examples[i].data;
-                }
-            }
+            string fieldTextStatic = fieldsStatic.Count == 0 ?
+                "" : "\n\n## Static Fields and Properties\n\n|  |  |\n|--|--|\n";
+            fieldTextStatic += string.Join("\n", fieldsStatic
+                .Select(fieldToString));
+
+            string exampleText = examples.Count == 0 ?
+                "" : "\n\n## Examples\n\n";
+            exampleText += string.Join("\n", examples.Select(e=>e.data));
 
             return $@"---
 layout: default
@@ -67,6 +72,8 @@ description: {StringHelper.CleanForDescription(summary)}
 {summary}
 {fieldText}
 {memberText}
+{fieldTextStatic}
+{memberTextStatic}
 {exampleText}
 ";
 

@@ -15,6 +15,8 @@ namespace StereoKitDocumenter
         public List<DocExample>        examples  = new List<DocExample>();
         public List<DocMethodOverload> overloads = new List<DocMethodOverload>();
 
+        public bool IsStatic => overloads.Count > 0 ? overloads[0].IsStatic : throw new Exception("Calling this too early?");
+
         public DocMethod(DocClass aParent, string aName)
         {
             parent = aParent;
