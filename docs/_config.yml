@@ -30,6 +30,7 @@ github_username:  maluoi
 theme: minima
 plugins:
   - jekyll-feed
+  - jekyll-sitemap
 
 include:
   - Pages/
