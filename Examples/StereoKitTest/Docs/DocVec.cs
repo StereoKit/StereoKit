@@ -43,11 +43,27 @@ class DocVec : IDemo
         return lerp.x == 3 && lerp.y == 2 && lerp.z == 6.5f;
     }
 
+    static bool TestDot()
+    {
+        /// :CodeSample: Vec3.Dot
+        Pose head        = Input.Head;
+        Vec3 objPosition = new Vec3(0,0,-1);
+        bool visible     = Vec3.Dot(head.Forward, objPosition-head.position) > 0;
+        if (visible)
+            Log.Info("Object's position is in front of the user!");
+        /// :End:
+
+        bool dotPerpendicular = 0 == Vec3.Dot(new Vec3(1,1,0), new Vec3(1,-1,0));
+        bool dotInvisible     = Vec3.Dot(head.Forward, new Vec3(0,0,1) - head.position) < 0;
+        return visible && dotPerpendicular && dotInvisible;
+    }
+
     public void Initialize()
     {
         Tester.Test(TestDistance);
         Tester.Test(TestDistanceSq);
         Tester.Test(TestLerp);
+        Tester.Test(TestDot);
     }
 
     public void Shutdown(){}

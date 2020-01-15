@@ -62,5 +62,7 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix ToMatrix()           => NativeAPI.pose_matrix(this, Vec3.One);
 
+        public override string ToString()
+            => string.Format("{0}, {1}", position, Forward);
     };
 }
