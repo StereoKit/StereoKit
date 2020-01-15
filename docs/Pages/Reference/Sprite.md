@@ -23,7 +23,15 @@ Since rendering is atlas based, you also have only one material per atlas. So th
 why you might wish to put a sprite in one atlas or another, so you can apply different
 
 
-## Fields and Properties
+
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -33,13 +41,10 @@ why you might wish to put a sprite in one atlas or another, so you can apply dif
 |int [Width]({{site.url}}/Pages/Reference/Sprite/Width.html)|Width of the sprite, in pixels.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
-|[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
 |[FromFile]({{site.url}}/Pages/Reference/Sprite/FromFile.html)|Create a sprite from an image file! This loads a Texture from file, and then uses that Texture as the source for the Sprite.|
 |[FromTex]({{site.url}}/Pages/Reference/Sprite/FromTex.html)|Create a sprite from a Texture object!|
-
 

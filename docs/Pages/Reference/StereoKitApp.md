@@ -8,7 +8,9 @@ description: This class contains functions for running the StereoKit library!
 This class contains functions for running the StereoKit library!
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -20,8 +22,7 @@ This class contains functions for running the StereoKit library!
 |string [VersionName]({{site.url}}/Pages/Reference/StereoKitApp/VersionName.html)|Human-readable version name embedded in the StereoKitC DLL.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
@@ -29,5 +30,4 @@ This class contains functions for running the StereoKit library!
 |[Quit]({{site.url}}/Pages/Reference/StereoKitApp/Quit.html)|Lets StereoKit know it should quit! It'll finish the current frame, and after that Step will return that it wants to exit.|
 |[Shutdown]({{site.url}}/Pages/Reference/StereoKitApp/Shutdown.html)|Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.|
 |[Step]({{site.url}}/Pages/Reference/StereoKitApp/Step.html)|Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.|
-
 

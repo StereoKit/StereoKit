@@ -11,11 +11,12 @@ user, via vertex shader manipulation.
 
 
 
-## Methods
+
+
+## Static Methods
 
 |  |  |
 |--|--|
 |[Add]({{site.url}}/Pages/Reference/Lines/Add.html)|Adds a line to the environment for the current frame.|
 |[AddAxis]({{site.url}}/Pages/Reference/Lines/AddAxis.html)|Displays an RGB/XYZ axis widget at the pose! Note that this draws lines along 'Forward' vectors for each axis, not necessarily in the axis positive direction.|
-
 

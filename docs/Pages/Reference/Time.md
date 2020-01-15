@@ -8,7 +8,9 @@ description: This class contains time information for the current session and fr
 This class contains time information for the current session and frame!
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -21,6 +23,5 @@ This class contains time information for the current session and frame!
 |float [Totalf]({{site.url}}/Pages/Reference/Time/Totalf.html)|How much time has elapsed since StereoKit was initialized? 32 bit time precision.|
 |double [TotalUnscaled]({{site.url}}/Pages/Reference/Time/TotalUnscaled.html)|How much time has elapsed since StereoKit was initialized? 64 bit time precision. This version is unaffected by the Time.Scale value!|
 |float [TotalUnscaledf]({{site.url}}/Pages/Reference/Time/TotalUnscaledf.html)|How much time has elapsed since StereoKit was initialized? 32 bit time precision. This version is unaffected by the Time.Scale value!|
-
 
 

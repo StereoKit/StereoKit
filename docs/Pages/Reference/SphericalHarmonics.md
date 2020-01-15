@@ -19,11 +19,17 @@ trying to hit 60fps, or even 144fps.
 
 
 
-## Methods
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Sample]({{site.url}}/Pages/Reference/SphericalHarmonics/Sample.html)|Look up the color information in a particular direction!|
+
+
+
+## Static Methods
 
 |  |  |
 |--|--|
 |[FromLights]({{site.url}}/Pages/Reference/SphericalHarmonics/FromLights.html)|Creates a SphericalHarmonics approximation of the irradiance given from a set of directional lights!|
-|[Sample]({{site.url}}/Pages/Reference/SphericalHarmonics/Sample.html)|Look up the color information in a particular direction!|
-
 

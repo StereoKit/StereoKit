@@ -21,7 +21,17 @@ So if you need speed, and only have a single mesh with a precalculated transform
 matrix, it can be faster to render a Mesh instead of a Model!
 
 
-## Fields and Properties
+
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
+|[Draw]({{site.url}}/Pages/Reference/Model/Draw.html)|Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
+|[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the mesh subset!|
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -29,16 +39,11 @@ matrix, it can be faster to render a Mesh instead of a Model!
 |int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
-|[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
-|[Draw]({{site.url}}/Pages/Reference/Model/Draw.html)|Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
 |[Find]({{site.url}}/Pages/Reference/Model/Find.html)|Looks for a Model asset that's already loaded, matching the given id!|
 |[FromFile]({{site.url}}/Pages/Reference/Model/FromFile.html)|Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.|
 |[FromMesh]({{site.url}}/Pages/Reference/Model/FromMesh.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
-|[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the mesh subset!|
-
 

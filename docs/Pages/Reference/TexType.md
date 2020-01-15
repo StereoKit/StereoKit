@@ -10,7 +10,9 @@ that tell StereoKit what type of texture we want, and how the application
 might use it!
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -21,6 +23,5 @@ might use it!
 |[TexType]({{site.url}}/Pages/Reference/TexType.html) [ImageNomips]({{site.url}}/Pages/Reference/TexType/ImageNomips.html)|A standard color image, without any generated mip-maps.|
 |[TexType]({{site.url}}/Pages/Reference/TexType.html) [Mips]({{site.url}}/Pages/Reference/TexType/Mips.html)|This texture will generate mip-maps any time the contents change. Mip-maps are a list of textures that are each half the size of the one before them! This is used to prevent textures from 'sparkling' or aliasing in the distance.|
 |[TexType]({{site.url}}/Pages/Reference/TexType.html) [Rendertarget]({{site.url}}/Pages/Reference/TexType/Rendertarget.html)|This texture can be rendered to! This is great for textures that might be passed in as a target to Renderer.Blit, or other such situations.|
-
 
 

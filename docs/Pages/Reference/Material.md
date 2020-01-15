@@ -14,7 +14,21 @@ operation on the graphics card, so re-using materials can be extremely beneficia
 for performance!
 
 
-## Fields and Properties
+
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Material]({{site.url}}/Pages/Reference/Material/Material.html)|Creates a material from a shader, and uses the shader's default settings. Uses an auto-generated id.|
+|[Copy]({{site.url}}/Pages/Reference/Material/Copy.html)|Creates a new Material asset with the same shader and properties! Draw calls with the new Material will not batch together with this one.|
+|[SetColor]({{site.url}}/Pages/Reference/Material/SetColor.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
+|[SetFloat]({{site.url}}/Pages/Reference/Material/SetFloat.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
+|[SetMatrix]({{site.url}}/Pages/Reference/Material/SetMatrix.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
+|[SetTexture]({{site.url}}/Pages/Reference/Material/SetTexture.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
+|[SetVector]({{site.url}}/Pages/Reference/Material/SetVector.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -25,18 +39,9 @@ for performance!
 |[Transparency]({{site.url}}/Pages/Reference/Transparency.html) [Transparency]({{site.url}}/Pages/Reference/Material/Transparency.html)|What type of transparency does this Material use? Default is None. Transparency has an impact on performance, and draw order. Check the Transparency enum for details.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
-|[Material]({{site.url}}/Pages/Reference/Material/Material.html)|Creates a material from a shader, and uses the shader's default settings. Uses an auto-generated id.|
-|[Copy]({{site.url}}/Pages/Reference/Material/Copy.html)|Creates a new Material asset with the same shader and properties! Draw calls with the new Material will not batch together with this one.|
 |[Find]({{site.url}}/Pages/Reference/Material/Find.html)|Looks for a Material asset that's already loaded, matching the given id!|
-|[SetColor]({{site.url}}/Pages/Reference/Material/SetColor.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
-|[SetFloat]({{site.url}}/Pages/Reference/Material/SetFloat.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
-|[SetMatrix]({{site.url}}/Pages/Reference/Material/SetMatrix.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
-|[SetTexture]({{site.url}}/Pages/Reference/Material/SetTexture.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
-|[SetVector]({{site.url}}/Pages/Reference/Material/SetVector.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
-
 

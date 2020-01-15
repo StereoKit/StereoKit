@@ -12,13 +12,14 @@ in cases where the mesh is designed to be 'double sided'. Front can also be help
 to flip a mesh 'inside-out'!
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
 |[Cull]({{site.url}}/Pages/Reference/Cull.html) [Back]({{site.url}}/Pages/Reference/Cull/Back.html)|Discard if the back of the triangle face is pointing towards the camera.|
 |[Cull]({{site.url}}/Pages/Reference/Cull.html) [Front]({{site.url}}/Pages/Reference/Cull/Front.html)|Discard if the front of the triangle face is pointing towards the camera.|
 |[Cull]({{site.url}}/Pages/Reference/Cull.html) [None]({{site.url}}/Pages/Reference/Cull/None.html)|No culling at all! Draw the triangle regardless of which way it's pointing.|
-
 
 

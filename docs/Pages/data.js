@@ -88,12 +88,16 @@ var documents =
 			pages : ['A','Add','Alt','B','Backspace','C','Ctrl','D','Decimal','Del','Divide','Down','E','End','Esc','F','F1','F10','F11','F12','F2','F3','F4','F5','F6','F7','F8','F9','G','H','Home','I','Insert','J','K','L','LCmd','Left','M','MAX','MouseCenter','MouseLeft','MouseRight','Multiply','N','N0','N1','N2','N3','N4','N5','N6','N7','N8','N9','Num0','Num1','Num2','Num3','Num4','Num5','Num6','Num7','Num8','Num9','O','P','Printscreen','Q','R','RCmd','Return','Right','S','Shift','Space','Subtract','T','Tab','U','Up','V','W','X','Y','Z'],
 			},
 			{
+			name : 'LinePoint',
+			pages : ['color','pt','thickness'],
+			},
+			{
 			name : 'Lines',
 			pages : ['Add','AddAxis'],
 			},
 			{
 			name : 'Log',
-			pages : ['Filter','Err','Info','Warn','Write'],
+			pages : ['Filter','Err','Info','Subscribe','Unsubscribe','Warn','Write'],
 			},
 			{
 			name : 'LogLevel',
@@ -165,7 +169,7 @@ var documents =
 			},
 			{
 			name : 'SKMath',
-			pages : ['Pi','Tau','Cos','Sin','Sqrt'],
+			pages : ['Pi','Tau','Cos','Exp','Sin','Sqrt'],
 			},
 			{
 			name : 'Solid',
@@ -201,7 +205,7 @@ var documents =
 			},
 			{
 			name : 'Tex',
-			pages : ['AddressMode','Anisoptropy','Height','Id','SampleMode','Width','Tex','Find','FromCubemapEquirectangular','FromCubemapFile','FromFile','GenCubemap'],
+			pages : ['AddressMode','Anisoptropy','Format','Height','Id','SampleMode','Width','Tex','Find','FromCubemapEquirectangular','FromCubemapFile','FromFile','GenCubemap'],
 			},
 			{
 			name : 'TexAddress',
@@ -241,7 +245,7 @@ var documents =
 			},
 			{
 			name : 'UI',
-			pages : ['ColorScheme','LineHeight','Settings','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','WindowBegin','WindowEnd'],
+			pages : ['AreaRemaining','ColorScheme','LineHeight','Settings','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','VolumeAt','WindowBegin','WindowEnd'],
 			},
 			{
 			name : 'UISettings',
@@ -257,7 +261,7 @@ var documents =
 			},
 			{
 			name : 'Vec3',
-			pages : ['Forward','Magnitude','MagnitudeSq','One','Right','Up','x','y','z','Zero','Vec3','AngleXY','AngleXZ','Cross','Distance','DistanceSq','Dot','Normalize','Normalized','PerpendicularRight'],
+			pages : ['Forward','Magnitude','MagnitudeSq','One','Right','Up','x','y','z','Zero','Vec3','AngleXY','AngleXZ','Cross','Distance','DistanceSq','Dot','Lerp','Normalize','Normalized','PerpendicularRight'],
 			},
 			{
 			name : 'Vec4',

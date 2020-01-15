@@ -9,7 +9,7 @@ StereoKit miscellaneous initialization settings! Setup StereoKit.settings with
 your data before calling StereoKitApp.Initialize.
 
 
-## Fields and Properties
+## Instance Fields and Properties
 
 |  |  |
 |--|--|
@@ -18,6 +18,7 @@ your data before calling StereoKitApp.Initialize.
 |int [flatscreenPosX]({{site.url}}/Pages/Reference/Settings/flatscreenPosX.html)|If using Runtime.Flatscreen, the pixel position of the window on the screen.|
 |int [flatscreenPosY]({{site.url}}/Pages/Reference/Settings/flatscreenPosY.html)|If using Runtime.Flatscreen, the pixel position of the window on the screen.|
 |int [flatscreenWidth]({{site.url}}/Pages/Reference/Settings/flatscreenWidth.html)|If using Runtime.Flatscreen, the pixel size of the window on the screen.|
+
 
 
 

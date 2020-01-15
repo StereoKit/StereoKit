@@ -20,15 +20,8 @@ single frame to travel through space to get to its destination, while teleport
 will simply appear at its destination without touching anything between.
 
 
-## Fields and Properties
 
-|  |  |
-|--|--|
-|bool [Enabled]({{site.url}}/Pages/Reference/Solid/Enabled.html)|Is the Solid enabled in the physics simulation? Set this to false if you want to prevent physics from influencing this solid!|
-
-
-
-## Methods
+## Instance Methods
 
 |  |  |
 |--|--|
@@ -43,5 +36,12 @@ will simply appear at its destination without touching anything between.
 |[SetType]({{site.url}}/Pages/Reference/Solid/SetType.html)|Changes the behavior type of the solid after it's created.|
 |[SetVelocity]({{site.url}}/Pages/Reference/Solid/SetVelocity.html)|Sets the velocity of this Solid.|
 |[Teleport]({{site.url}}/Pages/Reference/Solid/Teleport.html)|Moves the Solid to the new pose, without colliding with objects on the way there.|
+
+
+## Static Fields and Properties
+
+|  |  |
+|--|--|
+|bool [Enabled]({{site.url}}/Pages/Reference/Solid/Enabled.html)|Is the Solid enabled in the physics simulation? Set this to false if you want to prevent physics from influencing this solid!|
 
 

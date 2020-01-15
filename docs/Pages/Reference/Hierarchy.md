@@ -17,15 +17,16 @@ no matrices in the hierarchy stack, or that the hierarchy is disabled! It'll sav
 matrix multiplication in that case :)
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
 |bool [Enabled]({{site.url}}/Pages/Reference/Hierarchy/Enabled.html)|This is enabled by default. Disabling this will cause any draw call to ignore any Matrices that are on the Hierarchy stack.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
@@ -35,5 +36,4 @@ matrix multiplication in that case :)
 |[ToLocalDirection]({{site.url}}/Pages/Reference/Hierarchy/ToLocalDirection.html)|Converts a world space direction into the local space of the current Hierarchy stack! This excludes the translation component normally applied to vectors, so it's still a valid direction.|
 |[ToWorld]({{site.url}}/Pages/Reference/Hierarchy/ToWorld.html)|Converts a local point relative to the current hierarchy stack into world space!|
 |[ToWorldDirection]({{site.url}}/Pages/Reference/Hierarchy/ToWorldDirection.html)|Converts a local direction relative to the current hierarchy stack into world space! This excludes the translation component normally applied to vectors, so it's still a valid direction.|
-
 

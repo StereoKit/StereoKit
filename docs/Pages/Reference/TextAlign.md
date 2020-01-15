@@ -14,7 +14,9 @@ Avoid combining multiple items of the same axis, and note that a few items,
 like `Center` are already a combination of multiple flags.
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -25,6 +27,5 @@ like `Center` are already a combination of multiple flags.
 |[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YBottom]({{site.url}}/Pages/Reference/TextAlign/YBottom.html)|On the y axis, this item should start on the bottom.|
 |[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YCenter]({{site.url}}/Pages/Reference/TextAlign/YCenter.html)|On the y axis, the item should be centered.|
 |[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YTop]({{site.url}}/Pages/Reference/TextAlign/YTop.html)|On the y axis, this item should start at the top.|
-
 
 

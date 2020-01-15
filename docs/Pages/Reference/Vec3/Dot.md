@@ -23,3 +23,14 @@ of this concept
 
 
 
+
+## Examples
+
+```csharp
+Pose head        = Input.Head;
+Vec3 objPosition = new Vec3(0,0,-1);
+bool visible     = Vec3.Dot(head.Forward, objPosition-head.position) > 0;
+if (visible)
+    Log.Info("Object's position is in front of the user!");
+```
+

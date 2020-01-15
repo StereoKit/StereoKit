@@ -9,7 +9,9 @@ The default StereoKit assets all have ids, and this class is a collection
 of all of them in case you want to copy or use them!
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -29,6 +31,5 @@ of all of them in case you want to copy or use them!
 |string [texFlat]({{site.url}}/Pages/Reference/DefaultIds/texFlat.html)|Default 2x2 flat normal texture, this is a normal that faces out from the, face, and has a color value of (0.5,0.5,1). this is the texture referred to as 'flat' in the shader texture defaults.|
 |string [texGray]({{site.url}}/Pages/Reference/DefaultIds/texGray.html)|Default 2x2 middle gray (0.5,0.5,0.5) opaque texture, this is the texture referred to as 'gray' in the shader texture defaults.|
 |string [texRough]({{site.url}}/Pages/Reference/DefaultIds/texRough.html)|Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.|
-
 
 

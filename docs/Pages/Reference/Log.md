@@ -26,21 +26,62 @@ codes are as follows:
 | wht  | WHT    | White       |
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
 |[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info.|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
 |[Err]({{site.url}}/Pages/Reference/Log/Err.html)|Writes a formatted line to the log using a LogLevel.Error severity level!|
 |[Info]({{site.url}}/Pages/Reference/Log/Info.html)|Writes a formatted line to the log using a LogLevel.Info severity level!|
+|[Subscribe]({{site.url}}/Pages/Reference/Log/Subscribe.html)|Allows you to listen in on log events! Any callback subscribed here will be called when something is logged. This does honor the Log.Filter, so filtered logs will not be received here.|
+|[Unsubscribe]({{site.url}}/Pages/Reference/Log/Unsubscribe.html)|If you subscribed to the log callback, you can unsubscribe that callback here!|
 |[Warn]({{site.url}}/Pages/Reference/Log/Warn.html)|Writes a formatted line to the log using a LogLevel.Warn severity level!|
 |[Write]({{site.url}}/Pages/Reference/Log/Write.html)|Writes a formatted line to the log with the specified severity level!|
 
+
+## Examples
+
+### An in-application log window
+Here's an example of using the Log.Subscribe method to build a
+simple logging window. This can be pretty handy to have around
+somewhere in your application!
+
+Here's the code for the window, and log tracking.
+```csharp
+static Pose         demoLog     = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+static List<string> demoLogList = new List<string>();
+static void OnLog(LogLevel level, string text)
+{
+    if (demoLogList.Count > 10)
+        demoLogList.RemoveAt(demoLogList.Count - 1);
+    demoLogList.Insert(0, text);
+}
+static void LogWindow()
+{
+    UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * Units.cm2m);
+    for (int i = 0; i < demoLogList.Count; i++)
+        UI.Label(demoLogList[i], false);
+    UI.WindowEnd();
+}
+```
+
+Then you add the OnLog method into the log events like this in your initialization
+code!
+```csharp
+Log.Subscribe(OnLog);
+```
+
+And in your Update loop, you can draw the window.
+```csharp
+LogWindow();
+```
+And that's it!
 

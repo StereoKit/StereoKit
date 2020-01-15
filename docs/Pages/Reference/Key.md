@@ -9,7 +9,9 @@ A collection of system key codes, representing keyboard
 characters and mouse buttons.
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -99,6 +101,5 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [X]({{site.url}}/Pages/Reference/Key/X.html)|x/X|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Y]({{site.url}}/Pages/Reference/Key/Y.html)|y/Y|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Z]({{site.url}}/Pages/Reference/Key/Z.html)|z/Z|
-
 
 

@@ -9,7 +9,7 @@ A vector with 4 components: x, y, z, and w. Can be useful for things like
 shaders, where the registers are aligned to 4 float vectors.
 
 
-## Fields and Properties
+## Instance Fields and Properties
 
 |  |  |
 |--|--|
@@ -19,11 +19,11 @@ shaders, where the registers are aligned to 4 float vectors.
 |float [z]({{site.url}}/Pages/Reference/Vec4/z.html)|Vector components.|
 
 
-
-## Methods
+## Instance Methods
 
 |  |  |
 |--|--|
 |[Vec4]({{site.url}}/Pages/Reference/Vec4/Vec4.html)|A basic constructor, just copies the values in!|
+
 
 

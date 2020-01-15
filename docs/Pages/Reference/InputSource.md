@@ -9,7 +9,9 @@ What type of device is the source of the pointer? This is a bit-flag that can
 contain some input source family information.
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -22,6 +24,5 @@ contain some input source family information.
 |[InputSource]({{site.url}}/Pages/Reference/InputSource.html) [Hand]({{site.url}}/Pages/Reference/InputSource/Hand.html)|Matches with any hand input source.|
 |[InputSource]({{site.url}}/Pages/Reference/InputSource.html) [HandLeft]({{site.url}}/Pages/Reference/InputSource/HandLeft.html)|Matches with left hand input sources.|
 |[InputSource]({{site.url}}/Pages/Reference/InputSource.html) [HandRight]({{site.url}}/Pages/Reference/InputSource/HandRight.html)|Matches with right hand input sources.|
-
 
 

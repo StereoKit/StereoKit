@@ -10,7 +10,9 @@ typically uses floats instead of doubles, so you won't need to cast to
 and from using these methods.
 
 
-## Fields and Properties
+
+
+## Static Fields and Properties
 
 |  |  |
 |--|--|
@@ -18,13 +20,12 @@ and from using these methods.
 |float [Tau]({{site.url}}/Pages/Reference/SKMath/Tau.html)|Tau is 2*Pi, there are excellent arguments that Tau can make certain formulas more readable!|
 
 
-
-## Methods
+## Static Methods
 
 |  |  |
 |--|--|
 |[Cos]({{site.url}}/Pages/Reference/SKMath/Cos.html)|Same as Math.Cos|
+|[Exp]({{site.url}}/Pages/Reference/SKMath/Exp.html)|Same as Math.Exp|
 |[Sin]({{site.url}}/Pages/Reference/SKMath/Sin.html)|Same as Math.Sin|
 |[Sqrt]({{site.url}}/Pages/Reference/SKMath/Sqrt.html)|Same as Math.Sqrt|
-
 
