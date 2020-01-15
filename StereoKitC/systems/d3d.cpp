@@ -18,14 +18,40 @@ int                       d3d_screen_height = 480;
 
 ///////////////////////////////////////////
 
-bool d3d_init() {
+bool d3d_init(LUID *adapter_id) {
 	UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
 	creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
+
+	// Find the right adapter to use:
+	IDXGIAdapter1 *final_adapter = nullptr;
+	if (adapter_id != nullptr) {
+		IDXGIFactory1 *dxgi_factory;
+		CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)(&dxgi_factory));
+
+		int curr = 0;
+		IDXGIAdapter1 *curr_adapter = nullptr;
+		while (dxgi_factory->EnumAdapters1(curr++, &curr_adapter) == S_OK) {
+			DXGI_ADAPTER_DESC1 adapterDesc;
+			curr_adapter->GetDesc1(&adapterDesc);
+
+			if (memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(adapter_id)) == 0) {
+				log_infof("Using graphics adapter %ws", adapterDesc.Description);
+				final_adapter = curr_adapter;
+				break;
+			}
+			curr_adapter->Release();
+		}
+		dxgi_factory->Release();
+	}
+
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-	if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, 0, creation_flags, featureLevels, _countof(featureLevels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context)))
+	if (FAILED(D3D11CreateDevice(final_adapter, D3D_DRIVER_TYPE_HARDWARE, 0, creation_flags, featureLevels, _countof(featureLevels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context)))
 		return false;
+
+	if (final_adapter != nullptr)
+		final_adapter->Release();
 
 	// Hook into debug information
 	ID3D11Debug *d3dDebug = nullptr;

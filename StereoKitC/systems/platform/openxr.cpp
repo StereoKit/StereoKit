@@ -164,15 +164,15 @@ bool openxr_init(const char *app_name) {
 		return false;
 	}
 
-	// OpenXR wants to ensure apps are using the correct LUID, so this must be called before xrCreateSession
-	// TODO: Figure out how to make sure we're using the correct LUID, and get it to the d3d device before initialization >.<
-	// see here for reference: https://github.com/microsoft/OpenXR-SDK-VisualStudio/blob/fce13c538839a7c1f185595d6490e8d227741356/samples/BasicXrApp/DxUtility.cpp#L22
+	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
 	result = xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
 	if (XR_FAILED(result)) {
 		log_info("xrGetD3D11GraphicsRequirementsKHR failed");
 		return false;
 	}
+	if (!d3d_init(&requirement.adapterLuid))
+		return false;
 
 	// Check what blend mode is valid for this device (opaque vs transparent displays)
 	// We'll just take the first one available!
@@ -582,11 +582,14 @@ void openxr_shutdown() {
 		input_leap_shutdown();
 #endif
 #endif
+
+	d3d_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_begin() {
+	d3d_update();
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();

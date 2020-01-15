@@ -102,9 +102,9 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 
 	sk_update_timer();
 
-	systems_add("Graphics", nullptr, 0, nullptr, 0, d3d_init, d3d_update, d3d_shutdown);
+	systems_add("Platform", nullptr, 0, nullptr, 0, platform_init, nullptr, platform_shutdown);
 
-	const char *default_deps[] = {"Graphics"};
+	const char *default_deps[] = {"Platform"};
 	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, defaults_init, nullptr, defaults_shutdown);
 
 	const char *ui_deps       [] = {"Defaults"};
@@ -114,9 +114,6 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		ui_update_deps, _countof(ui_update_deps), 
 		ui_init, ui_update, ui_shutdown);
 
-	const char *platform_deps[] = {"Graphics", "Defaults"};
-	systems_add("Platform", platform_deps, _countof(platform_deps), nullptr, 0, platform_init, nullptr, platform_shutdown);
-
 	const char *physics_deps[] = {"Defaults"};
 	const char *physics_update_deps[] = {"Input", "FrameBegin"};
 	systems_add("Physics",  
@@ -124,7 +121,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		physics_update_deps, _countof(physics_update_deps), 
 		physics_init, physics_update, physics_shutdown);
 
-	const char *renderer_deps[] = {"Graphics", "Defaults"};
+	const char *renderer_deps[] = {"Platform", "Defaults"};
 	const char *renderer_update_deps[] = {"Physics", "FrameBegin"};
 	systems_add("Renderer",  
 		renderer_deps,        _countof(renderer_deps), 
@@ -166,7 +163,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 		line_update_deps, _countof(line_update_deps), 
 		line_drawer_init, line_drawer_update, line_drawer_shutdown);
 
-	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Graphics", "Physics", "Renderer", "UI"};
+	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
 	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);

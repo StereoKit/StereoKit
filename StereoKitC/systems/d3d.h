@@ -21,7 +21,7 @@ extern ID3D11RasterizerState  *d3d_rasterstate;
 extern int                     d3d_screen_width;
 extern int                     d3d_screen_height;
 
-bool d3d_init    ();
+bool d3d_init    (LUID *adapter_id);
 void d3d_update  ();
 void d3d_shutdown();
 

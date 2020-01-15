@@ -391,6 +391,9 @@ bool uwp_key_down(int vk) {
 bool uwp_init(const char *) {
 	d3d_screen_width  = sk_settings.flatscreen_width;
 	d3d_screen_height = sk_settings.flatscreen_height;
+	if (!d3d_init(nullptr))
+		return false;
+
 	sk_info.display_type = display_opaque;
 
 	_beginthread(window_thread, 0, nullptr);
@@ -404,7 +407,7 @@ bool uwp_init(const char *) {
 }
 
 void uwp_step_begin() {
-	//ViewProvider::inst->Run();
+	d3d_update();
 	win32_input_update();
 }
 void uwp_step_end() { 
@@ -429,6 +432,8 @@ void uwp_shutdown() {
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	tex_release(uwp_target);
 	uwp_swapchain->Release();
+
+	d3d_shutdown();
 }
 
 }

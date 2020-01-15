@@ -8,8 +8,6 @@
 #include <windows.h>
 #include <dxgi1_2.h>
 
-
-
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
@@ -57,6 +55,8 @@ void win32_resize(int width, int height) {
 bool win32_init(const char *app_name) {
 	d3d_screen_width  = sk_settings.flatscreen_width;
 	d3d_screen_height = sk_settings.flatscreen_height;
+	if (!d3d_init(nullptr))
+		return false;
 
 	sk_info.display_type = display_opaque;
 
@@ -147,11 +147,15 @@ void win32_shutdown() {
 	win32_input_shutdown();
 	tex_release(win32_target);
 	win32_swapchain->Release();
+
+	d3d_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void win32_step_begin() {
+	d3d_update();
+
 	MSG msg = {0};
 	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
