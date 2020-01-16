@@ -19,6 +19,9 @@ namespace StereoKit {
         /// the 'default/shader_font' shader, which is a two-sided alpha-clip shader. This also 
         /// turns off backface culling.</summary>
         public const string materialFont     = "default/material_font";
+        /// <summary>This is the default material for rendering the hand! It's a copy of the
+        /// default material, but set to transparent, and using a generated texture.</summary>
+        public const string materialHand     = "default/material_hand";
 
         /// <summary>Default 2x2 white opaque texture, this is the texture referred to as 'white'
         /// in the shader texture defaults.</summary>

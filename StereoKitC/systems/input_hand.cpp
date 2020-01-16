@@ -63,6 +63,7 @@ void input_hand_init() {
 		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_runtime() == runtime_flatscreen ? 1 : 0.5f));
 
 	material_t hand_mat = material_copy_id("default/material");
+	material_set_id(hand_mat, "default/material_hand");
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();

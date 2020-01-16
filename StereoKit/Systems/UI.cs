@@ -19,6 +19,10 @@ namespace StereoKit
         /// to skin the UI!</summary>
         public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
+        /// <summary>Shows or hides the collision volumes of the UI! This is for debug purposes,
+        /// and can help identify visible and invisible collision issues.</summary>
+        public static bool       ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
+
         /// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
         public static float      LineHeight => NativeAPI.ui_line_height();
 
@@ -27,6 +31,13 @@ namespace StereoKit
         /// give you distance to the bottom of the layout, including the current line. These values
         /// will be 0 if you're using 0 for the layout size on that axis.</summary>
         public static Vec2       AreaRemaining => NativeAPI.ui_area_remaining();
+
+        /// <summary>Tells if the user is currently interacting with a UI element! This will be true
+        /// if the hand has an active or focused UI element.</summary>
+        /// <param name="hand">Which hand is interacting?</param>
+        /// <returns>True if the hand has an active or focused UI element. False otherwise.</returns>
+        public static bool IsInteracting(Handed hand)
+            => NativeAPI.ui_is_interacting(hand);
 
         /// <summary>Manually define what area is used for the UI layout. This is in
         /// the current Hierarchy's coordinate space on the X/Y plane.</summary>

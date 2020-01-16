@@ -44,6 +44,7 @@ font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
+bool32_t        skui_show_volumes = false;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -121,6 +122,12 @@ inline bool ui_anim_has(uint64_t id, float duration) {
 
 inline float ui_anim_elapsed(uint64_t id, float duration = 1, float max = 1) {
 	return skui_anim_id == id ? fminf(max, (time_getf_unscaled() - skui_anim_time) / duration) : 0;
+}
+
+///////////////////////////////////////////
+
+void ui_show_volumes(bool32_t show) {
+	skui_show_volumes = show;
 }
 
 ///////////////////////////////////////////
@@ -241,6 +248,12 @@ uint64_t ui_push_id(const char *id) {
 
 void ui_pop_id() {
 	skui_id_stack.pop_back();
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_is_interacting(handed_ hand) {
+	return skui_hand[hand].active != 0 || skui_hand[hand].focused_prev != 0;
 }
 
 ///////////////////////////////////////////
@@ -394,7 +407,8 @@ void ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfoc
 ///////////////////////////////////////////
 
 bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
-	//render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
+	if (skui_show_volumes)
+		render_add_mesh(skui_box, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
 	return bounds_line_contains(box, pt, pt_prev);
 }
 
