@@ -15,6 +15,7 @@
 #define XR_USE_GRAPHICS_API_D3D11
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
+#include <openxr/openxr_reflection.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -124,6 +125,18 @@ inline bool openxr_loc_valid(XrSpaceLocation &loc) {
 
 ///////////////////////////////////////////
 
+const char *openxr_string(XrResult result) {
+	switch (result) {
+#define ENTRY(NAME, VALUE) \
+	case VALUE: return #NAME;
+		XR_LIST_ENUM_XrResult(ENTRY)
+#undef ENTRY
+	default: return "<UNKNOWN>";
+	}
+}
+
+///////////////////////////////////////////
+
 bool openxr_init(const char *app_name) {
 	uint32_t extension_count = 0;
 	openxr_preferred_extensions(extension_count, nullptr);
@@ -151,7 +164,7 @@ bool openxr_init(const char *app_name) {
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		log_info("Couldn't create OpenXR instance, is OpenXR installed and set as the active runtime?");
+		log_infof("Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
 		return false;
 	}
 
@@ -160,7 +173,7 @@ bool openxr_init(const char *app_name) {
 	systemInfo.formFactor = app_config_form;
 	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 	if (XR_FAILED(result)) {
-		log_info("xrGetSystem failed");
+		log_infof("xrGetSystem failed [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -168,7 +181,7 @@ bool openxr_init(const char *app_name) {
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
 	result = xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
 	if (XR_FAILED(result)) {
-		log_info("xrGetD3D11GraphicsRequirementsKHR failed");
+		log_infof("xrGetD3D11GraphicsRequirementsKHR failed [%s]", openxr_string(result));
 		return false;
 	}
 	if (!d3d_init(&requirement.adapterLuid))
@@ -182,7 +195,7 @@ bool openxr_init(const char *app_name) {
 	blend_modes.resize(blend_count);
 	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, blend_count, &blend_count, blend_modes.data());
 	if (XR_FAILED(result)) {
-		log_info("xrEnumerateEnvironmentBlendModes failed");
+		log_infof("xrEnumerateEnvironmentBlendModes failed [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -219,7 +232,7 @@ bool openxr_init(const char *app_name) {
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
-		log_info("Couldn't create an OpenXR session, no MR device attached/ready?");
+		log_infof("Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -231,7 +244,7 @@ bool openxr_init(const char *app_name) {
 	ref_space.referenceSpaceType   = xr_refspace;
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 	if (XR_FAILED(result)) {
-		log_info("xrCreateReferenceSpace failed");
+		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -240,7 +253,7 @@ bool openxr_init(const char *app_name) {
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
-		log_info("xrCreateReferenceSpace failed");
+		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
 		return false;
 	}
 	
@@ -259,7 +272,7 @@ bool openxr_init(const char *app_name) {
 	xr_viewpt_proj .resize(view_count, { });
 	result = xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, view_count, &view_count, xr_config_views.data());
 	if (XR_FAILED(result)) {
-		log_info("xrEnumerateViewConfigurationViews failed");
+		log_infof("xrEnumerateViewConfigurationViews failed [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -278,7 +291,7 @@ bool openxr_init(const char *app_name) {
 	swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
 	result = xrCreateSwapchain(xr_session, &swapchain_info, &handle);
 	if (XR_FAILED(result)) {
-		log_info("xrCreateSwapchain failed");
+		log_infof("xrCreateSwapchain failed [%s]", openxr_string(result));
 		return false;
 	}
 
@@ -296,7 +309,7 @@ bool openxr_init(const char *app_name) {
 	xr_swapchains.surface_data  .resize(surface_count, {});
 	result = xrEnumerateSwapchainImages(xr_swapchains.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)xr_swapchains.surface_images.data());
 	if (XR_FAILED(result)) {
-		log_info("xrEnumerateSwapchainImages failed");
+		log_infof("xrEnumerateSwapchainImages failed [%s]", openxr_string(result));
 		return false;
 	}
 
