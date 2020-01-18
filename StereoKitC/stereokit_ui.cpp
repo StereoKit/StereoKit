@@ -18,6 +18,8 @@ struct layer_t {
 	vec2   size;
 	float  line_height;
 	float  max_x;
+	vec3 finger_pos[handed_max];
+	vec3 finger_prev[handed_max];
 };
 struct ui_hand_t {
 	vec3            finger;
@@ -217,6 +219,9 @@ void ui_update() {
 		skui_hand[i].finger       = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
 		skui_hand[i].finger_prev  = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
 		skui_hand[i].tracked      = hand.tracked_state & button_state_active;
+
+		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
+		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 	}
 }
 
@@ -270,9 +275,10 @@ void ui_push_pose(pose_t pose, vec3 offset) {
 		vec3{skui_settings.padding, -skui_settings.padding}, {0,0}, 0, 0
 	});
 
+	layer_t &layer = skui_layers.back();
 	for (size_t i = 0; i < handed_max; i++) {
-		skui_hand[i].finger      = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
-		skui_hand[i].finger_prev = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
+		layer.finger_pos [i] = skui_hand[i].finger      = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
+		layer.finger_prev[i] = skui_hand[i].finger_prev = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
 	}
 }
 
@@ -281,6 +287,12 @@ void ui_push_pose(pose_t pose, vec3 offset) {
 void ui_pop_pose() {
 	hierarchy_pop();
 	skui_layers.pop_back();
+
+	layer_t &layer = skui_layers.back();
+	for (size_t i = 0; i < handed_max; i++) {
+		skui_hand[i].finger      = layer.finger_pos[i];
+		skui_hand[i].finger_prev = layer.finger_prev[i];
+	}
 }
 
 ///////////////////////////////////////////
