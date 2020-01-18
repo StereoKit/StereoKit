@@ -85,6 +85,8 @@ void input_leap_thread(void *arg) {
 		if (LeapPollConnection(leap_handle, 0, &msg) == eLeapRS_Success) {
 			if (msg.type == eLeapEventType_Tracking) {
 				const LEAP_TRACKING_EVENT *evt = msg.tracking_event;
+				if (!leap_has_device && evt->nHands > 0)
+					leap_has_device = true;
 
 				if (!leap_lock) {
 					leap_lock = true;
@@ -115,7 +117,6 @@ void input_leap_thread(void *arg) {
 			} else if (msg.type == eLeapEventType_Device) {
 				log_diag("Connected to Leap Motion device!");
 				LeapSetPolicyFlags(leap_handle, eLeapPolicyFlag_OptimizeHMD, 0);
-				leap_has_device = true;
 			} else if (msg.type == eLeapEventType_DeviceLost) {
 				leap_has_device = false;
 			}
