@@ -110,7 +110,7 @@ void line_addv(line_point_t start, line_point_t end) {
 
 void line_add_list(const vec3 *points, int32_t count, color32 color, float thickness) {
 	if (count < 2) return;
-	line_ensure_cap(count*2, (count-2)*6);
+	line_ensure_cap(count*2, (count-1)*6);
 	thickness *= 0.5f;
 	
 	vec3 prev = hierarchy_to_world_point(points[1]) - prev;
@@ -140,7 +140,7 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 
 void line_add_listv(const line_point_t *points, int32_t count) {
 	if (count < 2) return;
-	line_ensure_cap(count*2, (count-2)*6);
+	line_ensure_cap(count*2, (count-1)*6);
 	
 	vec3 prev = hierarchy_to_world_point(points[1].pt) - prev;
 	for (int32_t i = 0; i < count; i++) {
