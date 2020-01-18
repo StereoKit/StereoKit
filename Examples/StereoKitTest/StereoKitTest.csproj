@@ -98,7 +98,6 @@
     <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="DemoUISettings.cs" />
     <Compile Include="Docs\DocVec.cs" />
-    <Compile Include="FilePicker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IDemo.cs" />

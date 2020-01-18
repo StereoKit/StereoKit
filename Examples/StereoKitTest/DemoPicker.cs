@@ -1,4 +1,5 @@
 using StereoKit;
+using StereoKit.Framework;
 using System.IO;
 
 namespace StereoKitTest
@@ -14,10 +15,9 @@ namespace StereoKitTest
         
         public void Initialize() {
             picker = new FilePicker(
-                new (string, string)[]{
-                    ("GLTF", "*.gltf"),
-                    ("GLB",  "*.glb") }, 
-                Path.GetFullPath(StereoKitApp.settings.assetsFolder));
+                Path.GetFullPath(StereoKitApp.settings.assetsFolder),
+                new FilePicker.Filter("GLTF","*.gltf"),
+                new FilePicker.Filter("GLB", "*.glb" ));
         }
 
         public void Shutdown() { }

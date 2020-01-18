@@ -1,37 +1,44 @@
-﻿using StereoKit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace StereoKitTest
+namespace StereoKit.Framework
 {
-    class FilePicker
+    public class FilePicker
     {
         #region Support types
-        public enum FileType
+        enum FileType
         {
             File,
             Folder
         }
-        public struct File
+        struct File
         {
             public FileType type;
             public string   name;
             public string   extension;
         }
+        public struct Filter
+        {
+            public string name;
+            public string filter;
+            public Filter(string name, string filter)
+            {
+                this.name = name;
+                this.filter = filter;
+            }
+        }
         #endregion
 
         #region Fields
-        (string,string)[] filters;
-        List<File>        activeFiles = new List<File>();
-        int               selectedIndex = -1;
-        string            path;
-        string            title;
-        string[]          separatedPath;
-        Pose              windowPose = new Pose(new Vec3(-10,0,0)*Units.cm2m, Quat.LookDir(-Vec3.Forward));
+        Filter[]   filters;
+        List<File> activeFiles = new List<File>();
+        int        selectedIndex = -1;
+        string     path;
+        string     title;
+        string[]   separatedPath;
+        Pose       windowPose = new Pose(new Vec3(-10,0,0)*Units.cm2m, Quat.LookDir(-Vec3.Forward));
         #endregion
 
         public string SelectedFile { 
@@ -40,10 +47,10 @@ namespace StereoKitTest
                 Path.Combine(path, activeFiles[selectedIndex].name + activeFiles[selectedIndex].extension);
         }
 
-        public FilePicker((string name, string filter)[] filters, string initialFolder=null)
+        public FilePicker(params Filter[] filters) : this(null, filters) { }
+        public FilePicker(string initialFolder, params Filter[] filters)
         {
-            foreach (var s in filters)
-                this.title += s.name+"/";
+            this.title   = string.Join(" | ", filters.Select(filter => filter.name));
             this.filters = filters;
             UpdateFolder(initialFolder == null ? Directory.GetCurrentDirectory() : initialFolder);
         }
@@ -69,7 +76,7 @@ namespace StereoKitTest
 
             // Find the files and folders at the current path!
             List<string> files = new List<string>( filters
-                .SelectMany(f => Directory.GetFiles(path, f.Item2))
+                .SelectMany(f => Directory.GetFiles(path, f.filter))
                 .OrderBy   (f => f));
             string[] folders = Directory.GetDirectories(path);
 
@@ -79,7 +86,7 @@ namespace StereoKitTest
                 type      = FileType.File, 
                 extension = Path.GetExtension(f),
                 name      = Path.GetFileNameWithoutExtension(f)}));
-            activeFiles.AddRange(folders.Select(f=>new File{ 
+            activeFiles.AddRange(folders.Select(f => new File{ 
                 type      = FileType.Folder, 
                 extension = "",
                 name      = Path.GetFileName(f)}));

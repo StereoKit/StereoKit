@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,13 +27,13 @@ namespace StereoKitTest
         Mesh       lightMesh     = Mesh.GenerateSphere(1);
         Material   lightProbeMat = Default.Material;
         Material   lightSrcMat   = new Material(Default.ShaderUnlit);
-        FilePicker hdrPicker     = new FilePicker(new (string, string)[]{("HDR","*.hdr")});
+        FilePicker hdrPicker     = new FilePicker(new FilePicker.Filter("HDR","*.hdr"));
         bool       showPicker    = false;
 
         public void Initialize() {
             hdrPicker = new FilePicker(
-                new (string, string)[] { ("HDR", "*.hdr") },
-                Path.GetFullPath(StereoKitApp.settings.assetsFolder));
+                Path.GetFullPath(StereoKitApp.settings.assetsFolder),
+                new FilePicker.Filter("HDR", "*.hdr"));
         }
         public void Shutdown() { }
         public void Update()
