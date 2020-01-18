@@ -28,8 +28,12 @@ SK_API void     ui_pop_id      ();
 
 SK_API bool32_t ui_is_interacting(handed_ hand);
 
-SK_API void     ui_model_at    (model_t model, vec3 start, vec3 size, color128 color);
-SK_API bool32_t ui_volume_at   (const char *id, bounds_t bounds);
+SK_API void     ui_model_at       (model_t model, vec3 start, vec3 size, color128 color);
+SK_API bool32_t ui_volume_at      (const char *id, bounds_t bounds);
+SK_API bool32_t ui_button_at      (const char *text, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relative_pos, float diameter);
+SK_API bool32_t ui_toggle_at      (const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_hslider_at     (const char *id,   float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size);
 
 SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
 SK_API void     ui_image       (sprite_t image, vec2 size);

@@ -552,7 +552,7 @@ void ui_image(sprite_t image, vec2 size) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_at(vec3 window_relative_pos, vec2 size, const char *text) {
+bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -584,12 +584,12 @@ bool32_t ui_button(const char *text) {
 	ui_reserve_box(size);
 	ui_nextline   ();
 
-	return ui_button_at(offset, size, text);
+	return ui_button_at(text, offset, size);
 }
 
 ///////////////////////////////////////////
 
-bool32_t ui_toggle_at(vec3 window_relative_pos, vec2 size, const char *text, bool32_t &pressed) {
+bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -626,12 +626,12 @@ bool32_t ui_toggle(const char *text, bool32_t &pressed) {
 	ui_reserve_box(size);
 	ui_nextline   ();
 
-	return ui_toggle_at(offset, size, text, pressed);
+	return ui_toggle_at(text, pressed, offset, size);
 }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_round_at(vec3 window_relative_pos, float diameter, const char *text, sprite_t image) {
+bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relative_pos, float diameter) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -666,7 +666,7 @@ bool32_t ui_button_round(const char *id, sprite_t image, float diameter) {
 	ui_reserve_box(size);
 	ui_nextline   ();
 
-	return ui_button_round_at(offset, size.x, id, image);
+	return ui_button_round_at(id, image, offset, size.x);
 }
 
 ///////////////////////////////////////////
@@ -740,22 +740,15 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
-	uint64_t   id     = ui_stack_hash(name);
+bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size) {
+	uint64_t   id     = ui_stack_hash(id_text);
 	bool       result = false;
 	float      color  = 1;
-	vec3       offset = skui_layers.back().offset;
 
 	// Find sizes of slider elements
-	if (width == 0)
-		width = skui_layers.back().size.x == 0 ? 0.1f : (skui_layers.back().size.x - skui_settings.padding) - skui_layers.back().offset.x;
-	vec2 size = { width, ui_line_height() };
 	float rule_size = size.y / 6.f;
-
-	// Interaction code
-	vec3     box_start = offset + vec3{ 0, 0, skui_settings.depth };
-	vec3     box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
-	bounds_t box       = ui_size_box(box_start, box_size);
+	vec3  box_start = window_relative_pos + vec3{ 0, 0, skui_settings.depth };
+	vec3  box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
 
 	button_state_ focus_state;
 	int32_t hand = -1;
@@ -766,7 +759,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 		&focus_state, hand);
 
 	if (focus_state & button_state_active) {
-		float new_val = min + fminf(1, fmaxf(0, (fabsf(skui_hand[hand].finger.x - offset.x) / size.x))) * (max - min);
+		float new_val = min + fminf(1, fmaxf(0, (fabsf(skui_hand[hand].finger.x - window_relative_pos.x) / size.x))) * (max - min);
 		if (step != 0) {
 			new_val = ((int)(((new_val - min) / step) + 0.5f)) * step;
 		}
@@ -779,22 +772,50 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	}
 
 	// Draw the UI
-	ui_reserve_box(size);
-	float back_size = skui_settings.backplate_border;
+	float back_size   = skui_settings.backplate_border;
+	float x           = window_relative_pos.x;
+	float line_y      = window_relative_pos.y - size.y / 2.f + rule_size / 2.f;
+	float slide_x_rel = ((value - min) / (max - min)) * size.x;
+	float slide_y     = window_relative_pos.y - size.y / 4;
 	// Slide line
-	ui_box(vec3{ offset.x, offset.y - size.y / 2.f + rule_size / 2.f, offset.z }, vec3{ size.x, rule_size, rule_size }, skui_mat, skui_palette[2] * color);
-	ui_box(vec3{ offset.x+back_size, offset.y - size.y / 2.f + rule_size / 2.f + back_size, offset.z+mm2m }, vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, skui_mat, skui_color_border * color);
+	ui_box(
+		vec3{ x, line_y, window_relative_pos.z }, 
+		vec3{ size.x, rule_size, rule_size }, 
+		skui_mat, skui_palette[2] * color);
+	ui_box(
+		vec3{ x+back_size, line_y+back_size, window_relative_pos.z+mm2m }, 
+		vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, 
+		skui_mat, skui_color_border * color);
 	// Slide handle
-	ui_cylinder(vec3{ (offset.x - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4, offset.z}, size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0] * color);
-	ui_cylinder(vec3{ (offset.x+back_size - ((value-min)/(max-min))*size.x) + size.y/4.f, offset.y-size.y/4 + back_size, offset.z+mm2m}, size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color);
-	ui_nextline();
+	ui_cylinder(
+		vec3{ x - slide_x_rel + size.y/4.f, slide_y, window_relative_pos.z}, 
+		size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0] * color);
+	ui_cylinder(
+		vec3{ x+back_size - slide_x_rel + size.y/4.f, slide_y + back_size, window_relative_pos.z+mm2m}, 
+		size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color);
+	
 
 	if (focus_state & button_state_just_active)
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	else if (focus_state & button_state_just_inactive)
 		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
-	
+
 	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
+	vec3 offset = skui_layers.back().offset;
+	if (width == 0)
+		width = skui_layers.back().size.x == 0 ? 0.1f : (skui_layers.back().size.x - skui_settings.padding) - offset.x;
+	vec2 size = { width, ui_line_height() };
+
+	// Draw the UI
+	ui_reserve_box(size);
+	ui_nextline();
+	
+	return ui_hslider_at(name, value, min, max, step, offset, size);
 }
 
 ///////////////////////////////////////////
@@ -806,6 +827,10 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 
 	matrix to_local = hierarchy_to_local();
 	ui_push_pose(movement, vec3{ 0,0,0 });
+
+	// If the handle is scale of zero, we don't actually want to draw or interact with it
+	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
+		return false;
 
 	vec3     box_start = handle.center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
 	vec3     box_size  = handle.dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
@@ -865,7 +890,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 			skui_mat, skui_color_border * color);
 		ui_nextline();
 	}
-	return color > 1;
+	return result;
 }
 
 ///////////////////////////////////////////

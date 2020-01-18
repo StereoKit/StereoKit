@@ -10,11 +10,9 @@ namespace StereoKitTest
         Model paletteModel = Model.FromFile("Palette.glb");
         Pose palettePose = new Pose(Vec3.Zero, Quat.Identity);
         Color activeColor = Color.White;
-        Material handMaterial;
+        float lineSize = 0.02f;
 
-        public void Initialize() {
-            handMaterial = Material.Find(DefaultIds.materialHand);
-            }
+        public void Initialize() { }
         public void Shutdown() { }
 
         public void Update()
@@ -32,9 +30,9 @@ namespace StereoKitTest
             Hierarchy.Push(Matrix.T(0, 0.1f, 0));
             /// :CodeSample: Lines.Add
             Lines.Add(new LinePoint[]{ 
-                new LinePoint(new Vec3( 0.1f, 0, 0), Color.White, 0.01f),
+                new LinePoint(new Vec3( 0.1f, 0,     0), Color.White, 0.01f),
                 new LinePoint(new Vec3( 0,    0.02f, 0), Color.Black, 0.005f),
-                new LinePoint(new Vec3(-0.1f, 0, 0), Color.White, 0.01f),
+                new LinePoint(new Vec3(-0.1f, 0,     0), Color.White, 0.01f),
             });
             /// :End:
             Hierarchy.Pop();
@@ -56,6 +54,12 @@ namespace StereoKitTest
             UI.AffordanceBegin("PaletteMenu", ref palettePose, paletteModel.Bounds);
             paletteModel.Draw(Matrix.Identity);
 
+            Pose p = new Pose(Vec3.Zero, Quat.FromAngles(90, 0, 0));
+            UI.AffordanceBegin("LineSlider", ref p, new Bounds());
+            UI.HSliderAt("Size", ref lineSize, 0.001f, 0.02f, 0, new Vec3(-1,6,0) * Units.cm2m, new Vec2(6,2) * Units.cm2m);
+            Lines.Add(new Vec3(-1, 8, 0) * Units.cm2m, new Vec3(-7,8,0) * Units.cm2m, activeColor, lineSize);
+            UI.AffordanceEnd();
+
             if (UI.VolumeAt("White", new Bounds(new Vec3(4, 0, 7) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
                 SetColor(Color.White);
             if (UI.VolumeAt("Red",   new Bounds(new Vec3(9, 0, 3) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
@@ -70,7 +74,7 @@ namespace StereoKitTest
         void SetColor(Color color)
         {
             activeColor = color;
-            handMaterial["color"] = color;
+            Default.MaterialHand["color"] = color;
         }
 
         Vec3 prevTip;
@@ -82,15 +86,14 @@ namespace StereoKitTest
             Hand hand = Input.Hand(handed);
             Vec3 tip  = hand[FingerId.Index, JointId.Tip].position;
             tip = prevTip + (tip-prevTip) * 0.3f;
-            const float size    = 0.03f;
             const float minDist = 2 * Units.cm2m;
 
             if (hand.IsJustPinched && !UI.IsInteracting(handed)) { 
                 if (drawPoints.Count > 0)
                     drawList.Add(drawPoints.ToArray());
                 drawPoints.Clear();
-                drawPoints.Add(new LinePoint(tip, activeColor, size));
-                drawPoints.Add(new LinePoint(tip, activeColor, size));
+                drawPoints.Add(new LinePoint(tip, activeColor, lineSize));
+                drawPoints.Add(new LinePoint(tip, activeColor, lineSize));
                 prevTip = tip;
                 painting = true;
             }
@@ -103,7 +106,7 @@ namespace StereoKitTest
                 Vec3  dir   = (prev - (drawPoints.Count > 2 ? drawPoints[drawPoints.Count - 3].pt : drawPoints[drawPoints.Count - 1].pt)).Normalized();
                 float dist  = (prev - tip).Magnitude;
                 float speed = (tip - prevTip).Magnitude * Time.Elapsedf;
-                LinePoint here = new LinePoint(tip, activeColor, Math.Max(1-speed/0.0003f,0.1f) * size);
+                LinePoint here = new LinePoint(tip, activeColor, Math.Max(1-speed/0.0003f,0.1f) * lineSize);
                 drawPoints[drawPoints.Count - 1]  = here;
                 
                 if ((Vec3.Dot( dir, (tip-prev).Normalized() ) < 0.99f && dist > 0.01f) || dist > 0.05f) { 

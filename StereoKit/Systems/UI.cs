@@ -76,6 +76,18 @@ namespace StereoKit
         public static bool VolumeAt(string id, Bounds bounds)
             => NativeAPI.ui_volume_at(id, bounds);
 
+        public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
+            => NativeAPI.ui_button_at(text, windowRelativeCorner, size);
+
+        public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
+            => NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
+
+        public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
+            => NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
+
+        public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
+            => NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
+
         /// <summary>Adds some text to the layout! Text uses the UI's current font settings 
         /// (which are currently not exposed). Can contain newlines! May have trouble with
         /// non-latin characters. Will advance layout to next line.</summary>
