@@ -76,7 +76,7 @@ Build -mode "Release|X64"
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packageOff
 Write-Output "Finished building: X64"
 
-if (-not $upload) {
+if (-not $noupload) {
     $key = Get-Key
     if ($key -ne '') {
         & dotnet nuget push "bin\StereoKit.$version.nupkg" -k $key -s https://api.nuget.org/v3/index.json
