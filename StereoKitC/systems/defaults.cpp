@@ -112,7 +112,8 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_pbr,      "default/shader_pbr");
 	shader_set_id(sk_default_shader_unlit,    "default/shader_unlit");
 	shader_set_id(sk_default_shader_font,     "default/shader_font");
-	shader_set_id(sk_default_shader_equirect, "default/equirect_shader");
+	shader_set_id(sk_default_shader_equirect, "default/shader_equirect");
+	shader_set_id(sk_default_shader_ui,       "default/shader_ui");
 	
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);

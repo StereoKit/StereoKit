@@ -41,7 +41,7 @@ class DemoUI : IDemo
     Sprite powerSprite = Sprite.FromFile("power.png", SpriteType.Single);
     /// :End:
 
-    Model  clipboard     = Model.FromFile("Clipboard.glb");
+    Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
     Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
     Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
     bool  clipToggle;

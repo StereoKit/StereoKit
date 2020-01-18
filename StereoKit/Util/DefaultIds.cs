@@ -71,6 +71,7 @@ namespace StereoKit {
         public const string shaderFont     = "default/shader_font";
         /// <summary>A shader for projecting equirectangular textures onto cube faces! This is for 
         /// equirectangular texture loading.</summary>
-        public const string shaderEquirect = "default/equirect_shader";
+        public const string shaderEquirect = "default/shader_equirect";
+        public const string shaderUI       = "default/shader_ui";
     }
 }

@@ -22,6 +22,7 @@
         public static Shader ShaderUnlit    { get; private set; }
         public static Shader ShaderFont     { get; private set; }
         public static Shader ShaderEquirect { get; private set; }
+        public static Shader ShaderUI       { get; private set; }
 
         internal static void Initialize()
         {
@@ -45,7 +46,9 @@
             ShaderUnlit    = Shader.Find(DefaultIds.shaderUnlit);
             ShaderFont     = Shader.Find(DefaultIds.shaderFont);
             ShaderEquirect = Shader.Find(DefaultIds.shaderEquirect);
+            ShaderUI       = Shader.Find(DefaultIds.shaderUI);
         }
+
         internal static void Shutdown()
         {
             Material         = null;
@@ -68,6 +71,7 @@
             ShaderUnlit    = null;
             ShaderFont     = null;
             ShaderEquirect = null;
+            ShaderUI       = null;
         }
     }
 }

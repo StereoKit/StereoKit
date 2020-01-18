@@ -29,12 +29,14 @@ struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
 	float4 col  : COLOR;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
 	float4 color : COLOR0;
 	float4 world : TEXCOORD1;
 	float3 normal: NORMAL;
+	float2 uv    : TEXCOORD0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -73,6 +75,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
 	output.view_id    = sk_inst[id].view_id;
+	output.uv         = input.uv;
 	output.color      = _color * input.col * sk_inst[id].color;
 	output.color.rgb *= Lighting(output.normal);
 	return output;
@@ -84,12 +87,12 @@ float4 ps(psIn input) : SV_TARGET {
 		float3 delta = sk_fingertip[i].xyz - input.world.xyz;
 		float3 norm = normalize(delta);
 		float d = dot(delta,delta) / (0.08 * 0.08);
-		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.5)*200*d) );
+		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.9)*200*d) );
 		dist = min( dist, d );
 	}
 
 	float  pct = pow(1-dist, 5);
-	float4 col = float4(lerp(input.color.rgb, input.color.rgb*1.75, pct + (ring*pct)), input.color.a * (1-pct));
+	float4 col = float4(lerp(input.color.rgb, input.color.rgb*2, pct + (ring*pct)), input.color.a * (1-pct));
 
-	return col; 
+	return tex.Sample(tex_sampler, input.uv) * col; 
 })_";

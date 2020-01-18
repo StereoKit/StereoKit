@@ -6,11 +6,11 @@ namespace StereoKitTest
 {
     class DemoLines : IDemo
     {
-        Pose windowPose = new Pose(Vec3.Zero, Quat.Identity);
-        Model paletteModel = Model.FromFile("Palette.glb");
-        Pose palettePose = new Pose(Vec3.Zero, Quat.Identity);
-        Color activeColor = Color.White;
-        float lineSize = 0.02f;
+        Pose  windowPose   = new Pose(new Vec3(0.3f, 0, -0.3f), Quat.LookDir(-1,0,1));
+        Model paletteModel = Model.FromFile("Palette.glb", Default.ShaderUI);
+        Pose  palettePose  = new Pose(new Vec3(-0.3f, 0, -0.3f), Quat.LookDir(1, 0, 1));
+        Color activeColor  = Color.White;
+        float lineSize     = 0.02f;
 
         public void Initialize() { }
         public void Shutdown() { }
@@ -56,8 +56,8 @@ namespace StereoKitTest
 
             Pose p = new Pose(Vec3.Zero, Quat.FromAngles(90, 0, 0));
             UI.AffordanceBegin("LineSlider", ref p, new Bounds());
-            UI.HSliderAt("Size", ref lineSize, 0.001f, 0.02f, 0, new Vec3(-1,6,0) * Units.cm2m, new Vec2(6,2) * Units.cm2m);
-            Lines.Add(new Vec3(-1, 8, 0) * Units.cm2m, new Vec3(-7,8,0) * Units.cm2m, activeColor, lineSize);
+            UI.HSliderAt("Size", ref lineSize, 0.001f, 0.02f, 0, new Vec3(6,-1,0) * Units.cm2m, new Vec2(8,2) * Units.cm2m);
+            Lines.Add(new Vec3(6, 1, -1) * Units.cm2m, new Vec3(-2,1,-1) * Units.cm2m, activeColor, lineSize);
             UI.AffordanceEnd();
 
             if (UI.VolumeAt("White", new Bounds(new Vec3(4, 0, 7) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
