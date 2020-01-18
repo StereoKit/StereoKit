@@ -4,12 +4,16 @@ using System.Linq;
 
 class DemoBasics : IDemo
 {
+    Solid floorSolid;
     Model       gltf;
     List<Solid> objects = new List<Solid>();
 
     public void Initialize()
     {
         gltf = Model.FromFile("DamagedHelmet.gltf", Shader.Find(DefaultIds.shaderPbr));
+
+        floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
+        floorSolid.AddBox(new Vec3(20, 1, 20));
     }
 
     public void Update()

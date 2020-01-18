@@ -12,7 +12,6 @@ class Program
 
     static Model  floorMesh;
     static Matrix floorTr;
-    static Solid  floorSolid;
     static Pose   demoSelectPose = new Pose();
 
     //////////////////////
@@ -79,15 +78,12 @@ class Program
         Log.Subscribe(OnLog);
         /// :End:
 
-        Material floorMat = Material.Copy(DefaultIds.material);
+        Material floorMat = Default.Material.Copy();
         floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
         floorMat["tex_scale"] = 16;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(20, 1, 20));
-
-        floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
-        floorSolid.AddBox(new Vec3(20, 1, 20));
 
         demoSelectPose.position    = new Vec3(0, 0, -0.25f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);

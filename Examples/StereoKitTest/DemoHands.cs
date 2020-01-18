@@ -21,8 +21,7 @@ namespace StereoKitTest
         bool showAxes = true;
         bool showPointers = true;
 
-        Mesh     jointMesh     = Mesh.GenerateSphere(1);
-        Material jointMaterial = Material.Find(DefaultIds.material);
+        Mesh jointMesh = Mesh.GenerateSphere(1);
 
         public void Initialize() {
             /// :CodeDoc: Guides Using Hands
@@ -73,7 +72,7 @@ namespace StereoKitTest
             UI.Toggle("Pointers", ref showPointers);
             UI.WindowEnd();
 
-            if (showJoints)   DrawJoints(jointMesh, jointMaterial);
+            if (showJoints)   DrawJoints(jointMesh, Default.Material);
             if (showAxes)     DrawAxes();
             if (showPointers) DrawPointers();
 

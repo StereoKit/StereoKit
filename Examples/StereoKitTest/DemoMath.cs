@@ -147,10 +147,10 @@ class DemoMath : IDemo
         planeMesh  = Mesh.GeneratePlane(Vec2.One,Vec3.Forward, Vec3.Up);
         sphereMesh = Mesh.GenerateSphere(1);
         cubeMesh   = Mesh.GenerateCube(Vec3.One);
-        material   = Material.Find(DefaultIds.material);
+        material   = Default.Material;
 
         boundsMesh = cubeMesh;
-        boundsMat  = Material.Copy("default/material_ui");
+        boundsMat  = Default.MaterialUI.Copy();
         boundsMat.Transparency = Transparency.Blend;
         boundsMat["color"] = new Color(1,1,1,0.25f);
     }

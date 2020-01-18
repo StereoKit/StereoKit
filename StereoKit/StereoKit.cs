@@ -49,8 +49,10 @@ namespace StereoKit
             bool result = NativeAPI.sk_init(name, runtime, fallback ? 1 : 0) > 0;
 
             // Get system information
-            if (result)
+            if (result) { 
                 _system = NativeAPI.sk_system_info();
+                Default.Initialize();
+            }
 
             return result;
         }
@@ -60,6 +62,7 @@ namespace StereoKit
         {
             if (IsInitialized)
             {
+                Default.Shutdown();
                 NativeAPI.sk_shutdown();
             }
         }

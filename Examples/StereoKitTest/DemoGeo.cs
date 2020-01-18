@@ -2,8 +2,6 @@
 
 class DemoGeo : IDemo
 {
-    Material defaultMaterial;
-
     Mesh  demoCubeMesh  = null;
     Model demoCubeModel = null;
     Mesh  demoRoundedCubeMesh  = null;
@@ -17,14 +15,12 @@ class DemoGeo : IDemo
 
     public void Initialize()
     {
-        defaultMaterial = Material.Find(DefaultIds.material);
-
         /// :CodeSample: Mesh.GenerateCube
         /// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.4f);
-        Model cubeModel = Model.FromMesh(cubeMesh, Material.Copy(DefaultIds.material));
+        Model cubeModel = Model.FromMesh(cubeMesh, Default.Material);
         /// :End:
         demoCubeMesh  = cubeMesh;
         demoCubeModel = cubeModel;
@@ -34,7 +30,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
-        Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Material.Copy(DefaultIds.material));
+        Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Default.Material);
         /// :End:
         demoRoundedCubeMesh  = roundedCubeMesh;
         demoRoundedCubeModel = roundedCubeModel;
@@ -44,7 +40,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  sphereMesh  = Mesh.GenerateSphere(0.4f);
-        Model sphereModel = Model.FromMesh(sphereMesh, Material.Copy(DefaultIds.material));
+        Model sphereModel = Model.FromMesh(sphereMesh, Default.Material);
         /// :End:
         demoSphereMesh  = sphereMesh;
         demoSphereModel = sphereModel;
@@ -54,7 +50,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.4f, 0.4f, Vec3.Up);
-        Model cylinderModel = Model.FromMesh(cylinderMesh, Material.Copy(DefaultIds.material));
+        Model cylinderModel = Model.FromMesh(cylinderMesh, Default.Material);
         /// :End:
         demoCylinderMesh  = cylinderMesh;
         demoCylinderModel = cylinderModel;
@@ -64,7 +60,7 @@ class DemoGeo : IDemo
         /// Here's a quick example of generating a mesh! You can store it in just a
         /// Mesh, or you can attach it to a Model for easier rendering later on.
         Mesh  planeMesh  = Mesh.GeneratePlane(Vec2.One*0.4f);
-        Model planeModel = Model.FromMesh(planeMesh, Material.Copy(DefaultIds.material));
+        Model planeModel = Model.FromMesh(planeMesh, Default.Material);
         /// :End:
         demoPlaneMesh  = planeMesh;
         demoPlaneModel = planeModel;
@@ -88,7 +84,7 @@ class DemoGeo : IDemo
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
         Matrix cubeTransform = Matrix.T(-1.0f, 0, 1);
-        Renderer.Add(cubeMesh, defaultMaterial, cubeTransform);
+        Renderer.Add(cubeMesh, Default.Material, cubeTransform);
 
         cubeTransform = Matrix.T(-1.0f, 0, -1);
         Renderer.Add(cubeModel, cubeTransform);
@@ -104,7 +100,7 @@ class DemoGeo : IDemo
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
         Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
-        Renderer.Add(roundedCubeMesh, defaultMaterial, roundedCubeTransform);
+        Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 
         roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
         Renderer.Add(roundedCubeModel, roundedCubeTransform);
@@ -120,7 +116,7 @@ class DemoGeo : IDemo
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
         Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
-        Renderer.Add(sphereMesh, defaultMaterial, sphereTransform);
+        Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 
         sphereTransform = Matrix.T(0.0f, 0, -1);
         Renderer.Add(sphereModel, sphereTransform);
@@ -136,7 +132,7 @@ class DemoGeo : IDemo
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
         Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
-        Renderer.Add(cylinderMesh, defaultMaterial, cylinderTransform);
+        Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 
         cylinderTransform = Matrix.T(0.5f, 0, -1);
         Renderer.Add(cylinderModel, cylinderTransform);
@@ -152,7 +148,7 @@ class DemoGeo : IDemo
         /// here's a short example! For the Mesh, you'll need to create your own material, 
         /// we just loaded up the default Material here.
         Matrix planeTransform = Matrix.T(1.0f, 0, 1);
-        Renderer.Add(planeMesh, defaultMaterial, planeTransform);
+        Renderer.Add(planeMesh, Default.Material, planeTransform);
 
         planeTransform = Matrix.T(1.0f, 0, -1);
         Renderer.Add(planeModel, planeTransform);

@@ -24,8 +24,8 @@ namespace StereoKitTest
         static Tex         cubemap    = null;
 
         Mesh       lightMesh     = Mesh.GenerateSphere(1);
-        Material   lightProbeMat = Material.Find(DefaultIds.material);
-        Material   lightSrcMat   = new Material(Shader.Find(DefaultIds.shaderUnlit));
+        Material   lightProbeMat = Default.Material;
+        Material   lightSrcMat   = new Material(Default.ShaderUnlit);
         FilePicker hdrPicker     = new FilePicker(new (string, string)[]{("HDR","*.hdr")});
         bool       showPicker    = false;
 

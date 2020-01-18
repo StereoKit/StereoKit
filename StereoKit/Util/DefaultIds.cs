@@ -22,6 +22,9 @@ namespace StereoKit {
         /// <summary>This is the default material for rendering the hand! It's a copy of the
         /// default material, but set to transparent, and using a generated texture.</summary>
         public const string materialHand     = "default/material_hand";
+        /// <summary>The material used by the UI! By default, it uses a shader that creates
+        /// a 'finger shadow' that shows how close the finger is to the UI.</summary>
+        public const string materialUI       = "default/material_ui";
 
         /// <summary>Default 2x2 white opaque texture, this is the texture referred to as 'white'
         /// in the shader texture defaults.</summary>
