@@ -406,15 +406,21 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader) {
 	// Check if we've already loaded this material
+	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	sprintf_s(id, 512, "%s/%s", filename, material->name);
+	sprintf_s(id, 512, "%s/%s", filename, mat_name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;
 	}
-	
+
 	result = shader == nullptr ? material_copy_id("default/material") : material_create(shader);
 	material_set_id(result, id);
+
+	// If it's a null material, we can just stop here
+	if (material == nullptr)
+		return result;
+
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
