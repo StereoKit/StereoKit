@@ -27,15 +27,9 @@ namespace StereoKitTest
         Mesh       lightMesh     = Mesh.GenerateSphere(1);
         Material   lightProbeMat = Default.Material;
         Material   lightSrcMat   = new Material(Default.ShaderUnlit);
-        FilePicker hdrPicker     = new FilePicker(new FilePicker.Filter("HDR","*.hdr"));
-        bool       showPicker    = false;
 
-        public void Initialize() {
-            hdrPicker = new FilePicker(
-                Path.GetFullPath(StereoKitApp.settings.assetsFolder),
-                new FilePicker.Filter("HDR", "*.hdr"));
-        }
-        public void Shutdown() { }
+        public void Initialize() { }
+        public void Shutdown() => FilePicker.Hide();
         public void Update()
         {
             UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * Units.cm2m, 0));
@@ -66,8 +60,8 @@ namespace StereoKitTest
             if (mode == LightMode.Image)
             {
                 UI.Label("Image");
-                if (!showPicker && UI.Button("Open"))
-                    showPicker = true;
+                if (!FilePicker.Active && UI.Button("Open"))
+                    ShowPicker();
             }
 
             UI.WindowEnd();
@@ -82,16 +76,6 @@ namespace StereoKitTest
                 }
                 if (needsUpdate)
                     UpdateLights();
-            }
-            if (mode == LightMode.Image)
-            {
-                if (showPicker && hdrPicker.Show()) { 
-                    cubemap    = Tex.FromCubemapEquirectangular( hdrPicker.SelectedFile, out SphericalHarmonics lighting );
-                    showPicker = false;
-
-                    Renderer.SkyTex   = cubemap;
-                    Renderer.SkyLight = lighting;
-                }
             }
         }
 
@@ -119,6 +103,22 @@ namespace StereoKitTest
             return dirty;
         }
 
+        void ShowPicker()
+        {
+            FilePicker.Show(
+                Path.GetFullPath(StereoKitApp.settings.assetsFolder),
+                LoadSkyImage,
+                new FilePicker.Filter("HDR", "*.hdr"));
+        }
+
+        void LoadSkyImage(string file)
+        {
+            cubemap = Tex.FromCubemapEquirectangular(file, out SphericalHarmonics lighting);
+
+            Renderer.SkyTex   = cubemap;
+            Renderer.SkyLight = lighting;
+        }
+
         void UpdateLights()
         {
             SphericalHarmonics lighting = SphericalHarmonics.FromLights(lights
@@ -130,6 +130,7 @@ namespace StereoKitTest
             Renderer.SkyTex   = Tex.GenCubemap(lighting);
             Renderer.SkyLight = lighting;
         }
+
         float LightIntensity(Vec3 pos)
         {
             return Math.Max(0, 2 - pos.Magnitude * 4);
