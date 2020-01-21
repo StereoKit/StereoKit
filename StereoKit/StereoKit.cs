@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StereoKit.Framework;
+using System;
 
 namespace StereoKit
 {
@@ -6,6 +7,7 @@ namespace StereoKit
     public static class StereoKitApp
     {
         private static SystemInfo _system;
+        private static Steppers   _steppers;
 
         /// <summary>Settings for more detailed initialization of StereoKit! Set these before calling Initialize,
         /// otherwise they'll be ignored.</summary>
@@ -52,6 +54,9 @@ namespace StereoKit
             if (result) { 
                 _system = NativeAPI.sk_system_info();
                 Default.Initialize();
+
+                _steppers = new Steppers();
+                result = _steppers.Initialize();
             }
 
             return result;
@@ -62,6 +67,7 @@ namespace StereoKit
         {
             if (IsInitialized)
             {
+                _steppers.Shutdown();
                 Default.Shutdown();
                 NativeAPI.sk_shutdown();
             }
@@ -77,9 +83,17 @@ namespace StereoKit
         /// <summary> Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. </summary>
         /// <param name="onStep">A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.</param>
         /// <returns>If an exit message is received from the platform, this function will return false.</returns>
-        public static bool Step(Action onStep)
+        public static bool Step(Action onStep = null)
         {
-            return NativeAPI.sk_step(onStep);
+            return NativeAPI.sk_step(() => {
+                _steppers.Step();
+                onStep?.Invoke();
+            });
         }
+
+        public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
+        public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
+        public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
+        public static void RemoveStepper<T>() where T:IStepper => _steppers.Remove<T>();
     }
 }
