@@ -29,6 +29,7 @@ struct ui_hand_t {
 	bool            tracked;
 	uint64_t        focused_prev = {};
 	uint64_t        focused = {};
+	uint64_t        active_prev = {};
 	uint64_t        active = {};
 };
 
@@ -214,8 +215,10 @@ void ui_update() {
 		skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
 		skui_hand[i].finger_world      = hand.fingers[1][4].position;
 		skui_hand[i].focused_prev = skui_hand[i].focused;
+		skui_hand[i].active_prev  = skui_hand[i].active;
 
 		skui_hand[i].focused = 0;
+		skui_hand[i].active  = 0;
 		skui_hand[i].finger       = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
 		skui_hand[i].finger_prev  = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
 		skui_hand[i].tracked      = hand.tracked_state & button_state_active;
@@ -258,7 +261,7 @@ void ui_pop_id() {
 ///////////////////////////////////////////
 
 bool32_t ui_is_interacting(handed_ hand) {
-	return skui_hand[hand].active != 0 || skui_hand[hand].focused_prev != 0;
+	return skui_hand[hand].active_prev != 0 || skui_hand[hand].focused_prev != 0;
 }
 
 ///////////////////////////////////////////
@@ -452,18 +455,16 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 		finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
 		if (finger_offset < skui_settings.depth / 2) {
 			button_state = button_state_active;
-			if (skui_hand[hand].active != id) {
-				skui_hand[hand].active = id;
+			skui_hand[hand].active = id;
+			if (skui_hand[hand].active_prev != id) {
 				button_state |= button_state_just_active;
 			}
-		} else if (skui_hand[hand].active == id) {
-			skui_hand[hand].active = 0;
+		} else if (skui_hand[hand].active_prev == id) {
 			button_state |= button_state_just_inactive;
 		}
 		finger_offset = fmaxf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset);
 	} else if (focus_state & button_state_just_inactive) {
-		if (skui_hand[hand].active == id) {
-			skui_hand[hand].active = 0;
+		if (skui_hand[hand].active_prev == id) {
 			button_state |= button_state_just_inactive;
 		}
 	}
@@ -778,9 +779,7 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 		result = value != new_val;
 		value = new_val;
 
-		if (result && step != 0) {
-			skui_hand[hand].active = id;
-		}
+		skui_hand[hand].active = id;
 	}
 
 	// Draw the UI
@@ -861,7 +860,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 			skui_hand[i].focused = id;
 		}
 
-		if (skui_hand[i].focused == id || skui_hand[i].active == id) {
+		if (skui_hand[i].focused == id || skui_hand[i].active_prev == id) {
 			
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.pinch_state & button_state_just_active) {
@@ -871,9 +870,10 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				start_tip_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).palm.position );
 				start_tip_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).palm.orientation);
 			}
-			if (skui_hand[i].active == id) {
+			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 				color = 1.5f;
 				result = true;
+				skui_hand[i].active = id;
 
 				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).palm.position);
 				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
