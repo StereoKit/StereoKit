@@ -5,6 +5,20 @@ using System.Linq;
 
 namespace StereoKit.Framework
 {
+    public struct FileFilter
+    {
+        public string name;
+        public string filter;
+        public FileFilter(string name, string filter)
+        {
+            this.name = name;
+            this.filter = filter;
+        }
+    }
+
+    /// <summary>Lets you pick files from the file system! Use FilePicker.Show
+    /// to begin a file picker, and FilePicker.Hide to close it. You can safely 
+    /// call FilePicker.Hide even if it's already closed.</summary>
     public class FilePicker : IStepper
     {
         #region Support types
@@ -19,16 +33,6 @@ namespace StereoKit.Framework
             public string   name;
             public string   extension;
         }
-        public struct Filter
-        {
-            public string name;
-            public string filter;
-            public Filter(string name, string filter)
-            {
-                this.name = name;
-                this.filter = filter;
-            }
-        }
         #endregion
 
         #region Singleton
@@ -38,14 +42,14 @@ namespace StereoKit.Framework
         /// and this one will replace it.</summary>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Action<string> onSelectFile, params Filter[] filters)
+        public static void Show(Action<string> onSelectFile, params FileFilter[] filters)
             => Show(null, onSelectFile, null, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="onCancel">If the file selection has been cancelled, this'll get called!</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Action<string> onSelectFile, Action onCancel = null, params Filter[] filters)
+        public static void Show(Action<string> onSelectFile, Action onCancel = null, params FileFilter[] filters)
             => Show(null, onSelectFile, onCancel, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
@@ -53,7 +57,7 @@ namespace StereoKit.Framework
         /// the working directory.</param>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(string initialFolder, Action<string> onSelectFile, params Filter[] filters)
+        public static void Show(string initialFolder, Action<string> onSelectFile, params FileFilter[] filters)
             => Show(initialFolder, onSelectFile, null, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
@@ -62,7 +66,7 @@ namespace StereoKit.Framework
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="onCancel">If the file selection has been cancelled, this'll get called!</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(string initialFolder, Action<string> onSelectFile, Action onCancel, params Filter[] filters)
+        public static void Show(string initialFolder, Action<string> onSelectFile, Action onCancel, params FileFilter[] filters)
         {
             if (_inst != null) _inst._onCancel?.Invoke();
             if (_inst == null) _inst = StereoKitApp.AddStepper(new FilePicker());
@@ -81,7 +85,7 @@ namespace StereoKit.Framework
         #endregion
 
         #region Fields
-        Filter[]   _filters;
+        FileFilter[]   _filters;
         List<File> _activeFiles = new List<File>();
         string     _path;
         string     _title;
@@ -94,7 +98,7 @@ namespace StereoKit.Framework
         public bool Enabled => true;
         #endregion
 
-        void Setup(string initialFolder, Action<string> onSelectFile, Action onCancel, Filter[] filters)
+        void Setup(string initialFolder, Action<string> onSelectFile, Action onCancel, FileFilter[] filters)
         {
             _title        = string.Join(" | ", filters.Select(filter => filter.name));
             _filters      = filters;

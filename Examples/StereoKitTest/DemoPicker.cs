@@ -38,8 +38,8 @@ namespace StereoKitTest
             FilePicker.Show(
                 Path.GetFullPath(StereoKitApp.settings.assetsFolder),
                 LoadModel,
-                new FilePicker.Filter("GLTF", "*.gltf"),
-                new FilePicker.Filter("GLB", "*.glb"));
+                new FileFilter("GLTF", "*.gltf"),
+                new FileFilter("GLB", "*.glb"));
         }
 
         private void LoadModel(string filename)
