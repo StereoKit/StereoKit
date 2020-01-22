@@ -10,6 +10,7 @@
 /// :End:
 
 using StereoKit;
+using System;
 
 namespace StereoKitTest
 {
@@ -78,6 +79,8 @@ namespace StereoKitTest
 
             DrawHandMenu(Handed.Right);
             DrawHandMenu(Handed.Left);
+
+            HandSubMenu(Handed.Right);
         }
 
         /// :CodeDoc: Guides Using Hands
@@ -174,6 +177,66 @@ namespace StereoKitTest
             }
         }
         /// :End:
+        
+        bool showHandSubmenu = false;
+        int  depth = 0;
+        Pose subMenuPose;
+        public void HandSubMenu(Handed handed)
+        {
+            Hand hand = Input.Hand(handed);
+            
+            if (!showHandSubmenu && hand.IsJustGripped)
+            {
+                subMenuPose = hand[FingerId.Index, JointId.Tip].Pose;
+                subMenuPose.orientation = Quat.LookAt(subMenuPose.position, Input.Head.position);
+                showHandSubmenu = true;
+                depth = 0;
+            }
+
+            if (showHandSubmenu)
+            {
+                const float minDist = 0.03f;
+                const float midDist = 0.065f;
+                const float maxDist = 0.1f;
+                const int   count   = 6;
+                const float step    = 360 / count;
+                const float halfStep = step/2;
+
+                Hierarchy.Push(subMenuPose.ToMatrix());
+                Vec3  fingertip = Hierarchy.ToLocal(hand[FingerId.Index, JointId.Tip].position);
+                float magSq    = fingertip.MagnitudeSq;
+                float angle    = (float)Math.Atan2(fingertip.y, fingertip.x) * Units.rad2deg;
+                bool  onPlane  = fingertip.z > -0.02f && fingertip.z < 0.02f;
+                bool  active   = onPlane && magSq > minDist * minDist;
+                bool  selected = onPlane && magSq > midDist * midDist;
+                bool  unfocus  = magSq > maxDist*maxDist;
+
+                if (angle < 0)
+                    angle += 360;
+                int angleId = (int)(angle / step);
+
+                for (int i = 0; i < count; i++)
+                {
+                    bool highlightText = active && angleId == i;
+                    bool highlightLine = highlightText || (active && (angleId+1)%6 == i);
+                    Vec3 dir = Vec3.AngleXY(i * step);
+                    Lines.Add(dir * minDist, dir * maxDist, highlightLine ? Color.White : Color.White*0.5f, highlightLine?0.002f:0.001f);
+                    Text.Add((i+count*depth).ToString(), Matrix.TRS(Vec3.AngleXY(i * step + halfStep)*midDist, Quat.FromAngles(0, 0, i * step + halfStep - 90), highlightText?1.2f:1), TextAlign.XCenter | TextAlign.YBottom);
+                }
+                Lines.Add(Vec3.Zero, new Vec3(fingertip.x, fingertip.y, 0), Color.White * 0.5f, 0.001f);
+
+                Hierarchy.Pop();
+
+                if (unfocus)
+                    showHandSubmenu = false;
+                if (selected)
+                {
+                    Plane plane = new Plane(subMenuPose.position, subMenuPose.Forward);
+                    subMenuPose.position = plane.Closest( hand[FingerId.Index, JointId.Tip].position );
+                    depth += 1;
+                }
+            }
+        }
     }
 }
 
