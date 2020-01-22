@@ -30,14 +30,14 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
-Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Material.Copy(DefaultIds.material));
+Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Default.Material);
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
 Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
-Renderer.Add(roundedCubeMesh, defaultMaterial, roundedCubeTransform);
+Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 
 roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
 Renderer.Add(roundedCubeModel, roundedCubeTransform);

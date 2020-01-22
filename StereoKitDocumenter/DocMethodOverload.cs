@@ -67,7 +67,10 @@ namespace StereoKitDocumenter
 
         private static Type GetParentType(DocMethod rootMethod)
         {
-            return Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
+            Type result = Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
+            if (result == null)
+                result = Type.GetType("StereoKit.Framework." + rootMethod.parent.name + ", StereoKit");
+            return result;
         }
         private static MethodBase GetMethodInfo(string signature, DocMethod rootMethod)
         {
@@ -77,10 +80,21 @@ namespace StereoKitDocumenter
                 .Select(a => {
                     string cleanName = a.Replace("@", "");
                     bool   nullable  = a.Contains("System.Nullable");
+                    bool   action    = a.Contains("System.Action{");
+                    bool   array     = a.Contains("[]");
                     if (nullable)
                     {
                         int length = "System.Nullable{".Length;
                         cleanName = cleanName.Substring(length, cleanName.Length-length-1);
+                    }
+                    if (action)
+                    {
+                        int length = "System.Action{".Length;
+                        cleanName = cleanName.Substring(length, cleanName.Length - length - 1);
+                    }
+                    if (array)
+                    {
+                        cleanName = cleanName.Substring(0, cleanName.IndexOf("[]"));
                     }
 
                     Type t = Type.GetType(cleanName);
@@ -90,6 +104,10 @@ namespace StereoKitDocumenter
                         t = t.MakeByRefType();
                     if (nullable)
                         t = typeof(Nullable<>).MakeGenericType(t);
+                    if (action) 
+                        t = typeof(Action<>).MakeGenericType(t);
+                    if (array)
+                        t = t.MakeArrayType();
 
                     return t;
                     })

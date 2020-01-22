@@ -56,9 +56,9 @@ Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, Color.Black, 0.0
 ```
 ```csharp
 Lines.Add(new LinePoint[]{ 
-    new LinePoint(new Vec3( 0.1f, 0, 0), Color.White, 0.01f),
+    new LinePoint(new Vec3( 0.1f, 0,     0), Color.White, 0.01f),
     new LinePoint(new Vec3( 0,    0.02f, 0), Color.Black, 0.005f),
-    new LinePoint(new Vec3(-0.1f, 0, 0), Color.White, 0.01f),
+    new LinePoint(new Vec3(-0.1f, 0,     0), Color.White, 0.01f),
 });
 ```
 

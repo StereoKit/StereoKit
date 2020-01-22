@@ -17,7 +17,6 @@ namespace StereoKitDocumenter
 
             for (int i = 0; i < files.Length; i++)
             {
-                Console.WriteLine(files[i]);
                 StreamReader reader = new StreamReader(files[i]);
                 ParseFile(reader.ReadToEnd());
                 reader.Close();

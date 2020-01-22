@@ -15,16 +15,21 @@ namespace StereoKitDocumenter
 
         public static List<DocClass>  classes = new List<DocClass>();
         public static List<DocMethod> methods = new List<DocMethod>();
-        public static List<DocField> fields = new List<DocField>();
-        public static List<IDocItem>  items = new List<IDocItem>();
+        public static List<DocField>  fields  = new List<DocField>();
+        public static List<IDocItem>  items   = new List<IDocItem>();
 
         public static DocClass GetClass(string name) { return classes.Find((a)=>a.name==name); }
 
         static void Main(string[] args)
         {
-            RunSKTests();
+            int result = RunSKTests();
+            if (result != 0)
+                Environment.Exit(result);
+
+            Console.WriteLine("Building doc pages...");
             ScrapeData();
             WriteDocsToFile();
+            Console.WriteLine("Done!");
         }
 
         private static void WriteDocsToFile()
@@ -72,7 +77,7 @@ namespace StereoKitDocumenter
             DocExampleFinder.FindExamples(samplesProj);
         }
 
-        private static void RunSKTests()
+        private static int RunSKTests()
         {
             var testInfo = new System.Diagnostics.ProcessStartInfo();
             testInfo.FileName         = "cmd.exe";
@@ -86,6 +91,8 @@ namespace StereoKitDocumenter
             var process = System.Diagnostics.Process.Start(testInfo);
             process.WaitForExit();
             Console.WriteLine("Ran StereoKit tests! Result: " + process.ExitCode);
+
+            return process.ExitCode;
         }
 
         static void ReadClass(string signature, XmlReader reader)
@@ -94,9 +101,7 @@ namespace StereoKitDocumenter
 
             // Get names
             string[] segs = signature.Split('.');
-            if (segs.Length != 2)
-                Console.WriteLine("Unexpected signature length, " + signature);
-            result.name = segs[1];
+            result.name = segs[segs.Length-1];
 
             // Read properties
             while (reader.Read())
@@ -118,10 +123,8 @@ namespace StereoKitDocumenter
             string nameSignature = segs[0];
             string paramSignature = segs.Length > 1 ? segs[1] : "";
             segs = nameSignature.Split('.');
-            if (segs.Length != 3)
-                Console.WriteLine("Unexpected signature length, " + signature);
-
-            DocField result = new DocField(GetClass(segs[1]), segs[2]);
+            
+            DocField result = new DocField(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
 
             // Read properties
             while (reader.Read())
@@ -141,17 +144,15 @@ namespace StereoKitDocumenter
             // Get names
             string[] segs = signature.Split('(');
             string nameSignature  = segs[0];
-            string paramSignature = segs.Length>1?segs[1]:"";
+            string paramSignature = segs.Length>1?segs[1] :"";
             segs = nameSignature.Split('.');
             if (paramSignature.Length > 0)
                 paramSignature = paramSignature.Substring(0, paramSignature.Length-1);
-            if (segs.Length != 3)
-                Console.WriteLine("Unexpected signature length, " + signature);
-
-            DocMethod method = methods.Find(a => a.name == segs[2] && a.parent.name == segs[1]);
+            
+            DocMethod method = methods.Find(a => a.name == segs[segs.Length-1] && a.parent.name == segs[segs.Length-2]);
             if (method == null)
             {
-                method = new DocMethod(GetClass(segs[1]), segs[2]);
+                method = new DocMethod(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
                 methods.Add(method);
                 items.Add(method);
             }

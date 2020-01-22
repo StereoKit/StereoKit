@@ -28,6 +28,7 @@ namespace StereoKitDocumenter
         public override string ToString()
         {
             Type t = Type.GetType("StereoKit." + name + ", StereoKit");
+            if (t==null) t = Type.GetType("StereoKit.Framework." + name + ", StereoKit");
             methods.Sort((a,b)=>a.name.CompareTo(b.name));
             fields .Sort((a,b)=>a.name.CompareTo(b.name));
             List<DocMethod> methodsStatic   = methods.FindAll(a =>  a.IsStatic);

@@ -29,14 +29,14 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  sphereMesh  = Mesh.GenerateSphere(0.4f);
-Model sphereModel = Model.FromMesh(sphereMesh, Material.Copy(DefaultIds.material));
+Model sphereModel = Model.FromMesh(sphereMesh, Default.Material);
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
 Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
-Renderer.Add(sphereMesh, defaultMaterial, sphereTransform);
+Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 
 sphereTransform = Matrix.T(0.0f, 0, -1);
 Renderer.Add(sphereModel, sphereTransform);

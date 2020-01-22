@@ -35,6 +35,17 @@ function Clean {
 function Build {
     param([parameter(Mandatory)][string] $mode)
     & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' 'StereoKit' | Out-Null
+    return $LASTEXITCODE
+}
+function Test {
+    & $vsExe 'StereoKit.sln' '/Build' 'Debug|X64' '/Project' 'StereoKitDocumenter' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        return $LASTEXITCODE
+    }
+    & 'cd' 'StereoKitDocumenter/bin/Debug/';
+    & '.\StereoKitDocumenter.exe' | Write-Host
+    & 'cd' '../../../';
+    return $LASTEXITCODE
 }
 function Get-Key {
     if ($key -ne '') {
@@ -49,38 +60,63 @@ function Get-Key {
             Set-Content -path '.nugetkey' -value $key.Trim()
         }
     }
-
     return $key.Trim()
 }
 
-Write-Output 'Beginning a full build!'
+# Notify about our upload flag status 
+if ($noupload -eq $true) {
+    Write-Host 'Local package build only.'
+} else {
+    Write-Host 'Will attempt to upload package when finished!'
+}
 
+# Run tests before anything else!
+Write-Host 'Running tests...'
+if ( Test -ne 0 ) {
+    Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host 'Tests passed!' -ForegroundColor green
+
+# Notify of build, and output the version
+Write-Host 'Beginning a full build!'
 $version = Get-Version
-Write-Output "v$version"
+Write-Host "v$version"
+
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 
 # Clean out the old files, do a full build
 Clean
-Write-Output 'Cleaned'
+Write-Host 'Cleaned'
 
 # Build ARM first
-Build -mode "Release|ARM64"
-Write-Output "Finished building: ARM64"
+$result = Build -mode "Release|ARM64"
+if ($result -ne 0) {
+    Write-Host '--- ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: ARM64" -ForegroundColor green
 
 # Turn on NuGet package generation, build x64, then turn it off again
 $packageOff = '<GeneratePackageOnBuild>false</GeneratePackageOnBuild>'
 $packageOn  = '<GeneratePackageOnBuild>true</GeneratePackageOnBuild>'
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOff -with $packageOn
-Build -mode "Release|X64"
+$result = Build -mode "Release|X64"
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packageOff
-Write-Output "Finished building: X64"
+if ($result -ne 0) {
+    Write-Host '--- x64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: X64" -ForegroundColor green
 
 if (-not $noupload) {
     $key = Get-Key
     if ($key -ne '') {
         & dotnet nuget push "bin\StereoKit.$version.nupkg" -k $key -s https://api.nuget.org/v3/index.json
     } else {
-        Write-Output 'No key, cancelling upload'
+        Write-Host 'No key, cancelling upload'
     }
 }
+
+Write-Host "Done!" -ForegroundColor green

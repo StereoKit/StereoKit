@@ -42,14 +42,14 @@ Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
 Mesh  planeMesh  = Mesh.GeneratePlane(Vec2.One*0.4f);
-Model planeModel = Model.FromMesh(planeMesh, Material.Copy(DefaultIds.material));
+Model planeModel = Model.FromMesh(planeMesh, Default.Material);
 ```
 Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
 Matrix planeTransform = Matrix.T(1.0f, 0, 1);
-Renderer.Add(planeMesh, defaultMaterial, planeTransform);
+Renderer.Add(planeMesh, Default.Material, planeTransform);
 
 planeTransform = Matrix.T(1.0f, 0, -1);
 Renderer.Add(planeModel, planeTransform);

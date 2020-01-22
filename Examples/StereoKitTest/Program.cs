@@ -53,6 +53,10 @@ class Program
         StereoKitApp.settings.assetsFolder = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
+
+        if (Demos.TestMode)
+            Input.HandVisible(Handed.Max, false);
+
         CommonInit();
 
         Demos.FindDemos();

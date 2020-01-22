@@ -37,11 +37,15 @@ var documents =
 			},
 			{
 			name : 'DefaultIds',
-			pages : ['cubemap','font','material','materialEquirect','materialFont','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex','texBlack','texFlat','texGray','texRough'],
+			pages : ['cubemap','font','material','materialEquirect','materialFont','materialHand','materialUI','quad','shader','shaderEquirect','shaderFont','shaderPbr','shaderUnlit','tex','texBlack','texFlat','texGray','texRough'],
 			},
 			{
 			name : 'Display',
 			pages : ['Additive','Opaque','Passthrough'],
+			},
+			{
+			name : 'FilePicker',
+			pages : ['Active','Hide','Show'],
 			},
 			{
 			name : 'FingerId',
@@ -245,7 +249,7 @@ var documents =
 			},
 			{
 			name : 'UI',
-			pages : ['AreaRemaining','ColorScheme','LineHeight','Settings','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','VolumeAt','WindowBegin','WindowEnd'],
+			pages : ['AreaRemaining','ColorScheme','LineHeight','Settings','ShowVolumes','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','IsInteracting','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','VolumeAt','WindowBegin','WindowEnd'],
 			},
 			{
 			name : 'UISettings',
