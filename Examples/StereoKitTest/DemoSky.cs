@@ -106,6 +106,7 @@ namespace StereoKitTest
         void ShowPicker()
         {
             FilePicker.Show(
+                FilePicker.Mode.Open,
                 Path.GetFullPath(StereoKitApp.settings.assetsFolder),
                 LoadSkyImage,
                 new FileFilter("HDR", "*.hdr"));

@@ -6,10 +6,9 @@ namespace StereoKitTest
 {
     class DemoPicker : IDemo
     {
-        static Model model      = null;
-        static float modelScale = 1;
-        static float menuScale  = 1;
-        FilePicker picker;
+        Model model      = null;
+        float modelScale = 1;
+        float menuScale  = 1;
         Pose  modelPose  = new Pose(-.3f,0,0, Quat.LookDir(-Vec3.Forward));
         Pose  menuPose   = new Pose(0.3f,0,0, Quat.LookDir(-Vec3.Forward));
         
@@ -36,6 +35,7 @@ namespace StereoKitTest
         void ShowPicker()
         {
             FilePicker.Show(
+                FilePicker.Mode.Open,
                 Path.GetFullPath(StereoKitApp.settings.assetsFolder),
                 LoadModel,
                 new FileFilter("GLTF", "*.gltf"),
