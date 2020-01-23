@@ -45,6 +45,7 @@ void win32_resize(int width, int height) {
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+		back_buffer->Release();
 	}
 
 	render_update_projection();
@@ -132,6 +133,7 @@ bool win32_init(const char *app_name) {
 	tex_setsurface (win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 	tex_add_zbuffer(win32_target, tex_format_depth16);
 
+	back_buffer ->Release();
 	dxgi_factory->Release();
 	dxgi_adapter->Release();
 	dxgi_device ->Release();

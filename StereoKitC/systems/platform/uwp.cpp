@@ -157,6 +157,7 @@ public:
 		tex_setsurface (uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 		tex_add_zbuffer(uwp_target, tex_format_depth16);
 
+		back_buffer ->Release();
 		dxgi_factory->Release();
 		dxgi_adapter->Release();
 		dxgi_device ->Release();
@@ -353,7 +354,8 @@ private:
 			uwp_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
 			ID3D11Texture2D *back_buffer;
 			uwp_swapchain->GetBuffer(0, __uuidof(**(&back_buffer)), reinterpret_cast<void **>(&back_buffer));
-			tex_setsurface(uwp_target, back_buffer, DXGI_FORMAT_UNKNOWN);
+			tex_setsurface(uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+			back_buffer->Release();
 		}
 
 		render_update_projection();
