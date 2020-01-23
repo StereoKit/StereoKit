@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace StereoKit.Framework
 {
@@ -17,11 +18,30 @@ namespace StereoKit.Framework
         List<StepperInfo>     _steppers = new List<StepperInfo>();
         Dictionary<Type, int> _stepperSort;
 
+        static IEnumerable<Type> GetLoadableTypes(Assembly a)
+        {
+            if (a == null) throw new ArgumentNullException("assembly");
+            try { 
+                return a.GetTypes();
+            } catch (ReflectionTypeLoadException e) { 
+                return e.Types.Where(t => t != null);
+            }
+        }
+        static bool IsAssignable(Type interfaceType, Type otherType)
+        {
+            try {
+                return interfaceType.IsAssignableFrom(otherType);
+            } catch(TypeLoadException e) {
+                return false;
+            }
+        }
+
         public bool Initialize()
         {
+            Type stepperType = typeof(IStepper);
             Type[] stepperTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes()
-                    .Where(type => typeof(IStepper).IsAssignableFrom(type)))
+                .SelectMany(assembly => GetLoadableTypes(assembly)
+                    .Where(type => IsAssignable(stepperType, type)))
                 .ToArray();
 
             // TODO: change this to a dependency graph sort order!
