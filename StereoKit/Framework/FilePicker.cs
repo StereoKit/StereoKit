@@ -15,6 +15,11 @@ namespace StereoKit.Framework
             this.filter = filter;
         }
     }
+    public enum FilePickerMode
+    {
+        Open,
+        Save
+    }
 
     /// <summary>Lets you pick files from the file system! Use FilePicker.Show
     /// to begin a file picker, and FilePicker.Hide to close it. You can safely 
@@ -22,11 +27,6 @@ namespace StereoKit.Framework
     public class FilePicker : IStepper
     {
         #region Support types
-        public enum Mode
-        {
-            Open,
-            Save
-        }
         enum FileType
         {
             File,
@@ -45,33 +45,37 @@ namespace StereoKit.Framework
 
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
+        /// <param name="mode">For opening files, or for saving them?</param>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Mode mode, Action<string> onSelectFile, params FileFilter[] filters)
+        public static void Show(FilePickerMode mode, Action<string> onSelectFile, params FileFilter[] filters)
             => Show(mode, null, onSelectFile, null, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
+        /// <param name="mode">For opening files, or for saving them?</param>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="onCancel">If the file selection has been cancelled, this'll get called!</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Mode mode, Action<string> onSelectFile, Action onCancel = null, params FileFilter[] filters)
+        public static void Show(FilePickerMode mode, Action<string> onSelectFile, Action onCancel = null, params FileFilter[] filters)
             => Show(mode, null, onSelectFile, onCancel, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
+        /// <param name="mode">For opening files, or for saving them?</param>
         /// <param name="initialFolder">The starting folder. By default (or null), this'll just be
         /// the working directory.</param>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Mode mode, string initialFolder, Action<string> onSelectFile, params FileFilter[] filters)
+        public static void Show(FilePickerMode mode, string initialFolder, Action<string> onSelectFile, params FileFilter[] filters)
             => Show(mode, initialFolder, onSelectFile, null, filters);
         /// <summary>Show a file picker to the user! If one is already up, it'll be cancelled out,
         /// and this one will replace it.</summary>
+        /// <param name="mode">For opening files, or for saving them?</param>
         /// <param name="initialFolder">The starting folder. By default (or null), this'll just be
         /// the working directory.</param>
         /// <param name="onSelectFile">The function to call when the user has selected a file.</param>
         /// <param name="onCancel">If the file selection has been cancelled, this'll get called!</param>
         /// <param name="filters">What file types should show up in the picker?</param>
-        public static void Show(Mode mode, string initialFolder, Action<string> onSelectFile, Action onCancel, params FileFilter[] filters)
+        public static void Show(FilePickerMode mode, string initialFolder, Action<string> onSelectFile, Action onCancel, params FileFilter[] filters)
         {
             if (_inst != null) _inst._onCancel?.Invoke();
             if (_inst == null) { 
@@ -94,7 +98,7 @@ namespace StereoKit.Framework
         #endregion
 
         #region Fields
-        Mode         _mode;
+        FilePickerMode _mode;
         FileFilter[] _filters;
         List<File> _activeFiles = new List<File>();
         string     _path;
@@ -110,7 +114,7 @@ namespace StereoKit.Framework
         public bool Enabled => true;
         #endregion
 
-        void Setup(Mode mode, string initialFolder, Action<string> onSelectFile, Action onCancel, FileFilter[] filters)
+        void Setup(FilePickerMode mode, string initialFolder, Action<string> onSelectFile, Action onCancel, FileFilter[] filters)
         {
             _mode         = mode;
             _title        = string.Join(" | ", filters.Select(filter => filter.name));
@@ -174,9 +178,9 @@ namespace StereoKit.Framework
 
             ShowPath();
 
-            if (_mode == Mode.Open)
+            if (_mode == FilePickerMode.Open)
                 ShowOpenFile();
-            else if (_mode == Mode.Save)
+            else if (_mode == FilePickerMode.Save)
                 ShowSaveFile();
             
             ShowFolderItems();
