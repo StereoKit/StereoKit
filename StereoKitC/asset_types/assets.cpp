@@ -166,7 +166,7 @@ const char *assets_file(const char *file_name) {
 		ch++;
 	}
 
-	sprintf_s(assets_file_buffer, "%s/%s", sk_settings.assets_folder, file_name);
+	sprintf_s(assets_file_buffer, "%s\\%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
 }
 
