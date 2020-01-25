@@ -21,6 +21,14 @@ struct text_buffer_t {
 	int        vert_count;
 	int        vert_cap;
 };
+struct text_stepper_t {
+	_text_style_t *style;
+	text_align_ align;
+	int32_t line_remaining;
+	vec2 start;
+	vec2 bounds;
+	vec2 pos;
+};
 
 vec2 text_line_size(text_style_t style, const char *text);
 

@@ -71,6 +71,16 @@ class DemoText : IDemo
             "Here's\nSome\nMulti-line\nText!!", 
             Matrix.TRS(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
         /// :End:
+        
+        Hierarchy.Push(Matrix.T(0, -0.2f, 0));
+        Text.Add(
+            "Here's Some Multi-line Text!!",
+            Matrix.TRS(new Vec3(0, 0.0f, 0), Quat.LookDir(0, 0, 1)),
+            new Vec2(SKMath.Cos(Time.Totalf)*10+11, 20) * Units.cm2m,
+            TextFit.Wrap,
+            style, TextAlign.Center, align);
+        Hierarchy.Pop();
+
         Hierarchy.Pop();
 
         Hierarchy.Pop();
