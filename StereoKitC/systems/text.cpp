@@ -141,13 +141,17 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 	float last_width = 0;
 	const char *last_at = start;
 	const char *ch = start;
+	bool was_space = false;
 
 	while (true) {
 		char curr = *ch;
+		bool is_space = isspace(curr);
+
 		// We prefer to line break at spaces, rather than in the middle of words
-		if (isspace(curr) || curr == '\0') {
-			last_width = curr_width;
-			last_at = ch;
+		if (is_space || curr == '\0') {
+			if (!was_space)
+				last_width = curr_width;
+			last_at = curr != '\0' ? ch+1 : ch;
 		}
 		// End of line or string?
 		if (curr == '\0' || curr == '\n')
@@ -158,7 +162,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		float next_width = char_info.xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
-		if (next_width > step.bounds.x) {
+		if (!is_space && next_width > step.bounds.x) {
 			// If there were no spaces in this line, set to the previous character
 			if (last_width == 0) {
 				last_width = curr_width;
@@ -170,6 +174,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		
 		// Next character!
 		curr_width = next_width;
+		was_space = is_space;
 		ch++;
 	}
 
@@ -192,7 +197,7 @@ float text_step_height(const char *text, int32_t *out_length, const text_stepper
 
 	if (out_length != nullptr)
 		*out_length = curr - text;
-	return height * step.style->font->character_height * step.style->size;
+	return height * (step.style->font->character_height+step.style->line_spacing) * step.style->size;
 }
 
 ///
@@ -209,8 +214,10 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 void text_step_position(char ch, const char *start, text_stepper_t &step) {
 	font_char_t &char_info = step.style->font->characters[ch];
 	step.line_remaining--;
-	if (step.line_remaining <= 0)
-		text_step_next_line(start, step);
+	if (step.line_remaining <= 0) {
+		text_step_next_line(start+1, step);
+		return;
+	}
 
 	switch (ch) {
 	case '\t': step.pos.x -= step.style->font->characters[(int)' '].xadvance * 4 * step.style->size; break;
@@ -308,6 +315,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 
 	// Find the initial stepping information for this chunk of text
 	text_stepper_t step;
+	step.line_remaining = 0;
 	step.align  = align;
 	step.style  = &text_styles[style == -1 ? 0 : style];
 	step.bounds = size;
@@ -324,6 +332,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	if      (align & text_align_y_center) step.pos.y -= (step.bounds.y-text_height) / 2.f;
 	else if (align & text_align_y_bottom) step.pos.y -=  step.bounds.y-text_height;
 
+	// Debug draw bounds
 	line_add({ step.start.x, step.start.y,                 off_z }, { step.start.x - step.bounds.x, step.start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
 	line_add({ step.start.x, step.start.y - step.bounds.y, off_z }, { step.start.x - step.bounds.x, step.start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ step.start.x, step.start.y,                 off_z }, { step.start.x,                 step.start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
@@ -335,7 +344,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 
 	// Core loop for drawing the text
 	const char *curr = text;
-	text_step_position('\n', text, step);
+	text_step_next_line(text, step);
 	for (int32_t i=0; i<text_length; i++) {
 		if (!isspace(text[i])) {
 			font_char_t &char_info = step.style->font->characters[text[i]];
