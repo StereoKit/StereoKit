@@ -137,6 +137,20 @@ vec2 text_size(const char *text, text_style_t style) {
 ///////////////////////////////////////////
 
 float text_step_line_length(const char *start, int32_t *out_char_count, const text_stepper_t &step) {
+	// If we're not wrapping, this is really simple
+	if (!step.wrap) {
+		const char *curr = start;
+		float width = 0;
+		while (*curr != '\n' && *curr != '\0') {
+			width += step.style->font->characters[*curr].xadvance;
+			curr++;
+		}
+		if (out_char_count != nullptr)
+			*out_char_count = (*curr == '\n' ? curr+1 : curr) - start;
+		return width * step.style->size;
+	}
+
+	// Otherwise, we gotta do it the tricky way
 	float curr_width = 0;
 	float last_width = 0;
 	const char *last_at = start;
@@ -244,6 +258,50 @@ void text_add_quad(float x, float y, float off_z, font_char_t &char_info, _text_
 
 ///
 
+void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, font_char_t &char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+	float x_max = x - char_info.x0 * style_data.size;
+	float x_min = x - char_info.x1 * style_data.size;
+	float y_max = y + char_info.y0 * style_data.size;
+	float y_min = y + char_info.y1 * style_data.size;
+
+	// Ditch out if it's completely out of bounds
+	if (x_min > bounds_max.x ||
+		x_max < bounds_min.x ||
+		y_min > bounds_max.y ||
+		y_max < bounds_min.y)
+		return;
+
+	float u_max = char_info.u0;
+	float u_min = char_info.u1;
+	float v_max = char_info.v0;
+	float v_min = char_info.v1;
+
+	// Clip it if it's partially out of bounds
+	if (x_min < bounds_min.x) {
+		u_min = u_min + (u_max-u_min) * ((bounds_min.x-x_min) / (x_max-x_min));
+		x_min = bounds_min.x;
+	}
+	if (x_max > bounds_max.x) {
+		u_max = u_min + (u_max-u_min) * ((bounds_max.x-x_min) / (x_max-x_min));
+		x_max = bounds_max.x;
+	}
+	if (y_min < bounds_min.y) {
+		v_min = v_min + (v_max-v_min) * ((bounds_min.y-y_min) / (y_max-y_min));
+		y_min = bounds_min.y;
+	}
+	if (y_max > bounds_max.y) {
+		v_max = v_min + (v_max-v_min) * ((bounds_max.y-y_min) / (y_max-y_min));
+		y_max = bounds_max.y;
+	}
+
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ u_max, v_max }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ u_min, v_max }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ u_min, v_min }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ u_max, v_min }, style_data.color };
+}
+
+///
+
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
 	text_add_in(text, transform, text_size(text, style == -1 ? 0 : style), text_fit_exact, style, position, align, off_x, off_y, off_z);
 	return;
@@ -322,6 +380,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	text_stepper_t step;
 	step.line_remaining = 0;
 	step.align  = align;
+	step.wrap   = fit & text_fit_wrap;
 	step.style  = &text_styles[style == -1 ? 0 : style];
 	step.bounds = size;
 	step.start  = { off_x, off_y };
@@ -337,6 +396,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	*/
+
 	// Ensure scale is right for our fit
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
 		vec2 txt_size = text_size(text, style == -1 ? 0 : style);
@@ -353,6 +413,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 		step.bounds = step.bounds / scale;
 	}
 
+	// Align the start based on the size of the bounds
 	if      (position & text_align_x_center) step.start.x += step.bounds.x / 2.f;
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
 	if      (position & text_align_y_center) step.start.y += step.bounds.y / 2.f;
@@ -370,12 +431,17 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	text_buffer_ensure_capacity(buffer, text_length);
 
 	// Core loop for drawing the text
+	vec2 bounds_min = step.start - step.bounds;
+	bool clip = fit & text_fit_clip;
 	const char *curr = text;
 	text_step_next_line(text, step);
 	for (int32_t i=0; i<text_length; i++) {
 		if (!isspace(text[i])) {
 			font_char_t &char_info = step.style->font->characters[text[i]];
-			text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, buffer, tr, normal);
+			if (clip)
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
+			else
+				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, buffer, tr, normal);
 		}
 		text_step_position(text[i], &text[i], step);
 	}

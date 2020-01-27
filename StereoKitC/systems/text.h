@@ -25,6 +25,7 @@ struct text_stepper_t {
 	_text_style_t *style;
 	text_align_ align;
 	int32_t line_remaining;
+	bool32_t wrap;
 	vec2 start;
 	vec2 bounds;
 	vec2 pos;
