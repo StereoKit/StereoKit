@@ -434,11 +434,11 @@ SK_API shader_t   material_get_shader      (material_t material);
 ///////////////////////////////////////////
 
 enum text_fit_ {
-	text_fit_wrap = 0,
-	text_fit_clip,
-	text_fit_squeeze,
-	text_fit_exact,
-	text_fit_overflow
+	text_fit_wrap     = 1 << 0,
+	text_fit_clip     = 1 << 1,
+	text_fit_squeeze  = 1 << 2,
+	text_fit_exact    = 1 << 3,
+	text_fit_overflow = 1 << 4
 };
 enum text_align_ {
 	text_align_x_left   = 1 << 0,

@@ -239,13 +239,14 @@ namespace StereoKit
         Center  = XCenter | YCenter,
     }
 
+    [Flags]
     public enum TextFit
     {
-        Wrap = 0,
-        Clip,
-        Squeeze,
-        Exact,
-        Overflow
+        Wrap     = 1 << 0,
+        Clip     = 1 << 1,
+        Squeeze  = 1 << 2,
+        Exact    = 1 << 3,
+        Overflow = 1 << 4
     }
 
     /// <summary>A text style is a font plus size/color/material parameters, and are 

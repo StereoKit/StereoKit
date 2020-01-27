@@ -191,13 +191,14 @@ float text_step_height(const char *text, int32_t *out_length, const text_stepper
 	float       height = 0;
 	while (count > 0) {
 		text_step_line_length(curr, &count, step);
-		curr   += count;
-		height += 1;
+		curr += count;
+		if (count > 0)
+			height += 1;
 	}
 
 	if (out_length != nullptr)
 		*out_length = curr - text;
-	return height * (step.style->font->character_height+step.style->line_spacing) * step.style->size;
+	return (height * step.style->font->character_height + (height-1)*step.style->line_spacing) * step.style->size;
 }
 
 ///
@@ -208,7 +209,7 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 	if (step.align & text_align_x_center) align_x = ((step.bounds.x - line_size) / 2.f);
 	if (step.align & text_align_x_right)  align_x =  (step.bounds.x - line_size);
 	step.pos.x  = step.start.x - align_x;
-	step.pos.y -= step.style->size * (step.style->font->character_height+step.style->line_spacing);
+	step.pos.y -= step.style->size * step.style->font->character_height;
 }
 
 void text_step_position(char ch, const char *start, text_stepper_t &step) {
@@ -216,6 +217,7 @@ void text_step_position(char ch, const char *start, text_stepper_t &step) {
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
 		text_step_next_line(start+1, step);
+		step.pos.y -= step.style->size * step.style->line_spacing;
 		return;
 	}
 
@@ -243,6 +245,9 @@ void text_add_quad(float x, float y, float off_z, font_char_t &char_info, _text_
 ///
 
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+	text_add_in(text, transform, text_size(text, style == -1 ? 0 : style), text_fit_exact, style, position, align, off_x, off_y, off_z);
+	return;
+
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.back().transform, tr);
@@ -320,6 +325,34 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	step.style  = &text_styles[style == -1 ? 0 : style];
 	step.bounds = size;
 	step.start  = { off_x, off_y };
+
+	// Debug draw bounds
+	/*vec2 dbg_start = step.start;
+	if      (position & text_align_x_center) dbg_start.x += step.bounds.x / 2.f;
+	else if (position & text_align_x_right)  dbg_start.x += step.bounds.x;
+	if      (position & text_align_y_center) dbg_start.y += step.bounds.y / 2.f;
+	else if (position & text_align_y_bottom) dbg_start.y += step.bounds.y;
+	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
+	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
+	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
+	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
+	*/
+	// Ensure scale is right for our fit
+	if (fit & (text_fit_squeeze | text_fit_exact)) {
+		vec2 txt_size = text_size(text, style == -1 ? 0 : style);
+		vec2 scale_xy = {
+			size.x / txt_size.x,
+			size.y / txt_size.y };
+		float scale = fminf(scale_xy.x, scale_xy.y)*0.999f;
+		if (fit & text_fit_squeeze)
+			scale = fminf(1, scale);
+
+		// Apply the scale to the transform matrix
+		XMMATRIX scale_m = XMMatrixScaling(scale, scale, scale);
+		tr = XMMatrixMultiply(scale_m, tr);
+		step.bounds = step.bounds / scale;
+	}
+
 	if      (position & text_align_x_center) step.start.x += step.bounds.x / 2.f;
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
 	if      (position & text_align_y_center) step.start.y += step.bounds.y / 2.f;
@@ -331,12 +364,6 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	float   text_height = text_step_height(text, &text_length, step);
 	if      (align & text_align_y_center) step.pos.y -= (step.bounds.y-text_height) / 2.f;
 	else if (align & text_align_y_bottom) step.pos.y -=  step.bounds.y-text_height;
-
-	// Debug draw bounds
-	line_add({ step.start.x, step.start.y,                 off_z }, { step.start.x - step.bounds.x, step.start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
-	line_add({ step.start.x, step.start.y - step.bounds.y, off_z }, { step.start.x - step.bounds.x, step.start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ step.start.x, step.start.y,                 off_z }, { step.start.x,                 step.start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ step.start.x - step.bounds.x, step.start.y, off_z }, { step.start.x - step.bounds.x, step.start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 
 	// Ensure text capacity
 	text_buffer_t &buffer = text_buffers[step.style->buffer_index];
