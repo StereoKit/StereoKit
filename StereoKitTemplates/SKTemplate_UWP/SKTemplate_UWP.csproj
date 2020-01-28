@@ -7,8 +7,8 @@
     <ProjectGuid>{EB50E752-CF5E-4E7D-B81D-26A67CFCC6F2}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SKTemplate_UWP</RootNamespace>
-    <AssemblyName>SKTemplate_UWP</AssemblyName>
+    <RootNamespace>SKTemplate_UWP_Name</RootNamespace>
+    <AssemblyName>SKTemplate_UWP_Name</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
