@@ -115,6 +115,9 @@ namespace StereoKit
         public static bool Button (string text) 
             => NativeAPI.ui_button(text);
 
+        public static bool Button(string text, Vec2 size)
+            => NativeAPI.ui_button_sz(text, size);
+
         /// <summary>A Radio is similar to a button, except you can specify if it looks pressed
         /// or not regardless of interaction. This can be useful for radio-like behavior! Check
         /// an enum for a value, and use that as the 'active' state, Then switch to that enum 

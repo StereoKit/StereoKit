@@ -408,7 +408,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 			scale = fminf(1, scale);
 
 		// Apply the scale to the transform matrix
-		XMMATRIX scale_m = XMMatrixScaling(scale, scale, scale);
+		XMMATRIX scale_m = XMMatrixTranslation(-off_x, -off_y, -off_z) * XMMatrixScaling(scale, scale, 1) * XMMatrixTranslation(off_x, off_y, off_z);
 		tr = XMMatrixMultiply(scale_m, tr);
 		step.bounds = step.bounds / scale;
 	}
