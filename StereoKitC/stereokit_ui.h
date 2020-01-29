@@ -36,10 +36,13 @@ SK_API bool32_t ui_toggle_at      (const char *text, bool32_t &pressed, vec3 win
 SK_API bool32_t ui_hslider_at     (const char *id,   float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size);
 
 SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
+SK_API void     ui_label_sz    (const char *text, vec2 size);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
+SK_API bool32_t ui_button_sz   (const char *text, vec2 size);
 SK_API bool32_t ui_button_round(const char *id, sprite_t image, float diameter = 0);
 SK_API bool32_t ui_toggle      (const char *text, bool32_t &pressed);
+SK_API bool32_t ui_toggle_sz   (const char *text, bool32_t &pressed, vec2 size);
 //SK_API bool32_t ui_toggle_round(const char *text, bool32_t &pressed);
 SK_API void     ui_model       (model_t model, vec2 ui_size, float model_scale);
 SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_size);

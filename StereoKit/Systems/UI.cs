@@ -97,7 +97,10 @@ namespace StereoKit
         /// Sometimes you just want un-padded text!</param>
         public static void Label (string text, bool usePadding = true) 
             => NativeAPI.ui_label(text, usePadding);
-        
+
+        public static void Label(string text, Vec2 size)
+            => NativeAPI.ui_label_sz(text, size);
+
         /// <summary>Adds an image to the UI!</summary>
         /// <param name="image">A valid sprite.</param>
         /// <param name="size">Size in Hierarchy local meters. If one of the components is 0, 
@@ -115,6 +118,9 @@ namespace StereoKit
         public static bool Button (string text) 
             => NativeAPI.ui_button(text);
 
+        public static bool Button(string text, Vec2 size)
+            => NativeAPI.ui_button_sz(text, size);
+
         /// <summary>A Radio is similar to a button, except you can specify if it looks pressed
         /// or not regardless of interaction. This can be useful for radio-like behavior! Check
         /// an enum for a value, and use that as the 'active' state, Then switch to that enum 
@@ -125,7 +131,10 @@ namespace StereoKit
         /// <returns>Will return true only on the first frame it is pressed!</returns>
         public static bool Radio (string text, bool active) 
             => NativeAPI.ui_toggle(text, ref active) && active;
-        
+
+        public static bool Radio(string text, bool active, Vec2 size)
+            => NativeAPI.ui_toggle_sz(text, ref active, size) && active;
+
         /// <summary>A pressable button! A button will expand to fit the text provided to it,
         /// vertically and horizontally. Text is re-used as the id. Will return true only on 
         /// the first frame it is pressed!</summary>
@@ -146,6 +155,9 @@ namespace StereoKit
         /// <returns>Will return true any time the toggle value changes!</returns>
         public static bool Toggle (string text, ref bool value)
             => NativeAPI.ui_toggle(text, ref value);
+
+        public static bool Toggle(string text, ref bool value, Vec2 size)
+            => NativeAPI.ui_toggle_sz(text, ref value, size);
 
         /// <summary>A horizontal slider element! You can stick your finger in it, and slide the
         /// value up and down.</summary>

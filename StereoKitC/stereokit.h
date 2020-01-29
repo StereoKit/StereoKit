@@ -433,6 +433,13 @@ SK_API shader_t   material_get_shader      (material_t material);
 
 ///////////////////////////////////////////
 
+enum text_fit_ {
+	text_fit_wrap     = 1 << 0,
+	text_fit_clip     = 1 << 1,
+	text_fit_squeeze  = 1 << 2,
+	text_fit_exact    = 1 << 3,
+	text_fit_overflow = 1 << 4
+};
 enum text_align_ {
 	text_align_x_left   = 1 << 0,
 	text_align_y_top    = 1 << 1,
@@ -448,6 +455,7 @@ typedef int32_t text_style_t;
 
 SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color);
 SK_API void         text_add_at    (const char *text, const matrix& transform, text_style_t style = -1, text_align_ position = text_align_x_center | text_align_y_center, text_align_ align = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
+SK_API void         text_add_in    (const char *text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style = -1, text_align_ position = text_align_x_center | text_align_y_center, text_align_ align = text_align_x_center | text_align_y_center, float off_x = 0, float off_y = 0, float off_z = 0);
 SK_API vec2         text_size      (const char *text, text_style_t style = -1);
 
 ///////////////////////////////////////////
