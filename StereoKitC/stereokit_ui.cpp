@@ -321,20 +321,27 @@ vec2 ui_area_remaining() {
 
 ///////////////////////////////////////////
 
-void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding) {
-	out_position   = skui_layers.back().offset;
-	out_final_size = content_size;
-	if (use_content_padding)
-		out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
+void ui_layout_exact(vec2 content_size, vec3 &out_position) {
+	out_position = skui_layers.back().offset;
 
 	// If this is not the first element, and it goes outside the active window
 	if (out_position.x            != -skui_settings.padding &&
 		skui_layers.back().size.x != 0                      &&
-		out_position.x - out_final_size.x < skui_layers.back().offset_initial.x - skui_layers.back().size.x + skui_settings.padding)
+		out_position.x - content_size.x < skui_layers.back().offset_initial.x - skui_layers.back().size.x + skui_settings.padding)
 	{
 		ui_nextline();
 		out_position = skui_layers.back().offset;
 	}
+}
+
+///////////////////////////////////////////
+
+void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding) {
+	out_final_size = content_size;
+	if (use_content_padding)
+		out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
+
+	ui_layout_exact(out_final_size, out_position);
 }
 
 ///////////////////////////////////////////
@@ -535,6 +542,17 @@ void ui_text(vec3 start, vec2 size, const char *text, text_align_ position) {
 ///////////   UI Components   /////////////
 ///////////////////////////////////////////
 
+void ui_label_sz(const char *text, vec2 size) {
+	vec3 offset;
+	ui_layout_exact(size, offset);
+	ui_reserve_box(size);
+	ui_nextline();
+
+	ui_text(offset, size, text);
+}
+
+///////////////////////////////////////////
+
 void ui_label(const char *text, bool32_t use_padding) {
 	vec3  offset = skui_layers.back().offset;
 	vec2  size   = text_size(text, skui_font_style);
@@ -542,8 +560,8 @@ void ui_label(const char *text, bool32_t use_padding) {
 
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
-	ui_text(offset - vec3{pad, pad, 2*mm2m }, size, text);
 	ui_nextline();
+	ui_text(offset - vec3{pad, pad, 2*mm2m }, size, text);
 }
 
 ///////////////////////////////////////////
@@ -591,7 +609,8 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 ///////////////////////////////////////////
 
 bool32_t ui_button_sz(const char *text, vec2 size) {
-	vec3 offset = skui_layers.back().offset;
+	vec3 offset;
+	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
@@ -646,6 +665,17 @@ bool32_t ui_toggle(const char *text, bool32_t &pressed) {
 	vec3 offset;
 	vec2 size;
 	ui_layout_box (text_size(text, skui_font_style), offset, size);
+	ui_reserve_box(size);
+	ui_nextline   ();
+
+	return ui_toggle_at(text, pressed, offset, size);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_toggle_sz(const char *text, bool32_t &pressed, vec2 size) {
+	vec3 offset;
+	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
 	ui_nextline   ();
 

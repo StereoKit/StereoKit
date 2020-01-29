@@ -208,13 +208,13 @@ namespace StereoKit.Framework
         {
             if (_resultName != null)
             {
-                if (UI.Button("Open"))
+                if (UI.Button("Open", new Vec2(.04f, UI.LineHeight)))
                 {
                     _onFileSelect?.Invoke(Path.Combine(_resultFolder, _resultName));
                     Hide();
                 }
                 UI.SameLine();
-                UI.Label(_resultName);
+                UI.Label(_resultName, new Vec2(UI.AreaRemaining.x, UI.LineHeight) );
                 UI.Space(Units.cm2m * 1.5f);
             }
             else
@@ -246,9 +246,11 @@ namespace StereoKit.Framework
 
         void ShowFolderItems()
         {
+            Vec2 size = new Vec2(.085f, UI.LineHeight*1.5f);
+
             for (int i = 0; i < _activeFiles.Count; i++)
             {
-                if (UI.Button(_activeFiles[i].name + "\n" + _activeFiles[i].extension) && Select(i))
+                if (UI.Button(_activeFiles[i].name + "\n" + _activeFiles[i].extension, size) && Select(i))
                 {
                     _resultName   = _activeFiles[i].name + _activeFiles[i].extension;
                     _resultFolder = _path;
