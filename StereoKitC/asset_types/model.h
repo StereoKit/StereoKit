@@ -18,6 +18,8 @@ struct _model_t {
 	bounds_t        bounds;
 };
 
+bool modelfmt_obj (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
 void model_destroy(model_t model);
 
 } // namespace sk

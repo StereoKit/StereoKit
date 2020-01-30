@@ -127,6 +127,12 @@
     <ClCompile Include="asset_types\sound.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\model_obj.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="asset_types\model_gltf.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

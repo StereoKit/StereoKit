@@ -111,6 +111,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="asset_types\material.cpp" />
     <ClCompile Include="asset_types\mesh.cpp" />
     <ClCompile Include="asset_types\model.cpp" />
+    <ClCompile Include="asset_types\model_gltf.cpp" />
+    <ClCompile Include="asset_types\model_obj.cpp" />
     <ClCompile Include="asset_types\shader.cpp" />
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
