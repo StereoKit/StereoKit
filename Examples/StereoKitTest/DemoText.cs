@@ -2,7 +2,8 @@
 
 class DemoText : IDemo
 {
-    TextAlign align       = TextAlign.YTop | TextAlign.XLeft;
+    TextAlign alignX      = TextAlign.XLeft;
+    TextAlign alignY      = TextAlign.YTop;
     Pose      alignWindow = new Pose(0.4f, 0, 0, Quat.LookDir(-1, 0, 1));
 
     /// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
@@ -31,26 +32,30 @@ class DemoText : IDemo
         Hierarchy.Push(Matrix.T(0, 0, -0.3f));
 
         UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * Units.cm2m);
-        if (UI.Button("Left"  )) align = TextAlign.YCenter | TextAlign.XLeft;   UI.SameLine();
-        if (UI.Button("Center")) align = TextAlign.YCenter | TextAlign.XCenter; UI.SameLine();
-        if (UI.Button("Right" )) align = TextAlign.YCenter | TextAlign.XRight;
+        Vec2 size = new Vec2(5 * Units.cm2m, UI.LineHeight);
+        if (UI.Radio("Left"   , alignX == TextAlign.XLeft  , size)) alignX = TextAlign.XLeft;   UI.SameLine();
+        if (UI.Radio("CenterX", alignX == TextAlign.XCenter, size)) alignX = TextAlign.XCenter; UI.SameLine();
+        if (UI.Radio("Right"  , alignX == TextAlign.XRight , size)) alignX = TextAlign.XRight;
+        if (UI.Radio("Top"    , alignY == TextAlign.YTop   , size)) alignY = TextAlign.YTop;    UI.SameLine();
+        if (UI.Radio("CenterY", alignY == TextAlign.YCenter, size)) alignY = TextAlign.YCenter; UI.SameLine();
+        if (UI.Radio("Bottom" , alignY == TextAlign.YBottom, size)) alignY = TextAlign.YBottom;
         UI.WindowEnd();
 
         Hierarchy.Push(Matrix.T(0.1f,0,0));
-        Text.Add("X Center", Matrix.TRS(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.XCenter|TextAlign.YCenter, align);
-        Text.Add("X Left",   Matrix.TRS(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.XLeft  |TextAlign.YCenter, align);
-        Text.Add("X Right",  Matrix.TRS(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.XRight |TextAlign.YCenter, align);
+        Text.Add("X Center", Matrix.TRS(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.XCenter|TextAlign.YCenter, alignX | alignY);
+        Text.Add("X Left",   Matrix.TRS(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.XLeft  |TextAlign.YCenter, alignX | alignY);
+        Text.Add("X Right",  Matrix.TRS(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.XRight |TextAlign.YCenter, alignX | alignY);
         Lines.Add(new Vec3(0,.05f,0), new Vec3(0,.25f,0), Color32.White, 0.001f);
         Hierarchy.Pop();
 
         Hierarchy.Push(Matrix.T(-0.1f,0,0));
-        Text.Add("Y Center", Matrix.TRS(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.YCenter|TextAlign.XCenter, align);
+        Text.Add("Y Center", Matrix.TRS(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.YCenter|TextAlign.XCenter, alignX | alignY);
         Lines.Add(new Vec3(-0.05f, .1f, 0), new Vec3(.05f, .1f, 0), Color32.White, 0.001f);
 
-        Text.Add("Y Top",    Matrix.TRS(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.YTop|TextAlign.XCenter, align);
+        Text.Add("Y Top",    Matrix.TRS(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.YTop|TextAlign.XCenter, alignX | alignY);
         Lines.Add(new Vec3(-0.05f, .15f, 0), new Vec3(.05f, .15f, 0), Color32.White, 0.001f);
 
-        Text.Add("Y Bottom", Matrix.TRS(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.YBottom|TextAlign.XCenter, align);
+        Text.Add("Y Bottom", Matrix.TRS(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.YBottom|TextAlign.XCenter, alignX | alignY);
         Lines.Add(new Vec3(-0.05f,.2f, 0), new Vec3(.05f,.2f, 0), Color32.White, 0.001f);
         Hierarchy.Pop();
 
@@ -64,7 +69,7 @@ class DemoText : IDemo
         // Text with an explicit text style
         Text.Add(
             "Here's\nSome\nMulti-line\nText!!", 
-            Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)), 
+            Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
             style);
         // Text using the default text style
         Text.Add(
@@ -77,8 +82,8 @@ class DemoText : IDemo
             "Here's Some Multi-line Text!!",
             Matrix.TRS(new Vec3(0, 0.0f, 0), Quat.LookDir(0, 0, 1)),
             new Vec2(SKMath.Cos(Time.Totalf)*10+11, 20) * Units.cm2m,
-            TextFit.Wrap,
-            style, TextAlign.Center, align);
+            TextFit.Clip,
+            style, TextAlign.Center, alignX | alignY);
         Hierarchy.Pop();
 
         Hierarchy.Pop();
