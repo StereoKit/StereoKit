@@ -1,4 +1,6 @@
 ﻿
+using System.Text;
+
 namespace StereoKit
 {
     /// <summary>This class is a collection of user interface and interaction methods! StereoKit
@@ -158,6 +160,18 @@ namespace StereoKit
 
         public static bool Toggle(string text, ref bool value, Vec2 size)
             => NativeAPI.ui_toggle_sz(text, ref value, size);
+
+        public static bool Input(string id, ref string value) {
+            StringBuilder builder = value != null ? 
+                new StringBuilder(value, value.Length + 4) :
+                new StringBuilder(4);
+
+            if (NativeAPI.ui_input(id, builder, builder.Capacity)) { 
+                value = builder.ToString();
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>A horizontal slider element! You can stick your finger in it, and slide the
         /// value up and down.</summary>

@@ -236,6 +236,8 @@ namespace StereoKit.Framework
                 Hide();
             }
             UI.SameLine();
+            UI.Input("saveFile", ref _resultName);
+            UI.SameLine();
             if (UI.Button("Mic"))
             {
                 _resultName = "test";

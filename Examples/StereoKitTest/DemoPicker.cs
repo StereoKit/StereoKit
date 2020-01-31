@@ -1,6 +1,7 @@
 using StereoKit;
 using StereoKit.Framework;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace StereoKitTest
 {
@@ -35,17 +36,21 @@ namespace StereoKitTest
         void ShowPicker()
         {
             FilePicker.Show(
-                FilePickerMode.Open,
+                FilePickerMode.Save,
                 Path.GetFullPath(StereoKitApp.settings.assetsFolder),
                 LoadModel,
                 new FileFilter("GLTF", "*.gltf"),
-                new FileFilter("GLB", "*.glb"));
+                new FileFilter("GLB", "*.glb"),
+                new FileFilter("OBJ", "*.obj"));
         }
 
         private void LoadModel(string filename)
         {
-            model      = Model.FromFile(filename);
-            modelScale = 1 / model.Bounds.dimensions.Magnitude;
+            Task.Run(() =>
+            {
+                model      = Model.FromFile(filename);
+                modelScale = 1 / model.Bounds.dimensions.Magnitude;
+            });
         }
     }
 }
