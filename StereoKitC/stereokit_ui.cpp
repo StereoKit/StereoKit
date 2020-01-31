@@ -93,7 +93,7 @@ void     ui_button_behavior   (vec3 window_relative_pos, vec2 size, uint64_t id,
 
 // Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
-void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position = text_align_x_left | text_align_y_top);
+void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align);
 
 ///////////////////////////////////////////
 
@@ -534,8 +534,8 @@ bool32_t ui_volume_at(const char *id, bounds_t bounds) {
 
 ///////////////////////////////////////////
 
-void ui_text(vec3 start, vec2 size, const char *text, text_align_ position) {
-	text_add_in(text, matrix_identity, size, text_fit_squeeze, skui_font_style, position, text_align_center, start.x, start.y, start.z);
+void ui_text(vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align) {
+	text_add_in(text, matrix_identity, size, text_fit_squeeze, skui_font_style, position, align, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
@@ -548,20 +548,21 @@ void ui_label_sz(const char *text, vec2 size) {
 	ui_reserve_box(size);
 	ui_nextline();
 
-	ui_text(offset, size, text);
+	ui_text(offset, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 }
 
 ///////////////////////////////////////////
 
 void ui_label(const char *text, bool32_t use_padding) {
-	vec3  offset = skui_layers.back().offset;
-	vec2  size   = text_size(text, skui_font_style);
-	float pad    = use_padding ? skui_settings.padding : 0;
+	vec3  offset   = skui_layers.back().offset;
+	vec2  txt_size = text_size(text, skui_font_style);
+	vec2  size     = txt_size;
+	float pad      = use_padding ? skui_settings.padding : 0;
 
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
 	ui_nextline();
-	ui_text(offset - vec3{pad, pad, 2*mm2m }, size, text);
+	ui_text(offset - vec3{pad, pad, 2*mm2m }, txt_size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 }
 
 ///////////////////////////////////////////
@@ -601,7 +602,7 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 
 	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center);
+	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
@@ -654,7 +655,7 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 
 	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center);
+	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center, text_align_y_center);
 
 	return state & button_state_just_active;
 }
@@ -736,17 +737,18 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
-	uint64_t id_hash= ui_stack_hash(id);
-	bool     result = false;
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
+	uint64_t id_hash = ui_stack_hash(id);
+	bool     result  = false;
 	bool     focused = false;
-	vec3     offset = skui_layers.back().offset;
-	vec2     size   = text_size(buffer, skui_font_style);
-	size += vec2{ skui_settings.padding, skui_settings.padding } * 2;
+	vec3     offset  = skui_layers.back().offset;
 	vec3 box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
 
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(offset, box_size))) {
+			skui_hand[i].focused = id_hash;
+			focused = true;
+		} else if (skui_hand[i].focused_prev == id_hash) {
 			skui_hand[i].focused = id_hash;
 			focused = true;
 		}
@@ -785,7 +787,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size) {
 
 	ui_reserve_box(size);
 	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_palette[2] * (focused ? 0.5f : 1.f) );
-	ui_text(offset + vec3{ size.x/2, -size.y/2, skui_settings.depth/2 + 2*mm2m }, size, buffer, text_align_center);
+	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 	ui_nextline();
 
 	return result;
@@ -965,7 +967,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 
-		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,box_size.y/2 - skui_settings.padding, -skui_settings.depth/2 - 2*mm2m}, size, text);
+		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,box_size.y/2 - skui_settings.padding, -skui_settings.depth/2 - 2*mm2m}, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 		
 		ui_nextline();
 	} else {

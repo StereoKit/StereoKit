@@ -236,14 +236,12 @@ namespace StereoKit.Framework
                 Hide();
             }
             UI.SameLine();
-            UI.Input("saveFile", ref _resultName);
+            UI.Input("saveFile", ref _resultName, new Vec2(25.5f *Units.cm2m, UI.LineHeight));
             UI.SameLine();
             if (UI.Button("Mic"))
             {
                 _resultName = "test";
             }
-            UI.SameLine();
-            UI.Label(_resultName==null?"":_resultName);
         }
 
         void ShowFolderItems()

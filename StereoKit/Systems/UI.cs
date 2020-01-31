@@ -161,12 +161,12 @@ namespace StereoKit
         public static bool Toggle(string text, ref bool value, Vec2 size)
             => NativeAPI.ui_toggle_sz(text, ref value, size);
 
-        public static bool Input(string id, ref string value) {
+        public static bool Input(string id, ref string value, Vec2 size) {
             StringBuilder builder = value != null ? 
                 new StringBuilder(value, value.Length + 4) :
                 new StringBuilder(4);
 
-            if (NativeAPI.ui_input(id, builder, builder.Capacity)) { 
+            if (NativeAPI.ui_input(id, builder, builder.Capacity, size)) { 
                 value = builder.ToString();
                 return true;
             }
