@@ -145,11 +145,11 @@ class DemoUI : IDemo
         /// 'radio' actually happening, but it's still pretty simple. Pair it with an enum, or an
         /// integer, and have fun!
         ///
-        if (UI.Radio("Radio 1", clipOption == 1)) clipOption = 1;
+        if (UI.Radio("Radio1", clipOption == 1)) clipOption = 1;
         UI.SameLine();
-        if (UI.Radio("Radio 2", clipOption == 2)) clipOption = 2;
+        if (UI.Radio("Radio2", clipOption == 2)) clipOption = 2;
         UI.SameLine();
-        if (UI.Radio("Radio 3", clipOption == 3)) clipOption = 3;
+        if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
         ///
         /// As with windows, Affordances need an End call.
         /// 

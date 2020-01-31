@@ -19,7 +19,7 @@ class DemoText : IDemo
         /// material, and a base color.
         style = Text.MakeStyle(
             Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
-            3 * Units.cm2m,
+            2 * Units.cm2m,
             Material.Copy(DefaultIds.materialFont), 
             Color.HSV(0.05f, 0.7f, 0.8f));
         /// :End:
