@@ -87,6 +87,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 ///////////////////////////////////////////
 
 material_t model_get_material(model_t model, int32_t subset) {
+	assets_addref(model->subsets[subset].material->header);
 	return model->subsets[subset].material;
 }
 

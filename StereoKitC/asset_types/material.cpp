@@ -74,7 +74,7 @@ material_t material_copy(material_t material) {
 	material_t result = material_create(material->shader);
 	// Store allocated memory temporarily
 	void          *tmp_buffer   = result->args.buffer;
-	tex_t       *tmp_textures = result->args.textures;
+	tex_t         *tmp_textures = result->args.textures;
 	asset_header_t tmp_header   = result->header;
 
 	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
