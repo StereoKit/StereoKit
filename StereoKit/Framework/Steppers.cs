@@ -13,7 +13,7 @@ namespace StereoKit.Framework
             public int sortId;
 
             public int CompareTo(StepperInfo other)
-                => sortId.CompareTo(other);
+                => sortId.CompareTo(other.sortId);
         }
         List<StepperInfo>     _steppers = new List<StepperInfo>();
         Dictionary<Type, int> _stepperSort;
