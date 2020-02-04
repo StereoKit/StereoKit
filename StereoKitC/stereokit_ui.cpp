@@ -48,6 +48,7 @@ text_style_t    skui_font_style;
 material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
 bool32_t        skui_show_volumes = false;
+uint64_t        skui_input_target = 0;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -740,20 +741,16 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
 	uint64_t id_hash = ui_stack_hash(id);
 	bool     result  = false;
-	bool     focused = false;
 	vec3     offset  = skui_layers.back().offset;
 	vec3 box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
 
 	for (size_t i = 0; i < handed_max; i++) {
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(offset, box_size))) {
 			skui_hand[i].focused = id_hash;
-			focused = true;
-		} else if (skui_hand[i].focused_prev == id_hash) {
-			skui_hand[i].focused = id_hash;
-			focused = true;
+			skui_input_target = id_hash;
 		}
 	}
-	if (focused) {
+	if (skui_input_target == id_hash) {
 		char add = '\0';
 		bool shift = input_key(key_shift) & button_state_active;
 		if (input_key(key_backspace) & button_state_just_active) {
@@ -786,7 +783,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	}
 
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_palette[2] * (focused ? 0.5f : 1.f) );
+	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_palette[2] * (skui_input_target == id_hash ? 0.5f : 1.f) );
 	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 	ui_nextline();
 
