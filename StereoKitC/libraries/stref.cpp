@@ -119,6 +119,19 @@ bool  stref_equals(const stref_t &a, const stref_t &b) {
 
 ///////////////////////////////////////////
 
+bool  stref_startswith(const stref_t &a, const char *is) {
+	uint32_t curr = 0;
+	while (*is != '\0') {
+		if (curr >= a.length || *is != a.start[curr])
+			return false;
+		curr++;
+		is++;
+	}
+	return true;
+}
+
+///////////////////////////////////////////
+
 int32_t   stref_indexof(stref_t &aRef, char aChar) {
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
@@ -278,7 +291,13 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 		word = stref_substr(line, 0, 0);
 
 	char *curr = (char*)(word.start + word.length);
-	while (*curr == separator || *curr == ' ' || *curr== '\t') curr++;
+	if (*curr == separator) curr++;
+	while (*curr == ' ' || *curr == '\t') { 
+		if (*curr == separator && separator != ' ') {
+			int x = 0;
+		}
+		curr++; 
+	}
 	if ( *curr == '\n' || *curr == '\r' || *curr == '\0') return false;
 
 	word.start = curr;

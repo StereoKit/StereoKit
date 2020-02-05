@@ -21,6 +21,7 @@ uint64_t string_hash(const char *string, uint64_t start_hash = STREF_HASH_START)
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);
+bool     stref_startswith(const stref_t &a, const char *is);
 int32_t  stref_indexof (stref_t &ref, char character);
 int32_t  stref_lastof  (stref_t &ref, char character);
 char    *stref_copy    (const stref_t &ref);

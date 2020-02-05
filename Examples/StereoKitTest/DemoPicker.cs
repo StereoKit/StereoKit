@@ -36,7 +36,7 @@ namespace StereoKitTest
         void ShowPicker()
         {
             FilePicker.Show(
-                FilePickerMode.Save,
+                FilePickerMode.Open,
                 Path.GetFullPath(StereoKitApp.settings.assetsFolder),
                 LoadModel,
                 new FileFilter("GLTF", "*.gltf"),
