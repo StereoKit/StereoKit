@@ -485,4 +485,16 @@ namespace StereoKit
         /// <summary>Joint 4. The end/tip of each finger!</summary>
         Tip          = 4
     }
+
+    /// <summary>This describes how a UI element moves when being dragged around
+    /// by a user!</summary>
+    public enum UIMove
+    {
+        /// <summary>The element follows the position and orientation of the user's
+        /// hand exactly.</summary>
+        Exact,
+        /// <summary>The element follows the position of the user's hand, but orients
+        /// to face the user's head instead of just using the hand's rotation.</summary>
+        FaceUser,
+    }
 }

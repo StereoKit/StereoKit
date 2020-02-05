@@ -194,15 +194,16 @@ namespace StereoKit
         /// <param name="handle">Size and location of the affordance handle, relative to the pose.</param>
         /// <param name="drawHandle">Should this function draw the handle for you, or will you
         /// draw that yourself?</param>
+        /// <param name="moveType">Describes how the affordance will move when dragged around.</param>
         /// <returns>Returns true for every frame the user is grabbing the handle.</returns>
-        public static bool AffordanceBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false)
-            => NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle);
+        public static bool AffordanceBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+            => NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle, moveType);
 
         /// <summary>Finishes an affordance! Must be called after UI.AffordanceBegin() and all elements
         /// have been drawn.</summary>
         public static void AffordanceEnd   ()
             => NativeAPI.ui_affordance_end();
-        
+
         /// <summary>Begins a new window! This will push a pose onto the transform stack, and all UI 
         /// elements will be relative to that new pose. The pose is actually the top-center
         /// of the window. Must be finished with a call to UI.WindowEnd().</summary>
@@ -214,8 +215,9 @@ namespace StereoKit
         /// it'll default to 32mm. If y is zero, it'll expand to contain all elements within it.</param>
         /// <param name="showHeader">Should the window show a header bar? Header bar includes a title,
         /// and is grabbable when it's visible.</param>
-        public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true)
-            => NativeAPI.ui_window_begin(text, ref pose, size, showHeader);
+        /// <param name="moveType">Describes how the affordance will move when dragged around.</param>
+        public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true, UIMove moveType = UIMove.FaceUser)
+            => NativeAPI.ui_window_begin(text, ref pose, size, showHeader, moveType);
         
         /// <summary>Finishes a window! Must be called after UI.WindowBegin() and all elements
         /// have been drawn.</summary>

@@ -870,7 +870,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw) {
+bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
 	bool result = false;
 	float color = 1;
@@ -916,11 +916,16 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 
 				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).palm.position);
 				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
-
 				quat rot = quat_difference(start_tip_rot[i], curr_rot);
 
-				movement.position    = curr_pos + rot*(start_aff_pos[i] - start_tip_pos[i]);
-				movement.orientation = start_aff_rot[i]*rot;
+				movement.position = vec3_lerp(movement.position, curr_pos + rot*(start_aff_pos[i] - start_tip_pos[i]), 0.3f);
+				
+				switch (move_type) {
+				case ui_move_exact:     movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * rot, 0.3f); break;
+				case ui_move_face_user: movement.orientation = quat_slerp(movement.orientation, quat_lookat(movement.position, matrix_mul_point( to_local, input_head().position )), 0.3f); break;
+				default: log_err("Unimplemented move type!"); break;
+				}
+
 				if (hand.pinch_state & button_state_just_inactive) {
 					skui_hand[i].active = 0;
 				}
@@ -953,14 +958,14 @@ void ui_affordance_end() {
 
 ///////////////////////////////////////////
 
-void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t show_header) {
+void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t show_header, ui_move_ move_type) {
 	if (window_size.x == 0) window_size.x = 32*cm2m;
 
 	if (show_header) {
 		vec2 size      = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
-		ui_affordance_begin(text, pose, { box_start, box_size }, true);
+		ui_affordance_begin(text, pose, { box_start, box_size }, true, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 
@@ -968,7 +973,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		
 		ui_nextline();
 	} else {
-		ui_affordance_begin(text, pose, { vec3_zero, vec3_zero }, false);
+		ui_affordance_begin(text, pose, { vec3_zero, vec3_zero }, false, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 	}
 }
