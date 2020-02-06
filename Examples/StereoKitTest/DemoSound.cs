@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System;
 using System.Collections.Generic;
 
 namespace StereoKitTest
@@ -49,18 +50,22 @@ namespace StereoKitTest
 
             if (!contains && genPrevContains)
             {
+                double band1=0, band2=0, tp=0;
                 genSound = Sound.Generate((t) =>
                 {
+                    double e = t - tp;
+                    tp = t;
+
                     float sampleAt = (t / genDuration) * (genPath.Count-1);
                     float pct = sampleAt - (int)sampleAt;
-                    int s1 = (int)(sampleAt);
-                    int s2 = (int)System.Math.Ceiling(sampleAt);
-                    Vec3 sample = (Vec3.Lerp(genPath[s1].pt, genPath[s2].pt, pct) + genVolume.dimensions / 2) / genVolume.dimensions.x;
+                    int   s1 = (int)sampleAt;
+                    int   s2 = (int)Math.Ceiling(sampleAt);
+                    Vec3  sample = (Vec3.Lerp(genPath[s1].pt, genPath[s2].pt, pct) + genVolume.dimensions / 2) / genVolume.dimensions.x;
 
-                    float band1 = SKMath.Sin(t * (600 + sample.x * 4000) * 6.28f) * sample.y;
-                    float band2 = SKMath.Sin(t * (100 + sample.z * 600) * 6.28f) * sample.y;
+                    band1 += e * (600 + sample.x * 4000) * 6.28f;
+                    band2 += e * (100 + sample.z * 600 ) * 6.28f;
 
-                    return band1*0.45f + band2*0.45f;
+                    return (float)(Math.Sin(band1)*0.3 + Math.Sin(band2)*0.3) * sample.y;
                 }, genDuration);
                 genSound.Play(genVolume.center);
             }
