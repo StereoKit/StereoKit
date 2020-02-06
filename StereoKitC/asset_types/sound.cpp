@@ -67,7 +67,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
     result->sound_data = malloc(sizeof(float) * duration * SAMPLE_RATE);
     float *data = (float*)result->sound_data;
     for (uint32_t i = 0, s = duration * SAMPLE_RATE; i < s; i += 1) {
-        data[i] = function((float)i / SAMPLE_RATE);
+        data[i] = function((float)i / (float)SAMPLE_RATE);
     }
     
     au_decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
@@ -92,6 +92,7 @@ void sound_play(sound_t sound, vec3 at, float volume) {
     if (found == -1 && au_active_count < _countof(au_active_sounds)) {
         found = au_active_count;
         au_active_count += 1;
+        assets_addref(sound->header);
     }
 
     if (found != -1) {
@@ -173,6 +174,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
         ma_uint32 framesRead = read_and_mix_pcm_frames_f32(au_active_sounds[i], pOutputF32, frameCount);
         if (framesRead < frameCount) {
             ma_decoder_seek_to_pcm_frame(&au_active_sounds[i].sound->decoder, 0);
+            sound_release(au_active_sounds[i].sound);
             memmove(&au_active_sounds[i], &au_active_sounds[i + 1], sizeof(ma_decoder *) * (au_active_count - (i + 1)));
             au_active_count--;
             i--;

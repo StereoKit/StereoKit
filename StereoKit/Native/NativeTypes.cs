@@ -450,6 +450,9 @@ namespace StereoKit
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void LogCallback(LogLevel level, string text);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate float AudioGenerator(float time);
+
 
     /// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
     public enum FingerId
