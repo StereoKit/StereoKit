@@ -24,7 +24,7 @@ void demo_ui_update() {
 
 	ui_button("Testing!"); ui_sameline();
 	static char buffer[128] = {};
-	ui_input("text", buffer, 128);
+	ui_input("text", buffer, 128, {16*cm2m,ui_line_height()});
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;
