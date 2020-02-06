@@ -1,4 +1,5 @@
 #include "model.h"
+#include "../libraries/stref.h"
 
 #include <vector>
 #include <map>
@@ -15,6 +16,11 @@ inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
 ///////////////////////////////////////////
 
 int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, vind_t> indmap, vector<vert_t> &mesh_verts) {
+	if (uvs.size() == 0)
+		uvs.push_back(vec2{ 0,0 });
+	if (norms.size() == 0)
+		norms.push_back(vec3{ 0,1,0 });
+
 	int  id = meshfmt_obj_idx(iV, iN, iT, (int)verts.size(), (int)norms.size());
 	map<int, vind_t>::iterator item = indmap.find(id);
 	if (item == indmap.end()) {
@@ -29,45 +35,61 @@ int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, ve
 
 bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
 
-	// Parse the file
-	size_t len = file_length;
-	const char *line = (const char *)file_data;
-	int         read = 0;
-
 	vector<vec3> poss;
 	vector<vec3> norms;
 	vector<vec2> uvs;
 
 	map<int, vind_t> indmap;
 	vector<vert_t>   verts;
-	vector<vind_t> faces;
+	vector<vind_t>   faces;
 
 	vec3 in;
 	int inds[12];
-	int count = 0;
 
-	while ((size_t)(line-(const char *)file_data)+1 < len) {
-		if        (sscanf_s(line, "v %f %f %f\n%n",  &in.x, &in.y, &in.z, &read) > 0) {
+	stref_t data = stref_make((const char *)file_data);
+	stref_t line = {};
+	while (stref_nextline(data, line)) {
+		stref_t word = {};
+		if (!stref_nextword(line, word))
+			continue;
+
+		if        (stref_equals(word, "v" )) {
+			in = {};
+			if (stref_nextword(line, word)) in.x = stref_to_f(word);
+			if (stref_nextword(line, word)) in.y = stref_to_f(word);
+			if (stref_nextword(line, word)) in.z = stref_to_f(word);
 			poss.push_back(in);
-		} else if (sscanf_s(line, "vn %f %f %f\n%n", &in.x, &in.y, &in.z, &read) > 0) {
+		} else if (stref_equals(word, "vn")) {
+			in = {};
+			if (stref_nextword(line, word)) in.x = stref_to_f(word);
+			if (stref_nextword(line, word)) in.y = stref_to_f(word);
+			if (stref_nextword(line, word)) in.z = stref_to_f(word);
 			norms.push_back(in);
-		} else if (sscanf_s(line, "vt %f %f\n%n",    &in.x, &in.y,        &read) > 0) {
-			vec2 uv = { in.x, in.y };
-			uvs.push_back(uv);
-		} else if ((count = sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n%n", &inds[0], &inds[1], &inds[2],&inds[3],&inds[4],&inds[5],&inds[6],&inds[7],&inds[8],&inds[9],&inds[10],&inds[11],  &read)) > 0) {
+		} else if (stref_equals(word, "vt")) {
+			in = {};
+			if (stref_nextword(line, word)) in.x = stref_to_f(word);
+			if (stref_nextword(line, word)) in.y = stref_to_f(word);
+			uvs.push_back(vec2{ in.x, in.y });
+		} else if (stref_equals(word, "f" )) {
+			int sides = 0;
+			for (; sides < 4; sides++) {
+				if (!stref_nextword(line, word))
+					break;
+				stref_t ind = {};
+				inds[sides * 3  ] = stref_nextword(word, ind, '/') && ind.length > 0 ? stref_to_i(ind) : 1;
+				inds[sides * 3+1] = stref_nextword(word, ind, '/') && ind.length > 0 ? stref_to_i(ind) : 1;
+				inds[sides * 3+2] = stref_nextword(word, ind, '/') && ind.length > 0 ? stref_to_i(ind) : 1;
+			}
+
 			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
 			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
 			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
 			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
-			if (count > 9) {
+			if (sides == 4) {
 				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
 				faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
 			}
-		} else {
-			char str[512];
-			sscanf_s(line, "%[^\n]\n%n", str, 512, &read);
 		}
-		line += read;
 	}
 
 	char id[512];

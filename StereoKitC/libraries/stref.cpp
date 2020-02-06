@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 ///////////////////////////////////////////
 
@@ -63,20 +64,30 @@ bool  string_eq(const char *a, const char *b) {
 
 ///////////////////////////////////////////
 
-bool  string_endswith(const char *a, const char *end) {
+bool  string_endswith(const char *a, const char *end, bool case_sensitive) {
 	size_t len_a   = strlen(a);
 	size_t len_end = strlen(end);
 	if (len_end > len_a)
 		return false;
 	a = a + (len_a - len_end);
 
-	while (*a != '\0' && *end != '\0') {
-		if (*a != *end)
-			return false;
-		a++;
-		end++;
+	if (!case_sensitive) {
+		while (*a != '\0' && *end != '\0') {
+			if (tolower(*a) != tolower(*end))
+				return false;
+			a++;
+			end++;
+		}
+		return tolower(*a) == tolower(*end);
+	} else {
+		while (*a != '\0' && *end != '\0') {
+			if (*a != *end)
+				return false;
+			a++;
+			end++;
+		}
+		return *a == *end;
 	}
-	return *a == *end;
 }
 
 ///////////////////////////////////////////
@@ -113,6 +124,19 @@ bool  stref_equals(const stref_t &a, const stref_t &b) {
 		a_curr++;
 		b_curr++;
 		curr++;
+	}
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool  stref_startswith(const stref_t &a, const char *is) {
+	uint32_t curr = 0;
+	while (*is != '\0') {
+		if (curr >= a.length || *is != a.start[curr])
+			return false;
+		curr++;
+		is++;
 	}
 	return true;
 }
@@ -278,7 +302,13 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 		word = stref_substr(line, 0, 0);
 
 	char *curr = (char*)(word.start + word.length);
-	while (*curr == separator || *curr == ' ' || *curr== '\t') curr++;
+	if (*curr == separator) curr++;
+	while (*curr == ' ' || *curr == '\t') { 
+		if (*curr == separator && separator != ' ') {
+			int x = 0;
+		}
+		curr++; 
+	}
 	if ( *curr == '\n' || *curr == '\r' || *curr == '\0') return false;
 
 	word.start = curr;
