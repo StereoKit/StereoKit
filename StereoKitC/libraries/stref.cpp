@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 ///////////////////////////////////////////
 
@@ -63,20 +64,30 @@ bool  string_eq(const char *a, const char *b) {
 
 ///////////////////////////////////////////
 
-bool  string_endswith(const char *a, const char *end) {
+bool  string_endswith(const char *a, const char *end, bool case_sensitive) {
 	size_t len_a   = strlen(a);
 	size_t len_end = strlen(end);
 	if (len_end > len_a)
 		return false;
 	a = a + (len_a - len_end);
 
-	while (*a != '\0' && *end != '\0') {
-		if (*a != *end)
-			return false;
-		a++;
-		end++;
+	if (!case_sensitive) {
+		while (*a != '\0' && *end != '\0') {
+			if (tolower(*a) != tolower(*end))
+				return false;
+			a++;
+			end++;
+		}
+		return tolower(*a) == tolower(*end);
+	} else {
+		while (*a != '\0' && *end != '\0') {
+			if (*a != *end)
+				return false;
+			a++;
+			end++;
+		}
+		return *a == *end;
 	}
-	return *a == *end;
 }
 
 ///////////////////////////////////////////

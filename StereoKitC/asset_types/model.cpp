@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "material.h"
 #include "texture.h"
+#include "../libraries/stref.h"
 
 #include <stdio.h>
 
@@ -73,10 +74,17 @@ model_t model_create_file(const char *filename, shader_t shader) {
 	fclose(fp);
 	data[length] = '\0';
 
-	if        (modelfmt_gltf(result, filename, data, length, shader)) {
-	} else if (modelfmt_obj (result, filename, data, length, shader)) {
+	if (string_endswith(filename, ".glb", false) || string_endswith(filename, ".gltf", false)) {
+		if (!modelfmt_gltf(result, filename, data, length, shader))
+			log_errf("Issue loading GLTF file: %s!", filename);
+	} else if (string_endswith(filename, ".obj", false)) {
+		if (!modelfmt_obj (result, filename, data, length, shader))
+			log_errf("Issue loading Wavefront OBJ file: %s!", filename);
+	} else if (string_endswith(filename, ".stl", false)) {
+		if (!modelfmt_stl (result, filename, data, length, shader))
+			log_errf("Issue loading STL file: %s!", filename);
 	} else {
-		log_errf("Issue loading %s! Can't recognize the file format.", filename);
+		log_errf("Issue loading %s! Can't recognize the file extension.", filename);
 	}
 
 	free(data);

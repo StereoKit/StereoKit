@@ -41,7 +41,8 @@ namespace StereoKitTest
                 LoadModel,
                 new FileFilter("GLTF", "*.gltf"),
                 new FileFilter("GLB", "*.glb"),
-                new FileFilter("OBJ", "*.obj"));
+                new FileFilter("OBJ", "*.obj"),
+                new FileFilter("STL", "*.stl"));
         }
 
         private void LoadModel(string filename)
