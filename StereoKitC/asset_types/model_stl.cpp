@@ -1,10 +1,9 @@
 #include "model.h"
 #include "../libraries/stref.h"
+#include "../libraries/stb_ds.h"
 #include "../math.h"
 
-#include <vector>
-#include <map>
-using namespace std;
+#include <stdio.h>
 
 namespace sk {
 
@@ -20,51 +19,48 @@ struct stl_triangle_t {
 	uint16_t attribute;
 };
 
-struct vec3_cmp {
-	bool operator() (const vec3& a, const vec3& b) const {
-		return (a.x+a.y+a.z < b.x+b.y+b.z);
-	}
+struct point_hash_t {
+	vec3   key;
+	vind_t value;
 };
 
 ///////////////////////////////////////////
 
-vind_t indexof(vec3 pt, vec3 normal, vector<vert_t> &verts, map<vec3, vind_t, vec3_cmp> &indmap) {
-	//verts.push_back(vert_t{ pt, normal, {}, {255,255,255,255} });
-	//return verts.size() - 1;
-	auto find = indmap.find(pt);
-	vind_t result = 0;
-	if (find == indmap.end()) {
-		result = (vind_t)verts.size();
-		indmap[pt] = result;
-		verts.push_back(vert_t{ pt, {}, {}, {255,255,255,255} });
-	} else {
-		result = find->second;
+vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
+	vind_t result = hmget(*indmap, pt);
+	if (result == -1) {
+		result = arrlen(*verts);
+		hmput(*indmap, pt, result);
+		arrput(*verts, (vert_t{ pt, {}, {}, {255,255,255,255} }));
 	}
-	verts[result].norm += normal;
+	(*verts)[result].norm += normal;
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary(void *file_data, size_t file_length, vector<vert_t> &verts, vector<vind_t> &faces) {
+bool modelfmt_stl_binary(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
 	stl_header_t *header = (stl_header_t *)file_data;
-	map<vec3, vind_t, vec3_cmp> indmap;
-	
+	point_hash_t *indmap = nullptr;
+	hmdefault(indmap, -1);
+
 	size_t sz = sizeof(stl_triangle_t);
 	stl_triangle_t *tris = (stl_triangle_t *)(((uint8_t *)file_data) + sizeof(stl_header_t));
 	for (uint32_t i = 0; i < header->tri_count; i++) {
-		faces.push_back( indexof(tris[i].verts[0], tris[i].normal, verts, indmap) );
-		faces.push_back( indexof(tris[i].verts[1], tris[i].normal, verts, indmap) );
-		faces.push_back( indexof(tris[i].verts[2], tris[i].normal, verts, indmap) );
+		arrput(*faces, indexof(tris[i].verts[0], tris[i].normal, verts, &indmap) );
+		arrput(*faces, indexof(tris[i].verts[1], tris[i].normal, verts, &indmap) );
+		arrput(*faces, indexof(tris[i].verts[2], tris[i].normal, verts, &indmap) );
 	}
 
+	hmfree(indmap);
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text(void *file_data, size_t file_length, vector<vert_t> &verts, vector<vind_t> &faces) {
-	map<vec3, vind_t, vec3_cmp> indmap;
+bool modelfmt_stl_text(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
+	point_hash_t *indmap = nullptr;
+	hmdefault(indmap, -1);
 	
 	vec3    normal = {};
 	vind_t  curr[4] = {};
@@ -85,9 +81,9 @@ bool modelfmt_stl_text(void *file_data, size_t file_length, vector<vert_t> &vert
 				if (stref_nextword(line, word)) normal.z = stref_to_f(word);
 			}
 		} else if (stref_equals(word, "endfacet")) {
-			faces.push_back(curr[0]); faces.push_back(curr[1]); faces.push_back(curr[2]);
+			arrput(*faces, curr[0]); arrput(*faces, curr[1]); arrput(*faces, curr[2]);
 			if (curr_count == 4) {
-				faces.push_back(curr[0]); faces.push_back(curr[2]); faces.push_back(curr[3]);
+				arrput(*faces, curr[0]); arrput(*faces, curr[2]); arrput(*faces, curr[3]);
 			}
 			curr_count = 0;
 		} else if (stref_equals(word, "vertex")) {
@@ -96,40 +92,43 @@ bool modelfmt_stl_text(void *file_data, size_t file_length, vector<vert_t> &vert
 				if (stref_nextword(line, word)) pt.x = stref_to_f(word);
 				if (stref_nextword(line, word)) pt.y = stref_to_f(word);
 				if (stref_nextword(line, word)) pt.z = stref_to_f(word);
-				curr[curr_count] = indexof(pt, normal, verts, indmap);
+				curr[curr_count] = indexof(pt, normal, verts, &indmap);
 				curr_count = mini(4, curr_count + 1);
 			}
 		}
 	}
 
+	hmfree(indmap);
 	return true;
 }
 
 ///////////////////////////////////////////
 
 bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
-	vector<vert_t> verts;
-	vector<vind_t> faces;
+	vert_t *verts = nullptr;
+	vind_t *faces = nullptr;
 
 	bool result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
-		modelfmt_stl_text  (file_data, file_length, verts, faces) :
-		modelfmt_stl_binary(file_data, file_length, verts, faces);
+		modelfmt_stl_text  (file_data, file_length, &verts, &faces) :
+		modelfmt_stl_binary(file_data, file_length, &verts, &faces);
 
 	// Normalize all the normals
-	for (size_t i = 0; i < verts.size(); i++)
+	for (int i = 0, len = arrlen(verts); i < len; i++)
 		verts[i].norm = vec3_normalize(verts[i].norm);
 
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], (int32_t)verts.size());
-	mesh_set_inds (mesh, &faces[0], (int32_t)faces.size());
+	mesh_set_verts(mesh, &verts[0], arrlen(verts));
+	mesh_set_inds (mesh, &faces[0], arrlen(faces));
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
 
+	arrfree(verts);
+	arrfree(faces);
 	return result;
 }
 

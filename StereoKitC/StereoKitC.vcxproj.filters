@@ -260,6 +260,9 @@
     <ClInclude Include="libraries\dr_wav.h">
       <Filter>libraries</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\stb_ds.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

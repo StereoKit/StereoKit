@@ -1,11 +1,15 @@
 #include "model.h"
 #include "../libraries/stref.h"
+#include "../libraries/stb_ds.h"
 
-#include <vector>
-#include <map>
-using namespace std;
+#include <stdio.h>
 
 namespace sk {
+
+struct index_hash_t {
+	int    key;
+	vind_t value;
+};
 
 ///////////////////////////////////////////
 
@@ -15,34 +19,35 @@ inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
 
 ///////////////////////////////////////////
 
-int indexof(int iV, int iT, int iN, vector<vec3> &verts, vector<vec3> &norms, vector<vec2> &uvs, map<int, vind_t> indmap, vector<vert_t> &mesh_verts) {
-	if (uvs.size() == 0)
-		uvs.push_back(vec2{ 0,0 });
-	if (norms.size() == 0)
-		norms.push_back(vec3{ 0,1,0 });
+int indexof(int iV, int iT, int iN, vec3 *verts, vec3 **norms, vec2 **uvs, index_hash_t **indmap, vert_t **mesh_verts) {
+	if (arrlen(*uvs) == 0)
+		arrput(*uvs, (vec2{ 0,0 }));
+	if (arrlen(*norms) == 0)
+		arrput(*norms, (vec3{ 0,1,0 }));
 
-	int  id = meshfmt_obj_idx(iV, iN, iT, (int)verts.size(), (int)norms.size());
-	map<int, vind_t>::iterator item = indmap.find(id);
-	if (item == indmap.end()) {
-		mesh_verts.push_back({ verts[iV - 1LL], norms[iN - 1LL], uvs[iT - 1LL], {255,255,255,255} });
-		indmap[id] = (vind_t)(mesh_verts.size() - 1);
-		return (int)mesh_verts.size() - 1;
+	int  id = meshfmt_obj_idx(iV, iN, iT, arrlen(verts), arrlen(norms));
+	vind_t ind = hmget(*indmap, id);
+	if (ind == -1) {
+		arrput(*mesh_verts, (vert_t{ verts[iV - 1LL], (*norms)[iN - 1LL], (*uvs)[iT - 1LL], {255,255,255,255} }) );
+		ind = arrlen(*mesh_verts) - 1;
+		hmput(*indmap, id, ind);
+		
 	}
-	return item->second;
+	return ind;
 }
 
 ///////////////////////////////////////////
 
 bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
+	vec3 *poss  = nullptr;
+	vec3 *norms = nullptr;
+	vec2 *uvs   = nullptr;
+	vert_t *verts = nullptr;
+	vind_t *faces = nullptr;
 
-	vector<vec3> poss;
-	vector<vec3> norms;
-	vector<vec2> uvs;
-
-	map<int, vind_t> indmap;
-	vector<vert_t>   verts;
-	vector<vind_t>   faces;
-
+	index_hash_t  *indmap = nullptr;
+	hmdefault(indmap, -1);
+	
 	vec3 in;
 	int inds[12];
 
@@ -58,18 +63,18 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
 			if (stref_nextword(line, word)) in.z = stref_to_f(word);
-			poss.push_back(in);
+			arrput(poss, in);
 		} else if (stref_equals(word, "vn")) {
 			in = {};
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
 			if (stref_nextword(line, word)) in.z = stref_to_f(word);
-			norms.push_back(in);
+			arrput(norms, in);
 		} else if (stref_equals(word, "vt")) {
 			in = {};
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
-			uvs.push_back(vec2{ in.x, in.y });
+			arrput(uvs, (vec2{ in.x, in.y }));
 		} else if (stref_equals(word, "f" )) {
 			int sides = 0;
 			for (; sides < 4; sides++) {
@@ -81,13 +86,13 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 				inds[sides * 3+2] = stref_nextword(word, ind, '/') && ind.length > 0 ? stref_to_i(ind) : 1;
 			}
 
-			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2],  poss, norms, uvs, indmap, verts);
-			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5],  poss, norms, uvs, indmap, verts);
-			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8],  poss, norms, uvs, indmap, verts);
-			faces.push_back(id1); faces.push_back(id2); faces.push_back(id3);
+			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2],  poss, &norms, &uvs, &indmap, &verts);
+			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5],  poss, &norms, &uvs, &indmap, &verts);
+			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8],  poss, &norms, &uvs, &indmap, &verts);
+			arrput(faces, id1); arrput(faces, id2); arrput(faces, id3);
 			if (sides == 4) {
-				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], poss, norms, uvs, indmap, verts);
-				faces.push_back(id1); faces.push_back(id3); faces.push_back(id4);
+				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], poss, &norms, &uvs, &indmap, &verts);
+				arrput(faces, id1); arrput(faces, id3); arrput(faces, id4);
 			}
 		}
 	}
@@ -96,13 +101,19 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 	sprintf_s(id, 512, "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], (int32_t)verts.size());
-	mesh_set_inds (mesh, &faces[0], (int32_t)faces.size());
+	mesh_set_verts(mesh, &verts[0], arrlen(verts));
+	mesh_set_inds (mesh, &faces[0], arrlen(faces));
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
 
+	arrfree(poss);
+	arrfree(norms);
+	arrfree(uvs);
+	arrfree(verts);
+	arrfree(faces);
+	hmfree(indmap);
 	return true;
 }
 

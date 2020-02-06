@@ -6,6 +6,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
+
 ///////////////////////////////////////////
 
 char *string_copy(const char *aString) {
