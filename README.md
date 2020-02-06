@@ -11,7 +11,7 @@ StereoKit is designed to solve issues that occur when using a game engine to cre
 ![Screenshot](/Documentation/img/SKScreenshot1.jpg)
 
 StereoKit Features:
-- Model formats: .gltf, .glb, .obj, procedural
+- Model formats: .gltf, .glb, .obj, .stl, procedural
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Platforms: HoloLens 2, Windows Mixed Reality, eventually everywhere OpenXR is!

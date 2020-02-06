@@ -7,7 +7,7 @@ namespace StereoKit
     /// objects that have multiple parts in them, and in fact, most model formats
     /// are composed this way already!
     /// 
-    /// This class contains a number of methods for creation. If you pass in a .obj,
+    /// This class contains a number of methods for creation. If you pass in a .obj, .stl,
     /// .gltf, or .glb, StereoKit will load that model from file, and assemble materials
     /// and transforms from the file information. But you can also assemble a model
     /// from procedurally generated meshes!
@@ -99,7 +99,7 @@ namespace StereoKit
             return model == IntPtr.Zero ? null : new Model(model);
         }
 
-        /// <summary>Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.</summary>
+        /// <summary>Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file.</summary>
         /// <param name="file">Name of the file to load! This gets prefixed with the StereoKit asset
         /// folder if no drive letter is specified in the path.</param>
         /// <param name="shader">The shader to use for the model's materials! If null, this will
