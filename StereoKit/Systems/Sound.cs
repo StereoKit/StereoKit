@@ -10,6 +10,8 @@ namespace StereoKit
     {
         internal IntPtr _inst;
 
+        public string Id { set { NativeAPI.sound_set_id(_inst, value); } }
+
         private Sound(IntPtr sound)
         {
             _inst = sound;

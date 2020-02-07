@@ -44,8 +44,10 @@ namespace StereoKitTest
                 genPath.Clear();
             if (contains) {
                 Vec3 pt = hand[FingerId.Index, JointId.Tip].position - genVolume.center;
-                if (genPath.Count == 0 || Vec3.DistanceSq(pt, genPath[genPath.Count-1].pt) > 0.0001f)
-                genPath.Add(new LinePoint(pt, Color.White, 0.01f));
+                if (genPath.Count == 0 || Vec3.DistanceSq(pt, genPath[genPath.Count-1].pt) > 0.0001f) {
+                    Vec3 rgb = (pt + (genVolume.dimensions / 2)) / genVolume.dimensions.x;
+                    genPath.Add(new LinePoint(pt, new Color(rgb.x, rgb.y, rgb.z), 0.01f));
+                }
             }
 
             if (!contains && genPrevContains)

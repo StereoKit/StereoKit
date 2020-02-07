@@ -10,7 +10,6 @@
 
 namespace sk {
 
-uint32_t     au_active_count = 0;
 sound_inst_t au_active_sounds[8];
 float        au_mix_temp[4096];
 
@@ -82,24 +81,21 @@ sound_t sound_generate(float (*function)(float), float duration) {
 ///////////////////////////////////////////
 
 void sound_play(sound_t sound, vec3 at, float volume) {
-    int32_t found = -1;
-    for (size_t i = 0; i < au_active_count; i++) {
+    ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
+
+    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == sound) {
-            found = i;
-            break;
+            au_active_sounds[i] = {sound, at, volume};
+            return;
         }
     }
-    if (found == -1 && au_active_count < _countof(au_active_sounds)) {
-        found = au_active_count;
-        au_active_count += 1;
-        assets_addref(sound->header);
-    }
 
-    if (found != -1) {
-        ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
-        au_active_sounds[found].sound    = sound;
-        au_active_sounds[found].position = at;
-        au_active_sounds[found].volume   = volume;
+    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
+        if (au_active_sounds[i].sound == nullptr) {
+            assets_addref(sound->header);
+            au_active_sounds[i] = { sound, at, volume };
+            return;
+        }
     }
 }
 
@@ -163,21 +159,20 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
 
 ///////////////////////////////////////////
 
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
-{
+void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     float* pOutputF32 = (float*)pOutput;
     ma_uint32 iDecoder;
 
     ma_assert(pDevice->playback.format == SAMPLE_FORMAT);   // <-- Important for this example.
 
-    for (uint32_t i = 0; i < au_active_count; i++) {
+    for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
+        if (au_active_sounds[i].sound == nullptr)
+            continue;
+
         ma_uint32 framesRead = read_and_mix_pcm_frames_f32(au_active_sounds[i], pOutputF32, frameCount);
         if (framesRead < frameCount) {
-            ma_decoder_seek_to_pcm_frame(&au_active_sounds[i].sound->decoder, 0);
             sound_release(au_active_sounds[i].sound);
-            memmove(&au_active_sounds[i], &au_active_sounds[i + 1], sizeof(ma_decoder *) * (au_active_count - (i + 1)));
-            au_active_count--;
-            i--;
+            au_active_sounds[i].sound = nullptr;
         }
     }
 
