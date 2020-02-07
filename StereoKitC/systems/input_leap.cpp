@@ -131,21 +131,17 @@ void input_leap_thread(void *arg) {
 void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 	vec3 offset = {}; //{ 0, -0.25f, -0.15f };
 
-	matrix axis_convert = { {
-		{-1,0,0,0},
-		{0,0,-1,0},
-		{0,-1,0,0},
-		{0,0,-80,1}
+	static const quat   quat_convert = quat_from_angles(90, 0, 180);
+	static const matrix axis_convert = { {
+		{-1, 0, 0,  0},
+		{ 0, 0,-1,  0},
+		{ 0,-1, 0,  0},
+		{ 0, 0,-80, 1}
 	} };
 	const pose_t &head = input_head();
 	matrix to_world = axis_convert * matrix_trs(vec3_zero, quat_identity, vec3_one * 0.001f);
 	to_world = to_world * matrix_trs(vec3_zero, head.orientation);
-	auto to_quat = [](LEAP_QUATERNION q) {return quat_from_angles(90,0,180)*quat{ -q.x, -q.z, -q.y, q.w }; };
-
-	// Copy the palm
-	memcpy(&sk_hand.palm.position, &hand.palm.position, sizeof(vec3));
-	sk_hand.palm.orientation = quat_from_angles(-90,0,0) * to_quat(hand.palm.orientation) * head.orientation;
-	sk_hand.palm.position    = matrix_mul_point( to_world, sk_hand.palm.position) + head.position;
+	auto to_quat = [](LEAP_QUATERNION q) {return quat_convert*quat{ -q.x, -q.z, -q.y, q.w }; };
 
 	for (size_t f = 0; f < 5; f++) {
 		LEAP_BONE    &bone = hand.digits[f].bones[0];
@@ -167,6 +163,18 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 			pose->radius      = leap_finger_size[f] * leap_joint_size[j+1] * 0.35f;
 		}
 	}
+
+	// Calculate the palm, Leap's built-in palm seemed to be flickering?
+	// Right handed example
+	vec3 palm_tr = dest[hand_finger_index * 5 + hand_joint_proximal  ].position;
+	vec3 palm_tl = dest[hand_finger_pinky * 5 + hand_joint_proximal  ].position;
+	vec3 palm_br = dest[hand_finger_index * 5 + hand_joint_metacarpal].position;
+	vec3 palm_bl = dest[hand_finger_pinky * 5 + hand_joint_metacarpal].position;
+	sk_hand.palm.orientation = quat_lookat_up(
+		palm_bl,
+		palm_bl + (sk_hand.handedness == handed_right ? vec3_cross(palm_br - palm_bl, palm_tl - palm_bl) : vec3_cross(palm_tl - palm_bl, palm_br - palm_bl)),
+		palm_tl-palm_bl);
+	sk_hand.palm.position = (palm_tr*0.25f + palm_br*0.25f + palm_tl*0.25f + palm_bl*0.25f);
 }
 
 } // namespace sk

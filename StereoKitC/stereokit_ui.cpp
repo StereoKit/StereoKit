@@ -918,11 +918,12 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
 				quat rot = quat_difference(start_tip_rot[i], curr_rot);
 
-				movement.position = vec3_lerp(movement.position, curr_pos + rot*(start_aff_pos[i] - start_tip_pos[i]), 0.3f);
+				vec3 dest = curr_pos + rot * (start_aff_pos[i] - start_tip_pos[i]);
+				movement.position = vec3_lerp(movement.position, dest, 0.6f);
 				
 				switch (move_type) {
-				case ui_move_exact:     movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * rot, 0.3f); break;
-				case ui_move_face_user: movement.orientation = quat_slerp(movement.orientation, quat_lookat(movement.position, matrix_mul_point( to_local, input_head().position )), 0.3f); break;
+				case ui_move_exact:     movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * rot, 0.4f); break;
+				case ui_move_face_user: movement.orientation = quat_slerp(movement.orientation, quat_lookat(movement.position, matrix_mul_point( to_local, input_head().position )), 0.4f); break;
 				default: log_err("Unimplemented move type!"); break;
 				}
 
