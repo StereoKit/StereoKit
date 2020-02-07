@@ -41,10 +41,11 @@ SamplerState tex_sampler;
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	float4 view  = mul(float4(input.pos.xyz, 1), sk_viewproj[sk_inst[id].view_id]);
-	float3 norm  = mul(float4(input.norm,0), sk_viewproj[sk_inst[id].view_id]).xyz;
-	view.xy += float2(norm.y, -norm.x);
-	output.pos   = view;// mul(view, sk_proj[sk_inst[id].view_id]);
+	float magnitude = length(input.norm);
+	float4 view  = mul(float4(input.pos.xyz, 1), sk_view[sk_inst[id].view_id]);
+	float3 norm  = mul(float4(input.norm,    0), sk_view[sk_inst[id].view_id]).xyz;
+	view.xy += normalize(float2(norm.y, -norm.x))*magnitude;
+	output.pos   = mul(view, sk_proj[sk_inst[id].view_id]);
 
 	output.view_id = sk_inst[id].view_id;
 	output.uv      = input.uv;
@@ -53,7 +54,6 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = tex.Sample(tex_sampler, input.uv);
-	//clip(col.a-0.01);
 
 	col = col * input.color;
 
