@@ -139,8 +139,9 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 		{ 0, 0,-80, 1}
 	} };
 	const pose_t &head = input_head();
-	matrix to_world = axis_convert * matrix_trs(vec3_zero, quat_identity, vec3_one * 0.001f);
-	to_world = to_world * matrix_trs(vec3_zero, head.orientation);
+	matrix to_world = axis_convert * 
+		matrix_trs(vec3_zero, quat_identity, vec3_one * 0.001f) *
+		matrix_trs(vec3_zero, head.orientation);
 	auto to_quat = [](LEAP_QUATERNION q) {return quat_convert*quat{ -q.x, -q.z, -q.y, q.w }; };
 
 	for (size_t f = 0; f < 5; f++) {
