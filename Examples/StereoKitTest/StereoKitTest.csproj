@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DemoBasics.cs" />
+    <Compile Include="DemoSound.cs" />
     <Compile Include="Docs\DocDebug.cs" />
     <Compile Include="DemoGeo.cs" />
     <Compile Include="DemoHands.cs" />

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 
 namespace StereoKit.Framework
 {
@@ -126,20 +125,19 @@ namespace StereoKit.Framework
                 } 
                 else
                 {
-                    float d1 = Vec3.Distance(
+                    float dist = Math.Min(Vec3.Distance(
                         hand[FingerId.Little, JointId.Tip].position,
-                        hand[FingerId.Little, JointId.Metacarpal].position);
-                    float d2 = Vec3.Distance(
-                        hand[FingerId.Little, JointId.Tip].position,
-                        hand[FingerId.Little, JointId.Metacarpal].position);
-                    const float previewDist = 14 * Units.cm2m;
-                    scale = minScale + ((previewDist-(d1+d2)) / previewDist) * 0.2f;
+                        hand[FingerId.Ring,   JointId.Metacarpal].position),
+                        Vec3.Distance(
+                        hand[FingerId.Middle, JointId.Tip].position,
+                        hand[FingerId.Ring,   JointId.Metacarpal].position));
+                    const float previewDist = 10 * Units.cm2m;
+                    scale = minScale + (Math.Max(0,previewDist-dist) / previewDist) * 0.2f;
 
                     subMenuPose.position = 
-                       (hand[FingerId.Little, JointId.Tip].position +
-                        hand[FingerId.Middle, JointId.Tip].position +
+                       (hand[FingerId.Ring,   JointId.Tip].position +
                         hand[FingerId.Little, JointId.Metacarpal].position +
-                        hand[FingerId.Middle, JointId.Metacarpal].position) * 0.25f;
+                        hand[FingerId.Middle, JointId.Metacarpal].position) * 0.3333f;
                     subMenuPose.orientation = Quat.LookAt(subMenuPose.position, Input.Head.position);
                     subMenuPose.position += subMenuPose.Forward*Units.cm2m;
                 }
