@@ -31,7 +31,7 @@ namespace StereoKitTest
                 fileSound.Play(windowPose.position);
             UI.Label("Generated Sound:");
             UI.Label("Duration"); UI.SameLine();
-            UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, UI.AreaRemaining.x);
+            UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, 8*Units.cm2m);
             if (genSound != null && UI.Button("Play"))
                 genSound.Play(windowPose.position);
             UI.WindowEnd();
