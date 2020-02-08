@@ -8,7 +8,7 @@ namespace StereoKitTest
     {
         Pose  windowPose = new Pose(.4f, 0, -0.4f, Quat.LookDir(-1,0,1));
         Sound fileSound  = Sound.FromFile("BlipNoise.wav");
-
+        
         float      genDuration = 0.5f;
         Sound      genSound;
         Bounds     genVolume = new Bounds(new Vec3(0.25f, 0.25f, 0.25f));
@@ -21,6 +21,27 @@ namespace StereoKitTest
         public void Initialize() {
             boundsMat.Transparency = Transparency.Blend;
             boundsMat["color"] = new Color(1, 1, 1, 0.25f);
+
+            /// :CodeSample: Sound Sound.FromFile Sound.Play
+            /// ### Basic usage
+            Sound sound = Sound.FromFile("BlipNoise.wav");
+            //sound.Play(Vec3.Zero);
+            /// :End:
+
+            /// :CodeSample: Sound Sound.Generate
+            /// ### Generating a sound
+            /// Making a procedural sound is pretty straightforward! Here's
+            /// an example of building a sound from two frequencies of sin
+            /// wave.
+            Sound genSound = Sound.Generate((t) =>
+            {
+                float band1 = SKMath.Sin(t * 523.25f * SKMath.Tau); // a 'C' tone
+                float band2 = SKMath.Sin(t * 659.25f * SKMath.Tau); // an 'E' tone
+                const float volume = 0.1f;
+                return (band1*0.6f + band2*0.4f) * volume;
+            }, 0.5f);
+            genSound.Play(Vec3.Zero);
+            /// :End:
         }
         public void Shutdown() { }
 

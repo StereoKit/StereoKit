@@ -141,11 +141,12 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
         }
 
         float dist   = vec3_magnitude(inst.position - head_pos);
-        float volume = (1.f / dist) * inst.volume;
+        float volume = fminf(1,(1.f / dist) * inst.volume);
 
         // Mix the frames together.
         for (ma_uint32 sample = 0; sample < frames_read*CHANNEL_COUNT; ++sample) {
-            pOutputF32[total_frames_read*CHANNEL_COUNT + sample] += au_mix_temp[sample] * volume;
+            int i = total_frames_read * CHANNEL_COUNT + sample;
+            pOutputF32[i] = fmax(-1, fmin(1, pOutputF32[i] + au_mix_temp[sample] * volume));
         }
 
         total_frames_read += frames_read;
