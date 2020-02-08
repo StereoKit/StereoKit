@@ -888,8 +888,8 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 	
 	static vec3 start_aff_pos[2] = {};
 	static quat start_aff_rot[2] = { quat_identity,quat_identity };
-	static vec3 start_tip_pos[2] = {};
-	static quat start_tip_rot[2] = { quat_identity,quat_identity };
+	static vec3 start_palm_pos[2] = {};
+	static quat start_palm_rot[2] = { quat_identity,quat_identity };
 	for (size_t i = 0; i < handed_max; i++) {
 		// Skip this if something else has some focus!
 		if (!skui_hand[i].tracked || (skui_hand[i].focused_prev != 0 && skui_hand[i].focused_prev != id))
@@ -906,26 +906,33 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_tip_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).palm.position );
-				start_tip_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).palm.orientation);
+				start_palm_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).palm.position );
+				start_palm_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
 
-				vec3 curr_pos = matrix_mul_point   (to_local, input_hand((handed_)i).palm.position);
-				quat curr_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
-				quat rot = quat_difference(start_tip_rot[i], curr_rot);
-
-				vec3 dest = curr_pos + rot * (start_aff_pos[i] - start_tip_pos[i]);
-				movement.position = vec3_lerp(movement.position, dest, 0.6f);
+				quat dest_rot;
+				vec3 dest_pos;
 				
 				switch (move_type) {
-				case ui_move_exact:     movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * rot, 0.4f); break;
-				case ui_move_face_user: movement.orientation = quat_slerp(movement.orientation, quat_lookat(movement.position, matrix_mul_point( to_local, input_head().position )), 0.4f); break;
+				case ui_move_exact: {
+					dest_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
+					dest_rot = quat_difference(start_palm_rot[i], dest_rot);
+				} break;
+				case ui_move_face_user: {
+					dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head().position));
+					dest_rot = quat_difference(start_aff_rot[i], dest_rot);
+				} break;
 				default: log_err("Unimplemented move type!"); break;
 				}
+
+				vec3 curr_pos = matrix_mul_point(to_local, input_hand((handed_)i).palm.position);
+				dest_pos = curr_pos + dest_rot * (start_aff_pos[i] - start_palm_pos[i]);
+				movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
+				movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * dest_rot, 0.4f); 
 
 				if (hand.pinch_state & button_state_just_inactive) {
 					skui_hand[i].active = 0;
