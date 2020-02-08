@@ -70,6 +70,10 @@ if ($noupload -eq $true) {
     Write-Host 'Will attempt to upload package when finished!'
 }
 
+# Print version, so we know we're building the right version right away
+$version = Get-Version
+Write-Host "v$version"
+
 # Run tests before anything else!
 Write-Host 'Running tests...'
 if ( Test -ne 0 ) {
@@ -80,8 +84,6 @@ Write-Host 'Tests passed!' -ForegroundColor green
 
 # Notify of build, and output the version
 Write-Host 'Beginning a full build!'
-$version = Get-Version
-Write-Host "v$version"
 
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
