@@ -177,25 +177,8 @@ bool ui_init() {
 	skui_layers.push_back({});
 	skui_id_stack.push_back({ STREF_HASH_START });
 
-	skui_snd_interact = sound_generate([](float t){
-		float x = t / 0.03f;
-		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
-		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
-		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
-		float band4 = sinf(t*500)  * (x * powf(1 - x, 6)) / 0.03f;
-
-		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
-		}, .03f);
-
-	skui_snd_uninteract = sound_generate([](float t){
-		float x = t / 0.03f;
-		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
-		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
-		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
-		float band4 = sinf(t*500)  * (x * powf(1 - x, 6)) / 0.03f;
-
-		return (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
-		}, .03f);
+	skui_snd_interact   = sound_find("default/sound_click");
+	skui_snd_uninteract = sound_find("default/sound_unclick");
 
 	return true;
 }
@@ -232,6 +215,8 @@ void ui_update() {
 ///////////////////////////////////////////
 
 void ui_shutdown() {
+	sound_release(skui_snd_interact);
+	sound_release(skui_snd_uninteract);
 	mesh_release(skui_box);
 	mesh_release(skui_cylinder);
 	material_release(skui_mat);

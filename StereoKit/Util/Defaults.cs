@@ -24,6 +24,9 @@
         public static Shader ShaderEquirect { get; private set; }
         public static Shader ShaderUI       { get; private set; }
 
+        public static Sound SoundClick   { get; private set; }
+        public static Sound SoundUnclick { get; private set; }
+
         internal static void Initialize()
         {
             Material         = Material.Find(DefaultIds.material);
@@ -47,6 +50,9 @@
             ShaderFont     = Shader.Find(DefaultIds.shaderFont);
             ShaderEquirect = Shader.Find(DefaultIds.shaderEquirect);
             ShaderUI       = Shader.Find(DefaultIds.shaderUI);
+
+            SoundClick   = Sound.Find(DefaultIds.soundClick);
+            SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
         }
 
         internal static void Shutdown()
@@ -72,6 +78,9 @@
             ShaderFont     = null;
             ShaderEquirect = null;
             ShaderUI       = null;
+
+            SoundClick   = null;
+            SoundUnclick = null;
         }
     }
 }

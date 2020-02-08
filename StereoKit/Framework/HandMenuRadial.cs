@@ -100,6 +100,7 @@ namespace StereoKit.Framework
 
         public void Close()
         {
+            Default.SoundUnclick.Play(Input.Hand(Handed.Right)[FingerId.Index, JointId.Tip].position);
             scale = minScale;
             activeLayer = 0;
             showHandSubmenu = false;
@@ -135,6 +136,7 @@ namespace StereoKit.Framework
                     destPose = hand[FingerId.Index, JointId.Tip].Pose;
                     destPose.orientation = Quat.LookAt(subMenuPose.position, Input.Head.position);
                     showHandSubmenu = true;
+                    Default.SoundClick.Play(hand[FingerId.Index, JointId.Tip].position);
                 } 
                 else
                 {
@@ -210,6 +212,7 @@ namespace StereoKit.Framework
                         }
                         else if (item.action == HandMenuAction.Layer) 
                         {
+                            Default.SoundClick.Play(hand[FingerId.Index, JointId.Tip].position);
                             navStack.Push(activeLayer);
                             activeLayer = Array.FindIndex(layers, l=>l.layerName == item.layerName);
                             if (activeLayer == -1)
@@ -217,6 +220,7 @@ namespace StereoKit.Framework
                         } 
                         else if (item.action == HandMenuAction.Back) 
                         {
+                            Default.SoundUnclick.Play(hand[FingerId.Index, JointId.Tip].position);
                             if (navStack.Count > 0)
                                 activeLayer = navStack.Pop();
                         }
@@ -229,7 +233,6 @@ namespace StereoKit.Framework
 
                         if (layers[activeLayer].backAngle != 0)
                         {
-                            Log.Info($"start:{((angleId + 0.5f) * step)} backAngle:{layers[activeLayer].backAngle}");
                             angleOffset = (((angleId + 0.5f) * step) - layers[activeLayer].backAngle) + 180;
                             while(angleOffset < 0  ) angleOffset += 360;
                             while(angleOffset > 360) angleOffset -= 360;

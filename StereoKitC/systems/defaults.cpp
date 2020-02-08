@@ -27,6 +27,8 @@ material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
+sound_t      sk_default_click;
+sound_t      sk_default_unclick;
 
 ///////////////////////////////////////////
 
@@ -140,12 +142,37 @@ bool defaults_init() {
 
 	font_set_id(sk_default_font, "default/font");
 
+	// Sounds
+	sk_default_click = sound_generate([](float t){
+		float x = t / 0.03f;
+		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+
+		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
+		}, .03f);
+	sk_default_unclick = sound_generate([](float t){
+		float x = t / 0.03f;
+		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+
+		return (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
+		}, .03f);
+
+	sound_set_id(sk_default_click,   "default/sound_click");
+	sound_set_id(sk_default_unclick, "default/sound_unclick");
+
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void defaults_shutdown() {
+	sound_release   (sk_default_click);
+	sound_release   (sk_default_unclick);
 	font_release    (sk_default_font);
 	material_release(sk_default_material_equirect);
 	material_release(sk_default_material);

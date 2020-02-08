@@ -73,5 +73,7 @@ namespace StereoKit {
         /// equirectangular texture loading.</summary>
         public const string shaderEquirect = "default/shader_equirect";
         public const string shaderUI       = "default/shader_ui";
+        public const string soundClick     = "default/sound_click";
+        public const string soundUnclick   = "default/sound_unclick";
     }
 }
