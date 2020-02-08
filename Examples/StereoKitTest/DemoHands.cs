@@ -88,7 +88,12 @@ namespace StereoKitTest
             /// :End:
         }
 
-        public void Shutdown() { StereoKitApp.RemoveStepper(handMenu); }
+        public void Shutdown()
+        {
+            /// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
+            StereoKitApp.RemoveStepper(handMenu); 
+            /// :End:
+        }
 
         public void Update()
         {
