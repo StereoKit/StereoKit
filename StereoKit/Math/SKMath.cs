@@ -27,5 +27,8 @@ namespace StereoKit
         /// <summary>Same as Math.Exp</summary>
         /// <returns>Same as Math.Exp</returns>
         public static float Exp(float f) => (float)Math.Exp(f);
+
+        public static float Lerp(float a, float b, float t) => a + (b-a)*t;
+
     }
 }
