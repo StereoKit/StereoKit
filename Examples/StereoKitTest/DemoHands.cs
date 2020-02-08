@@ -57,32 +57,35 @@ namespace StereoKitTest
             /// These are all convenience functions wrapping the `hand.pinchState` bit-flag, so you
             /// can also use that directly if you want to do some bit-flag wizardry!
             /// :End:
-            
+
+            /// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
+            /// ### Basic layered hand menu
+            /// 
+            /// The HandMenuRadial is an `IStepper`, so it should be registered with 
+            /// `StereoKitApp.AddStepper` so it can run by itself! It's recommended to
+            /// keep track of it anyway, so you can remove it when you're done with it
+            /// via `StereoKitApp.RemoveStepper`
+            /// 
+            /// The constructor uses a params style argument list that makes it easy and
+            /// clean to provide lists of items! This means you can assemble the whole
+            /// menu on a single 'line'. You can still pass arrays instead if you prefer
+            /// that!
             handMenu = StereoKitApp.AddStepper(new HandMenuRadial(
                 new HandRadialLayer("Root",
-                    new HandMenuItem("One", null, null, "One"),
-                    new HandMenuItem("Two", null, null, "Two"),
-                    new HandMenuItem("Three", null, null, "Three"),
-                    new HandMenuItem("Four", null, null, "Four"),
+                    new HandMenuItem("File",   null, null, "File"),
+                    new HandMenuItem("Edit",   null, null, "Edit"),
+                    new HandMenuItem("About",  null, () => Log.Info(StereoKitApp.VersionName)),
                     new HandMenuItem("Cancel", null, null)),
-                new HandRadialLayer("One", 
-                    new HandMenuItem("a", null, ()=>Log.Info("a")),
-                    new HandMenuItem("b", null, ()=>Log.Info("b")),
-                    new HandMenuItem("back", null, null, HandMenuAction.Back)),
-                new HandRadialLayer("Two",
-                    new HandMenuItem("c", null, ()=>Log.Info("c")),
-                    new HandMenuItem("back", null, null, HandMenuAction.Back)),
-                new HandRadialLayer("Three",
-                    new HandMenuItem("d", null, ()=>Log.Info("d")),
-                    new HandMenuItem("e", null, ()=>Log.Info("e")),
-                    new HandMenuItem("f", null, ()=>Log.Info("f")),
-                    new HandMenuItem("back", null, null, HandMenuAction.Back)),
-                new HandRadialLayer("Four",
-                    new HandMenuItem("g", null, () => Log.Info("g")),
-                    new HandMenuItem("h", null, () => Log.Info("h")),
-                    new HandMenuItem("i", null, () => Log.Info("i")),
-                    new HandMenuItem("j", null, () => Log.Info("j")),
-                    new HandMenuItem("back", null, null, HandMenuAction.Back))));
+                new HandRadialLayer("File", 
+                    new HandMenuItem("New",   null, () => Log.Info("New")),
+                    new HandMenuItem("Open",  null, () => Log.Info("Open")),
+                    new HandMenuItem("Close", null, () => Log.Info("Close")),
+                    new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
+                new HandRadialLayer("Edit",
+                    new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
+                    new HandMenuItem("Paste", null, () => Log.Info("Paste")),
+                    new HandMenuItem("Back", null, null, HandMenuAction.Back))));
+            /// :End:
         }
 
         public void Shutdown() { StereoKitApp.RemoveStepper(handMenu); }
