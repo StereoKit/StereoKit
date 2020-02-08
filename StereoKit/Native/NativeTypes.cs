@@ -475,16 +475,16 @@ namespace StereoKit
     public enum JointId
     {
         /// <summary>Joint 0. This is at the base of the hand, right above the wrist. For 
-        /// the thumb, Metacarpal and Proximal have the same value.</summary>
-        Metacarpal   = 0,
+        /// the thumb, Root and KnuckleMajor have the same value.</summary>
+        Root = 0,
         /// <summary>Joint 1. These are the knuckles at the top of the palm! For 
-        /// the thumb, Metacarpal and Proximal have the same value.</summary>
-        Proximal     = 1,
+        /// the thumb, Root and KnuckleMajor have the same value.</summary>
+        KnuckleMajor = 1,
         /// <summary>Joint 2. These are the knuckles in the middle of the finger! First
         /// joints on the fingers themselves.</summary>
-        Intermediate = 2,
+        KnuckleMid   = 2,
         /// <summary>Joint 3. The joints right below the fingertip!</summary>
-        Distal       = 3,
+        KnuckleMinor = 3,
         /// <summary>Joint 4. The end/tip of each finger!</summary>
         Tip          = 4
     }

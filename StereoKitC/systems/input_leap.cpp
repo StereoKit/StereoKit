@@ -167,10 +167,10 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 
 	// Calculate the palm, Leap's built-in palm seemed to be flickering?
 	// Right handed example
-	vec3 palm_tr = dest[hand_finger_index * 5 + hand_joint_proximal  ].position;
-	vec3 palm_tl = dest[hand_finger_pinky * 5 + hand_joint_proximal  ].position;
-	vec3 palm_br = dest[hand_finger_index * 5 + hand_joint_metacarpal].position;
-	vec3 palm_bl = dest[hand_finger_pinky * 5 + hand_joint_metacarpal].position;
+	vec3 palm_tr = dest[hand_finger_index*5 + hand_joint_knuckle_major].position;
+	vec3 palm_tl = dest[hand_finger_pinky*5 + hand_joint_knuckle_major].position;
+	vec3 palm_br = dest[hand_finger_index*5 + hand_joint_root         ].position;
+	vec3 palm_bl = dest[hand_finger_pinky*5 + hand_joint_root         ].position;
 	sk_hand.palm.orientation = quat_lookat_up(
 		palm_bl,
 		palm_bl + (sk_hand.handedness == handed_right ? vec3_cross(palm_br - palm_bl, palm_tl - palm_bl) : vec3_cross(palm_tl - palm_bl, palm_br - palm_bl)),

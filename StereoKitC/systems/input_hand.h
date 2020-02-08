@@ -12,10 +12,10 @@ enum hand_finger_ {
 	hand_finger_pinky,
 };
 enum hand_joint_ {
-	hand_joint_metacarpal = 0,
-	hand_joint_proximal,
-	hand_joint_intermediate,
-	hand_joint_distal,
+	hand_joint_root = 0,
+	hand_joint_knuckle_major,
+	hand_joint_knuckle_mid,
+	hand_joint_knuckle_minor,
 	hand_joint_tip,
 };
 
