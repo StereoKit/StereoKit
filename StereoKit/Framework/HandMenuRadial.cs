@@ -36,14 +36,26 @@ namespace StereoKit.Framework
         public string         layerName;
         public HandMenuItem[] items;
         public float          startAngle;
+        public float          backAngle = 0;
 
-        public HandRadialLayer(string name, params HandMenuItem[] items):
-            this(name, 0, items) { }
+        public HandRadialLayer(string name, params HandMenuItem[] items)
+            :this(name, 0, items) {
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (items[i].action == HandMenuAction.Back)
+                {
+                    float step = (360.0f / items.Length);
+                    backAngle = (i+0.5f) * step;
+                }
+            }
+        }
         public HandRadialLayer(string name, float startAngle, params HandMenuItem[] items)
         {
             this.layerName  = name;
             this.startAngle = startAngle;
             this.items      = items;
+
+            
         }
     }
 
@@ -59,6 +71,7 @@ namespace StereoKit.Framework
         LinePoint[]       circle;
         LinePoint[]       innerCircle;
         float             scale = minScale;
+        float             angleOffset = 0;
 
         const float minDist = 0.03f;
         const float midDist = 0.065f;
@@ -161,7 +174,7 @@ namespace StereoKit.Framework
 
                 Vec3  fingertip = Hierarchy.ToLocal(hand[FingerId.Index, JointId.Tip].position);
                 float magSq    = fingertip.MagnitudeSq;
-                float angle    = (float)Math.Atan2(fingertip.y, fingertip.x) * Units.rad2deg - layer.startAngle;
+                float angle    = (float)Math.Atan2(fingertip.y, fingertip.x) * Units.rad2deg - (layer.startAngle + angleOffset);
                 bool  onPlane  = fingertip.z > -0.02f && fingertip.z < 0.02f;
                 bool  active   = onPlane && magSq > minDist * minDist;
                 bool  selected = onPlane && magSq > midDist * midDist;
@@ -173,7 +186,7 @@ namespace StereoKit.Framework
 
                 for (int i = 0; i < count; i++)
                 {
-                    float currAngle = i*step + layer.startAngle;
+                    float currAngle = i*step + layer.startAngle + angleOffset;
                     bool highlightText = active && angleId == i;
                     bool highlightLine = highlightText || (active && (angleId+1)%6 == i);
                     Vec3 dir = Vec3.AngleXY(currAngle);
@@ -213,6 +226,14 @@ namespace StereoKit.Framework
                             Plane plane = new Plane(subMenuPose.position, subMenuPose.Forward);
                             destPose.position = plane.Closest(hand[FingerId.Index, JointId.Tip].position);
                         }
+
+                        if (layers[activeLayer].backAngle != 0)
+                        {
+                            Log.Info($"start:{((angleId + 0.5f) * step)} backAngle:{layers[activeLayer].backAngle}");
+                            angleOffset = (((angleId + 0.5f) * step) - layers[activeLayer].backAngle) + 180;
+                            while(angleOffset < 0  ) angleOffset += 360;
+                            while(angleOffset > 360) angleOffset -= 360;
+                        } else angleOffset = 0;
 
                         item.callback?.Invoke();
                     }
