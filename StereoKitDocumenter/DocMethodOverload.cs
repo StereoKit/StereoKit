@@ -52,7 +52,7 @@ namespace StereoKitDocumenter
 
                 if (returnType != typeof(void)) {
                     if (string.IsNullOrEmpty( returns ))
-                        throw new Exception("Missing doc tag for the return value of " + methodName);
+                        throw new Exception("Missing doc tag for the return value of " + rootMethod.Name);
                     paramText += $"|RETURNS: {returnName}|{StringHelper.CleanForTable(returns)}|\n";
                 }
             }

@@ -115,6 +115,7 @@ namespace StereoKit.Framework
         /// <summary>HandMenuRadial is always Enabled.</summary>
         public bool Enabled => true;
         /// <summary>Part of IStepper, you shouldn't be calling this yourself.</summary>
+        /// <returns>Always returns true.</returns>
         public bool Initialize() => true;
         /// <summary>Part of IStepper, you shouldn't be calling this yourself.</summary>
         public void Shutdown() { }
