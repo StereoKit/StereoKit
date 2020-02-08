@@ -1,5 +1,6 @@
 ﻿using StereoKit.Framework;
 using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -23,7 +24,7 @@ namespace StereoKit
         public static SystemInfo System => _system;
 
         /// <summary>Human-readable version name embedded in the StereoKitC DLL.</summary>
-        public static string VersionName => NativeAPI.sk_version_name();
+        public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
         /// <summary>An integer version Id! This is defined using a hex value with this format: </summary>
         /// `0xMMMMiiiiPPPPrrrr` in order of Major.mInor.Patch.pre-Release
         public static ulong VersionId => NativeAPI.sk_version_id();
