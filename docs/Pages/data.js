@@ -76,6 +76,22 @@ var documents =
 			pages : ['orientation','Pose','position','radius'],
 			},
 			{
+			name : 'HandMenuAction',
+			pages : ['Back','Close','Layer'],
+			},
+			{
+			name : 'HandMenuItem',
+			pages : ['action','callback','image','layerName','name','HandMenuItem'],
+			},
+			{
+			name : 'HandMenuRadial',
+			pages : ['Enabled','HandMenuRadial','Close','Initialize','Show','Shutdown','Step'],
+			},
+			{
+			name : 'HandRadialLayer',
+			pages : ['backAngle','items','layerName','startAngle','HandRadialLayer'],
+			},
+			{
 			name : 'Hierarchy',
 			pages : ['Enabled','Pop','Push','ToLocal','ToLocalDirection','ToWorld','ToWorldDirection'],
 			},
@@ -85,7 +101,7 @@ var documents =
 			},
 			{
 			name : 'JointId',
-			pages : ['Distal','Intermediate','Metacarpal','Proximal','Tip'],
+			pages : ['KnuckleMajor','KnuckleMid','KnuckleMinor','Root','Tip'],
 			},
 			{
 			name : 'Key',
@@ -184,6 +200,10 @@ var documents =
 			pages : ['Immovable','Normal','Unaffected'],
 			},
 			{
+			name : 'Sound',
+			pages : ['Find','FromFile','Generate','Play'],
+			},
+			{
 			name : 'Sphere',
 			pages : ['center','Diameter','radius','Sphere','Contains','Intersect'],
 			},
@@ -250,6 +270,10 @@ var documents =
 			{
 			name : 'UI',
 			pages : ['AreaRemaining','ColorScheme','LineHeight','Settings','ShowVolumes','AffordanceBegin','AffordanceEnd','Button','ButtonRound','HSlider','Image','IsInteracting','Label','LayoutArea','NextLine','PopId','PushId','Radio','ReserveBox','SameLine','Space','Toggle','VolumeAt','WindowBegin','WindowEnd'],
+			},
+			{
+			name : 'UIMove',
+			pages : ['Exact','FaceUser'],
 			},
 			{
 			name : 'UISettings',

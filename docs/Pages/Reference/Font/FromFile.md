@@ -32,7 +32,7 @@ material, and a base color.
 ```csharp
 style = Text.MakeStyle(
     Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
-    3 * Units.cm2m,
+    2 * Units.cm2m,
     Material.Copy(DefaultIds.materialFont), 
     Color.HSV(0.05f, 0.7f, 0.8f));
 ```
@@ -43,7 +43,7 @@ without one will just fall back on the default style.
 // Text with an explicit text style
 Text.Add(
     "Here's\nSome\nMulti-line\nText!!", 
-    Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)), 
+    Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
     style);
 // Text using the default text style
 Text.Add(

@@ -144,11 +144,11 @@ And while we're at it, here's a quick example of doing a radio button group! Not
 integer, and have fun!
 
 ```csharp
-if (UI.Radio("Radio 1", clipOption == 1)) clipOption = 1;
+if (UI.Radio("Radio1", clipOption == 1)) clipOption = 1;
 UI.SameLine();
-if (UI.Radio("Radio 2", clipOption == 2)) clipOption = 2;
+if (UI.Radio("Radio2", clipOption == 2)) clipOption = 2;
 UI.SameLine();
-if (UI.Radio("Radio 3", clipOption == 3)) clipOption = 3;
+if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
 ```
 
 As with windows, Affordances need an End call.

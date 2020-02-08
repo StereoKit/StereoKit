@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Model.FromFile
-description: Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.
+description: Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file.
 ---
 # [Model]({{site.url}}/Pages/Reference/Model.html).FromFile
 
@@ -15,7 +15,7 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromFile(string file, [S
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|The shader to use for the model's materials! If null, this will             automatically determine the best shader available to use.|
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model created from the file, or null if the file failed to load!|
 
-Loads a list of mesh and material subsets from a .obj, .gltf, or .glb file.
+Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file.
 
 
 
