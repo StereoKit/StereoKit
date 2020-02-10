@@ -13,6 +13,8 @@ class DemoGeo : IDemo
     Mesh  demoPlaneMesh  = null;
     Model demoPlaneModel = null;
 
+    Mesh  demoProcMesh = null;
+
     public void Initialize()
     {
         /// :CodeSample: Mesh.GenerateCube
@@ -64,6 +66,31 @@ class DemoGeo : IDemo
         /// :End:
         demoPlaneMesh  = planeMesh;
         demoPlaneModel = planeModel;
+
+        const int size = 8;
+        Vertex[] verts = new Vertex[size*size];
+        uint  [] inds  = new uint[size*size*6];
+        for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            verts[x+y*size] = new Vertex(
+                new Vec3(x/(float)size-0.5f, SKMath.Sin((x+y)*0.7f)*0.1f, y/(float)size-0.5f),
+                new Vec3(-SKMath.Cos((x + y) * 0.7f), 1, -SKMath.Cos((x + y) * 0.7f)).Normalized());
+
+            if (x<size-1 && y < size - 1)
+            {
+                int ind = (x+y*size)*6;
+                inds[ind  ] = (uint)((x+1)+(y+1)*size);
+                inds[ind+1] = (uint)((x+1)+(y  )*size);
+                inds[ind+2] = (uint)((x  )+(y+1)*size);
+
+                inds[ind+3] = (uint)((x  )+(y+1)*size);
+                inds[ind+4] = (uint)((x+1)+(y  )*size);
+                inds[ind+5] = (uint)((x  )+(y  )*size);
+            }
+        } }
+        demoProcMesh = new Mesh();
+        demoProcMesh.SetVerts(verts);
+        demoProcMesh.SetInds (inds);
     }
 
     public void Shutdown()
@@ -153,5 +180,7 @@ class DemoGeo : IDemo
         planeTransform = Matrix.T(1.0f, 0, -1);
         Renderer.Add(planeModel, planeTransform);
         /// :End:
+        
+        demoProcMesh.Draw(Default.Material, Matrix.T(1,-.3f,0));
     }
 }

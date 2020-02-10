@@ -46,6 +46,12 @@ namespace StereoKit
                 NativeAPI.mesh_release(_inst);
         }
 
+        public void SetVerts(Vertex[] verts)
+            =>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
+
+        public void SetInds (uint[] inds)
+            =>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
+
         /// <summary>Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given
         /// dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!</summary>
         /// <param name="dimensions">How large is this plane on the XZ axis, in meters?</param>
