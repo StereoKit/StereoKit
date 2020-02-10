@@ -22,6 +22,7 @@ namespace StereoKitTest
         bool showJoints = false;
         bool showAxes = true;
         bool showPointers = true;
+        bool showHandMenus = true;
 
         Mesh jointMesh = Mesh.GenerateSphere(1);
         HandMenuRadial handMenu;
@@ -107,14 +108,18 @@ namespace StereoKitTest
             UI.Toggle("Axes", ref showAxes);
             UI.SameLine();
             UI.Toggle("Pointers", ref showPointers);
+            UI.SameLine();
+            UI.Toggle("Menu", ref showHandMenus);
             UI.WindowEnd();
 
             if (showJoints)   DrawJoints(jointMesh, Default.Material);
             if (showAxes)     DrawAxes();
             if (showPointers) DrawPointers();
-
-            DrawHandMenu(Handed.Right);
-            DrawHandMenu(Handed.Left);
+            if (showHandMenus) 
+            { 
+                DrawHandMenu(Handed.Right);
+                DrawHandMenu(Handed.Left);
+            }
         }
 
         /// :CodeDoc: Guides Using Hands
