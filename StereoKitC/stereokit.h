@@ -79,6 +79,7 @@ SK_API double   time_elapsed_unscaled ();
 SK_API float    time_elapsedf();
 SK_API double   time_elapsed ();
 SK_API void     time_scale(double scale);
+SK_API void     time_set_time(double total_seconds, double frame_elapsed_seconds=0);
 
 ///////////////////////////////////////////
 

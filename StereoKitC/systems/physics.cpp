@@ -61,6 +61,8 @@ void physics_update() {
 	int32_t frames = (int32_t)ceil((sk_timev - physics_sim_time) / physics_step);
 	if (frames <= 0)
 		return;
+	if (frames > (0.5f/physics_step))
+		frames = (int32_t)(0.5f/physics_step);
 
 	// Calculate move velocities for objects that need to be at their destination by the end of this function!
 	for (size_t i = 0; i < solid_moves.size(); i++) {

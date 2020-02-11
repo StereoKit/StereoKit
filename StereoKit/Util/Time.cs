@@ -26,5 +26,14 @@ namespace StereoKit
         public static float  ElapsedUnscaledf { get { return NativeAPI.time_elapsedf_unscaled(); } }
         /// <summary>Time is scaled by this value! Want time to pass slower? Set it to 0.5! Faster? Try 2!</summary>
         public static double Scale    { set { NativeAPI.time_scale(value); } }
+
+        /// <summary>This allows you to override the application time! The application
+        /// will progress from this time using the current timescale.</summary>
+        /// <param name="totalSeconds">What time should it now be? The app will progress from this point in time.</param>
+        /// <param name="frameElapsedSeconds">How long was the previous frame? This is a number often used
+        /// in motion calculations. If left to zero, it'll use the previous frame's time, and if the previous
+        /// frame's time was also zero, it'll use 1/90.</param>
+        public static void SetTime(double totalSeconds, double frameElapsedSeconds = 0)
+            => NativeAPI.time_set_time(totalSeconds, frameElapsedSeconds);
     }
 }

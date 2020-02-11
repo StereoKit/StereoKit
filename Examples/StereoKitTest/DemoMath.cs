@@ -1,9 +1,4 @@
 ﻿using StereoKit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 class DemoMath : IDemo
 {
@@ -144,6 +139,9 @@ class DemoMath : IDemo
     }
 
     public void Initialize() {
+        if (Demos.TestMode)
+            Time.SetTime(3.4, 1 / 90.0);
+
         planeMesh  = Mesh.GeneratePlane(Vec2.One,Vec3.Forward, Vec3.Up);
         sphereMesh = Mesh.GenerateSphere(1);
         cubeMesh   = Mesh.GenerateCube(Vec3.One);

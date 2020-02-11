@@ -125,6 +125,8 @@ button_state_ input_key(key_ key) {
 	return (button_state_)input_key_data.keys[key];
 }
 
+///////////////////////////////////////////
+
 const pose_t &input_head() {
 	return input_head_pose;
 }
