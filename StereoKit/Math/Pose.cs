@@ -62,6 +62,15 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Matrix ToMatrix()           => NativeAPI.pose_matrix(this, Vec3.One);
 
+        /// <summary>Interpolates between two poses! t is unclamped, so values outside of (0,1) will
+        /// extrapolate their position.</summary>
+        /// <param name="a">Starting pose, or percent == 0</param>
+        /// <param name="b">Ending pose, or percent == 1</param>
+        /// <param name="percent">A value usually 0->1 that tells the blend between a and b.</param>
+        /// <returns>A new pose, blended between a and b based on percent!</returns>
+        public static Pose Lerp(Pose a, Pose b, float percent)
+            => new Pose(Vec3.Lerp(a.position, b.position, percent), Quat.Slerp(a.orientation, b.orientation, percent));
+
         public override string ToString()
             => string.Format("{0}, {1}", position, Forward);
     };

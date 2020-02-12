@@ -81,6 +81,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugToolWindow.cs" />
     <Compile Include="DemoBasics.cs" />
     <Compile Include="DemoSound.cs" />
     <Compile Include="Docs\DocDebug.cs" />

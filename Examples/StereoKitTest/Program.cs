@@ -124,25 +124,13 @@ class Program
         UI.WindowEnd();
 
         RulerWindow();
+        DebugToolWindow.Step();
         /// :CodeSample: Log.Subscribe Log
         /// And in your Update loop, you can draw the window.
         LogWindow();
         /// And that's it!
         /// :End:
-
-        // Take a screenshot on the first frame both hands are gripped
-        bool valid = 
-            Input.Hand(Handed.Left).IsTracked &&
-            Input.Hand(Handed.Right).IsTracked;
-        BtnState right = Input.Hand(Handed.Right).grip;
-        BtnState left  = Input.Hand(Handed.Left).grip;
-        if (valid && left.IsActive() && right.IsActive() && (left.IsJustActive() || right.IsJustActive()))
-        {
-            Renderer.Screenshot(Input.Head.position, Input.Head.Forward, 1920*2, 1080*2, "Screenshot"+screenshotId+".jpg");
-            screenshotId += 1;
-        }
     }
-    static int screenshotId = 1; 
     static void CommonShutdown()
     {
     }
