@@ -80,12 +80,13 @@ Build-Config -config "x64_UWP" -target "x64"
 Build-Config -config "ARM64" -target "ARM64"
 Build-Config -config "ARM64_UWP" -target "ARM64"
 
+Pop-Location
+
 # Copy include files
 Write-Host 'Copying headers'
 Copy-Item -Path "include\openxr\*.h" -Destination "..\StereoKitC\lib\include\openxr" -Force -Confirm:$false
 Write-Host 'Headers copied!' -ForegroundColor green
 
 # Clean up and delete files!
-Pop-Location
 Pop-Location
 Remove-Item -Path "OpenXR-SDK" -Recurse -Force -Confirm:$false
