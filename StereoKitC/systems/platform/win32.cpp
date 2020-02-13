@@ -139,7 +139,6 @@ bool win32_init(const char *app_name) {
 	dxgi_adapter->Release();
 	dxgi_device ->Release();
 
-	input_hand_set_system(hand_system_mouse);
 	win32_input_init();
 
 	return true;

@@ -96,8 +96,10 @@ void input_leap_thread(void *arg) {
 		if (LeapPollConnection(leap_handle, 0, &msg) == eLeapRS_Success) {
 			if (msg.type == eLeapEventType_Tracking) {
 				const LEAP_TRACKING_EVENT *evt = msg.tracking_event;
-				if (!leap_has_device && evt->nHands > 0)
+				if (!leap_has_device && evt->nHands > 0) {
 					leap_has_device = true;
+					input_hand_refresh_system();
+				}
 
 				if (!leap_lock) {
 					leap_lock = true;
@@ -130,6 +132,7 @@ void input_leap_thread(void *arg) {
 				LeapSetPolicyFlags(leap_handle, eLeapPolicyFlag_OptimizeHMD, 0);
 			} else if (msg.type == eLeapEventType_DeviceLost) {
 				leap_has_device = false;
+				input_hand_refresh_system();
 			}
 		}
 	}

@@ -94,7 +94,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {},
 		[]() {} },
 };
-int32_t active_system = _countof(hand_sources)-1;
+int32_t active_system = -1;
 
 hand_state_t hand_state[2];
 
@@ -121,7 +121,22 @@ hand_system_ input_hand_get_system() {
 
 ///////////////////////////////////////////
 
-void input_hand_set_system(hand_system_ system) {
+void input_hand_refresh_system() {
+	int available_source = _countof(hand_sources) - 1;
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_sources[i].available()) {
+			available_source = i;
+			break;
+		}
+	}
+	if (available_source != active_system) {
+		active_system = available_source;
+		log_diagf("Switched to input source: %d", hand_sources[active_system].system);
+		if (!hand_sources[active_system].initialized) {
+			hand_sources[active_system].init();
+			hand_sources[active_system].initialized = true;
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -200,6 +215,8 @@ void input_hand_init() {
 
 	tex_release(gradient_tex);
 	material_release(hand_mat);
+
+	input_hand_refresh_system();
 }
 
 ///////////////////////////////////////////
@@ -225,21 +242,7 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	int available_source = _countof(hand_sources) - 1;
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
-		if (hand_sources[i].available()) {
-			available_source = i;
-			break;
-		}
-	}
-	if (available_source != active_system) {
-		active_system = available_source;
-		log_diagf("Switched to input source: %d", hand_sources[active_system].system);
-		if (!hand_sources[active_system].initialized) {
-			hand_sources[active_system].init();
-			hand_sources[active_system].initialized = true;
-		}
-	}
+	
 	hand_sources[active_system].update_frame();
 
 	for (size_t i = 0; i < handed_max; i++) {

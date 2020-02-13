@@ -29,7 +29,7 @@ enum hand_system_ {
 };
 
 hand_system_ input_hand_get_system();
-void input_hand_set_system(hand_system_ system);
+void input_hand_refresh_system();
 
 void input_hand_init    ();
 void input_hand_shutdown();
