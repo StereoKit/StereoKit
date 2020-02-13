@@ -4,19 +4,29 @@
 
 namespace sk {
 
+///////////////////////////////////////////
+
 int   mouse_pointer_id;
 float mouse_hand_scroll = 0;
+
+///////////////////////////////////////////
 
 bool hand_mouse_available() {
 	return sk_active_runtime() == runtime_flatscreen;
 }
 
+///////////////////////////////////////////
+
 void hand_mouse_init() {
 	mouse_pointer_id = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
 }
 
+///////////////////////////////////////////
+
 void hand_mouse_shutdown() {
 }
+
+///////////////////////////////////////////
 
 void hand_mouse_update_frame() {
 	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
@@ -61,8 +71,10 @@ void hand_mouse_update_frame() {
 	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 
-	input_hand_draw();
+	input_hand_update_meshes();
 }
+
+///////////////////////////////////////////
 
 void hand_mouse_update_predicted() {
 }

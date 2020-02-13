@@ -152,7 +152,7 @@ void hand_mirage_update_frame() {
 
 void hand_mirage_update_predicted() {
 	hand_mirage_update_hands(openxr_get_time());
-	input_hand_draw();
+	input_hand_update_meshes();
 }
 
 }

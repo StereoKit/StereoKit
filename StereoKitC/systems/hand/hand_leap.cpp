@@ -78,7 +78,7 @@ void hand_leap_update_frame() {
 			memcpy(pose, &leap_hands[i][0][0], sizeof(hand_joint_t) * 25);
 		}
 		leap_lock = false;
-		input_hand_draw();
+		input_hand_update_meshes();
 	}
 }
 

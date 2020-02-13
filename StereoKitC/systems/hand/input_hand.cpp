@@ -101,6 +101,8 @@ hand_state_t hand_state[2];
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
 
+void input_hand_update_mesh(handed_ hand);
+
 ///////////////////////////////////////////
 
 const hand_t &input_hand(handed_ hand) {
@@ -249,8 +251,13 @@ void input_hand_update() {
 		// Update hand states
 		input_hand_state_update((handed_)i);
 
-		// Update hand physics
+		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
+		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
+			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
+		}
+
+		// Update hand physics
 		solid_set_enabled(hand_state[i].solids[0], tracked);
 		if (tracked) {
 			solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
@@ -266,13 +273,12 @@ void input_hand_update_predicted() {
 
 ///////////////////////////////////////////
 
-void input_hand_draw() {
+void input_hand_update_meshes() {
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
-			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
 		}
 	}
 }
