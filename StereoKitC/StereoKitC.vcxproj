@@ -186,6 +186,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\openxr.h" />
+    <ClInclude Include="systems\platform\openxr_extensions.h" />
     <ClInclude Include="systems\platform\platform.h" />
     <ClInclude Include="systems\platform\uwp.h" />
     <ClInclude Include="systems\platform\win32.h" />

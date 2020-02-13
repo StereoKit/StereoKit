@@ -16,6 +16,7 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
+#include "openxr_extensions.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -87,6 +88,7 @@ XrViewConfigurationType app_config_view = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STE
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
+XrExtTable     xr_extensions    = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running         = false;
 XrSpace        xr_app_space     = {};
@@ -168,6 +170,9 @@ bool openxr_init(const char *app_name) {
 		return false;
 	}
 
+	// Create links to the extension functions
+	xr_extensions = xrCreateExtensionTable(xr_instance);
+
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	systemInfo.formFactor = app_config_form;
@@ -179,7 +184,7 @@ bool openxr_init(const char *app_name) {
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
-	result = xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
+	result = xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
 	if (XR_FAILED(result)) {
 		log_infof("xrGetD3D11GraphicsRequirementsKHR failed [%s]", openxr_string(result));
 		return false;
@@ -347,7 +352,7 @@ void uwp_update_hands(XrTime prediction, bool update_mesh) {
 		return;
 	// Convert the time we're given into a format that Windows likes
 	LARGE_INTEGER time;
-	xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, prediction, &time);
+	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, prediction, &time);
 	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpan(time.QuadPart));
 	IVectorView<SpatialInteractionSourceState> sources = xr_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
 

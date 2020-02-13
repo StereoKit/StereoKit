@@ -263,6 +263,9 @@
     <ClInclude Include="libraries\stb_ds.h">
       <Filter>libraries</Filter>
     </ClInclude>
+    <ClInclude Include="systems\platform\openxr_extensions.h">
+      <Filter>systems\platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
