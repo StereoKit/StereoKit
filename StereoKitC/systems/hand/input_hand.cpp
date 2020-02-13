@@ -6,7 +6,7 @@
 #include "hand_mouse.h"
 #include "hand_mirage.h"
 #include "hand_leap.h"
-#include "hand_oxr.h"
+#include "hand_oxr_controller.h"
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
@@ -76,11 +76,11 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_leap_update_predicted },
 #endif
 	{ hand_system_oxr_controllers, false,
-		[]() {return false;},
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr },
+		hand_oxrc_available,
+		hand_oxrc_init,
+		hand_oxrc_shutdown,
+		hand_oxrc_update_frame,
+		hand_oxrc_update_predicted },
 	{ hand_system_mouse, false,
 		hand_mouse_available,
 		hand_mouse_init,
