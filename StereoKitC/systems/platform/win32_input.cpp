@@ -11,7 +11,7 @@
 #include "win32.h"
 #include "uwp.h"
 #include "../input.h"
-#include "../input_hand.h"
+#include "../hand/input_hand.h"
 #include "../render.h"
 #include "../d3d.h"
 

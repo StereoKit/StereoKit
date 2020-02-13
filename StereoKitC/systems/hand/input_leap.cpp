@@ -2,11 +2,11 @@
 
 #pragma comment(lib, "leapC.lib")
 
-#include "input.h"
+#include "../input.h"
 #include "input_leap.h"
-#include "../stereokit.h"
+#include "../../stereokit.h"
 #include "input_hand.h"
-#include "render.h"
+#include "../render.h"
 
 #include <leapC.h>
 #include <string.h>

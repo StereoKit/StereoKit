@@ -7,8 +7,8 @@
 #include "../../systems/d3d.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
-#include "../../systems/input_hand.h"
-#include "../../systems/input_leap.h"
+#include "../../systems/hand/input_hand.h"
+#include "../../systems/hand/input_leap.h"
 #include "../../asset_types/texture.h"
 
 #define XR_USE_PLATFORM_WIN32

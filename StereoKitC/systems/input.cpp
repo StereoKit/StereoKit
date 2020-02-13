@@ -1,6 +1,6 @@
 #include "../stereokit.h"
 #include "input.h"
-#include "input_hand.h"
+#include "hand/input_hand.h"
 
 #ifndef SK_NO_FLATSCREEN
 #define WIN32_LEAN_AND_MEAN

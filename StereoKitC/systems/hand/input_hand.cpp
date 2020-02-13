@@ -1,10 +1,10 @@
-#include "../stereokit.h"
-#include "input.h"
+#include "../../stereokit.h"
+#include "../input.h"
 #include "input_hand.h"
 #include "input_hand_poses.h"
 
-#include "../asset_types/assets.h"
-#include "../asset_types/material.h"
+#include "../../asset_types/assets.h"
+#include "../../asset_types/material.h"
 
 namespace sk {
 
@@ -47,7 +47,7 @@ const hand_t &input_hand(handed_ hand) {
 ///////////////////////////////////////////
 
 void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
-	memcpy(hand_state[hand].pose_blend, hand_joints, sizeof(hand_joint_t) * 25);
+	memcpy(hand_state[hand].info.fingers, hand_joints, sizeof(hand_joint_t) * 25);
 }
 
 ///////////////////////////////////////////
