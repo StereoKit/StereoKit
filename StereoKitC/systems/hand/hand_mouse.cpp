@@ -8,7 +8,7 @@ int   mouse_pointer_id;
 float mouse_hand_scroll = 0;
 
 bool hand_mouse_available() {
-	return true;
+	return sk_active_runtime() == runtime_flatscreen;
 }
 
 void hand_mouse_init() {

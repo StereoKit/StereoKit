@@ -48,7 +48,6 @@ struct hand_system_t {
 	void (*update_predicted)() = nullptr;
 };
 
-hand_system_ active_system;
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override, false,
 		[]() {return false;},
@@ -95,11 +94,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {},
 		[]() {} },
 };
-
-void (*hand_sys_init)()             = nullptr;
-void (*hand_sys_shutdown)()         = nullptr;
-void (*hand_sys_update_frame)()     = nullptr;
-void (*hand_sys_update_predicted)() = nullptr;
+int32_t active_system = _countof(hand_sources)-1;
 
 hand_state_t hand_state[2];
 
@@ -121,22 +116,12 @@ void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
 ///////////////////////////////////////////
 
 hand_system_ input_hand_get_system() {
-	return active_system;
+	return hand_sources[active_system].system;
 }
 
 ///////////////////////////////////////////
 
 void input_hand_set_system(hand_system_ system) {
-	active_system = system;
-	switch (system) {
-	case hand_system_mouse: {
-		hand_sys_init             = hand_mouse_init;
-		hand_sys_shutdown         = hand_mouse_shutdown;
-		hand_sys_update_frame     = hand_mouse_update_frame;
-		hand_sys_update_predicted = hand_mouse_update_predicted;
-	}break;
-	default: log_errf("Couldn't set hand input system %d!", system);
-	}
 }
 
 ///////////////////////////////////////////
@@ -215,14 +200,16 @@ void input_hand_init() {
 
 	tex_release(gradient_tex);
 	material_release(hand_mat);
-
-	hand_sys_init();
 }
 
 ///////////////////////////////////////////
 
 void input_hand_shutdown() {
-	hand_sys_shutdown();
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_sources[i].initialized)
+			hand_sources[i].shutdown();
+		hand_sources[i].initialized = false;
+	}
 
 	for (size_t i = 0; i < handed_max; i++) {
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
@@ -245,12 +232,15 @@ void input_hand_update() {
 			break;
 		}
 	}
-	if (available_source != (int)active_system && !hand_sources[available_source].initialized) {
-		hand_sources[available_source].init();
-		hand_sources[available_source].initialized = true;
+	if (available_source != active_system) {
+		active_system = available_source;
+		log_diagf("Switched to input source: %d", hand_sources[active_system].system);
+		if (!hand_sources[active_system].initialized) {
+			hand_sources[active_system].init();
+			hand_sources[active_system].initialized = true;
+		}
 	}
-	active_system = (hand_system_)available_source;
-	hand_sources[available_source].update_frame();
+	hand_sources[active_system].update_frame();
 
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand states
@@ -268,7 +258,7 @@ void input_hand_update() {
 ///////////////////////////////////////////
 
 void input_hand_update_predicted() {
-	hand_sys_update_predicted();
+	hand_sources[active_system].update_predicted();
 }
 
 ///////////////////////////////////////////

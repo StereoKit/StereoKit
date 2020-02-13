@@ -77,7 +77,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 		return;
 
 	// Convert the time we're given into a format that Windows likes
-	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpan(win32_prediction_time));
+	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpan((long long)win32_prediction_time));
 	IVectorView<SpatialInteractionSourceState> sources = xr_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
 
 	for (auto sourceState : sources)
@@ -112,7 +112,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 
 			// Take it from the origin, to our coordinates
 			pose_t hand_to_world = {};
-			openxr_get_space(xr_input.handSpace[handed], prediction, hand_to_world);
+			openxr_get_space(xr_hand_space[handed], hand_to_world);
 			
 			// Aaaand convert!
 			for (size_t i = 0; i < 27; i++) {
