@@ -3,7 +3,7 @@
 #pragma comment(lib, "leapC.lib")
 
 #include "../input.h"
-#include "input_leap.h"
+#include "hand_leap.h"
 #include "../../stereokit.h"
 #include "input_hand.h"
 #include "../render.h"
@@ -21,6 +21,7 @@ LEAP_CONNECTION      leap_handle      = nullptr;
 LEAP_TRACKING_EVENT *leap_last_frame  = nullptr;
 LEAP_DEVICE_INFO    *leap_last_device = nullptr;
 
+bool leap_checked    = false;
 bool leap_run        = true;
 bool leap_has_device = false;
 bool leap_has_new_hands = false;
@@ -30,13 +31,16 @@ hand_joint_t leap_hands[2][5][5];
 const float leap_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float leap_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
 
-
 void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand);
 void input_leap_thread(void *arg);
 
 ///////////////////////////////////////////
 
-bool input_leap_init() {
+bool hand_leap_present() {
+	if (leap_checked)
+		return leap_has_device;
+	leap_checked = true;
+
 	if (LeapCreateConnection(nullptr, &leap_handle) != eLeapRS_Success) {
 		log_diag("Couldn't create connection to Leap Motion.");
 		return false;
@@ -45,23 +49,26 @@ bool input_leap_init() {
 		log_diag("Couldn't open a connection to Leap Motion.");
 		return false;
 	}
-	
 	_beginthread(input_leap_thread, 0, nullptr);
 
 	log_diag("Leap Motion is installed on the system.");
-	return true;
+	return false;
 }
 
 ///////////////////////////////////////////
 
-void input_leap_shutdown() {
+void hand_leap_init() {
+}
+
+///////////////////////////////////////////
+
+void hand_leap_shutdown() {
 	leap_run = false;
 }
 
 ///////////////////////////////////////////
 
-bool input_leap_update() {
-	bool result = false;
+void hand_leap_update_frame() {
 	if (leap_has_new_hands && !leap_lock) {
 		leap_lock = true;
 		leap_has_new_hands = false;
@@ -71,9 +78,13 @@ bool input_leap_update() {
 			memcpy(pose, &leap_hands[i][0][0], sizeof(hand_joint_t) * 25);
 		}
 		leap_lock = false;
-		result = true;
+		input_hand_draw();
 	}
-	return result;
+}
+
+///////////////////////////////////////////
+
+void hand_leap_update_predicted() {
 }
 
 ///////////////////////////////////////////

@@ -8,7 +8,7 @@
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/hand/input_hand.h"
-#include "../../systems/hand/input_leap.h"
+#include "../../systems/hand/hand_leap.h"
 #include "../../asset_types/texture.h"
 
 #define XR_USE_PLATFORM_WIN32
@@ -23,33 +23,6 @@
 #include <vector>
 
 using namespace std;
-
-#if WINDOWS_UWP
-#include <chrono>
-
-#include "winrt/Windows.UI.Core.h" 
-#include "winrt/Windows.UI.Input.Spatial.h" 
-#include "winrt/Windows.Perception.h"
-#include "winrt/Windows.Perception.People.h"
-#include "winrt/Windows.Perception.Spatial.h"
-#include "winrt/Windows.Foundation.Numerics.h"
-#include "winrt/Windows.ApplicationModel.Core.h"
-#include "winrt/Windows.Foundation.Collections.h"
-#include "winrt/Windows.Foundation.h"
-
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Input::Spatial;
-using namespace winrt::Windows::Perception;
-using namespace winrt::Windows::Perception::People;
-using namespace winrt::Windows::Perception::Spatial;
-using namespace winrt::Windows::Foundation::Numerics;
-using namespace winrt::Windows::ApplicationModel::Core;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::Foundation;
-
-SpatialStationaryFrameOfReference xr_spatial_stage       = nullptr;
-SpatialInteractionManager         xr_interaction_manager = nullptr;
-#endif
 
 namespace sk {
 
@@ -90,15 +63,14 @@ XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
 XrExtTable     xr_extensions    = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
-bool           xr_running         = false;
+bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 xr_input_t     xr_input = {};
 XrTime         xr_time;
 bool           xr_depth_lsr = false;
-bool           xr_hand_support = false;
-hand_joint_t   xr_hand_data[2][27] = {};
+
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
 
@@ -135,6 +107,14 @@ const char *openxr_string(XrResult result) {
 #undef ENTRY
 	default: return "<UNKNOWN>";
 	}
+}
+
+///////////////////////////////////////////
+
+int64_t openxr_get_time() {
+	LARGE_INTEGER time;
+	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, xr_time, &time);
+	return time.QuadPart;
 }
 
 ///////////////////////////////////////////
@@ -329,108 +309,7 @@ bool openxr_init(const char *app_name) {
 	
 	openxr_make_actions();
 
-			
-#if WINDOWS_UWP
-	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
-		xr_spatial_stage       = SpatialLocator::GetDefault().CreateStationaryFrameOfReferenceAtCurrentLocation();
-		xr_interaction_manager = SpatialInteractionManager::GetForCurrentView();
-		xr_hand_support        = xr_interaction_manager.IsSourceKindSupported(SpatialInteractionSourceKind::Hand);
-	});
-#else	
-#ifndef SK_NO_LEAP_MOTION
-	input_leap_init();
-#endif
-#endif
-
 	return true;
-}
-
-
-void uwp_update_hands(XrTime prediction, bool update_mesh) {
-#if WINDOWS_UWP
-	if (!xr_hand_support)
-		return;
-	// Convert the time we're given into a format that Windows likes
-	LARGE_INTEGER time;
-	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, prediction, &time);
-	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpan(time.QuadPart));
-	IVectorView<SpatialInteractionSourceState> sources = xr_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
-
-	for (auto sourceState : sources)
-	{
-		HandPose pose = sourceState.TryGetHandPose();
-		if (!pose || !xr_spatial_stage)
-			continue;
-
-		// Grab the joints from windows
-		JointPose               poses[27];
-		SpatialCoordinateSystem coordinates = xr_spatial_stage.CoordinateSystem();
-		handed_                 handed      = sourceState.Source().Handedness() == SpatialInteractionSourceHandedness::Left ? handed_left : handed_right;
-		bool gotJoints = pose.TryGetJoints(
-			coordinates,
-			{   HandJointKind::ThumbMetacarpal,  HandJointKind::ThumbMetacarpal,  HandJointKind::ThumbProximal,      HandJointKind::ThumbDistal,  HandJointKind::ThumbTip,
-				HandJointKind::IndexMetacarpal,  HandJointKind::IndexProximal,    HandJointKind::IndexIntermediate,  HandJointKind::IndexDistal,  HandJointKind::IndexTip,
-				HandJointKind::MiddleMetacarpal, HandJointKind::MiddleProximal,   HandJointKind::MiddleIntermediate, HandJointKind::MiddleDistal, HandJointKind::MiddleTip,
-				HandJointKind::RingMetacarpal,   HandJointKind::RingProximal,     HandJointKind::RingIntermediate,   HandJointKind::RingDistal,   HandJointKind::RingTip,
-				HandJointKind::LittleMetacarpal, HandJointKind::LittleProximal,   HandJointKind::LittleIntermediate, HandJointKind::LittleDistal, HandJointKind::LittleTip,
-				HandJointKind::Palm, HandJointKind::Wrist, },
-			poses);
-		
-		// Convert the data from their format to ours
-		if (gotJoints) {
-			SpatialInteractionSourceLocation location = sourceState.Properties().TryGetLocation(coordinates);
-
-			// Take it from Mirage coordinates to the origin
-			pose_t hand_to_origin;
-			memcpy(&hand_to_origin.position,    &location.Position().Value(),    sizeof(vec3));
-			memcpy(&hand_to_origin.orientation, &location.Orientation().Value(), sizeof(quat));
-			hand_to_origin.orientation = quat_inverse(hand_to_origin.orientation);
-
-			// Take it from the origin, to our coordinates
-			pose_t hand_to_world = {};
-			openxr_get_space(xr_input.handSpace[handed], prediction, hand_to_world);
-			
-			// Aaaand convert!
-			for (size_t i = 0; i < 27; i++) {
-				memcpy(&xr_hand_data[handed][i].position,    &poses[i].Position,    sizeof(vec3));
-				memcpy(&xr_hand_data[handed][i].orientation, &poses[i].Orientation, sizeof(quat));
-				xr_hand_data[handed][i].position    = hand_to_origin.orientation * (xr_hand_data[handed][i].position - hand_to_origin.position);
-				xr_hand_data[handed][i].position    = (hand_to_world.orientation * xr_hand_data[handed][i].position) + hand_to_world.position; 
-				xr_hand_data[handed][i].orientation = xr_hand_data[handed][i].orientation * hand_to_origin.orientation;
-				xr_hand_data[handed][i].orientation = xr_hand_data[handed][i].orientation * hand_to_world.orientation;
-				xr_hand_data[handed][i].radius = (poses[i].Radius * 0.85f);
-			}
-			
-			// Copy the data into the input system
-			hand_t& inp_hand = (hand_t&)input_hand(handed);
-			inp_hand.tracked_state = button_state_active;
-			hand_joint_t* pose = input_hand_get_pose_buffer(handed);
-			memcpy(pose, &xr_hand_data[handed][0], sizeof(hand_joint_t) * 25);
-
-			quat face_forward = quat_from_angles(-90,0,0);
-			inp_hand.palm  = pose_t{ xr_hand_data[handed][25].position, face_forward * xr_hand_data[handed][25].orientation };
-			inp_hand.wrist = pose_t{ xr_hand_data[handed][26].position, face_forward * quat_from_angles(-90,0,0) * xr_hand_data[handed][26].orientation };
-
-			// Rebuild the mesh if we need to!
-			if (update_mesh)
-				input_hand_update_mesh(handed);
-		} else {
-			log_warn("Couldn't get hand joints!");
-		}
-	}
-#else
-#ifndef SK_NO_LEAP_MOTION
-	xr_hand_support = leap_has_device;
-	if (xr_hand_support && leap_has_device) {
-		input_leap_update();
-
-		if (update_mesh) {
-			input_hand_update_mesh(handed_left);
-			input_hand_update_mesh(handed_right);
-		}
-	}
-#endif
-#endif
 }
 
 ///////////////////////////////////////////
@@ -593,14 +472,6 @@ void openxr_shutdown() {
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
 	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
 
-#if WINDOWS_UWP
-#else
-#ifndef SK_NO_LEAP_MOTION
-	if (xr_hand_support)
-		input_leap_shutdown();
-#endif
-#endif
-
 	d3d_shutdown();
 }
 
@@ -670,8 +541,7 @@ void openxr_render_frame() {
 
 	// Execute any code that's dependant on the predicted time, such as updating the location of
 	// controller models.
-	//openxr_poll_predicted(frame_state.predictedDisplayTime);
-	uwp_update_hands(frame_state.predictedDisplayTime, true);
+	input_update_predicted();
 
 	// If the session is active, lets render our layer in the compositor!
 	XrCompositionLayerBaseHeader            *layer      = nullptr;
@@ -966,7 +836,8 @@ void openxr_poll_actions() {
 
 		// If we have a select event, update the hand pose to match the event's timestamp
 		pose_t hand_pose = {};
-		if (!xr_hand_support && openxr_get_space(xr_input.handSpace[hand], xr_time, hand_pose)) {
+		if (false && openxr_get_space(xr_input.handSpace[hand], xr_time, hand_pose)) {
+			// TODO: make this into a oxr hand!
 			hand_pose.orientation = xr_input.offset_rot[hand] * hand_pose.orientation;
 			hand_pose.position   += hand_pose.orientation * xr_input.offset_pos[hand];
 			input_hand_sim((handed_)hand, hand_pose.position, hand_pose.orientation, pose_state.isActive, select_state.currentState, grip_state.currentState );
@@ -1001,8 +872,6 @@ void openxr_poll_actions() {
 			input_fire_event(pointer->source, pointer->tracked & ~button_state_active, *pointer);
 		}
 	}
-
-	uwp_update_hands(xr_time, false);
 }
 
 ///////////////////////////////////////////

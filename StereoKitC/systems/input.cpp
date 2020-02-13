@@ -115,6 +115,12 @@ void input_update() {
 
 ///////////////////////////////////////////
 
+void input_update_predicted() {
+	input_hand_update_predicted();
+}
+
+///////////////////////////////////////////
+
 const mouse_t &input_mouse() {
 	return input_mouse_data;
 }

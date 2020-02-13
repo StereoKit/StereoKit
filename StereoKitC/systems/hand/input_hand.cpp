@@ -1,7 +1,12 @@
 #include "../../stereokit.h"
 #include "../input.h"
 #include "input_hand.h"
-#include "input_hand_poses.h"
+#include "hand_poses.h"
+
+#include "hand_mouse.h"
+#include "hand_mirage.h"
+#include "hand_leap.h"
+#include "hand_oxr.h"
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
@@ -33,6 +38,69 @@ struct hand_state_t {
 	bool        enabled;
 };
 
+struct hand_system_t {
+	hand_system_ system;
+	bool         initialized;
+	bool (*available)()        = nullptr;
+	void (*init)()             = nullptr;
+	void (*shutdown)()         = nullptr;
+	void (*update_frame)()     = nullptr;
+	void (*update_predicted)() = nullptr;
+};
+
+hand_system_ active_system;
+hand_system_t hand_sources[] = { // In order of priority
+	{ hand_system_override, false,
+		[]() {return false;},
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr },
+	{ hand_system_oxr_articulated, false,
+		[]() {return false;},
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr },
+	{ hand_system_mirage, false,
+		hand_mirage_available,
+		hand_mirage_init,
+		hand_mirage_shutdown,
+		hand_mirage_update_frame,
+		hand_mirage_update_predicted },
+#ifndef SK_NO_LEAP_MOTION
+	{ hand_system_leap, false,
+		hand_leap_present,
+		hand_leap_init,
+		hand_leap_shutdown,
+		hand_leap_update_frame,
+		hand_leap_update_predicted },
+#endif
+	{ hand_system_oxr_controllers, false,
+		[]() {return false;},
+		nullptr,
+		nullptr,
+		nullptr,
+		nullptr },
+	{ hand_system_mouse, false,
+		hand_mouse_available,
+		hand_mouse_init,
+		hand_mouse_shutdown,
+		hand_mouse_update_frame,
+		hand_mouse_update_predicted },
+	{ hand_system_none, false,
+		[]() {return true;},
+		[]() {},
+		[]() {},
+		[]() {},
+		[]() {} },
+};
+
+void (*hand_sys_init)()             = nullptr;
+void (*hand_sys_shutdown)()         = nullptr;
+void (*hand_sys_update_frame)()     = nullptr;
+void (*hand_sys_update_predicted)() = nullptr;
+
 hand_state_t hand_state[2];
 
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
@@ -48,6 +116,27 @@ const hand_t &input_hand(handed_ hand) {
 
 void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
 	memcpy(hand_state[hand].info.fingers, hand_joints, sizeof(hand_joint_t) * 25);
+}
+
+///////////////////////////////////////////
+
+hand_system_ input_hand_get_system() {
+	return active_system;
+}
+
+///////////////////////////////////////////
+
+void input_hand_set_system(hand_system_ system) {
+	active_system = system;
+	switch (system) {
+	case hand_system_mouse: {
+		hand_sys_init             = hand_mouse_init;
+		hand_sys_shutdown         = hand_mouse_shutdown;
+		hand_sys_update_frame     = hand_mouse_update_frame;
+		hand_sys_update_predicted = hand_mouse_update_predicted;
+	}break;
+	default: log_errf("Couldn't set hand input system %d!", system);
+	}
 }
 
 ///////////////////////////////////////////
@@ -126,11 +215,15 @@ void input_hand_init() {
 
 	tex_release(gradient_tex);
 	material_release(hand_mat);
+
+	hand_sys_init();
 }
 
 ///////////////////////////////////////////
 
 void input_hand_shutdown() {
+	hand_sys_shutdown();
+
 	for (size_t i = 0; i < handed_max; i++) {
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
 			solid_release(hand_state[i].solids[f]);
@@ -145,22 +238,48 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	
+	int available_source = _countof(hand_sources) - 1;
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_sources[i].available()) {
+			available_source = i;
+			break;
+		}
+	}
+	if (available_source != (int)active_system && !hand_sources[available_source].initialized) {
+		hand_sources[available_source].init();
+		hand_sources[available_source].initialized = true;
+	}
+	active_system = (hand_system_)available_source;
+	hand_sources[available_source].update_frame();
+
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand states
 		input_hand_state_update((handed_)i);
 
-		// Update hand meshes
+		// Update hand physics
+		bool tracked = hand_state[i].info.tracked_state & button_state_active;
+		solid_set_enabled(hand_state[i].solids[0], tracked);
+		if (tracked) {
+			solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void input_hand_update_predicted() {
+	hand_sys_update_predicted();
+}
+
+///////////////////////////////////////////
+
+void input_hand_draw() {
+	for (size_t i = 0; i < handed_max; i++) {
+		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
-		}
-
-		// Update hand physics
-		solid_set_enabled(hand_state[i].solids[0], tracked);
-		if (tracked) {
-			solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
 		}
 	}
 }

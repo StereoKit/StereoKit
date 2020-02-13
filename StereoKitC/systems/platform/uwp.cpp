@@ -9,6 +9,7 @@
 #include "../../asset_types/texture.h"
 #include "../d3d.h"
 #include "../render.h"
+#include "../input.h"
 #include "win32_input.h"
 
 namespace sk {
@@ -420,6 +421,8 @@ void uwp_step_end() {
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	tex_rtarget_clear(uwp_target, {0,0,0,255});
 	tex_rtarget_set_active(uwp_target);
+
+	input_update_predicted();
 
 	render_draw();
 	render_clear();

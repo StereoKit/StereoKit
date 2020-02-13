@@ -130,10 +130,19 @@
     <ClCompile Include="asset_types\model_stl.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
-    <ClCompile Include="systems\hand\input_leap.cpp">
+    <ClCompile Include="systems\hand\input_hand.cpp">
       <Filter>systems\hand</Filter>
     </ClCompile>
-    <ClCompile Include="systems\hand\input_hand.cpp">
+    <ClCompile Include="systems\hand\hand_leap.cpp">
+      <Filter>systems\hand</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\hand\hand_mouse.cpp">
+      <Filter>systems\hand</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\hand\hand_oxr.cpp">
+      <Filter>systems\hand</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\hand\hand_mirage.cpp">
       <Filter>systems\hand</Filter>
     </ClCompile>
   </ItemGroup>
@@ -257,13 +266,22 @@
     <ClInclude Include="systems\platform\openxr_extensions.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
-    <ClInclude Include="systems\hand\input_hand_poses.h">
-      <Filter>systems\hand</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\hand\input_leap.h">
-      <Filter>systems\hand</Filter>
-    </ClInclude>
     <ClInclude Include="systems\hand\input_hand.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_leap.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_poses.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_mirage.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_mouse.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_oxr.h">
       <Filter>systems\hand</Filter>
     </ClInclude>
   </ItemGroup>

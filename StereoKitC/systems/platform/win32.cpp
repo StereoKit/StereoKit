@@ -14,6 +14,7 @@
 #include "../render.h"
 #include "../d3d.h"
 #include "../input.h"
+#include "../hand/input_hand.h"
 
 namespace sk {
 
@@ -138,6 +139,7 @@ bool win32_init(const char *app_name) {
 	dxgi_adapter->Release();
 	dxgi_device ->Release();
 
+	input_hand_set_system(hand_system_mouse);
 	win32_input_init();
 
 	return true;
@@ -176,6 +178,8 @@ void win32_step_end() {
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	tex_rtarget_clear(win32_target, {0,0,0,255});
 	tex_rtarget_set_active(win32_target);
+
+	input_update_predicted();
 
 	render_draw();
 	render_clear();
