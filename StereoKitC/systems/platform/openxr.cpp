@@ -14,7 +14,6 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
-#include "openxr_extensions.h"
 
 #include <string.h>
 #include <stdlib.h>

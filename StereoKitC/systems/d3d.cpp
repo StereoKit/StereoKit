@@ -37,7 +37,7 @@ bool d3d_init(LUID *adapter_id) {
 			curr_adapter->GetDesc1(&adapterDesc);
 
 			if (memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(adapter_id)) == 0) {
-				log_infof("Using graphics adapter %ws", adapterDesc.Description);
+				log_diagf("Using graphics adapter: %ws", adapterDesc.Description);
 				final_adapter = curr_adapter;
 				break;
 			}

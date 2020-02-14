@@ -4,7 +4,6 @@
 #include "../input.h"
 #include "input_hand.h"
 
-#include <openxr/openxr.h>
 #include <string.h>
 #include <stdlib.h>
 
