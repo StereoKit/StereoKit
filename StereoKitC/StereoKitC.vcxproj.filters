@@ -145,6 +145,9 @@
     <ClCompile Include="systems\hand\hand_oxr_controller.cpp">
       <Filter>systems\hand</Filter>
     </ClCompile>
+    <ClCompile Include="systems\hand\hand_override.cpp">
+      <Filter>systems\hand</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -282,6 +285,9 @@
       <Filter>systems\hand</Filter>
     </ClInclude>
     <ClInclude Include="systems\hand\hand_oxr_controller.h">
+      <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\hand\hand_override.h">
       <Filter>systems\hand</Filter>
     </ClInclude>
   </ItemGroup>

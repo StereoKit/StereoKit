@@ -6,6 +6,7 @@
 #include "hand_mouse.h"
 #include "hand_mirage.h"
 #include "hand_leap.h"
+#include "hand_override.h"
 #include "hand_oxr_controller.h"
 
 #include "../../asset_types/assets.h"
@@ -50,11 +51,11 @@ struct hand_system_t {
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override, false,
-		[]() {return false;},
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr },
+		hand_override_available,
+		hand_override_init,
+		hand_override_shutdown,
+		hand_override_update_frame,
+		hand_override_update_predicted },
 	{ hand_system_oxr_articulated, false,
 		[]() {return false;},
 		nullptr,
@@ -107,12 +108,6 @@ void input_hand_update_mesh(handed_ hand);
 
 const hand_t &input_hand(handed_ hand) {
 	return hand_state[hand].info;
-}
-
-///////////////////////////////////////////
-
-void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
-	memcpy(hand_state[hand].info.fingers, hand_joints, sizeof(hand_joint_t) * 25);
 }
 
 ///////////////////////////////////////////

@@ -20,13 +20,20 @@ namespace StereoKit
         /// <summary>A convenience property that wraps position and orientation
         /// into a Pose.</summary>
         public Pose Pose => new Pose(position, orientation);
+
+        public HandJoint(Vec3 position, Quat orientation, float radius)
+        {
+            this.position    = position;
+            this.orientation = orientation;
+            this.radius      = radius;
+        }
     }
 
     /// <summary>Information about a hand!</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct Hand {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
-        private HandJoint[] fingers;
+        public HandJoint[]  fingers;
         /// <summary>Pose of the wrist. TODO: Not populated right now.</summary>
         public  Pose        wrist;
         /// <summary>The position and orientation at the center of the palm! Here,
@@ -100,6 +107,10 @@ namespace StereoKit
             => NativeAPI.input_pointer(index, filter);
         public static Hand Hand(Handed handed)
             => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+        public static void HandOverride(Handed hand, in HandJoint[] joints)
+            => NativeAPI.input_hand_override(hand, joints);
+        public static void HandClearOverride(Handed hand)
+            => NativeAPI.input_hand_override(hand, IntPtr.Zero);
         public static void HandVisible(Handed hand, bool visible)
             => NativeAPI.input_hand_visible(hand, visible);
         public static void HandSolid(Handed hand, bool solid)

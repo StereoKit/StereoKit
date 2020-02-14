@@ -139,6 +139,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mirage.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
+    <ClCompile Include="systems\hand\hand_override.cpp" />
     <ClCompile Include="systems\hand\hand_oxr_controller.cpp" />
     <ClCompile Include="systems\hand\input_hand.cpp" />
     <ClCompile Include="systems\hand\hand_leap.cpp" />
@@ -184,6 +185,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\hand\hand_mirage.h" />
     <ClInclude Include="systems\hand\hand_mouse.h" />
+    <ClInclude Include="systems\hand\hand_override.h" />
     <ClInclude Include="systems\hand\hand_oxr_controller.h" />
     <ClInclude Include="systems\hand\input_hand.h" />
     <ClInclude Include="systems\hand\hand_poses.h" />
