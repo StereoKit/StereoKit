@@ -26,12 +26,13 @@ bool leap_run        = true;
 bool leap_has_device = false;
 bool leap_has_new_hands = false;
 bool leap_lock       = false;
-hand_joint_t leap_hands[2][5][5];
+hand_joint_t leap_hands[2][27];
+bool32_t     leap_hand_tracked[2];
 
 const float leap_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float leap_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
 
-void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand);
+void copy_hand(handed_ handed, hand_joint_t *dest, LEAP_HAND &hand);
 void input_leap_thread(void *arg);
 
 ///////////////////////////////////////////
@@ -74,8 +75,13 @@ void hand_leap_update_frame() {
 		leap_has_new_hands = false;
 
 		for (size_t i = 0; i < handed_max; i++) {
+			hand_t &inp_hand = (hand_t &)input_hand((handed_)i);
+			inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, leap_hand_tracked[i]);
+
 			hand_joint_t *pose = input_hand_get_pose_buffer((handed_)i);
-			memcpy(pose, &leap_hands[i][0][0], sizeof(hand_joint_t) * 25);
+			memcpy(pose, &leap_hands[i], sizeof(hand_joint_t) * 25);
+			inp_hand.palm  = pose_t{ leap_hands[i][25].position, leap_hands[i][25].orientation };
+			inp_hand.wrist = pose_t{ leap_hands[i][26].position, leap_hands[i][26].orientation };
 		}
 		leap_lock = false;
 		input_hand_update_meshes();
@@ -104,26 +110,16 @@ void input_leap_thread(void *arg) {
 				if (!leap_lock) {
 					leap_lock = true;
 					
-					bool32_t track_state_prev[2] = { 
-						input_hand((handed_)0).tracked_state & button_state_active, 
-						input_hand((handed_)1).tracked_state & button_state_active,};
-					bool32_t track_state_curr[2] = {};
-
+					leap_hand_tracked[0] = false;
+					leap_hand_tracked[1] = false;
 					for (size_t i = 0; i < evt->nHands; i++) {
 						LEAP_HAND    &hand   = evt->pHands[i];
 						handed_       handed = hand.type == eLeapHandType_Left ? handed_left : handed_right;
 						hand_joint_t *pose   = input_hand_get_pose_buffer(handed);
-						track_state_curr[handed] = true;
-
-						hand_t &inp_hand = (hand_t &)input_hand(handed);						
-						copy_hand(inp_hand, &leap_hands[handed][0][0], hand);
-					}
-
-					for (size_t i = 0; i < handed_max; i++) {
-						hand_t &inp_hand = (hand_t &)input_hand((handed_)i);
-						inp_hand.tracked_state = button_make_state(track_state_prev[i], track_state_curr[i]);
-					}
+						leap_hand_tracked[handed] = true;
 					
+						copy_hand(handed, leap_hands[handed], hand);
+					}
 					leap_lock = false;
 					leap_has_new_hands = true;
 				}
@@ -142,7 +138,7 @@ void input_leap_thread(void *arg) {
 
 ///////////////////////////////////////////
 
-void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
+void copy_hand(handed_ handed, hand_joint_t *dest, LEAP_HAND &hand) {
 	vec3 offset = {}; //{ 0, -0.25f, -0.15f };
 
 	static const quat   quat_convert = quat_from_angles(90, 0, 180);
@@ -185,11 +181,12 @@ void copy_hand(hand_t &sk_hand, hand_joint_t *dest, LEAP_HAND &hand) {
 	vec3 palm_tl = dest[hand_finger_pinky*5 + hand_joint_knuckle_major].position;
 	vec3 palm_br = dest[hand_finger_index*5 + hand_joint_root         ].position;
 	vec3 palm_bl = dest[hand_finger_pinky*5 + hand_joint_root         ].position;
-	sk_hand.palm.orientation = quat_lookat_up(
+	dest[25].orientation = quat_lookat_up(
 		palm_bl,
-		palm_bl + (sk_hand.handedness == handed_right ? vec3_cross(palm_br - palm_bl, palm_tl - palm_bl) : vec3_cross(palm_tl - palm_bl, palm_br - palm_bl)),
+		palm_bl + (handed == handed_right ? vec3_cross(palm_br - palm_bl, palm_tl - palm_bl) : vec3_cross(palm_tl - palm_bl, palm_br - palm_bl)),
 		palm_tl-palm_bl);
-	sk_hand.palm.position = (palm_tr*0.25f + palm_br*0.25f + palm_tl*0.25f + palm_bl*0.25f);
+	dest[25].position = (palm_tr*0.25f + palm_br*0.25f + palm_tl*0.25f + palm_bl*0.25f);
+	dest[26] = dest[25];
 }
 
 } // namespace sk
