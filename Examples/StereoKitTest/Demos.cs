@@ -10,6 +10,8 @@ public static class Demos
     static IDemo activeScene;
     static IDemo nextScene;
     static int   testIndex = 0;
+    static float sceneTime = 0;
+    static HashSet<string> screens = new HashSet<string>();
     static Type ActiveScene { set { nextScene = (IDemo)Activator.CreateInstance(value); } }
     public static int Count => demos.Count;
     public static bool TestMode { get; set; }
@@ -24,13 +26,16 @@ public static class Demos
 
     public static void Initialize()
     {
-        if (TestMode)
+        if (TestMode) { 
             nextScene = null;
+            Input.HandVisible(Handed.Max, false);
+        }
         if (activeScene == null)
             activeScene = nextScene;
         if (activeScene == null)
             activeScene = (IDemo)Activator.CreateInstance(demos[testIndex]);
         activeScene.Initialize();
+        sceneTime = Time.Totalf;
     }
     public static void Update()
     {
@@ -79,5 +84,22 @@ public static class Demos
         Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
 
         ActiveScene = result;
+    }
+
+    public static void Screenshot(int width, int height, string name, Vec3 from, Vec3 at) 
+        => Screenshot(0, width, height, name, from, at);
+    public static void Screenshot(float time, int width, int height, string name, Vec3 from, Vec3 at)
+    {
+        if (!TestMode || time > (Time.Totalf-sceneTime) || screens.Contains(name))
+            return;
+        screens.Add(name);
+        Renderer.Screenshot(from, at, width, height, $"../../../docs/img/screenshots/{name}");
+    }
+    public static void Hand(in HandJoint[] joints)
+    {
+        if (!TestMode)
+            return;
+        Input.HandVisible (Handed.Right, true);
+        Input.HandOverride(Handed.Right, joints);
     }
 }

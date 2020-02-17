@@ -79,6 +79,7 @@ class DebugToolWindow
     {
         UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*Units.cm2m);
         if (UI.Button("Print Screenshot Pose")) HeadshotPose();
+        if (UI.Button("Print Hand Pose")) HandshotPose();
         if (UI.Toggle("Record Head", ref recordHead)) ToggleRecordHead();
         if (headAnim != null) {
             UI.SameLine();
@@ -191,7 +192,7 @@ class DebugToolWindow
                     result.Append(",");
             }
             result.Append(");");
-            //Log.Info(result.ToString());
+            Log.Info(result.ToString());
 
             handAnim = new DemoAnim<HandJoint[]>(JointsLerp, recordingHand.ToArray());
             recordingHand.Clear();
@@ -202,7 +203,26 @@ class DebugToolWindow
     {
         Vec3 pos = Input.Head.position;
         Vec3 fwd = pos + Input.Head.Forward;
-        Log.Info($"if (Demos.TestMode) Renderer.Screenshot(new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f), 600, 600, \"../../../docs/img/screenshots/image.jpg\");");
+        Log.Info($"Demos.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+    }
+    static void HandshotPose()
+    {
+        Hand h = Input.Hand(Handed.Right);
+        HandJoint[] joints = new HandJoint[27];
+        Array.Copy(h.fingers, 0, joints, 0, 25);
+        joints[25] = new HandJoint(h.palm.position, h.palm.orientation, 0);
+        joints[26] = new HandJoint(h.wrist.position, h.wrist.orientation, 0);
+        recordingHand.Add((Time.Totalf, joints));
+
+        string result = ($"Demos.Hand(new HandJoint[]{{");
+        for (int j = 0; j < joints.Length; j++)
+        {
+            result += $"new HandJoint(new Vec3({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quat({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
+            if (j < joints.Length - 1)
+                result += ",";
+        }
+        result+="});";
+        Log.Info(result);
     }
 
     static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)

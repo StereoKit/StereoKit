@@ -31,7 +31,7 @@ class Program
     {
         if (demoLogList.Count > 10)
             demoLogList.RemoveAt(demoLogList.Count - 1);
-        demoLogList.Insert(0, text);
+        demoLogList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
     }
     static void LogWindow()
     {
@@ -53,9 +53,6 @@ class Program
         StereoKitApp.settings.assetsFolder = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
-
-        if (Demos.TestMode)
-            Input.HandVisible(Handed.Max, false);
 
         CommonInit();
 

@@ -60,7 +60,12 @@ void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
 	bool32_t enable = override_hand[0] || override_hand[1];
 	if (enable != override_enabled) {
 		override_enabled = enable;
+
 		input_hand_refresh_system();
+
+		if (enable) {
+			input_hand_update();
+		}
 	}
 }
 
