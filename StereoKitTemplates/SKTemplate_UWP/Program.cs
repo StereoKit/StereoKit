@@ -12,7 +12,7 @@ namespace SKTemplate_UWP_Name
 
             Model cube = Model.FromMesh(
                 Mesh.GenerateRoundedCube(Vec3.One, 0.2f), 
-                Material.Find(DefaultIds.material));
+                Default.Material);
 
             while (StereoKitApp.Step(() =>
             {
