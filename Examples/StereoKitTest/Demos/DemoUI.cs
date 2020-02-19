@@ -50,11 +50,9 @@ class DemoUI : ITest
 
     public void Update()
     {
-        if (Tests.IsTesting) { 
-            Renderer.Screenshot(new Vec3(-0.325f,-0.00f,.075f), new Vec3(-.4f,-0.05f,0), 600, 400, "../../../docs/img/screenshots/GuideUserInterface.jpg");
-            Renderer.Screenshot(new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0), 400, 600, "../../../docs/img/screenshots/GuideUserInterfaceCustom.jpg");
-        }
-
+        Tests.Screenshot(600, 400, "GuideUserInterface.jpg", new Vec3(-0.363f, -0.010f, 0.135f), new Vec3(-0.743f, -0.434f, -0.687f));
+        Tests.Screenshot(400, 600, "GuideUserInterfaceCustom.jpg", new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
+        
         /// :CodeDoc: Guides User Interface
         /// Then we'll move over to the application step where we'll do the rest of the UI code!
         ///

@@ -1,7 +1,9 @@
 ﻿using StereoKit;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 class DemoAnim<T>
 {
@@ -103,6 +105,7 @@ class DebugToolWindow
         else
             Input.HandClearOverride(Handed.Right);
         
+        ScreenshotPreview();
     }
 
     static void TakeScreenshots()
@@ -201,9 +204,10 @@ class DebugToolWindow
 
     static void HeadshotPose()
     {
-        Vec3 pos = Input.Head.position;
+        Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * Units.cm2m;
         Vec3 fwd = pos + Input.Head.Forward;
         Log.Info($"Demos.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+        PreviewScreenshot(pos, fwd);
     }
     static void HandshotPose()
     {
@@ -234,5 +238,40 @@ class DebugToolWindow
             result[i].radius      = SKMath.Lerp (a[i].radius, b[i].radius, t);
         }
         return result;
+    }
+
+    static Sprite screenshot;
+    static Pose   screenshotPose;
+    static bool   screenshotVisible;
+    static void PreviewScreenshot(Vec3 from, Vec3 at)
+    {
+        string path = Path.GetTempFileName();
+        path = Path.ChangeExtension(path, "jpg");
+        Renderer.Screenshot(from, at, 600, 600, path);
+        Task.Run(()=> { 
+            Task.Delay(1000).Wait();
+            screenshot = Sprite.FromTex(Tex.FromFile(path));
+        });
+
+        if (!screenshotVisible) { 
+            screenshotPose.position    = Input.Head.position + Input.Head.Forward * 0.3f;
+            screenshotPose.orientation = Quat.LookAt(screenshotPose.position, Input.Head.position);
+        }
+        screenshotVisible = true;
+    }
+    static void ScreenshotPreview()
+    {
+        if (!screenshotVisible)
+            return;
+
+        UI.WindowBegin("Screenshot", ref screenshotPose, new Vec2(20,0)*Units.cm2m);
+        if (screenshot != null)
+            UI.Image(screenshot, new Vec2(18,0) * Units.cm2m);
+        if (UI.Button("Close"))
+        { 
+            screenshotVisible = false;
+            screenshot = null;
+        }
+        UI.WindowEnd();
     }
 }
