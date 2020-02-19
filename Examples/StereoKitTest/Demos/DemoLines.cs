@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StereoKitTest
 {
-    class DemoLines : IDemo
+    class DemoLines : ITest
     {
         Pose  windowPose   = new Pose(new Vec3(0.3f, 0, -0.3f), Quat.LookDir(-1,0,1));
         Model paletteModel = Model.FromFile("Palette.glb", Default.ShaderUI);

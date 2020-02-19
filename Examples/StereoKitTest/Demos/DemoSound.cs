@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StereoKitTest
 {
-    class DemoSound : IDemo
+    class DemoSound : ITest
     {
         Pose  windowPose = new Pose(.4f, 0, -0.4f, Quat.LookDir(-1,0,1));
         Sound fileSound  = Sound.FromFile("BlipNoise.wav");

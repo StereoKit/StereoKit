@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-class DemoBasics : IDemo
+class DemoBasics : ITest
 {
     Solid floorSolid;
     Model       gltf;

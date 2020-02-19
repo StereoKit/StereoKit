@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DocHand : IDemo
+class DocHand : ITest
 {
     static void HandInBounds()
     {

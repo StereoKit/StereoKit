@@ -1,4 +1,5 @@
-﻿interface IDemo
+﻿interface ITest
+
 {
     void Initialize();
     void Update();

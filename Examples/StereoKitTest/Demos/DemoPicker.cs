@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace StereoKitTest
 {
-    class DemoPicker : IDemo
+    class DemoPicker : ITest
     {
         Model model      = null;
         float modelScale = 1;

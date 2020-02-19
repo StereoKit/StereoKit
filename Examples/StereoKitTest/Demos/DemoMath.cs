@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoMath : IDemo
+class DemoMath : ITest
 {
     Mesh planeMesh;
     Mesh sphereMesh;
@@ -38,7 +38,7 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(posePlaneRay.position+new Vec3(0.0f,0.3f,0.15f), posePlaneRay.position + Vec3.Up*0.1f, 400, 400, "../../../docs/img/screenshots/RayIntersectPlane.jpg");
 
         // Line and Plane
@@ -60,7 +60,7 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(poseLinePlane.position + new Vec3(0.0f, 0.3f, 0.15f), poseLinePlane.position + Vec3.Up * 0.1f, 400, 400, "../../../docs/img/screenshots/LineIntersectPlane.jpg");
 
         // Sphere and Ray
@@ -78,7 +78,7 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(poseSphereRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseSphereRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectSphere.jpg");
 
         // Bounds and Ray
@@ -96,7 +96,7 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(poseBoundsRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectBounds.jpg");
 
         // Bounds and Line
@@ -115,7 +115,7 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
 
         // Cross product
@@ -134,12 +134,12 @@ class DemoMath : IDemo
 
         UI.AffordanceEnd();
 
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(poseCross.position + new Vec3(0.075f, 0.1f, 0.15f), poseCross.position + new Vec3(0.075f,0,0), 400, 400, "../../../docs/img/screenshots/CrossProduct.jpg");
     }
 
     public void Initialize() {
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Time.SetTime(3.4, 1 / 90.0);
 
         planeMesh  = Mesh.GeneratePlane(Vec2.One,Vec3.Forward, Vec3.Up);

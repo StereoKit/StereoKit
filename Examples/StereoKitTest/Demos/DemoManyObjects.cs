@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StereoKitTest
 {
-    class DemoManyObjects : IDemo
+    class DemoManyObjects : ITest
     {
         Model model = Model.FromFile("DamagedHelmet.gltf");
         const int cacheCount = 100;

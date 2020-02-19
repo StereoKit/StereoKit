@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-class DemoUISettings : IDemo
+class DemoUISettings : ITest
 {
     readonly static UISettings defaultSettings = new UISettings {
         backplateBorder = 0.5f * Units.mm2m,

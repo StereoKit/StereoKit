@@ -17,7 +17,7 @@ namespace StereoKitTest
         Image,
     }
 
-    class DemoSky : IDemo
+    class DemoSky : ITest
     {
         static List<Light> lights     = new List<Light>();
         static Pose        windowPose = new Pose(new Vec3(0,0.1f,-0.3f), Quat.LookDir(-Vec3.Forward));

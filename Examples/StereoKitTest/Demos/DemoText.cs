@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoText : IDemo
+class DemoText : ITest
 {
     TextAlign alignX      = TextAlign.XLeft;
     TextAlign alignY      = TextAlign.YTop;
@@ -60,7 +60,7 @@ class DemoText : IDemo
         Hierarchy.Pop();
 
         Hierarchy.Push(Matrix.T(0, -0.1f, 0));
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             Renderer.Screenshot(Hierarchy.ToWorld(new Vec3(0, 0, 0.09f)), Hierarchy.ToWorld(Vec3.Zero), 600, 300, "../../../docs/img/screenshots/BasicText.jpg");
         /// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
         /// Then it's pretty trivial to just draw some text on the screen! Just call
