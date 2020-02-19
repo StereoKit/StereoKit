@@ -97,6 +97,7 @@
     <Compile Include="Demos\DemoUI.cs" />
     <Compile Include="Docs\DocHand.cs" />
     <Compile Include="Tester.cs" />
+    <Compile Include="Tests\TestTextureCrash.cs" />
     <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="Demos\DemoUISettings.cs" />
     <Compile Include="Docs\DocVec.cs" />
