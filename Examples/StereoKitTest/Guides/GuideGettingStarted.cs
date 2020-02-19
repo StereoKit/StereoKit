@@ -33,26 +33,23 @@
 using System;
 using StereoKit;
 
-namespace Project
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        if (!StereoKitApp.Initialize("Project", Runtime.MixedReality))
+            Environment.Exit(1);
+
+        Model cube = Model.FromMesh(
+            Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
+            Default.Material);
+
+        while (StereoKitApp.Step(() =>
         {
-            if (!StereoKitApp.Initialize("Project", Runtime.MixedReality))
-                Environment.Exit(1);
+            cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+        }));
 
-            Model cube = Model.FromMesh(
-                Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
-                Material.Find(DefaultIds.material));
-
-            while (StereoKitApp.Step(() =>
-            {
-                cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
-            }));
-
-            StereoKitApp.Shutdown();
-        }
+        StereoKitApp.Shutdown();
     }
 }
 /// 
