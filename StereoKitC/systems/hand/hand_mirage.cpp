@@ -129,8 +129,8 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 			// Copy the data into the input system
 			hand_t& inp_hand = (hand_t&)input_hand(handed);
 			inp_hand.tracked_state = button_state_active;
-			hand_joint_t* pose = input_hand_get_pose_buffer(handed);
-			memcpy(pose, &xr_hand_data[handed][0], sizeof(hand_joint_t) * 25);
+			hand_joint_t* hand_poses = input_hand_get_pose_buffer(handed);
+			memcpy(hand_poses, &xr_hand_data[handed][0], sizeof(hand_joint_t) * 25);
 
 			quat face_forward = quat_from_angles(-90,0,0);
 			inp_hand.palm  = pose_t{ xr_hand_data[handed][25].position, face_forward * xr_hand_data[handed][25].orientation };

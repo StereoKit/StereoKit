@@ -39,12 +39,11 @@ vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
+bool modelfmt_stl_binary(void *file_data, size_t, vert_t **verts, vind_t **faces) {
 	stl_header_t *header = (stl_header_t *)file_data;
 	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 
-	size_t sz = sizeof(stl_triangle_t);
 	stl_triangle_t *tris = (stl_triangle_t *)(((uint8_t *)file_data) + sizeof(stl_header_t));
 	for (uint32_t i = 0; i < header->tri_count; i++) {
 		arrput(*faces, indexof(tris[i].verts[0], tris[i].normal, verts, &indmap) );
@@ -58,9 +57,9 @@ bool modelfmt_stl_binary(void *file_data, size_t file_length, vert_t **verts, vi
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
+bool modelfmt_stl_text(void *file_data, size_t, vert_t **verts, vind_t **faces) {
 	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 	
 	vec3    normal = {};
 	vind_t  curr[4] = {};

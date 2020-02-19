@@ -38,7 +38,7 @@ int indexof(int iV, int iT, int iN, vec3 *verts, vec3 **norms, vec2 **uvs, index
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
+bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
 	vec3 *poss  = nullptr;
 	vec3 *norms = nullptr;
 	vec2 *uvs   = nullptr;
@@ -46,7 +46,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 	vind_t *faces = nullptr;
 
 	index_hash_t  *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 	
 	vec3 in;
 	int inds[12];
