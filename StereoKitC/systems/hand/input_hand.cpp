@@ -120,7 +120,7 @@ hand_system_ input_hand_get_system() {
 
 void input_hand_refresh_system() {
 	int available_source = _countof(hand_sources) - 1;
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		if (hand_sources[i].available()) {
 			available_source = i;
 			break;

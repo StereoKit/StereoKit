@@ -146,7 +146,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 			curr++;
 		}
 		if (out_char_count != nullptr)
-			*out_char_count = (*curr == '\n' ? curr+1 : curr) - start;
+			*out_char_count = (int32_t)((*curr == '\n' ? curr+1 : curr) - start);
 		return width * step.style->size;
 	}
 
@@ -193,7 +193,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 	}
 
 	if (out_char_count != nullptr)
-		*out_char_count = last_at - start;
+		*out_char_count = (int32_t)(last_at - start);
 	return last_width;
 }
 
@@ -211,7 +211,7 @@ float text_step_height(const char *text, int32_t *out_length, const text_stepper
 	}
 
 	if (out_length != nullptr)
-		*out_length = curr - text;
+		*out_length = (int32_t)(curr - text);
 	return (height * step.style->font->character_height + (height-1)*step.style->line_spacing) * step.style->size;
 }
 

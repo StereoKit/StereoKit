@@ -29,7 +29,7 @@ struct point_hash_t {
 vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
 	vind_t result = hmget(*indmap, pt);
 	if (result == -1) {
-		result = arrlen(*verts);
+		result = (vind_t)arrlen(*verts);
 		hmput(*indmap, pt, result);
 		arrput(*verts, (vert_t{ pt, {}, {}, {255,255,255,255} }));
 	}
@@ -113,15 +113,15 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 		modelfmt_stl_binary(file_data, file_length, &verts, &faces);
 
 	// Normalize all the normals
-	for (int i = 0, len = arrlen(verts); i < len; i++)
+	for (int i = 0, len = (int)arrlen(verts); i < len; i++)
 		verts[i].norm = vec3_normalize(verts[i].norm);
 
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], arrlen(verts));
-	mesh_set_inds (mesh, &faces[0], arrlen(faces));
+	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
+	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 
