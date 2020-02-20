@@ -19,18 +19,20 @@ ID3D11InputLayout *vert_t_layout = nullptr;
 void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
 	if (mesh->vert_buffer == nullptr) {
 		// Create a static vertex buffer the first time we call this function!
-		mesh->vert_dynamic = false;
+		mesh->vert_dynamic  = false;
+		mesh->vert_capacity = vertex_count;
 
 		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
 		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, D3D11_BIND_VERTEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
 		DX11ResType(mesh->vert_buffer, "verts");
-	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_count) {
+	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
 		mesh->vert_buffer->Release();
-		mesh->vert_dynamic = true;
+		mesh->vert_dynamic  = true;
+		mesh->vert_capacity = vertex_count;
 
 		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
 		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, 
@@ -71,20 +73,27 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 ///////////////////////////////////////////
 
 void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
+	if (index_count % 3 != 0) {
+		log_err("mesh_set_inds index_count must be a multiple of 3!");
+		return;
+	}
+
 	if (mesh->ind_buffer == nullptr) {
 		// Create a static vertex buffer the first time we call this function!
-		mesh->ind_dynamic = false;
+		mesh->ind_dynamic  = false;
+		mesh->ind_capacity = index_count;
 
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
 		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, D3D11_BIND_INDEX_BUFFER);
 		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
 			log_err("mesh_set_inds: Failed to create index buffer");
 		DX11ResType(mesh->ind_buffer,  "inds");
-	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_count) {
+	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
 		mesh->ind_buffer->Release();
-		mesh->ind_dynamic = true;
+		mesh->ind_dynamic  = true;
+		mesh->ind_capacity = index_count;
 
 		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
 		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, 

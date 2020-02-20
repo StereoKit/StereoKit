@@ -67,30 +67,58 @@ class DemoGeo : ITest
         demoPlaneMesh  = planeMesh;
         demoPlaneModel = planeModel;
 
-        const int size = 8;
-        Vertex[] verts = new Vertex[size*size];
-        uint  [] inds  = new uint[size*size*6];
-        for (int y = 0; y < size; y++) {
-        for (int x = 0; x < size; x++) {
-            verts[x+y*size] = new Vertex(
-                new Vec3(x/(float)size-0.5f, SKMath.Sin((x+y)*0.7f)*0.1f, y/(float)size-0.5f),
-                new Vec3(-SKMath.Cos((x + y) * 0.7f), 1, -SKMath.Cos((x + y) * 0.7f)).Normalized());
+        /// :CodeSample: Mesh.SetVerts Mesh.SetInds
+        /// ## Procedurally generating a wavy grid
+        /// ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
+        /// Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
+        /// is a common example of creating a grid using code, we're using a sin wave
+        /// to make it more visually interesting, but you could also substitute this for
+        /// something like sampling a heightmap, or a more interesting mathematical 
+        /// formula!
+        /// 
+        /// Note: x+y*gridSize is the formula for 2D (x,y) access of a 1D array that represents
+        /// a grid.
+        const int gridSize = 8;
+        Vertex[] verts = new Vertex[gridSize*gridSize];
+        uint  [] inds  = new uint  [gridSize*gridSize*6];
 
-            if (x<size-1 && y < size - 1)
+        for (int y = 0; y < gridSize; y++) {
+        for (int x = 0; x < gridSize; x++) {
+            // Create a vertex on a grid, centered about the origin. The dimensions extends
+            // from -0.5 to +0.5 on the X and Z axes. The Y value is then sampled from 
+            // a sin wave using the x and y values.
+            //
+            // The normal of the vertex is then calculated from the derivative of the Y 
+            // value!
+            verts[x+y*gridSize] = new Vertex(
+                new Vec3(
+                    x/(float)gridSize-0.5f, 
+                    SKMath.Sin((x+y) * 0.7f)*0.1f, 
+                    y/(float)gridSize-0.5f),
+                new Vec3(
+                    -SKMath.Cos((x+y) * 0.7f), 
+                    1, 
+                    -SKMath.Cos((x+y) * 0.7f)).Normalized());
+
+            // Create triangle face indices from the current vertex, and the vertices
+            // on the next row and column! Since there is no 'next' row and column on
+            // the last row and column, we guard this with a check for size-1.
+            if (x<gridSize-1 && y<gridSize-1)
             {
-                int ind = (x+y*size)*6;
-                inds[ind  ] = (uint)((x+1)+(y+1)*size);
-                inds[ind+1] = (uint)((x+1)+(y  )*size);
-                inds[ind+2] = (uint)((x  )+(y+1)*size);
+                int ind = (x+y*gridSize)*6;
+                inds[ind  ] = (uint)((x+1)+(y+1)*gridSize);
+                inds[ind+1] = (uint)((x+1)+(y  )*gridSize);
+                inds[ind+2] = (uint)((x  )+(y+1)*gridSize);
 
-                inds[ind+3] = (uint)((x  )+(y+1)*size);
-                inds[ind+4] = (uint)((x+1)+(y  )*size);
-                inds[ind+5] = (uint)((x  )+(y  )*size);
+                inds[ind+3] = (uint)((x  )+(y+1)*gridSize);
+                inds[ind+4] = (uint)((x+1)+(y  )*gridSize);
+                inds[ind+5] = (uint)((x  )+(y  )*gridSize);
             }
         } }
         demoProcMesh = new Mesh();
         demoProcMesh.SetVerts(verts);
         demoProcMesh.SetInds (inds);
+        /// :End:
     }
 
     public void Shutdown()
@@ -103,8 +131,8 @@ class DemoGeo : ITest
         Mesh  cubeMesh  = demoCubeMesh;
         Model cubeModel = demoCubeModel;
 
-        if (Tests.IsTesting)
-            Renderer.Screenshot(new Vec3(0.25f,1.5f,2f)*0.75f, Vec3.Zero, 600, 400, "../../../docs/img/screenshots/ProceduralGeometry.jpg");
+        Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vec3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
+        Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.222f), new Vec3(1.012f, -0.682f, -0.131f));
 
         /// :CodeSample: Mesh.GenerateCube
         /// Drawing both a Mesh and a Model generated this way is reasonably simple, 
