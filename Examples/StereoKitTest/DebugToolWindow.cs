@@ -70,7 +70,7 @@ class DebugToolWindow
     static List<(float time, HandJoint[] pose)> recordingHand = new List<(float time, HandJoint[] pose)>();
     static bool recordHead   = false;
     static bool recordHand   = false;
-    static Pose pose         = new Pose(0, 0.2f, -.5f, Quat.LookAt(new Vec3(0, 0.2f, -.5f), Vec3.Zero));
+    static Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
     static bool screenshots  = false;
     static int  screenshotId = 1;
 
