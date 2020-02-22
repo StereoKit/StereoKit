@@ -81,8 +81,8 @@ class Program
         /// :End:
 
         Material floorMat = Default.Material.Copy();
-        floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
-        floorMat["tex_scale"] = 16;
+        floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
+        floorMat[MatParamName.TexScale  ] = 16;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(20, 1, 20));

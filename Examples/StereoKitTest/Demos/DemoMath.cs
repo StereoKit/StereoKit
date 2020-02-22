@@ -150,7 +150,7 @@ class DemoMath : ITest
         boundsMesh = cubeMesh;
         boundsMat  = Default.MaterialUI.Copy();
         boundsMat.Transparency = Transparency.Blend;
-        boundsMat["color"] = new Color(1,1,1,0.25f);
+        boundsMat[MatParamName.ColorTint] = new Color(1,1,1,0.25f);
     }
     public void Shutdown  () { }
 }

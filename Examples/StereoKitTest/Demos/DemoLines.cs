@@ -74,7 +74,7 @@ namespace StereoKitTest
         void SetColor(Color color)
         {
             activeColor = color;
-            Default.MaterialHand["color"] = color;
+            Default.MaterialHand[MatParamName.ColorTint] = color;
         }
 
         Vec3 prevTip;

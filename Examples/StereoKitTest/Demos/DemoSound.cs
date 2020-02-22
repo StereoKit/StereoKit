@@ -20,7 +20,7 @@ namespace StereoKitTest
 
         public void Initialize() {
             boundsMat.Transparency = Transparency.Blend;
-            boundsMat["color"] = new Color(1, 1, 1, 0.25f);
+            boundsMat[MatParamName.ColorTint] = new Color(1, 1, 1, 0.25f);
 
             /// :CodeSample: Sound Sound.FromFile Sound.Play
             /// ### Basic usage
