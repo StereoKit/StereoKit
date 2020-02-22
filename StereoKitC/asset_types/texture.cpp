@@ -577,7 +577,7 @@ bool tex_create_views(tex_t texture, DXGI_FORMAT source_format, bool create_shad
 	}
 
 	if (texture->sampler == nullptr)
-		tex_set_options(texture);
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
 	return true;
 }
