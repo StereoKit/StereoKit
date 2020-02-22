@@ -100,14 +100,14 @@ namespace StereoKitDocumenter
                     Type t = Type.GetType(cleanName);
                     if (t == null)
                         t = Type.GetType(cleanName + ", StereoKit");
-                    if (a.Contains("@"))
-                        t = t.MakeByRefType();
                     if (nullable)
                         t = typeof(Nullable<>).MakeGenericType(t);
                     if (action) 
                         t = typeof(Action<>).MakeGenericType(t);
                     if (array)
                         t = t.MakeArrayType();
+                    if (a.Contains("@"))
+                        t = t.MakeByRefType();
 
                     return t;
                     })

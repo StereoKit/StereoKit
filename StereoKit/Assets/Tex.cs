@@ -68,8 +68,24 @@ namespace StereoKit
         #endregion
 
         #region Methods
+        /// <summary>Set the texture's pixels using a pointer to a chunk of memory! This is great if
+        /// you're pulling in some color data from native code, and don't want to pay the cost of trying
+        /// to marshal that data around.</summary>
+        /// <param name="width">Width in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="height">Height in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="data">A pointer to a chunk of memory containing color data! Should be 
+        /// width*height*size_of_texture_format bytes large. Color data should definitely match the format 
+        /// provided when constructing the texture!</param>
         public void SetColors(int width, int height, IntPtr data)
             => NativeAPI.tex_set_colors(_inst, width, height, data);
+        /// <summary>Set the texture's pixels using a color array! This function sould only be called on
+        /// textures with a format of Rgba32 or Rgba32Linear. You can call this as many times as you'd
+        /// like, even with different widths and heights. Calling this multiple times will mark it as
+        /// dynamic on the graphics card. Calling this function can also result in building mip-maps,
+        /// which has a non-zero cost: use TexType.ImageNomips when creating the Tex to avoid this.</summary>
+        /// <param name="width">Width in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="height">Height in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="data">An array of 32 bit colors, should be a length of `width*height`.</param>
         public void SetColors(int width, int height, in Color32[] data)
         {
             if (Format != TexFormat.Rgba32 && Format != TexFormat.Rgba32Linear)
@@ -79,6 +95,14 @@ namespace StereoKit
             }
             NativeAPI.tex_set_colors(_inst, width, height, data);
         }
+        /// <summary>Set the texture's pixels using a color array! This function sould only be called on
+        /// textures with a format of Rgba128 . You can call this as many times as you'd
+        /// like, even with different widths and heights. Calling this multiple times will mark it as
+        /// dynamic on the graphics card. Calling this function can also result in building mip-maps,
+        /// which has a non-zero cost: use TexType.ImageNomips when creating the Tex to avoid this.</summary>
+        /// <param name="width">Width in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="height">Height in pixels of the texture. Powers of two are generally best!</param>
+        /// <param name="data">An array of 128 bit colors, should be a length of `width*height`.</param>
         public void SetColors(int width, int height, in Color[] data)
         {
             if (Format != TexFormat.Rgba128)

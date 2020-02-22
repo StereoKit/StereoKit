@@ -84,6 +84,7 @@
     <Compile Include="DebugToolWindow.cs" />
     <Compile Include="Demos\DemoBasics.cs" />
     <Compile Include="Demos\DemoSound.cs" />
+    <Compile Include="Demos\DemoTextures.cs" />
     <Compile Include="Docs\DocDebug.cs" />
     <Compile Include="Demos\DemoGeo.cs" />
     <Compile Include="Demos\DemoHands.cs" />
