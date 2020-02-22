@@ -19,7 +19,7 @@ cbuffer TransformBuffer : register(b1) {
 	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
-SamplerState tex_cube_sampler;
+SamplerState tex_cube_sampler : register(s11);
 
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color {1,1,1,1}
@@ -41,7 +41,7 @@ struct psIn {
 
 // [texture] diffuse white
 Texture2D tex : register(t0);
-SamplerState tex_sampler;
+SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;

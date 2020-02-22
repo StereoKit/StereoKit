@@ -37,7 +37,7 @@ struct psIn {
 
 // [texture] diffuse white
 Texture2D tex : register(t0);
-SamplerState tex_sampler;
+SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;

@@ -36,7 +36,7 @@ struct psIn {
 
 // [texture] source white
 Texture2D source : register(t0);
-SamplerState source_sampler;
+SamplerState source_sampler : register(s0);
 
 static const float2 invAtan = float2(0.1591, 0.3183);
 float2 ToEquirect(float3 v) {

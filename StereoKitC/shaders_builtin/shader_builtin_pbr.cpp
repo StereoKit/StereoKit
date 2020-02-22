@@ -18,7 +18,7 @@ cbuffer TransformBuffer : register(b1) {
 	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
-SamplerState tex_cube_sampler;
+SamplerState tex_cube_sampler : register(s11);
 
 cbuffer ParamBuffer : register(b2) {
 	// [param] color color {1,1,1,1}
@@ -47,23 +47,23 @@ struct psIn {
 
 // [texture] diffuse white
 Texture2D tex : register(t0);
-SamplerState tex_sampler;
+SamplerState tex_sampler : register(s0);
 
 // [texture] emission black
 Texture2D tex_emission : register(t1);
-SamplerState tex_e_sampler;
+SamplerState tex_e_sampler : register(s1);
 
 // [texture] metal white
 Texture2D tex_metal : register(t2);
-SamplerState tex_metal_sampler;
+SamplerState tex_metal_sampler : register(s2);
 
 // [texture] normal flat
 Texture2D tex_normal : register(t3);
-SamplerState tex_normal_sampler;
+SamplerState tex_normal_sampler : register(s3);
 
 // [texture] occlusion white
 Texture2D tex_occ : register(t4);
-SamplerState tex_occ_sampler;
+SamplerState tex_occ_sampler : register(s4);
 
 float3 sRGBToLinear(float3 sRGB);
 float3 LinearTosRGB(float3 lin);
