@@ -127,6 +127,11 @@ void input_hand_refresh_system() {
 		}
 	}
 	if (available_source != active_system) {
+		// TODO: Only really necessary for oxrc -> mirage transition, when mirage dies, this can go away
+		if (active_system >= 0) {
+			hand_sources[active_system].shutdown();
+			hand_sources[active_system].initialized = false;
+		}
 		active_system = available_source;
 		log_diagf("Switched to input source: %d", hand_sources[active_system].system);
 		if (!hand_sources[active_system].initialized) {

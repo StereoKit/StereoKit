@@ -203,11 +203,9 @@ void hand_oxrc_init() {
 ///////////////////////////////////////////
 
 void hand_oxrc_shutdown() {
-	if (xrc_action_set != XR_NULL_HANDLE) {
-		if (xr_hand_space[0] != XR_NULL_HANDLE) xrDestroySpace(xr_hand_space[0]);
-		if (xr_hand_space[1] != XR_NULL_HANDLE) xrDestroySpace(xr_hand_space[1]);
-		xrDestroyActionSet(xrc_action_set);
-	}
+	xrDestroySpace(xr_hand_space[0]);
+	xrDestroySpace(xr_hand_space[1]);
+	xrDestroyActionSet(xrc_action_set);
 }
 
 ///////////////////////////////////////////
