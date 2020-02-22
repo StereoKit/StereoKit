@@ -29,61 +29,84 @@ treeDict.load = function() {
     }
 }
 
+function updateVisibility(folder) {
+    var valid = nameValid(folder.name);
+    
+    if (folder.pages) {
+        for (var i = 0; i<folder.pages.length; i+=1) {
+            valid = updateVisibility(folder.pages[i]) || valid;
+        }
+    }
+
+    folder.element.style.display = valid ? "block" : "none";
+    return valid;
+}
+
 function updateSearch(text) {
     sessionStorage.setItem("search", text);
     search = text.toLowerCase();
     
-    // Check each leaf to see if it's visible
-    var leaves = document.getElementsByClassName("tree-leaf");
-    for(var i=0; i<leaves.length; i+=1) {
-        var valid = nameValid(leaves[i].textContent);
-        leaves[i].style.display = valid ? "block" : "none";
-    }
-
-    // See if a branch has any visible leaves
-    var branches = document.getElementsByClassName("tree-branch");
-    for(var i=0; i<branches.length; i+=1) {
-        var leaves = branches[i].getElementsByClassName("tree-leaf");
-        var valid  = false;
-        for (var f=0; f<leaves.length; f+=1) {
-            if (leaves[f].style.display === "block") {
-                valid = true;
-            }
-        }
-
-        branches[i].style.display = valid ? "block" : "none";
-
-        branches[i].getElementsByClassName("tree-branch-check")[0].checked = !(text !== "" || treeDict.hasItem(branches[i].attributes.branchname.value));
+    for (var i = 0; i<documents.pages.length; i+=1) {
+        updateVisibility(documents.pages[i]);
     }
 }
+
 function nameValid(name) {
     return search === "" || name.toLowerCase().includes(search);
 }
-function renderFolder(folder, parent) {
-    var result = parent == "" ? "<ul>" : "<li class='tree-branch' branchName='"+folder.name+"'><input class='tree-branch-check' type='checkbox' onClick='treeDict.setItem(\""+folder.name+"\", !this.checked)' /><span></span><a href='{{site.url}}/"+parent+"/"+folder.name.replace(" ", "-")+".html'>"+folder.name+"</a><ul>";
-    if (parent != "") parent += "/";
-    parent += folder.name.replace(" ", "-");
 
-    // Render the pages in this folder
-    if (folder.pages) {
-        for (var i = 0; i<folder.pages.length; i+=1) {
-            result += "<li class='tree-leaf'><a href='{{site.url}}/"+parent+"/"+folder.pages[i].replace(" ", "-")+".html'>"+folder.pages[i]+"</a></li>";
-        }
+function renderFolder(folder, parent, hierarchy) {
+    // Check if it has children
+    var hasChildren = folder.pages != null && folder.pages.length > 0;
+
+    // Add the root DOM node for the folder
+    var folderItem = document.createElement("li");
+    folderItem.className = hasChildren ? "tree-branch" : "tree-leaf";
+    folder.element = folderItem;
+    parent.appendChild(folderItem);
+
+    // If there are child pages, make it expandable
+    if (hasChildren) {
+        // The expand tree arrow
+        var expander = document.createElement("input");
+        expander.className = "tree-branch-check";
+        expander.type      = "checkbox";
+        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); console.log(folder.name); };
+        folderItem.appendChild(expander);
+
+        // A span for some of the tree trickery
+        folderItem.appendChild(document.createElement("span"));
     }
+
+    // Link to the actual document
+    var link = document.createElement("a");
+    link.href      = "{{site.url}}/"+hierarchy+"/"+folder.name.replace(" ", "-")+".html";
+    link.innerText = folder.name;
+    folderItem.appendChild(link);
 
     // Render sub-folders
-    if (folder.folders) {
-        for (var i = 0; i<folder.folders.length; i+=1) {
-            var folderText = renderFolder(folder.folders[i], parent);
-            result += folderText;
+    if (hasChildren) {
+        // Update the URL hierarchy
+        hierarchy += "/"+folder.name.replace(" ", "-");
+
+        // We need a sub-menu for the folding to work
+        var subList = document.createElement("ul");
+        folderItem.appendChild(subList);
+
+        for (var i = 0; i<folder.pages.length; i+=1) {
+            renderFolder(folder.pages[i], subList, hierarchy);
         }
     }
-    result += "</ul></li>";
-    return result;
 }
+
 function renderNav() {
-    var nav = document.getElementById("links");
-    nav.innerHTML = renderFolder(documents, "");
+    var nav  = document.getElementById("links");
+    var list = document.createElement("ul");
+    
+    for (var i = 0; i<documents.pages.length; i+=1) {
+        renderFolder(documents.pages[i], list, "Pages");
+    }
+    nav.appendChild(list);
 }
 
 window.addEventListener("load", function () {

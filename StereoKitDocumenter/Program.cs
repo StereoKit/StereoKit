@@ -189,12 +189,12 @@ namespace StereoKitDocumenter
 
                 for (int f = 0; f < classes[i].fields.Count; f++)
                 {
-                    classFolder.pages.Add(classes[i].fields[f].name);
+                    classFolder.folders.Add(new DocIndexFolder(classes[i].fields[f].name));
                 }
 
                 for (int m = 0; m < classes[i].methods.Count; m++)
                 {
-                    classFolder.pages.Add(classes[i].methods[m].ShowName);
+                    classFolder.folders.Add(new DocIndexFolder(classes[i].methods[m].ShowName));
                 }
             }
 
@@ -214,7 +214,7 @@ namespace StereoKitDocumenter
                         folder = new DocIndexFolder(ex.category);
                         root.folders.Add(folder);
                     }
-                    folder.pages.Add(ex.Name);
+                    folder.folders.Add(new DocIndexFolder( ex.Name ));
                 }
             }
 

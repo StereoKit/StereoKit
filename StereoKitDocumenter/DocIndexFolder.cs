@@ -9,7 +9,6 @@ namespace StereoKitDocumenter
     class DocIndexFolder
     {
         public string name;
-        public List<string> pages = new List<string>();
         public List<DocIndexFolder> folders = new List<DocIndexFolder>();
 
         public DocIndexFolder(string aName)
@@ -27,29 +26,23 @@ namespace StereoKitDocumenter
         }
         static string ToString(DocIndexFolder curr, int indent)
         {
-            string result = "";
+            StringBuilder result = new StringBuilder();
             string ind = "";
             for (int i = 0; i < indent; i++) ind += '\t';
 
-            result += $"{ind}{{\n";
-            result += $"{ind}name : '{curr.name}',\n";
-            if (curr.pages.Count > 0)
-                result += $"{ind}pages : ['{string.Join("','",curr.pages)}'],\n";
-            else
-                result += $"{ind}pages : [],\n";
-
+            result.Append($"{ind}{{name : '{curr.name}'");
 
             if (curr.folders.Count > 0) { 
-                result += $"{ind}folders : [\n";
+                result.Append( $",\n{ind} pages: [\n");
                 for (int i = 0; i < curr.folders.Count; i++)
                 {
-                    result += ToString(curr.folders[i], indent + 1);
+                    result.Append(ToString(curr.folders[i], indent + 1));
                 }
-                result += $"{ind}]\n";
+                result.Append($"{ind}]\n{ind}");
             }
-            result += $"{ind}}},\n";
-
-            return result;
+            result.Append($"}},\n");
+            
+            return result.ToString();
         }
     }
 }
