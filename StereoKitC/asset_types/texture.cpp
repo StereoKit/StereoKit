@@ -257,12 +257,15 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 	bool different_size = texture->width != width || texture->height != height || texture->array_size != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
-	if (texture->texture == nullptr || different_size) {
+	if (texture->texture == nullptr || different_size || (!different_size && !dynamic)) {
 		tex_releasesurface(texture);
 		
 		texture->width  = width;
 		texture->height = height;
 		texture->array_size = data_count;
+
+		if (!different_size && !dynamic)
+			texture->type &= tex_type_dynamic;
 
 		bool result = tex_create_surface(texture, data, data_count, sh_lighting_info);
 		if (result)
