@@ -62,7 +62,7 @@ static void OnLog(LogLevel level, string text)
 {
     if (demoLogList.Count > 10)
         demoLogList.RemoveAt(demoLogList.Count - 1);
-    demoLogList.Insert(0, text);
+    demoLogList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
 }
 static void LogWindow()
 {

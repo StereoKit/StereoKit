@@ -45,3 +45,16 @@ for performance!
 |--|--|
 |[Find]({{site.url}}/Pages/Reference/Material/Find.html)|Looks for a Material asset that's already loaded, matching the given id!|
 
+
+## Examples
+
+## Material parameter access
+Material does have an array operator overload for setting
+shader parameters really quickly! You can do this with strings
+representing shader parameter names, or use the MatParamName
+enum for compile safety.
+```csharp
+exampleMaterial[MatParamName.DiffuseTex] = gridTex;
+exampleMaterial[MatParamName.TexScale  ] = 2;
+```
+

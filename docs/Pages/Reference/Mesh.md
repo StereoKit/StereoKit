@@ -25,6 +25,8 @@ Mesh indices are stored as unsigned shorts, so they cap out at 65,535. This limi
 |--|--|
 |[Mesh]({{site.url}}/Pages/Reference/Mesh/Mesh.html)|Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!|
 |[Draw]({{site.url}}/Pages/Reference/Mesh/Draw.html)|Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
+|[SetInds]({{site.url}}/Pages/Reference/Mesh/SetInds.html)|Assigns the face indices for this Mesh! Faces are always triangles, there are only ever three indices per face. This function will create a index buffer object on the graphics card right away. If you're calling this a second time, the buffer will be marked as dynamic and re-allocated. If you're calling this a third time, the buffer will only re-allocate if the buffer is too small, otherwise it just copies in the data!|
+|[SetVerts]({{site.url}}/Pages/Reference/Mesh/SetVerts.html)|Assigns the vertices for this Mesh! This will create a vertex buffer object on the graphics card right away. If you're calling this a second time, the buffer will be marked as dynamic and re-allocated. If you're calling this a third time, the buffer will only re-allocate if the buffer is too small, otherwise it just copies in the data!|
 
 
 ## Static Fields and Properties

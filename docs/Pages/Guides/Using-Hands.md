@@ -14,6 +14,8 @@ hand data is always present for you to work with!
 
 ## Accessing Joints
 
+![Hand with joints]({{site.url}}/img/screenshots/HandAxes.jpg)
+
 Since hands are so central to interaction, accessing hand information needs
 to be really easy to get! So here's how you might find the fingertip of the right
 hand! If you ignore IsTracked, this'll give you the last known position for that
