@@ -57,6 +57,7 @@ vector<matrix>                  xr_viewpt_proj;
 vector<XrView>                  xr_views;
 vector<XrViewConfigurationView> xr_config_views;
 swapchain_t                     xr_swapchains;
+xr_hand_state_                  xr_hand_state = xr_hand_state_uncertain;
 
 ///////////////////////////////////////////
 

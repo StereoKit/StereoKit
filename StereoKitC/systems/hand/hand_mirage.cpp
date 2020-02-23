@@ -55,11 +55,17 @@ bool hand_mirage_available() {
 		xr_spatial_stage       = SpatialLocator::GetDefault().CreateStationaryFrameOfReferenceAtCurrentLocation();
 		xr_interaction_manager = SpatialInteractionManager::GetForCurrentView();
 		xr_hand_support        = xr_interaction_manager.IsSourceKindSupported(SpatialInteractionSourceKind::Hand);
+
+		xr_hand_state = xr_hand_support == true
+			? xr_hand_state_present 
+			: xr_hand_state_unavailable;
+
 		input_hand_refresh_system();
 	});
 
 	return xr_hand_support;
 #else
+	xr_hand_state = xr_hand_state_unavailable;
 	return false;
 #endif
 }

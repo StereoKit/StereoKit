@@ -84,6 +84,8 @@ shader_blob_t load_shader(const char* filename, const char* hlsl, const char* en
 #ifdef SK_NO_RUNTIME_SHADER_COMPILE
 		log_errf("Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
 #else
+		log_diagf("Compiling un-cached shader: %s", filename);
+
 		ID3DBlob *blob = compile_shader(assets_file(filename), hlsl, entrypoint, target);
 		if (blob == nullptr)
 			return result;

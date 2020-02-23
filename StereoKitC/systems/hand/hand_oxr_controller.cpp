@@ -26,7 +26,7 @@ XrSpace     xr_hand_space[2] = {};
 ///////////////////////////////////////////
 
 bool hand_oxrc_available() {
-	return sk_active_runtime() == runtime_mixedreality && xr_session != XR_NULL_HANDLE;
+	return sk_active_runtime() == runtime_mixedreality && xr_session != XR_NULL_HANDLE && xr_hand_state == xr_hand_state_unavailable;
 }
 
 ///////////////////////////////////////////

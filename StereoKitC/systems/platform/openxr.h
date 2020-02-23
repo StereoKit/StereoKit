@@ -12,6 +12,12 @@
 
 namespace sk {
 
+enum xr_hand_state_ {
+	xr_hand_state_uncertain,
+	xr_hand_state_present,
+	xr_hand_state_unavailable,
+};
+
 bool openxr_init          (const char *app_name);
 void openxr_shutdown      ();
 void openxr_step_begin    ();
@@ -30,5 +36,6 @@ extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
+extern xr_hand_state_ xr_hand_state; // TODO: This can go when OpenXR has real hands
 
 } // namespace sk
