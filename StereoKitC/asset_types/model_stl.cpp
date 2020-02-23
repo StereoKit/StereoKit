@@ -29,7 +29,7 @@ struct point_hash_t {
 vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
 	vind_t result = hmget(*indmap, pt);
 	if (result == -1) {
-		result = arrlen(*verts);
+		result = (vind_t)arrlen(*verts);
 		hmput(*indmap, pt, result);
 		arrput(*verts, (vert_t{ pt, {}, {}, {255,255,255,255} }));
 	}
@@ -39,12 +39,11 @@ vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
+bool modelfmt_stl_binary(void *file_data, size_t, vert_t **verts, vind_t **faces) {
 	stl_header_t *header = (stl_header_t *)file_data;
 	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 
-	size_t sz = sizeof(stl_triangle_t);
 	stl_triangle_t *tris = (stl_triangle_t *)(((uint8_t *)file_data) + sizeof(stl_header_t));
 	for (uint32_t i = 0; i < header->tri_count; i++) {
 		arrput(*faces, indexof(tris[i].verts[0], tris[i].normal, verts, &indmap) );
@@ -58,9 +57,9 @@ bool modelfmt_stl_binary(void *file_data, size_t file_length, vert_t **verts, vi
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text(void *file_data, size_t file_length, vert_t **verts, vind_t **faces) {
+bool modelfmt_stl_text(void *file_data, size_t, vert_t **verts, vind_t **faces) {
 	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 	
 	vec3    normal = {};
 	vind_t  curr[4] = {};
@@ -113,15 +112,15 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 		modelfmt_stl_binary(file_data, file_length, &verts, &faces);
 
 	// Normalize all the normals
-	for (int i = 0, len = arrlen(verts); i < len; i++)
+	for (int i = 0, len = (int)arrlen(verts); i < len; i++)
 		verts[i].norm = vec3_normalize(verts[i].norm);
 
 	char id[512];
 	sprintf_s(id, 512, "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], arrlen(verts));
-	mesh_set_inds (mesh, &faces[0], arrlen(faces));
+	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
+	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 

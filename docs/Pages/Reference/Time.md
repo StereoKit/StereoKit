@@ -25,3 +25,9 @@ This class contains time information for the current session and frame!
 |float [TotalUnscaledf]({{site.url}}/Pages/Reference/Time/TotalUnscaledf.html)|How much time has elapsed since StereoKit was initialized? 32 bit time precision. This version is unaffected by the Time.Scale value!|
 
 
+## Static Methods
+
+|  |  |
+|--|--|
+|[SetTime]({{site.url}}/Pages/Reference/Time/SetTime.html)|This allows you to override the application time! The application will progress from this time using the current timescale.|
+

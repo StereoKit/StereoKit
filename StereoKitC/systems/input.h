@@ -18,6 +18,7 @@ pointer_t *input_get_pointer(int id);
 bool input_init    ();
 void input_shutdown();
 void input_update  ();
+void input_update_predicted();
 
 inline button_state_ button_make_state(bool32_t was, bool32_t is) { 
 	button_state_ result = is ? button_state_active : button_state_inactive;

@@ -7,7 +7,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 1
-#define SK_VERSION_PATCH 6
+#define SK_VERSION_PATCH 7
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(_DLL)
@@ -79,6 +79,7 @@ SK_API double   time_elapsed_unscaled ();
 SK_API float    time_elapsedf();
 SK_API double   time_elapsed ();
 SK_API void     time_scale(double scale);
+SK_API void     time_set_time(double total_seconds, double frame_elapsed_seconds=0);
 
 ///////////////////////////////////////////
 
@@ -621,6 +622,8 @@ struct hand_t {
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
+	float pinch_activation;
+	float grip_activation;
 };
 
 struct mouse_t {
@@ -654,6 +657,7 @@ enum key_ {
 SK_API int           input_pointer_count(input_source_ filter = input_source_any);
 SK_API pointer_t     input_pointer      (int32_t index, input_source_ filter = input_source_any);
 SK_API const hand_t &input_hand         (handed_ hand);
+SK_API void          input_hand_override(handed_ hand, hand_joint_t *hand_joints);
 SK_API const pose_t &input_head         ();
 SK_API const mouse_t&input_mouse        ();
 SK_API button_state_ input_key          (key_ key);

@@ -17,6 +17,7 @@ procedurally.
 |  |  |
 |--|--|
 |[Tex]({{site.url}}/Pages/Reference/Tex/Tex.html)|Sets up an empty texture container! Fill it with data using SetColors next! Creates a default unique asset Id.|
+|[SetColors]({{site.url}}/Pages/Reference/Tex/SetColors.html)|Set the texture's pixels using a pointer to a chunk of memory! This is great if you're pulling in some color data from native code, and don't want to pay the cost of trying to marshal that data around.|
 
 
 ## Static Fields and Properties

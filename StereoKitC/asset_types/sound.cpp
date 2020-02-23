@@ -63,14 +63,14 @@ sound_t sound_generate(float (*function)(float), float duration) {
     sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
     au_decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
-    result->sound_data = malloc(sizeof(float) * duration * SAMPLE_RATE);
+    result->sound_data = malloc(sizeof(float) * (size_t)(duration * SAMPLE_RATE));
     float *data = (float*)result->sound_data;
-    for (uint32_t i = 0, s = duration * SAMPLE_RATE; i < s; i += 1) {
+    for (uint32_t i = 0, s = (size_t)(duration * SAMPLE_RATE); i < s; i += 1) {
         data[i] = function((float)i / (float)SAMPLE_RATE);
     }
     
     au_decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
-    if (ma_decoder_init_memory_raw(result->sound_data, sizeof(float) * duration * SAMPLE_RATE, &au_decoder_config, &au_decoder_config, &result->decoder) != MA_SUCCESS) {
+    if (ma_decoder_init_memory_raw(result->sound_data, sizeof(float) * (size_t)(duration * SAMPLE_RATE), &au_decoder_config, &au_decoder_config, &result->decoder) != MA_SUCCESS) {
         log_err("Failed to generate sound!");
         free(result->sound_data);
         return nullptr;
@@ -146,7 +146,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
         // Mix the frames together.
         for (ma_uint32 sample = 0; sample < frames_read*CHANNEL_COUNT; ++sample) {
             int i = total_frames_read * CHANNEL_COUNT + sample;
-            pOutputF32[i] = fmax(-1, fmin(1, pOutputF32[i] + au_mix_temp[sample] * volume));
+            pOutputF32[i] = fmaxf(-1, fminf(1, pOutputF32[i] + au_mix_temp[sample] * volume));
         }
 
         total_frames_read += frames_read;
@@ -162,7 +162,6 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
 
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     float* pOutputF32 = (float*)pOutput;
-    ma_uint32 iDecoder;
 
     ma_assert(pDevice->playback.format == SAMPLE_FORMAT);   // <-- Important for this example.
 

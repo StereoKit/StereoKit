@@ -11,9 +11,11 @@ namespace sk {
 struct _mesh_t {
 	asset_header_t header;
 	int            vert_count;
+	int            vert_capacity;
 	bool32_t       vert_dynamic;
 	ID3D11Buffer  *vert_buffer;
 	int            ind_count;
+	int            ind_capacity;
 	bool32_t       ind_dynamic;
 	ID3D11Buffer  *ind_buffer;
 	int            ind_draw;

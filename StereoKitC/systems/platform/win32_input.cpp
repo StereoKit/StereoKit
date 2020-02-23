@@ -11,7 +11,7 @@
 #include "win32.h"
 #include "uwp.h"
 #include "../input.h"
-#include "../input_hand.h"
+#include "../hand/input_hand.h"
 #include "../render.h"
 #include "../d3d.h"
 
@@ -22,19 +22,16 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int   win32_input_pointers[2];
-float win32_hand_scroll = 0;
+int win32_gaze_pointer;
 
 ///////////////////////////////////////////
 
 void win32_mouse_update();
-void win32_mouse_hand();
 
 ///////////////////////////////////////////
 
 void win32_input_init() {
-	win32_input_pointers[0] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
-	win32_input_pointers[1] = input_add_pointer(input_source_gaze | input_source_gaze_head);
+	win32_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
 	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero)));
 }
@@ -62,9 +59,8 @@ void win32_input_update() {
 #endif
 
 	win32_mouse_update();
-	win32_mouse_hand();
 
-	pointer_t   *pointer_head = input_get_pointer(win32_input_pointers[1]);
+	pointer_t   *pointer_head = input_get_pointer(win32_gaze_pointer);
 	pose_t       head         = input_head();
 
 	pointer_head->tracked = button_state_active;
@@ -100,52 +96,6 @@ void win32_mouse_update() {
 		input_mouse_data.pos        = mouse_pos;
 		input_mouse_data.available  = true;
 	}
-}
-
-///////////////////////////////////////////
-
-void win32_mouse_hand() {
-	pointer_t *pointer_cursor = input_get_pointer(win32_input_pointers[0]);
-
-	const hand_t &hand = input_hand(handed_right);
-	vec3 hand_pos     = hand.palm.position;
-	quat hand_rot     = hand.palm.orientation;
-	bool l_pressed    = false;
-	bool r_pressed    = false;
-	bool hand_tracked = false;
-	vec3 pointer_dir  = pointer_cursor->ray.dir;
-
-	bool was_tracked   = hand.tracked_state & button_state_active;
-	bool was_l_pressed = hand.pinch_state   & button_state_active;
-	bool was_r_pressed = hand.grip_state    & button_state_active;
-
-	win32_hand_scroll = win32_hand_scroll + (input_mouse_data.scroll - win32_hand_scroll) * time_elapsedf_unscaled() * 8;
-
-	ray_t ray = {};
-	if (ray_from_mouse(input_mouse_data.pos, ray)) {
-		ray.dir = vec3_normalize(ray.dir);
-		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
-
-		hand_pos     = ray.pos + ray.dir * (0.6f + win32_hand_scroll * 0.00025f);
-		hand_rot     = quat_from_angles(40,30,90) * pointer_rot;
-		hand_tracked = true;
-		l_pressed    = input_key(key_mouse_left ) & button_state_active;
-		r_pressed    = input_key(key_mouse_right) & button_state_active;
-
-		pointer_cursor->ray.dir     = ray.dir;
-		pointer_cursor->ray.pos     = hand_pos;
-		pointer_cursor->orientation = pointer_rot;
-	}
-	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
-	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);
-
-	input_hand_sim(handed_right, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
-	input_hand_sim(handed_left,  vec3_zero, quat_identity, false, false, false);
-
-	input_source_ src = input_source_hand | input_source_hand_right;
-	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
-	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
-	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 }
 
 } // namespace sk

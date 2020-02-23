@@ -1,6 +1,6 @@
 #include "../stereokit.h"
 #include "input.h"
-#include "input_hand.h"
+#include "hand/input_hand.h"
 
 #ifndef SK_NO_FLATSCREEN
 #define WIN32_LEAN_AND_MEAN
@@ -115,6 +115,12 @@ void input_update() {
 
 ///////////////////////////////////////////
 
+void input_update_predicted() {
+	input_hand_update_predicted();
+}
+
+///////////////////////////////////////////
+
 const mouse_t &input_mouse() {
 	return input_mouse_data;
 }
@@ -124,6 +130,8 @@ const mouse_t &input_mouse() {
 button_state_ input_key(key_ key) {
 	return (button_state_)input_key_data.keys[key];
 }
+
+///////////////////////////////////////////
 
 const pose_t &input_head() {
 	return input_head_pose;

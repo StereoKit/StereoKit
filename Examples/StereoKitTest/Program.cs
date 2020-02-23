@@ -31,7 +31,7 @@ class Program
     {
         if (demoLogList.Count > 10)
             demoLogList.RemoveAt(demoLogList.Count - 1);
-        demoLogList.Insert(0, text);
+        demoLogList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
     }
     static void LogWindow()
     {
@@ -46,30 +46,27 @@ class Program
 
     static void Main(string[] args) 
     {
-        Demos.TestMode = args.Length > 0 && args[0].ToLower() == "-test";
-        Time .Scale    = Demos.TestMode ? 0 : 1;
+        Tests.IsTesting = args.Length > 0 && args[0].ToLower() == "-test";
+        Time .Scale     = Tests.IsTesting ? 0 : 1;
 
         Log.Filter = LogLevel.Diagnostic;
         StereoKitApp.settings.assetsFolder = Program.Root;
-        if (!StereoKitApp.Initialize("StereoKit C#", Demos.TestMode ? Runtime.Flatscreen : Runtime.MixedReality,  true))
+        if (!StereoKitApp.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
-
-        if (Demos.TestMode)
-            Input.HandVisible(Handed.Max, false);
 
         CommonInit();
 
-        Demos.FindDemos();
-        Demos.SetActive(args.Length > 0 ? args[0] : "Lines");
-        Demos.Initialize();
+        Tests.FindTests();
+        Tests.SetTestActive(args.Length > 0 ? args[0] : "Lines");
+        Tests.Initialize();
         
         while (StereoKitApp.Step(() =>
         {
-            Demos.Update();
+            Tests.Update();
             CommonUpdate();
         }));
 
-        Demos.Shutdown();
+        Tests.Shutdown();
         CommonShutdown();
 
         StereoKitApp.Shutdown();
@@ -84,8 +81,8 @@ class Program
         /// :End:
 
         Material floorMat = Default.Material.Copy();
-        floorMat["diffuse"  ] = Tex.FromFile("Floor.png");
-        floorMat["tex_scale"] = 16;
+        floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
+        floorMat[MatParamName.TexScale  ] = 16;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(20, 1, 20));
@@ -100,49 +97,29 @@ class Program
             Renderer.Add(floorMesh, floorTr, Color.White);
 
         // Skip selection window if we're in test mode
-        if (Demos.TestMode)
+        if (Tests.IsTesting)
             return;
 
         // Make a window for demo selection
         UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));
-        for (int i = 0; i < Demos.Count; i++)
+        for (int i = 0; i < Tests.DemoCount; i++)
         {
-            string name = Demos.GetName(i);
-
-            // No Doc demos
-            if (name.StartsWith("Doc"))
-                continue;
-
-            // Chop off the "Demo" part of any demo name that has it
-            if (name.StartsWith("Demo"))
-                name = name.Substring("Demo".Length);
+            string name = Tests.GetDemoName(i).Substring("Demo".Length);
 
             if (UI.Button(name))
-                Demos.SetActive(i);
+                Tests.SetDemoActive(i);
             UI.SameLine();
         }
         UI.WindowEnd();
 
         RulerWindow();
+        DebugToolWindow.Step();
         /// :CodeSample: Log.Subscribe Log
         /// And in your Update loop, you can draw the window.
         LogWindow();
         /// And that's it!
         /// :End:
-
-        // Take a screenshot on the first frame both hands are gripped
-        bool valid = 
-            Input.Hand(Handed.Left).IsTracked &&
-            Input.Hand(Handed.Right).IsTracked;
-        BtnState right = Input.Hand(Handed.Right).grip;
-        BtnState left  = Input.Hand(Handed.Left).grip;
-        if (valid && left.IsActive() && right.IsActive() && (left.IsJustActive() || right.IsJustActive()))
-        {
-            Renderer.Screenshot(Input.Head.position, Input.Head.Forward, 1920*2, 1080*2, "Screenshot"+screenshotId+".jpg");
-            screenshotId += 1;
-        }
     }
-    static int screenshotId = 1; 
     static void CommonShutdown()
     {
     }

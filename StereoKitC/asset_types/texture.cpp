@@ -257,12 +257,15 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 	bool different_size = texture->width != width || texture->height != height || texture->array_size != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
-	if (texture->texture == nullptr || different_size) {
+	if (texture->texture == nullptr || different_size || (!different_size && !dynamic)) {
 		tex_releasesurface(texture);
 		
 		texture->width  = width;
 		texture->height = height;
 		texture->array_size = data_count;
+
+		if (!different_size && !dynamic)
+			texture->type &= tex_type_dynamic;
 
 		bool result = tex_create_surface(texture, data, data_count, sh_lighting_info);
 		if (result)
@@ -413,7 +416,7 @@ void tex_set_active(tex_t texture, int slot) {
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
 	if (sh_lighting_info != nullptr) *sh_lighting_info = {};
 
-	bool mips    = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128);
+	bool mips    = (texture->width & (texture->width - 1)) == 0 && texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128);
 	bool dynamic = texture->type & tex_type_dynamic;
 	bool depth   = texture->type & tex_type_depth;
 	bool rtarget = texture->type & tex_type_rendertarget;
@@ -521,7 +524,7 @@ void tex_setsurface(tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_f
 
 bool tex_create_views(tex_t texture, DXGI_FORMAT source_format, bool create_shader_view) {
 	DXGI_FORMAT format    = source_format == DXGI_FORMAT_UNKNOWN ? tex_get_native_format(texture->format) : source_format;
-	bool        mips      = texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
+	bool        mips      = (texture->width & (texture->width - 1)) == 0 && texture->type & tex_type_mips && texture->width == texture->height && (texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128) ;
 	uint32_t    mip_count = (uint32_t)(mips ? log2(texture->width) + 1 : 1);
 
 	if (!(texture->type & tex_type_depth) && create_shader_view) {
@@ -577,7 +580,7 @@ bool tex_create_views(tex_t texture, DXGI_FORMAT source_format, bool create_shad
 	}
 
 	if (texture->sampler == nullptr)
-		tex_set_options(texture);
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
 	return true;
 }

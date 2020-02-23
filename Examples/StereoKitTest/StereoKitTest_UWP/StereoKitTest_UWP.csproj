@@ -72,6 +72,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\*.cs" />
+    <Compile Include="..\Demos\*.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

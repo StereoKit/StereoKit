@@ -13,9 +13,11 @@ Information about a hand!
 |  |  |
 |--|--|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [grip]({{site.url}}/Pages/Reference/Hand/grip.html)|Is the hand making a grip gesture right now? Fingers next to the palm.|
+|float [gripActivation]({{site.url}}/Pages/Reference/Hand/gripActivation.html)|What percentage of activation is the grip gesture right now? Where 0 is a hand in an outstretched resting position, and 0 is ring finger touching the base of the palm, within a device error tolerant threshold.|
 |[Handed]({{site.url}}/Pages/Reference/Handed.html) [handed]({{site.url}}/Pages/Reference/Hand/handed.html)|Is this a right hand, or a left hand?|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [pinch]({{site.url}}/Pages/Reference/Hand/pinch.html)|Is the hand making a pinch gesture right now? Finger and thumb together.|
+|float [pinchActivation]({{site.url}}/Pages/Reference/Hand/pinchActivation.html)|What percentage of activation is the pinch gesture right now? Where 0 is a hand in an outstretched resting position, and 0 is fingers touching, within a device error tolerant threshold.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [tracked]({{site.url}}/Pages/Reference/Hand/tracked.html)|Is the hand being tracked by the sensors right now?|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [wrist]({{site.url}}/Pages/Reference/Hand/wrist.html)|Pose of the wrist. TODO: Not populated right now.|
 

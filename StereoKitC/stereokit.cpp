@@ -238,4 +238,29 @@ float  time_elapsedf         (){ return sk_timev_elapsedf; };
 double time_elapsed          (){ return sk_timev_elapsed; };
 void   time_scale(double scale) { sk_timev_scale = scale; }
 
+///////////////////////////////////////////
+
+void time_set_time(double total_seconds, double frame_elapsed_seconds) {
+	if (frame_elapsed_seconds < 0) {
+		frame_elapsed_seconds = sk_timev_elapsed_us;
+		if (frame_elapsed_seconds == 0)
+			frame_elapsed_seconds = 1.f / 90.f;
+	}
+	total_seconds = fmax(total_seconds, 0);
+
+	time_point<high_resolution_clock> now = high_resolution_clock::now();
+	sk_timev_raw  = duration_cast<nanoseconds>(now.time_since_epoch()).count();
+	sk_time_start = (sk_timev_raw / 1000000000.0) - total_seconds; 
+
+	sk_timev_elapsed_us  = frame_elapsed_seconds;
+	sk_timev_elapsed     = frame_elapsed_seconds * sk_timev_scale;
+	sk_timev_us          = total_seconds;
+	sk_timev             = total_seconds;
+	sk_timev_elapsedf_us = (float)sk_timev_elapsed_us;
+	sk_timev_elapsedf    = (float)sk_timev_elapsed;
+	sk_timevf_us         = (float)sk_timev_us;
+	sk_timevf            = (float)sk_timev;
+	physics_sim_time     = sk_timev;
+}
+
 } // namespace sk

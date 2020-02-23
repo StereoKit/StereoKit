@@ -33,3 +33,9 @@ Pose represents a location and orientation in space, excluding scale!
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Up]({{site.url}}/Pages/Reference/Pose/Up.html)|Calculates the up (+Y) direction from this pose. This is done by multiplying the orientation with Vec3.Up.|
 
 
+## Static Methods
+
+|  |  |
+|--|--|
+|[Lerp]({{site.url}}/Pages/Reference/Pose/Lerp.html)|Interpolates between two poses! t is unclamped, so values outside of (0,1) will extrapolate their position.|
+

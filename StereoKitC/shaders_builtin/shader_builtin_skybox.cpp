@@ -19,7 +19,7 @@ cbuffer TransformBuffer : register(b1) {
 	Inst sk_inst[682];
 };
 TextureCube sk_cubemap : register(t11);
-SamplerState tex_cube_sampler;
+SamplerState tex_cube_sampler : register(s11);
 
 cbuffer ParamBuffer : register(b2) {
 	// [param] float blur 0.0

@@ -70,6 +70,35 @@ namespace StereoKit
         public float backplateBorder;
     }
 
+    /// <summary>This represents a single vertex in a Mesh, all StereoKit
+    /// Meshes currently use this exact layout!</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Vertex
+    {
+        /// <summary>Position of the vertex, in model space coordinates.</summary>
+        public Vec3    pos;
+        /// <summary>The normal of this vertex, or the direction the vertex is 
+        /// facing. Preferably normalized.</summary>
+        public Vec3    norm;
+        /// <summary>The texture coordinates at this vertex.</summary>
+        public Vec2    uv;
+        /// <summary>The color of the vertex. If you aren't using it, set it to 
+        /// white.</summary>
+        public Color32 col;
+
+        public Vertex(Vec3 position, Vec3 normal)
+            : this(position, normal, Vec2.Zero, Color32.White) { }
+        public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates)
+            : this(position, normal, textureCoordinates, Color32.White) { }
+        public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates, Color32 color)
+        {
+            pos  = position;
+            norm = normal;
+            uv   = textureCoordinates;
+            col  = color;
+        }
+    }
+
     /// <summary>Textures come in various types and flavors! These are bit-flags
     /// that tell StereoKit what type of texture we want, and how the application
     /// might use it!</summary>

@@ -2,6 +2,55 @@
 
 namespace StereoKit
 {
+    /// <summary>An better way to access standard shader paramter names, instead
+    /// of using just strings! If you have your own custom parameters, you can still 
+    /// access them via the string methods, but this is checked and verified by the
+    /// compiler!</summary>
+    public enum MatParamName
+    {
+        /// <summary>The primary color texture for the shader! Diffuse, Albedo,
+        /// 'The Texture', or whatever you want to call it, this is usually the
+        /// base color that the shader works with. 
+        /// This represents the texture param 'diffuse'.</summary>
+        DiffuseTex = 0,
+        /// <summary>This texture is unaffected by lighting, and is frequently just
+        /// added in on top of the material's final color! Tends to look really glowy.
+        /// This represents the texture param 'emission'.</summary>
+        EmissionTex,
+        /// <summary>For physically based shaders, metal is a texture that encodes
+        /// metallic and roughness data into the 'B' and 'G' channels, respectively.
+        /// This represents the texture param 'metal'.</summary>
+        MetalTex,
+        /// <summary>The 'normal map' texture for the material! This texture contains
+        /// information about the direction of the material's surface, which is used
+        /// to calculate lighting, and make surfaces look like they have more detail
+        /// than they actually do. Normals are in Tangent Coordinate Space, and the RGB
+        /// values map to XYZ values.
+        /// This represents the texture param 'normal'.</summary>
+        NormalTex,
+        /// <summary>Used by physically based shaders, this can be used for baked ambient 
+        /// occlusion lighting, or to remove specular reflections from areas that are
+        /// surrounded by geometry that would likely block reflections.
+        /// This represents the texture param 'occlusion'.</summary>
+        OcclusionTex,
+        /// <summary>A per-material color tint, behavior could vary from shader to shader,
+        /// but often this is just multiplied against the diffuse texture right at the start.
+        /// This represents the Color param 'color'.</summary>
+        ColorTint,
+        /// <summary>For physically based shader, this is a multiplier to scale the metallic
+        /// properties of the material.
+        /// This represents the float param 'metallic'.</summary>
+        MetallicAmount,
+        /// <summary>For physically based shader, this is a multiplier to scale the roughness
+        /// properties of the material.
+        /// This represents the float param 'roughness'.</summary>
+        RoughnessAmount,
+        /// <summary>Not necessarily present in all shaders, this multiplies the UV coordinates
+        /// of the mesh, so that the texture will repeat. This is great for tiling textures!
+        /// This represents the float param 'tex_scale'.</summary>
+        TexScale
+    }
+
     /// <summary>A Material describes the surface of anything drawn on the graphics 
     /// card! It is typically composed of a Shader, and shader properties like colors,
     /// textures, transparency info, etc.
@@ -69,6 +118,23 @@ namespace StereoKit
                 default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
             }
         } }
+        public object this[MatParamName parameter] { set { this[MaterialParamString(parameter)] = value; } }
+        private string MaterialParamString(MatParamName parameter)
+        {
+            switch (parameter)
+            {
+                case MatParamName.ColorTint:       return "color";
+                case MatParamName.DiffuseTex:      return "diffuse";
+                case MatParamName.EmissionTex:     return "emission";
+                case MatParamName.MetallicAmount:  return "metallic";
+                case MatParamName.MetalTex:        return "metal";
+                case MatParamName.NormalTex:       return "normal";
+                case MatParamName.OcclusionTex:    return "occlusion";
+                case MatParamName.RoughnessAmount: return "roughness";
+                case MatParamName.TexScale:        return "tex_scale";
+                default: Log.Err("Unimplemented Material Parameter Name! " + parameter); return "";
+            }
+        }
 
         /// <summary>Creates a new Material asset with the same shader and properties! Draw calls with
         /// the new Material will not batch together with this one.</summary>

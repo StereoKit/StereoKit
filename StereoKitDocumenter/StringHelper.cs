@@ -37,6 +37,7 @@ namespace StereoKitDocumenter
                 case "Single" : return "float";
                 case "Double": return "double";
                 case "Int32" : return "int";
+                case "UInt32": return "uint";
                 case "String": return "string";
                 case "Boolean": return "bool";
                 case "Void": return "void";

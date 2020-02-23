@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DocVec : IDemo
+class DocVec : ITest
 {
     static bool TestDistance()
     {

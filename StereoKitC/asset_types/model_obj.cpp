@@ -25,11 +25,11 @@ int indexof(int iV, int iT, int iN, vec3 *verts, vec3 **norms, vec2 **uvs, index
 	if (arrlen(*norms) == 0)
 		arrput(*norms, (vec3{ 0,1,0 }));
 
-	int  id = meshfmt_obj_idx(iV, iN, iT, arrlen(verts), arrlen(norms));
+	int  id = meshfmt_obj_idx(iV, iN, iT, (int)arrlen(verts), (int)arrlen(norms));
 	vind_t ind = hmget(*indmap, id);
 	if (ind == -1) {
 		arrput(*mesh_verts, (vert_t{ verts[iV - 1LL], (*norms)[iN - 1LL], (*uvs)[iT - 1LL], {255,255,255,255} }) );
-		ind = arrlen(*mesh_verts) - 1;
+		ind = (int)arrlen(*mesh_verts) - 1;
 		hmput(*indmap, id, ind);
 		
 	}
@@ -38,7 +38,7 @@ int indexof(int iV, int iT, int iN, vec3 *verts, vec3 **norms, vec2 **uvs, index
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
+bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
 	vec3 *poss  = nullptr;
 	vec3 *norms = nullptr;
 	vec2 *uvs   = nullptr;
@@ -46,7 +46,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 	vind_t *faces = nullptr;
 
 	index_hash_t  *indmap = nullptr;
-	hmdefault(indmap, -1);
+	hmdefault(indmap, (vind_t)-1);
 	
 	vec3 in;
 	int inds[12];
@@ -101,8 +101,8 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t f
 	sprintf_s(id, 512, "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], arrlen(verts));
-	mesh_set_inds (mesh, &faces[0], arrlen(faces));
+	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
+	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
 

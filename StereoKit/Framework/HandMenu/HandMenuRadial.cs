@@ -127,22 +127,13 @@ namespace StereoKit.Framework
         void StepMenuIndicator(Hand hand)
         {
             // Scale the indicator based on the 'activation' of the grip motion
-            float dist = Math.Min(
-                Vec3.Distance(
-                    hand[FingerId.Little, JointId.Tip ].position,
-                    hand[FingerId.Ring,   JointId.Root].position),
-                Vec3.Distance(
-                    hand[FingerId.Middle, JointId.Tip ].position,
-                    hand[FingerId.Ring,   JointId.Root].position));
-            const float previewDist = 10 * Units.cm2m;
-            activation = minScale + (Math.Max(0,previewDist-dist) / previewDist) * 0.2f;
+            activation = Math.Max(0.02f, hand.gripActivation * 0.2f);
 
             // Show the indicator towards the middle of the fingers that control
             // the grip motion, the help show the user 
             menuPose.position = 
-               (hand[FingerId.Ring,   JointId.Tip ].position +
-                hand[FingerId.Little, JointId.Root].position +
-                hand[FingerId.Middle, JointId.Root].position) * 0.3333f;
+               (hand[FingerId.Ring, JointId.Tip ].position +
+                hand[FingerId.Ring, JointId.Root].position) * 0.5f;
             menuPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
             menuPose.position   += menuPose.Forward*Units.cm2m;
 
