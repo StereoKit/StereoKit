@@ -39,6 +39,8 @@ function updateVisibility(folder) {
     }
 
     folder.element.style.display = valid ? "block" : "none";
+    if (folder.check)
+        folder.check.checked = !(search !== "" || treeDict.hasItem(folder.name));
     return valid;
 }
 
@@ -72,6 +74,7 @@ function renderFolder(folder, parent, hierarchy) {
         expander.className = "tree-branch-check";
         expander.type      = "checkbox";
         expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); console.log(folder.name); };
+        folder.check = expander;
         folderItem.appendChild(expander);
 
         // A span for some of the tree trickery
