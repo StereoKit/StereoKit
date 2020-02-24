@@ -94,11 +94,88 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 ///////////////////////////////////////////
 
+void model_recalculate_bounds(model_t model) {
+	if (model->subset_count <= 0) {
+		model->bounds = {};
+		return;
+	}
+
+	// Get an initial size
+	vec3 min, max;
+	min = max = matrix_mul_point( model->subsets[0].offset, bounds_corner(model->subsets[0].mesh->bounds, 0) );
+	
+	// Find the corners for each bounding cube, and factor them in!
+	for (int32_t m = 0; m < model->subset_count; m += 1) {
+		for (int32_t i = 0; i < 8; i += 1) {
+			vec3 corner = bounds_corner   (model->subsets[m].mesh->bounds, i);
+			vec3 pt     = matrix_mul_point(model->subsets[m].offset, corner);
+			min.x = fminf(pt.x, min.x);
+			min.y = fminf(pt.y, min.y);
+			min.z = fminf(pt.z, min.z);
+
+			max.x = fmaxf(pt.x, max.x);
+			max.y = fmaxf(pt.y, max.y);
+			max.z = fmaxf(pt.z, max.z);
+		}
+	}
+	
+	// Final bounds value
+	model->bounds = bounds_t{ min / 2 + max / 2, max - min };
+}
+
+///////////////////////////////////////////
+
 material_t model_get_material(model_t model, int32_t subset) {
+	assert(subset < model->subset_count);
 	assets_addref(model->subsets[subset].material->header);
 	return model->subsets[subset].material;
 }
 
+///////////////////////////////////////////
+
+mesh_t model_get_mesh(model_t model, int32_t subset) {
+	assert(subset < model->subset_count);
+	assets_addref(model->subsets[subset].mesh->header);
+	return model->subsets[subset].mesh;
+}
+
+///////////////////////////////////////////
+
+matrix model_get_transform(model_t model, int32_t subset) {
+	assert(subset < model->subset_count);
+	return model->subsets[subset].offset;
+}
+
+///////////////////////////////////////////
+
+void model_set_material(model_t model, int32_t subset, material_t material) {
+	assert(subset < model->subset_count);
+	assert(material != nullptr);
+
+	material_release(model->subsets[subset].material);
+	model->subsets[subset].material = material;
+	assets_addref(model->subsets[subset].material->header);
+}
+
+///////////////////////////////////////////
+
+void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
+	assert(subset < model->subset_count);
+	assert(mesh != nullptr);
+
+	mesh_release(model->subsets[subset].mesh);
+	model->subsets[subset].mesh = mesh;
+	assets_addref(model->subsets[subset].mesh->header);
+
+	model_recalculate_bounds(model);
+}
+
+///////////////////////////////////////////
+
+void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
+	assert(subset < model->subset_count);
+	model->subsets[subset].offset = transform;
+}
 ///////////////////////////////////////////
 
 int32_t model_subset_count(model_t model) {
@@ -108,35 +185,35 @@ int32_t model_subset_count(model_t model) {
 ///////////////////////////////////////////
 
 int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const matrix &transform) {
+	assert(model    != nullptr);
+	assert(mesh     != nullptr);
+	assert(material != nullptr);
+
 	model->subsets                      = (model_subset_t *)realloc(model->subsets, sizeof(model_subset_t) * (model->subset_count + 1));
 	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
 	assets_addref(mesh->header);
 	assets_addref(material->header);
 
-	// Get initial size
-	vec3 min, max;
-	if (model->subset_count > 0) {
-		min = model->bounds.center - model->bounds.dimensions / 2;
-		max = model->bounds.center + model->bounds.dimensions / 2;
-	} else {
-		min = max = matrix_mul_point( transform, bounds_corner(mesh->bounds, 0) );
-	}
-
-	// Add the size of this subset
-	for (int32_t i = 1; i < 8; i += 1) {
-		vec3 pt = matrix_mul_point( transform, bounds_corner(mesh->bounds, i) );
-		min.x = fminf(pt.x, min.x);
-		min.y = fminf(pt.y, min.y);
-		min.z = fminf(pt.z, min.z);
-
-		max.x = fmaxf(pt.x, max.x);
-		max.y = fmaxf(pt.y, max.y);
-		max.z = fmaxf(pt.z, max.z);
-	}
-	model->bounds = bounds_t{ min / 2 + max / 2, max - min };
-
 	model->subset_count += 1;
+	model_recalculate_bounds(model);
+
 	return model->subset_count - 1;
+}
+
+///////////////////////////////////////////
+
+void model_remove_subset(model_t model, int32_t subset) {
+	assert(subset < model->subset_count);
+
+	mesh_release    (model->subsets[subset].mesh);
+	material_release(model->subsets[subset].material);
+	if (subset < model->subset_count - 1) {
+		memmove(
+			&model->subsets[subset],
+			&model->subsets[subset + 1],
+			sizeof(model_subset_t) * (model->subset_count - (subset + 1)));
+	}
+	model->subset_count -= 1;
 }
 
 ///////////////////////////////////////////

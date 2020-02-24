@@ -34,7 +34,7 @@ namespace StereoKit
             if (_inst == IntPtr.Zero)
                 Log.Err("Couldn't create empty mesh!");
         }
-        private Mesh(IntPtr mesh)
+        internal Mesh(IntPtr mesh)
         {
             _inst = mesh;
             if (_inst == IntPtr.Zero)

@@ -486,16 +486,24 @@ SK_API void    solid_get_pose        (const solid_t solid, pose_t &out_pose);
 
 SK_DeclarePrivateType(model_t);
 
-SK_API model_t    model_find        (const char *id);
-SK_API model_t    model_create_mesh (mesh_t mesh, material_t material);
-SK_API model_t    model_create_file (const char *filename, shader_t shader = nullptr);
-SK_API void       model_set_id      (model_t model, const char *id);
-SK_API material_t model_get_material(model_t model, int32_t subset);
-SK_API int32_t    model_add_subset  (model_t model, mesh_t mesh, material_t material, const matrix &transform);
-SK_API int32_t    model_subset_count(model_t model);
-SK_API void       model_release     (model_t model);
-SK_API void       model_set_bounds  (model_t model, const bounds_t &bounds);
-SK_API bounds_t   model_get_bounds  (model_t model);
+SK_API model_t    model_find         (const char *id);
+SK_API model_t    model_create       ();
+SK_API model_t    model_create_mesh  (mesh_t mesh, material_t material);
+SK_API model_t    model_create_file  (const char *filename, shader_t shader = nullptr);
+SK_API void       model_set_id       (model_t model, const char *id);
+SK_API void       model_release      (model_t model);
+SK_API material_t model_get_material (model_t model, int32_t subset);
+SK_API mesh_t     model_get_mesh     (model_t model, int32_t subset);
+SK_API matrix     model_get_transform(model_t model, int32_t subset);
+SK_API void       model_set_material (model_t model, int32_t subset, material_t material);
+SK_API void       model_set_mesh     (model_t model, int32_t subset, mesh_t mesh);
+SK_API void       model_set_transform(model_t model, int32_t subset, const matrix &transform);
+SK_API void       model_remove_subset(model_t model, int32_t subset);
+SK_API int32_t    model_add_subset   (model_t model, mesh_t mesh, material_t material, const matrix &transform);
+SK_API int32_t    model_subset_count (model_t model);
+SK_API void       model_recalculate_bounds(model_t model);
+SK_API void       model_set_bounds   (model_t model, const bounds_t &bounds);
+SK_API bounds_t   model_get_bounds   (model_t model);
 
 ///////////////////////////////////////////
 

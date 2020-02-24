@@ -41,6 +41,13 @@ namespace StereoKit
             _inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
         }
 
+        /// <summary>Creates an empty Model object with an automatically generated id. Use the 
+        /// AddSubset methods to fill this model out.</summary>
+        public Model()
+        {
+            _inst = NativeAPI.model_create();
+        }
+
         /// <summary>Creates a single mesh subset Model using the indicated Mesh and Material!</summary>
         /// <param name="id">Uses this as the id, so you can Find it later.</param>
         /// <param name="mesh">Any Mesh asset.</param>
@@ -67,10 +74,67 @@ namespace StereoKit
         #endregion
 
         #region Methods
-        /// <summary>Gets a link to the Material asset used by the mesh subset!</summary>
-        /// <param name="subsetIndex">Index of the mesh subset to get the material for, should be less than SubsetCount.</param>
-        /// <returns>A link to the Material asset used by the mesh subset at subsetIndex</returns>
-        public Material GetMaterial(int subsetIndex) => new Material(NativeAPI.model_get_material(_inst, subsetIndex));
+        /// <summary>Gets a link to the Material asset used by the model subset! Note that this is not
+        /// necessarily a unique material, and could be shared in a number of other places. Consider
+        /// copying and replacing it if you intend to modify it!</summary>
+        /// <param name="subsetIndex">Index of the model subset to get the Material for, should be less than SubsetCount.</param>
+        /// <returns>A link to the Material asset used by the model subset at subsetIndex</returns>
+        public Material GetMaterial(int subsetIndex) 
+            => new Material(NativeAPI.model_get_material(_inst, subsetIndex));
+
+        /// <summary>Gets a link to the Mesh asset used by the model subset! Note that this is not
+        /// necessarily a unique mesh, and could be shared in a number of other places. Consider
+        /// copying and replacing it if you intend to modify it!</summary>
+        /// <param name="subsetIndex">Index of the model subset to get the Mesh for, should be less than SubsetCount.</param>
+        /// <returns>A link to the Mesh asset used by the model subset at subsetIndex</returns>
+        public Mesh GetMesh(int subsetIndex) 
+            => new Mesh(NativeAPI.model_get_mesh(_inst, subsetIndex));
+
+        /// <summary>Gets the transform matrix used by the model subset!</summary>
+        /// <param name="subsetIndex">Index of the model subset to get the transform for, should be less than SubsetCount.</param>
+        /// <returns>A transform matrix used by the model subset at subsetIndex</returns>
+        public Matrix GetTransform(int subsetIndex) 
+            => NativeAPI.model_get_transform(_inst, subsetIndex);
+
+        /// <summary>Changes the Material for the subset to a new one!</summary>
+        /// <param name="subsetIndex">Index of the model subset to replace, should be less than SubsetCount.</param>
+        /// <param name="material">The new Material, cannot be null.</param>
+        public void SetMaterial(int subsetIndex, Material material)
+            => NativeAPI.model_set_material(_inst, subsetIndex, material._inst);
+
+        /// <summary>Changes the mesh for the subset to a new one!</summary>
+        /// <param name="subsetIndex">Index of the model subset to replace, should be less than SubsetCount.</param>
+        /// <param name="mesh">The new Mesh, cannot be null.</param>
+        public void SetMesh(int subsetIndex, Mesh mesh)
+            => NativeAPI.model_set_mesh(_inst, subsetIndex, mesh._inst);
+
+        /// <summary>Changes the transform for the subset to a new one! This is in Model space, so it's 
+        /// relative to the origin of the model.</summary>
+        /// <param name="subsetIndex">Index of the transform to replace, should be less than SubsetCount.</param>
+        /// <param name="transform">The new transform.</param>
+        public void SetTransform(int subsetIndex, in Matrix transform)
+            => NativeAPI.model_set_transform(_inst, subsetIndex, transform);
+
+        /// <summary>Adds a new subset to the Model, and recalculates the bounds.</summary>
+        /// <param name="mesh">The Mesh for the subset, may not be null.</param>
+        /// <param name="material">The Material for the subset, may not be null.</param>
+        /// <param name="transform">A transform Matrix representing the Mesh's location
+        /// relative to the origin of the Model.</param>
+        /// <returns>The index of the subset that was just added.</returns>
+        public int AddSubset(Mesh mesh, Material material, in Matrix transform)
+            => NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
+
+        /// <summary>Removes and dereferences a subset from the model.</summary>
+        /// <param name="subsetIndex">Index of the subset to remove, should be less than SubsetCount.</param>
+        public void RemoveSubset(int subsetIndex)
+            => NativeAPI.model_remove_subset(_inst, subsetIndex);
+
+        /// <summary>Examines the subsets as they currently are, and rebuilds the bounds 
+        /// based on that! This is normally done automatically, but if you modify a Mesh 
+        /// that this Model is using, the Model can't see it, and you should call this 
+        /// manually.</summary>
+        public void RecalculateBounds()
+            => NativeAPI.model_recalculate_bounds(_inst);
 
         /// <summary>Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it,
         /// that transform is combined with the Matrix provided here.</summary>
