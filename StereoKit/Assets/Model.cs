@@ -60,7 +60,7 @@ namespace StereoKit
                 NativeAPI.material_set_id(_inst, id);
             }
         }
-        private Model(IntPtr model)
+        internal Model(IntPtr model)
         {
             _inst = model;
             if (_inst == IntPtr.Zero)
