@@ -60,10 +60,10 @@ class DocVec : ITest
 
     public void Initialize()
     {
-        Tester.Test(TestDistance);
-        Tester.Test(TestDistanceSq);
-        Tester.Test(TestLerp);
-        Tester.Test(TestDot);
+        Tests.Test(TestDistance);
+        Tests.Test(TestDistanceSq);
+        Tests.Test(TestLerp);
+        Tests.Test(TestDot);
     }
 
     public void Shutdown(){}

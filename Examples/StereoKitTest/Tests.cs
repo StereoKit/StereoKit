@@ -35,7 +35,6 @@ public static class Tests
     {
         if (IsTesting) { 
             nextScene = null;
-            Input.HandVisible(Handed.Max, false);
         }
         if (activeScene == null)
             activeScene = nextScene;
@@ -49,6 +48,11 @@ public static class Tests
         if (nextScene != null)
         {
             activeScene.Shutdown();
+            if (IsTesting)
+            { 
+                Input.HandVisible(Handed.Max, false);
+            }
+
             nextScene  .Initialize();
             activeScene = nextScene;
             nextScene   = null;
@@ -93,6 +97,14 @@ public static class Tests
         runFrames  = int.MaxValue;
         runSeconds = float.MaxValue;
         ActiveTest = result;
+    }
+    public static void Test(Func<bool> testFunction)
+    {
+        if (!testFunction())
+        {
+            Log.Err("Test failed for {0}!", testFunction.Method.Name);
+            Environment.Exit(-1);
+        }
     }
 
     private static bool FinishedWithTest()

@@ -9,21 +9,21 @@ class DocModel : ITest
         /// :CodeSample: Model.Model
         Model model = new Model();
         model.AddSubset(
-            Mesh.GenerateCube(Vec3.One),
+            Mesh   .GenerateCube(Vec3.One),
             Default.Material,
-            Matrix.Identity);
+            Matrix .Identity);
         /// :End:
         /// :CodeSample: Model.AddSubset
         model.AddSubset(
-            Mesh.GenerateSphere(1),
+            Mesh   .GenerateSphere(1),
             Default.Material,
-            Matrix.T(0,1,0));
+            Matrix .T(0,1,0));
         /// :End:
         
         int lastSubset = model.AddSubset(
-            Mesh.GenerateCube(new Vec3(0.5f,1,0.5f)),
+            Mesh   .GenerateCube(new Vec3(0.5f,1,0.5f)),
             Default.Material,
-            Matrix.T(0, 1, 0));
+            Matrix .T(0, 1, 0));
 
         testModel = model;
 
@@ -42,6 +42,9 @@ class DocModel : ITest
         /// :CodeSample: Model.SubsetCount Model.GetMaterial Model.SetMaterial
         for (int i = 0; i < model.SubsetCount; i++)
         {
+            // GetMaterial will often returned a shared resource, so 
+            // copy it if you don't wish to change all assets that 
+            // share it.
             Material mat = model.GetMaterial(i).Copy();
             mat[MatParamName.ColorTint] = Color.HSV(0, 1, 1);
             model.SetMaterial(i, mat);
@@ -53,7 +56,7 @@ class DocModel : ITest
 
     public void Initialize()
     {
-        Tester.Test(TestModel);
+        Tests.Test(TestModel);
     }
     public void Shutdown  (){}
     public void Update    ()
