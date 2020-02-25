@@ -13,6 +13,17 @@ namespace StereoKit
         /// <summary>Typically a value between 0-1! This is the position of 
         /// the color along the 'x-axis' of the gradient.</summary>
         public float position;
+
+        /// <summary>A basic copy constructor for GradientKey.</summary>
+        /// <param name="color">The color for this item, can be whatever color space you
+        /// want, as long as it's consistent with the other keys.</param>
+        /// <param name="position">Typically a value between 0-1! This is the position of 
+        /// the color along the 'x-axis' of the gradient.</param>
+        public GradientKey(Color color, float position)
+        {
+            this.position = position;
+            this.color    = color;
+        }
     }
 
     /// <summary>A Gradient is a sparse collection of color keys that are used
@@ -35,7 +46,7 @@ namespace StereoKit
         /// <summary>Creates a new gradient from the list of color keys!</summary>
         /// <param name="keys">These can be in any order that you like, they'll
         /// be sorted by their GradientKey.position value regardless!</param>
-        public Gradient(GradientKey[] keys) => _inst = NativeAPI.gradient_create_keys(keys, keys.Length);
+        public Gradient(params GradientKey[] keys) => _inst = NativeAPI.gradient_create_keys(keys, keys.Length);
         ~Gradient() => NativeAPI.gradient_release(_inst);
 
         /// <summary>This adds a color key into the list. It'll get inserted

@@ -115,6 +115,8 @@ namespace StereoKitTest
             UI.Toggle("Pointers", ref showPointers);
             UI.SameLine();
             UI.Toggle("Menu", ref showHandMenus);
+            if (UI.Button("Colorize Fingers"))
+                ColorizeFingers();
             UI.WindowEnd();
 
             if (showJoints)   DrawJoints(jointMesh, Default.Material);
@@ -125,6 +127,32 @@ namespace StereoKitTest
                 DrawHandMenu(Handed.Right);
                 DrawHandMenu(Handed.Left);
             }
+        }
+
+        private void ColorizeFingers()
+        {
+            Tex tex = new Tex();
+            tex.SampleMode = TexSample.Point;
+            const int size = 32;
+
+            Gradient gradient = new Gradient(
+                new GradientKey(new Color(1,1,1,0), 0),
+                new GradientKey(new Color(1,1,1,0), .5f),
+                new GradientKey(new Color(1,1,1,1), 1));
+
+            Color32[] pixels = new Color32[size*size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    Color color = Color.HSV(x/(float)size, 1, 1, gradient.Get(y/(float)size).a );
+                    pixels[x+y*size] = color;
+                }
+            }
+
+            tex.SetColors(size, size, pixels);
+
+            Default.MaterialHand[MatParamName.DiffuseTex] = tex;
         }
 
         /// :CodeDoc: Guides Using Hands
