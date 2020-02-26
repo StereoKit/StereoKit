@@ -31,9 +31,11 @@ int64_t     openxr_get_time();
 bool32_t    openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time = 0);
 const char* openxr_string(XrResult result);
 
+extern XrSpace    xr_hand_space[2];
 extern XrSpace    xr_app_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
+extern bool       xr_articulated_hands;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
 extern xr_hand_state_ xr_hand_state; // TODO: This can go when OpenXR has real hands

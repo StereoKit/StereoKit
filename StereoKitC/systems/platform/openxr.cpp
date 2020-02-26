@@ -48,6 +48,9 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time;
 bool           xr_depth_lsr = false;
+bool           xr_depth_lsr_ext = false;
+bool           xr_articulated_hands = false;
+bool           xr_articulated_hands_ext = false;
 
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
@@ -139,6 +142,19 @@ bool openxr_init(const char *app_name) {
 		log_infof("xrGetSystem failed [%s]", openxr_string(result));
 		return false;
 	}
+
+	// Figure out what this device is capable of!
+	XrSystemProperties properties = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemHandTrackingPropertiesMSFT tracking_properties = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_MSFT };
+	properties.next = &tracking_properties;
+	result = xrGetSystemProperties(xr_instance, xr_system_id, &properties);
+	if (XR_FAILED(result)) {
+		log_infof("xrGetSystemProperties failed [%s]", openxr_string(result));
+		return false;
+	}
+	log_diagf("Using system: %s", properties.systemName);
+	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
+	xr_depth_lsr         = xr_depth_lsr_ext; // TODO: Find out how to verify this one
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
@@ -297,7 +313,9 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 		XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
 		XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 		XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
-		XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME};
+		XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
+		XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME,
+		XR_MSFT_SPATIAL_GRAPH_BRIDGE_PREVIEW_EXTENSION_NAME, };
 
 	// Find what extensions are available on this system!
 	uint32_t ext_count = 0;
@@ -323,7 +341,9 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	if (out_extensions != nullptr) {
 		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0)
-				xr_depth_lsr = true;
+				xr_depth_lsr_ext = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME) == 0)
+				xr_articulated_hands_ext = true;
 		}
 	}
 

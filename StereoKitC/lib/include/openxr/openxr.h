@@ -193,6 +193,8 @@ typedef enum XrResult {
     XR_ERROR_ANDROID_THREAD_SETTINGS_ID_INVALID_KHR = -1000003000,
     XR_ERROR_ANDROID_THREAD_SETTINGS_FAILURE_KHR = -1000003001,
     XR_ERROR_CREATE_SPATIAL_ANCHOR_FAILED_MSFT = -1000039001,
+    XR_ERROR_SPATIAL_GRAPH_NODE_NOT_FOUND_MSFT = -1000049001,
+    XR_ERROR_SECONDARY_VIEW_CONFIGURATION_TYPE_NOT_ENABLED_MSFT = -1000053000,
     XR_RESULT_MAX_ENUM = 0x7FFFFFFF
 } XrResult;
 
@@ -281,6 +283,23 @@ typedef enum XrStructureType {
     XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_MSFT = 1000039000,
     XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT = 1000039001,
     XR_TYPE_VIEW_CONFIGURATION_DEPTH_RANGE_EXT = 1000046000,
+    XR_TYPE_SPACE_FROM_SPATIAL_GRAPH_NODE_CREATE_INFO_MSFT = 1000049000,
+    XR_TYPE_HAND_TRACKER_CREATE_INFO_MSFT = 1000051000,
+    XR_TYPE_HAND_TRACKER_STATE_MSFT = 1000051001,
+    XR_TYPE_HAND_JOINT_SPACE_CREATE_INFO_MSFT = 1000051002,
+    XR_TYPE_HAND_JOINT_RADIUS_MSFT = 1000051003,
+    XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_MSFT = 1000051004,
+    XR_TYPE_HAND_MESH_SPACE_CREATE_INFO_MSFT = 1000052000,
+    XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT = 1000052001,
+    XR_TYPE_HAND_MESH_MSFT = 1000052002,
+    XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT = 1000052003,
+    XR_TYPE_HAND_POSE_TYPE_INFO_MSFT = 1000052004,
+    XR_TYPE_SESSION_BEGIN_SECONDARY_VIEW_CONFIGURATION_INFO_MSFT = 1000053000,
+    XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT = 1000053001,
+    XR_TYPE_FRAME_SECONDARY_VIEW_CONFIGURATIONS_STATE_MSFT = 1000053002,
+    XR_TYPE_FRAME_END_SECONDARY_VIEW_CONFIGURATION_INFO_MSFT = 1000053003,
+    XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT = 1000053004,
+    XR_TYPE_SWAPCHAIN_SECONDARY_VIEW_CONFIGURATION_CREATE_INFO_MSFT = 1000053005,
     XR_STRUCTURE_TYPE_MAX_ENUM = 0x7FFFFFFF
 } XrStructureType;
 
@@ -294,6 +313,7 @@ typedef enum XrViewConfigurationType {
     XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO = 1,
     XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO = 2,
     XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO = 1000037000,
+    XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT = 1000054000,
     XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM = 0x7FFFFFFF
 } XrViewConfigurationType;
 
@@ -351,6 +371,7 @@ typedef enum XrObjectType {
     XR_OBJECT_TYPE_ACTION = 6,
     XR_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT = 1000019000,
     XR_OBJECT_TYPE_SPATIAL_ANCHOR_MSFT = 1000039000,
+    XR_OBJECT_TYPE_HAND_TRACKER_MSFT = 1000051000,
     XR_OBJECT_TYPE_MAX_ENUM = 0x7FFFFFFF
 } XrObjectType;
 typedef XrFlags64 XrInstanceCreateFlags;
@@ -874,7 +895,7 @@ typedef struct XrEventDataInstanceLossPending {
 } XrEventDataInstanceLossPending;
 
 typedef struct XrEventDataSessionStateChanged {
-     XrStructureType            type;
+    XrStructureType             type;
     const void* XR_MAY_ALIAS    next;
     XrSession                   session;
     XrSessionState              state;
@@ -947,7 +968,7 @@ typedef XrResult (XRAPI_PTR *PFN_xrEnumerateReferenceSpaces)(XrSession session, 
 typedef XrResult (XRAPI_PTR *PFN_xrCreateReferenceSpace)(XrSession session, const XrReferenceSpaceCreateInfo* createInfo, XrSpace* space);
 typedef XrResult (XRAPI_PTR *PFN_xrGetReferenceSpaceBoundsRect)(XrSession session, XrReferenceSpaceType referenceSpaceType, XrExtent2Df* bounds);
 typedef XrResult (XRAPI_PTR *PFN_xrCreateActionSpace)(XrSession session, const XrActionSpaceCreateInfo* createInfo, XrSpace* space);
-typedef XrResult (XRAPI_PTR *PFN_xrLocateSpace)(XrSpace space, XrSpace baseSpace, XrTime   time, XrSpaceLocation* location);
+typedef XrResult (XRAPI_PTR *PFN_xrLocateSpace)(XrSpace space, XrSpace baseSpace, XrTime time, XrSpaceLocation* location);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroySpace)(XrSpace space);
 typedef XrResult (XRAPI_PTR *PFN_xrEnumerateViewConfigurations)(XrInstance instance, XrSystemId systemId, uint32_t viewConfigurationTypeCapacityInput, uint32_t* viewConfigurationTypeCountOutput, XrViewConfigurationType* viewConfigurationTypes);
 typedef XrResult (XRAPI_PTR *PFN_xrGetViewConfigurationProperties)(XrInstance instance, XrSystemId systemId, XrViewConfigurationType viewConfigurationType, XrViewConfigurationProperties* configurationProperties);
@@ -956,9 +977,9 @@ typedef XrResult (XRAPI_PTR *PFN_xrEnumerateSwapchainFormats)(XrSession session,
 typedef XrResult (XRAPI_PTR *PFN_xrCreateSwapchain)(XrSession session, const XrSwapchainCreateInfo* createInfo, XrSwapchain* swapchain);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroySwapchain)(XrSwapchain swapchain);
 typedef XrResult (XRAPI_PTR *PFN_xrEnumerateSwapchainImages)(XrSwapchain swapchain, uint32_t imageCapacityInput, uint32_t* imageCountOutput, XrSwapchainImageBaseHeader* images);
-typedef XrResult (XRAPI_PTR *PFN_xrAcquireSwapchainImage)(XrSwapchain         swapchain, const XrSwapchainImageAcquireInfo* acquireInfo, uint32_t* index);
+typedef XrResult (XRAPI_PTR *PFN_xrAcquireSwapchainImage)(XrSwapchain swapchain, const XrSwapchainImageAcquireInfo* acquireInfo, uint32_t* index);
 typedef XrResult (XRAPI_PTR *PFN_xrWaitSwapchainImage)(XrSwapchain swapchain, const XrSwapchainImageWaitInfo* waitInfo);
-typedef XrResult (XRAPI_PTR *PFN_xrReleaseSwapchainImage)(XrSwapchain         swapchain, const XrSwapchainImageReleaseInfo* releaseInfo);
+typedef XrResult (XRAPI_PTR *PFN_xrReleaseSwapchainImage)(XrSwapchain swapchain, const XrSwapchainImageReleaseInfo* releaseInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrBeginSession)(XrSession session, const XrSessionBeginInfo* beginInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrEndSession)(XrSession session);
 typedef XrResult (XRAPI_PTR *PFN_xrRequestExitSession)(XrSession session);
@@ -1496,7 +1517,7 @@ typedef struct XrDebugUtilsMessengerCreateInfoEXT {
 typedef XrResult (XRAPI_PTR *PFN_xrSetDebugUtilsObjectNameEXT)(XrInstance instance, const XrDebugUtilsObjectNameInfoEXT* nameInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrCreateDebugUtilsMessengerEXT)(XrInstance instance, const XrDebugUtilsMessengerCreateInfoEXT* createInfo, XrDebugUtilsMessengerEXT* messenger);
 typedef XrResult (XRAPI_PTR *PFN_xrDestroyDebugUtilsMessengerEXT)(XrDebugUtilsMessengerEXT messenger);
-typedef XrResult                                    (XRAPI_PTR *PFN_xrSubmitDebugUtilsMessageEXT)(XrInstance                                  instance, XrDebugUtilsMessageSeverityFlagsEXT         messageSeverity, XrDebugUtilsMessageTypeFlagsEXT             messageTypes, const XrDebugUtilsMessengerCallbackDataEXT* callbackData);
+typedef XrResult (XRAPI_PTR *PFN_xrSubmitDebugUtilsMessageEXT)(XrInstance instance, XrDebugUtilsMessageSeverityFlagsEXT messageSeverity, XrDebugUtilsMessageTypeFlagsEXT messageTypes, const XrDebugUtilsMessengerCallbackDataEXT* callbackData);
 typedef XrResult (XRAPI_PTR *PFN_xrSessionBeginDebugUtilsLabelRegionEXT)(XrSession session, const XrDebugUtilsLabelEXT* labelInfo);
 typedef XrResult (XRAPI_PTR *PFN_xrSessionEndDebugUtilsLabelRegionEXT)(XrSession session);
 typedef XrResult (XRAPI_PTR *PFN_xrSessionInsertDebugUtilsLabelEXT)(XrSession session, const XrDebugUtilsLabelEXT* labelInfo);
@@ -1514,7 +1535,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrCreateDebugUtilsMessengerEXT(
 XRAPI_ATTR XrResult XRAPI_CALL xrDestroyDebugUtilsMessengerEXT(
     XrDebugUtilsMessengerEXT                    messenger);
 
-XRAPI_ATTR XrResult                                    XRAPI_CALL xrSubmitDebugUtilsMessageEXT(
+XRAPI_ATTR XrResult XRAPI_CALL xrSubmitDebugUtilsMessageEXT(
     XrInstance                                  instance,
     XrDebugUtilsMessageSeverityFlagsEXT         messageSeverity,
     XrDebugUtilsMessageTypeFlagsEXT             messageTypes,
@@ -1647,6 +1668,274 @@ XRAPI_ATTR XrResult XRAPI_CALL xrSetInputDeviceLocationEXT(
     XrSpace                                     space,
     XrPosef                                     pose);
 #endif
+
+
+#define XR_MSFT_spatial_graph_bridge_preview 1
+#define XR_MSFT_spatial_graph_bridge_preview_SPEC_VERSION 1
+#define XR_MSFT_SPATIAL_GRAPH_BRIDGE_PREVIEW_EXTENSION_NAME "XR_MSFT_spatial_graph_bridge_preview"
+
+typedef enum XrSpatialGraphNodeTypeMSFT {
+    XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT = 1,
+    XR_SPATIAL_GRAPH_NODE_TYPE_DYNAMIC_MSFT = 2,
+    XR_SPATIAL_GRAPH_NODE_TYPE_MAX_ENUM_MSFT = 0x7FFFFFFF
+} XrSpatialGraphNodeTypeMSFT;
+typedef struct XrSpaceFromSpatialGraphNodeCreateInfoMSFT {
+    XrStructureType               type;
+    const void* XR_MAY_ALIAS      next;
+    XrSpatialGraphNodeTypeMSFT    spatialGraphNodeType;
+    uint8_t                       nodeId[16];
+    XrPosef                       pose;
+} XrSpaceFromSpatialGraphNodeCreateInfoMSFT;
+
+typedef XrResult (XRAPI_PTR *PFN_xrCreateSpaceFromSpatialGraphNodeMSFT)(XrSession session, const XrSpaceFromSpatialGraphNodeCreateInfoMSFT*spaceCreateInfo, XrSpace*space);
+
+#ifndef XR_NO_PROTOTYPES
+XRAPI_ATTR XrResult XRAPI_CALL xrCreateSpaceFromSpatialGraphNodeMSFT(
+    XrSession                                   session,
+    const XrSpaceFromSpatialGraphNodeCreateInfoMSFT* spaceCreateInfo,
+    XrSpace*                                    space);
+#endif
+
+
+#define XR_MSFT_hand_interaction_preview 1
+#define XR_MSFT_hand_interaction_preview_SPEC_VERSION 1
+#define XR_MSFT_HAND_INTERACTION_PREVIEW_EXTENSION_NAME "XR_MSFT_hand_interaction_preview"
+
+
+#define XR_MSFT_hand_tracking_preview 1
+
+            XR_DEFINE_HANDLE(XrHandTrackerMSFT)
+
+#define XR_MSFT_hand_tracking_preview_SPEC_VERSION 1
+#define XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME "XR_MSFT_hand_tracking_preview"
+
+typedef enum XrHandMSFT {
+    XR_HAND_LEFT_MSFT = 1,
+    XR_HAND_RIGHT_MSFT = 2,
+    XR_HAND_MAX_ENUM_MSFT = 0x7FFFFFFF
+} XrHandMSFT;
+
+typedef enum XrHandJointMSFT {
+    XR_HAND_JOINT_PALM_MSFT = 0,
+    XR_HAND_JOINT_WRIST_MSFT = 1,
+    XR_HAND_JOINT_THUMB_METACARPAL_MSFT = 2,
+    XR_HAND_JOINT_THUMB_PROXIMAL_MSFT = 3,
+    XR_HAND_JOINT_THUMB_DISTAL_MSFT = 4,
+    XR_HAND_JOINT_THUMB_TIP_MSFT = 5,
+    XR_HAND_JOINT_INDEX_METACARPAL_MSFT = 6,
+    XR_HAND_JOINT_INDEX_PROXIMAL_MSFT = 7,
+    XR_HAND_JOINT_INDEX_INTERMEDIATE_MSFT = 8,
+    XR_HAND_JOINT_INDEX_DISTAL_MSFT = 9,
+    XR_HAND_JOINT_INDEX_TIP_MSFT = 10,
+    XR_HAND_JOINT_MIDDLE_METACARPAL_MSFT = 11,
+    XR_HAND_JOINT_MIDDLE_PROXIMAL_MSFT = 12,
+    XR_HAND_JOINT_MIDDLE_INTERMEDIATE_MSFT = 13,
+    XR_HAND_JOINT_MIDDLE_DISTAL_MSFT = 14,
+    XR_HAND_JOINT_MIDDLE_TIP_MSFT = 15,
+    XR_HAND_JOINT_RING_METACARPAL_MSFT = 16,
+    XR_HAND_JOINT_RING_PROXIMAL_MSFT = 17,
+    XR_HAND_JOINT_RING_INTERMEDIATE_MSFT = 18,
+    XR_HAND_JOINT_RING_DISTAL_MSFT = 19,
+    XR_HAND_JOINT_RING_TIP_MSFT = 20,
+    XR_HAND_JOINT_LITTLE_METACARPAL_MSFT = 21,
+    XR_HAND_JOINT_LITTLE_PROXIMAL_MSFT = 22,
+    XR_HAND_JOINT_LITTLE_INTERMEDIATE_MSFT = 23,
+    XR_HAND_JOINT_LITTLE_DISTAL_MSFT = 24,
+    XR_HAND_JOINT_LITTLE_TIP_MSFT = 25,
+    XR_HAND_JOINT_MAX_ENUM_MSFT = 0x7FFFFFFF
+} XrHandJointMSFT;
+typedef struct XrHandTrackerCreateInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrHandMSFT                  hand;
+} XrHandTrackerCreateInfoMSFT;
+
+typedef struct XrHandTrackerStateMSFT {
+    XrStructureType       type;
+    void* XR_MAY_ALIAS    next;
+    XrBool32              isActive;
+} XrHandTrackerStateMSFT;
+
+typedef struct XrHandJointSpaceCreateInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrHandTrackerMSFT           handTracker;
+    XrHandJointMSFT             joint;
+    XrPosef                     poseInJointSpace;
+} XrHandJointSpaceCreateInfoMSFT;
+
+typedef struct XrHandJointRadiusMSFT {
+    XrStructureType       type;
+    void* XR_MAY_ALIAS    next;
+    float                 radius;
+} XrHandJointRadiusMSFT;
+
+typedef struct XrSystemHandTrackingPropertiesMSFT {
+    XrStructureType       type;
+    void* XR_MAY_ALIAS    next;
+    XrBool32              supportsHandTracking;
+} XrSystemHandTrackingPropertiesMSFT;
+
+typedef XrResult (XRAPI_PTR *PFN_xrCreateHandTrackerMSFT)(XrSession session, const XrHandTrackerCreateInfoMSFT* createInfo, XrHandTrackerMSFT* handTracker);
+typedef XrResult (XRAPI_PTR *PFN_xrDestroyHandTrackerMSFT)(XrHandTrackerMSFT handTracker);
+typedef XrResult (XRAPI_PTR *PFN_xrGetHandTrackerStateMSFT)(XrHandTrackerMSFT handTracker, XrTime time, XrHandTrackerStateMSFT* state);
+typedef XrResult (XRAPI_PTR *PFN_xrCreateHandJointSpaceMSFT)(XrSession session, const XrHandJointSpaceCreateInfoMSFT* createInfo, XrSpace* space);
+
+#ifndef XR_NO_PROTOTYPES
+XRAPI_ATTR XrResult XRAPI_CALL xrCreateHandTrackerMSFT(
+    XrSession                                   session,
+    const XrHandTrackerCreateInfoMSFT*          createInfo,
+    XrHandTrackerMSFT*                          handTracker);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrDestroyHandTrackerMSFT(
+    XrHandTrackerMSFT                           handTracker);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrGetHandTrackerStateMSFT(
+    XrHandTrackerMSFT                           handTracker,
+    XrTime                                      time,
+    XrHandTrackerStateMSFT*                     state);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrCreateHandJointSpaceMSFT(
+    XrSession                                   session,
+    const XrHandJointSpaceCreateInfoMSFT*       createInfo,
+    XrSpace*                                    space);
+#endif
+
+
+#define XR_MSFT_hand_tracking_mesh_preview 1
+#define XR_MSFT_hand_tracking_mesh_preview_SPEC_VERSION 1
+#define XR_MSFT_HAND_TRACKING_MESH_PREVIEW_EXTENSION_NAME "XR_MSFT_hand_tracking_mesh_preview"
+
+typedef enum XrHandPoseTypeMSFT {
+    XR_HAND_POSE_TYPE_TRACKED_MSFT = 0,
+    XR_HAND_POSE_TYPE_REFERENCE_OPEN_PALM_MSFT = 1,
+    XR_HAND_POSE_TYPE_MAX_ENUM_MSFT = 0x7FFFFFFF
+} XrHandPoseTypeMSFT;
+typedef struct XrHandMeshSpaceCreateInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrHandTrackerMSFT           handTracker;
+    XrHandPoseTypeMSFT          handPoseType;
+    XrPosef                     poseInHandMeshSpace;
+} XrHandMeshSpaceCreateInfoMSFT;
+
+typedef struct XrHandMeshUpdateInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrTime                      time;
+    XrHandPoseTypeMSFT          handPoseType;
+} XrHandMeshUpdateInfoMSFT;
+
+typedef struct XrHandMeshIndexBufferMSFT {
+    uint32_t     indexBufferKey;
+    uint32_t     indexCapacityInput;
+    uint32_t     indexCountOutput;
+    uint32_t*    indices;
+} XrHandMeshIndexBufferMSFT;
+
+typedef struct XrHandMeshVertexMSFT {
+    XrVector3f    position;
+    XrVector3f    normal;
+} XrHandMeshVertexMSFT;
+
+typedef struct XrHandMeshVertexBufferMSFT {
+    XrTime                   vertexUpdateTime;
+    uint32_t                 vertexCapacityInput;
+    uint32_t                 vertexCountOutput;
+    XrHandMeshVertexMSFT*    vertices;
+} XrHandMeshVertexBufferMSFT;
+
+typedef struct XrHandMeshMSFT {
+    XrStructureType               type;
+    void* XR_MAY_ALIAS            next;
+    XrBool32                      isActive;
+    XrBool32                      indexBufferChanged;
+    XrBool32                      vertexBufferChanged;
+    XrHandMeshIndexBufferMSFT     indexBuffer;
+    XrHandMeshVertexBufferMSFT    vertexBuffer;
+} XrHandMeshMSFT;
+
+typedef struct XrSystemHandTrackingMeshPropertiesMSFT {
+    XrStructureType       type;
+    void* XR_MAY_ALIAS    next;
+    XrBool32              supportsHandTrackingMesh;
+    uint32_t              maxHandMeshIndexCount;
+    uint32_t              maxHandMeshVertexCount;
+} XrSystemHandTrackingMeshPropertiesMSFT;
+
+typedef struct XrHandPoseTypeInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrHandPoseTypeMSFT          handPoseType;
+} XrHandPoseTypeInfoMSFT;
+
+typedef XrResult (XRAPI_PTR *PFN_xrCreateHandMeshSpaceMSFT)(XrSession session, const XrHandMeshSpaceCreateInfoMSFT* createInfo, XrSpace* space);
+typedef XrResult (XRAPI_PTR *PFN_xrUpdateHandMeshMSFT)(XrHandTrackerMSFT handTracker, const XrHandMeshUpdateInfoMSFT* updateInfo, XrHandMeshMSFT* handMesh);
+
+#ifndef XR_NO_PROTOTYPES
+XRAPI_ATTR XrResult XRAPI_CALL xrCreateHandMeshSpaceMSFT(
+    XrSession                                   session,
+    const XrHandMeshSpaceCreateInfoMSFT*        createInfo,
+    XrSpace*                                    space);
+
+XRAPI_ATTR XrResult XRAPI_CALL xrUpdateHandMeshMSFT(
+    XrHandTrackerMSFT                           handTracker,
+    const XrHandMeshUpdateInfoMSFT*             updateInfo,
+    XrHandMeshMSFT*                             handMesh);
+#endif
+
+
+#define XR_MSFT_secondary_view_configuration_preview 1
+#define XR_MSFT_secondary_view_configuration_preview_SPEC_VERSION 1
+#define XR_MSFT_SECONDARY_VIEW_CONFIGURATION_PREVIEW_EXTENSION_NAME "XR_MSFT_secondary_view_configuration_preview"
+typedef struct XrSessionBeginSecondaryViewConfigurationInfoMSFT {
+    XrStructureType                   type;
+    const void* XR_MAY_ALIAS          next;
+    uint32_t                          viewConfigurationCount;
+    const XrViewConfigurationType*    enabledViewConfigurationTypes;
+} XrSessionBeginSecondaryViewConfigurationInfoMSFT;
+
+typedef struct XrSecondaryViewConfigurationStateMSFT {
+    XrStructureType            type;
+    void* XR_MAY_ALIAS         next;
+    XrViewConfigurationType    viewConfigurationType;
+    XrBool32                   active;
+} XrSecondaryViewConfigurationStateMSFT;
+
+typedef struct XrFrameSecondaryViewConfigurationsStateMSFT {
+    XrStructureType                           type;
+    void* XR_MAY_ALIAS                        next;
+    uint32_t                                  viewConfigurationCount;
+    XrSecondaryViewConfigurationStateMSFT*    states;
+} XrFrameSecondaryViewConfigurationsStateMSFT;
+
+typedef struct XrSecondaryViewConfigurationLayerInfoMSFT {
+    XrStructureType                               type;
+    const void* XR_MAY_ALIAS                      next;
+    XrViewConfigurationType                       viewConfigurationType;
+    XrEnvironmentBlendMode                        environmentBlendMode;
+    uint32_t                                      layerCount;
+    const XrCompositionLayerBaseHeader* const*    layers;
+} XrSecondaryViewConfigurationLayerInfoMSFT;
+
+typedef struct XrFrameEndSecondaryViewConfigurationInfoMSFT {
+    XrStructureType                                     type;
+    const void* XR_MAY_ALIAS                            next;
+    uint32_t                                            viewConfigurationCount;
+    const XrSecondaryViewConfigurationLayerInfoMSFT*    viewConfigurationLayersInfo;
+} XrFrameEndSecondaryViewConfigurationInfoMSFT;
+
+typedef struct XrSwapchainSecondaryViewConfigurationCreateInfoMSFT {
+    XrStructureType             type;
+    const void* XR_MAY_ALIAS    next;
+    XrViewConfigurationType     viewConfigurationType;
+} XrSwapchainSecondaryViewConfigurationCreateInfoMSFT;
+
+
+
+#define XR_MSFT_first_person_observer_preview 1
+#define XR_MSFT_first_person_observer_preview_SPEC_VERSION 1
+#define XR_MSFT_FIRST_PERSON_OBSERVER_PREVIEW_EXTENSION_NAME "XR_MSFT_first_person_observer_preview"
 
 
 #define XR_EXT_win32_appcontainer_compatible 1

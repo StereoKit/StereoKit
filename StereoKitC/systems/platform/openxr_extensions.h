@@ -17,7 +17,12 @@
     _(xrConvertWin32PerformanceCounterToTimeKHR) \
     _(xrConvertTimeToWin32PerformanceCounterKHR) \
     _(xrGetD3D11GraphicsRequirementsKHR)         \
-    _(xrGetVisibilityMaskKHR)
+    _(xrGetVisibilityMaskKHR)                    \
+    _(xrCreateHandTrackerMSFT)                   \
+    _(xrDestroyHandTrackerMSFT)                  \
+    _(xrGetHandTrackerStateMSFT)                 \
+    _(xrCreateHandJointSpaceMSFT)                \
+    _(xrCreateSpaceFromSpatialGraphNodeMSFT)     \
 
 #define GET_INSTANCE_PROC_ADDRESS(name) (void)xrGetInstanceProcAddr(instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&result.name)));
 #define DEFINE_PROC_MEMBER(name) PFN_##name name;
