@@ -60,9 +60,9 @@ void hand_oxra_init() {
 	for (int32_t h = 0; h < handed_max; h++) {
 		XrHandTrackerCreateInfoMSFT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_MSFT };
 		info.hand = h == handed_left ? XR_HAND_LEFT_MSFT : XR_HAND_RIGHT_MSFT;
-		XrResult result = xr_extensions.xrCreateHandTrackerMSFT(xr_session, &info, &xra_hand_tracker[handed_left]);
+		XrResult result = xr_extensions.xrCreateHandTrackerMSFT(xr_session, &info, &xra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
-			log_infof("xrCreateHandTrackerMSFT failed: [%s]", openxr_string(result));
+			log_warnf("xrCreateHandTrackerMSFT failed: [%s]", openxr_string(result));
 			return;
 		}
 
@@ -74,7 +74,11 @@ void hand_oxra_init() {
 			joint_info.handTracker      = xra_hand_tracker[h];
 			joint_info.poseInJointSpace = { {0,0,0,1}, {0,0,0} };
 
-			xr_extensions.xrCreateHandJointSpaceMSFT(xr_session, &joint_info, &xra_joint_space[h][j]);
+			result = xr_extensions.xrCreateHandJointSpaceMSFT(xr_session, &joint_info, &xra_joint_space[h][j]);
+			if (XR_FAILED(result)) {
+				log_warnf("xrCreateHandJointSpaceMSFT failed: [%s]", openxr_string(result));
+				return;
+			}
 		}
 	}
 }
@@ -92,10 +96,17 @@ void hand_oxra_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_joints() {
+	if (xr_time <= 0)
+		return;
+
 	for (int32_t h = 0; h < handed_max; h++) {
 		// Find if the hand is tracked
 		XrHandTrackerStateMSFT state = { XR_TYPE_HAND_TRACKER_STATE_MSFT };
-		xr_extensions.xrGetHandTrackerStateMSFT(xra_hand_tracker[h], xr_time, &state);
+		XrResult result = xr_extensions.xrGetHandTrackerStateMSFT(xra_hand_tracker[h], xr_time, &state);
+		if (XR_FAILED(result)) {
+			log_warnf("xrGetHandTrackerStateMSFT failed: [%s] - %lld", openxr_string(result), xr_time);
+			return;
+		}
 
 		// Update the tracking state of the hand
 		hand_t& inp_hand = (hand_t&)input_hand((handed_)h);
