@@ -49,8 +49,8 @@ hand_joint_t      xra_hand_joints[2][27];
 
 bool hand_oxra_available() {
 	return
-		sk_active_runtime() == runtime_mixedreality && 
-		xr_session != XR_NULL_HANDLE &&
+		sk_active_runtime()  == runtime_mixedreality &&
+		xr_session           != XR_NULL_HANDLE       &&
 		xr_articulated_hands == true;
 }
 

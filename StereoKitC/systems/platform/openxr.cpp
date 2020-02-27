@@ -675,4 +675,19 @@ bool32_t openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time) {
 	return false;
 }
 
+///////////////////////////////////////////
+
+pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
+	XrSpace                                   space;
+	pose_t                                    result     = {};
+	XrSpaceFromSpatialGraphNodeCreateInfoMSFT space_info = { XR_TYPE_SPACE_FROM_SPATIAL_GRAPH_NODE_CREATE_INFO_MSFT };
+	space_info.spatialGraphNodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
+
+	xr_extensions.xrCreateSpaceFromSpatialGraphNodeMSFT(xr_session, &space_info, &space);
+
+	openxr_get_space(space, result);
+	return result;
+}
+
 } // namespace sk

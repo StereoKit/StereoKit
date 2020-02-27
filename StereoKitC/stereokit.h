@@ -679,6 +679,10 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const p
 
 ///////////////////////////////////////////
 
+SK_API pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]);
+
+///////////////////////////////////////////
+
 enum log_{
 	log_diagnostic = 0,
 	log_inform,
