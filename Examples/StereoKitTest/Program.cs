@@ -49,6 +49,11 @@ class Program
         Tests.IsTesting = args.Length > 0 && args[0].ToLower() == "-test";
         Time .Scale     = Tests.IsTesting ? 0 : 1;
 
+        /// :CodeSample: Log.Subscribe Log
+        /// Then you add the OnLog method into the log events like this in your initialization
+        /// code!
+        Log.Subscribe(OnLog);
+        /// :End:
         Log.Filter = LogLevel.Diagnostic;
         StereoKitApp.settings.assetsFolder = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.MixedReality,  true))
@@ -74,12 +79,6 @@ class Program
 
     static void CommonInit()
     {
-        /// :CodeSample: Log.Subscribe Log
-        /// Then you add the OnLog method into the log events like this in your initialization
-        /// code!
-        Log.Subscribe(OnLog);
-        /// :End:
-
         Material floorMat = Default.Material.Copy();
         floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
         floorMat[MatParamName.TexScale  ] = 16;
