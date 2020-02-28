@@ -7,8 +7,8 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 1
-#define SK_VERSION_PATCH 7
-#define SK_VERSION_PRERELEASE 0
+#define SK_VERSION_PATCH 8
+#define SK_VERSION_PRERELEASE 1
 
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)
