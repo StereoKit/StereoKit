@@ -98,9 +98,6 @@ hand_system_t hand_sources[] = { // In order of priority
 int32_t      hand_system = -1;
 hand_state_t hand_state[2];
 
-const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
-const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
-
 void input_hand_update_mesh(handed_ hand);
 
 ///////////////////////////////////////////
