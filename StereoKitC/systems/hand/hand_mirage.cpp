@@ -184,6 +184,25 @@ void hand_mirage_shutdown() {
 
 ///////////////////////////////////////////
 
+#if WINDOWS_UWP
+// Time conversion code from David Fields, thank you!
+static inline int64_t SourceDurationTicksToDestDurationTicks(int64_t sourceDurationInTicks, int64_t sourceTicksPerSecond, int64_t destTicksPerSecond) {
+    int64_t whole = (sourceDurationInTicks / sourceTicksPerSecond) * destTicksPerSecond;                          // 'whole' is rounded down in the target time units.
+    int64_t part  = (sourceDurationInTicks % sourceTicksPerSecond) * destTicksPerSecond / sourceTicksPerSecond;   // 'part' is the remainder in the target time units.
+    return whole + part;
+}
+static inline TimeSpan TimeSpanFromQpcTicks(int64_t qpcTicks) {
+    static const int64_t qpcFrequency = [](){
+        LARGE_INTEGER frequency;
+        QueryPerformanceFrequency(&frequency);
+        return frequency.QuadPart;
+    }();
+    return TimeSpan{ SourceDurationTicksToDestDurationTicks(qpcTicks, qpcFrequency, winrt::clock::period::den) / winrt::clock::period::num };
+}
+#endif
+
+///////////////////////////////////////////
+
 void hand_mirage_update_hands(int64_t win32_prediction_time) {
 #if WINDOWS_UWP
 	if (!xr_hand_support)
@@ -199,7 +218,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 	xrSyncActions(xr_session, &sync_info);
 
 	// Convert the time we're given into a format that Windows likes
-	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpan((long long)win32_prediction_time));
+	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpanFromQpcTicks(win32_prediction_time));
 	IVectorView<SpatialInteractionSourceState> sources = xr_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
 
 	for (auto sourceState : sources)

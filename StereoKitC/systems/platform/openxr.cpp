@@ -625,7 +625,9 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 
 	// Call the rendering callback with our view and swapchain info
 	tex_t target = xr_swapchains.surface_data[img_id];
-	tex_rtarget_clear(target, sk_info.display_type == display_opaque ? color32{0,0,0,255} : color32{0, 0, 0, 0});
+	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
+		? color32{ 0,0,0,255 } 
+		: color32{ 0,0,0,0   });
 	tex_rtarget_set_active(target);
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)xr_swapchains.width, (float)xr_swapchains.height);
 	d3d_context->RSSetViewports(1, &viewport);
