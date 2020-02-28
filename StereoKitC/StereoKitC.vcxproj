@@ -148,6 +148,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
+    <ClCompile Include="systems\platform\openxr_input.cpp" />
     <ClCompile Include="systems\platform\platform.cpp" />
     <ClCompile Include="systems\platform\uwp.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
@@ -197,6 +198,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\openxr.h" />
     <ClInclude Include="systems\platform\openxr_extensions.h" />
+    <ClInclude Include="systems\platform\openxr_input.h" />
     <ClInclude Include="systems\platform\platform.h" />
     <ClInclude Include="systems\platform\uwp.h" />
     <ClInclude Include="systems\platform\win32.h" />
