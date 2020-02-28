@@ -92,7 +92,7 @@ float4 ps(psIn input) : SV_TARGET {
 	}
 
 	float  pct = pow(1-dist, 5);
-	float4 col = float4(lerp(input.color.rgb, input.color.rgb*2, pct + (ring*pct)), input.color.a * (1-pct));
+	float4 col = float4(lerp(input.color.rgb, float3(1,1,1), pct*0.6 + (ring*pct)), input.color.a);
 
 	return tex.Sample(tex_sampler, input.uv) * col; 
 })_";
