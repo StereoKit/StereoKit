@@ -27,8 +27,16 @@ matrix, it can be faster to render a Mesh instead of a Model!
 |  |  |
 |--|--|
 |[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
+|[AddSubset]({{site.url}}/Pages/Reference/Model/AddSubset.html)|Adds a new subset to the Model, and recalculates the bounds.|
 |[Draw]({{site.url}}/Pages/Reference/Model/Draw.html)|Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
-|[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the mesh subset!|
+|[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the model subset! Note that this is not necessarily a unique material, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
+|[GetMesh]({{site.url}}/Pages/Reference/Model/GetMesh.html)|Gets a link to the Mesh asset used by the model subset! Note that this is not necessarily a unique mesh, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
+|[GetTransform]({{site.url}}/Pages/Reference/Model/GetTransform.html)|Gets the transform matrix used by the model subset!|
+|[RecalculateBounds]({{site.url}}/Pages/Reference/Model/RecalculateBounds.html)|Examines the subsets as they currently are, and rebuilds the bounds based on that! This is normally done automatically, but if you modify a Mesh that this Model is using, the Model can't see it, and you should call this manually.|
+|[RemoveSubset]({{site.url}}/Pages/Reference/Model/RemoveSubset.html)|Removes and dereferences a subset from the model.|
+|[SetMaterial]({{site.url}}/Pages/Reference/Model/SetMaterial.html)|Changes the Material for the subset to a new one!|
+|[SetMesh]({{site.url}}/Pages/Reference/Model/SetMesh.html)|Changes the mesh for the subset to a new one!|
+|[SetTransform]({{site.url}}/Pages/Reference/Model/SetTransform.html)|Changes the transform for the subset to a new one! This is in Model space, so it's relative to the origin of the model.|
 
 
 ## Static Fields and Properties
