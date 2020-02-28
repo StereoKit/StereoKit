@@ -19,7 +19,6 @@ namespace sk {
 
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
-#define SK_SQRT2 1.41421356237f
 #define SK_FINGER_SOLIDS 1
 
 struct hand_mesh_t {
@@ -96,8 +95,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {},
 		[]() {} },
 };
-int32_t active_system = -1;
-
+int32_t      hand_system = -1;
 hand_state_t hand_state[2];
 
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
@@ -114,7 +112,7 @@ const hand_t &input_hand(handed_ hand) {
 ///////////////////////////////////////////
 
 hand_system_ input_hand_get_system() {
-	return hand_sources[active_system].system;
+	return hand_sources[hand_system].system;
 }
 
 ///////////////////////////////////////////
@@ -127,18 +125,18 @@ void input_hand_refresh_system() {
 			break;
 		}
 	}
-	if (available_source != active_system) {
+	if (available_source != hand_system) {
 		// TODO: Only really necessary for oxrc -> mirage transition, when mirage dies, this can go away
-		if (active_system >= 0) {
-			hand_sources[active_system].shutdown();
-			hand_sources[active_system].initialized = false;
+		if (hand_system >= 0) {
+			hand_sources[hand_system].shutdown();
+			hand_sources[hand_system].initialized = false;
 		}
-		active_system = available_source;
+		hand_system = available_source;
 
 		const char *source_name = "N/A";
-		switch (hand_sources[active_system].system) {
+		switch (hand_sources[hand_system].system) {
 		case hand_system_leap:            source_name = "Leap"; break;
-		case hand_system_mirage:          source_name = "UWP Spatial"; break;
+		case hand_system_mirage:          source_name = "UWP Articulated"; break;
 		case hand_system_mouse:           source_name = "Mouse"; break;
 		case hand_system_none:            source_name = "None"; break;
 		case hand_system_override:        source_name = "Override"; break;
@@ -147,9 +145,9 @@ void input_hand_refresh_system() {
 		}
 
 		log_diagf("Switched to input source: %s", source_name);
-		if (!hand_sources[active_system].initialized) {
-			hand_sources[active_system].init();
-			hand_sources[active_system].initialized = true;
+		if (!hand_sources[hand_system].initialized) {
+			hand_sources [hand_system].init();
+			hand_sources [hand_system].initialized = true;
 		}
 	}
 }
@@ -159,8 +157,8 @@ void input_hand_refresh_system() {
 void modify(pose_t *pose, vec3 offset) {
 	quat rot = quat_from_angles(0, 180, 0);
 	for (size_t i = 0; i < 25; i++) {
-		pose[i].position += offset;
-		pose[i].position *= 1.15f;
+		pose[i].position   += offset;
+		pose[i].position   *= 1.15f;
 		pose[i].orientation = rot * pose[i].orientation;
 	}
 }
@@ -177,7 +175,7 @@ void input_hand_init() {
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0);
+	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0f);
 	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.2f);
 	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
 
@@ -192,7 +190,7 @@ void input_hand_init() {
 	tex_t gradient_tex = tex_create();
 	tex_set_colors (gradient_tex, 16, 16, gradient);
 	tex_set_address(gradient_tex, tex_address_clamp);
-	material_set_texture(hand_mat, "diffuse", gradient_tex);
+	material_set_texture     (hand_mat, "diffuse", gradient_tex);
 	material_set_queue_offset(hand_mat, -10);
 	
 	// Initialize the hands!
@@ -224,7 +222,7 @@ void input_hand_init() {
 			}
 			hand.fingers[f][j].position    = pos;
 			hand.fingers[f][j].orientation = rot;
-			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.5f;
 		} }
 	}
 
@@ -248,7 +246,7 @@ void input_hand_shutdown() {
 			solid_release(hand_state[i].solids[f]);
 		}
 		material_release(hand_state[i].material);
-		mesh_release(hand_state[i].mesh.mesh);
+		mesh_release    (hand_state[i].mesh.mesh);
 		free(hand_state[i].mesh.inds);
 		free(hand_state[i].mesh.verts);
 	}
@@ -257,8 +255,7 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	
-	hand_sources[active_system].update_frame();
+	hand_sources[hand_system].update_frame();
 
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand states
@@ -281,7 +278,7 @@ void input_hand_update() {
 ///////////////////////////////////////////
 
 void input_hand_update_predicted() {
-	hand_sources[active_system].update_predicted();
+	hand_sources[hand_system].update_predicted();
 }
 
 ///////////////////////////////////////////
@@ -339,7 +336,10 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
-	hand.palm.orientation = quat_from_angles(0,handedness == handed_right ? 90.f : -90.f, handedness == handed_right ? -90.f : 90.f) * orientation;
+	hand.palm.orientation = quat_from_angles(
+		0, 
+		handedness == handed_right ?  90.f : -90.f, 
+		handedness == handed_right ? -90.f :  90.f) * orientation;
 	
 	// Update hand state based on inputs
 	bool was_tracked = hand.tracked_state & button_state_active;
@@ -349,14 +349,10 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	if (tracked) {
 		// Switch pose based on what buttons are pressed
 		const pose_t *dest_pose;
-		if (trigger_pressed && !grip_pressed)
-			dest_pose = &input_pose_pinch[0][0];
-		else if (trigger_pressed && grip_pressed)
-			dest_pose = &input_pose_fist[0][0];
-		else if (!trigger_pressed && grip_pressed)
-			dest_pose = &input_pose_point[0][0];
-		else
-			dest_pose = &input_pose_neutral[0][0];
+		if      ( trigger_pressed && !grip_pressed) dest_pose = &input_pose_pinch  [0][0];
+		else if ( trigger_pressed &&  grip_pressed) dest_pose = &input_pose_fist   [0][0];
+		else if (!trigger_pressed &&  grip_pressed) dest_pose = &input_pose_point  [0][0];
+		else                                        dest_pose = &input_pose_neutral[0][0];
 
 		// Blend our active pose with our desired pose, for smooth transitions
 		// between poses
@@ -382,7 +378,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			}
 			hand.fingers[f][j].position    = orientation * pos + hand_pos;
 			hand.fingers[f][j].orientation = rot * orientation;
-			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.5f;
 		} }
 	}
 }
@@ -481,42 +477,33 @@ void input_hand_update_mesh(handed_ hand) {
 		for (int f = 0; f < SK_FINGERS;      f++) {
 			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERJOINTS);
 		for (int j = 0; j < SK_FINGERJOINTS; j++) {
-			float y = f == 0 ?
-				(fmaxf(0,(float)j-1) / (float)(SK_FINGERJOINTS-2)) :
-				(j / (float)(SK_FINGERJOINTS-1));
+			float y = f == 0 
+				? (fmaxf(0,(float)j-1) / (float)(SK_FINGERJOINTS-2)) 
+				: (j / (float)(SK_FINGERJOINTS-1));
 			
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 255,255,255,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 255,255,255,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 255,255,255,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 200,200,200,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 200,200,200,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 200,200,200,255 };
-			v++;
-			data.verts[v].uv  = { x,y };
-			data.verts[v].col = { 200,200,200,255 };
-			v++;
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 255,255,255,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 255,255,255,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 255,255,255,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 200,200,200,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 200,200,200,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 200,200,200,255 };
+			data.verts[v  ].uv  = { x,y };
+			data.verts[v++].col = { 200,200,200,255 };
 		} 
-			data.verts[v].uv  = { x,1.0f };
-			data.verts[v].col = { 255,255,255,255 };
-			v++;
+			data.verts[v  ].uv  = { x,1.0f };
+			data.verts[v++].col = { 255,255,255,255 };
 		}
 
 		data.mesh = mesh_create();
-		if (hand == handed_left)
-			mesh_set_id(data.mesh, "default/mesh_lefthand");
-		else
-			mesh_set_id(data.mesh, "default/mesh_righthand");
+		mesh_set_id(data.mesh, hand == handed_left
+			? "default/mesh_lefthand"
+			: "default/mesh_righthand");
 		mesh_set_inds(data.mesh, data.inds, data.ind_count);
 	}
 
@@ -524,7 +511,7 @@ void input_hand_update_mesh(handed_ hand) {
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
 		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][max(0,j-1)];
-		const hand_joint_t &pose = hand_state[hand].info.fingers[f][j];
+		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
 		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
 		// Make local right and up axis vectors
