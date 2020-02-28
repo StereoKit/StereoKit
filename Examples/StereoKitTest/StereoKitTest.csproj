@@ -92,6 +92,7 @@
     <Compile Include="Demos\DemoManyObjects.cs" />
     <Compile Include="Demos\DemoMath.cs" />
     <Compile Include="Demos\DemoPicker.cs" />
+    <Compile Include="Docs\DocModel.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Demos\DemoSky.cs" />
     <Compile Include="Demos\DemoText.cs" />

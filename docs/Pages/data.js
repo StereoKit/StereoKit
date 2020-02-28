@@ -136,6 +136,7 @@ var documents =
 			 pages: [
 				{name : 'color'},
 				{name : 'position'},
+				{name : 'GradientKey'},
 			]
 			},
 			{name : 'Hand',
@@ -439,11 +440,19 @@ var documents =
 				{name : 'Bounds'},
 				{name : 'SubsetCount'},
 				{name : 'Model'},
+				{name : 'AddSubset'},
 				{name : 'Draw'},
 				{name : 'Find'},
 				{name : 'FromFile'},
 				{name : 'FromMesh'},
 				{name : 'GetMaterial'},
+				{name : 'GetMesh'},
+				{name : 'GetTransform'},
+				{name : 'RecalculateBounds'},
+				{name : 'RemoveSubset'},
+				{name : 'SetMaterial'},
+				{name : 'SetMesh'},
+				{name : 'SetTransform'},
 			]
 			},
 			{name : 'Mouse',

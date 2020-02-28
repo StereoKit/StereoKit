@@ -17,6 +17,12 @@ description: Creates a single mesh subset Model using the indicated Mesh and Mat
 Creates a single mesh subset Model using the indicated Mesh and Material! An
 id will be automatically generated for this asset.
 <div class='signature' markdown='1'>
+ Model()
+</div>
+
+Creates an empty Model object with an automatically generated id. Use the
+AddSubset methods to fill this model out.
+<div class='signature' markdown='1'>
  Model(string id, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
 </div>
 
@@ -29,4 +35,15 @@ id will be automatically generated for this asset.
 Creates a single mesh subset Model using the indicated Mesh and Material!
 
 
+
+
+## Examples
+
+```csharp
+Model model = new Model();
+model.AddSubset(
+    Mesh   .GenerateCube(Vec3.One),
+    Default.Material,
+    Matrix .Identity);
+```
 
