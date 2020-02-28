@@ -263,7 +263,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 				xr_hand_data[handed][i].position    = (hand_to_world.orientation * xr_hand_data[handed][i].position) + hand_to_world.position; 
 				xr_hand_data[handed][i].orientation = xr_hand_data[handed][i].orientation * hand_to_origin.orientation;
 				xr_hand_data[handed][i].orientation = xr_hand_data[handed][i].orientation * hand_to_world.orientation;
-				xr_hand_data[handed][i].radius = (poses[i].Radius * 0.85f);
+				xr_hand_data[handed][i].radius      = poses[i].Radius * 1.2f;
 			}
 			
 			// Copy the data into the input system

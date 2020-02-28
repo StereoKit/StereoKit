@@ -58,12 +58,6 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_frame,
 		hand_override_update_predicted },
 	{ hand_system_oxr_articulated, false,
-		[]() {return false;},
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr },
-	{ hand_system_oxr_articulated, false,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
@@ -140,7 +134,19 @@ void input_hand_refresh_system() {
 			hand_sources[active_system].initialized = false;
 		}
 		active_system = available_source;
-		log_diagf("Switched to input source: %d", hand_sources[active_system].system);
+
+		const char *source_name = "N/A";
+		switch (hand_sources[active_system].system) {
+		case hand_system_leap:            source_name = "Leap"; break;
+		case hand_system_mirage:          source_name = "UWP Spatial"; break;
+		case hand_system_mouse:           source_name = "Mouse"; break;
+		case hand_system_none:            source_name = "None"; break;
+		case hand_system_override:        source_name = "Override"; break;
+		case hand_system_oxr_articulated: source_name = "OpenXR Articulated"; break;
+		case hand_system_oxr_controllers: source_name = "OpenXR Controllers"; break;
+		}
+
+		log_diagf("Switched to input source: %s", source_name);
 		if (!hand_sources[active_system].initialized) {
 			hand_sources[active_system].init();
 			hand_sources[active_system].initialized = true;
@@ -501,9 +507,9 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v].col = { 200,200,200,255 };
 			v++;
 		} 
-		data.verts[v].uv  = { 1.0f,1.0f };
-		data.verts[v].col = { 255,255,255,255 };
-		v++;
+			data.verts[v].uv  = { x,1.0f };
+			data.verts[v].col = { 255,255,255,255 };
+			v++;
 		}
 
 		data.mesh = mesh_create();
@@ -531,8 +537,8 @@ void input_hand_update_mesh(handed_ hand) {
 
 		// Use the local axis to create a ring of verts
 		for (size_t i = 0; i < ring_count; i++) {
-			data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*(SK_SQRT2*scale);
+			data.verts[v].norm = up*sincos_norm[i].y + right*sincos_norm[i].x;
+			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
 			v++;
 		}
 	}

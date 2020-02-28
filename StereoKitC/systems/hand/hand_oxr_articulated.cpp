@@ -125,14 +125,16 @@ void hand_oxra_update_joints() {
 
 			memcpy(&xra_hand_joints[h][j].position,    &space_location.pose.position,    sizeof(vec3));
 			memcpy(&xra_hand_joints[h][j].orientation, &space_location.pose.orientation, sizeof(quat));
-			xra_hand_joints[h][j].radius = joint_radius.radius;
+			xra_hand_joints[h][j].radius = joint_radius.radius * 1.2f;
 		}
 
 		// Copy the pose data into our hand
 		hand_joint_t* pose = input_hand_get_pose_buffer((handed_)h);
 		memcpy(pose, &xra_hand_joints[h], sizeof(hand_joint_t) * 25);
-		inp_hand.palm  = pose_t{ xra_hand_joints[h][25].position, xra_hand_joints[h][25].orientation };
-		inp_hand.wrist = pose_t{ xra_hand_joints[h][26].position, quat_from_angles(-90,0,0) * xra_hand_joints[h][26].orientation };
+
+		static const quat face_forward = quat_from_angles(-90,0,0);
+		inp_hand.palm  = pose_t{ xra_hand_joints[h][25].position, face_forward * xra_hand_joints[h][25].orientation };
+		inp_hand.wrist = pose_t{ xra_hand_joints[h][26].position, face_forward * xra_hand_joints[h][26].orientation };
 	}
 }
 
