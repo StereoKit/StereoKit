@@ -12,7 +12,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-const XrHandJointMSFT xra_joints[] = {
+const XrHandJointMSFT oxra_joints[] = {
 	XR_HAND_JOINT_THUMB_METACARPAL_MSFT,
 	XR_HAND_JOINT_THUMB_METACARPAL_MSFT,
 	XR_HAND_JOINT_THUMB_PROXIMAL_MSFT,
@@ -41,9 +41,9 @@ const XrHandJointMSFT xra_joints[] = {
 	XR_HAND_JOINT_PALM_MSFT,
 	XR_HAND_JOINT_WRIST_MSFT, };
 
-XrHandTrackerMSFT xra_hand_tracker[2];
-XrSpace           xra_joint_space[2][27];
-hand_joint_t      xra_hand_joints[2][27];
+XrHandTrackerMSFT oxra_hand_tracker[2];
+XrSpace           oxra_joint_space[2][27];
+hand_joint_t      oxra_hand_joints[2][27];
 
 ///////////////////////////////////////////
 
@@ -60,7 +60,7 @@ void hand_oxra_init() {
 	for (int32_t h = 0; h < handed_max; h++) {
 		XrHandTrackerCreateInfoMSFT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_MSFT };
 		info.hand = h == handed_left ? XR_HAND_LEFT_MSFT : XR_HAND_RIGHT_MSFT;
-		XrResult result = xr_extensions.xrCreateHandTrackerMSFT(xr_session, &info, &xra_hand_tracker[h]);
+		XrResult result = xr_extensions.xrCreateHandTrackerMSFT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerMSFT failed: [%s]", openxr_string(result));
 			return;
@@ -68,13 +68,13 @@ void hand_oxra_init() {
 
 		XrHandPoseTypeInfoMSFT pose_info{ XR_TYPE_HAND_POSE_TYPE_INFO_MSFT };
 		pose_info.handPoseType = XR_HAND_POSE_TYPE_TRACKED_MSFT;
-		for (int32_t j = 0; j < _countof(xra_joints); j++) {
+		for (int32_t j = 0; j < _countof(oxra_joints); j++) {
 			XrHandJointSpaceCreateInfoMSFT joint_info{ XR_TYPE_HAND_JOINT_SPACE_CREATE_INFO_MSFT, &pose_info };
-			joint_info.joint            = xra_joints[j];
-			joint_info.handTracker      = xra_hand_tracker[h];
+			joint_info.joint            = oxra_joints[j];
+			joint_info.handTracker      = oxra_hand_tracker[h];
 			joint_info.poseInJointSpace = { {0,0,0,1}, {0,0,0} };
 
-			result = xr_extensions.xrCreateHandJointSpaceMSFT(xr_session, &joint_info, &xra_joint_space[h][j]);
+			result = xr_extensions.xrCreateHandJointSpaceMSFT(xr_session, &joint_info, &oxra_joint_space[h][j]);
 			if (XR_FAILED(result)) {
 				log_warnf("xrCreateHandJointSpaceMSFT failed: [%s]", openxr_string(result));
 				return;
@@ -87,9 +87,9 @@ void hand_oxra_init() {
 
 void hand_oxra_shutdown() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		for (int32_t j = 0; j < _countof(xra_joints); j++)
-			xrDestroySpace(xra_joint_space[h][j]);
-		xr_extensions.xrDestroyHandTrackerMSFT(xra_hand_tracker[h]);
+		for (int32_t j = 0; j < _countof(oxra_joints); j++)
+			xrDestroySpace(oxra_joint_space[h][j]);
+		xr_extensions.xrDestroyHandTrackerMSFT(oxra_hand_tracker[h]);
 	}
 }
 
@@ -101,10 +101,10 @@ void hand_oxra_update_joints() {
 
 	for (int32_t h = 0; h < handed_max; h++) {
 		// Find if the hand is tracked
-		XrHandTrackerStateMSFT state = { XR_TYPE_HAND_TRACKER_STATE_MSFT };
-		XrResult result = xr_extensions.xrGetHandTrackerStateMSFT(xra_hand_tracker[h], xr_time, &state);
+		XrHandTrackerStateMSFT state  = { XR_TYPE_HAND_TRACKER_STATE_MSFT };
+		XrResult               result = xr_extensions.xrGetHandTrackerStateMSFT(oxra_hand_tracker[h], xr_time, &state);
 		if (XR_FAILED(result)) {
-			log_warnf("xrGetHandTrackerStateMSFT failed: [%s] - %lld", openxr_string(result), xr_time);
+			log_warnf("xrGetHandTrackerStateMSFT failed: [%s]", openxr_string(result));
 			return;
 		}
 
@@ -117,24 +117,24 @@ void hand_oxra_update_joints() {
 			continue;
 
 		// Get joint poses from OpenXR
-		for (int32_t j = 0; j < _countof(xra_joints); j++) {
+		for (int32_t j = 0; j < _countof(oxra_joints); j++) {
 			pose_t hand_pose = {};
 			XrHandJointRadiusMSFT joint_radius   = { XR_TYPE_HAND_JOINT_RADIUS_MSFT };
 			XrSpaceLocation       space_location = { XR_TYPE_SPACE_LOCATION, &joint_radius };
-			xrLocateSpace(xra_joint_space[h][j], xr_app_space, xr_time, &space_location);
+			xrLocateSpace(oxra_joint_space[h][j], xr_app_space, xr_time, &space_location);
 
-			memcpy(&xra_hand_joints[h][j].position,    &space_location.pose.position,    sizeof(vec3));
-			memcpy(&xra_hand_joints[h][j].orientation, &space_location.pose.orientation, sizeof(quat));
-			xra_hand_joints[h][j].radius = joint_radius.radius * 1.2f;
+			memcpy(&oxra_hand_joints[h][j].position,    &space_location.pose.position,    sizeof(vec3));
+			memcpy(&oxra_hand_joints[h][j].orientation, &space_location.pose.orientation, sizeof(quat));
+			oxra_hand_joints[h][j].radius = joint_radius.radius * 1.2f;
 		}
 
 		// Copy the pose data into our hand
 		hand_joint_t* pose = input_hand_get_pose_buffer((handed_)h);
-		memcpy(pose, &xra_hand_joints[h], sizeof(hand_joint_t) * 25);
+		memcpy(pose, &oxra_hand_joints[h], sizeof(hand_joint_t) * 25);
 
 		static const quat face_forward = quat_from_angles(-90,0,0);
-		inp_hand.palm  = pose_t{ xra_hand_joints[h][25].position, face_forward * xra_hand_joints[h][25].orientation };
-		inp_hand.wrist = pose_t{ xra_hand_joints[h][26].position, face_forward * xra_hand_joints[h][26].orientation };
+		inp_hand.palm  = pose_t{ oxra_hand_joints[h][25].position, face_forward * oxra_hand_joints[h][25].orientation };
+		inp_hand.wrist = pose_t{ oxra_hand_joints[h][26].position, face_forward * oxra_hand_joints[h][26].orientation };
 	}
 }
 
