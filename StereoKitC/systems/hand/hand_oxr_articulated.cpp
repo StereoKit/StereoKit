@@ -118,7 +118,6 @@ void hand_oxra_update_joints() {
 
 		// Get joint poses from OpenXR
 		for (int32_t j = 0; j < _countof(oxra_joints); j++) {
-			pose_t hand_pose = {};
 			XrHandJointRadiusMSFT joint_radius   = { XR_TYPE_HAND_JOINT_RADIUS_MSFT };
 			XrSpaceLocation       space_location = { XR_TYPE_SPACE_LOCATION, &joint_radius };
 			xrLocateSpace(oxra_joint_space[h][j], xr_app_space, xr_time, &space_location);

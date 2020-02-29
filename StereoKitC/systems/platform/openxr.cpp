@@ -682,6 +682,7 @@ pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
 	pose_t                                    result     = {};
 	XrSpaceFromSpatialGraphNodeCreateInfoMSFT space_info = { XR_TYPE_SPACE_FROM_SPATIAL_GRAPH_NODE_CREATE_INFO_MSFT };
 	space_info.spatialGraphNodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	space_info.pose                 = { {0,0,0,1}, {0,0,0} };
 	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
 
 	xr_extensions.xrCreateSpaceFromSpatialGraphNodeMSFT(xr_session, &space_info, &space);
