@@ -41,6 +41,9 @@
         public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
             => NativeAPI.text_add_in(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
 
+        public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+            => NativeAPI.text_add_in(text, transform, size, fit, -1, position, align, offX, offY, offZ);
+
         /// <summary>Sometimes you just need to know how much room some text takes up! This finds
         /// the size of the text in meters, when using the indicated style!</summary>
         /// <param name="text">Text you want to find the size of.</param>
