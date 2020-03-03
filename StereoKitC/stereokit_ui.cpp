@@ -908,7 +908,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 					dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 				} break;
 				case ui_move_face_user: {
-					dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head().position));
+					dest_rot = quat_lookat(movement.position, movement.position + -(input_head().orientation*vec3_forward));
 					dest_rot = quat_difference(start_aff_rot[i], dest_rot);
 				} break;
 				default: log_err("Unimplemented move type!"); break;
