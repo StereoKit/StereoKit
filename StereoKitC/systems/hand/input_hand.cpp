@@ -295,8 +295,8 @@ void input_hand_state_update(handed_ handedness) {
 	hand.pinch_state = button_state_inactive;
 	hand.grip_state  = button_state_inactive;
 	
-	const float grip_activation_dist  = 5 * cm2m;
-	const float pinch_activation_dist = 1 * cm2m;
+	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
+	const float pinch_activation_dist = (was_trigger ? 2 : 1) * cm2m;
 	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
 	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
