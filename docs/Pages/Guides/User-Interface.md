@@ -31,12 +31,10 @@ the window, off to the left and facing to the right, as well as a boolean
 for a toggle, and a float that we'll use as a slider! We'll add this code
 to our initialization section.
 ```csharp
-Pose  windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1,0,1));
-
-bool  showHeader = true;
-float slider     = 0.5f;
-
-Sprite powerSprite = Sprite.FromFile("power.png", SpriteType.Single);
+Pose   windowPose        = new Pose(-.4f, 0, 0, Quat.LookDir(1,0,1));
+Sprite windowPowerSprite = Sprite.FromFile("power.png", SpriteType.Single);
+bool   windowShowHeader  = true;
+float  windowSlider      = 0.5f;
 ```
 Then we'll move over to the application step where we'll do the rest of the UI code!
 
@@ -49,7 +47,7 @@ We'll also use a toggle to turn the window's header on and off! The value from t
 is passed in here via the showHeader field.
 
 ```csharp
-UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * Units.cm2m, showHeader);
+UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * Units.cm2m, windowShowHeader);
 ```
 
 When you begin a window, all visual elements are now relative to that window! UI takes advantage
@@ -66,7 +64,7 @@ element will update that value for you based on user interaction, but you can al
 yourself whenever you want to!
 
 ```csharp
-UI.Toggle("Show Header", ref showHeader);
+UI.Toggle("Show Header", ref windowShowHeader);
 ```
 
 Here's an example slider! We start off with a label element, and tell the UI to
@@ -77,14 +75,14 @@ the `step` value to 0!
 ```csharp
 UI.Label("Slide");
 UI.SameLine();
-UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * Units.mm2m);
+UI.HSlider("slider", ref windowSlider, 0, 1, 0.2f, 72 * Units.mm2m);
 ```
 
 Here's how you use a simple button! Just check it with an 'if'. Any UI method
 will return true on the frame when their value or state has changed.
 
 ```csharp
-if (UI.ButtonRound("Exit", powerSprite))
+if (UI.ButtonRound("Exit", windowPowerSprite))
     StereoKitApp.Quit();
 ```
 
@@ -105,10 +103,15 @@ elements to their surface! StereoKit uses 'affordances' to accomplish this, a gr
 area that behaves much like a window, but with a few more options for customizing
 layout and size.
 
-We'll load up a clipboard, so we can attach an interface to that!
+Here's the data we'll use for tracking our clipboard:
 
 ```csharp
-Model clipboard = Model.FromFile("Clipboard.glb");
+Model  clipboard      = Model .FromFile("Clipboard.glb", Default.ShaderUI);
+Sprite clipLogoSprite = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
+Pose   clipPose       = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+bool   clipToggle;
+float  clipSlider;
+int    clipOption = 1;
 ```
 
 And, similar to the window previously, here's how you would turn it into a grabbable
@@ -118,7 +121,7 @@ we're drawing using an identity matrix. This takes advantage of how AffordanceBe
 pushes the affordance's pose onto the Hierarchy transform stack!
 
 ```csharp
-UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds);
+UI.AffordanceBegin("Clip", ref clipPose, clipboard.Bounds);
 Renderer.Add(clipboard, Matrix.Identity);
 ```
 
@@ -133,7 +136,7 @@ UI.LayoutArea(new Vec3(12, 13, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
 Then after that? We can just add UI elements like normal!
 
 ```csharp
-UI.Image(logoSprite, new Vec2(22,0) * Units.cm2m);
+UI.Image(clipLogoSprite, new Vec2(22,0) * Units.cm2m);
 
 UI.Toggle("Toggle", ref clipToggle);
 UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
@@ -156,11 +159,10 @@ As with windows, Affordances need an End call.
 ```csharp
 UI.AffordanceEnd();
 ```
-
 And there you go! That's how UI works in StereoKit, pretty simple, huh?
 For further reference, and more UI methods, check out the
 [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
 
 If you'd like to see the complete code for this sample,
-[check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
+[check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
 
