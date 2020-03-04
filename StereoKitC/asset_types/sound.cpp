@@ -8,14 +8,18 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "../libraries/miniaudio.h"
 
+#include "../libraries/isac_spatial_sound.h"
+
 namespace sk {
 
-sound_inst_t au_active_sounds[8];
+#define MAX_SOUND_SOURCES 8
+sound_inst_t au_active_sounds[MAX_SOUND_SOURCES];
 float        au_mix_temp[4096];
 
 ma_decoder_config au_decoder_config = {};
 ma_device_config  au_config = {};
 ma_device         au_device = {};
+IsacAdapter* isac_adapter = nullptr;
 
 #define SAMPLE_FORMAT   ma_format_f32
 #define CHANNEL_COUNT   1
@@ -83,14 +87,14 @@ sound_t sound_generate(float (*function)(float), float duration) {
 void sound_play(sound_t sound, vec3 at, float volume) {
     ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
 
-    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
+    for (size_t i = 0; i < MAX_SOUND_SOURCES; i++) {
         if (au_active_sounds[i].sound == sound) {
             au_active_sounds[i] = {sound, at, volume};
             return;
         }
     }
 
-    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
+    for (size_t i = 0; i < MAX_SOUND_SOURCES; i++) {
         if (au_active_sounds[i].sound == nullptr) {
             assets_addref(sound->header);
             au_active_sounds[i] = { sound, at, volume };
@@ -165,7 +169,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
     ma_assert(pDevice->playback.format == SAMPLE_FORMAT);   // <-- Important for this example.
 
-    for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
+    for (uint32_t i = 0; i < MAX_SOUND_SOURCES; i++) {
         if (au_active_sounds[i].sound == nullptr)
             continue;
 
@@ -181,24 +185,86 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
 ///////////////////////////////////////////
 
-bool sound_init() {
-    
-    au_config = ma_device_config_init(ma_device_type_playback);
-    au_config.playback.format   = SAMPLE_FORMAT;
-    au_config.playback.channels = CHANNEL_COUNT;
-    au_config.sampleRate        = SAMPLE_RATE;
-    au_config.dataCallback      = data_callback;
-    au_config.pUserData         = nullptr;
+ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame_count, vec3* position, float* volume) {
+    // The way mixing works is that we just read into a temporary buffer, then take the contents of that buffer and mix it with the
+    // contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
+    // doing that in this example.
 
-    if (ma_device_init(NULL, &au_config, &au_device) != MA_SUCCESS) {
-        log_err("Failed to open playback device.");
-        return false;
+    vec3 head_pos = input_head().position;
+    *position = (inst.position - head_pos);
+    *volume = inst.volume;
+
+    ma_uint32 tempCapInFrames = _countof(au_mix_temp) / CHANNEL_COUNT;
+    ma_uint32 total_frames_read = 0;
+
+    while (total_frames_read < frame_count) {
+        ma_uint32 frames_remaining = frame_count - total_frames_read;
+        ma_uint32 frames_to_read = tempCapInFrames;
+        if (frames_to_read > frames_remaining) {
+            frames_to_read = frames_remaining;
+        }
+
+        ma_uint32 frames_read = (ma_uint32)ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
+        if (frames_read == 0) {
+            break;
+        }
+        
+        // Read the data into the buffer provided by ISAC
+        for (ma_uint32 sample = 0; sample < frames_read * CHANNEL_COUNT; ++sample) {
+            int i = total_frames_read * CHANNEL_COUNT + sample;
+            pOutputF32[i] = au_mix_temp[sample];
+        }
+
+        total_frames_read += frames_read;
+        if (frames_read < frames_to_read) {
+            break;  // Reached EOF.
+        }
     }
 
-    if (ma_device_start(&au_device) != MA_SUCCESS) {
-        log_err("Failed to start playback device.\n");
-        ma_device_uninit(&au_device);
-        return false;
+    return total_frames_read;
+}
+///////////////////////////////////////////
+void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes)
+{
+    for (uint32_t i = 0; i < MAX_SOUND_SOURCES; i++) {
+        if (au_active_sounds[i].sound == nullptr)
+            continue;
+
+        ma_uint32 framesRead = readDataForIsac(au_active_sounds[i], sourceBuffers[i], numFrames, &positions[i], &volumes[i]);
+        if (framesRead < numFrames) {
+            sound_release(au_active_sounds[i].sound);
+            au_active_sounds[i].sound = nullptr;
+        }
+    }
+}
+
+///////////////////////////////////////////
+
+bool sound_init() {
+#ifdef _MSC_VER
+    isac_adapter = new IsacAdapter(MAX_SOUND_SOURCES);
+    HRESULT hr = isac_adapter->Activate(isac_data_callback);
+
+    if (FAILED(hr))
+#endif
+    {
+        au_config = ma_device_config_init(ma_device_type_playback);
+        au_config.playback.format = SAMPLE_FORMAT;
+        au_config.playback.channels = CHANNEL_COUNT;
+        au_config.sampleRate = SAMPLE_RATE;
+        au_config.dataCallback = data_callback;
+        au_config.pUserData = nullptr;
+
+        if (ma_device_init(NULL, &au_config, &au_device) != MA_SUCCESS) {
+            log_err("Failed to open playback device.");
+            return false;
+        }
+
+        if (ma_device_start(&au_device) != MA_SUCCESS) {
+            log_err("Failed to start playback device.\n");
+            ma_device_uninit(&au_device);
+            return false;
+        }
     }
     return true;
 }
@@ -212,6 +278,7 @@ void sound_update() {
 
 void sound_shutdown() {
     ma_device_uninit (&au_device);
+    delete isac_adapter;
 }
 
 }
