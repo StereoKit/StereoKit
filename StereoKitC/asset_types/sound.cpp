@@ -222,6 +222,8 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame
 ///////////////////////////////////////////
 
 void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes) {
+    // Assert on debug builds, eliminate warning on release builds
+    UNREFERENCED_PARAMETER(numSources);
     assert(numSources == _countof(au_active_sounds));
 
     for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
