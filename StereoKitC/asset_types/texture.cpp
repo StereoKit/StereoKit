@@ -29,7 +29,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
-		log_err("Can't add a zbuffer to a non-rendertarget texture!");
+		log_err("tex_add_zbuffer can't add a zbuffer to a non-rendertarget texture!");
 		return nullptr;
 	}
 
@@ -41,6 +41,20 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 		tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->array_size);
 	}
 	return texture->depth_buffer;
+}
+
+///////////////////////////////////////////
+
+void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
+	if (!(texture->type & tex_type_rendertarget)) {
+		log_err("tex_set_zbuffer can't add a zbuffer to a non-rendertarget texture!");
+		return;
+	}
+	if (!(depth_texture->type & tex_type_depth)) {
+		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
+		return;
+	}
+	texture->depth_buffer = depth_texture;
 }
 
 ///////////////////////////////////////////

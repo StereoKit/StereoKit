@@ -2,6 +2,7 @@
 
 #include "openxr.h"
 #include "openxr_input.h"
+#include "openxr_view.h"
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -26,18 +27,24 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-struct swapchain_t {
-	XrSwapchain handle;
-	int32_t     width;
-	int32_t     height;
-	vector<XrSwapchainImageD3D11KHR> surface_images;
-	vector<tex_t>                    surface_data;
+XrFormFactor            xr_config_form     = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+XrViewConfigurationType xr_view_primary    = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+
+const char *xr_request_extensions[] = {
+	XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
+	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
+	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
+	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
+	XR_MSFT_HAND_INTERACTION_PREVIEW_EXTENSION_NAME,
+	XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME,
+	XR_MSFT_SPATIAL_GRAPH_BRIDGE_PREVIEW_EXTENSION_NAME,
+	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_PREVIEW_EXTENSION_NAME,
+	XR_MSFT_FIRST_PERSON_OBSERVER_PREVIEW_EXTENSION_NAME,
 };
-
-///////////////////////////////////////////
-
-XrFormFactor            app_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-XrViewConfigurationType app_config_view = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+bool xr_depth_lsr     = false;
+bool xr_depth_lsr_ext = false;
+bool xr_articulated_hands     = false;
+bool xr_articulated_hands_ext = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -48,26 +55,15 @@ XrSpace        xr_app_space     = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time;
-bool           xr_depth_lsr = false;
-bool           xr_depth_lsr_ext = false;
-bool           xr_articulated_hands = false;
-bool           xr_articulated_hands_ext = false;
 
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
-
-vector<matrix>                  xr_viewpt_view;
-vector<matrix>                  xr_viewpt_proj;
-vector<XrView>                  xr_views;
-vector<XrViewConfigurationView> xr_config_views;
-swapchain_t                     xr_swapchains;
-xr_hand_state_                  xr_hand_state = xr_hand_state_uncertain;
+xr_hand_state_         xr_hand_state = xr_hand_state_uncertain;
 
 ///////////////////////////////////////////
 
 bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 
-void                 openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format);
 XrReferenceSpaceType openxr_preferred_space();
 void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
 
@@ -137,7 +133,7 @@ bool openxr_init(const char *app_name) {
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
-	systemInfo.formFactor = app_config_form;
+	systemInfo.formFactor = xr_config_form;
 	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_infof("xrGetSystem failed [%s]", openxr_string(result));
@@ -171,9 +167,9 @@ bool openxr_init(const char *app_name) {
 	// We'll just take the first one available!
 	uint32_t                       blend_count = 0;
 	vector<XrEnvironmentBlendMode> blend_modes;
-	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, 0, &blend_count, nullptr);
+	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, xr_view_primary, 0, &blend_count, nullptr);
 	blend_modes.resize(blend_count);
-	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, app_config_view, blend_count, &blend_count, blend_modes.data());
+	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, xr_view_primary, blend_count, &blend_count, blend_modes.data());
 	if (XR_FAILED(result)) {
 		log_infof("xrEnumerateEnvironmentBlendModes failed [%s]", openxr_string(result));
 		return false;
@@ -236,89 +232,19 @@ bool openxr_init(const char *app_name) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
 		return false;
 	}
-	
-	// Get the surface format information before we create surfaces!
-	DXGI_FORMAT color_format;
-	tex_format_ depth_format;
-	openxr_preferred_format(color_format, depth_format);
 
-	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
-	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
-	uint32_t view_count = 0;
-	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, 0, &view_count, nullptr);
-	xr_config_views.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
-	xr_views       .resize(view_count, { XR_TYPE_VIEW });
-	xr_viewpt_view .resize(view_count, { });
-	xr_viewpt_proj .resize(view_count, { });
-	result = xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, app_config_view, view_count, &view_count, xr_config_views.data());
-	if (XR_FAILED(result)) {
-		log_infof("xrEnumerateViewConfigurationViews failed [%s]", openxr_string(result));
+	if (!openxr_views_create())
 		return false;
-	}
-
-	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
-	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
-	XrViewConfigurationView &view           = xr_config_views[0];
-	XrSwapchainCreateInfo    swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
-	XrSwapchain              handle         = {};
-	swapchain_info.arraySize   = view_count;
-	swapchain_info.mipCount    = 1;
-	swapchain_info.faceCount   = 1;
-	swapchain_info.format      = color_format;
-	swapchain_info.width       = view.recommendedImageRectWidth;
-	swapchain_info.height      = view.recommendedImageRectHeight;
-	swapchain_info.sampleCount = view.recommendedSwapchainSampleCount;
-	swapchain_info.usageFlags  = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
-	result = xrCreateSwapchain(xr_session, &swapchain_info, &handle);
-	if (XR_FAILED(result)) {
-		log_infof("xrCreateSwapchain failed [%s]", openxr_string(result));
-		return false;
-	}
-
-	// Find out how many textures were generated for the swapchain
-	uint32_t surface_count = 0;
-	xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr);
-
-	// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
-	// a depth buffer for each generated texture here as well with make_surfacedata.
-	xr_swapchains = {};
-	xr_swapchains.width  = swapchain_info.width;
-	xr_swapchains.height = swapchain_info.height;
-	xr_swapchains.handle = handle;
-	xr_swapchains.surface_images.resize(surface_count, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR } );
-	xr_swapchains.surface_data  .resize(surface_count, {});
-	result = xrEnumerateSwapchainImages(xr_swapchains.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader*)xr_swapchains.surface_images.data());
-	if (XR_FAILED(result)) {
-		log_infof("xrEnumerateSwapchainImages failed [%s]", openxr_string(result));
-		return false;
-	}
-
-	for (uint32_t s = 0; s < surface_count; s++) {
-		char name[64];
-		sprintf_s(name, 64, "stereokit/system/rendertarget_%d", s);
-		xr_swapchains.surface_data[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id     (xr_swapchains.surface_data[s], name);
-		tex_setsurface (xr_swapchains.surface_data[s], xr_swapchains.surface_images[s].texture, color_format);
-		tex_add_zbuffer(xr_swapchains.surface_data[s], depth_format);
-	}
 	
-	
+	if (!oxri_init())
+		return false;
 
-	return oxri_init();
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
-	const char *extensions[] = {
-		XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
-		XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
-		XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
-		XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
-		XR_MSFT_HAND_INTERACTION_PREVIEW_EXTENSION_NAME,
-		XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME,
-		XR_MSFT_SPATIAL_GRAPH_BRIDGE_PREVIEW_EXTENSION_NAME, };
-
 	// Find what extensions are available on this system!
 	uint32_t ext_count = 0;
 	xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr);
@@ -328,11 +254,11 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 
 	// Count how many there are, and copy them out
 	out_extension_count = 0;
-	for (int32_t e = 0; e < _countof(extensions); e++) {
+	for (int32_t e = 0; e < _countof(xr_request_extensions); e++) {
 		for (uint32_t i = 0; i < ext_count; i++) {
-			if (strcmp(exts[i].extensionName, extensions[e]) == 0) {
+			if (strcmp(exts[i].extensionName, xr_request_extensions[e]) == 0) {
 				if (out_extensions != nullptr)
-					out_extensions[out_extension_count] = extensions[e];
+					out_extensions[out_extension_count] = xr_request_extensions[e];
 				out_extension_count += 1;
 				break;
 			}
@@ -395,73 +321,11 @@ XrReferenceSpaceType openxr_preferred_space() {
 
 ///////////////////////////////////////////
 
-void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_depth_format) {
-	DXGI_FORMAT pixel_formats[] = {
-		DXGI_FORMAT_R8G8B8A8_UNORM,
-		DXGI_FORMAT_B8G8R8A8_UNORM,
-		DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-		DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,};
-	DXGI_FORMAT depth_formats[] = {
-		DXGI_FORMAT_D32_FLOAT,
-		DXGI_FORMAT_D16_UNORM,
-		DXGI_FORMAT_D24_UNORM_S8_UINT,};
-
-	// Get the list of formats OpenXR would like
-	uint32_t count = 0;
-	xrEnumerateSwapchainFormats(xr_session, 0, &count, nullptr);
-	int64_t *formats = (int64_t *)malloc(sizeof(int64_t) * count);
-	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
-
-	// Check those against our color formats
-	out_pixel_format = DXGI_FORMAT_UNKNOWN;
-	for (uint32_t i = 0; i < count; i++) {
-		for (int32_t f = 0; f < _countof(pixel_formats); f++) {
-			if (formats[i] == pixel_formats[f]) {
-				out_pixel_format = pixel_formats[f];
-				break;
-			}
-		}
-		if (out_pixel_format != DXGI_FORMAT_UNKNOWN)
-			break;
-	}
-
-	// Check those against our depth formats
-	DXGI_FORMAT depth_format = DXGI_FORMAT_UNKNOWN;
-	for (uint32_t i = 0; i < count; i++) {
-		for (int32_t f = 0; f < _countof(depth_formats); f++) {
-			if (formats[i] == depth_formats[f]) {
-				depth_format = depth_formats[f];
-				break;
-			}
-		}
-		if (depth_format != DXGI_FORMAT_UNKNOWN)
-			break;
-	}
-
-	// Depth maps directly to SK tex types, so we'll return that instead!
-	out_depth_format = tex_format_depth16;
-	switch (depth_format) {
-	case DXGI_FORMAT_D16_UNORM:         out_depth_format = tex_format_depth16; break;
-	case DXGI_FORMAT_D24_UNORM_S8_UINT: out_depth_format = tex_format_depthstencil; break;
-	case DXGI_FORMAT_D32_FLOAT:         out_depth_format = tex_format_depth32; break;
-	}
-
-	// Release memory
-	free(formats);
-}
-
-///////////////////////////////////////////
-
 void openxr_shutdown() {
 	// Shut down the input!
 	oxri_shutdown();
 
-	// We used a graphics API to initialize the swapchain data, so we'll
-	// give it a chance to release anything here!
-	for (size_t s = 0; s < xr_swapchains.surface_data.size(); s++) {
-		tex_release(xr_swapchains.surface_data[s]);
-	}
-	xrDestroySwapchain(xr_swapchains.handle);
+	openxr_views_destroy();
 
 	// Release all the other OpenXR resources that we've created!
 	// What gets allocated, must get deallocated!
@@ -505,7 +369,7 @@ void openxr_poll_events() {
 			switch (xr_session_state) {
 			case XR_SESSION_STATE_READY: {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
-				begin_info.primaryViewConfigurationType = app_config_view;
+				begin_info.primaryViewConfigurationType = xr_view_primary;
 				xrBeginSession(xr_session, &begin_info);
 				xr_running = true;
 				log_diag("OpenXR session begin.");
@@ -541,14 +405,9 @@ void openxr_render_frame() {
 	// controller models.
 	input_update_predicted();
 
-	// If the session is active, lets render our layer in the compositor!
-	XrCompositionLayerBaseHeader            *layer      = nullptr;
-	XrCompositionLayerProjection             layer_proj = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-	vector<XrCompositionLayerProjectionView> views;
-	bool session_active = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
-	if (session_active && openxr_render_layer(frame_state.predictedDisplayTime, views, layer_proj)) {
-		layer = (XrCompositionLayerBaseHeader*)&layer_proj;
-	}
+	// Render all the views for the application, then clear out the render queue
+	openxr_views_render();
+	render_clear();
 
 	// We're finished with rendering our layer, so send it off for display!
 	XrFrameEndInfo end_info{ XR_TYPE_FRAME_END_INFO };
@@ -557,96 +416,6 @@ void openxr_render_frame() {
 	end_info.layerCount           = layer == nullptr ? 0 : 1;
 	end_info.layers               = &layer;
 	xrEndFrame(xr_session, &end_info);
-
-	render_clear();
-}
-
-///////////////////////////////////////////
-
-void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *result) {
-	// Mix of XMMatrixPerspectiveFovRH from DirectXMath and XrMatrix4x4f_CreateProjectionFov from xr_linear.h
-	const float tanLeft        = tanf(fov.angleLeft);
-	const float tanRight       = tanf(fov.angleRight);
-	const float tanDown        = tanf(fov.angleDown);
-	const float tanUp          = tanf(fov.angleUp);
-	const float tanAngleWidth  = tanRight - tanLeft;
-	const float tanAngleHeight = tanUp - tanDown;
-	const float range          = clip_far / (clip_near - clip_far);
-
-	// [row][column]
-	memset(result, 0, sizeof(float) * 16);
-	result[0]  = 2 / tanAngleWidth;                    // [0][0] Different, DX uses: Width (Height / AspectRatio);
-	result[5]  = 2 / tanAngleHeight;                   // [1][1] Same as DX's: Height (CosFov / SinFov)
-	result[8]  = (tanRight + tanLeft) / tanAngleWidth; // [2][0] Only present in xr's
-	result[9]  = (tanUp + tanDown) / tanAngleHeight;   // [2][1] Only present in xr's
-	result[10] = range;                               // [2][2] Same as xr's: -(farZ + offsetZ) / (farZ - nearZ)
-	result[11] = -1;                                  // [2][3] Same
-	result[14] = range * clip_near;                   // [3][2] Same as xr's: -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
-}
-
-///////////////////////////////////////////
-
-bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &views, XrCompositionLayerProjection &layer) {
-
-	// Find the state and location of each viewpoint at the predicted time
-	uint32_t         view_count  = 0;
-	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
-	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
-	locate_info.viewConfigurationType = app_config_view;
-	locate_info.displayTime           = predictedTime;
-	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, (uint32_t)xr_views.size(), &view_count, xr_views.data());
-
-	// We need to ask which swapchain image to use for rendering! Which one will we get?
-	// Who knows! It's up to the runtime to decide.
-	uint32_t                    img_id;
-	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-	xrAcquireSwapchainImage(xr_swapchains.handle, &acquire_info, &img_id);
-
-	// Wait until the image is available to render to. The compositor could still be
-	// reading from it.
-	XrSwapchainImageWaitInfo wait_info = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
-	wait_info.timeout = XR_INFINITE_DURATION;
-	xrWaitSwapchainImage(xr_swapchains.handle, &wait_info);
-
-	// And now we'll iterate through each viewpoint, and render it!
-	views.resize(view_count);
-	for (uint32_t i = 0; i < view_count; i++) {
-		// Set up our rendering information for the viewpoint we're using right now!
-		views[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
-		views[i].pose = xr_views[i].pose;
-		views[i].fov  = xr_views[i].fov;
-		views[i].subImage.imageArrayIndex  = i;
-		views[i].subImage.swapchain        = xr_swapchains.handle;
-		views[i].subImage.imageRect.offset = { 0, 0 };
-		views[i].subImage.imageRect.extent = { xr_swapchains.width, xr_swapchains.height };
-
-		float xr_projection[16];
-		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
-		memcpy(&xr_viewpt_proj[i], xr_projection, sizeof(float) * 16);
-		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), xr_viewpt_view[i]);
-	}
-
-	// Call the rendering callback with our view and swapchain info
-	tex_t target = xr_swapchains.surface_data[img_id];
-	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? color32{ 0,0,0,255 } 
-		: color32{ 0,0,0,0   });
-	tex_rtarget_set_active(target);
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)xr_swapchains.width, (float)xr_swapchains.height);
-	d3d_context->RSSetViewports(1, &viewport);
-
-	render_draw_matrix(&xr_viewpt_view[0], &xr_viewpt_proj[0], view_count);
-
-	// And tell OpenXR we're done with rendering to this one!
-	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
-	xrReleaseSwapchainImage(xr_swapchains.handle, &release_info);
-
-	layer.space      = xr_app_space;
-	layer.viewCount  = (uint32_t)views.size();
-	layer.views      = views.data();
-	layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-	return true;
 }
 
 ///////////////////////////////////////////
