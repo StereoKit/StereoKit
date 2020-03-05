@@ -185,10 +185,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 ///////////////////////////////////////////
 
 ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame_count, vec3* position, float* volume) {
-    // The way mixing works is that we just read into a temporary buffer, then take the contents of that buffer and mix it with the
-    // contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
-    // doing that in this example.
-
+    // Set the position and volume for this object. ISAC applies this directly for us
     vec3 head_pos = input_head().position;
     *position = (inst.position - head_pos);
     *volume = inst.volume;
@@ -209,10 +206,7 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame
         }
         
         // Read the data into the buffer provided by ISAC
-        for (ma_uint32 sample = 0; sample < frames_read * CHANNEL_COUNT; ++sample) {
-            int i = total_frames_read * CHANNEL_COUNT + sample;
-            pOutputF32[i] = au_mix_temp[sample];
-        }
+        memcpy(&pOutputF32[total_frames_read * CHANNEL_COUNT], au_mix_temp, frames_read * CHANNEL_COUNT * sizeof(float));
 
         total_frames_read += frames_read;
         if (frames_read < frames_to_read) {
@@ -222,9 +216,12 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame
 
     return total_frames_read;
 }
+
 ///////////////////////////////////////////
-void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes)
-{
+
+void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes) {
+    assert(numSources == _countof(au_active_sounds));
+
     for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == nullptr)
             continue;

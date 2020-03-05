@@ -209,6 +209,9 @@ DWORD WINAPI IsacAdapter::SpatialAudioClientWorker(LPVOID lpParam)
                 pThis->m_Sources[i]->GetBuffer(&objectBuffers[i], &byteCount);
                 // Fill the buffers with 0s
                 memset(objectBuffers[i], 0, byteCount);
+                // Set all positions and volumes to 0, too. The app callback will overwrite them
+                positions[i] = vec3_zero;
+                volumes[i] = 0.0f;
             }
 
             pThis->m_AppCallback((float**)objectBuffers, pThis->m_MaxSources, byteCount / sizeof(float), positions, volumes);
@@ -217,7 +220,11 @@ DWORD WINAPI IsacAdapter::SpatialAudioClientWorker(LPVOID lpParam)
             {
                 // Intentionally ignore any per-object failures and continue to the next object
                 pThis->m_Sources[i]->SetPosition(positions[i].x, positions[i].y, positions[i].z);
-                pThis->m_Sources[i]->SetVolume(volumes[i]);
+                // Apply 1/r gain
+                float dist = vec3_magnitude(positions[i]);
+                // Guard against objects being too close
+                if (dist <= 0.00001f) dist = 1;
+                pThis->m_Sources[i]->SetVolume(min(1.0f, volumes[i] / dist));
             }
 
             pThis->m_SpatialAudioStream->EndUpdatingAudioObjects();
