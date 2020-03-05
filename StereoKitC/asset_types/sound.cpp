@@ -18,7 +18,9 @@ float        au_mix_temp[4096];
 ma_decoder_config au_decoder_config = {};
 ma_device_config  au_config = {};
 ma_device         au_device = {};
+#ifdef _MSC_VER
 IsacAdapter* isac_adapter = nullptr;
+#endif
 
 #define SAMPLE_FORMAT   ma_format_f32
 #define CHANNEL_COUNT   1
@@ -274,7 +276,9 @@ void sound_update() {
 
 void sound_shutdown() {
     ma_device_uninit (&au_device);
+#ifdef _MSC_VER
     delete isac_adapter;
+#endif
 }
 
 }
