@@ -12,8 +12,7 @@
 
 namespace sk {
 
-#define MAX_SOUND_SOURCES 8
-sound_inst_t au_active_sounds[MAX_SOUND_SOURCES];
+sound_inst_t au_active_sounds[8];
 float        au_mix_temp[4096];
 
 ma_decoder_config au_decoder_config = {};
@@ -87,14 +86,14 @@ sound_t sound_generate(float (*function)(float), float duration) {
 void sound_play(sound_t sound, vec3 at, float volume) {
     ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
 
-    for (size_t i = 0; i < MAX_SOUND_SOURCES; i++) {
+    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == sound) {
             au_active_sounds[i] = {sound, at, volume};
             return;
         }
     }
 
-    for (size_t i = 0; i < MAX_SOUND_SOURCES; i++) {
+    for (size_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == nullptr) {
             assets_addref(sound->header);
             au_active_sounds[i] = { sound, at, volume };
@@ -169,7 +168,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
     ma_assert(pDevice->playback.format == SAMPLE_FORMAT);   // <-- Important for this example.
 
-    for (uint32_t i = 0; i < MAX_SOUND_SOURCES; i++) {
+    for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == nullptr)
             continue;
 
@@ -226,7 +225,7 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame
 ///////////////////////////////////////////
 void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes)
 {
-    for (uint32_t i = 0; i < MAX_SOUND_SOURCES; i++) {
+    for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
         if (au_active_sounds[i].sound == nullptr)
             continue;
 
@@ -242,7 +241,7 @@ void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t num
 
 bool sound_init() {
 #ifdef _MSC_VER
-    isac_adapter = new IsacAdapter(MAX_SOUND_SOURCES);
+    isac_adapter = new IsacAdapter(_countof(au_active_sounds));
     HRESULT hr = isac_adapter->Activate(isac_data_callback);
 
     if (FAILED(hr))

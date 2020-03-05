@@ -1,6 +1,7 @@
 #ifdef _MSC_VER
 
 #include "isac_spatial_sound.h"
+#include <winrt/Windows.Foundation.h>
 
 using namespace Microsoft::WRL;
 using namespace winrt::Windows::Media::Devices;
@@ -21,15 +22,17 @@ if (y) return x
 #define RETURN_HR_IF_NULL(x, y) \
 if (y == nullptr) return x
 
-IsacAdapter::IsacAdapter(int maxSources) : m_IsActivated(false), m_PumpEvent(nullptr)
+IsacAdapter::IsacAdapter(int maxSources) : m_IsActivated(false), 
+    m_PumpEvent(nullptr), m_AppCallback(nullptr), m_PumpThread(nullptr)
 {
-    //TODO TODO TODO
     // Subscribe to device change notifications so we can reactivate later
-    //auto deviceChangeHandler = [&](winrt::Windows::Foundation::IInspectable const&,
-    //    DefaultAudioRenderDeviceChangedEventArgs const& args) {
-    //        return HandleDeviceChange(args.Id());
-    //};
-    //m_DeviceChangeToken = MediaDevice::DefaultAudioRenderDeviceChanged(deviceChangeHandler);
+    winrt::Windows::Foundation::TypedEventHandler<struct winrt::Windows::Foundation::IInspectable, 
+        struct winrt::Windows::Media::Devices::DefaultAudioRenderDeviceChangedEventArgs> 
+        deviceChangeHandler = [&](winrt::Windows::Foundation::IInspectable const&,
+        DefaultAudioRenderDeviceChangedEventArgs const& args) {
+            return HandleDeviceChange(args.Id());
+    };
+    m_DeviceChangeToken = MediaDevice::DefaultAudioRenderDeviceChanged(deviceChangeHandler);
     m_Sources = new ComPtr<ISpatialAudioObject>[maxSources];
     m_MaxSources = maxSources;
 }
