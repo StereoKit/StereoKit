@@ -14,6 +14,7 @@ namespace sk {
 
 sound_inst_t au_active_sounds[8];
 float        au_mix_temp[4096];
+matrix       au_head_transform;
 
 ma_decoder_config au_decoder_config = {};
 ma_device_config  au_config = {};
@@ -188,9 +189,8 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
 ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame_count, vec3* position, float* volume) {
     // Set the position and volume for this object. ISAC applies this directly for us
-    vec3 head_pos = input_head().position;
-    *position = (inst.position - head_pos);
-    *volume = inst.volume;
+    *position = matrix_mul_point(au_head_transform, inst.position);
+    *volume   = inst.volume;
 
     ma_uint32 tempCapInFrames = _countof(au_mix_temp) / CHANNEL_COUNT;
     ma_uint32 total_frames_read = 0;
@@ -272,6 +272,8 @@ bool sound_init() {
 ///////////////////////////////////////////
 
 void sound_update() {
+    matrix head = pose_matrix(input_head());
+    matrix_inverse(head, au_head_transform);
 }
 
 ///////////////////////////////////////////
