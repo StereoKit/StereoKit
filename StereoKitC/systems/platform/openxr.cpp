@@ -27,8 +27,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-XrFormFactor            xr_config_form     = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-XrViewConfigurationType xr_view_primary    = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 
 const char *xr_request_extensions[] = {
 	XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
@@ -61,8 +60,6 @@ XrReferenceSpaceType   xr_refspace;
 xr_hand_state_         xr_hand_state = xr_hand_state_uncertain;
 
 ///////////////////////////////////////////
-
-bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &projectionViews, XrCompositionLayerProjection &layer);
 
 XrReferenceSpaceType openxr_preferred_space();
 void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
@@ -134,68 +131,25 @@ bool openxr_init(const char *app_name) {
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	systemInfo.formFactor = xr_config_form;
-	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
-	if (XR_FAILED(result)) {
-		log_infof("xrGetSystem failed [%s]", openxr_string(result));
-		return false;
-	}
+	xr_check(xrGetSystem(xr_instance, &systemInfo, &xr_system_id),
+		"xrGetSystem failed [%s]");
 
 	// Figure out what this device is capable of!
-	XrSystemProperties properties = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemProperties                 properties          = { XR_TYPE_SYSTEM_PROPERTIES };
 	XrSystemHandTrackingPropertiesMSFT tracking_properties = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_MSFT };
 	properties.next = &tracking_properties;
-	result = xrGetSystemProperties(xr_instance, xr_system_id, &properties);
-	if (XR_FAILED(result)) {
-		log_infof("xrGetSystemProperties failed [%s]", openxr_string(result));
-		return false;
-	}
+	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
+		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
 	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
 	xr_depth_lsr         = xr_depth_lsr_ext; // TODO: Find out how to verify this one
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
-	result = xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement);
-	if (XR_FAILED(result)) {
-		log_infof("xrGetD3D11GraphicsRequirementsKHR failed [%s]", openxr_string(result));
-		return false;
-	}
+	xr_check(xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
+		"xrGetD3D11GraphicsRequirementsKHR failed [%s]");
 	if (!d3d_init(&requirement.adapterLuid))
 		return false;
-
-	// Check what blend mode is valid for this device (opaque vs transparent displays)
-	// We'll just take the first one available!
-	uint32_t                       blend_count = 0;
-	vector<XrEnvironmentBlendMode> blend_modes;
-	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, xr_view_primary, 0, &blend_count, nullptr);
-	blend_modes.resize(blend_count);
-	result = xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, xr_view_primary, blend_count, &blend_count, blend_modes.data());
-	if (XR_FAILED(result)) {
-		log_infof("xrEnumerateEnvironmentBlendModes failed [%s]", openxr_string(result));
-		return false;
-	}
-
-	for (size_t i = 0; i < blend_count; i++) {
-		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
-			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
-			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
-			xr_blend = blend_modes[i];
-			break;
-		}
-	}
-	
-	// register dispay type with the system
-	switch (xr_blend) {
-	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE: {
-		sk_info.display_type = display_opaque;
-	}break;
-	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE: {
-		sk_info.display_type = display_additive;
-	}break;
-	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: {
-		sk_info.display_type = display_passthrough;
-	}break;
-	}
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
@@ -268,10 +222,8 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	// Flag any extensions the app will need to know about
 	if (out_extensions != nullptr) {
 		for (uint32_t i = 0; i < out_extension_count; i++) {
-			if (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0)
-				xr_depth_lsr_ext = true;
-			else if (strcmp(out_extensions[i], XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME) == 0)
-				xr_articulated_hands_ext = true;
+			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME ) == 0) xr_articulated_hands_ext = true;
 		}
 	}
 
@@ -369,7 +321,16 @@ void openxr_poll_events() {
 			switch (xr_session_state) {
 			case XR_SESSION_STATE_READY: {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
-				begin_info.primaryViewConfigurationType = xr_view_primary;
+				begin_info.primaryViewConfigurationType = xr_display_types[0];
+
+				XrSessionBeginSecondaryViewConfigurationInfoMSFT secondary = { XR_TYPE_SESSION_BEGIN_SECONDARY_VIEW_CONFIGURATION_INFO_MSFT };
+				if (xr_display_count > 1) {
+					secondary.next                          = nullptr;
+					secondary.viewConfigurationCount        = xr_display_count-1;
+					secondary.enabledViewConfigurationTypes = xr_display_types+1;
+					begin_info.next = &secondary;
+				}
+
 				xrBeginSession(xr_session, &begin_info);
 				xr_running = true;
 				log_diag("OpenXR session begin.");
@@ -383,39 +344,6 @@ void openxr_poll_events() {
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
-}
-
-///////////////////////////////////////////
-
-void openxr_render_frame() {
-	// Block until the previous frame is finished displaying, and is ready for another one.
-	// Also returns a prediction of when the next frame will be displayed, for use with predicting
-	// locations of controllers, viewpoints, etc.
-	XrFrameState frame_state = { XR_TYPE_FRAME_STATE };
-	xrWaitFrame (xr_session, nullptr, &frame_state);
-	// Must be called before any rendering is done! This can return some interesting flags, like 
-	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
-	// xrEndFrame right away.
-	xrBeginFrame(xr_session, nullptr);
-
-	// Timing also needs some work, may be best as some sort of anchor system
-	xr_time = frame_state.predictedDisplayTime + frame_state.predictedDisplayPeriod;
-
-	// Execute any code that's dependant on the predicted time, such as updating the location of
-	// controller models.
-	input_update_predicted();
-
-	// Render all the views for the application, then clear out the render queue
-	openxr_views_render();
-	render_clear();
-
-	// We're finished with rendering our layer, so send it off for display!
-	XrFrameEndInfo end_info{ XR_TYPE_FRAME_END_INFO };
-	end_info.displayTime          = frame_state.predictedDisplayTime;
-	end_info.environmentBlendMode = xr_blend;
-	end_info.layerCount           = layer == nullptr ? 0 : 1;
-	end_info.layers               = &layer;
-	xrEndFrame(xr_session, &end_info);
 }
 
 ///////////////////////////////////////////

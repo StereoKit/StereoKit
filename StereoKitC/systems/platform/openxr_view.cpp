@@ -6,6 +6,7 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
+#include "../../systems/input.h"
 #include "../../libraries/stb_ds.h"
 
 #include <openxr/openxr.h>
@@ -34,8 +35,11 @@ void swapchain_delete(swapchain_t &swapchain) {
 
 ///////////////////////////////////////////
 
-struct projection_layer_t {
-	XrViewConfigurationType type;
+struct device_display_t {
+	XrViewConfigurationType      type;
+	XrEnvironmentBlendMode       blend;
+	XrCompositionLayerProjection projection_data;
+	bool32_t                     active;
 	
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
@@ -45,32 +49,36 @@ struct projection_layer_t {
 	XrView                           *views;
 	XrCompositionLayerProjectionView *view_layers;
 	matrix                           *view_transforms;
-	matrix                           *projections;
+	matrix                           *view_projections;
 };
-void projection_layer_delete(projection_layer_t &layer) {
-	swapchain_delete(layer.swapchain_color);
-	swapchain_delete(layer.swapchain_depth);
+void device_display_delete(device_display_t &display) {
+	swapchain_delete(display.swapchain_color);
+	swapchain_delete(display.swapchain_depth);
 
-	free(layer.views          ); layer.views           = nullptr;
-	free(layer.view_transforms); layer.view_transforms = nullptr;
-	free(layer.view_layers    ); layer.view_layers     = nullptr;
-	free(layer.projections    ); layer.projections     = nullptr;
+	free(display.views           ); display.views            = nullptr;
+	free(display.view_transforms ); display.view_transforms  = nullptr;
+	free(display.view_layers     ); display.view_layers      = nullptr;
+	free(display.view_projections); display.view_projections = nullptr;
 }
 
 ///////////////////////////////////////////
 
-XrViewConfigurationType xr_request_views[] = {
+XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
 	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
+XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
-projection_layer_t           *xr_view_layers = nullptr;
-XrCompositionLayerProjection *xr_composition_layers = nullptr;
+uint32_t                      xr_display_count      = 0;
+device_display_t             *xr_displays           = nullptr;
+XrViewConfigurationType      *xr_display_types      = nullptr;
+XrCompositionLayerProjection**xr_composition_layers = nullptr;
 
 ///////////////////////////////////////////
 
-bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count);
+bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count);
 void openxr_preferred_format(DXGI_FORMAT &out_color, DXGI_FORMAT &out_depth);
+bool openxr_preferred_blend (XrViewConfigurationType view_type, XrEnvironmentBlendMode &out_blend);
 
 ///////////////////////////////////////////
 
@@ -85,32 +93,44 @@ bool openxr_views_create() {
 
 	// Initialize each valid view configuration
 	for (uint32_t t = 0; t < count; t++) {
-		for (uint32_t r = 0; r < _countof(xr_request_views); r++) {
-			if (types[t] == xr_request_views[r]) {
-				arrput(xr_view_layers, projection_layer_t{});
-				openxr_create_view(types[t], arrlast(xr_view_layers));
+		for (uint32_t r = 0; r < _countof(xr_request_displays); r++) {
+			if (types[t] == xr_request_displays[r]) {
+				arrput(xr_display_types, types[t]);
+				arrput(xr_displays,  device_display_t{});
+				openxr_create_view(types[t], arrlast(xr_displays));
 			}
 		}
 	}
-
 	free(types);
+	xr_display_count = arrlen(xr_displays);
+
+	if (xr_display_count == 0) {
+		log_info("No valid display configurations were found!");
+		return false;
+	}
+
+	// Register dispay type with the system
+	switch (xr_displays[0].blend) {
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      sk_info.display_type = display_opaque;      break;
+	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
+	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
+	}
 }
 
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
-	for (size_t i = 0; i < arrlen(xr_view_layers); i++) {
-		projection_layer_delete(xr_view_layers[i]);
+	for (size_t i = 0; i < arrlen(xr_displays); i++) {
+		device_display_delete(xr_displays[i]);
 	}
-	arrfree(xr_view_layers);
+	arrfree(xr_displays);
+	arrfree(xr_display_types);
 	arrfree(xr_composition_layers);
 }
 
 ///////////////////////////////////////////
 
-bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &out_view) {
-	out_view.type = view_type;
-
+bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out_view) {
 	// Get the surface format information before we create surfaces!
 	DXGI_FORMAT color_format, depth_format;
 	openxr_preferred_format(color_format, depth_format);
@@ -129,20 +149,22 @@ bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &o
 		"xrEnumerateViewConfigurationViews failed [%s]");
 
 	// Extract information from the views we got
-	out_view.view_cap        = config_ct;
-	out_view.view_count      = 0;
-	out_view.views           = (XrView*)malloc(sizeof(XrView) * config_ct);
-	out_view.view_layers     = (XrCompositionLayerProjectionView*)malloc(sizeof(XrCompositionLayerProjectionView) * config_ct);
-	out_view.view_transforms = (matrix*)malloc(sizeof(matrix) * config_ct);
-	out_view.projections     = (matrix*)malloc(sizeof(matrix) * config_ct);
+	out_view.type             = view_type;
+	out_view.view_cap         = config_ct;
+	out_view.view_count       = 0;
+	out_view.views            = (XrView*)malloc(sizeof(XrView) * config_ct);
+	out_view.view_layers      = (XrCompositionLayerProjectionView*)malloc(sizeof(XrCompositionLayerProjectionView) * config_ct);
+	out_view.view_transforms  = (matrix*)malloc(sizeof(matrix) * config_ct);
+	out_view.view_projections = (matrix*)malloc(sizeof(matrix) * config_ct);
 	
 	int32_t w = configs[0].recommendedImageRectWidth;
 	int32_t h = configs[0].recommendedImageRectHeight;
 	int32_t s = configs[0].recommendedSwapchainSampleCount;
 	free(configs); configs = nullptr;
 	
-	openxr_create_swapchain(out_view.swapchain_color, true,  config_ct, color_format, w, h, s);
-	openxr_create_swapchain(out_view.swapchain_depth, false, config_ct, depth_format, w, h, s);
+	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
+	if (!openxr_create_swapchain(out_view.swapchain_color, view_type, true,  config_ct, color_format, w, h, s)) return false;
+	if (!openxr_create_swapchain(out_view.swapchain_depth, view_type, false, config_ct, depth_format, w, h, s)) return false;
 
 	// Turn swapchains into StereoKit assets
 	for (uint32_t s = 0; s < out_view.swapchain_color.surface_count; s++) {
@@ -167,7 +189,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &o
 
 ///////////////////////////////////////////
 
-bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count) {
+bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count) {
 	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
 	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
 	XrSwapchainCreateInfo swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
@@ -182,6 +204,14 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t ar
 	swapchain_info.usageFlags  = color 
 		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT 
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	// If it's a secondary view, let OpenXR know
+	XrSwapchainSecondaryViewConfigurationCreateInfoMSFT secondary = { XR_TYPE_SWAPCHAIN_SECONDARY_VIEW_CONFIGURATION_CREATE_INFO_MSFT };
+	if (type != xr_display_primary) {
+		secondary.viewConfigurationType = type;
+		swapchain_info.next = &secondary;
+	}
+
 	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle), 
 		"xrCreateSwapchain failed [%s]");
 
@@ -228,28 +258,22 @@ void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_d
 	int64_t *formats = (int64_t *)malloc(sizeof(int64_t) * count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
-	// Check those against our color formats
+	// Check those against our formats
 	out_color_dx = DXGI_FORMAT_UNKNOWN;
+	out_depth_dx = DXGI_FORMAT_UNKNOWN;
 	for (uint32_t i=0; i<count; i++) {
-		for (int32_t f=0; f<_countof(pixel_formats); f++) {
+		for (int32_t f=0; out_color_dx == DXGI_FORMAT_UNKNOWN && f<_countof(pixel_formats); f++) {
 			if (formats[i] == pixel_formats[f]) {
 				out_color_dx = pixel_formats[f];
 				break;
 			}
 		}
-		if (out_color_dx != DXGI_FORMAT_UNKNOWN) break;
-	}
-
-	// Check those against our depth formats
-	out_depth_dx = DXGI_FORMAT_UNKNOWN;
-	for (uint32_t i=0; i<count; i++) {
-		for (int32_t f=0; f<_countof(depth_formats); f++) {
+		for (int32_t f=0; out_depth_dx == DXGI_FORMAT_UNKNOWN && f<_countof(depth_formats); f++) {
 			if (formats[i] == depth_formats[f]) {
 				out_depth_dx = depth_formats[f];
 				break;
 			}
 		}
-		if (out_depth_dx != DXGI_FORMAT_UNKNOWN) break;
 	}
 
 	// Release memory
@@ -258,23 +282,82 @@ void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_d
 
 ///////////////////////////////////////////
 
-void openxr_views_render() {
-	// If the session is active, lets render our layer in the compositor!
-	XrCompositionLayerBaseHeader *layer      = nullptr;
-	XrCompositionLayerProjection  layer_proj = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-	arrsetlen(xr_composition_layers, 0);
-	bool session_active = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
-	if (session_active && openxr_render_layer(frame_state.predictedDisplayTime, views, layer_proj)) {
-		layer = (XrCompositionLayerBaseHeader*)&layer_proj;
+bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlendMode &out_blend) {
+	// Check what blend mode is valid for this device (opaque vs transparent displays)
+	// We'll just take the first one available!
+	uint32_t                blend_count = 0;
+	XrEnvironmentBlendMode *blend_modes;
+	xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, 0, &blend_count, nullptr);
+	blend_modes = (XrEnvironmentBlendMode*)malloc(sizeof(XrEnvironmentBlendMode) * blend_count);
+	xr_check(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, blend_count, &blend_count, blend_modes),
+		"xrEnumerateEnvironmentBlendModes failed [%s]");
+
+	for (size_t i = 0; i < blend_count; i++) {
+		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
+			out_blend = blend_modes[i];
+			return true;
+		}
 	}
+
+	log_info("openxr_preferred_blend couldn't find a valid blend mode!");
+	return false;
+}
+
+
+///////////////////////////////////////////
+
+void openxr_render_frame() {
+	// Block until the previous frame is finished displaying, and is ready for another one.
+	// Also returns a prediction of when the next frame will be displayed, for use with predicting
+	// locations of controllers, viewpoints, etc.
+	XrFrameWaitInfo wait_info   = { XR_TYPE_FRAME_WAIT_INFO };
+	XrFrameState    frame_state = { XR_TYPE_FRAME_STATE };
+	xrWaitFrame (xr_session, &wait_info, &frame_state);
+	// Must be called before any rendering is done! This can return some interesting flags, like 
+	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
+	// xrEndFrame right away.
+	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
+	xrBeginFrame(xr_session, &begin_info);
+
+	// Timing also needs some work, may be best as some sort of anchor system
+	xr_time = frame_state.predictedDisplayTime;
+
+	// Execute any code that's dependant on the predicted time, such as updating the location of
+	// controller models.
+	input_update_predicted();
+
+	// Render all the views for the application, then clear out the render queue
+	openxr_views_render(frame_state.predictedDisplayTime);
+	render_clear();
+
+	XrFrameEndSecondaryViewConfigurationInfoMSFT end_second = {};
+	end_second.viewConfigurationCount = 
 
 	// We're finished with rendering our layer, so send it off for display!
 	XrFrameEndInfo end_info{ XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime          = frame_state.predictedDisplayTime;
-	end_info.environmentBlendMode = xr_blend;
-	end_info.layerCount           = layer == nullptr ? 0 : 1;
-	end_info.layers               = &layer;
+	end_info.environmentBlendMode = xr_displays[0].blend;
+	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
+	end_info.layers               = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data;
 	xrEndFrame(xr_session, &end_info);
+}
+
+///////////////////////////////////////////
+
+void openxr_views_render(XrTime time) {
+	// If the session is active, lets render our layer in the compositor!
+	arrsetlen(xr_composition_layers, 0);
+	bool session_active = 
+		xr_session_state == XR_SESSION_STATE_VISIBLE || 
+		xr_session_state == XR_SESSION_STATE_FOCUSED;
+	if (session_active) {
+		for (size_t i = 0; i < xr_display_count; i++) {
+			arrput(xr_composition_layers, &xr_displays[i].projection_data);
+			openxr_render_layer(time, xr_displays[i]);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -302,7 +385,7 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 
 ///////////////////////////////////////////
 
-bool openxr_render_layer(XrTime predictedTime, projection_layer_t &layer, XrCompositionLayerProjection &composition_layer) {
+bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 
 	// Find the state and location of each viewpoint at the predicted time
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
@@ -338,7 +421,7 @@ bool openxr_render_layer(XrTime predictedTime, projection_layer_t &layer, XrComp
 
 		float xr_projection[16];
 		openxr_projection(view.fov, 0.1f, 50, xr_projection);
-		memcpy(&layer.projections[i], xr_projection, sizeof(float) * 16);
+		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
 		matrix_inverse(matrix_trs((vec3&)view.pose.position, (quat&)view.pose.orientation, vec3_one), layer.view_transforms[i]);
 	}
 
@@ -351,16 +434,17 @@ bool openxr_render_layer(XrTime predictedTime, projection_layer_t &layer, XrComp
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)xr_swapchains.width, (float)xr_swapchains.height);
 	d3d_context->RSSetViewports(1, &viewport);
 
-	render_draw_matrix(layer.view_transforms, layer.projections, layer.view_count);
+	render_draw_matrix(layer.view_transforms, layer.view_projections, layer.view_count);
 
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
 	xrReleaseSwapchainImage(xr_swapchains.handle, &release_info);
 
-	composition_layer.space      = xr_app_space;
-	composition_layer.viewCount  = layer.view_count;
-	composition_layer.views      = layer.view_layers;
-	composition_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+	layer.projection_data = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+	layer.projection_data.space      = xr_app_space;
+	layer.projection_data.viewCount  = layer.view_count;
+	layer.projection_data.views      = layer.view_layers;
+	layer.projection_data.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 	return true;
 }
 

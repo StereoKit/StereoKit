@@ -37,6 +37,7 @@ extern XrSpace    xr_hand_space[2];
 extern XrSpace    xr_app_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
+extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_articulated_hands;
 extern XrExtTable xr_extensions;
