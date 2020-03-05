@@ -616,6 +616,21 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 
 ///////////////////////////////////////////
 
+tex_format_ tex_get_tex_format(DXGI_FORMAT format) {
+	switch (format) {
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return tex_format_rgba32;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:      return tex_format_rgba32_linear;
+	case DXGI_FORMAT_R16G16B16A16_UNORM:  return tex_format_rgba64;
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:  return tex_format_rgba128;
+	case DXGI_FORMAT_D32_FLOAT:           return tex_format_depth32;
+	case DXGI_FORMAT_D16_UNORM:           return tex_format_depth16;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return tex_format_depthstencil;
+	default: log_errf("tex_get_tex_format received an unrecognized format %d", format); return (tex_format_)0;
+	}
+}
+
+///////////////////////////////////////////
+
 size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:

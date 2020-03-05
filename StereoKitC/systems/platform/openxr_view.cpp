@@ -6,6 +6,7 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
+#include "../../libraries/stb_ds.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -34,13 +35,17 @@ void swapchain_delete(swapchain_t &swapchain) {
 ///////////////////////////////////////////
 
 struct projection_layer_t {
+	XrViewConfigurationType type;
+	
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
 
 	uint32_t view_count;
-	XrView  *views;
-	matrix  *view_transforms;
-	matrix  *projections;
+	uint32_t view_cap;
+	XrView                           *views;
+	XrCompositionLayerProjectionView *view_layers;
+	matrix                           *view_transforms;
+	matrix                           *projections;
 };
 void projection_layer_delete(projection_layer_t &layer) {
 	swapchain_delete(layer.swapchain_color);
@@ -48,6 +53,7 @@ void projection_layer_delete(projection_layer_t &layer) {
 
 	free(layer.views          ); layer.views           = nullptr;
 	free(layer.view_transforms); layer.view_transforms = nullptr;
+	free(layer.view_layers    ); layer.view_layers     = nullptr;
 	free(layer.projections    ); layer.projections     = nullptr;
 }
 
@@ -58,13 +64,13 @@ XrViewConfigurationType xr_request_views[] = {
 	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
 
-int32_t             xr_view_count;
-projection_layer_t *xr_view_layers;
+projection_layer_t           *xr_view_layers = nullptr;
+XrCompositionLayerProjection *xr_composition_layers = nullptr;
 
 ///////////////////////////////////////////
 
 bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count);
-void openxr_preferred_format(DXGI_FORMAT &out_pixel_format_dx, tex_format_ &out_pixel_format_sk, DXGI_FORMAT &out_depth_format_dx, tex_format_ &out_depth_format_sk);
+void openxr_preferred_format(DXGI_FORMAT &out_color, DXGI_FORMAT &out_depth);
 
 ///////////////////////////////////////////
 
@@ -77,23 +83,12 @@ bool openxr_views_create() {
 	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, count, &count, types),
 		"xrEnumerateViewConfigurations failed [%s]");
 
-	// Count how many view configurations are valid that we've requested
-	xr_view_count = 0;
-	for (uint32_t t = 0; t < count; t++) {
-		for (uint32_t r = 0; r < _countof(xr_request_views); r++) {
-			if (types[t] == xr_request_views[r])
-				xr_view_count++;
-		}
-	}
-
-	// Now initialize each valid view configurations
-	xr_view_layers = (projection_layer_t*)malloc(sizeof(projection_layer_t) * xr_view_count);
-	xr_view_count  = 0;
+	// Initialize each valid view configuration
 	for (uint32_t t = 0; t < count; t++) {
 		for (uint32_t r = 0; r < _countof(xr_request_views); r++) {
 			if (types[t] == xr_request_views[r]) {
-				openxr_create_view(types[t], xr_view_layers[xr_view_count]);
-				xr_view_count++;
+				arrput(xr_view_layers, projection_layer_t{});
+				openxr_create_view(types[t], arrlast(xr_view_layers));
 			}
 		}
 	}
@@ -104,19 +99,21 @@ bool openxr_views_create() {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
-	for (size_t i = 0; i < xr_view_count; i++)
+	for (size_t i = 0; i < arrlen(xr_view_layers); i++) {
 		projection_layer_delete(xr_view_layers[i]);
-	free(xr_view_layers);
+	}
+	arrfree(xr_view_layers);
+	arrfree(xr_composition_layers);
 }
 
 ///////////////////////////////////////////
 
-int32_t xr_target_index = 0;
 bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &out_view) {
+	out_view.type = view_type;
+
 	// Get the surface format information before we create surfaces!
-	DXGI_FORMAT color_format,    depth_format;
-	tex_format_ color_format_sk, depth_format_sk;
-	openxr_preferred_format(color_format, color_format_sk, depth_format, depth_format_sk);
+	DXGI_FORMAT color_format, depth_format;
+	openxr_preferred_format(color_format, depth_format);
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
@@ -131,6 +128,14 @@ bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &o
 	xr_check(xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, view_type, config_ct, &config_ct, configs),
 		"xrEnumerateViewConfigurationViews failed [%s]");
 
+	// Extract information from the views we got
+	out_view.view_cap        = config_ct;
+	out_view.view_count      = 0;
+	out_view.views           = (XrView*)malloc(sizeof(XrView) * config_ct);
+	out_view.view_layers     = (XrCompositionLayerProjectionView*)malloc(sizeof(XrCompositionLayerProjectionView) * config_ct);
+	out_view.view_transforms = (matrix*)malloc(sizeof(matrix) * config_ct);
+	out_view.projections     = (matrix*)malloc(sizeof(matrix) * config_ct);
+	
 	int32_t w = configs[0].recommendedImageRectWidth;
 	int32_t h = configs[0].recommendedImageRectHeight;
 	int32_t s = configs[0].recommendedSwapchainSampleCount;
@@ -142,19 +147,19 @@ bool openxr_create_view(XrViewConfigurationType view_type, projection_layer_t &o
 	// Turn swapchains into StereoKit assets
 	for (uint32_t s = 0; s < out_view.swapchain_color.surface_count; s++) {
 		out_view.swapchain_color.textures[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		out_view.swapchain_depth.textures[s] = tex_create(tex_type_depth, depth_format_sk);
+		out_view.swapchain_depth.textures[s] = tex_create(tex_type_depth, tex_get_tex_format(depth_format));
 
-		char name[64];
-		sprintf_s(name, "renderer/colortarget_%d", xr_target_index);
+		char           name[64];
+		static int32_t target_index = 0;
+		target_index++;
+		sprintf_s(name, "renderer/colortarget_%d", target_index);
 		tex_set_id(out_view.swapchain_color.textures[s], name);
-		sprintf_s(name, "renderer/depthtarget_%d", xr_target_index);
+		sprintf_s(name, "renderer/depthtarget_%d", target_index);
 		tex_set_id(out_view.swapchain_depth.textures[s], name);
 
 		tex_setsurface (out_view.swapchain_color.textures[s], out_view.swapchain_color.images[s].texture, color_format);
 		tex_setsurface (out_view.swapchain_depth.textures[s], out_view.swapchain_depth.images[s].texture, depth_format);
 		tex_set_zbuffer(out_view.swapchain_color.textures[s], out_view.swapchain_depth.textures[s]);
-
-		xr_target_index++;
 	}
 	
 	return true;
@@ -194,8 +199,9 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t ar
 	out_swapchain.surface_count = surface_count;
 	out_swapchain.images        = (XrSwapchainImageD3D11KHR*)malloc(sizeof(XrSwapchainImageD3D11KHR) * surface_count);
 	out_swapchain.textures      = (tex_t                   *)malloc(sizeof(tex_t                   ) * surface_count);
-	for (size_t i = 0; i < surface_count; i++)
+	for (size_t i = 0; i < surface_count; i++) {
 		out_swapchain.images[i] = { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR };
+	}
 	
 	xr_check(xrEnumerateSwapchainImages(out_swapchain.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader *)out_swapchain.images),
 		"xrEnumerateSwapchainImages failed [%s]");
@@ -205,7 +211,7 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, bool color, uint32_t ar
 
 ///////////////////////////////////////////
 
-void openxr_preferred_format(DXGI_FORMAT &out_pixel_format_dx, tex_format_ &out_pixel_format_sk, DXGI_FORMAT &out_depth_format_dx, tex_format_ &out_depth_format_sk) {
+void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_dx) {
 	DXGI_FORMAT pixel_formats[] = {
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -223,46 +229,27 @@ void openxr_preferred_format(DXGI_FORMAT &out_pixel_format_dx, tex_format_ &out_
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
 	// Check those against our color formats
-	out_pixel_format_dx = DXGI_FORMAT_UNKNOWN;
-	for (uint32_t i = 0; i < count; i++) {
-		for (int32_t f = 0; f < _countof(pixel_formats); f++) {
+	out_color_dx = DXGI_FORMAT_UNKNOWN;
+	for (uint32_t i=0; i<count; i++) {
+		for (int32_t f=0; f<_countof(pixel_formats); f++) {
 			if (formats[i] == pixel_formats[f]) {
-				out_pixel_format_dx = pixel_formats[f];
+				out_color_dx = pixel_formats[f];
 				break;
 			}
 		}
-		if (out_pixel_format_dx != DXGI_FORMAT_UNKNOWN)
-			break;
-	}
-
-	// Find the matching StereoKit format
-	out_pixel_format_sk = tex_format_rgba32;
-	switch (out_depth_format_dx) {
-	case DXGI_FORMAT_R8G8B8A8_UNORM:      out_pixel_format_sk = tex_format_rgba32_linear; break;
-	case DXGI_FORMAT_B8G8R8A8_UNORM:      out_pixel_format_sk = tex_format_rgba32_linear; break;
-	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: out_pixel_format_sk = tex_format_rgba32;        break;
-	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: out_pixel_format_sk = tex_format_rgba32;        break;
+		if (out_color_dx != DXGI_FORMAT_UNKNOWN) break;
 	}
 
 	// Check those against our depth formats
-	out_depth_format_dx = DXGI_FORMAT_UNKNOWN;
-	for (uint32_t i = 0; i < count; i++) {
-		for (int32_t f = 0; f < _countof(depth_formats); f++) {
+	out_depth_dx = DXGI_FORMAT_UNKNOWN;
+	for (uint32_t i=0; i<count; i++) {
+		for (int32_t f=0; f<_countof(depth_formats); f++) {
 			if (formats[i] == depth_formats[f]) {
-				out_depth_format_dx = depth_formats[f];
+				out_depth_dx = depth_formats[f];
 				break;
 			}
 		}
-		if (out_depth_format_dx != DXGI_FORMAT_UNKNOWN)
-			break;
-	}
-
-	// Depth maps directly to SK tex types, so we'll return that instead!
-	out_depth_format_sk = tex_format_depth16;
-	switch (out_depth_format_dx) {
-	case DXGI_FORMAT_D16_UNORM:         out_depth_format_sk = tex_format_depth16;      break;
-	case DXGI_FORMAT_D24_UNORM_S8_UINT: out_depth_format_sk = tex_format_depthstencil; break;
-	case DXGI_FORMAT_D32_FLOAT:         out_depth_format_sk = tex_format_depth32;      break;
+		if (out_depth_dx != DXGI_FORMAT_UNKNOWN) break;
 	}
 
 	// Release memory
@@ -273,9 +260,9 @@ void openxr_preferred_format(DXGI_FORMAT &out_pixel_format_dx, tex_format_ &out_
 
 void openxr_views_render() {
 	// If the session is active, lets render our layer in the compositor!
-	XrCompositionLayerBaseHeader            *layer      = nullptr;
-	XrCompositionLayerProjection             layer_proj = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-	vector<XrCompositionLayerProjectionView> views;
+	XrCompositionLayerBaseHeader *layer      = nullptr;
+	XrCompositionLayerProjection  layer_proj = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+	arrsetlen(xr_composition_layers, 0);
 	bool session_active = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
 	if (session_active && openxr_render_layer(frame_state.predictedDisplayTime, views, layer_proj)) {
 		layer = (XrCompositionLayerBaseHeader*)&layer_proj;
@@ -315,16 +302,15 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 
 ///////////////////////////////////////////
 
-bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjectionView> &views, XrCompositionLayerProjection &layer) {
+bool openxr_render_layer(XrTime predictedTime, projection_layer_t &layer, XrCompositionLayerProjection &composition_layer) {
 
 	// Find the state and location of each viewpoint at the predicted time
-	uint32_t         view_count  = 0;
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
 	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
-	locate_info.viewConfigurationType = xr_view_primary;
+	locate_info.viewConfigurationType = layer.type;
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, (uint32_t)xr_views_count.size(), &view_count, xr_views.data());
+	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
 
 	// We need to ask which swapchain image to use for rendering! Which one will we get?
 	// Who knows! It's up to the runtime to decide.
@@ -339,21 +325,21 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	xrWaitSwapchainImage(xr_swapchains.handle, &wait_info);
 
 	// And now we'll iterate through each viewpoint, and render it!
-	views.resize(view_count);
-	for (uint32_t i = 0; i < view_count; i++) {
+	for (uint32_t i = 0; i < layer.view_count; i++) {
 		// Set up our rendering information for the viewpoint we're using right now!
-		views[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
-		views[i].pose = xr_views[i].pose;
-		views[i].fov  = xr_views[i].fov;
-		views[i].subImage.imageArrayIndex  = i;
-		views[i].subImage.swapchain        = xr_swapchains.handle;
-		views[i].subImage.imageRect.offset = { 0, 0 };
-		views[i].subImage.imageRect.extent = { xr_swapchains.width, xr_swapchains.height };
+		XrCompositionLayerProjectionView &view = layer.view_layers[i];
+		view = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
+		view.pose = layer.views[i].pose;
+		view.fov  = layer.views[i].fov;
+		view.subImage.imageArrayIndex  = i;
+		view.subImage.swapchain        = xr_swapchains.handle;
+		view.subImage.imageRect.offset = { 0, 0 };
+		view.subImage.imageRect.extent = { xr_swapchains.width, xr_swapchains.height };
 
 		float xr_projection[16];
-		openxr_projection(views[i].fov, 0.1f, 50, xr_projection);
-		memcpy(&xr_viewpt_proj[i], xr_projection, sizeof(float) * 16);
-		matrix_inverse(matrix_trs((vec3&)views[i].pose.position, (quat&)views[i].pose.orientation, vec3_one), xr_viewpt_view[i]);
+		openxr_projection(view.fov, 0.1f, 50, xr_projection);
+		memcpy(&layer.projections[i], xr_projection, sizeof(float) * 16);
+		matrix_inverse(matrix_trs((vec3&)view.pose.position, (quat&)view.pose.orientation, vec3_one), layer.view_transforms[i]);
 	}
 
 	// Call the rendering callback with our view and swapchain info
@@ -365,16 +351,16 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)xr_swapchains.width, (float)xr_swapchains.height);
 	d3d_context->RSSetViewports(1, &viewport);
 
-	render_draw_matrix(&xr_viewpt_view[0], &xr_viewpt_proj[0], view_count);
+	render_draw_matrix(layer.view_transforms, layer.projections, layer.view_count);
 
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
 	xrReleaseSwapchainImage(xr_swapchains.handle, &release_info);
 
-	layer.space      = xr_app_space;
-	layer.viewCount  = (uint32_t)views.size();
-	layer.views      = views.data();
-	layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+	composition_layer.space      = xr_app_space;
+	composition_layer.viewCount  = layer.view_count;
+	composition_layer.views      = layer.view_layers;
+	composition_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 	return true;
 }
 

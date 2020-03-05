@@ -29,6 +29,7 @@ tex_t       tex_create_mem       (void *data, size_t data_size, bool32_t srgb_da
 void        tex_set_active       (tex_t texture, int slot);
 void        tex_destroy          (tex_t texture);
 DXGI_FORMAT tex_get_native_format(tex_format_ format);
+tex_format_ tex_get_tex_format   (DXGI_FORMAT format);
 size_t      tex_format_size      (tex_format_ format);
 
 void tex_releasesurface(tex_t texture);
