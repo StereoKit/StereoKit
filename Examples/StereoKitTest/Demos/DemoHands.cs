@@ -115,8 +115,36 @@ namespace StereoKitTest
             UI.Toggle("Pointers", ref showPointers);
             UI.SameLine();
             UI.Toggle("Menu", ref showHandMenus);
-            if (UI.Button("Colorize Fingers"))
-                ColorizeFingers();
+            UI.Label("Color");
+            if (UI.Button("Rainbow"))
+                ColorizeFingers(32, 
+                    new Gradient(
+                        new GradientKey(Color.HSV(0.0f,1,1), 0.1f),
+                        new GradientKey(Color.HSV(0.2f,1,1), 0.3f),
+                        new GradientKey(Color.HSV(0.4f,1,1), 0.5f),
+                        new GradientKey(Color.HSV(0.6f,1,1), 0.7f),
+                        new GradientKey(Color.HSV(0.8f,1,1), 0.9f)),
+                    new Gradient(
+                        new GradientKey(new Color(1,1,1,0), 0),
+                        new GradientKey(new Color(1,1,1,0), 0.2f),
+                        new GradientKey(new Color(1,1,1,1), 0.9f)));
+            UI.SameLine();
+            if (UI.Button("Black"))
+                ColorizeFingers(32,
+                    new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
+                    new Gradient(
+                        new GradientKey(new Color(1,1,1,0), 0),
+                        new GradientKey(new Color(1,1,1,0), 0.4f),
+                        new GradientKey(new Color(1,1,1,1), 0.6f),
+                        new GradientKey(new Color(1,1,1,1), 0.9f)));
+            UI.SameLine();
+            if (UI.Button("Normal"))
+                ColorizeFingers(32,
+                    new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
+                    new Gradient(
+                        new GradientKey(new Color(1,1,1,0), 0),
+                        new GradientKey(new Color(1,1,1,0), 0.2f),
+                        new GradientKey(new Color(1,1,1,1), 0.9f)));
             UI.WindowEnd();
 
             if (showJoints)   DrawJoints(jointMesh, Default.Material);
@@ -129,27 +157,21 @@ namespace StereoKitTest
             }
         }
 
-        private void ColorizeFingers()
+        private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
         {
             Tex tex = new Tex();
-            tex.SampleMode = TexSample.Point;
-            const int size = 32;
-
-            Gradient gradient = new Gradient(
-                new GradientKey(new Color(1,1,1,0), 0),
-                new GradientKey(new Color(1,1,1,0), .5f),
-                new GradientKey(new Color(1,1,1,1), 1));
+            tex.AddressMode = TexAddress.Clamp;
 
             Color32[] pixels = new Color32[size*size];
             for (int y = 0; y < size; y++)
             {
+                Color v = vertical.Get(y / (size-1.0f));
                 for (int x = 0; x < size; x++)
                 {
-                    Color color = Color.HSV(x/(float)size, 1, 1, gradient.Get(y/(float)size).a );
-                    pixels[x+y*size] = color;
+                    Color h = horizontal.Get(x / (size-1.0f));
+                    pixels[x+y*size] = v*h;
                 }
             }
-
             tex.SetColors(size, size, pixels);
 
             Default.MaterialHand[MatParamName.DiffuseTex] = tex;
