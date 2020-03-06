@@ -104,7 +104,7 @@ bool openxr_views_create() {
 		for (uint32_t r = 0; r < _countof(xr_request_displays); r++) {
 			if (types[t] == xr_request_displays[r]) {
 				if (types[t] != xr_display_primary) {
-					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_FRAME_SECONDARY_VIEW_CONFIGURATIONS_STATE_MSFT };
+					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
 					state.active                = false;
 					state.viewConfigurationType = types[t];
 					arrput(xr_display_2nd_states, state);
