@@ -25,7 +25,7 @@ void openxr_shutdown      ();
 void openxr_step_begin    ();
 void openxr_step_end      ();
 void openxr_poll_events   ();
-void openxr_render_frame  ();
+bool openxr_render_frame  ();
 void openxr_make_actions  ();
 void openxr_poll_actions  ();
 
@@ -40,6 +40,7 @@ extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_articulated_hands;
+extern bool       xr_depth_lsr;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
 extern xr_hand_state_ xr_hand_state; // TODO: This can go when OpenXR has real hands
