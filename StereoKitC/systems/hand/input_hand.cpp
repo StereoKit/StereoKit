@@ -160,7 +160,7 @@ void input_hand_init() {
 		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_runtime() == runtime_flatscreen ? 1 : 0.5f));
 
 	material_t hand_mat = material_copy_id("default/material");
-	material_set_id(hand_mat, "default/material_hand");
+	material_set_id          (hand_mat, "default/material_hand");
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
@@ -254,7 +254,7 @@ void input_hand_update() {
 		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
-			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity);
+			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
 		}
 
 		// Update hand physics
@@ -295,8 +295,8 @@ void input_hand_state_update(handed_ handedness) {
 	hand.pinch_state = button_state_inactive;
 	hand.grip_state  = button_state_inactive;
 	
-	const float grip_activation_dist  = 5 * cm2m;
-	const float pinch_activation_dist = 1 * cm2m;
+	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
+	const float pinch_activation_dist = (was_trigger ? 2 : 1) * cm2m;
 	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
 	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
@@ -511,7 +511,7 @@ void input_hand_update_mesh(handed_ hand) {
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
 		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][max(0,j-1)];
-		const hand_joint_t &pose = hand_state[hand].info.fingers[f][j];
+		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
 		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
 		// Make local right and up axis vectors
