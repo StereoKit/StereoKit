@@ -1,6 +1,7 @@
 #include "stereokit_ui.h"
 #include "_stereokit_ui.h"
 #include "math.h"
+#include "systems/input.h"
 #include "libraries/stref.h"
 
 #include <DirectXMath.h>
@@ -512,6 +513,29 @@ bool32_t ui_volume_at(const char *id, bounds_t bounds) {
 			skui_hand[i].focused = id_hash;
 			if (!was_focused)
 				result = true;
+		}
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
+	button_state_ result  = button_state_inactive;
+
+	for (int32_t i = 0; i < handed_max; i++) {
+		bool     was_active  = skui_hand[i].active_prev  != 0;
+		bool     was_focused = skui_hand[i].focused_prev != 0 || was_active;
+		if (was_active || was_focused)
+			continue;
+
+		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, bounds)) {
+			button_state_ state = input_hand((handed_)i).pinch_state;
+			if (state != button_state_active) {
+				result = state;
+				out_hand = (handed_)i;
+			}
 		}
 	}
 
