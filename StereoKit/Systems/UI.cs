@@ -78,6 +78,9 @@ namespace StereoKit
         public static bool VolumeAt(string id, Bounds bounds)
             => NativeAPI.ui_volume_at(id, bounds);
 
+        public static BtnState InteractVolume(Bounds bounds, out Handed hand)
+            => NativeAPI.ui_interact_volume_at(bounds, out hand);
+
         public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
             => NativeAPI.ui_button_at(text, windowRelativeCorner, size);
 

@@ -35,6 +35,7 @@ SK_API bool32_t ui_is_interacting(handed_ hand);
 
 SK_API void     ui_model_at       (model_t model, vec3 start, vec3 size, color128 color);
 SK_API bool32_t ui_volume_at      (const char *id, bounds_t bounds);
+SK_API button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand);
 SK_API bool32_t ui_button_at      (const char *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t ui_toggle_at      (const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size);

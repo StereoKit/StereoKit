@@ -3,6 +3,7 @@
 #pragma comment(lib, "leapC.lib")
 
 #include "../input.h"
+#include "../../math.h"
 #include "hand_leap.h"
 #include "../../stereokit.h"
 #include "input_hand.h"
@@ -165,11 +166,12 @@ void copy_hand(handed_ handed, hand_joint_t *dest, LEAP_HAND &hand) {
 	}
 	for (size_t f = 0; f < 5; f++) {
 		for (size_t j = 0; j < 4; j++) {
-			LEAP_BONE    &bone = hand.digits[f].bones[j];
-			hand_joint_t *pose = ((dest+f*5)+(j+1));
+			LEAP_BONE    &bone      = hand.digits[f].bones[j];
+			LEAP_BONE    &bone_next = hand.digits[f].bones[mini(j+1,3)];
+			hand_joint_t *pose      = ((dest+f*5)+(j+1));
 
 			memcpy(&pose->position,    &bone.next_joint, sizeof(vec3));
-			pose->orientation = to_quat(bone.rotation) *head.orientation;
+			pose->orientation = to_quat(bone_next.rotation) *head.orientation;
 			pose->position    = matrix_mul_point(to_world, pose->position) + head.position;
 			pose->radius      = leap_finger_size[f] * leap_joint_size[j+1] * 0.35f;
 		}
