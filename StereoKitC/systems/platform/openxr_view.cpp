@@ -150,6 +150,29 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	DXGI_FORMAT color_format, depth_format;
 	openxr_preferred_format(color_format, depth_format);
 
+	// Debug print the view and format info
+	const char *view_name       = "N/A";
+	const char *view_color_name = "N/A";
+	const char *view_depth_name = "N/A";
+	switch (view_type) {
+	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO:                              view_name = "PrimaryMono"; break;
+	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO:                            view_name = "PrimaryStereo"; break;
+	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO:                        view_name = "PrimaryQuad_Varjo"; break;
+	case XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT: view_name = "SecondaryMonoFPO_Msft"; break;
+	}
+	switch (color_format) {
+	case DXGI_FORMAT_R8G8B8A8_UNORM:      view_color_name = "rgba8_linear"; break;
+	case DXGI_FORMAT_B8G8R8A8_UNORM:      view_color_name = "bgra8_linear"; break;
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: view_color_name = "rgba8_srgb"; break;
+	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: view_color_name = "bgra8_srgb"; break;
+	}
+	switch (depth_format) {
+	case DXGI_FORMAT_D16_UNORM:         view_depth_name = "d16"; break;
+	case DXGI_FORMAT_D32_FLOAT:         view_depth_name = "d32"; break; 
+	case DXGI_FORMAT_D24_UNORM_S8_UINT: view_depth_name = "d24_s8"; break;
+	}
+	log_diagf("Creating view: %s color:%s depth:%s", view_name, view_color_name, view_depth_name);
+
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
 	uint32_t                 config_ct = 0;
@@ -276,8 +299,8 @@ void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_d
 		DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
 		DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,};
 	DXGI_FORMAT depth_formats[] = {
-		DXGI_FORMAT_D32_FLOAT,
 		DXGI_FORMAT_D16_UNORM,
+		DXGI_FORMAT_D32_FLOAT,
 		DXGI_FORMAT_D24_UNORM_S8_UINT,};
 
 	// Get the list of formats OpenXR would like
