@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -16,11 +16,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\Repositories\LightweightRenderer\StereoKit\StereoKit.xml</DocumentationFile>
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <DocumentationFile>C:\Repositories\LightweightRenderer\StereoKit\StereoKit.xml</DocumentationFile>
+    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
   </PropertyGroup>
 
   <!-- NuGet package -->
