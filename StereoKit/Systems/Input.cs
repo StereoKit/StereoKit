@@ -49,11 +49,11 @@ namespace StereoKit
         /// <summary>Is the hand making a grip gesture right now? Fingers next to the palm.</summary>
         public  BtnState    grip;
         /// <summary>What percentage of activation is the pinch gesture right now? Where 0 is a hand in
-        /// an outstretched resting position, and 0 is fingers touching, within a device error tolerant
+        /// an outstretched resting position, and 1 is fingers touching, within a device error tolerant
         /// threshold.</summary>
         public float pinchActivation;
         /// <summary>What percentage of activation is the grip gesture right now? Where 0 is a hand in
-        /// an outstretched resting position, and 0 is ring finger touching the base of the palm, within 
+        /// an outstretched resting position, and 1 is ring finger touching the base of the palm, within 
         /// a device error tolerant threshold.</summary>
         public float gripActivation;
 
