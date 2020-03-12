@@ -31,7 +31,10 @@ namespace StereoKit.Framework
         {
             try {
                 return interfaceType.IsAssignableFrom(otherType);
-            } catch(TypeLoadException e) {
+            } catch(Exception) {
+                // It's expected for IsAssignableFrom to raise exceptions in UWP? .Net Native?
+                // during normal operation. Expected a TypeLoadException, but was also getting
+                // an <unknown> exception.
                 return false;
             }
         }
