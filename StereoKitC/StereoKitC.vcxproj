@@ -153,6 +153,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
     <ClCompile Include="systems\platform\platform.cpp" />
+    <ClCompile Include="systems\platform\platform_utils.cpp" />
     <ClCompile Include="systems\platform\uwp.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
     <ClCompile Include="systems\platform\win32_input.cpp" />
@@ -182,6 +183,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\stb_rect_pack.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="spherical_harmonics.h" />
@@ -202,6 +204,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\platform\openxr.h" />
     <ClInclude Include="systems\platform\openxr_extensions.h" />
     <ClInclude Include="systems\platform\platform.h" />
+    <ClInclude Include="systems\platform\platform_utils.h" />
     <ClInclude Include="systems\platform\uwp.h" />
     <ClInclude Include="systems\platform\win32.h" />
     <ClInclude Include="systems\platform\win32_input.h" />
