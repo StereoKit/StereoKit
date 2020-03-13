@@ -51,6 +51,12 @@ bool hand_mirage_available() {
 		return xr_hand_support;
 	mirage_checked = true;
 
+	if (sk_active_runtime() != runtime_mixedreality) {
+		xr_hand_state   = xr_hand_state_unavailable;
+		xr_hand_support = false;
+		return false;
+	}
+
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
 		xr_spatial_stage       = SpatialLocator::GetDefault().CreateStationaryFrameOfReferenceAtCurrentLocation();
 		xr_interaction_manager = SpatialInteractionManager::GetForCurrentView();
