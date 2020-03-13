@@ -211,8 +211,7 @@ static inline TimeSpan TimeSpanFromQpcTicks(int64_t qpcTicks) {
 
 void hand_mirage_update_hands(int64_t win32_prediction_time) {
 #if WINDOWS_UWP
-	if (!xr_hand_support)
-		return;
+	if (!xr_hand_support) return;
 
 	// Update our action set with up-to-date input data!
 	XrActiveActionSet action_set = { };
@@ -291,12 +290,16 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 ///////////////////////////////////////////
 
 void hand_mirage_update_frame() {
+	if (xr_time == 0) return;
+
 	hand_mirage_update_hands(openxr_get_time());
 }
 
 ///////////////////////////////////////////
 
 void hand_mirage_update_predicted() {
+	if (xr_time == 0) return;
+
 	hand_mirage_update_hands(openxr_get_time());
 	input_hand_update_meshes();
 }
