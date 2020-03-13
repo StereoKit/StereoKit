@@ -211,6 +211,8 @@ void hand_oxrc_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxrc_update_frame() {
+	if (xr_time == 0) return;
+
 	// Update our action set with up-to-date input data!
 	XrActiveActionSet action_set = { };
 	action_set.actionSet     = xrc_action_set;

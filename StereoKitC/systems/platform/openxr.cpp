@@ -46,7 +46,7 @@ bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
-XrTime         xr_time;
+XrTime         xr_time          = 0;
 bool           xr_depth_lsr = false;
 
 XrEnvironmentBlendMode xr_blend;
@@ -633,7 +633,7 @@ void openxr_make_actions() {
 ///////////////////////////////////////////
 
 void openxr_poll_actions() {
-	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
+	if (xr_session_state != XR_SESSION_STATE_FOCUSED || xr_time == 0)
 		return;
 
 	// Track the head location
@@ -643,8 +643,7 @@ void openxr_poll_actions() {
 ///////////////////////////////////////////
 
 bool32_t openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time) {
-	if (time == 0)
-		time = xr_time;
+	if (time == 0) time = xr_time;
 
 	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 	XrResult        res            = xrLocateSpace(space, xr_app_space, time, &space_location);
