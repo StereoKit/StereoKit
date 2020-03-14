@@ -55,6 +55,8 @@ void hand_oxrc_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxrc_update_frame() {
+	if (xr_time == 0) return;
+
 	oxri_update_frame();
 
 	// Now we'll get the current states of our actions, and store them for later use

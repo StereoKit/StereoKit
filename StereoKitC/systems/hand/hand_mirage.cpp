@@ -45,6 +45,12 @@ bool hand_mirage_available() {
 		return mirage_hand_support;
 	mirage_checked = true;
 
+	if (sk_active_runtime() != runtime_mixedreality) {
+		xr_hand_state       = xr_hand_state_unavailable;
+		mirage_hand_support = false;
+		return false;
+	}
+
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
 		mirage_spatial_stage       = SpatialLocator::GetDefault().CreateStationaryFrameOfReferenceAtCurrentLocation();
 		mirage_interaction_manager = SpatialInteractionManager::GetForCurrentView();
@@ -173,12 +179,16 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 ///////////////////////////////////////////
 
 void hand_mirage_update_frame() {
+	if (xr_time == 0) return;
+
 	hand_mirage_update_hands(openxr_get_time());
 }
 
 ///////////////////////////////////////////
 
 void hand_mirage_update_predicted() {
+	if (xr_time == 0) return;
+
 	hand_mirage_update_hands(openxr_get_time());
 	input_hand_update_meshes();
 }

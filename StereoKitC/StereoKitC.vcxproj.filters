@@ -158,6 +158,9 @@
     <ClCompile Include="systems\hand\hand_oxr_articulated.cpp">
       <Filter>systems\hand</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\platform_utils.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -309,6 +312,9 @@
     </ClInclude>
     <ClInclude Include="systems\hand\hand_oxr_articulated.h">
       <Filter>systems\hand</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\platform\platform_utils.h">
+      <Filter>systems\platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

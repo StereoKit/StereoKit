@@ -27,21 +27,14 @@ namespace StereoKit.Framework
                 return e.Types.Where(t => t != null);
             }
         }
-        static bool IsAssignable(Type interfaceType, Type otherType)
-        {
-            try {
-                return interfaceType.IsAssignableFrom(otherType);
-            } catch(TypeLoadException e) {
-                return false;
-            }
-        }
 
         public bool Initialize()
         {
-            Type stepperType = typeof(IStepper);
+            Type   stepperType  = typeof(IStepper);
             Type[] stepperTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .Where     (assembly => !assembly.FullName.Contains("Hidden") && !assembly.FullName.Contains("Private"))
                 .SelectMany(assembly => GetLoadableTypes(assembly)
-                    .Where(type => IsAssignable(stepperType, type)))
+                    .Where(type => stepperType.IsAssignableFrom(type)))
                 .ToArray();
 
             // TODO: change this to a dependency graph sort order!

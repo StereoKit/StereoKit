@@ -91,6 +91,9 @@ class Program
     }
     static void CommonUpdate()
     {
+        if (Input.Key(Key.Esc).IsJustActive())
+            StereoKitApp.Quit();
+
         // If we can't see the world, we'll draw a floor!
         if (StereoKitApp.System.displayType == Display.Opaque)
             Renderer.Add(floorMesh, floorTr, Color.White);
