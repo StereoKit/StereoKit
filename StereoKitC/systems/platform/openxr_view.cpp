@@ -129,6 +129,8 @@ bool openxr_views_create() {
 	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
 	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
 	}
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -424,10 +426,10 @@ bool openxr_render_frame() {
 
 	render_clear();
 
-	XrFrameEndSecondaryViewConfigurationInfoMSFT end_second = {};
+	XrFrameEndSecondaryViewConfigurationInfoMSFT end_second = { XR_TYPE_FRAME_END_SECONDARY_VIEW_CONFIGURATION_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = xr_display_2nd_layers;
 	end_second.viewConfigurationCount      = arrlen(xr_display_2nd_layers);
-
+	
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
 	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
@@ -435,6 +437,8 @@ bool openxr_render_frame() {
 	end_info.environmentBlendMode = xr_displays[0].blend;
 	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
 	end_info.layers               = &layer;
+	if (end_second.viewConfigurationCount > 0)
+		end_info.next = &end_second;
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
 	return true;
