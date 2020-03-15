@@ -2,7 +2,7 @@
 #ifndef WINDOWS_UWP
 
 #include "win32.h"
-#include "win32_input.h"
+#include "flatscreen_input.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -139,7 +139,7 @@ bool win32_init(const char *app_name) {
 	dxgi_adapter->Release();
 	dxgi_device ->Release();
 
-	win32_input_init();
+	flatscreen_input_init();
 
 	return true;
 }
@@ -147,7 +147,7 @@ bool win32_init(const char *app_name) {
 ///////////////////////////////////////////
 
 void win32_shutdown() {
-	win32_input_shutdown();
+	flatscreen_input_shutdown();
 	tex_release(win32_target);
 	win32_swapchain->Release();
 
@@ -164,7 +164,7 @@ void win32_step_begin() {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
-	win32_input_update();
+	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////

@@ -156,7 +156,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\platform\platform_utils.cpp" />
     <ClCompile Include="systems\platform\uwp.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
-    <ClCompile Include="systems\platform\win32_input.cpp" />
+    <ClCompile Include="systems\platform\flatscreen_input.cpp" />
     <ClCompile Include="systems\render.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
@@ -207,7 +207,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\platform\platform_utils.h" />
     <ClInclude Include="systems\platform\uwp.h" />
     <ClInclude Include="systems\platform\win32.h" />
-    <ClInclude Include="systems\platform\win32_input.h" />
+    <ClInclude Include="systems\platform\flatscreen_input.h" />
     <ClInclude Include="systems\render.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />

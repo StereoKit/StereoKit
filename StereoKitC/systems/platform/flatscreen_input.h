@@ -4,9 +4,9 @@
 
 namespace sk {
 
-void win32_input_init();
-void win32_input_shutdown();
-void win32_input_update();
+void flatscreen_input_init();
+void flatscreen_input_shutdown();
+void flatscreen_input_update();
 
 } // namespace sk
 

@@ -1,6 +1,6 @@
 #ifndef SK_NO_FLATSCREEN
 
-#include "win32_input.h"
+#include "flatscreen_input.h"
 
 #if WINDOWS_UWP
 #else
@@ -22,28 +22,28 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int win32_gaze_pointer;
+int fltscr_gaze_pointer;
 
 ///////////////////////////////////////////
 
-void win32_mouse_update();
+void flatscreen_mouse_update();
 
 ///////////////////////////////////////////
 
-void win32_input_init() {
-	win32_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
+void flatscreen_input_init() {
+	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
 	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero)));
 }
 
 ///////////////////////////////////////////
 
-void win32_input_shutdown() {
+void flatscreen_input_shutdown() {
 }
 
 ///////////////////////////////////////////
 
-void win32_input_update() {
+void flatscreen_input_update() {
 #if WINDOWS_UWP
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = (uint8_t)button_make_state(
@@ -58,9 +58,9 @@ void win32_input_update() {
 	}
 #endif
 
-	win32_mouse_update();
+	flatscreen_mouse_update();
 
-	pointer_t   *pointer_head = input_get_pointer(win32_gaze_pointer);
+	pointer_t   *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pose_t       head         = input_head();
 
 	pointer_head->tracked = button_state_active;
@@ -70,7 +70,7 @@ void win32_input_update() {
 
 ///////////////////////////////////////////
 
-void win32_mouse_update() {
+void flatscreen_mouse_update() {
 	input_mouse_data.available = false;
 	vec2  mouse_pos = {};
 	float mouse_scroll = 0;

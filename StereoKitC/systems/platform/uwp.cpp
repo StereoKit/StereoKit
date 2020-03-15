@@ -10,7 +10,7 @@
 #include "../d3d.h"
 #include "../render.h"
 #include "../input.h"
-#include "win32_input.h"
+#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -405,13 +405,13 @@ bool uwp_init(const char *) {
 		Sleep(1);
 	}
 
-	win32_input_init();
+	flatscreen_input_init();
 	return ViewProvider::inst->valid;
 }
 
 void uwp_step_begin() {
 	d3d_update();
-	win32_input_update();
+	flatscreen_input_update();
 }
 void uwp_step_end() { 
 	// Set up where on the render target we want to draw, the view has a 
@@ -432,7 +432,7 @@ void uwp_vsync() {
 }
 
 void uwp_shutdown() {
-	win32_input_shutdown();
+	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	tex_release(uwp_target);
