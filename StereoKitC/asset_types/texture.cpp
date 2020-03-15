@@ -1,6 +1,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/d3d.h"
+#include "../systems/platform/platform_utils.h"
 #include "../libraries/stref.h"
 #include "../math.h"
 #include "../spherical_harmonics.h"
@@ -69,32 +70,53 @@ void tex_set_id(tex_t tex, const char *id) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file(const char *file, bool32_t srgb_data) {
-	tex_t result = tex_find(file);
-	if (result != nullptr)
-		return result;
-
-	bool     is_hdr   = stbi_is_hdr(assets_file(file));
+tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
+	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, data_size);
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *data     =  is_hdr ? 
-		(uint8_t *)stbi_loadf(assets_file(file), &width, &height, &channels, 4):
-		(uint8_t *)stbi_load (assets_file(file), &width, &height, &channels, 4);
+	uint8_t *col_data =  is_hdr ? 
+		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, data_size, &width, &height, &channels, 4):
+		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, data_size, &width, &height, &channels, 4);
 
-	if (data == nullptr) {
-		log_warnf("Couldn't load image file: %s", file);
+	if (col_data == nullptr) {
+		log_warn("Couldn't parse image data!");
 		return nullptr;
 	}
 	tex_format_ format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 	if (is_hdr) format = tex_format_rgba128;
 
-	result = tex_create(tex_type_image, format);
-	
-	tex_set_colors(result, width, height, data);
-	tex_set_id(result, file);
-	free(data);
+	tex_t result = tex_create(tex_type_image, format);
 
+	tex_set_colors(result, width, height, col_data);
+	free(col_data);
+
+	DX11ResType(result->resource, "tex_view");
+	DX11ResType(result->texture,  "tex_src" );
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_file(const char *file, bool32_t srgb_data) {
+	tex_t result = tex_find(file);
+	if (result != nullptr)
+		return result;
+
+	void  *file_data;
+	size_t file_size;
+	if (!platform_read_file(assets_file(file), file_data, file_size))
+		return nullptr;
+
+	result = tex_create_mem(file_data, file_size, srgb_data);
+	free(file_data);
+
+	if (result == nullptr) {
+		log_warnf("Issue loading file [%s]", file);
+		return nullptr;
+	}
+	tex_set_id(result, file);
+	
 	return result;
 }
 
@@ -194,28 +216,6 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 		free(data[i]);
 	}
 
-	return result;
-}
-
-///////////////////////////////////////////
-
-tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
-
-	int      channels = 0;
-	int      width    = 0;
-	int      height   = 0;
-	uint8_t *col_data =  stbi_load_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
-
-	if (col_data == nullptr) {
-		return nullptr;
-	}
-	tex_t result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-
-	tex_set_colors(result, width, height, col_data);
-	free(col_data);
-
-	DX11ResType(result->resource, "tex_view");
-	DX11ResType(result->texture,  "tex_src" );
 	return result;
 }
 

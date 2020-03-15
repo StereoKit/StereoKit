@@ -4,6 +4,9 @@
 #include "../../log.h"
 #include "../../libraries/stref.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #if WINDOWS_UWP
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h> 
@@ -58,6 +61,31 @@ void platform_msgbox_err(const char *text, const char *header) {
 #else
 	log_err("No messagebox capability for this platform!");
 #endif
+}
+
+bool platform_read_file(const char *filename, void *&out_data, size_t &out_size) {
+	out_data = nullptr;
+	out_size = 0;
+
+	// Open file
+	FILE *fp;
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
+		log_errf("Can't find file %s!", filename);
+		return false;
+	}
+
+	// Get length of file
+	fseek(fp, 0L, SEEK_END);
+	out_size = ftell(fp);
+	rewind(fp);
+
+	// Read the data
+	out_data = (uint8_t *)malloc(sizeof(uint8_t) *out_size+1);
+	if (out_data == nullptr) { out_size = 0; fclose(fp); return false; }
+	fread (out_data, 1, out_size, fp);
+	fclose(fp);
+
+	return true;
 }
 
 }

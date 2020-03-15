@@ -338,6 +338,7 @@ SK_DeclarePrivateType(tex_t);
 
 SK_API tex_t tex_find                (const char *id);
 SK_API tex_t tex_create              (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
+SK_API tex_t tex_create_mem          (void *data, size_t data_size,       bool32_t srgb_data = true);
 SK_API tex_t tex_create_file         (const char *file,                   bool32_t srgb_data = true);
 SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
 SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
