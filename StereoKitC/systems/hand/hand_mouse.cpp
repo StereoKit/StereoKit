@@ -1,5 +1,6 @@
 #include "../../stereokit.h"
 #include "../input.h"
+#include "../platform/flatscreen_input.h"
 #include "input_hand.h"
 
 namespace sk {
@@ -54,7 +55,7 @@ void hand_mouse_update_frame() {
 		hand_rot     = quat_from_angles(40,30,90) * pointer_rot;
 		hand_tracked = true;
 		l_pressed    = input_key(key_mouse_left ) & button_state_active;
-		r_pressed    = input_key(key_mouse_right) & button_state_active;
+		r_pressed    = flatscreen_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
 
 		pointer_cursor->ray.dir     = ray.dir;
 		pointer_cursor->ray.pos     = hand_pos;

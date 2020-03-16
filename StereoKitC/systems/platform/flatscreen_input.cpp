@@ -1,5 +1,6 @@
 #ifndef SK_NO_FLATSCREEN
 
+#include "../../_stereokit.h"
 #include "flatscreen_input.h"
 
 #if WINDOWS_UWP
@@ -22,7 +23,10 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int fltscr_gaze_pointer;
+int   fltscr_gaze_pointer;
+float fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
+vec2  fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
+vec3  fltscr_head_rot   = {};
 
 ///////////////////////////////////////////
 
@@ -51,14 +55,55 @@ void flatscreen_input_update() {
 			uwp_key_down(i));
 	}
 #else
+	uint8_t caps_lock = input_key_data.keys[key_caps_lock];
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = (uint8_t)button_make_state(
 			input_key_data.keys[i] & button_state_active,
-			GetKeyState(i) & 0x8000);
+			GetKeyState(i)         & 0x8000);
 	}
+	input_key_data.keys[key_caps_lock] = (uint8_t)button_make_state(
+		caps_lock                  & button_state_active,
+		GetKeyState(key_caps_lock) & 0x1);
 #endif
 
 	flatscreen_mouse_update();
+
+	if (flatscreen_is_simulating_movement()) {
+
+		// Get key based movement
+		vec3 movement = {};
+		if (input_key(key_w) & button_state_active) movement += vec3_forward;
+		if (input_key(key_s) & button_state_active) movement -= vec3_forward;
+		if (input_key(key_d) & button_state_active) movement += vec3_right;
+		if (input_key(key_a) & button_state_active) movement -= vec3_right;
+		if (input_key(key_e) & button_state_active) movement += vec3_up;
+		if (input_key(key_q) & button_state_active) movement -= vec3_up;
+		if (vec3_magnitude_sq( movement ) != 0)
+			movement = vec3_normalize(movement);
+
+		// Apply movement to the camera
+		pose_t head = input_head();
+		head.position += head.orientation * movement * time_elapsedf() * fltscr_move_speed;
+
+		// head rotation
+		if (input_key(key_mouse_right) & button_state_active) {
+			mouse_t mouse = input_mouse();
+			fltscr_head_rot.y -= mouse.pos_change.x * fltscr_rot_speed.x * time_elapsedf();
+			fltscr_head_rot.x -= mouse.pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			head.orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+
+
+#if WINDOWS_UWP
+#else
+			POINT pt = { mouse.pos.x - mouse.pos_change.x, mouse.pos.y - mouse.pos_change.y };
+			input_mouse_data.pos = {(float)pt.x, (float)pt.y};
+			ClientToScreen(win32_window, &pt);
+			SetCursorPos(pt.x, pt.y);
+#endif
+		}
+
+		render_set_view(pose_matrix(head));
+	}
 
 	pointer_t   *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pose_t       head         = input_head();
@@ -72,7 +117,7 @@ void flatscreen_input_update() {
 
 void flatscreen_mouse_update() {
 	input_mouse_data.available = false;
-	vec2  mouse_pos = {};
+	vec2  mouse_pos    = {};
 	float mouse_scroll = 0;
 
 #if WINDOWS_UWP
@@ -82,7 +127,9 @@ void flatscreen_mouse_update() {
 	mouse_scroll = win32_scroll;
 	
 	POINT cursor_pos;
-	input_mouse_data.available = GetCursorPos(&cursor_pos) && ScreenToClient(win32_window, &cursor_pos);
+	input_mouse_data.available 
+		=  GetCursorPos  (&cursor_pos)
+		&& ScreenToClient(win32_window, &cursor_pos);
 	mouse_pos.x = (float)cursor_pos.x;
 	mouse_pos.y = (float)cursor_pos.y;
 #endif
@@ -96,6 +143,15 @@ void flatscreen_mouse_update() {
 		input_mouse_data.pos        = mouse_pos;
 		input_mouse_data.available  = true;
 	}
+}
+
+///////////////////////////////////////////
+
+bool flatscreen_is_simulating_movement() {
+	return sk_runtime == runtime_flatscreen
+		&& sk_settings.disable_flatscreen_mr_sim == false
+		&& (   input_key(key_caps_lock) & button_state_active
+			|| input_key(key_shift)     & button_state_active);
 }
 
 } // namespace sk

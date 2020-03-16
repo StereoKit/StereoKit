@@ -30,6 +30,10 @@ namespace StereoKit
         /// '[assetsFolder]/[file]', so a trailing '/' is unnecessary.</summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string assetsFolder;
+        /// <summary>By default, StereoKit will simulate Mixed Reality input
+        /// so developers can test MR spaces without being in a headeset. If
+        /// You don't want this, you can disable it with this setting!</summary>
+        public bool disableFlatscreenMRSim;
     }
 
     /// <summary>This describes the type of display tech used on a Mixed Reality device.</summary>

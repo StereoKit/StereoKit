@@ -46,6 +46,7 @@ struct settings_t {
 	int32_t flatscreen_width;
 	int32_t flatscreen_height;
 	char assets_folder[128];
+	bool32_t disable_flatscreen_mr_sim;
 };
 
 enum display_ {
@@ -649,6 +650,7 @@ enum key_ {
 	key_backspace = 0x08, key_tab       = 0x09,
 	key_return    = 0x0D, key_shift     = 0x10,
 	key_ctrl      = 0x11, key_alt       = 0x12,
+	key_caps_lock = 0x14,
 	key_esc       = 0x1B, key_space     = 0x20,
 	key_end       = 0x23, key_home      = 0x24,
 	key_left      = 0x25, key_right     = 0x27,

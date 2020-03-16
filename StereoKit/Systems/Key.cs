@@ -19,6 +19,9 @@
         Return = 0x0D,
         /// <summary>Left or right Shift</summary>
         Shift = 0x10,
+        /// <summary>This behaves a little differently! This tells the toggle
+        /// state of caps lock, rather than the key state itself.</summary>
+        CapsLock = 0x14,
         /// <summary>Left or right Control key</summary>
         Ctrl = 0x11,
         /// <summary>Left or right Alt key</summary>
