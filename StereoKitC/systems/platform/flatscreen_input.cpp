@@ -1,6 +1,7 @@
 #ifndef SK_NO_FLATSCREEN
 
 #include "../../_stereokit.h"
+#include "platform_utils.h"
 #include "flatscreen_input.h"
 
 #if WINDOWS_UWP
@@ -92,14 +93,9 @@ void flatscreen_input_update() {
 			fltscr_head_rot.x -= mouse.pos_change.y * fltscr_rot_speed.y * time_elapsedf();
 			head.orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
-
-#if WINDOWS_UWP
-#else
-			POINT pt = { mouse.pos.x - mouse.pos_change.x, mouse.pos.y - mouse.pos_change.y };
-			input_mouse_data.pos = {(float)pt.x, (float)pt.y};
-			ClientToScreen(win32_window, &pt);
-			SetCursorPos(pt.x, pt.y);
-#endif
+			vec2 prev_pt = mouse.pos - mouse.pos_change;
+			input_mouse_data.pos = prev_pt;
+			platform_set_cursor(prev_pt);
 		}
 
 		render_set_view(pose_matrix(head));
@@ -116,23 +112,10 @@ void flatscreen_input_update() {
 ///////////////////////////////////////////
 
 void flatscreen_mouse_update() {
-	input_mouse_data.available = false;
-	vec2  mouse_pos    = {};
-	float mouse_scroll = 0;
+	vec2  mouse_pos            = {};
+	float mouse_scroll         = platform_get_scroll();
+	input_mouse_data.available = platform_get_cursor(mouse_pos);
 
-#if WINDOWS_UWP
-	input_mouse_data.available = true;
-	uwp_get_mouse(mouse_pos.x, mouse_pos.y, mouse_scroll);
-#else
-	mouse_scroll = win32_scroll;
-	
-	POINT cursor_pos;
-	input_mouse_data.available 
-		=  GetCursorPos  (&cursor_pos)
-		&& ScreenToClient(win32_window, &cursor_pos);
-	mouse_pos.x = (float)cursor_pos.x;
-	mouse_pos.y = (float)cursor_pos.y;
-#endif
 	// Mouse scroll
 	input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
 	input_mouse_data.scroll        = mouse_scroll;

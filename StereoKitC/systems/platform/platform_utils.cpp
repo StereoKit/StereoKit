@@ -1,5 +1,5 @@
 #include "platform_utils.h"
-#include "uwp.h"
+
 #include "../../stereokit.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
@@ -8,20 +8,25 @@
 #include <stdlib.h>
 
 #if WINDOWS_UWP
+#include "uwp.h"
+
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h> 
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #endif
 #if _MSC_VER
+#include "win32.h"
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
 namespace sk {
 
-bool in_messagebox = false;
+///////////////////////////////////////////
 
+bool in_messagebox = false;
 void platform_msgbox_err(const char *text, const char *header) {
 #if WINDOWS_UWP
 	char *src_text  = string_copy(text);
@@ -63,6 +68,8 @@ void platform_msgbox_err(const char *text, const char *header) {
 #endif
 }
 
+///////////////////////////////////////////
+
 bool platform_read_file(const char *filename, void *&out_data, size_t &out_size) {
 	out_data = nullptr;
 	out_size = 0;
@@ -80,12 +87,55 @@ bool platform_read_file(const char *filename, void *&out_data, size_t &out_size)
 	rewind(fp);
 
 	// Read the data
-	out_data = (uint8_t *)malloc(sizeof(uint8_t) *out_size+1);
+	out_data = malloc(out_size+1);
 	if (out_data == nullptr) { out_size = 0; fclose(fp); return false; }
 	fread (out_data, 1, out_size, fp);
 	fclose(fp);
 
+	// Stick an end string 0 character at the end in case the caller wants
+	// to treat it like a string
+	((uint8_t *)out_data)[out_size] = 0;
+
 	return true;
+}
+
+///////////////////////////////////////////
+
+bool platform_get_cursor(vec2 &out_pos) {
+	bool result = false;
+#if WINDOWS_UWP
+	result = uwp_get_mouse(out_pos);
+#elif _MSC_VER
+	POINT cursor_pos;
+	result =  GetCursorPos  (&cursor_pos)
+		   && ScreenToClient(win32_window, &cursor_pos);
+	out_pos.x = (float)cursor_pos.x;
+	out_pos.y = (float)cursor_pos.y;
+#else
+#endif
+	return result;
+}
+
+///////////////////////////////////////////
+
+void platform_set_cursor(vec2 window_pos) {
+#if WINDOWS_UWP
+	uwp_set_mouse(window_pos);
+#elif _MSC_VER
+	POINT pt = { window_pos.x, window_pos.y };
+	ClientToScreen(win32_window, &pt);
+	SetCursorPos  (pt.x, pt.y);
+#endif
+}
+
+///////////////////////////////////////////
+
+float platform_get_scroll() {
+#if WINDOWS_UWP
+	return uwp_get_scroll();
+#elif _MSC_VER
+	return win32_scroll;
+#endif
 }
 
 }
