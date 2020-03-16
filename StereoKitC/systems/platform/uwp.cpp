@@ -250,15 +250,20 @@ protected:
 	}
 
 	void OnMouseButtonChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		key_state[0x01] = args.CurrentPoint().Properties().IsLeftButtonPressed();
-		key_state[0x02] = args.CurrentPoint().Properties().IsRightButtonPressed();
+		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
+		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
 	}
+
 	void OnMouseChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
+		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
+
 		Point p = args.CurrentPoint().RawPosition();
 		mouse_point = { 
 			dips_to_pixels(p.X, m_DPI),
 			dips_to_pixels(p.Y, m_DPI) };
 	}
+
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
