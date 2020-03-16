@@ -10,7 +10,7 @@
 #include "../d3d.h"
 #include "../render.h"
 #include "../input.h"
-#include "win32_input.h"
+#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -48,6 +48,14 @@ using namespace winrt::Windows::Graphics::Display;
 
 using namespace sk;
 
+inline float dips_to_pixels(float dips, float DPI) {
+	return dips * DPI / 96.f + 0.5f;
+}
+
+inline float pixels_to_dips(float pixels, float DPI) {
+	return (float(pixels) * 96.f / DPI);
+}
+
 class ViewProvider : public winrt::implements<ViewProvider, IFrameworkView> {
 public:
 	static ViewProvider *inst;
@@ -58,6 +66,7 @@ public:
 	float mouse_scroll = 0;
 	bool  mouse_down[2];
 	uint8_t key_state[255];
+	float m_DPI;
 
 	ViewProvider() :
 		m_exit(false),
@@ -92,6 +101,8 @@ public:
 		auto navigation                = SystemNavigationManager::GetForCurrentView();
 		auto currentDisplayInformation = DisplayInformation::GetForCurrentView();
 
+		key_state[key_caps_lock] = window.GetKeyState(VirtualKey::CapitalLock) == CoreVirtualKeyStates::Locked ? true : false;
+
 		window.SizeChanged({ this, &ViewProvider::OnWindowSizeChanged });
 
 #if defined(NTDDI_WIN10_RS2) && (NTDDI_VERSION >= NTDDI_WIN10_RS2)
@@ -102,8 +113,15 @@ public:
 			// Requires Windows 10 Creators Update (10.0.15063) or later
 		}
 #endif
-		window.KeyDown                                ([this](auto &&, auto &&args) { key_state[(int)args.VirtualKey()] = true; });
-		window.KeyUp                                  ([this](auto &&, auto &&args) { key_state[(int)args.VirtualKey()] = false; });
+		window.KeyDown([this](auto &&, auto &&args) {
+			key_ key = (key_)args.VirtualKey();
+			key_state[key] = key == key_caps_lock ? !key_state[key] : true;
+		});
+		window.KeyUp([this](auto &&, auto &&args) { 
+			key_ key = (key_)args.VirtualKey();
+			if (key != key_caps_lock)
+				key_state[key] = false; 
+		});
 		window.PointerPressed                         ({ this, &ViewProvider::OnMouseButtonChanged });
 		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonChanged });
 		window.PointerMoved                           ({ this, &ViewProvider::OnMouseChanged       });
@@ -124,8 +142,8 @@ public:
 		m_logicalHeight      = window.Bounds().Height;
 		m_nativeOrientation  = currentDisplayInformation.NativeOrientation ();
 		m_currentOrientation = currentDisplayInformation.CurrentOrientation();
-		d3d_screen_width  = ConvertDipsToPixels(m_logicalWidth);
-		d3d_screen_height = ConvertDipsToPixels(m_logicalHeight);
+		d3d_screen_width  = dips_to_pixels(m_logicalWidth,  m_DPI);
+		d3d_screen_height = dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
@@ -199,12 +217,12 @@ protected:
 		ApplicationView::PreferredLaunchWindowingMode(ApplicationViewWindowingMode::PreferredLaunchViewSize);
 		// Change to ApplicationViewWindowingMode::FullScreen to default to full screen
 
-		auto desiredSize = Size(ConvertPixelsToDips(1280), ConvertPixelsToDips(720));
+		auto desiredSize = Size(pixels_to_dips(1280, m_DPI), pixels_to_dips(720, m_DPI));
 
 		ApplicationView::PreferredLaunchViewSize(desiredSize);
 
 		auto view    = ApplicationView::GetForCurrentView();
-		auto minSize = Size(ConvertPixelsToDips(320), ConvertPixelsToDips(200));
+		auto minSize = Size(pixels_to_dips(320, m_DPI), pixels_to_dips(200, m_DPI));
 
 		view.SetPreferredMinSize(minSize);
 
@@ -241,15 +259,20 @@ protected:
 	}
 
 	void OnMouseButtonChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		key_state[0x01] = args.CurrentPoint().Properties().IsLeftButtonPressed();
-		key_state[0x02] = args.CurrentPoint().Properties().IsRightButtonPressed();
+		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
+		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
 	}
+
 	void OnMouseChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
+		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
+
 		Point p = args.CurrentPoint().RawPosition();
 		mouse_point = { 
-			(float)ConvertDipsToPixels(p.X),
-			(float)ConvertDipsToPixels(p.Y) };
+			dips_to_pixels(p.X, m_DPI),
+			dips_to_pixels(p.Y, m_DPI) };
 	}
+
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
@@ -297,20 +320,11 @@ private:
 	bool  m_exit;
 	bool  m_visible;
 	bool  m_in_sizemove;
-	float m_DPI;
 	float m_logicalWidth;
 	float m_logicalHeight;
 
 	winrt::Windows::Graphics::Display::DisplayOrientations	m_nativeOrientation;
 	winrt::Windows::Graphics::Display::DisplayOrientations	m_currentOrientation;
-
-	inline int ConvertDipsToPixels(float dips) const {
-		return int(dips * m_DPI / 96.f + 0.5f);
-	}
-
-	inline float ConvertPixelsToDips(int pixels) const {
-		return (float(pixels) * 96.f / m_DPI);
-	}
 
 	DXGI_MODE_ROTATION ComputeDisplayRotation() const {
 		DXGI_MODE_ROTATION rotation = DXGI_MODE_ROTATION_UNSPECIFIED;
@@ -336,8 +350,8 @@ private:
 	}
 
 	void HandleWindowSizeChanged() {
-		int outputWidth  = ConvertDipsToPixels(m_logicalWidth);
-		int outputHeight = ConvertDipsToPixels(m_logicalHeight);
+		int outputWidth  = dips_to_pixels(m_logicalWidth, m_DPI);
+		int outputHeight = dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 
@@ -379,11 +393,26 @@ void window_thread(void *) {
 	CoreApplication::Run(viewProviderFactory);
 }
 
-void uwp_get_mouse(float &out_x, float &out_y, float &out_scroll) {
-	out_x      = ViewProvider::inst->mouse_point.x;
-	out_y      = ViewProvider::inst->mouse_point.y;
-	out_scroll = ViewProvider::inst->mouse_scroll;
+bool uwp_get_mouse(vec2 &out_pos) {
+	out_pos = ViewProvider::inst->mouse_point;
+	return true;
 }
+void uwp_set_mouse(vec2 window_pos) {
+	ViewProvider::inst->mouse_point = window_pos;
+
+	winrt::Windows::ApplicationModel::Core::CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(
+		winrt::Windows::UI::Core::CoreDispatcherPriority::High, [window_pos]() {
+			Rect pos = CoreWindow::GetForCurrentThread().Bounds();
+			CoreWindow::GetForCurrentThread().PointerPosition(Point(
+				pixels_to_dips(window_pos.x, ViewProvider::inst->m_DPI) + pos.X,
+				pixels_to_dips(window_pos.y, ViewProvider::inst->m_DPI) + pos.Y));
+		});
+}
+
+float uwp_get_scroll() {
+	return ViewProvider::inst->mouse_scroll;
+}
+
 bool uwp_mouse_button(int button) {
 	return ViewProvider::inst->mouse_down[button];
 }
@@ -405,13 +434,13 @@ bool uwp_init(const char *) {
 		Sleep(1);
 	}
 
-	win32_input_init();
+	flatscreen_input_init();
 	return ViewProvider::inst->valid;
 }
 
 void uwp_step_begin() {
 	d3d_update();
-	win32_input_update();
+	flatscreen_input_update();
 }
 void uwp_step_end() { 
 	// Set up where on the render target we want to draw, the view has a 
@@ -432,7 +461,7 @@ void uwp_vsync() {
 }
 
 void uwp_shutdown() {
-	win32_input_shutdown();
+	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	tex_release(uwp_target);

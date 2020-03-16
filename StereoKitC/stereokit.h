@@ -46,6 +46,7 @@ struct settings_t {
 	int32_t flatscreen_width;
 	int32_t flatscreen_height;
 	char assets_folder[128];
+	bool32_t disable_flatscreen_mr_sim;
 };
 
 enum display_ {
@@ -338,6 +339,7 @@ SK_DeclarePrivateType(tex_t);
 
 SK_API tex_t tex_find                (const char *id);
 SK_API tex_t tex_create              (tex_type_ type = tex_type_image, tex_format_ format = tex_format_rgba32);
+SK_API tex_t tex_create_mem          (void *data, size_t data_size,       bool32_t srgb_data = true);
 SK_API tex_t tex_create_file         (const char *file,                   bool32_t srgb_data = true);
 SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
 SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data = true, spherical_harmonics_t *sh_lighting_info = nullptr);
@@ -648,6 +650,7 @@ enum key_ {
 	key_backspace = 0x08, key_tab       = 0x09,
 	key_return    = 0x0D, key_shift     = 0x10,
 	key_ctrl      = 0x11, key_alt       = 0x12,
+	key_caps_lock = 0x14,
 	key_esc       = 0x1B, key_space     = 0x20,
 	key_end       = 0x23, key_home      = 0x24,
 	key_left      = 0x25, key_right     = 0x27,
