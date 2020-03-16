@@ -7,27 +7,34 @@ namespace StereoKit
     /// <summary>Specifies details about how StereoKit should start up!</summary>
     public enum Runtime
     {
-        /// <summary>Creates a flat, Win32 window, and simulates some MR functionality. Great for debugging.</summary>
+        /// <summary>Creates a flat, Win32 window, and simulates some MR 
+        /// functionality. Great for debugging.</summary>
         Flatscreen   = 0,
-        /// <summary>Creates an OpenXR instance, and drives display/input through that.</summary>
+        /// <summary>Creates an OpenXR instance, and drives display/input 
+        /// through that.</summary>
         MixedReality = 1
     }
 
-    /// <summary>StereoKit miscellaneous initialization settings! Setup StereoKit.settings with
-    /// your data before calling StereoKitApp.Initialize.</summary>
+    /// <summary>StereoKit miscellaneous initialization settings! Setup 
+    /// StereoKit.settings with your data before calling StereoKitApp.Initialize.</summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     public struct Settings
     {
-        /// <summary>If using Runtime.Flatscreen, the pixel position of the window on the screen.</summary>
+        /// <summary>If using Runtime.Flatscreen, the pixel position of the
+        /// window on the screen.</summary>
         public int flatscreenPosX;
-        /// <summary>If using Runtime.Flatscreen, the pixel position of the window on the screen.</summary>
+        /// <summary>If using Runtime.Flatscreen, the pixel position of the
+        /// window on the screen.</summary>
         public int flatscreenPosY;
-        /// <summary>If using Runtime.Flatscreen, the pixel size of the window on the screen.</summary>
+        /// <summary>If using Runtime.Flatscreen, the pixel size of the
+        /// window on the screen.</summary>
         public int flatscreenWidth;
-        /// <summary>If using Runtime.Flatscreen, the pixel size of the window on the screen.</summary>
+        /// <summary>If using Runtime.Flatscreen, the pixel size of the
+        /// window on the screen.</summary>
         public int flatscreenHeight;
-        /// <summary>Where to look for assets when loading files! Final path will look like
-        /// '[assetsFolder]/[file]', so a trailing '/' is unnecessary.</summary>
+        /// <summary>Where to look for assets when loading files! Final path 
+        /// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+        /// unnecessary.</summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string assetsFolder;
         /// <summary>By default, StereoKit will simulate Mixed Reality input
@@ -36,17 +43,19 @@ namespace StereoKit
         public bool disableFlatscreenMRSim;
     }
 
-    /// <summary>This describes the type of display tech used on a Mixed Reality device.</summary>
+    /// <summary>This describes the type of display tech used on a Mixed
+    /// Reality device.</summary>
     public enum Display
     {
-        /// <summary>This display is opaque, with no view into the real world! This is equivalent
-        /// to a VR headset, or a PC screen.</summary>
+        /// <summary>This display is opaque, with no view into the real world!
+        /// This is equivalent to a VR headset, or a PC screen.</summary>
         Opaque = 0,
-        /// <summary>This display is transparent, and adds light on top of the real world. This is 
-        /// equivalent to a HoloLens type of device.</summary>
+        /// <summary>This display is transparent, and adds light on top of
+        /// the real world. This is equivalent to a HoloLens type of device.</summary>
         Additive,
-        /// <summary>This is a physically opaque display, but with a camera passthrough displaying
-        /// the world behind it anyhow. This would be like a Varjo XR-1, or phone-camera based AR.</summary>
+        /// <summary>This is a physically opaque display, but with a camera
+        /// passthrough displaying the world behind it anyhow. This would be
+        /// like a Varjo XR-1, or phone-camera based AR.</summary>
         Passthrough,
     }
 
@@ -68,9 +77,11 @@ namespace StereoKit
         public float gutter;
         /// <summary>The Z depth of 3D UI elements, in meters.</summary>
         public float depth;
-        /// <summary>How far up does the white back-border go on UI elements? This is a 0-1 percentage of the depth value.</summary>
+        /// <summary>How far up does the white back-border go on UI elements?
+        /// This is a 0-1 percentage of the depth value.</summary>
         public float backplateDepth;
-        /// <summary>How wide is the back-border around the UI elements? In meters.</summary>
+        /// <summary>How wide is the back-border around the UI elements? In
+        /// meters.</summary>
         public float backplateBorder;
     }
 
@@ -111,74 +122,89 @@ namespace StereoKit
     {
         /// <summary>A standard color image, without any generated mip-maps.</summary>
         ImageNomips  = 1 << 0,
-        /// <summary>A size sided texture that's used for things like skyboxes, environment
-        /// maps, and reflection probes. It behaves like a texture array with 6 textures.</summary>
+        /// <summary>A size sided texture that's used for things like skyboxes,
+        /// environment maps, and reflection probes. It behaves like a texture
+        /// array with 6 textures.</summary>
         Cubemap      = 1 << 1,
-        /// <summary>This texture can be rendered to! This is great for textures that might be
-        /// passed in as a target to Renderer.Blit, or other such situations.</summary>
+        /// <summary>This texture can be rendered to! This is great for textures
+        /// that might be passed in as a target to Renderer.Blit, or other
+        /// such situations.</summary>
         Rendertarget = 1 << 2,
         /// <summary>This texture contains depth data, not color data!</summary>
         Depth        = 1 << 3,
-        /// <summary>This texture will generate mip-maps any time the contents change. Mip-maps
-        /// are a list of textures that are each half the size of the one before them! This is 
-        /// used to prevent textures from 'sparkling' or aliasing in the distance.</summary>
+        /// <summary>This texture will generate mip-maps any time the contents
+        /// change. Mip-maps are a list of textures that are each half the
+        /// size of the one before them! This is used to prevent textures from
+        /// 'sparkling' or aliasing in the distance.</summary>
         Mips         = 1 << 4,
-        /// <summary>This texture's data will be updated frequently from the CPU (not renders)!
-        /// This ensures the graphics card stores it someplace where writes are easy to do quickly.</summary>
+        /// <summary>This texture's data will be updated frequently from the
+        /// CPU (not renders)! This ensures the graphics card stores it
+        /// someplace where writes are easy to do quickly.</summary>
         Dynamic      = 1 << 5,
-        /// <summary>A standard color image that also generates mip-maps automatically.</summary>
+        /// <summary>A standard color image that also generates mip-maps
+        /// automatically.</summary>
         Image = ImageNomips | Mips,
     }
 
-    /// <summary>What type of color information will the texture contain? A good default
-    /// here is Rgba32.</summary>
+    /// <summary>What type of color information will the texture contain? A
+    /// good default here is Rgba32.</summary>
     public enum TexFormat
     {
-        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits per-channel in sRGB color space. 
-        /// This is what you'll want most of the time you're dealing with color images! Matches well with the 
-        /// Color32 struct! If you're storing normals, rough/metal, or anything else, use Rgba32Linear.</summary>
+        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
+        /// per-channel in sRGB color space. This is what you'll want most of
+        /// the time you're dealing with color images! Matches well with the 
+        /// Color32 struct! If you're storing normals, rough/metal, or
+        /// anything else, use Rgba32Linear.</summary>
         Rgba32 = 0,
-        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits per-channel in linear color space. 
-        /// This is what you'll want most of the time you're dealing with color data! Matches well with the 
+        /// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
+        /// per-channel in linear color space. This is what you'll want most
+        /// of the time you're dealing with color data! Matches well with the 
         /// Color32 struct.</summary>
         Rgba32Linear,
-        /// <summary>Red/Green/Blue/Transparency data channels, at 16 bits per-channel! This is not
-        /// common, but you might encounter it with raw photos, or HDR images.</summary>
+        /// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+        /// per-channel! This is not common, but you might encounter it with
+        /// raw photos, or HDR images.</summary>
         Rgba64,
-        /// <summary>Red/Green/Blue/Transparency data channels at 32 bits per-channel! Basically 4 floats
-        /// per color, which is bonkers expensive. Don't use this unless you know -exactly- what you're doing.</summary>
+        /// <summary>Red/Green/Blue/Transparency data channels at 32 bits
+        /// per-channel! Basically 4 floats per color, which is bonkers
+        /// expensive. Don't use this unless you know -exactly- what you're
+        /// doing.</summary>
         Rgba128,
-        /// <summary>A depth data format, 24 bits for depth data, and 8 bits to store stencil information!
-        /// Stencil data can be used for things like clipping effects, deferred rendering, or shadow effects.</summary>
+        /// <summary>A depth data format, 24 bits for depth data, and 8 bits
+        /// to store stencil information! Stencil data can be used for things
+        /// like clipping effects, deferred rendering, or shadow effects.</summary>
         DepthStencil,
-        /// <summary>32 bits of data per depth value! This is pretty detailed, and is excellent for experiences
-        /// that have a very far view distance.</summary>
+        /// <summary>32 bits of data per depth value! This is pretty detailed, 
+        /// and is excellent for experiences that have a very far view distance.</summary>
         Depth32,
-        /// <summary>16 bits of depth is not a lot, but it can be enough if your far clipping plane is pretty close.
-        /// If you're seeing lots of flickering where two objects overlap, you either need to bring your far clip
-        /// in, or switch to 32/24 bit depth.</summary>
+        /// <summary>16 bits of depth is not a lot, but it can be enough if
+        /// your far clipping plane is pretty close. If you're seeing lots of
+        /// flickering where two objects overlap, you either need to bring
+        /// your far clip in, or switch to 32/24 bit depth.</summary>
         Depth16,
     }
 
-    /// <summary>How does the shader grab pixels from the texture? Or more specifically,
-    /// how does the shader grab colors between the provided pixels? If you'd like an
-    /// in-depth explanation of these topics, check out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+    /// <summary>How does the shader grab pixels from the texture? Or more
+    /// specifically, how does the shader grab colors between the provided 
+    /// pixels? If you'd like an in-depth explanation of these topics, check
+    /// out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
     /// by graphics wizard Ben Golus.</summary>
     public enum TexSample
     {
-        /// <summary>Use a linear blend between adjacent pixels, this creates a smooth,
-        /// blurry look when texture resolution is too low.</summary>
+        /// <summary>Use a linear blend between adjacent pixels, this creates
+        /// a smooth, blurry look when texture resolution is too low.</summary>
         Linear = 0,
-        /// <summary>Choose the nearest pixel's color! This makes your texture look like
-        /// pixel art if you're too close.</summary>
+        /// <summary>Choose the nearest pixel's color! This makes your texture
+        /// look like pixel art if you're too close.</summary>
         Point,
-        /// <summary>This helps reduce texture blurriness when a surface is viewed at an
-        /// extreme angle!</summary>
+        /// <summary>This helps reduce texture blurriness when a surface is
+        /// viewed at an extreme angle!</summary>
         Anisotropic
     }
 
-    /// <summary>What happens when the shader asks for a texture coordinate that's outside
-    /// the texture?? Believe it or not, this happens plenty often!</summary>
+    /// <summary>What happens when the shader asks for a texture coordinate
+    /// that's outside the texture?? Believe it or not, this happens plenty
+    /// often!</summary>
     public enum TexAddress
     {
         /// <summary>Wrap the UV coordinate around to the other side of the texture! This
