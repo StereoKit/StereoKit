@@ -101,6 +101,8 @@ public:
 		auto navigation                = SystemNavigationManager::GetForCurrentView();
 		auto currentDisplayInformation = DisplayInformation::GetForCurrentView();
 
+		key_state[key_caps_lock] = window.GetKeyState(VirtualKey::CapitalLock) == CoreVirtualKeyStates::Locked ? true : false;
+
 		window.SizeChanged({ this, &ViewProvider::OnWindowSizeChanged });
 
 #if defined(NTDDI_WIN10_RS2) && (NTDDI_VERSION >= NTDDI_WIN10_RS2)
@@ -111,8 +113,15 @@ public:
 			// Requires Windows 10 Creators Update (10.0.15063) or later
 		}
 #endif
-		window.KeyDown                                ([this](auto &&, auto &&args) { key_state[(int)args.VirtualKey()] = true; });
-		window.KeyUp                                  ([this](auto &&, auto &&args) { key_state[(int)args.VirtualKey()] = false; });
+		window.KeyDown([this](auto &&, auto &&args) {
+			key_ key = (key_)args.VirtualKey();
+			key_state[key] = key == key_caps_lock ? !key_state[key] : true;
+		});
+		window.KeyUp([this](auto &&, auto &&args) { 
+			key_ key = (key_)args.VirtualKey();
+			if (key != key_caps_lock)
+				key_state[key] = false; 
+		});
 		window.PointerPressed                         ({ this, &ViewProvider::OnMouseButtonChanged });
 		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonChanged });
 		window.PointerMoved                           ({ this, &ViewProvider::OnMouseChanged       });
