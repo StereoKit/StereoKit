@@ -6,6 +6,7 @@
 #include "material.h"
 #include "texture.h"
 #include "../libraries/stref.h"
+#include "../systems/platform/platform_utils.h"
 
 #include <stdio.h>
 
@@ -47,48 +48,42 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
+model_t model_create_mem(const char *filename, void *data, size_t data_size, shader_t shader = nullptr) {
+	model_t result = model_create();
+	
+	if (string_endswith(filename, ".glb",  false) || 
+		string_endswith(filename, ".gltf", false)) {
+		if (!modelfmt_gltf(result, filename, data, data_size, shader))
+			log_errf("Issue loading GLTF file: %s!", filename);
+	} else if (string_endswith(filename, ".obj", false)) {
+		if (!modelfmt_obj (result, filename, data, data_size, shader))
+			log_errf("Issue loading Wavefront OBJ file: %s!", filename);
+	} else if (string_endswith(filename, ".stl", false)) {
+		if (!modelfmt_stl (result, filename, data, data_size, shader))
+			log_errf("Issue loading STL file: %s!", filename);
+	} else {
+		log_errf("Issue loading %s! Unrecognized file extension.", filename);
+	}
+	model_set_id(result, filename);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 model_t model_create_file(const char *filename, shader_t shader) {
 	model_t result = model_find(filename);
 	if (result != nullptr)
 		return result;
-	result = model_create();
-	model_set_id(result, filename);
 
-	const char *model_file = assets_file(filename);
-	// Open file
-	FILE *fp;
-	if (fopen_s(&fp, model_file, "rb") != 0 || fp == nullptr) {
-		log_errf("Can't find file %s!", model_file);
+	void  *data;
+	size_t length;
+	if (!platform_read_file(assets_file(filename), data, length))
 		return nullptr;
-	}
 
-	// Get length of file
-	fseek(fp, 0L, SEEK_END);
-	uint64_t length = ftell(fp);
-	rewind(fp);
-
-	// Read the data
-	uint8_t *data = (uint8_t *)malloc(sizeof(uint8_t) *length+1);
-	if (data == nullptr) { fclose(fp); return false; }
-	fread(data, 1, length, fp);
-	fclose(fp);
-	data[length] = '\0';
-
-	if (string_endswith(filename, ".glb", false) || string_endswith(filename, ".gltf", false)) {
-		if (!modelfmt_gltf(result, filename, data, length, shader))
-			log_errf("Issue loading GLTF file: %s!", filename);
-	} else if (string_endswith(filename, ".obj", false)) {
-		if (!modelfmt_obj (result, filename, data, length, shader))
-			log_errf("Issue loading Wavefront OBJ file: %s!", filename);
-	} else if (string_endswith(filename, ".stl", false)) {
-		if (!modelfmt_stl (result, filename, data, length, shader))
-			log_errf("Issue loading STL file: %s!", filename);
-	} else {
-		log_errf("Issue loading %s! Can't recognize the file extension.", filename);
-	}
-
+	result = model_create_mem(filename, data, length, shader);
+	
 	free(data);
-
 	return result;
 }
 
@@ -101,8 +96,9 @@ void model_recalculate_bounds(model_t model) {
 	}
 
 	// Get an initial size
+	vec3 first_corner = bounds_corner(model->subsets[0].mesh->bounds, 0);
 	vec3 min, max;
-	min = max = matrix_mul_point( model->subsets[0].offset, bounds_corner(model->subsets[0].mesh->bounds, 0) );
+	min = max = matrix_mul_point( model->subsets[0].offset, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
 	for (int32_t m = 0; m < model->subset_count; m += 1) {

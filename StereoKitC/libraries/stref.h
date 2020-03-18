@@ -16,14 +16,15 @@ char *string_copy  (const char *string);
 char *string_make  (stref_t &ref);
 char *string_append(char *base, uint32_t count, ...);
 bool  string_eq    (const char *a, const char *b);
-bool  string_endswith(const char *a, const char *end, bool case_sensitive = true);
+bool  string_eq_nocase(const char *a, const char *b);
+bool  string_endswith (const char *a, const char *end, bool case_sensitive = true);
 uint64_t string_hash(const char *string, uint64_t start_hash = STREF_HASH_START);
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);
 bool     stref_startswith(const stref_t &a, const char *is);
-int32_t  stref_indexof (stref_t &ref, char character);
-int32_t  stref_lastof  (stref_t &ref, char character);
+int32_t  stref_indexof (const stref_t &ref, char character);
+int32_t  stref_lastof  (const stref_t &ref, char character);
 char    *stref_copy    (const stref_t &ref);
 void     stref_copy_to (const stref_t &ref, char *text, size_t text_size);
 const char *stref_withend(stref_t &ref);

@@ -491,6 +491,7 @@ SK_DeclarePrivateType(model_t);
 SK_API model_t    model_find         (const char *id);
 SK_API model_t    model_create       ();
 SK_API model_t    model_create_mesh  (mesh_t mesh, material_t material);
+SK_API model_t    model_create_mem   (const char *filename, void *data, size_t data_size, shader_t shader = nullptr);
 SK_API model_t    model_create_file  (const char *filename, shader_t shader = nullptr);
 SK_API void       model_set_id       (model_t model, const char *id);
 SK_API void       model_release      (model_t model);

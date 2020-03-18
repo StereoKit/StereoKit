@@ -67,6 +67,18 @@ bool  string_eq(const char *a, const char *b) {
 
 ///////////////////////////////////////////
 
+bool  string_eq_nocase(const char *a, const char *b) {
+	while (*a != '\0' && *b != '\0') {
+		if (tolower(*a) != tolower(*b))
+			return false;
+		a++;
+		b++;
+	}
+	return *a == *b;
+}
+
+///////////////////////////////////////////
+
 bool  string_endswith(const char *a, const char *end, bool case_sensitive) {
 	size_t len_a   = strlen(a);
 	size_t len_end = strlen(end);
@@ -146,7 +158,7 @@ bool  stref_startswith(const stref_t &a, const char *is) {
 
 ///////////////////////////////////////////
 
-int32_t   stref_indexof(stref_t &aRef, char aChar) {
+int32_t   stref_indexof(const stref_t &aRef, char aChar) {
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
 			return i;
@@ -156,7 +168,7 @@ int32_t   stref_indexof(stref_t &aRef, char aChar) {
 
 ///////////////////////////////////////////
 
-int32_t   stref_lastof(stref_t &aRef, char aChar) {
+int32_t   stref_lastof(const stref_t &aRef, char aChar) {
 	int32_t result = -1;
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
