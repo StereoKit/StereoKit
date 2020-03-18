@@ -48,7 +48,7 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, void *data, size_t data_size, shader_t shader = nullptr) {
+model_t model_create_mem(const char *filename, void *data, size_t data_size, shader_t shader) {
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 
@@ -64,7 +64,6 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	} else {
 		log_errf("Issue loading %s! Unrecognized file extension.", filename);
 	}
-	model_set_id(result, filename);
 
 	return result;
 }
@@ -82,6 +81,9 @@ model_t model_create_file(const char *filename, shader_t shader) {
 		return nullptr;
 
 	result = model_create_mem(filename, data, length, shader);
+	if (result != nullptr) {
+		model_set_id(result, filename);
+	}
 	
 	free(data);
 	return result;
