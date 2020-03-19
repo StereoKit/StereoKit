@@ -224,6 +224,7 @@ bool shader_file_parse_mem(void *data, size_t data_size, char **out_name, shader
 	out_desc.item        = (shaderargs_desc_item_t*)malloc(sizeof(shaderargs_desc_item_t) * header->param_count);
 	for (int32_t i = 0; i < header->param_count; i++) {
 		shaderargs_desc_item_t &item = out_desc.item[i];
+		item = {};
 		item.name = string_copy(params[i].name);
 		item.id   = string_hash(params[i].name);
 		item.tags = string_copy(params[i].tags);
@@ -239,9 +240,11 @@ bool shader_file_parse_mem(void *data, size_t data_size, char **out_name, shader
 	out_slots.tex       = (shader_tex_slots_item_t*)malloc(sizeof(shader_tex_slots_item_t) * header->tex_count);
 	for (int32_t i = 0; i < header->tex_count; i++) {
 		shader_tex_slots_item_t &tex = out_slots.tex[i];
-		tex.id          = string_hash(textures[i].name);
-		tex.slot        = i;
-		tex.default_tex = shader_stref_to_tex(stref_make(textures[i].value));
+		tex = {};
+		tex.id           = string_hash(textures[i].name);
+		tex.slot         = i;
+		tex.default_name = string_copy(textures[i].value);
+		tex.default_tex  = shader_stref_to_tex(stref_make(textures[i].value));
 	}
 
 	// Now, copy the shader code blobs!

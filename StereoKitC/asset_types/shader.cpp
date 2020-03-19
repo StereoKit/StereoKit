@@ -178,7 +178,11 @@ shader_t shader_create_mem(void *data, size_t data_size) {
 	if (!shader_file_parse_mem(data, data_size, &name, desc, tex_slots, vs, ps))
 		return nullptr;
 
-	shader_t result = (shader_t)assets_allocate(asset_type_shader);
+	shader_t result = shader_find(name);
+	if (result != nullptr)
+		return result;
+
+	result = (shader_t)assets_allocate(asset_type_shader);
 	if (!_shader_set_code(result, name, desc, tex_slots, vs, ps)) {
 		shader_destroy(result);
 		return nullptr;
@@ -208,8 +212,7 @@ shader_t shader_create_file(const char *filename) {
 		uint64_t hash = string_hash((char*)data);
 
 		// Check if it's cached first
-		if      (shader_cached(hash, compiled_data, compiled_size)) {
-		}
+		if      (shader_cached(hash, compiled_data, compiled_size)) { }
 		// If not, try compiling it and caching it
 		else if (shader_compile((char *)data, compiled_data, compiled_size)) {
 			shader_cache(hash, compiled_data, compiled_size);
@@ -231,6 +234,23 @@ shader_t shader_create_file(const char *filename) {
 		shader_set_id(result, filename);
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+shader_t shader_create_hlsl(const char *hlsl) {
+	void    *data;
+	size_t   size;
+	uint64_t hash = string_hash(hlsl);
+
+	// Check if it's cached first
+	if      (shader_cached (hash, data, size)) { }
+	// If not, try compiling it and caching it
+	else if (shader_compile(hlsl, data, size)) { shader_cache(hash, data, size); } 
+	// If still no luck, fail out!
+	else { return nullptr; }
+
+	return shader_create_mem(data, size);
 }
 
 ///////////////////////////////////////////
