@@ -79,6 +79,7 @@ class Program
 
     static void CommonInit()
     {
+        Log.Write(LogLevel.Diagnostic, "Temp path: " + System.IO.Path.GetTempPath());
         Material floorMat = Default.Material.Copy();
         floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
         floorMat[MatParamName.TexScale  ] = 16;

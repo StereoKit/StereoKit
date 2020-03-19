@@ -94,7 +94,8 @@ void assets_set_id(asset_header_t &header, const char *id) {
 
 void assets_set_id(asset_header_t &header, uint64_t id) {
 #if _DEBUG
-	assert(assets_find(id, header.type) == nullptr);
+	asset_header_t *other = (asset_header_t *)assets_find(id, header.type);
+	assert(other == nullptr);
 #endif
 	header.id = id;
 }

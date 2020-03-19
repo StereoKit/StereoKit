@@ -229,11 +229,7 @@ shader_t shader_create_file(const char *filename) {
 		size = compiled_size;
 	}
 
-	result = shader_create_mem(data, size);
-	if (result != nullptr)
-		shader_set_id(result, filename);
-
-	return result;
+	return shader_create_mem(data, size);
 }
 
 ///////////////////////////////////////////
