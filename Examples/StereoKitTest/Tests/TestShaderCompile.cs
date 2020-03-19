@@ -43,6 +43,7 @@ class DemoShaderCompile : ITest
 			File.WriteAllText (file1, code1);
 			File.WriteAllBytes(file2, Shader.Compile(code2));
 
+			// Wait for file to finish writing
 			while(!IsFileAvailable(file1) || !IsFileAvailable(file2))
 				Thread.Sleep(100);
 
