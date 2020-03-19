@@ -9,24 +9,30 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include <direct.h>
-
-#include <vector>
-using namespace std;
+#include <direct.h>   // for _mkdir
+#include <sys/stat.h> // for stat
 
 namespace sk {
 
 ///////////////////////////////////////////
 
-bool32_t shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps);
+ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target);
+bool32_t _shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps);
+
+const char *shader_cache_name(uint64_t hash);
+const char *shader_cache_folder();
+void        shader_cache (uint64_t hlsl_hash, void *data, size_t size);
+bool32_t    shader_cached(uint64_t hlsl_hash, void *&out_data, size_t &out_size);
 
 ///////////////////////////////////////////
 
 #ifndef SK_NO_RUNTIME_SHADER_COMPILE
 #include <d3dcompiler.h>
 #pragma comment(lib,"D3dcompiler.lib")
+#endif
 
 ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
+#ifndef SK_NO_RUNTIME_SHADER_COMPILE
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #ifdef _DEBUG
 	flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
@@ -40,14 +46,16 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 	if (errors) errors->Release();
 
 	return compiled;
-}
-
+#else
+	log_err("Shader compile not supported in this build!");
+	return nullptr;
 #endif
+}
 
 ///////////////////////////////////////////
 
 char cache_folder[512];
-const char* shader_cache_name(uint64_t hash) {
+const char *shader_cache_name(uint64_t hash) {
 	char temp[512];
 	GetTempPathA(512, temp);
 	sprintf_s(cache_folder, "%s\\cache\\%I64u.sks", temp, hash);
@@ -56,7 +64,7 @@ const char* shader_cache_name(uint64_t hash) {
 
 ///////////////////////////////////////////
 
-const char* shader_cache_folder() {
+const char *shader_cache_folder() {
 	char temp[512];
 	GetTempPathA(512, temp);
 	sprintf_s(cache_folder, "%s\\cache", temp);
@@ -171,7 +179,7 @@ shader_t shader_create_mem(void *data, size_t data_size) {
 		return nullptr;
 
 	shader_t result = (shader_t)assets_allocate(asset_type_shader);
-	if (!shader_set_code(result, name, desc, tex_slots, vs, ps)) {
+	if (!_shader_set_code(result, name, desc, tex_slots, vs, ps)) {
 		shader_destroy(result);
 		return nullptr;
 	}
@@ -227,7 +235,7 @@ shader_t shader_create_file(const char *filename) {
 
 ///////////////////////////////////////////
 
-bool32_t shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps) {
+bool32_t _shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps) {
 	shader_destroy_parsedata(shader);
 	shader->name      = name;
 	shader->args_desc = desc;
@@ -270,7 +278,7 @@ bool32_t shader_set_code(shader_t shader, void *data, size_t data_size) {
 	if (!shader_file_parse_mem(data, data_size, &name, desc, tex_slots, vs, ps))
 		return false;
 
-	return shader_set_code(shader, name, desc, tex_slots, vs, ps);
+	return _shader_set_code(shader, name, desc, tex_slots, vs, ps);
 }
 
 ///////////////////////////////////////////
@@ -304,6 +312,8 @@ void shader_destroy_parsedata(shader_t shader) {
 	}
 
 	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
+		free(shader->tex_slots.tex[i].name);
+		free(shader->tex_slots.tex[i].default_name);
 		tex_release(shader->tex_slots.tex[i].default_tex);
 	}
 	

@@ -58,9 +58,8 @@ const size_t register_sz = sizeof(float) * 4;
 
 ///////////////////////////////////////////
 
-tex_t       shader_stref_to_tex (const stref_t &tex_name);
-const char *shader_tex_to_string(tex_t tex);
-void        shader_init_buffer  (shaderargs_desc_t &desc);
+tex_t shader_stref_to_tex(const stref_t &tex_name);
+void  shader_init_buffer (shaderargs_desc_t &desc);
 
 ///////////////////////////////////////////
 
@@ -71,17 +70,6 @@ tex_t shader_stref_to_tex(const stref_t &tex_name) {
 	else if (stref_equals(tex_name, "flat" )) return tex_find("default/tex_flat");
 	else if (stref_equals(tex_name, "rough")) return tex_find("default/tex_rough");
 	else                                      return tex_find("default/tex");
-}
-
-///////////////////////////////////////////
-
-const char *shader_tex_to_string(tex_t tex) {
-	if      (tex == sk_default_tex      ) return "white";
-	else if (tex == sk_default_tex_black) return "black";
-	else if (tex == sk_default_tex_gray ) return "gray";
-	else if (tex == sk_default_tex_flat ) return "flat";
-	else if (tex == sk_default_tex_rough) return "rough";
-	else return "white";
 }
 
 ///////////////////////////////////////////
@@ -167,9 +155,11 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 
 			// Find a default texture for this slot, in case it isn't used!
 			if (stref_nextword(curr, word)) {
-				item.default_tex = shader_stref_to_tex(word);
+				item.default_name = stref_copy(word);
+				item.default_tex  = shader_stref_to_tex(word);
 			} else {
-				item.default_tex = tex_find("default/tex");
+				item.default_name = string_copy("white");
+				item.default_tex  = tex_find("default/tex");
 			}
 
 			arrput(tex_items, item);
@@ -359,7 +349,7 @@ bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, cons
 
 		textures[i] = {};
 		strcpy_s(textures[i].name,  slots.tex[i].name);
-		strcpy_s(textures[i].value, shader_tex_to_string(slots.tex[i].default_tex));
+		strcpy_s(textures[i].value, slots.tex[i].default_name);
 	}
 
 	// Now, the shader code blobs!

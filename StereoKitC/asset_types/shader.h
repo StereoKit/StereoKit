@@ -41,6 +41,7 @@ struct shader_tex_slots_item_t {
 	char    *name;
 	int      slot;
 	tex_t    default_tex;
+	char    *default_name;
 };
 
 struct shader_tex_slots_t {
@@ -59,7 +60,6 @@ struct _shader_t {
 	char               *name;
 };
 
-void shader_from_memory      (void *data, size_t data_size);
 void shader_destroy          (shader_t shader);
 void shader_destroy_parsedata(shader_t shader);
 
