@@ -174,7 +174,8 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
 
 	sk_initialized = systems_initialize();
-	log_show_any_fail_reason();
+	if (!sk_initialized) log_show_any_fail_reason();
+	else                 log_clear_any_fail_reason();
 	return sk_initialized;
 }
 

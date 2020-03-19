@@ -4,6 +4,7 @@
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
+#include "../../log.h"
 #include "../../systems/d3d.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
@@ -124,7 +125,7 @@ bool openxr_init(const char *app_name) {
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		log_infof("Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
+		log_fail_reasonf(90, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
 		return false;
 	}
 
@@ -195,7 +196,7 @@ bool openxr_init(const char *app_name) {
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
-		log_infof("Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
+		log_fail_reasonf(90, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
 		return false;
 	}
 
