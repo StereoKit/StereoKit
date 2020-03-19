@@ -7,7 +7,7 @@
 
 namespace sk {
 
-extern const size_t shaderarg_size[];
+extern const size_t shaderarg_sz[];
 
 struct shaderargs_data_t {
 	void  *buffer;
@@ -38,6 +38,7 @@ struct shaderargs_desc_t {
 
 struct shader_tex_slots_item_t {
 	uint64_t id;
+	char    *name;
 	int      slot;
 	tex_t    default_tex;
 };
@@ -58,6 +59,7 @@ struct _shader_t {
 	char               *name;
 };
 
+void shader_from_memory      (void *data, size_t data_size);
 void shader_destroy          (shader_t shader);
 void shader_destroy_parsedata(shader_t shader);
 

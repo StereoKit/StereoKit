@@ -380,11 +380,12 @@ SK_API tex_t  font_get_tex(font_t font);
 SK_DeclarePrivateType(shader_t);
 
 SK_API shader_t    shader_find        (const char *id);
-SK_API shader_t    shader_create      (const char *hlsl);
+SK_API bool32_t    shader_compile     (const char *hlsl, void *&out_data, size_t &out_size);
 SK_API shader_t    shader_create_file (const char *filename);
+SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
-SK_API bool32_t    shader_set_code    (shader_t shader, const char *hlsl, const char *filename = nullptr);
+SK_API bool32_t    shader_set_code    (shader_t shader, void *data, size_t data_size);
 SK_API bool32_t    shader_set_codefile(shader_t shader, const char *filename);
 SK_API void        shader_release     (shader_t shader);
 

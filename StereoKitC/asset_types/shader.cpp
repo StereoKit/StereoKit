@@ -2,7 +2,10 @@
 #include "../_stereokit.h"
 #include "../libraries/stref.h"
 #include "../systems/d3d.h"
+#include "../systems/platform/platform_utils.h"
+#include "../shaders_builtin/shader_include.h"
 #include "shader.h"
+#include "shader_file.h"
 #include "assets.h"
 
 #include <stdio.h>
@@ -16,24 +19,33 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-struct shader_blob_t {
-	void *data;
-	size_t size;
-};
-
-const size_t shaderarg_size[] = { 
-	sizeof(float),    // shaderarg_type_float
-	sizeof(float)*4,  // shaderarg_type_color
-	sizeof(float)*4,  // shaderarg_type_vector
-	sizeof(float)*16, // shaderarg_type_matrix
-};
-const size_t shader_register_size = sizeof(float) * 4;
+bool32_t shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps);
 
 ///////////////////////////////////////////
 
 #ifndef SK_NO_RUNTIME_SHADER_COMPILE
 #include <d3dcompiler.h>
 #pragma comment(lib,"D3dcompiler.lib")
+
+class StereoKitIncludes : public ID3DInclude {
+	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) override {
+		void  *data;
+		size_t size;
+		if (string_eq_nocase(pFileName, "stereokit.hlsl")) {
+			size = strlen(sk_shader_builtin_include);
+			data = malloc(size);
+		}
+		else if (!platform_read_file(pFileName, data, size))
+			return S_FALSE;
+		*ppData = data;
+		*pBytes = size;
+		return S_OK;
+	}
+	HRESULT Close(LPCVOID pData) override {
+		free((void*)pData);
+		return S_OK;
+	}
+};
 
 ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -44,7 +56,8 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 #endif
 
 	ID3DBlob *compiled, *errors;
-	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
+	StereoKitIncludes includes;
+	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, &includes, entrypoint, target, flags, 0, &compiled, &errors)))
 		log_err((char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
@@ -56,195 +69,59 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 ///////////////////////////////////////////
 
 char cache_folder[512];
-const char* cache_create_name(const char* postfix) {
+const char* shader_cache_name(uint64_t hash) {
 	char temp[512];
 	GetTempPathA(512, temp);
-	sprintf_s(cache_folder, "%s\\%s", temp, postfix);
+	sprintf_s(cache_folder, "%s\\cache\\%I64u.sks", temp, hash);
 	return cache_folder;
-}
-
-shader_blob_t load_shader(const char* filename, const char* hlsl, const char* entrypoint) {
-	uint64_t hash = string_hash(hlsl);
-	char cache_name[128];
-	sprintf_s(cache_name, "cache\\%I64u.%s.blob", hash, entrypoint);
-	char target[16];
-	sprintf_s(target, "%s_5_0", entrypoint);
-
-	shader_blob_t result = {};
-	FILE         *fp     = nullptr;
-	if (fopen_s(&fp, cache_create_name(cache_name), "rb") == 0 && fp != nullptr) {
-		fseek(fp, 0, SEEK_END);
-		long length = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		result.data = malloc(length);
-		result.size = length;
-		fread(result.data, result.size, 1, fp);
-		fclose(fp);
-	} else {
-#ifdef SK_NO_RUNTIME_SHADER_COMPILE
-		log_errf("Runtime shader compile is disabled: couldn't find precompiled shader (%s) for %s!", cache_name, filename);
-#else
-		log_diagf("Compiling un-cached shader: %s", filename);
-
-		ID3DBlob *blob = compile_shader(assets_file(filename), hlsl, entrypoint, target);
-		if (blob == nullptr)
-			return result;
-		result.size = blob->GetBufferSize();
-		result.data = malloc(result.size);
-		memcpy(result.data, blob->GetBufferPointer(), result.size);
-		blob->Release();
-
-		// Ensure cache folder is present
-		struct stat st = { 0 };
-		const char *folder_name = cache_create_name("cache");
-		if (stat(folder_name, &st) == -1) {
-			if (_mkdir(folder_name) == -1) {
-				log_warnf("Couldn't create the cache folder! - %u");
-			}
-		}
-
-		// Write the blob to file for future use.
-		if (fopen_s(&fp, cache_create_name(cache_name), "wb") == 0 && fp != nullptr) {
-			fwrite(result.data, result.size, 1, fp);
-			fclose(fp);
-		} else {
-			log_warn("Couldn't write shader blob!");
-		}
-#endif
-	}
-	return result;
 }
 
 ///////////////////////////////////////////
 
-void shader_parse_file(shader_t shader, const char *hlsl) {
-	stref_t file = stref_make(hlsl);
-	stref_t line = {};
+const char* shader_cache_folder() {
+	char temp[512];
+	GetTempPathA(512, temp);
+	sprintf_s(cache_folder, "%s\\cache", temp);
+	return cache_folder;
+}
 
-	vector<shaderargs_desc_item_t > buffer_items;
-	vector<shader_tex_slots_item_t> tex_items;
+///////////////////////////////////////////
 
-	size_t buffer_size = 0;
-	while (stref_nextline(file, line)) {
-		stref_t curr = line;
-		stref_t word = {};
-		stref_trim(curr);
-		
-		// Make sure it's not an empty line, and it begins with a comment tag
-		if (!stref_nextword(curr, word, ' ', '[', ']') || !stref_equals(word, "//"))
-			continue;
-		if (!stref_nextword(curr, word, ' ', '[', ']'))
-			continue;
-		// Ensure this is a tag we'll want to parse (starts with '[')
-		if (*word.start != '[')
-			continue;
-		stref_t stripped_word = stref_stripcapture(word, '[', ']');
-		if (stref_equals(stripped_word, "param")) {
-			if (!stref_nextword(curr, word))
-				continue;
+bool32_t shader_cached(uint64_t hlsl_hash, void *&out_data, size_t &out_size) {
+	FILE *fp = nullptr;
+	if (fopen_s(&fp, shader_cache_name(hlsl_hash), "rb") != 0 || fp == nullptr) {
+		return false;
+	}
 
-			shaderargs_desc_item_t item = {};
-			if      (stref_equals(word, "float" )) item.type = material_param_float;
-			else if (stref_equals(word, "color" )) item.type = material_param_vector;
-			else if (stref_equals(word, "vector")) item.type = material_param_vector;
-			else if (stref_equals(word, "matrix")) item.type = material_param_matrix;
-			else {
-				char name[64];
-				stref_copy_to(word, name, 64);
-				log_warnf("Unrecognized shader param type: %s", name);
-				free(name);
-			}
-			item.size   = shaderarg_size[item.type];
+	fseek(fp, 0, SEEK_END);
+	out_size = ftell(fp);
+	out_data = malloc(out_size);
+	fseek(fp, 0, SEEK_SET);
+	fread(out_data, out_size, 1, fp);
+	fclose(fp);
 
-			// make sure parameters are padded so they don't overflow into the next register
-			if (buffer_size % shader_register_size != 0 && // if it's evenly aligned, it isn't a problem, but if it's not, we need to check!
-				buffer_size/shader_register_size != (buffer_size+item.size)/shader_register_size && // if we've crossed into the next register
-				(buffer_size+item.size) % shader_register_size != 0) // and if crossing over means crossing allll the way over, instead of just up-to
-			{
-				buffer_size += shader_register_size - (buffer_size % shader_register_size);
-			}
-			item.offset = buffer_size;
-			buffer_size += item.size;
+	return true;
+}
 
-			item.id = 0;
-			if (stref_nextword(curr, word)) {
-				item.name = stref_copy(word);
-				item.id   = stref_hash(word);
-			}
+///////////////////////////////////////////
 
-			while (stref_nextword(curr, word, ' ', '{','}')) {
-				if (stref_equals(word, "tags")) {
-					if (stref_nextword(curr, word, ' ', '{','}'))
-						item.tags = stref_copy(stref_stripcapture(word, '{','}'));
-				} else {
-					stref_t value = stref_stripcapture(word, '{', '}');
-					if (item.type == material_param_float) {
-						item.default_value = malloc(sizeof(float));
-						*(float *)item.default_value = stref_to_f(value);
-
-					} else if (item.type == material_param_vector) {
-						vec4    result    = {};
-						stref_t component = {};
-						if (stref_nextword(value, component, ',')) result.x = stref_to_f(component);
-						if (stref_nextword(value, component, ',')) result.y = stref_to_f(component);
-						if (stref_nextword(value, component, ',')) result.z = stref_to_f(component);
-						if (stref_nextword(value, component, ',')) result.w = stref_to_f(component);
-
-						item.default_value = malloc(sizeof(vec4));
-						*(vec4 *)item.default_value = result;
-					}
-				}
-			}
-
-			buffer_items.emplace_back(item);
-		} if (stref_equals(stripped_word, "texture")) {
-
-			shader_tex_slots_item_t item;
-			item.slot = (int)tex_items.size();
-			if (stref_nextword(curr, word)) {
-				item.id = stref_hash(word);
-			}
-
-			// Find a default texture for this slot, in case it isn't used!
-			if (stref_nextword(curr, word)) {
-				if      (stref_equals(word, "white")) item.default_tex = tex_find("default/tex");
-				else if (stref_equals(word, "black")) item.default_tex = tex_find("default/tex_black");
-				else if (stref_equals(word, "gray" )) item.default_tex = tex_find("default/tex_gray");
-				else if (stref_equals(word, "flat" )) item.default_tex = tex_find("default/tex_flat");
-				else if (stref_equals(word, "rough")) item.default_tex = tex_find("default/tex_rough");
-				else                                  item.default_tex = tex_find("default/tex");
-			} else {
-				item.default_tex = tex_find("default/tex");
-			}
-
-			tex_items.emplace_back(item);
-		} if (stref_equals(stripped_word, "name")) {
-			if (!stref_nextword(curr, word))
-				continue;
-			shader->name = stref_copy(word);
+void shader_cache(uint64_t hlsl_hash, void *data, size_t size) {
+	// Ensure cache folder is present
+	struct stat st = { 0 };
+	const char *folder_name = shader_cache_folder();
+	if (stat(folder_name, &st) == -1) {
+		if (_mkdir(folder_name) == -1) {
+			log_warnf("Couldn't create the cache folder!");
 		}
 	}
 
-	// And ensure our final buffer is a multiple of register size!
-	if (buffer_size % shader_register_size != 0) {
-		buffer_size += shader_register_size - (buffer_size % shader_register_size);
-	}
-
-	shader->args_desc = {};
-	shader->args_desc.buffer_size = (int)buffer_size;
-	size_t data_size = sizeof(shaderargs_desc_item_t) * buffer_items.size();
-	if (data_size > 0) {
-		shader->args_desc.item_count = (int)buffer_items.size();
-		shader->args_desc.item       = (shaderargs_desc_item_t *)malloc(data_size);
-		memcpy(shader->args_desc.item, &buffer_items[0], data_size);
-	}
-
-	shader->tex_slots = {};
-	data_size = sizeof(shader_tex_slots_item_t) * tex_items.size();
-	if (data_size > 0) {
-		shader->tex_slots.tex_count = (int)tex_items.size();
-		shader->tex_slots.tex       = (shader_tex_slots_item_t*)malloc(data_size);
-		memcpy(shader->tex_slots.tex, &tex_items[0], data_size);
+	// Write the blob to file
+	FILE *fp = nullptr;
+	if (fopen_s(&fp, shader_cache_name(hlsl_hash), "wb") == 0 && fp != nullptr) {
+		fwrite(data, size, 1, fp);
+		fclose(fp);
+	} else {
+		log_warn("Couldn't write shader cache file!");
 	}
 }
 
@@ -280,53 +157,110 @@ const char *shader_get_name(shader_t shader) {
 
 ///////////////////////////////////////////
 
+bool32_t shader_compile(const char *hlsl, void *&out_data, size_t &out_size) {
+	char *name;
+	shaderargs_desc_t desc;
+	shader_tex_slots_t tex_slots;
+	shader_file_parse(hlsl, &name, desc, tex_slots);
+
+	// Compile the shader into machine code!
+	shader_blob_t ps, vs;
+	ID3DBlob *vs_blob = compile_shader(nullptr, hlsl, "vs", "vs_5_0");
+	if (vs_blob == nullptr) return false;
+	ID3DBlob *ps_blob = compile_shader(nullptr, hlsl, "ps", "ps_5_0");
+	if (ps_blob == nullptr) { vs_blob->Release(); return false; };
+
+	// Create a binary shader file, and put it in our out arguments
+	bool result = shader_file_write_mem(name, desc, tex_slots,
+		{ vs_blob->GetBufferPointer(), vs_blob->GetBufferSize() },
+		{ vs_blob->GetBufferPointer(), vs_blob->GetBufferSize() },
+		out_data, out_size);
+
+	vs_blob->Release();
+	ps_blob->Release();
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+shader_t shader_create_mem(void *data, size_t data_size) {
+	char              *name;
+	shaderargs_desc_t  desc;
+	shader_tex_slots_t tex_slots;
+	shader_blob_t      vs, ps;
+	if (!shader_file_parse_mem(data, data_size, &name, desc, tex_slots, vs, ps))
+		return nullptr;
+
+	shader_t result = (shader_t)assets_allocate(asset_type_shader);
+	if (!shader_set_code(result, name, desc, tex_slots, vs, ps)) {
+		shader_destroy(result);
+		return nullptr;
+	}
+	shader_set_id(result, result->name);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 shader_t shader_create_file(const char *filename) {
 	shader_t result = shader_find(filename);
 	if (result != nullptr)
 		return result;
-	result = (shader_t)assets_allocate(asset_type_shader);
-	shader_set_id      (result, filename);
-	shader_set_codefile(result, filename);
 
-	return result;
-}
-
-///////////////////////////////////////////
-
-shader_t shader_create(const char *hlsl) {
-	shader_t result = (shader_t)assets_allocate(asset_type_shader);
-
-	if (!shader_set_code(result, hlsl, nullptr)) {
-		shader_release(result);
+	// Load from file
+	void  *data;
+	size_t size;
+	if (!platform_read_file(assets_file(filename), data, size))
 		return nullptr;
+
+	// If it's not a compiled binary shader file...
+	if (!shader_file_is_mem(data, size)) {
+		void    *compiled_data;
+		size_t   compiled_size;
+		uint64_t hash = string_hash((char*)data);
+
+		// Check if it's cached first
+		if      (shader_cached(hash, compiled_data, compiled_size)) {
+		}
+		// If not, try compiling it and caching it
+		else if (shader_compile((char *)data, compiled_data, compiled_size)) {
+			shader_cache(hash, compiled_data, compiled_size);
+		} 
+		// If still no luck, fail out!
+		else {
+			free(data);
+			return nullptr;
+		}
+
+		// Got our shader, lets move on!
+		free(data);
+		data = compiled_data;
+		size = compiled_size;
 	}
-	
+
+	result = shader_create_mem(data, size);
+	if (result != nullptr)
+		shader_set_id(result, filename);
+
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename) {
-
-	// Check the parameters on this shader
+bool32_t shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &tex_slots, const shader_blob_t &vs, const shader_blob_t &ps) {
 	shader_destroy_parsedata(shader);
-	shader_parse_file(shader, hlsl);
+	shader->name      = name;
+	shader->args_desc = desc;
+	shader->tex_slots = tex_slots;
 	shaderargs_create(shader->args, shader->args_desc.buffer_size, 2);
-	if (filename == nullptr)
-		filename = shader->name;
 
-	// Compile the shader code
-	shader_blob_t vert_shader_blob  = load_shader(filename, hlsl, "vs");
-	if (vert_shader_blob.data == nullptr) return false;
-	shader_blob_t pixel_shader_blob = load_shader(filename, hlsl, "ps");
-	if (pixel_shader_blob.data == nullptr) return false;
-
-	// If the shader compiled fine, set up and send it to the GPU
 	if (shader->vshader != nullptr) shader->vshader->Release();
 	if (shader->pshader != nullptr) shader->pshader->Release();
-	if (FAILED(d3d_device->CreateVertexShader(vert_shader_blob.data, vert_shader_blob.size, nullptr, &shader->vshader)))
+	if (FAILED(d3d_device->CreateVertexShader(vs.data, vs.size, nullptr, &shader->vshader)))
 		log_warnf("Issue creating vertex shader for %s", shader->name);
-	if (FAILED(d3d_device->CreatePixelShader (pixel_shader_blob.data, pixel_shader_blob.size, nullptr, &shader->pshader)))
+	if (FAILED(d3d_device->CreatePixelShader (ps.data, ps.size, nullptr, &shader->pshader)))
 		log_warnf("Issue creating pixel shader for %s", shader->name);
 	DX11ResType(shader->vshader, "vertex_shader");
 	DX11ResType(shader->pshader, "pixel_shader");
@@ -339,40 +273,39 @@ bool32_t shader_set_code(shader_t shader, const char *hlsl, const char *filename
 		{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"SV_RenderTargetArrayIndex" ,  0, DXGI_FORMAT_R32_UINT,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0} };
-	if (FAILED(d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vert_shader_blob.data, vert_shader_blob.size, &shader->vert_layout)))
-		log_warnf("Issue creating vertex layout for %s", filename);
+	if (FAILED(d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), vs.data, vs.size, &shader->vert_layout)))
+		log_warnf("Issue creating vertex layout for %s", shader->name);
 
-	free(vert_shader_blob .data);
-	free(pixel_shader_blob.data);
+	free(vs.data);
+	free(ps.data);
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool32_t shader_set_codefile(shader_t shader, const char *filename) {
-	// Open file
-	FILE *fp;
-	if (fopen_s(&fp, assets_file(filename), "rb") != 0 || fp == nullptr)
+bool32_t shader_set_code(shader_t shader, void *data, size_t data_size) {
+	char              *name;
+	shaderargs_desc_t  desc;
+	shader_tex_slots_t tex_slots;
+	shader_blob_t      vs, ps;
+	if (!shader_file_parse_mem(data, data_size, &name, desc, tex_slots, vs, ps))
 		return false;
 
-	// Get length of file
-	fseek(fp, 0L, SEEK_END);
-	size_t length = ftell(fp);
-	rewind(fp);
+	return shader_set_code(shader, name, desc, tex_slots, vs, ps);
+}
 
-	// Read the data
-	unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) *length+1);
-	if (data == nullptr) { fclose(fp); return false; }
-	fread(data, 1, length, fp);
-	data[length] = '\0';
-	fclose(fp);
+///////////////////////////////////////////
 
-	// Compile the shader
-	shader_set_code(shader, (const char *)data, filename);
+bool32_t shader_set_codefile(shader_t shader, const char *filename) {
+	void  *data;
+	size_t size;
+	if (!platform_read_file(filename, data, size))
+		return false;
+
+	bool32_t result = shader_set_code(shader, data, size);
 	free(data);
-
-	return true;
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -386,14 +319,19 @@ void shader_release(shader_t shader) {
 ///////////////////////////////////////////
 
 void shader_destroy_parsedata(shader_t shader) {
-	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
+	for (int32_t i = 0; i < shader->args_desc.item_count; i++) {
 		free(shader->args_desc.item[i].name);
 		free(shader->args_desc.item[i].tags);
 		free(shader->args_desc.item[i].default_value);
 	}
 
+	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
+		tex_release(shader->tex_slots.tex[i].default_tex);
+	}
+	
 	shaderargs_destroy(shader->args);
 	free(shader->args_desc.item);
+	free(shader->tex_slots.tex);
 	free(shader->name);
 }
 
@@ -401,11 +339,6 @@ void shader_destroy_parsedata(shader_t shader) {
 
 void shader_destroy(shader_t shader) {
 	shader_destroy_parsedata(shader);
-
-	for (size_t i = 0; i < shader->tex_slots.tex_count; i++) {
-		tex_release(shader->tex_slots.tex[i].default_tex);
-	}
-	free(shader->tex_slots.tex );
 	
 	if (shader->pshader     != nullptr) shader->pshader    ->Release();
 	if (shader->vshader     != nullptr) shader->vshader    ->Release();

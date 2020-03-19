@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -27,19 +28,17 @@ namespace StereoKit
                 NativeAPI.shader_release(_inst);
         }
 
-        /// <summary>Creates a shader from a piece of HLSL code! Shader stuff like this may 
-        /// change in the future, since HLSL may not be all that portable. Also, before
-        /// compiling the shader code, StereoKit hashes the contents, and looks to see if
-        /// it has that shader cached. If so, it'll just load that instead of compiling it
-        /// again.</summary>
-        /// <param name="hlsl">A vertex and pixel shader written in HLSL, check the shader
-        /// guides for more on this later!</param>
-        /// <returns>A shader from the given code, or null if it failed to load/compile.</returns>
-        public static Shader FromHLSL(string hlsl)
+
+        public static byte[] Compile(string hlsl)
         {
-            IntPtr inst = NativeAPI.shader_create(hlsl);
-            return inst == IntPtr.Zero ? null : new Shader(inst);
+            if (!NativeAPI.shader_compile(hlsl, out IntPtr ptr, out long size))
+                return new byte[]{ };
+
+            byte[] result = new byte[size];
+            Marshal.Copy(ptr, result, 0, (int)size);
+            return result;
         }
+
         /// <summary>Loads and compiles a shader from an hlsl file! Technically, after loading the file,
         /// StereoKit will hash it, and check to see if it has changed since the last time it cached a
         /// compiled version. If there is no cache for the hash, it'll compile it, and save the compiled
