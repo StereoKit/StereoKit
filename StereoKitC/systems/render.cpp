@@ -384,7 +384,7 @@ bool render_initialize() {
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
-	shader_t sky_shader = shader_create(sk_shader_builtin_skybox);
+	shader_t sky_shader = shader_create_mem((void*)shader_builtin_skybox, sizeof(shader_builtin_skybox));
 	shader_set_id(sky_shader, "render/skybox_shader");
 	render_sky_mesh = mesh_gen_sphere(1, 3);
 	mesh_set_id(render_sky_mesh, "render/skybox_mesh");

@@ -31,7 +31,7 @@ namespace StereoKit
 
         public static byte[] Compile(string hlsl)
         {
-            if (!NativeAPI.shader_compile(hlsl, out IntPtr ptr, out long size))
+            if (!NativeAPI.shader_compile(hlsl, out IntPtr ptr, out ulong size))
                 return new byte[]{ };
 
             byte[] result = new byte[size];

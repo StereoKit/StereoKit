@@ -227,14 +227,13 @@ bool shader_file_parse_mem(void *data, size_t data_size, char **out_name, shader
 	uint8_t              *blob_start =                         (uint8_t*)textures  + sizeof(shader_file_tex_t)    * header->tex_count;
 
 	// Grab the header information
-	shader_t result = nullptr;
-	result->name = string_copy(header->name);
+	*out_name = string_copy(header->name);
 
 	// Copy over the shader parameters
-	result->args_desc.item_count  = header->param_count;
-	result->args_desc.item        = (shaderargs_desc_item_t*)malloc(sizeof(shaderargs_desc_item_t) * header->param_count);
+	out_desc.item_count  = header->param_count;
+	out_desc.item        = (shaderargs_desc_item_t*)malloc(sizeof(shaderargs_desc_item_t) * header->param_count);
 	for (int32_t i = 0; i < header->param_count; i++) {
-		shaderargs_desc_item_t &item = result->args_desc.item[i];
+		shaderargs_desc_item_t &item = out_desc.item[i];
 		item.name = string_copy(params[i].name);
 		item.id   = string_hash(params[i].name);
 		item.tags = string_copy(params[i].tags);
@@ -243,13 +242,13 @@ bool shader_file_parse_mem(void *data, size_t data_size, char **out_name, shader
 		item.default_value = malloc(item.size);
 		memcpy(item.default_value, params[i].data, item.size);
 	}
-	shader_init_buffer(result->args_desc);
+	shader_init_buffer(out_desc);
 
 	// Copy the texture parameters
-	result->tex_slots.tex_count = header->tex_count;
-	result->tex_slots.tex       = (shader_tex_slots_item_t*)malloc(sizeof(shader_tex_slots_item_t) * header->tex_count);
+	out_slots.tex_count = header->tex_count;
+	out_slots.tex       = (shader_tex_slots_item_t*)malloc(sizeof(shader_tex_slots_item_t) * header->tex_count);
 	for (int32_t i = 0; i < header->tex_count; i++) {
-		shader_tex_slots_item_t &tex = result->tex_slots.tex[i];
+		shader_tex_slots_item_t &tex = out_slots.tex[i];
 		tex.id          = string_hash(textures[i].name);
 		tex.slot        = i;
 		tex.default_tex = shader_stref_to_tex(stref_make(textures[i].value));
@@ -297,7 +296,7 @@ void shader_init_buffer(shaderargs_desc_t &desc) {
 
 ///////////////////////////////////////////
 
-bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &slots, const shader_blob_t &vs, const shader_blob_t &ps, void *out_data, size_t out_size) {
+bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, const shader_tex_slots_t &slots, const shader_blob_t &vs, const shader_blob_t &ps, void *&out_data, size_t &out_size) {
 	if (strlen(name) > SHADER_MAX_NAME) {
 		log_errf("Shader name [%s] exceeds %d characters!", name, SHADER_MAX_NAME);
 		return false;
@@ -314,18 +313,19 @@ bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, cons
 	uint8_t *buffer = (uint8_t *)out_data;
 
 	// write the header
-	shader_file_t &header = (shader_file_t &)buffer;
-	strcpy_s(header.signature, "sk_shd");
-	strcpy_s(header.name,      name);
-	header.blob_count  = 2;
-	header.param_count = desc.item_count;
-	header.tex_count   = slots.tex_count;
+	shader_file_t *header = (shader_file_t *)buffer;
+	*header = {};
+	strcpy_s(header->signature, "sk_shd");
+	strcpy_s(header->name,      name);
+	header->blob_count  = 2;
+	header->param_count = desc.item_count;
+	header->tex_count   = slots.tex_count;
 
 	// Get file addresses for each chunk of data!
 	shader_file_blob_t   *blob_info  = (shader_file_blob_t  *)(buffer              + sizeof(shader_file_t));
-	shader_file_params_t *params     = (shader_file_params_t*)((uint8_t*)blob_info + sizeof(shader_file_blob_t)   * header.blob_count);
-	shader_file_tex_t    *textures   = (shader_file_tex_t   *)((uint8_t*)params    + sizeof(shader_file_params_t) * header.param_count);
-	uint8_t              *blob_start =                         (uint8_t*)textures  + sizeof(shader_file_tex_t)    * header.tex_count;
+	shader_file_params_t *params     = (shader_file_params_t*)((uint8_t*)blob_info + sizeof(shader_file_blob_t)   * header->blob_count);
+	shader_file_tex_t    *textures   = (shader_file_tex_t   *)((uint8_t*)params    + sizeof(shader_file_params_t) * header->param_count);
+	uint8_t              *blob_start =                         (uint8_t*)textures  + sizeof(shader_file_tex_t)    * header->tex_count;
 
 	blob_info[0].language = shader_lang_hlsl_vs;
 	blob_info[1].language = shader_lang_hlsl_ps;
@@ -333,12 +333,12 @@ bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, cons
 	blob_info[1].size     = ps.size;
 
 	// Write the shader parameters
-	for (int32_t i = 0; i < header.param_count; i++) {
+	for (int32_t i = 0; i < header->param_count; i++) {
 		if (strlen(desc.item[i].name) > SHADER_MAX_PARAM_NAME) {
 			log_errf("Shader param name [%s] exceeds %d characters!", desc.item[i].name, SHADER_MAX_PARAM_NAME);
 			goto fail;
 		}
-		if (strlen(desc.item[i].tags) > SHADER_MAX_PARAM_TAG) {
+		if (desc.item[i].tags != nullptr && strlen(desc.item[i].tags) > SHADER_MAX_PARAM_TAG) {
 			log_errf("Shader param tag [%s] exceeds %d characters!", desc.item[i].tags, SHADER_MAX_PARAM_TAG);
 			goto fail;
 		}
@@ -346,13 +346,13 @@ bool shader_file_write_mem(const char *name, const shaderargs_desc_t &desc, cons
 		params[i] = {};
 		params[i].type = desc.item[i].type;
 		strcpy_s(params[i].name, desc.item[i].name);
-		strcpy_s(params[i].tags, desc.item[i].tags);
 		memcpy  (params[i].data, desc.item[i].default_value, desc.item[i].size);
+		if (desc.item[i].tags != nullptr) strcpy_s(params[i].tags, desc.item[i].tags);
 	}
 
 	// Write the texture info
-	for (int32_t i = 0; i < header.tex_count; i++) {
-		if (strlen(desc.item[i].name) > SHADER_MAX_PARAM_NAME) {
+	for (int32_t i = 0; i < header->tex_count; i++) {
+		if (strlen(slots.tex[i].name) > SHADER_MAX_PARAM_NAME) {
 			log_errf("Shader texture name [%s] exceeds %d characters!", slots.tex[i].name, SHADER_MAX_PARAM_NAME);
 			goto fail;
 		}

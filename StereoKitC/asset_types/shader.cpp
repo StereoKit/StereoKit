@@ -3,7 +3,6 @@
 #include "../libraries/stref.h"
 #include "../systems/d3d.h"
 #include "../systems/platform/platform_utils.h"
-#include "../shaders_builtin/shader_include.h"
 #include "shader.h"
 #include "shader_file.h"
 #include "assets.h"
@@ -27,26 +26,6 @@ bool32_t shader_set_code(shader_t shader, char *name, const shaderargs_desc_t &d
 #include <d3dcompiler.h>
 #pragma comment(lib,"D3dcompiler.lib")
 
-class StereoKitIncludes : public ID3DInclude {
-	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) override {
-		void  *data;
-		size_t size;
-		if (string_eq_nocase(pFileName, "stereokit.hlsl")) {
-			size = strlen(sk_shader_builtin_include);
-			data = malloc(size);
-		}
-		else if (!platform_read_file(pFileName, data, size))
-			return S_FALSE;
-		*ppData = data;
-		*pBytes = size;
-		return S_OK;
-	}
-	HRESULT Close(LPCVOID pData) override {
-		free((void*)pData);
-		return S_OK;
-	}
-};
-
 ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
 	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #ifdef _DEBUG
@@ -56,8 +35,7 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 #endif
 
 	ID3DBlob *compiled, *errors;
-	StereoKitIncludes includes;
-	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, &includes, entrypoint, target, flags, 0, &compiled, &errors)))
+	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
 		log_err((char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
@@ -173,7 +151,7 @@ bool32_t shader_compile(const char *hlsl, void *&out_data, size_t &out_size) {
 	// Create a binary shader file, and put it in our out arguments
 	bool result = shader_file_write_mem(name, desc, tex_slots,
 		{ vs_blob->GetBufferPointer(), vs_blob->GetBufferSize() },
-		{ vs_blob->GetBufferPointer(), vs_blob->GetBufferSize() },
+		{ ps_blob->GetBufferPointer(), ps_blob->GetBufferSize() },
 		out_data, out_size);
 
 	vs_blob->Release();

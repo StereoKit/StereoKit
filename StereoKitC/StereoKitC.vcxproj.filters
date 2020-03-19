@@ -307,7 +307,28 @@
     <ClInclude Include="asset_types\shader_file.h">
       <Filter>asset_types</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_include.h">
+    <ClInclude Include="shaders_builtin\shader_builtin_font.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_lines.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_pbr.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_skybox.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_ui.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_unlit.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_default.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_equirect.h">
       <Filter>shaders_builtin</Filter>
     </ClInclude>
   </ItemGroup>
@@ -333,5 +354,31 @@
     <Filter Include="systems\hand">
       <UniqueIdentifier>{7e9a2597-f32e-49c0-8322-9259b2bfed54}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders_builtin\shader_builtin_default.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_equirect.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_font.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_lines.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_pbr.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_skybox.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_ui.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders_builtin\shader_builtin_unlit.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

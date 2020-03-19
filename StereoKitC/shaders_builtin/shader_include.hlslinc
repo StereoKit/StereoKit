@@ -1,5 +1,3 @@
-#pragma once
-const char* sk_shader_builtin_include = R"_(
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view[2];
 	float4x4 sk_proj[2];
@@ -42,4 +40,4 @@ float3 Lighting(float3 normal) {
 	result += sk_lighting_sh[7].xyz * n.z;
 	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
 	return result;
-})_";
+}
