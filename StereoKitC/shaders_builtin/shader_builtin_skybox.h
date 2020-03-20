@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char shader_builtin_skybox[3536];
+extern unsigned const char shader_builtin_skybox[35480];

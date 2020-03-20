@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char shader_builtin_equirect[3896];
+extern unsigned const char shader_builtin_equirect[38368];

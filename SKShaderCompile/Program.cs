@@ -71,7 +71,7 @@ class Program
             string name = Path.GetFileNameWithoutExtension(filename);
             StringBuilder result = new StringBuilder();
             result.Append($"#include \"{name}.h\"\n\n");
-            string start = $"const char {name}[{bytes.Length}] = {{";
+            string start = $"unsigned const char {name}[{bytes.Length}] = {{";
             result.Append(start);
             int length = start.Length;
             for (int i = 0; i < bytes.Length; i++)
@@ -92,7 +92,7 @@ class Program
                 }
             }
             result.Append("};\n");
-            File.WriteAllText(Path.ChangeExtension(filename,"h"), $"#pragma once\n\nextern const char {name}[{bytes.Length}];\n");
+            File.WriteAllText(Path.ChangeExtension(filename,"h"), $"#pragma once\n\nextern unsigned const char {name}[{bytes.Length}];\n");
             File.WriteAllText(Path.ChangeExtension(filename,"cpp"), result.ToString());
         }
     }

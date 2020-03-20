@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char shader_builtin_font[5004];
+extern unsigned const char shader_builtin_font[45648];

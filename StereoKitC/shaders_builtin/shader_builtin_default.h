@@ -1,3 +1,3 @@
 #pragma once
 
-extern const char shader_builtin_default[5008];
+extern unsigned const char shader_builtin_default[41360];
