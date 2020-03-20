@@ -155,6 +155,15 @@
     <ClCompile Include="asset_types\shader_file.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\model_fbx.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\ofbx.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\miniz.c">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -330,6 +339,12 @@
     </ClInclude>
     <ClInclude Include="shaders_builtin\shader_builtin_equirect.h">
       <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\miniz.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\ofbx.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
