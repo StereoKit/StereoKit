@@ -1,4 +1,5 @@
 #include "model.h"
+#include "../libraries/miniz.h"
 #include "../libraries/ofbx.h"
 
 #include <stdio.h>
@@ -25,9 +26,9 @@ material_t modelfmt_fbx_material(const char *filename, shader_t shader, const of
 
 ///////////////////////////////////////////
 
-mesh_t modelfmt_fbx_geometry(const char *filename, const ofbx::Geometry *geo) {
+mesh_t modelfmt_fbx_geometry(const char *filename, const char *name, const ofbx::Geometry *geo) {
 	char id[512];
-	sprintf_s(id, 512, "%s/%s", filename, geo->name);
+	sprintf_s(id, 512, "%s/%s", filename, name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr)
 		return result;
@@ -65,10 +66,10 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const ofbx::Geometry *geo) {
 
 	// Assemble face data
 	int32_t ind_count = geo->getIndexCount();
-	vind_t *inds      = (vind_t *)malloc(ind_count * ind_count);
+	vind_t *inds      = (vind_t *)malloc(ind_count * sizeof(vind_t));
 	const int32_t *source_inds = geo->getFaceIndices();
 	for (int32_t i = 0; i < ind_count; i++) {
-		inds[i] = (vind_t)source_inds[i];
+		inds[i] = (vind_t)(source_inds[i] < 0 ? -source_inds[i]-1 : source_inds[i]);
 	}
 
 	// Assemble a mesh
@@ -89,11 +90,12 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 
 	int32_t count = scene->getMeshCount();
 	for (int32_t i = 0; i < count; i++) {
-		const ofbx::Mesh *mesh = scene->getMesh(i);
-		mesh_t     mesh     = modelfmt_fbx_geometry(mesh->getGeometry());
-		material_t material = mesh->getMaterialCount > 0 
-			? modelfmt_fbx_material(mesh->getMaterial(0))
+		const ofbx::Mesh *fbx_mesh = scene->getMesh(i);
+		mesh_t     mesh     = modelfmt_fbx_geometry(filename, fbx_mesh->name, fbx_mesh->getGeometry());
+		material_t material = fbx_mesh->getMaterialCount() > 0 
+			? modelfmt_fbx_material(filename, shader, fbx_mesh->getMaterial(0))
 			: material_find("default/material");
+		model_add_subset(model, mesh, material, matrix_identity);
 	}
 
 	scene->destroy();
