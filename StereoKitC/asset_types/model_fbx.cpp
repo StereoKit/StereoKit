@@ -43,7 +43,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *name, const ofbx:
 
 	if (source_verts != nullptr)
 		for (int32_t i = 0; i < vert_count; i++)
-			verts[i].pos = { (float)source_verts[i].x, (float)source_verts[i].y, (float)source_verts[i].z };
+			verts[i].pos = vec3{ (float)source_verts[i].x, (float)source_verts[i].y, (float)source_verts[i].z };// *cm2m;
 
 	if (source_norms != nullptr)
 		for (int32_t i = 0; i < vert_count; i++)
@@ -95,7 +95,27 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 		material_t material = fbx_mesh->getMaterialCount() > 0 
 			? modelfmt_fbx_material(filename, shader, fbx_mesh->getMaterial(0))
 			: material_find("default/material");
-		model_add_subset(model, mesh, material, matrix_identity);
+		ofbx::Matrix transform = fbx_mesh->getGlobalTransform();
+		ofbx::Vec3 scale = fbx_mesh->getLocalScaling();
+		ofbx::Vec3 pos   = fbx_mesh->getLocalTranslation();
+		ofbx::Vec3 rot   = fbx_mesh->getLocalRotation();
+		matrix sk_transform;
+		for (int32_t m = 0; m < 4; m++) {
+			sk_transform.row[m].x = (float)transform.m[m*4];
+			sk_transform.row[m].y = (float)transform.m[m*4+1];
+			sk_transform.row[m].z = (float)transform.m[m*4+2];
+			sk_transform.row[m].w = (float)transform.m[m*4+3];
+		}
+		
+		ofbx::Vec3 fbx_pivot = fbx_mesh->getScalingPivot();
+		vec3 pivot = { fbx_pivot.x, fbx_pivot.y, fbx_pivot.z };
+		matrix sk_scale = matrix_trs(-pivot) *  matrix_trs(vec3_zero, quat_identity, vec3_one * cm2m) * matrix_trs(pivot);
+		
+		model_add_subset(model, mesh, material, sk_transform * sk_scale);
+		/*matrix_trs(
+			vec3{ (float)pos.x, (float)pos.y, (float)pos.z } *cm2m, 
+			quat_from_angles(rot.x * rad2deg, rot.y * rad2deg, rot.z * rad2deg), 
+			vec3{(float)scale.x, (float)scale.y, (float)scale.z} *cm2m));*/
 	}
 
 	scene->destroy();
