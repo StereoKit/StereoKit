@@ -1,11 +1,14 @@
+const char *sk_shader_builtin_include = R"_(
+///////////////////////////////////////////
+
 cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view[2];
-	float4x4 sk_proj[2];
-	float4x4 sk_viewproj[2];
+	float4x4 sk_view       [2];
+	float4x4 sk_proj       [2];
+	float4x4 sk_viewproj   [2];
 	float4   sk_lighting_sh[9];
-	float4   sk_camera_pos[2];
-	float4   sk_camera_dir[2];
-	float4   sk_fingertip[2];
+	float4   sk_camera_pos [2];
+	float4   sk_camera_dir [2];
+	float4   sk_fingertip  [2];
 	float    sk_time;
 };
 struct Inst {
@@ -16,8 +19,10 @@ struct Inst {
 cbuffer TransformBuffer : register(b1) {
 	Inst sk_inst[682];
 };
-TextureCube sk_cubemap : register(t11);
+TextureCube  sk_cubemap       : register(t11);
 SamplerState tex_cube_sampler : register(s11);
+
+///////////////////////////////////////////
 
 // A spherical harmonics lighting lookup!
 // Some calculations have been offloaded to 'sh_to_fast'
@@ -40,4 +45,4 @@ float3 Lighting(float3 normal) {
 	result += sk_lighting_sh[7].xyz * n.z;
 	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
 	return result;
-}
+})_";

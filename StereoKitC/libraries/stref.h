@@ -31,7 +31,7 @@ const char *stref_withend(stref_t &ref);
 void     stref_remend  (stref_t &ref);
 stref_t  stref_make    (const char *source);
 stref_t  stref_substr  (const char *source, uint32_t length);
-stref_t  stref_substr  (stref_t &ref, uint32_t start, uint32_t length);
+stref_t  stref_substr  (const stref_t &ref, uint32_t start, uint32_t length);
 void     stref_trim    (stref_t &ref);
 uint32_t stref_count   (stref_t &ref, char character);
 bool     stref_nextline(stref_t &from, stref_t &curr_line);

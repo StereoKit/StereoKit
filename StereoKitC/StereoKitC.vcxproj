@@ -196,6 +196,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="shaders_builtin\shader_builtin_default.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_equirect.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_font.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_include.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_lines.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_pbr.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_skybox.h" />

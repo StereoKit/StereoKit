@@ -47,7 +47,7 @@ class Program
         for (int i = 0; i < files.Length; i++)
         {
             string text   = File.ReadAllText(files[i]);
-            byte[] shader = Shader.Compile(text);
+            byte[] shader = Shader.Compile(text, files[i]);
 
             if (shader.Length == 0)
             {

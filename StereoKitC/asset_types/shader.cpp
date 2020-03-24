@@ -3,6 +3,7 @@
 #include "../libraries/stref.h"
 #include "../systems/d3d.h"
 #include "../systems/platform/platform_utils.h"
+#include "../shaders_builtin/shader_builtin_include.h"
 #include "shader.h"
 #include "shader_file.h"
 #include "assets.h"
@@ -29,6 +30,47 @@ bool32_t    shader_cached(uint64_t hlsl_hash, void *&out_data, size_t &out_size)
 #ifndef SK_NO_RUNTIME_SHADER_COMPILE
 #include <d3dcompiler.h>
 #pragma comment(lib,"D3dcompiler.lib")
+
+
+class StereoKitIncludes : public ID3DInclude {
+public: 
+	static const char *shader_active_file;
+	HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) override {
+		void  *data = nullptr;
+		size_t size = 0;
+		bool   found = false;
+		if (string_eq_nocase(pFileName, "stereokit")) {
+			size = strlen(sk_shader_builtin_include);
+			data = malloc(size+1);
+			strcpy_s((char*)data, size+1, sk_shader_builtin_include);
+			found = true;
+		} 
+
+		// try for a file in the same directory
+		if (!found && shader_active_file != nullptr) {
+			stref_t rel_file = stref_make(assets_file(shader_active_file));
+			stref_t rel_path, rel_name;
+			stref_file_path(rel_file, rel_path, rel_name);
+			char *rel_final = nullptr;
+			rel_final = string_append(rel_final, 3, stref_withend(rel_path), "\\", pFileName); stref_remend(rel_path);
+
+			found = platform_read_file(rel_final, data, size);
+		}
+		
+		// try for a file in the assets folder
+		if (!found && platform_read_file(assets_file(pFileName), data, size))
+			found = true;
+		
+		*ppData = data;
+		*pBytes = size;
+		return found ? S_OK : S_FALSE;
+	}
+	HRESULT Close(LPCVOID pData) override {
+		free((void*)pData);
+		return S_OK;
+	}
+};
+const char *StereoKitIncludes::shader_active_file;
 #endif
 
 ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *entrypoint, const char *target) {
@@ -41,7 +83,9 @@ ID3DBlob *compile_shader(const char *filename, const char *hlsl, const char *ent
 #endif
 
 	ID3DBlob *compiled, *errors;
-	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entrypoint, target, flags, 0, &compiled, &errors)))
+	StereoKitIncludes includes;
+	StereoKitIncludes::shader_active_file = filename;
+	if (FAILED(D3DCompile(hlsl, strlen(hlsl), filename, nullptr, &includes, entrypoint, target, flags, 0, &compiled, &errors)))
 		log_err((char*)errors->GetBufferPointer());
 	if (errors) errors->Release();
 
@@ -143,7 +187,7 @@ const char *shader_get_name(shader_t shader) {
 
 ///////////////////////////////////////////
 
-bool32_t shader_compile(const char *hlsl, void *&out_data, size_t &out_size) {
+bool32_t shader_compile(const char *hlsl, const char *opt_filename, void *&out_data, size_t &out_size) {
 	char *name;
 	shaderargs_desc_t desc;
 	shader_tex_slots_t tex_slots;
@@ -151,9 +195,9 @@ bool32_t shader_compile(const char *hlsl, void *&out_data, size_t &out_size) {
 
 	// Compile the shader into machine code!
 	shader_blob_t ps, vs;
-	ID3DBlob *vs_blob = compile_shader(nullptr, hlsl, "vs", "vs_5_0");
+	ID3DBlob *vs_blob = compile_shader(opt_filename, hlsl, "vs", "vs_5_0");
 	if (vs_blob == nullptr) return false;
-	ID3DBlob *ps_blob = compile_shader(nullptr, hlsl, "ps", "ps_5_0");
+	ID3DBlob *ps_blob = compile_shader(opt_filename, hlsl, "ps", "ps_5_0");
 	if (ps_blob == nullptr) { vs_blob->Release(); return false; };
 
 	// Create a binary shader file, and put it in our out arguments
@@ -214,7 +258,7 @@ shader_t shader_create_file(const char *filename) {
 		// Check if it's cached first
 		if      (shader_cached(hash, compiled_data, compiled_size)) { }
 		// If not, try compiling it and caching it
-		else if (shader_compile((char *)data, compiled_data, compiled_size)) {
+		else if (shader_compile((char *)data, filename, compiled_data, compiled_size)) {
 			shader_cache(hash, compiled_data, compiled_size);
 		} 
 		// If still no luck, fail out!
@@ -242,7 +286,7 @@ shader_t shader_create_hlsl(const char *hlsl) {
 	// Check if it's cached first
 	if      (shader_cached (hash, data, size)) { }
 	// If not, try compiling it and caching it
-	else if (shader_compile(hlsl, data, size)) { shader_cache(hash, data, size); } 
+	else if (shader_compile(hlsl, nullptr, data, size)) { shader_cache(hash, data, size); } 
 	// If still no luck, fail out!
 	else { return nullptr; }
 
