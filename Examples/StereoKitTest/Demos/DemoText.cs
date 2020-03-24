@@ -18,7 +18,7 @@ class DemoText : ITest
         /// In initialization, we can create the style from a font, a size, a 
         /// material, and a base color.
         style = Text.MakeStyle(
-            Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
+            Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
             2 * Units.cm2m,
             Material.Copy(DefaultIds.materialFont), 
             Color.HSV(0.05f, 0.7f, 0.8f));
