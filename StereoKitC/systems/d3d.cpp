@@ -2,6 +2,7 @@
 #pragma comment(lib,"Dxgi.lib") // CreateSwapChainForHwnd
 
 #include "../stereokit.h"
+#include "../log.h"
 #include "d3d.h"
 
 namespace sk {
@@ -47,8 +48,11 @@ bool d3d_init(LUID *adapter_id) {
 	}
 
 	D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-	if (FAILED(D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, featureLevels, _countof(featureLevels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context)))
+	HRESULT hr = D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, featureLevels, _countof(featureLevels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context);
+	if (FAILED(hr)) {
+		log_fail_reasonf(90, "Failed to initialize Direct3D 11 - 0x%08x", hr);
 		return false;
+	}
 
 	if (final_adapter != nullptr)
 		final_adapter->Release();

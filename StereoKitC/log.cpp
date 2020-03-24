@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "_stereokit.h"
+#include "log.h"
 #include "libraries/stref.h"
 #include "libraries/stb_ds.h"
 #include "systems/platform/platform_utils.h"
@@ -258,6 +259,8 @@ void log_set_colors(log_colors_ colors) {
 ///////////////////////////////////////////
 
 void log_fail_reason(int32_t confidence, const char *fail_reason) {
+	log_err(fail_reason);
+
 	if (confidence <= log_fail_confidence)
 		return;
 
@@ -268,12 +271,31 @@ void log_fail_reason(int32_t confidence, const char *fail_reason) {
 
 ///////////////////////////////////////////
 
+void log_fail_reasonf(int32_t confidence, const char *fail_reason, ...) {
+	va_list args;
+	va_start(args, fail_reason);
+	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
+	char* buffer = (char*)malloc(length + 2);
+	vsnprintf(buffer, length + 2, fail_reason, args);
+
+	log_fail_reason(confidence, buffer);
+	free(buffer);
+	va_end(args);
+}
+
+///////////////////////////////////////////
+
 void log_show_any_fail_reason() {
 	if (log_fail_confidence == -1)
 		return;
 
 	platform_msgbox_err(log_fail_reason_str, "StereoKit Failure");
+	log_clear_any_fail_reason();
+}
 
+///////////////////////////////////////////
+
+void log_clear_any_fail_reason() {
 	free(log_fail_reason_str);
 	log_fail_confidence = -1;
 	log_fail_reason_str = nullptr;

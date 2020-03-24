@@ -95,12 +95,12 @@ bool defaults_init() {
 	mesh_set_id   (sk_default_quad, "default/quad");
 
 	// Shaders
-	sk_default_shader          = shader_create(sk_shader_builtin_default);
-	sk_default_shader_pbr      = shader_create(sk_shader_builtin_pbr);
-	sk_default_shader_unlit    = shader_create(sk_shader_builtin_unlit);
-	sk_default_shader_font     = shader_create(sk_shader_builtin_font);
-	sk_default_shader_equirect = shader_create(sk_shader_builtin_equirect);
-	sk_default_shader_ui       = shader_create(sk_shader_builtin_ui);
+	sk_default_shader          = shader_create_mem((void*)shader_builtin_default,  sizeof(shader_builtin_default));
+	sk_default_shader_pbr      = shader_create_mem((void*)shader_builtin_pbr,      sizeof(shader_builtin_pbr));
+	sk_default_shader_unlit    = shader_create_mem((void*)shader_builtin_unlit,    sizeof(shader_builtin_unlit));
+	sk_default_shader_font     = shader_create_mem((void*)shader_builtin_font,     sizeof(shader_builtin_font));
+	sk_default_shader_equirect = shader_create_mem((void*)shader_builtin_equirect, sizeof(shader_builtin_equirect));
+	sk_default_shader_ui       = shader_create_mem((void*)shader_builtin_ui,       sizeof(shader_builtin_ui));
 	
 	if (sk_default_shader          == nullptr ||
 		sk_default_shader_pbr      == nullptr ||

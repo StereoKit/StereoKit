@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="..\*.cpp" />
     <ClCompile Include="..\libraries\*.cpp" />
+    <ClCompile Include="..\libraries\*.c" />
     <ClCompile Include="..\asset_types\*.cpp" />
     <ClCompile Include="..\systems\*.cpp" />
     <ClCompile Include="..\systems\platform\*.cpp" />

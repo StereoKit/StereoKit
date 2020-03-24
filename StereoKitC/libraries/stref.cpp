@@ -67,6 +67,18 @@ bool  string_eq(const char *a, const char *b) {
 
 ///////////////////////////////////////////
 
+bool  string_eq_nocase(const char *a, const char *b) {
+	while (*a != '\0' && *b != '\0') {
+		if (tolower(*a) != tolower(*b))
+			return false;
+		a++;
+		b++;
+	}
+	return *a == *b;
+}
+
+///////////////////////////////////////////
+
 bool  string_endswith(const char *a, const char *end, bool case_sensitive) {
 	size_t len_a   = strlen(a);
 	size_t len_end = strlen(end);
@@ -146,7 +158,7 @@ bool  stref_startswith(const stref_t &a, const char *is) {
 
 ///////////////////////////////////////////
 
-int32_t   stref_indexof(stref_t &aRef, char aChar) {
+int32_t   stref_indexof(const stref_t &aRef, char aChar) {
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
 			return i;
@@ -156,7 +168,7 @@ int32_t   stref_indexof(stref_t &aRef, char aChar) {
 
 ///////////////////////////////////////////
 
-int32_t   stref_lastof(stref_t &aRef, char aChar) {
+int32_t   stref_lastof(const stref_t &aRef, char aChar) {
 	int32_t result = -1;
 	for (uint32_t i = 0; i < aRef.length; i++) {
 		if (aRef.start[i] == aChar)
@@ -220,7 +232,7 @@ stref_t  stref_make(const char *aSource) {
 
 ///////////////////////////////////////////
 
-stref_t stref_substr(stref_t &aRef, uint32_t aStart, uint32_t aLength) {
+stref_t stref_substr(const stref_t &aRef, uint32_t aStart, uint32_t aLength) {
 	assert(aRef.temp == false);
 
 	stref_t result;
@@ -300,7 +312,7 @@ bool stref_nextline(stref_t &from, stref_t &curr_line) {
 bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_char_start, char capture_char_end, bool *out_capture_error) {
 	assert(word.temp == false);
 	if (out_capture_error != nullptr)
-		out_capture_error = false;
+		*out_capture_error = false;
 	if (word.start == nullptr)
 		word = stref_substr(line, 0, 0);
 
@@ -352,16 +364,16 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 ///////////////////////////////////////////
 
 void stref_file_path(const stref_t &filename, stref_t &out_path, stref_t &out_name) {
-	out_path = filename;
-	int32_t  end    = out_path.length;
-	int32_t  slash1 = stref_lastof(out_path, '\\');
-	int32_t  slash2 = stref_lastof(out_path, '/');
+	out_path = stref_t{ filename.start, 0 };
+	int32_t  end    = filename.length;
+	int32_t  slash1 = stref_lastof(filename, '\\');
+	int32_t  slash2 = stref_lastof(filename, '/');
 	uint32_t start  = (slash1 > slash2 ? slash1 : slash2) + 1;
-	out_name = stref_substr(out_path, start, end-start);
+	out_name = stref_substr(filename, start, end-start);
 
 	if (stref_indexof(out_name, '.') != -1) {
 		// Has a '.', must be a filename!
-		out_path.length = start-1;
+		out_path.length = (int)start-1 < 0 ? 0 : start-1;
 	}
 }
 

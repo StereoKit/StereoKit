@@ -5,9 +5,9 @@ using StereoKit;
 class Program 
 {
 #if WINDOWS_UWP
-    const string Root = "Assets";
+    public const string Root = "Assets";
 #else
-    const string Root = "../../../Examples/Assets";
+    public const string Root = "../../../Examples/Assets";
 #endif
 
     static Model  floorMesh;
@@ -55,6 +55,7 @@ class Program
         Log.Subscribe(OnLog);
         /// :End:
         Log.Filter = LogLevel.Diagnostic;
+        Log.Write(LogLevel.Diagnostic, "Temp path: " + System.IO.Path.GetTempPath());
         StereoKitApp.settings.assetsFolder = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
