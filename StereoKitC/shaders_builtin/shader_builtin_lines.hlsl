@@ -1,22 +1,7 @@
 // [name] sk/lines
-cbuffer GlobalBuffer : register(b0) {
-	float4x4 sk_view[2];
-	float4x4 sk_proj[2];
-	float4x4 sk_viewproj[2];
-	float4   sk_lighting_sh[9];
-	float4   sk_camera_pos[2];
-	float4   sk_camera_dir[2];
-	float4   sk_fingertip[2];
-	float    sk_time;
-};
-struct Inst {
-	float4x4 world;
-	float4   color;
-	uint     view_id;
-};
-cbuffer TransformBuffer : register(b1) {
-	Inst sk_inst[682];
-};
+
+#include <stereokit>
+
 cbuffer ParamBuffer : register(b2) {
 	// [ param ] vector color {1, 1, 1, 1}
 	float4 _color;
