@@ -187,7 +187,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 
 	// Debug print the view and format info
 	log_diagf("Creating view: %s color:%s depth:%s", 
-		openxr_view_name(out_view.type), 
+		openxr_view_name(view_type), 
 		openxr_fmt_name (out_view.color_format),  
 		openxr_fmt_name (out_view.depth_format));
 
