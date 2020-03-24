@@ -132,8 +132,11 @@ bool openxr_init(const char *app_name) {
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	systemInfo.formFactor = xr_config_form;
-	xr_check(xrGetSystem(xr_instance, &systemInfo, &xr_system_id),
-		"xrGetSystem failed [%s]");
+	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	if (XR_FAILED(result)) {
+		log_fail_reasonf(90, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
+		return false;
+	}
 
 	// Figure out what this device is capable of!
 	XrSystemProperties                 properties          = { XR_TYPE_SYSTEM_PROPERTIES };
