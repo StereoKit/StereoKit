@@ -51,41 +51,53 @@ namespace StereoKit
         TexScale
     }
 
-    /// <summary>A Material describes the surface of anything drawn on the graphics 
-    /// card! It is typically composed of a Shader, and shader properties like colors,
-    /// textures, transparency info, etc.
+    /// <summary>A Material describes the surface of anything drawn on the 
+    /// graphics card! It is typically composed of a Shader, and shader 
+    /// properties like colors, textures, transparency info, etc.
     /// 
-    /// Items drawn with the same Material can be batched together into a single, fast
-    /// operation on the graphics card, so re-using materials can be extremely beneficial 
-    /// for performance!</summary>
+    /// Items drawn with the same Material can be batched together into a 
+    /// single, fast operation on the graphics card, so re-using materials 
+    /// can be extremely beneficial for performance!</summary>
     public class Material
     {
         internal IntPtr _inst;
 
-        /// <summary>What type of transparency does this Material use? Default is None. Transparency 
-        /// has an impact on performance, and draw order. Check the Transparency enum for details.</summary>
+        /// <summary>What type of transparency does this Material use? Default
+        /// is None. Transparency has an impact on performance, and draw order.
+        /// Check the Transparency enum for details.</summary>
         public Transparency Transparency { set { NativeAPI.material_set_transparency(_inst, value); } }
         /// <summary>How should this material cull faces?</summary>
         public Cull         FaceCull     { set { NativeAPI.material_set_cull        (_inst, value); } }
-        /// <summary>This property will force this material to draw earlier or later in the draw
-        /// queue. Positive values make it draw later, negative makes it earlier. This can be helpful 
-        /// for tweaking performance! If you know an object is always going to be close to the user
-        /// and likely to obscure lots of objects (like hands), drawing it earlier can mean objects behind it
-        /// get discarded much faster! Similarly, objects that are far away (skybox!) can be pushed towards the 
-        /// back of the queue, so they're more likely to be discarded early.</summary>
+        /// <summary>Should this material draw only the edges/wires of the 
+        /// mesh? This can be useful for debugging, and even some kinds of
+        /// visualization work.</summary>
+        public bool         Wireframe    { set { NativeAPI.material_set_wireframe   (_inst, value); } }
+        /// <summary>This property will force this material to draw earlier
+        /// or later in the draw queue. Positive values make it draw later, 
+        /// negative makes it earlier. This can be helpful for tweaking 
+        /// performance! If you know an object is always going to be close to 
+        /// the user and likely to obscure lots of objects (like hands), 
+        /// drawing it earlier can mean objects behind it get discarded much 
+        /// faster! Similarly, objects that are far away (skybox!) can be 
+        /// pushed towards the back of the queue, so they're more likely to 
+        /// be discarded early.</summary>
         public int          QueueOffset  { set { NativeAPI.material_set_queue_offset(_inst, value); } }
-        /// <summary>The number of shader parameters available to this material.</summary>
+        /// <summary>The number of shader parameters available to this 
+        /// material.</summary>
         public int          ParamCount => NativeAPI.material_get_param_count(_inst);
-        /// <summary>Gets a link to the Shader that the Material is currently using</summary>
+        /// <summary>Gets a link to the Shader that the Material is currently 
+        /// using</summary>
         public Shader       Shader => new Shader(NativeAPI.material_get_shader(_inst));
 
-        /// <summary>Creates a material from a shader, and uses the shader's default settings. Uses an auto-generated id.</summary>
+        /// <summary>Creates a material from a shader, and uses the shader's 
+        /// default settings. Uses an auto-generated id.</summary>
         /// <param name="shader">Any valid shader.</param>
         public Material(Shader shader)
         {
             _inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
         }
-        /// <summary>Creates a material from a shader, and uses the shader's default settings.</summary>
+        /// <summary>Creates a material from a shader, and uses the shader's 
+        /// default settings.</summary>
         /// <param name="id">Set the material's id to this.</param>
         /// <param name="shader">Any valid shader.</param>
         public Material(string id, Shader shader)

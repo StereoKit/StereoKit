@@ -420,6 +420,7 @@ SK_API void       material_set_id          (material_t material, const char *id)
 SK_API void       material_release         (material_t material);
 SK_API void       material_set_transparency(material_t material, transparency_ mode);
 SK_API void       material_set_cull        (material_t material, cull_ mode);
+SK_API void       material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
 SK_API void       material_set_float       (material_t material, const char *name, float    value);
 SK_API void       material_set_color       (material_t material, const char *name, color128 value);
