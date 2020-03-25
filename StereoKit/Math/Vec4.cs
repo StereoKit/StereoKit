@@ -10,6 +10,11 @@ namespace StereoKit
         /// <summary>Vector components.</summary>
         public float x, y, z, w;
 
+        public Vec2 XY { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
+        public Vec2 YZ { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
+        public Vec2 XZ { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
+        public Vec2 ZW { get => new Vec2(x, z); set { z = value.x; w = value.y; } }
+
         /// <summary>A basic constructor, just copies the values in!</summary>
         /// <param name="x">X component of the vector.</param>
         /// <param name="y">Y component of the vector.</param>

@@ -22,7 +22,11 @@ namespace StereoKit
         /// <summary>This is the squared magnitude of the vector! It skips the Sqrt call, and
         /// just gives you the squared version for speedy calculations that can work with it squared.</summary>
         public float MagnitudeSq => x*x + y*y + z*z;
-        
+
+        public Vec2 XY { get => new Vec2(x,y); set { x = value.x; y = value.y; } }
+        public Vec2 YZ { get => new Vec2(y,z); set { y = value.x; z = value.y; } }
+        public Vec2 XZ { get => new Vec2(x,z); set { x = value.x; z = value.y; } }
+
         /// <summary>Creates a vector from x, y, and z values! StereoKit uses a right-handed metric
         /// coordinate system, where +x is to the right, +y is upwards, and -z is forward.</summary>
         /// <param name="x">The x axis.</param>
