@@ -16,7 +16,30 @@ ID3D11InputLayout *vert_t_layout = nullptr;
 
 ///////////////////////////////////////////
 
+void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
+	mesh->discard_data = !keep_data;
+	if (mesh->discard_data) {
+		free(mesh->verts); mesh->verts = nullptr;
+		free(mesh->inds ); mesh->inds  = nullptr;
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t mesh_get_keep_data(mesh_t mesh) {
+	return !mesh->discard_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+	// Keep track of vertex data for use on CPU side
+	if (!mesh->discard_data) {
+		if (mesh->vert_capacity < vertex_count)
+			mesh->verts = (vert_t*)realloc(mesh->verts, vertex_count * sizeof(vert_t));
+		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
+	}
+
 	if (mesh->vert_buffer == nullptr) {
 		// Create a static vertex buffer the first time we call this function!
 		mesh->vert_dynamic  = false;
@@ -72,10 +95,24 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 
 ///////////////////////////////////////////
 
+void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count) {
+	out_vertices     = mesh->verts;
+	out_vertex_count = mesh->verts == nullptr ? 0 : mesh->vert_count;
+}
+
+///////////////////////////////////////////
+
 void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
+	}
+
+	// Keep track of index data for use on CPU side
+	if (!mesh->discard_data) {
+		if (mesh->ind_capacity < index_count)
+			mesh->inds = (vind_t*)realloc(mesh->inds, index_count * sizeof(vind_t));
+		memcpy(mesh->inds, indices, sizeof(vind_t) * index_count);
 	}
 
 	if (mesh->ind_buffer == nullptr) {
@@ -114,6 +151,13 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 
 	mesh->ind_count = index_count;
 	mesh->ind_draw  = index_count;
+}
+
+///////////////////////////////////////////
+
+void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
+	out_indices     = mesh->inds;
+	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
 }
 
 ///////////////////////////////////////////
@@ -180,6 +224,8 @@ void mesh_release(mesh_t mesh) {
 void mesh_destroy(mesh_t mesh) {
 	if (mesh->ind_buffer  != nullptr) mesh->ind_buffer ->Release();
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
+	free(mesh->verts);
+	free(mesh->inds);
 	*mesh = {};
 }
 

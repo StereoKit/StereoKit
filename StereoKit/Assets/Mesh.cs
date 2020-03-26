@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -19,12 +20,24 @@ namespace StereoKit
     {
         internal IntPtr _inst;
 
-        /// <summary>This is a bounding box that encapsulates the Mesh! It's used for collision, visibility
-        /// testing, UI layout, and probably other things. While it's normally cacluated from the mesh
-        /// vertices, you can also override this to suit your needs.</summary>
+        /// <summary>This is a bounding box that encapsulates the Mesh! It's
+        /// used for collision, visibility testing, UI layout, and probably 
+        /// other things. While it's normally cacluated from the mesh vertices, 
+        /// you can also override this to suit your needs.</summary>
         public Bounds Bounds { 
             get => NativeAPI.mesh_get_bounds(_inst);
             set => NativeAPI.mesh_set_bounds(_inst, value);
+        }
+
+        /// <summary>Should StereoKit keep the mesh data on the CPU for later
+        /// access, or collision detection? Defaults to true. If you set this 
+        /// to false before setting data, the data won't be stored. If you 
+        /// call this after setting data, that stored data will be freed! If 
+        /// you set this to true again later on, it will not contain data 
+        /// until it's set again.</summary>
+        public bool KeepData {
+            get => NativeAPI.mesh_get_keep_data(_inst);
+            set => NativeAPI.mesh_set_keep_data(_inst, value);
         }
 
         /// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!</summary>
@@ -54,6 +67,17 @@ namespace StereoKit
         public void SetVerts(Vertex[] verts)
             =>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
 
+        public Vertex[] GetVerts()
+        {
+            NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size);
+            int szStruct = Marshal.SizeOf(typeof(Vertex));
+            Vertex[] result = new Vertex[size];
+            // AHHHHHH
+            for (uint i = 0; i < size; i++)
+                result[i] = Marshal.PtrToStructure<Vertex>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+            return result;
+        }
+        
         /// <summary>Assigns the face indices for this Mesh! Faces are always triangles, there are
         /// only ever three indices per face. This function will create a index buffer object
         /// on the graphics card right away. If you're calling this a second time, the buffer will
@@ -63,6 +87,17 @@ namespace StereoKit
         /// a vertex from the array assigned using SetVerts.</param>
         public void SetInds (uint[] inds)
             =>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
+
+        public uint[] GetInds()
+        {
+            NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size);
+            int szStruct = Marshal.SizeOf(typeof(uint));
+            uint[] result = new uint[size];
+            // AHHHHHH
+            for (uint i = 0; i < size; i++)
+                result[i] = Marshal.PtrToStructure<uint>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+            return result;
+        }
 
         /// <summary>Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given
         /// dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!</summary>
