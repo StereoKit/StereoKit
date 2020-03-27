@@ -54,5 +54,8 @@ namespace StereoKit
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Intersect(Bounds bounds, out Vec3 at) =>
             NativeAPI.bounds_ray_intersect(bounds, this, out at);
+
+        public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt) =>
+            NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
     }
 }

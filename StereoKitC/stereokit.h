@@ -297,6 +297,7 @@ SK_API void     mesh_get_inds     (mesh_t mesh, vind_t *&out_indices,  int32_t &
 SK_API void     mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds   (mesh_t mesh, const bounds_t &bounds);
 SK_API bounds_t mesh_get_bounds   (mesh_t mesh);
+SK_API bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt);
 
 SK_API mesh_t mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);

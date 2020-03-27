@@ -7,6 +7,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <float.h>
 
 namespace sk {
 
@@ -213,6 +214,31 @@ mesh_t mesh_create() {
 
 ///////////////////////////////////////////
 
+const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
+	if (mesh->collision_data.pts != nullptr)
+		return &mesh->collision_data;
+	if (mesh->discard_data)
+		return nullptr;
+
+	mesh_collision_t &coll = mesh->collision_data;
+	coll.pts    = (vec3*)   malloc(sizeof(vec3)    * mesh->ind_count);
+	coll.planes = (plane_t*)malloc(sizeof(plane_t) * mesh->ind_count/3);
+
+	for (int32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
+
+	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
+		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
+		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
+		vec3    normal = vec3_normalize( vec3_cross(dir1, dir2) );
+		plane_t plane  = { normal, -vec3_dot(coll.pts[i + 1], normal) };
+		coll.planes[i/3] = plane;
+	}
+
+	return &mesh->collision_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
@@ -226,7 +252,59 @@ void mesh_destroy(mesh_t mesh) {
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
 	free(mesh->verts);
 	free(mesh->inds);
+	free(mesh->collision_data.pts   );
+	free(mesh->collision_data.planes);
 	*mesh = {};
+}
+
+///////////////////////////////////////////
+
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
+	vec3 result = {};
+
+	const mesh_collision_t *data = mesh_get_collision_data(mesh);
+	if (data == nullptr)
+		return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
+
+	vec3  pt = {};
+	float nearest_dist = FLT_MAX;
+	for (int32_t i = 0; i < mesh->ind_count; i+=3) {
+		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
+			continue;
+
+		// point in triangle, implementation based on:
+		// https://blackpawn.com/texts/pointinpoly/default.html
+
+		// Compute vectors
+		vec3 v0 = data->pts[i+1] - data->pts[i];
+		vec3 v1 = data->pts[i+2] - data->pts[i];
+		vec3 v2 = pt - data->pts[i];
+
+		// Compute dot products
+		float dot00 = vec3_dot(v0, v0);
+		float dot01 = vec3_dot(v0, v1);
+		float dot02 = vec3_dot(v0, v2);
+		float dot11 = vec3_dot(v1, v1);
+		float dot12 = vec3_dot(v1, v2);
+
+		// Compute barycentric coordinates
+		float inv_denom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+		float u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+		float v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+		// Check if point is in triangle
+		if ((u >= 0) && (v >= 0) && (u + v < 1)) {
+			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
+			if (dist < nearest_dist) {
+				nearest_dist = dist;
+				*out_pt      = pt;
+			}
+		}
+	}
+
+	return nearest_dist != FLT_MAX;
 }
 
 ///////////////////////////////////////////

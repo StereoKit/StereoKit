@@ -99,6 +99,9 @@ namespace StereoKit
             return result;
         }
 
+        public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+            => NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
+
         /// <summary>Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given
         /// dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!</summary>
         /// <param name="dimensions">How large is this plane on the XZ axis, in meters?</param>
