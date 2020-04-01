@@ -61,7 +61,7 @@ namespace StereoKit
 
         public override string ToString()
         {
-            return string.Format("<{0:0.00}, {1:0.00}, {2:0.00}>", x, y, z);
+            return string.Format("[{0:0.00}, {1:0.00}, {2:0.00}]", x, y, z);
         }
 
         /// <summary>Shorthand for a vector where all values are 0! Same as `new Vec3(0,0,0)`.</summary>

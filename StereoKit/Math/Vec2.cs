@@ -1,5 +1,5 @@
-﻿
-using System;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -22,6 +22,9 @@ namespace StereoKit
         /// the Sqrt call, and just gives you the squared version for speedy 
         /// calculations that can work with it squared.</summary>
         public float MagnitudeSq => x*x + y*y;
+
+        public Vec3 XY0 { get => new Vec3(x, y, 0); }
+        public Vec3 X0Y { get => new Vec3(x, 0, y); }
 
         /// <summary>A basic constructor, just copies the values in!</summary>
         /// <param name="x">X component of the vector.</param>
@@ -79,9 +82,39 @@ namespace StereoKit
         public static float AngleBetween(Vec2 a, Vec2 b)
             => (float)Math.Atan2(a.x*b.y - a.y*b.x, a.x*b.x + a.y*b.y) * Units.rad2deg;
 
+        /// <summary>Calculates the distance between two points in space! Make sure they're in the
+        /// same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.</summary>
+        /// <param name="a">The first point.</param>
+        /// <param name="b">And the second point!</param>
+        /// <returns>Distance between the two points.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Distance(in Vec2 a, in Vec2 b)
+            {Vec2 d = b-a; return SKMath.Sqrt(d.x*d.x + d.y*d.y);}
+
+        /// <summary>Calculates the distance between two points in space, but leaves them squared! Make 
+        /// sure they're in the same coordinate space! This is a fast function :)</summary>
+        /// <param name="a">The first point.</param>
+        /// <param name="b">And the second point!</param>
+        /// <returns>Distance between the two points, but squared!</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DistanceSq(in Vec2 a, in Vec2 b)
+            {Vec2 d = b - a; return d.x*d.x + d.y*d.y;}
+
+        /// <summary>The dot product is an extremely useful operation! One major use is to determine
+        /// how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then 
+        /// the result will be 1 if the vectors are the same, -1 if they're opposite, and a gradient 
+        /// in-between with 0 being perpendicular. See [Freya Holmer's excellent visualization](https://twitter.com/FreyaHolmer/status/1200807790580768768)
+        /// of this concept</summary>
+        /// <param name="a">First vector.</param>
+        /// <param name="b">Second vector.</param>
+        /// <returns>The dot product!</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Dot(in Vec2 a, in Vec2 b)
+            => a.x*b.x + a.y*b.y;
+
         public override string ToString()
         {
-            return string.Format("<{0:0.00}, {1:0.00}>", x, y);
+            return string.Format("[{0:0.00}, {1:0.00}]", x, y);
         }
 
         /// <summary>A Vec2 with all components at zero, same as new Vec2(0,0).</summary>
