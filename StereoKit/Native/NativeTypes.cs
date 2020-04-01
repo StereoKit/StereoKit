@@ -548,15 +548,19 @@ namespace StereoKit
         Tip          = 4
     }
 
-    /// <summary>This describes how a UI element moves when being dragged around
-    /// by a user!</summary>
+    /// <summary>This describes how a UI element moves when being dragged 
+    /// around by a user!</summary>
     public enum UIMove
     {
-        /// <summary>The element follows the position and orientation of the user's
-        /// hand exactly.</summary>
+        /// <summary>The element follows the position and orientation of the 
+        /// user's hand exactly.</summary>
         Exact,
-        /// <summary>The element follows the position of the user's hand, but orients
-        /// to face the user's head instead of just using the hand's rotation.</summary>
+        /// <summary>The element follows the position of the user's hand, but
+        /// orients to face the user's head instead of just using the hand's
+        /// rotation.</summary>
         FaceUser,
+        /// <summary>This element follows the hand's position only, completely
+        /// discarding any rotation information.</summary>
+        PosOnly,
     }
 }
