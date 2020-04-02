@@ -230,11 +230,11 @@ struct color128 {
 static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 
 SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
-SK_API vec3     color_to_hsv(color128 color);
+SK_API vec3     color_to_hsv(const color128 &color);
 SK_API color128 color_lab   (float l, float a, float b, float transparency);
-SK_API vec3     color_to_lab(color128 color);
-inline color128 color_lerp  (color128 a, color128 b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline color32  color_to_32 (color128 a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
+SK_API vec3     color_to_lab(const color128 &color);
+inline color128 color_lerp  (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
+inline color32  color_to_32 (const color128 &a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
 
 ///////////////////////////////////////////
 

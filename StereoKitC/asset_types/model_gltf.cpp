@@ -35,7 +35,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
 		size_t             offset = buff->offset + attr->data->offset;
-
+		
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
@@ -63,8 +63,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
-				memcpy(&verts[v].col, col, sizeof(color32));
+				color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
+				verts[v].col = color_to_32(*col);
 			}
 		}
 	}
