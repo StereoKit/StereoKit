@@ -207,6 +207,28 @@ namespace StereoKit
         public static void AffordanceEnd   ()
             => NativeAPI.ui_affordance_end();
 
+        /// <summary>This begins and ends an affordance so you can just use 
+        /// its grabbable/moveable functionality! Behaves much like a window,
+        /// except with a more flexible handle, and no header. You can draw 
+        /// the handle, but it will have no text on it.</summary>
+        /// <param name="id">Id of the affordance group.</param>
+        /// <param name="pose">The pose state for the affordance! The user 
+        /// will be able to grab this affordance and move it around.</param>
+        /// <param name="handle">Size and location of the affordance handle, 
+        /// relative to the pose.</param>
+        /// <param name="drawHandle">Should this function draw the handle for 
+        /// you, or will you draw that yourself?</param>
+        /// <param name="moveType">Describes how the affordance will move
+        /// when dragged around.</param>
+        /// <returns>Returns true for every frame the user is grabbing the 
+        /// handle.</returns>
+        public static bool Affordance(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+        {
+            bool result = NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle, moveType);
+            NativeAPI.ui_affordance_end();
+            return result;
+        }
+
         /// <summary>Begins a new window! This will push a pose onto the transform stack, and all UI 
         /// elements will be relative to that new pose. The pose is actually the top-center
         /// of the window. Must be finished with a call to UI.WindowEnd().</summary>
