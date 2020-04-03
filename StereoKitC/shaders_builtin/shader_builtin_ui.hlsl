@@ -22,7 +22,7 @@ struct psIn {
 };
 
 // [texture] diffuse white
-Texture2D tex : register(t0);
+Texture2D    tex         : register(t0);
 SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
@@ -43,8 +43,8 @@ float4 ps(psIn input) : SV_TARGET {
 	float ring = 0;
 	for	(int i=0;i<2;i++) {
 		float3 delta = sk_fingertip[i].xyz - input.world.xyz;
-		float3 norm = normalize(delta);
-		float d = dot(delta,delta) / (0.08 * 0.08);
+		float3 norm  = normalize(delta);
+		float  d     = dot(delta,delta) / (0.08 * 0.08);
 		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.9)*200*d) );
 		dist = min( dist, d );
 	}
