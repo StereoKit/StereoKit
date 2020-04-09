@@ -138,7 +138,7 @@ bool openxr_init(const char *app_name) {
 	systemInfo.formFactor = app_config_form;
 	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 	if (XR_FAILED(result)) {
-		log_infof("xrGetSystem failed [%s]", openxr_string(result));
+		log_fail_reasonf(90, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
 		return false;
 	}
 

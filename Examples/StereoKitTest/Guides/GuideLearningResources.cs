@@ -1,9 +1,11 @@
 ﻿/// :CodeDoc: Guides Learning Resources
 /// # Learning Resources
 /// 
-/// Here's a collection of external learning and sample resources to get you 
-/// off the ground a little faster! If you have your own resources that you'd 
-/// like to see linked here, just let us know!
+/// Outside of the resources here on the StereoKit site, there's a number of
+/// other places you can go for learning information! Here's a collection of 
+/// external learning and sample resources to get you off the ground a little
+/// faster! If you have your own resources that you'd like to see linked 
+/// here, just let us know!
 /// 
 /// ## Sample Projects
 /// 

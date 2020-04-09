@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace StereoKit
 {
-    /// <summary>This class contains some convenience math functions! StereoKit
-    /// typically uses floats instead of doubles, so you won't need to cast to
-    /// and from using these methods.</summary>
+    /// <summary>This class contains some convenience math functions!
+    /// StereoKit typically uses floats instead of doubles, so you won't need 
+    /// to cast to and from using these methods.</summary>
     public static class SKMath
     {
         /// <summary>The mathematical constant, Pi!</summary>
@@ -45,7 +43,8 @@ namespace StereoKit
         /// 0-360.</summary>
         /// <param name="a">First angle, in degrees.</param>
         /// <param name="b">Second angle, in degrees.</param>
-        /// <returns>Degrees 0-180, the minimum angle between a and b.</returns>
+        /// <returns>Degrees 0-180, the minimum angle between a and b.
+        /// </returns>
         public static float AngleDist(float a, float b)
         {
             float delta = b-a;
