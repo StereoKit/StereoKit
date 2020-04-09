@@ -36,6 +36,7 @@ extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
+extern XrSpace    xr_hand_space[2];
 extern xr_hand_state_ xr_hand_state; // TODO: This can go when OpenXR has real hands
 
 } // namespace sk

@@ -203,7 +203,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 250));
+		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 100));
 	return sk_run;
 }
 

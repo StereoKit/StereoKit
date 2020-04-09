@@ -1,6 +1,7 @@
 #pragma comment(lib,"openxr_loader.lib")
 
 #include "openxr.h"
+#include "openxr_input.h"
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -286,7 +287,8 @@ bool openxr_init(const char *app_name) {
 		tex_add_zbuffer(xr_swapchains.surface_data[s], depth_format);
 	}
 	
-	openxr_make_actions();
+	if (!oxri_init())
+		return false;
 
 	return true;
 }
@@ -432,6 +434,9 @@ void openxr_preferred_format(DXGI_FORMAT &out_pixel_format, tex_format_ &out_dep
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
+	// Shut down the input!
+	oxri_shutdown();
+
 	// We used a graphics API to initialize the swapchain data, so we'll
 	// give it a chance to release anything here!
 	for (size_t s = 0; s < xr_swapchains.surface_data.size(); s++) {
@@ -623,12 +628,6 @@ bool openxr_render_layer(XrTime predictedTime, vector<XrCompositionLayerProjecti
 	layer.views      = views.data();
 	layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 	return true;
-}
-
-///////////////////////////////////////////
-
-void openxr_make_actions() {
-	
 }
 
 ///////////////////////////////////////////

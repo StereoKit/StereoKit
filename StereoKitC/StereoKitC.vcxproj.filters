@@ -166,6 +166,9 @@
     <ClCompile Include="libraries\miniz.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\openxr_input.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -352,6 +355,9 @@
     </ClInclude>
     <ClInclude Include="libraries\isac_spatial_sound.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\platform\openxr_input.h">
+      <Filter>systems\platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
