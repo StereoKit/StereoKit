@@ -219,7 +219,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count) {
 	size_t queue_size = render_queue.size();
-	if (queue_size == 0) return;
+	if (queue_size == 0 || view_count == 0) return;
 
 	// Sort the draw list
 	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 

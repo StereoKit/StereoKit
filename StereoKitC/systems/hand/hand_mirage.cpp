@@ -37,8 +37,6 @@ hand_joint_t                      mirage_hand_data[2][27]    = {};
 bool                              mirage_checked             = false;
 #endif
 
-
-
 ///////////////////////////////////////////
 
 bool hand_mirage_available() {

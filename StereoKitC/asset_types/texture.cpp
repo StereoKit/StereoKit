@@ -30,7 +30,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
-		log_err("Can't add a zbuffer to a non-rendertarget texture!");
+		log_err("tex_add_zbuffer can't add a zbuffer to a non-rendertarget texture!");
 		return nullptr;
 	}
 
@@ -42,6 +42,23 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 		tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->array_size);
 	}
 	return texture->depth_buffer;
+}
+
+///////////////////////////////////////////
+
+void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
+	if (!(texture->type & tex_type_rendertarget)) {
+		log_err("tex_set_zbuffer can't add a zbuffer to a non-rendertarget texture!");
+		return;
+	}
+	if (!(depth_texture->type & tex_type_depth)) {
+		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
+		return;
+	}
+	assets_addref(depth_texture->header);
+	if (texture->depth_buffer != nullptr)
+		tex_release(texture->depth_buffer);
+	texture->depth_buffer = depth_texture;
 }
 
 ///////////////////////////////////////////
@@ -597,6 +614,21 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	case tex_format_depth16:       return DXGI_FORMAT_D16_UNORM;
 	case tex_format_depthstencil:  return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	default: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	}
+}
+
+///////////////////////////////////////////
+
+tex_format_ tex_get_tex_format(DXGI_FORMAT format) {
+	switch (format) {
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return tex_format_rgba32;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:      return tex_format_rgba32_linear;
+	case DXGI_FORMAT_R16G16B16A16_UNORM:  return tex_format_rgba64;
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:  return tex_format_rgba128;
+	case DXGI_FORMAT_D32_FLOAT:           return tex_format_depth32;
+	case DXGI_FORMAT_D16_UNORM:           return tex_format_depth16;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return tex_format_depthstencil;
+	default: log_errf("tex_get_tex_format received an unrecognized format %d", format); return (tex_format_)0;
 	}
 }
 

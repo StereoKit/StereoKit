@@ -28,10 +28,12 @@ struct _tex_t {
 void        tex_set_active       (tex_t texture, int slot);
 void        tex_destroy          (tex_t texture);
 DXGI_FORMAT tex_get_native_format(tex_format_ format);
+tex_format_ tex_get_tex_format   (DXGI_FORMAT format);
 size_t      tex_format_size      (tex_format_ format);
 
 void tex_releasesurface(tex_t texture);
 void tex_setsurface    (tex_t texture, ID3D11Texture2D *source, DXGI_FORMAT source_format);
+void tex_set_zbuffer   (tex_t texture, tex_t depth_texture);
 bool tex_create_surface(tex_t texture, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info);
 bool tex_create_views  (tex_t texture, DXGI_FORMAT source_format, bool create_shader_view);
 void tex_set_options   (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, int32_t anisotropy_level = 4);
