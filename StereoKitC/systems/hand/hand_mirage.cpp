@@ -1,6 +1,7 @@
 #include "../../stereokit.h"
 #include "../platform/openxr.h"
 #include "../platform/openxr_input.h"
+#include "../input.h"
 #include "input_hand.h"
 
 #if WINDOWS_UWP
@@ -104,7 +105,7 @@ static inline TimeSpan TimeSpanFromQpcTicks(int64_t qpcTicks) {
 
 ///////////////////////////////////////////
 
-void hand_mirage_update_hands(int64_t win32_prediction_time) {
+void hand_mirage_update_hands(int64_t win32_prediction_time, bool update_tracked) {
 #if WINDOWS_UWP
 	if (!mirage_hand_support) return;
 
@@ -114,12 +115,14 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpanFromQpcTicks(win32_prediction_time));
 	IVectorView<SpatialInteractionSourceState> sources = mirage_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
 
+	bool hand_found[2] = { false,false };
 	for (auto sourceState : sources)
 	{
 		HandPose pose = sourceState.TryGetHandPose();
-		if (!pose || !mirage_spatial_stage)
+		if (!pose || !mirage_spatial_stage || sourceState.Properties().SourceLossRisk() >= 1) {
 			continue;
-
+		}
+		
 		// Grab the joints from windows
 		JointPose               poses[27];
 		SpatialCoordinateSystem coordinates = mirage_spatial_stage.CoordinateSystem();
@@ -136,6 +139,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 		
 		// Convert the data from their format to ours
 		if (gotJoints) {
+			hand_found[handed] = true;
 			SpatialInteractionSourceLocation location = sourceState.Properties().TryGetLocation(coordinates);
 
 			// Take it from Mirage coordinates to the origin
@@ -160,8 +164,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 			}
 			
 			// Copy the data into the input system
-			hand_t& inp_hand = (hand_t&)input_hand(handed);
-			inp_hand.tracked_state = button_state_active;
+			hand_t&       inp_hand   = (hand_t&)input_hand(handed);
 			hand_joint_t* hand_poses = input_hand_get_pose_buffer(handed);
 			memcpy(hand_poses, &mirage_hand_data[handed][0], sizeof(hand_joint_t) * 25);
 
@@ -172,6 +175,12 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 			log_warn("Couldn't get hand joints!");
 		}
 	}
+	if (update_tracked) {
+		for (size_t i = 0; i < handed_max; i++) {
+			hand_t &inp_hand = (hand_t &)input_hand((handed_)i);
+			inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, hand_found[i]);
+		}
+	}
 #endif
 }
 
@@ -180,7 +189,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 void hand_mirage_update_frame() {
 	if (xr_time == 0) return;
 
-	hand_mirage_update_hands(openxr_get_time());
+	hand_mirage_update_hands(openxr_get_time(), true);
 }
 
 ///////////////////////////////////////////
@@ -188,7 +197,7 @@ void hand_mirage_update_frame() {
 void hand_mirage_update_predicted() {
 	if (xr_time == 0) return;
 
-	hand_mirage_update_hands(openxr_get_time());
+	hand_mirage_update_hands(openxr_get_time(), false);
 	input_hand_update_meshes();
 }
 
