@@ -322,6 +322,23 @@ bool32_t material_set_texture(material_t material, const char *name, tex_t value
 
 ///////////////////////////////////////////
 
+bool32_t material_has_param(material_t material, const char *name, material_param_ type) {
+	uint64_t id = string_hash(name);
+
+	if (type == material_param_texture) {
+		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
+			if (material->shader->tex_slots.tex[i].id == id)
+				return true;
+		}
+	} else {
+		if (find_desc(material->shader, id) != nullptr)
+			return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
 void material_set_param(material_t material, const char *name, material_param_ type, const void *value) {
 	material_set_param_id(material, string_hash(name), type, value);
 }

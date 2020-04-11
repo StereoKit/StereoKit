@@ -433,6 +433,7 @@ SK_API void       material_set_vector      (material_t material, const char *nam
 SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
+SK_API bool32_t   material_has_param       (material_t material, const char *name, material_param_ type);
 SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
 SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
 SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
