@@ -142,12 +142,12 @@ public:
 		m_logicalHeight      = window.Bounds().Height;
 		m_nativeOrientation  = currentDisplayInformation.NativeOrientation ();
 		m_currentOrientation = currentDisplayInformation.CurrentOrientation();
-		d3d_screen_width  = dips_to_pixels(m_logicalWidth,  m_DPI);
-		d3d_screen_height = dips_to_pixels(m_logicalHeight, m_DPI);
+		sk_info.display_width  = dips_to_pixels(m_logicalWidth,  m_DPI);
+		sk_info.display_height = dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			std::swap(d3d_screen_width, d3d_screen_height);
+			std::swap(sk_info.display_width, sk_info.display_height);
 		}
 
 		auto windowPtr = static_cast<::IUnknown*>(winrt::get_abi(window));
@@ -156,8 +156,8 @@ public:
 		// Create a swapchain for the window
 		DXGI_SWAP_CHAIN_DESC1 sd = { };
 		sd.BufferCount = 2;
-		sd.Width       = d3d_screen_width;
-		sd.Height      = d3d_screen_height;
+		sd.Width       = sk_info.display_width;
+		sd.Height      = sk_info.display_height;
 		sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -358,15 +358,15 @@ private:
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270)
 			std::swap(outputWidth, outputHeight);
 
-		if (outputWidth == d3d_screen_width && outputHeight == d3d_screen_height)
+		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
 			return;
-		d3d_screen_width  = outputWidth;
-		d3d_screen_height = outputHeight;
+		sk_info.display_width  = outputWidth;
+		sk_info.display_height = outputHeight;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
 		if (uwp_swapchain != nullptr) {
 			tex_releasesurface(uwp_target);
-			uwp_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
+			uwp_swapchain->ResizeBuffers(0, (UINT)sk_info.display_width, (UINT)sk_info.display_height, DXGI_FORMAT_UNKNOWN, 0);
 			ID3D11Texture2D *back_buffer;
 			uwp_swapchain->GetBuffer(0, __uuidof(**(&back_buffer)), reinterpret_cast<void **>(&back_buffer));
 			tex_setsurface(uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
@@ -421,8 +421,8 @@ bool uwp_key_down(int vk) {
 }
 
 bool uwp_init(const char *) {
-	d3d_screen_width  = sk_settings.flatscreen_width;
-	d3d_screen_height = sk_settings.flatscreen_height;
+	sk_info.display_width  = sk_settings.flatscreen_width;
+	sk_info.display_height = sk_settings.flatscreen_height;
 	if (!d3d_init(nullptr))
 		return false;
 
@@ -444,7 +444,7 @@ void uwp_step_begin() {
 }
 void uwp_step_end() { 
 	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)d3d_screen_width, (float)d3d_screen_height);
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!

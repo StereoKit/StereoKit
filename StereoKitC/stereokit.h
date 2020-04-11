@@ -57,6 +57,8 @@ enum display_ {
 
 struct system_info_t {
 	display_ display_type;
+	int32_t  display_width;
+	int32_t  display_height;
 };
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);

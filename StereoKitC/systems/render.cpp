@@ -121,7 +121,7 @@ void render_set_clip(float near_plane, float far_plane) {
 void render_update_projection() {
 	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
 		90 * deg2rad, 
-		(float)d3d_screen_width/d3d_screen_height, 
+		(float)sk_system_info().display_width/sk_system_info().display_height, 
 		render_clip_planes.x, 
 		render_clip_planes.y), &render_default_camera_proj);
 }

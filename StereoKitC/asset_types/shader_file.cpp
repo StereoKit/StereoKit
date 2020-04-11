@@ -3,7 +3,6 @@
 
 #include "../libraries/stref.h"
 #include "../libraries/stb_ds.h"
-#include "../systems/d3d.h"
 #include "../systems/defaults.h"
 
 namespace sk {

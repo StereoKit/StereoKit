@@ -4,21 +4,8 @@
 #include "platform_utils.h"
 #include "flatscreen_input.h"
 
-#if WINDOWS_UWP
-#else
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#include "win32.h"
-#include "uwp.h"
 #include "../input.h"
-#include "../hand/input_hand.h"
 #include "../render.h"
-#include "../d3d.h"
-
-#include <directxmath.h> // Matrix math functions and objects
-using namespace DirectX;
 
 namespace sk {
 
@@ -49,23 +36,11 @@ void flatscreen_input_shutdown() {
 ///////////////////////////////////////////
 
 void flatscreen_input_update() {
-#if WINDOWS_UWP
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = (uint8_t)button_make_state(
 			input_key_data.keys[i] & button_state_active,
-			uwp_key_down(i));
+			platform_key_down((key_)i));
 	}
-#else
-	uint8_t caps_lock = input_key_data.keys[key_caps_lock];
-	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = (uint8_t)button_make_state(
-			input_key_data.keys[i] & button_state_active,
-			GetKeyState(i)         & 0x8000);
-	}
-	input_key_data.keys[key_caps_lock] = (uint8_t)button_make_state(
-		caps_lock                  & button_state_active,
-		GetKeyState(key_caps_lock) & 0x1);
-#endif
 
 	flatscreen_mouse_update();
 

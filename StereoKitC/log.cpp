@@ -1,16 +1,11 @@
 #include "stereokit.h"
-#include "_stereokit.h"
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/stb_ds.h"
 #include "systems/platform/platform_utils.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 namespace sk {
 
@@ -187,7 +182,7 @@ void log_write(log_ level, const char *text) {
 	for (size_t i = 0; i < arrlen( log_listeners ); i++) {
 		log_listeners[i](level, colored_text);
 	}
-	OutputDebugStringA(colored_text);
+	platform_debug_output(colored_text);
 	free(colored_text);
 	
 	free(full_text);

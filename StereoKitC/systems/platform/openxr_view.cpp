@@ -251,6 +251,11 @@ bool openxr_update_swapchains(device_display_t &display) {
 		tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
 	}
 
+	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
+		sk_info.display_width  = w;
+		sk_info.display_height = h;
+	}
+
 	return true;
 }
 

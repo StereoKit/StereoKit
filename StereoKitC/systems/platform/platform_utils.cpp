@@ -108,7 +108,7 @@ bool platform_get_cursor(vec2 &out_pos) {
 #elif _MSC_VER
 	POINT cursor_pos;
 	result =  GetCursorPos  (&cursor_pos)
-		   && ScreenToClient(win32_window, &cursor_pos);
+		   && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
 	out_pos.x = (float)cursor_pos.x;
 	out_pos.y = (float)cursor_pos.y;
 #else
@@ -123,7 +123,7 @@ void platform_set_cursor(vec2 window_pos) {
 	uwp_set_mouse(window_pos);
 #elif _MSC_VER
 	POINT pt = { window_pos.x, window_pos.y };
-	ClientToScreen(win32_window, &pt);
+	ClientToScreen((HWND)win32_hwnd(), &pt);
 	SetCursorPos  (pt.x, pt.y);
 #endif
 }
@@ -136,6 +136,22 @@ float platform_get_scroll() {
 #elif _MSC_VER
 	return win32_scroll;
 #endif
+}
+
+///////////////////////////////////////////
+
+bool platform_key_down(key_ key) {
+#if WINDOWS_UWP
+	return uwp_key_down(key);
+#else
+	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
+#endif
+}
+
+///////////////////////////////////////////
+
+void platform_debug_output(const char *text) {
+	OutputDebugStringA(text);
 }
 
 }

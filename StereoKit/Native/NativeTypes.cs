@@ -65,6 +65,12 @@ namespace StereoKit
     {
         /// <summary>The type of display this device has.</summary>
         public Display displayType;
+        /// <summary>Width of the display surface, in pixels! For a stereo
+        /// display, this will be the width of a single eye.</summary>
+        public int displayWidth;
+        /// <summary>Height of the display surface, in pixels! For a stereo
+        /// display, this will be the height of a single eye.</summary>
+        public int displayHeight;
     }
 
     /// <summary>Visual properties and spacing of the UI system.</summary>

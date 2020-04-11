@@ -4,7 +4,6 @@
 #include "log.h"
 
 #include "systems/render.h"
-#include "systems/d3d.h"
 #include "systems/input.h"
 #include "systems/physics.h"
 #include "systems/system.h"
