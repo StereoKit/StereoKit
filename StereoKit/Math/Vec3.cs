@@ -26,6 +26,8 @@ namespace StereoKit
         public Vec2 XY { get => new Vec2(x,y); set { x = value.x; y = value.y; } }
         public Vec2 YZ { get => new Vec2(y,z); set { y = value.x; z = value.y; } }
         public Vec2 XZ { get => new Vec2(x,z); set { x = value.x; z = value.y; } }
+        public Vec3 X0Z { get => new Vec3(x, 0, z); }
+        public Vec3 XY0 { get => new Vec3(x, y, 0); }
 
         /// <summary>Creates a vector from x, y, and z values! StereoKit uses a right-handed metric
         /// coordinate system, where +x is to the right, +y is upwards, and -z is forward.</summary>
