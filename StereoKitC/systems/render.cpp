@@ -380,7 +380,7 @@ bool render_initialize() {
 	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero), vec3_one));
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_find("default/quad");
+	render_blit_quad = mesh_find("default/mesh_quad");
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox

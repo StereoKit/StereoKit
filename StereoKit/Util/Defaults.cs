@@ -15,7 +15,9 @@
         public static Tex TexRough { get; private set; }
         public static Tex Cubemap  { get; private set; }
 
-        public static Mesh Quad { get; private set; }
+        public static Mesh MeshQuad   { get; private set; }
+        public static Mesh MeshCube   { get; private set; }
+        public static Mesh MeshSphere { get; private set; }
 
         public static Shader Shader         { get; private set; }
         public static Shader ShaderPbr      { get; private set; }
@@ -42,7 +44,9 @@
             TexRough = Tex.Find(DefaultIds.texRough);
             Cubemap  = Tex.Find(DefaultIds.cubemap);
 
-            Quad = Mesh.Find(DefaultIds.quad);
+            MeshQuad   = Mesh.Find(DefaultIds.meshQuad);
+            MeshCube   = Mesh.Find(DefaultIds.meshCube);
+            MeshSphere = Mesh.Find(DefaultIds.meshSphere);
 
             Shader         = Shader.Find(DefaultIds.shader);
             ShaderPbr      = Shader.Find(DefaultIds.shaderPbr);
@@ -70,7 +74,9 @@
             TexRough = null;
             Cubemap  = null;
 
-            Quad = null;
+            MeshQuad   = null;
+            MeshCube   = null;
+            MeshSphere = null;
 
             Shader         = null;
             ShaderPbr      = null;

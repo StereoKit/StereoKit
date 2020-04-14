@@ -53,7 +53,9 @@ namespace StereoKit {
         /// <summary>A default quad mesh, 2 triangles, 4 verts, from (-1,-1,0) to (1,1,0) and facing 
         /// forward on the Z axis (0,0,-1). White vertex colors, and UVs from (0,0) at 
         /// vertex (-1,-1,0) to (1,1) at vertex (1,1,0).</summary>
-        public const string quad = "default/quad";
+        public const string meshQuad = "default/mesh_quad";
+        public const string meshCube = "default/mesh_cube";
+        public const string meshSphere = "default/mesh_sphere";
 
         /// <summary>This is a fast, general purpose shader. It uses a texture for 'diffuse', a 'color'
         /// property for tinting the material, and a 'tex_scale' for scaling the UV coordinates. For 
