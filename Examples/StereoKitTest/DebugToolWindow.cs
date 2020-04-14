@@ -82,6 +82,7 @@ class DebugToolWindow
         UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*Units.cm2m);
         if (UI.Button("Print Screenshot Pose")) HeadshotPose();
         if (UI.Button("Print Hand Pose")) HandshotPose();
+        if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
         if (UI.Toggle("Record Head", ref recordHead)) ToggleRecordHead();
         if (headAnim != null) {
             UI.SameLine();

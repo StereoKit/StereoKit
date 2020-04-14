@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="DebugToolWindow.cs" />
     <Compile Include="Demos\DemoBasics.cs" />
+    <Compile Include="Demos\DemoRayMesh.cs" />
     <Compile Include="Guides\GuideLearningResources.cs" />
     <Compile Include="Tests\TestAssetsFromMemory.cs" />
     <Compile Include="Tests\TestShaderCompile.cs" />
