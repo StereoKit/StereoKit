@@ -912,13 +912,23 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 			
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.pinch_state & button_state_just_active) {
+				const hand_t &hand = input_hand((handed_)i);
+				vec3 finger_pos = vec3_lerp(
+					hand.fingers[0][4].position, 
+					hand.fingers[1][4].position, 0.3f);
+
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_palm_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).fingers[0][4].position );
-				start_palm_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).fingers[0][4].orientation);
+				start_palm_pos[i] = matrix_mul_point   ( to_local, finger_pos );
+				start_palm_rot[i] = matrix_mul_rotation( to_local, hand.palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
+				const hand_t &hand = input_hand((handed_)i);
+				vec3 finger_pos = vec3_lerp(
+					hand.fingers[0][4].position, 
+					hand.fingers[1][4].position, 0.3f);
+
 				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
@@ -928,7 +938,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				
 				switch (move_type) {
 				case ui_move_exact: {
-					dest_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).fingers[0][4].orientation);
+					dest_rot = matrix_mul_rotation(to_local, hand.palm.orientation);
 					dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 				} break;
 				case ui_move_face_user: {
@@ -941,7 +951,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				default: log_err("Unimplemented move type!"); break;
 				}
 
-				vec3 curr_pos = matrix_mul_point(to_local, input_hand((handed_)i).fingers[0][4].position);
+				vec3 curr_pos = matrix_mul_point(to_local, finger_pos);
 				dest_pos = curr_pos + dest_rot * (start_aff_pos[i] - start_palm_pos[i]);
 				movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 				movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * dest_rot, 0.4f); 
