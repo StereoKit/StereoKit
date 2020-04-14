@@ -57,5 +57,8 @@ namespace StereoKit
 
         public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt) =>
             NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
+
+        public static Ray FromTo(Vec3 a, Vec3 b)
+            => new Ray(a, b-a);
     }
 }
