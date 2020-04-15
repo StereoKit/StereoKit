@@ -100,7 +100,7 @@ class DebugToolWindow
         if (recordHead)  RecordHead();
         if (recordHand)  RecordHand();
         if (headAnim != null && headAnim.Playing)
-            Renderer.SetView(headAnim.Current.ToMatrix());
+            Renderer.CameraRoot = headAnim.Current.ToMatrix();
         if (handAnim != null && handAnim.Playing)
             Input.HandOverride(Handed.Right, handAnim.Current);
         else

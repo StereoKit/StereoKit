@@ -169,6 +169,9 @@
     <ClCompile Include="systems\platform\openxr_input.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\openxr_view.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -357,6 +360,9 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="systems\platform\openxr_input.h">
+      <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\platform\openxr_view.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
   </ItemGroup>

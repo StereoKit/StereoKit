@@ -190,7 +190,10 @@ void win32_step_end() {
 
 	input_update_predicted();
 
-	render_draw();
+	matrix view = render_get_cam_root  ();
+	matrix proj = render_get_projection();
+	matrix_inverse(view, view);
+	render_draw_matrix(&view, &proj, 1);
 	render_clear();
 }
 

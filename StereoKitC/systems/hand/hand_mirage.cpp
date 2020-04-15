@@ -89,17 +89,17 @@ void hand_mirage_shutdown() {
 #if WINDOWS_UWP
 // Time conversion code from David Fields, thank you!
 static inline int64_t SourceDurationTicksToDestDurationTicks(int64_t sourceDurationInTicks, int64_t sourceTicksPerSecond, int64_t destTicksPerSecond) {
-    int64_t whole = (sourceDurationInTicks / sourceTicksPerSecond) * destTicksPerSecond;                          // 'whole' is rounded down in the target time units.
-    int64_t part  = (sourceDurationInTicks % sourceTicksPerSecond) * destTicksPerSecond / sourceTicksPerSecond;   // 'part' is the remainder in the target time units.
-    return whole + part;
+	int64_t whole = (sourceDurationInTicks / sourceTicksPerSecond) * destTicksPerSecond;                          // 'whole' is rounded down in the target time units.
+	int64_t part  = (sourceDurationInTicks % sourceTicksPerSecond) * destTicksPerSecond / sourceTicksPerSecond;   // 'part' is the remainder in the target time units.
+	return whole + part;
 }
 static inline TimeSpan TimeSpanFromQpcTicks(int64_t qpcTicks) {
-    static const int64_t qpcFrequency = [](){
-        LARGE_INTEGER frequency;
-        QueryPerformanceFrequency(&frequency);
-        return frequency.QuadPart;
-    }();
-    return TimeSpan{ SourceDurationTicksToDestDurationTicks(qpcTicks, qpcFrequency, winrt::clock::period::den) / winrt::clock::period::num };
+	static const int64_t qpcFrequency = [](){
+		LARGE_INTEGER frequency;
+		QueryPerformanceFrequency(&frequency);
+		return frequency.QuadPart;
+	}();
+	return TimeSpan{ SourceDurationTicksToDestDurationTicks(qpcTicks, qpcFrequency, winrt::clock::period::den) / winrt::clock::period::num };
 }
 #endif
 
@@ -122,7 +122,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time, bool update_tracked
 		if (!pose || !mirage_spatial_stage || sourceState.Properties().SourceLossRisk() >= 1) {
 			continue;
 		}
-		
+
 		// Grab the joints from windows
 		JointPose               poses[27];
 		SpatialCoordinateSystem coordinates = mirage_spatial_stage.CoordinateSystem();
@@ -136,7 +136,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time, bool update_tracked
 				HandJointKind::LittleMetacarpal, HandJointKind::LittleProximal,   HandJointKind::LittleIntermediate, HandJointKind::LittleDistal, HandJointKind::LittleTip,
 				HandJointKind::Palm, HandJointKind::Wrist, },
 			poses);
-		
+
 		// Convert the data from their format to ours
 		if (gotJoints) {
 			hand_found[handed] = true;
@@ -151,18 +151,21 @@ void hand_mirage_update_hands(int64_t win32_prediction_time, bool update_tracked
 			// Take it from the origin, to our coordinates
 			pose_t hand_to_world = {};
 			openxr_get_space(xr_hand_space[handed], hand_to_world);
-			
+
 			// Aaaand convert!
+			matrix root = render_get_cam_root();
 			for (size_t i = 0; i < 27; i++) {
 				memcpy(&mirage_hand_data[handed][i].position,    &poses[i].Position,    sizeof(vec3));
 				memcpy(&mirage_hand_data[handed][i].orientation, &poses[i].Orientation, sizeof(quat));
 				mirage_hand_data[handed][i].position    = hand_to_origin.orientation * (mirage_hand_data[handed][i].position - hand_to_origin.position);
-				mirage_hand_data[handed][i].position    = (hand_to_world.orientation * mirage_hand_data[handed][i].position) + hand_to_world.position; 
+				mirage_hand_data[handed][i].position    = (hand_to_world.orientation * mirage_hand_data[handed][i].position) + hand_to_world.position;
+				mirage_hand_data[handed][i].position    = matrix_mul_point(root, mirage_hand_data[handed][i].position);
 				mirage_hand_data[handed][i].orientation = mirage_hand_data[handed][i].orientation * hand_to_origin.orientation;
 				mirage_hand_data[handed][i].orientation = mirage_hand_data[handed][i].orientation * hand_to_world.orientation;
+				mirage_hand_data[handed][i].orientation = matrix_mul_rotation(root, mirage_hand_data[handed][i].orientation);
 				mirage_hand_data[handed][i].radius = (poses[i].Radius * 0.85f);
 			}
-			
+
 			// Copy the data into the input system
 			hand_t&       inp_hand   = (hand_t&)input_hand(handed);
 			hand_joint_t* hand_poses = input_hand_get_pose_buffer(handed);

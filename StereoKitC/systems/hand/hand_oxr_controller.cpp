@@ -60,6 +60,7 @@ void hand_oxrc_update_frame() {
 	oxri_update_frame();
 
 	// Now we'll get the current states of our actions, and store them for later use
+	matrix root = render_get_cam_root();
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
@@ -88,6 +89,9 @@ void hand_oxrc_update_frame() {
 		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
 		pointer->state   = button_make_state(pointer->state   & button_state_active, select_state.currentState);
 		if (openxr_get_space(xrc_point_space[hand], point_pose)) {
+			point_pose.position    = matrix_mul_point   (root, point_pose.position);
+			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
+
 			pointer->ray.pos = point_pose.position;
 			pointer->ray.dir = point_pose.orientation * vec3_forward;
 			pointer->orientation = point_pose.orientation;
@@ -96,7 +100,9 @@ void hand_oxrc_update_frame() {
 		// If we have a select event, update the hand pose to match the event's timestamp
 		pose_t hand_pose = {};
 		if (openxr_get_space(xr_hand_space[hand], hand_pose)) {
-			// TODO: make this into a oxr hand!
+			hand_pose.position    = matrix_mul_point   (root, hand_pose.position);
+			hand_pose.orientation = matrix_mul_rotation(root, hand_pose.orientation);
+
 			hand_pose.orientation = xrc_offset_rot[hand] * hand_pose.orientation;
 			hand_pose.position   += hand_pose.orientation * xrc_offset_pos[hand];
 			input_hand_sim((handed_)hand, hand_pose.position, hand_pose.orientation, pose_state.isActive, select_state.currentState, grip_state.currentState);
@@ -107,6 +113,8 @@ void hand_oxrc_update_frame() {
 		pose_t pose = {};
 		if (curr_hand.pinch_state & button_state_changed &&
 			openxr_get_space(xrc_point_space[hand], pose, select_state.lastChangeTime)) {
+			pose.position    = matrix_mul_point   (root, pose.position);
+			pose.orientation = matrix_mul_rotation(root, pose.orientation);
 
 			pointer_t event_pointer = *pointer;
 			event_pointer.ray.pos     = pose.position;
@@ -118,6 +126,8 @@ void hand_oxrc_update_frame() {
 		}
 		if (curr_hand.grip_state & button_state_changed &&
 			openxr_get_space(xrc_point_space[hand], pose, grip_state.lastChangeTime)) {
+			pose.position    = matrix_mul_point   (root, pose.position);
+			pose.orientation = matrix_mul_rotation(root, pose.orientation);
 
 			pointer_t event_pointer = *pointer;
 			event_pointer.ray.pos = pose.position;

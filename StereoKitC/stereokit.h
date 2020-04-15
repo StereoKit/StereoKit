@@ -554,7 +554,8 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 ///////////////////////////////////////////
 
 SK_API void     render_set_clip      (float near_plane=0.01f, float far_plane=50);
-SK_API void     render_set_view      (const matrix &cam_transform);
+SK_API matrix   render_get_cam_root  ();
+SK_API void     render_set_cam_root  (const matrix &cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const spherical_harmonics_t &light_info);

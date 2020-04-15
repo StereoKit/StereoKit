@@ -505,7 +505,9 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		float xr_projection[16];
 		openxr_projection(view.fov, 0.1f, 50, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
-		matrix_inverse(matrix_trs((vec3&)view.pose.position, (quat&)view.pose.orientation, vec3_one), layer.view_transforms[i]);
+		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
+		view_tr = view_tr * render_get_cam_root();
+		matrix_inverse(view_tr, layer.view_transforms[i]);
 	}
 
 	// Call the rendering callback with our view and swapchain info
