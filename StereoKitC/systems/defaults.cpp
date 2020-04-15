@@ -15,6 +15,8 @@ tex_t        sk_default_tex_flat;
 tex_t        sk_default_tex_rough;
 tex_t        sk_default_cubemap;
 mesh_t       sk_default_quad;
+mesh_t       sk_default_sphere;
+mesh_t       sk_default_cube;
 shader_t     sk_default_shader;
 shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_unlit;
@@ -92,7 +94,12 @@ bool defaults_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);
-	mesh_set_id   (sk_default_quad, "default/quad");
+	mesh_set_id   (sk_default_quad, "default/mesh_quad");
+	sk_default_cube   = mesh_gen_cube(vec3_one);
+	sk_default_sphere = mesh_gen_sphere(1);
+	
+	mesh_set_id(sk_default_cube,   "default/mesh_cube");
+	mesh_set_id(sk_default_sphere, "default/mesh_sphere");
 
 	// Shaders
 	sk_default_shader          = shader_create_mem((void*)shader_builtin_default,  sizeof(shader_builtin_default));

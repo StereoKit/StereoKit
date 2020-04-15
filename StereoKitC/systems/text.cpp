@@ -113,6 +113,8 @@ vec2 text_line_size(text_style_t style, const char *text) {
 ///////////////////////////////////////////
 
 vec2 text_size(const char *text, text_style_t style) {
+	if (text == nullptr) return {};
+
 	font_t font = text_styles[style == -1 ? 0 : style].font;
 	const char *curr = text;
 	float x = 0;
@@ -309,6 +311,8 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 ///////////////////////////////////////////
 
 void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+	if (text == nullptr) return;
+
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.back().transform, tr);

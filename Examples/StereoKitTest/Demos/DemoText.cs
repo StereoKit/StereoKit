@@ -18,9 +18,9 @@ class DemoText : ITest
         /// In initialization, we can create the style from a font, a size, a 
         /// material, and a base color.
         style = Text.MakeStyle(
-            Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
-            2 * Units.cm2m,
-            Material.Copy(DefaultIds.materialFont), 
+            Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
+            2 * U.cm,
+			Default.MaterialFont.Copy(), 
             Color.HSV(0.05f, 0.7f, 0.8f));
         /// :End:
     }
@@ -31,8 +31,8 @@ class DemoText : ITest
     {
         Hierarchy.Push(Matrix.T(0, 0, -0.3f));
 
-        UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * Units.cm2m);
-        Vec2 size = new Vec2(5 * Units.cm2m, UI.LineHeight);
+        UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * U.cm);
+        Vec2 size = new Vec2(5 * U.cm, UI.LineHeight);
         if (UI.Radio("Left"   , alignX == TextAlign.XLeft  , size)) alignX = TextAlign.XLeft;   UI.SameLine();
         if (UI.Radio("CenterX", alignX == TextAlign.XCenter, size)) alignX = TextAlign.XCenter; UI.SameLine();
         if (UI.Radio("Right"  , alignX == TextAlign.XRight , size)) alignX = TextAlign.XRight;
@@ -81,7 +81,7 @@ class DemoText : ITest
         Text.Add(
             "Here's Some Multi-line Text!!",
             Matrix.TRS(new Vec3(0, 0.0f, 0), Quat.LookDir(0, 0, 1)),
-            new Vec2(SKMath.Cos(Time.Totalf)*10+11, 20) * Units.cm2m,
+            new Vec2(SKMath.Cos(Time.Totalf)*10+11, 20) * U.cm,
             TextFit.Clip,
             style, TextAlign.Center, alignX | alignY);
         Hierarchy.Pop();

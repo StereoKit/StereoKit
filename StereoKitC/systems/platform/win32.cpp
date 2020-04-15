@@ -34,15 +34,15 @@ UINT win32_resize_y     = 0;
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (width == d3d_screen_width && height == d3d_screen_height)
+	if (width == sk_info.display_width && height == sk_info.display_height)
 		return;
-	d3d_screen_width  = width;
-	d3d_screen_height = height;
+	sk_info.display_width  = width;
+	sk_info.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
 	if (win32_swapchain != nullptr) {
 		tex_releasesurface(win32_target);
-		win32_swapchain->ResizeBuffers(0, (UINT)d3d_screen_width, (UINT)d3d_screen_height, DXGI_FORMAT_UNKNOWN, 0);
+		win32_swapchain->ResizeBuffers(0, (UINT)sk_info.display_width, (UINT)sk_info.display_height, DXGI_FORMAT_UNKNOWN, 0);
 		ID3D11Texture2D *back_buffer;
 		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
@@ -55,8 +55,8 @@ void win32_resize(int width, int height) {
 ///////////////////////////////////////////
 
 bool win32_init(const char *app_name) {
-	d3d_screen_width  = sk_settings.flatscreen_width;
-	d3d_screen_height = sk_settings.flatscreen_height;
+	sk_info.display_width  = sk_settings.flatscreen_width;
+	sk_info.display_height = sk_settings.flatscreen_height;
 	if (!d3d_init(nullptr))
 		return false;
 
@@ -108,14 +108,24 @@ bool win32_init(const char *app_name) {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name;
 	if( !RegisterClass(&wc) ) return false;
-	win32_window = CreateWindow(wc.lpszClassName, app_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE, sk_settings.flatscreen_pos_x, sk_settings.flatscreen_pos_y, d3d_screen_width, d3d_screen_height, 0, 0, wc.hInstance, nullptr);
+	win32_window = CreateWindow(
+		wc.lpszClassName, 
+		app_name, 
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+		sk_settings.flatscreen_pos_x, 
+		sk_settings.flatscreen_pos_y, 
+		sk_info.display_width, 
+		sk_info.display_height, 
+		0, 0, 
+		wc.hInstance, 
+		nullptr);
 	if( !win32_window ) return false;
 
 	// Create a swapchain for the window
 	DXGI_SWAP_CHAIN_DESC1 sd = { };
 	sd.BufferCount = 2;
-	sd.Width       = d3d_screen_width;
-	sd.Height      = d3d_screen_height;
+	sd.Width       = sk_info.display_width;
+	sd.Height      = sk_info.display_height;
 	sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -171,7 +181,7 @@ void win32_step_begin() {
 
 void win32_step_end() {
 	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)d3d_screen_width, (float)d3d_screen_height);
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
@@ -180,7 +190,10 @@ void win32_step_end() {
 
 	input_update_predicted();
 
-	render_draw();
+	matrix view = render_get_cam_root  ();
+	matrix proj = render_get_projection();
+	matrix_inverse(view, view);
+	render_draw_matrix(&view, &proj, 1);
 	render_clear();
 }
 
@@ -188,6 +201,12 @@ void win32_step_end() {
 
 void win32_vsync() {
 	win32_swapchain->Present(1, 0);
+}
+
+///////////////////////////////////////////
+
+void *win32_hwnd() {
+	return win32_window;
 }
 
 } // namespace sk

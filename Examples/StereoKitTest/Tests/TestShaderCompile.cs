@@ -16,7 +16,8 @@ class DemoShaderCompile : ITest
 	{
 		// Delete all cached shader files
 		string cachePath = Path.Combine(Path.GetTempPath(), "cache");
-		Array.ForEach(Directory.GetFiles(cachePath), (p) => File.Delete(p));
+		if (Directory.Exists(cachePath))
+			Array.ForEach(Directory.GetFiles(cachePath), (p) => File.Delete(p));
 
 		// Build a shader from an HLSL code string
 		Func<bool> buildFromHLSL = () =>

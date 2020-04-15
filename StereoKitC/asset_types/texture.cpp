@@ -55,6 +55,9 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
 		return;
 	}
+	assets_addref(depth_texture->header);
+	if (texture->depth_buffer != nullptr)
+		tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
 }
 

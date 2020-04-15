@@ -12,7 +12,7 @@ struct render_stats_t {
 	int draw_calls;
 };
 
-void render_draw        ();
+matrix render_get_projection();
 void render_draw_matrix (const matrix *views, const matrix *projs, int32_t view_count);
 void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
@@ -24,7 +24,6 @@ void render_shutdown();
 
 void render_set_material(material_t material);
 void render_set_shader  (shader_t   shader);
-void render_set_texture (tex_t      texture, int slot);
 void render_set_mesh    (mesh_t     mesh);
 void render_draw_item   (int count);
 

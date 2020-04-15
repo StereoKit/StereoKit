@@ -32,7 +32,7 @@ namespace StereoKitTest
         public void Shutdown() => FilePicker.Hide();
         public void Update()
         {
-            UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * Units.cm2m, 0));
+            UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
             UI.Label("Mode");
             if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
             UI.SameLine();
@@ -44,7 +44,7 @@ namespace StereoKitTest
                 if (UI.Button("Add"))
                 {
                     lights.Add(new Light { 
-                        pose  = new Pose(Vec3.Up*Units.cm2m*25, Quat.LookDir(-Vec3.Forward)), 
+                        pose  = new Pose(Vec3.Up*25*U.cm, Quat.LookDir(-Vec3.Forward)), 
                         color = Vec3.One });
                     UpdateLights();
                 }
@@ -82,22 +82,22 @@ namespace StereoKitTest
         bool LightHandle(int i)
         {
             UI.PushId("window"+i);
-            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * Units.cm2m));
-            UI.LayoutArea(new Vec3(6,-3,0)*Units.cm2m, new Vec2(10, 0) * Units.cm2m);
+            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
+            UI.LayoutArea(new Vec3(6,-3,0)*U.cm, new Vec2(10, 0)*U.cm);
             if (lights[i].pose.position.Magnitude > 0.5f)
                 lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;
 
-            lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3*Units.cm2m), Color.HSV(lights[i].color));
+            lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3* U.cm), Color.HSV(lights[i].color));
 
-            dirty = UI.HSlider("H", ref lights[i].color.x, 0, 1, 0, 10 * Units.cm2m) || dirty;
-            dirty = UI.HSlider("S", ref lights[i].color.y, 0, 1, 0, 10 * Units.cm2m) || dirty;
-            dirty = UI.HSlider("V", ref lights[i].color.z, 0, 1, 0, 10 * Units.cm2m) || dirty;
+            dirty = UI.HSlider("H", ref lights[i].color.x, 0, 1, 0, 10 * U.cm) || dirty;
+            dirty = UI.HSlider("S", ref lights[i].color.y, 0, 1, 0, 10 * U.cm) || dirty;
+            dirty = UI.HSlider("V", ref lights[i].color.z, 0, 1, 0, 10 * U.cm) || dirty;
             
             UI.AffordanceEnd();
             Lines.Add(
                 lights[i].pose.position, Vec3.Zero, 
                 Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 
-                Units.mm2m);
+                U.mm);
 
             UI.PopId();
             return dirty;

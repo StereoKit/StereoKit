@@ -47,12 +47,12 @@ namespace StereoKitTest
 
         public void Update()
         {
-            UI.WindowBegin("Sound", ref windowPose, new Vec2(20, 0) * Units.cm2m);
+            UI.WindowBegin("Sound", ref windowPose, new Vec2(20, 0) * U.cm);
             if (UI.Button("BlipNoise.wav"))
                 fileSound.Play(windowPose.position);
             UI.Label("Generated Sound:");
             UI.Label("Duration"); UI.SameLine();
-            UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, 8*Units.cm2m);
+            UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, 8 * U.cm);
             if (genSound != null && UI.Button("Play"))
                 genSound.Play(windowPose.position);
             UI.WindowEnd();

@@ -1,7 +1,6 @@
 #include "stereokit.h"
 #include "math.h"
 
-#include "systems/d3d.h"
 #include "systems/render.h"
 
 #define _USE_MATH_DEFINES
@@ -107,8 +106,8 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 ///////////////////////////////////////////
 
 bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
-	float x = (((screen_pixel_pos.x / (float)d3d_screen_width ) - 0.5f) *  2.f);
-	float y = (((screen_pixel_pos.y / (float)d3d_screen_height) - 0.5f) * -2.f);
+	float x = (((screen_pixel_pos.x / (float)sk_system_info().display_width ) - 0.5f) *  2.f);
+	float y = (((screen_pixel_pos.y / (float)sk_system_info().display_height) - 0.5f) * -2.f);
 	if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
 		out_ray.pos = input_head().position;
 		out_ray.dir = vec3{ x, y, 1.0f };
@@ -136,7 +135,7 @@ void matrix_mul(const matrix &a, const matrix &b, matrix &out_matrix) {
 	XMMATRIX mat_a, mat_b, mat_result;
 	math_matrix_to_fast(a, &mat_a);
 	math_matrix_to_fast(b, &mat_b);
-	mat_result = mat_a * mat_b;
+	mat_result = XMMatrixMultiply(mat_a, mat_b);
 	math_fast_to_matrix(mat_result, &out_matrix);
 }
 

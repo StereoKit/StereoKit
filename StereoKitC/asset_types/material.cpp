@@ -219,12 +219,12 @@ void material_set_transparency(material_t material, transparency_ mode) {
 
 ///////////////////////////////////////////
 
-void material_set_cull(material_t material, cull_ mode) {
+void material_update_rasterizer(material_t material) {
 	if (material->rasterizer_state != nullptr)
 		material->rasterizer_state->Release();
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
-	desc_rasterizer.FillMode = D3D11_FILL_SOLID;
-	switch (mode) {
+	desc_rasterizer.FillMode = material->wireframe ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+	switch (material->cull) {
 	case cull_none:  desc_rasterizer.CullMode = D3D11_CULL_NONE;  break;
 	case cull_front: desc_rasterizer.CullMode = D3D11_CULL_FRONT; break;
 	case cull_back:  desc_rasterizer.CullMode = D3D11_CULL_BACK;  break;
@@ -232,7 +232,20 @@ void material_set_cull(material_t material, cull_ mode) {
 	desc_rasterizer.FrontCounterClockwise = true;
 
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &material->rasterizer_state);
+}
+
+///////////////////////////////////////////
+
+void material_set_cull(material_t material, cull_ mode) {
 	material->cull = mode;
+	material_update_rasterizer(material);
+}
+
+///////////////////////////////////////////
+
+void material_set_wireframe(material_t material, bool32_t wireframe) {
+	material->wireframe = wireframe;
+	material_update_rasterizer(material);
 }
 
 ///////////////////////////////////////////
@@ -305,6 +318,23 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 bool32_t material_set_texture(material_t material, const char *name, tex_t value) {
 	uint64_t id = string_hash(name);
 	return material_set_texture_id(material, id, value);
+}
+
+///////////////////////////////////////////
+
+bool32_t material_has_param(material_t material, const char *name, material_param_ type) {
+	uint64_t id = string_hash(name);
+
+	if (type == material_param_texture) {
+		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
+			if (material->shader->tex_slots.tex[i].id == id)
+				return true;
+		}
+	} else {
+		if (find_desc(material->shader, id) != nullptr)
+			return true;
+	}
+	return false;
 }
 
 ///////////////////////////////////////////

@@ -2,6 +2,7 @@
 
 class DemoMath : ITest
 {
+    Mesh suzanne;
     Mesh planeMesh;
     Mesh sphereMesh;
     Mesh cubeMesh;
@@ -14,6 +15,7 @@ class DemoMath : ITest
     Pose poseSphereRay  = new Pose(0, 0, -0.5f, Quat.Identity);
     Pose poseBoundsRay  = new Pose(-.5f, 0, -0.5f, Quat.Identity);
     Pose poseBoundsLine = new Pose(.5f, 0, -0.5f, Quat.Identity);
+    Pose poseMeshRay    = new Pose(-.5f, 0, 0.5f, Quat.Identity);
     Pose poseCross      = new Pose(0, 0, 0.5f, Quat.Identity);
 
     public void Update()
@@ -118,6 +120,25 @@ class DemoMath : ITest
         if (Tests.IsTesting)
             Renderer.Screenshot(poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
 
+        // Mesh and Ray
+        bool meshRayActive = UI.AffordanceBegin("MeshRay", ref poseMeshRay, new Bounds(Vec3.One * 0.4f));
+        boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), meshRayActive ? active : notActive);
+        suzanne.Draw(material, Matrix.T(Vec3.Zero), colObj);
+
+        Vec3 meshDir = Vec3.AngleXZ(Time.Totalf * 90, SKMath.Cos(Time.Totalf * 3) * 1.5f).Normalized();
+        Ray  meshRay = new Ray(bounds.center+Vec3.Up*0.1f - meshDir * 0.35f, meshDir);
+        if (meshRay.Intersect(suzanne, out Vec3 meshAt)) {
+            Lines.Add(meshRay.position, meshAt, colTest, 2 * Units.mm2m);
+            sphereMesh.Draw(material, Matrix.TS(meshAt, 0.02f), colIntersect);
+        } else {
+            Lines.Add(meshRay.position, meshRay.position + meshRay.direction * 0.4f, colTest, 2 * Units.mm2m);
+        }
+
+        UI.AffordanceEnd();
+
+        //if (Tests.IsTesting)
+        //    Renderer.Screenshot(poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
+
         // Cross product
         bool crossActive = UI.AffordanceBegin("Cross", ref poseCross, new Bounds(Vec3.One * 0.4f));
         boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), crossActive ? active : notActive);
@@ -146,6 +167,7 @@ class DemoMath : ITest
         sphereMesh = Mesh.GenerateSphere(1);
         cubeMesh   = Mesh.GenerateCube(Vec3.One);
         material   = Default.Material;
+        suzanne    = Model.FromFile("suzanne_bin.stl").GetMesh(0);
 
         boundsMesh = cubeMesh;
         boundsMat  = Default.MaterialUI.Copy();

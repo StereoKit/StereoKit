@@ -19,6 +19,7 @@ namespace sk {
 
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
+#define SK_SQRT2 1.41421356237f
 #define SK_FINGER_SOLIDS 1
 
 struct hand_mesh_t {
@@ -219,7 +220,7 @@ void input_hand_init() {
 			}
 			hand.fingers[f][j].position    = pos;
 			hand.fingers[f][j].orientation = rot;
-			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.5f;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
 		} }
 	}
 
@@ -252,6 +253,7 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
+	
 	hand_sources[hand_system].update_frame();
 
 	for (size_t i = 0; i < handed_max; i++) {
@@ -334,7 +336,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
 	hand.palm.orientation = quat_from_angles(
-		0, 
+		0,
 		handedness == handed_right ?  90.f : -90.f, 
 		handedness == handed_right ? -90.f :  90.f) * orientation;
 	
@@ -375,7 +377,7 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			}
 			hand.fingers[f][j].position    = orientation * pos + hand_pos;
 			hand.fingers[f][j].orientation = rot * orientation;
-			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.5f;
+			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
 		} }
 	}
 }
@@ -493,8 +495,8 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 200,200,200,255 };
 		} 
-			data.verts[v  ].uv  = { x,1.0f };
-			data.verts[v++].col = { 255,255,255,255 };
+		data.verts[v  ].uv  = { 1.0f,1.0f };
+		data.verts[v++].col = { 255,255,255,255 };
 		}
 
 		data.mesh = mesh_create();
@@ -521,8 +523,8 @@ void input_hand_update_mesh(handed_ hand) {
 
 		// Use the local axis to create a ring of verts
 		for (size_t i = 0; i < ring_count; i++) {
-			data.verts[v].norm = up*sincos_norm[i].y + right*sincos_norm[i].x;
-			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
+			data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*(SK_SQRT2*scale);
 			v++;
 		}
 	}

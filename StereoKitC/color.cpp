@@ -31,7 +31,7 @@ color128 color_hsv(float hue, float saturation, float value, float transparency)
 ///////////////////////////////////////////
 
 // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-vec3 color_to_hsv(color128 col) {
+vec3 color_to_hsv(const color128 &col) {
 	const vec4 K = vec4{ 0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f };
 	vec4 p = col.g < col.b ? vec4{ col.b, col.g, K.w, K.z } : vec4{ col.g, col.b, K.x, K.y };
 	vec4 q = col.r < p.x   ? vec4{ p.x, p.y, p.w, col.r }   : vec4{ col.r, p.y, p.z, p.x };
@@ -79,7 +79,7 @@ color128 color_lab(float l, float a, float b, float transparency) {
 // https://www.easyrgb.com/en/math.php, conversion to XYZ, then LAB
 // LAB is usually in 0-100,-200-200,-200-200 range, but we convert it
 // all to 0-1 for ease of use.
-vec3 color_to_lab(color128 color) {
+vec3 color_to_lab(const color128 &color) {
 	vec3 lab;
 	color128 col = color;
 

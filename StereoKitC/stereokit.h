@@ -57,6 +57,8 @@ enum display_ {
 
 struct system_info_t {
 	display_ display_type;
+	int32_t  display_width;
+	int32_t  display_height;
 };
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback = true);
@@ -230,11 +232,11 @@ struct color128 {
 static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 
 SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
-SK_API vec3     color_to_hsv(color128 color);
+SK_API vec3     color_to_hsv(const color128 &color);
 SK_API color128 color_lab   (float l, float a, float b, float transparency);
-SK_API vec3     color_to_lab(color128 color);
-inline color128 color_lerp  (color128 a, color128 b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline color32  color_to_32 (color128 a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
+SK_API vec3     color_to_lab(const color128 &color);
+inline color128 color_lerp  (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
+inline color32  color_to_32 (const color128 &a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
 
 ///////////////////////////////////////////
 
@@ -288,11 +290,16 @@ SK_API mesh_t   mesh_find         (const char *name);
 SK_API mesh_t   mesh_create       ();
 SK_API void     mesh_set_id       (mesh_t mesh, const char *id);
 SK_API void     mesh_release      (mesh_t mesh);
-SK_API void     mesh_set_verts    (mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds = true);
-SK_API void     mesh_set_inds     (mesh_t mesh, vind_t *indices,  int32_t index_count);
+SK_API void     mesh_set_keep_data(mesh_t mesh, bool32_t keep_data);
+SK_API bool32_t mesh_get_keep_data(mesh_t mesh);
+SK_API void     mesh_set_verts    (mesh_t mesh, vert_t *vertices,      int32_t vertex_count, bool32_t calculate_bounds = true);
+SK_API void     mesh_get_verts    (mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count);
+SK_API void     mesh_set_inds     (mesh_t mesh, vind_t *indices,       int32_t index_count);
+SK_API void     mesh_get_inds     (mesh_t mesh, vind_t *&out_indices,  int32_t &out_index_count);
 SK_API void     mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds   (mesh_t mesh, const bounds_t &bounds);
 SK_API bounds_t mesh_get_bounds   (mesh_t mesh);
+SK_API bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt);
 
 SK_API mesh_t mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions = 0);
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions = 0);
@@ -420,6 +427,7 @@ SK_API void       material_set_id          (material_t material, const char *id)
 SK_API void       material_release         (material_t material);
 SK_API void       material_set_transparency(material_t material, transparency_ mode);
 SK_API void       material_set_cull        (material_t material, cull_ mode);
+SK_API void       material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void       material_set_queue_offset(material_t material, int32_t offset);
 SK_API void       material_set_float       (material_t material, const char *name, float    value);
 SK_API void       material_set_color       (material_t material, const char *name, color128 value);
@@ -427,6 +435,7 @@ SK_API void       material_set_vector      (material_t material, const char *nam
 SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
+SK_API bool32_t   material_has_param       (material_t material, const char *name, material_param_ type);
 SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
 SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
 SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
@@ -545,7 +554,8 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 ///////////////////////////////////////////
 
 SK_API void     render_set_clip      (float near_plane=0.01f, float far_plane=50);
-SK_API void     render_set_view      (const matrix &cam_transform);
+SK_API matrix   render_get_cam_root  ();
+SK_API void     render_set_cam_root  (const matrix &cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const spherical_harmonics_t &light_info);

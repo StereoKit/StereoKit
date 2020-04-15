@@ -7,6 +7,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <float.h>
 
 namespace sk {
 
@@ -16,7 +17,30 @@ ID3D11InputLayout *vert_t_layout = nullptr;
 
 ///////////////////////////////////////////
 
+void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
+	mesh->discard_data = !keep_data;
+	if (mesh->discard_data) {
+		free(mesh->verts); mesh->verts = nullptr;
+		free(mesh->inds ); mesh->inds  = nullptr;
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t mesh_get_keep_data(mesh_t mesh) {
+	return !mesh->discard_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+	// Keep track of vertex data for use on CPU side
+	if (!mesh->discard_data) {
+		if (mesh->vert_capacity < vertex_count)
+			mesh->verts = (vert_t*)realloc(mesh->verts, vertex_count * sizeof(vert_t));
+		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
+	}
+
 	if (mesh->vert_buffer == nullptr) {
 		// Create a static vertex buffer the first time we call this function!
 		mesh->vert_dynamic  = false;
@@ -72,10 +96,24 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 
 ///////////////////////////////////////////
 
+void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count) {
+	out_vertices     = mesh->verts;
+	out_vertex_count = mesh->verts == nullptr ? 0 : mesh->vert_count;
+}
+
+///////////////////////////////////////////
+
 void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
+	}
+
+	// Keep track of index data for use on CPU side
+	if (!mesh->discard_data) {
+		if (mesh->ind_capacity < index_count)
+			mesh->inds = (vind_t*)realloc(mesh->inds, index_count * sizeof(vind_t));
+		memcpy(mesh->inds, indices, sizeof(vind_t) * index_count);
 	}
 
 	if (mesh->ind_buffer == nullptr) {
@@ -114,6 +152,13 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 
 	mesh->ind_count = index_count;
 	mesh->ind_draw  = index_count;
+}
+
+///////////////////////////////////////////
+
+void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
+	out_indices     = mesh->inds;
+	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
 }
 
 ///////////////////////////////////////////
@@ -169,6 +214,31 @@ mesh_t mesh_create() {
 
 ///////////////////////////////////////////
 
+const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
+	if (mesh->collision_data.pts != nullptr)
+		return &mesh->collision_data;
+	if (mesh->discard_data)
+		return nullptr;
+
+	mesh_collision_t &coll = mesh->collision_data;
+	coll.pts    = (vec3*)   malloc(sizeof(vec3)    * mesh->ind_count);
+	coll.planes = (plane_t*)malloc(sizeof(plane_t) * mesh->ind_count/3);
+
+	for (int32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
+
+	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
+		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
+		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
+		vec3    normal = vec3_normalize( vec3_cross(dir1, dir2) );
+		plane_t plane  = { normal, -vec3_dot(coll.pts[i + 1], normal) };
+		coll.planes[i/3] = plane;
+	}
+
+	return &mesh->collision_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
@@ -180,7 +250,61 @@ void mesh_release(mesh_t mesh) {
 void mesh_destroy(mesh_t mesh) {
 	if (mesh->ind_buffer  != nullptr) mesh->ind_buffer ->Release();
 	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
+	free(mesh->verts);
+	free(mesh->inds);
+	free(mesh->collision_data.pts   );
+	free(mesh->collision_data.planes);
 	*mesh = {};
+}
+
+///////////////////////////////////////////
+
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
+	vec3 result = {};
+
+	const mesh_collision_t *data = mesh_get_collision_data(mesh);
+	if (data == nullptr)
+		return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
+
+	vec3  pt = {};
+	float nearest_dist = FLT_MAX;
+	for (int32_t i = 0; i < mesh->ind_count; i+=3) {
+		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
+			continue;
+
+		// point in triangle, implementation based on:
+		// https://blackpawn.com/texts/pointinpoly/default.html
+
+		// Compute vectors
+		vec3 v0 = data->pts[i+1] - data->pts[i];
+		vec3 v1 = data->pts[i+2] - data->pts[i];
+		vec3 v2 = pt - data->pts[i];
+
+		// Compute dot products
+		float dot00 = vec3_dot(v0, v0);
+		float dot01 = vec3_dot(v0, v1);
+		float dot02 = vec3_dot(v0, v2);
+		float dot11 = vec3_dot(v1, v1);
+		float dot12 = vec3_dot(v1, v2);
+
+		// Compute barycentric coordinates
+		float inv_denom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+		float u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+		float v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+		// Check if point is in triangle
+		if ((u >= 0) && (v >= 0) && (u + v < 1)) {
+			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
+			if (dist < nearest_dist) {
+				nearest_dist = dist;
+				*out_pt      = pt;
+			}
+		}
+	}
+
+	return nearest_dist != FLT_MAX;
 }
 
 ///////////////////////////////////////////

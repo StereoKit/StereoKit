@@ -43,6 +43,7 @@ extern bool       xr_articulated_hands;
 extern bool       xr_depth_lsr;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
+extern XrSpace    xr_hand_space[2];
 extern xr_hand_state_ xr_hand_state; // TODO: This can go when OpenXR has real hands
 
 } // namespace sk

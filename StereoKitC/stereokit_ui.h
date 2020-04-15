@@ -7,6 +7,7 @@ namespace sk {
 enum ui_move_ {
 	ui_move_exact = 0,
 	ui_move_face_user,
+	ui_move_pos_only,
 };
 
 struct ui_settings_t {

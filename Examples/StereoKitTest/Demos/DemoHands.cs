@@ -103,7 +103,7 @@ namespace StereoKitTest
 
         public void Update()
         {
-            UI.WindowBegin("Options", ref optionsPose, new Vec2(24, 0)*Units.cm2m);
+            UI.WindowBegin("Options", ref optionsPose, new Vec2(24, 0)*U.cm);
             UI.Label("Show");
             if (UI.Toggle("Hands", ref showHands))
                 Input.HandVisible(Handed.Max, showHands);
@@ -210,11 +210,11 @@ namespace StereoKitTest
 
             // Position the menu relative to the palm
             Pose menuPose = Input.Hand(handed).palm;
-            menuPose.position += menuPose.Right * offset * Units.cm2m;
-            menuPose.position += menuPose.Up * (size.y/2) * Units.cm2m;
+            menuPose.position += menuPose.Right * offset * U.cm;
+            menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 
             // And make a menu!
-            UI.WindowBegin("HandMenu", ref menuPose, size * Units.cm2m, false);
+            UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, false);
             UI.Button("Test");
             UI.Button("That");
             UI.Button("Hand");

@@ -1,5 +1,6 @@
 #include "sprite_drawer.h"
 
+#include "../asset_types/sprite.h"
 #include "../asset_types/material.h"
 #include "../asset_types/mesh.h"
 #include "../asset_types/assets.h"

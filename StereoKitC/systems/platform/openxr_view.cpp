@@ -4,6 +4,7 @@
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
+#include "../../log.h"
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
@@ -142,7 +143,8 @@ bool openxr_views_create() {
 				}
 				arrput(xr_display_types, types[t]);
 				arrput(xr_displays,      device_display_t{});
-				openxr_create_view(types[t], arrlast(xr_displays));
+				if (!openxr_create_view(types[t], arrlast(xr_displays)))
+					return false;
 			}
 		}
 	}
@@ -216,7 +218,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	}
 
 	if (!openxr_update_swapchains(out_view)) {
-		log_warnf("Couldn't create OpenXR view swapchains!");
+		log_fail_reason(80, "Couldn't create OpenXR view swapchains!");
 		return false;
 	}
 	
@@ -261,6 +263,11 @@ bool openxr_update_swapchains(device_display_t &display) {
 		tex_setsurface (display.swapchain_color.textures[s], display.swapchain_color.images[s].texture, display.color_format);
 		tex_setsurface (display.swapchain_depth.textures[s], display.swapchain_depth.images[s].texture, display.depth_format);
 		tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
+	}
+
+	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
+		sk_info.display_width  = w;
+		sk_info.display_height = h;
 	}
 
 	return true;
@@ -550,7 +557,9 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		float xr_projection[16];
 		openxr_projection(view.fov, 0.1f, 50, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
-		matrix_inverse(matrix_trs((vec3&)view.pose.position, (quat&)view.pose.orientation, vec3_one), layer.view_transforms[i]);
+		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
+		view_tr = view_tr * render_get_cam_root();
+		matrix_inverse(view_tr, layer.view_transforms[i]);
 	}
 
 	// Call the rendering callback with our view and swapchain info

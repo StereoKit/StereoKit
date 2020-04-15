@@ -1,4 +1,3 @@
-
 #include "openxr.h"
 #include "openxr_input.h"
 

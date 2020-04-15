@@ -64,7 +64,7 @@ class DemoUI : ITest
         /// We'll also use a toggle to turn the window's header on and off! The value from that toggle
         /// is passed in here via the showHeader field.
         /// 
-        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * Units.cm2m, showHeader);
+        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader);
         ///
         /// When you begin a window, all visual elements are now relative to that window! UI takes advantage
         /// of the Hierarchy class and pushes the window's pose onto the Hierarchy stack. Ending the window
@@ -130,14 +130,14 @@ class DemoUI : ITest
         /// elements will go. This is different for each model, so you'll need to plan this around
         /// the size of your object!
         /// 
-        UI.LayoutArea(new Vec3(12, 13, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
+        UI.LayoutArea(new Vec3(12, 13, 0) * U.cm, new Vec2(24, 30) * U.cm);
         ///
         /// Then after that? We can just add UI elements like normal!
         /// 
-        UI.Image(logoSprite, new Vec2(22,0) * Units.cm2m);
+        UI.Image(logoSprite, new Vec2(22,0) * U.cm);
 
         UI.Toggle("Toggle", ref clipToggle);
-        UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
+        UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * U.cm);
         ///
         /// And while we're at it, here's a quick example of doing a radio button group! Not much 
         /// 'radio' actually happening, but it's still pretty simple. Pair it with an enum, or an

@@ -39,6 +39,10 @@ void input_leap_thread(void *arg);
 ///////////////////////////////////////////
 
 bool hand_leap_present() {
+	// We don't want leap hands in flatscreen
+	if (sk_active_runtime() != runtime_mixedreality)
+		return false;
+
 	if (leap_checked)
 		return leap_has_device;
 	leap_checked = true;

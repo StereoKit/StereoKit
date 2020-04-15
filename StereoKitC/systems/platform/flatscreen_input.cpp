@@ -4,21 +4,8 @@
 #include "platform_utils.h"
 #include "flatscreen_input.h"
 
-#if WINDOWS_UWP
-#else
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#include "win32.h"
-#include "uwp.h"
 #include "../input.h"
-#include "../hand/input_hand.h"
 #include "../render.h"
-#include "../d3d.h"
-
-#include <directxmath.h> // Matrix math functions and objects
-using namespace DirectX;
 
 namespace sk {
 
@@ -28,6 +15,7 @@ int   fltscr_gaze_pointer;
 float fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
 vec2  fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
 vec3  fltscr_head_rot   = {};
+vec3  fltscr_head_pos   = {};
 
 ///////////////////////////////////////////
 
@@ -38,7 +26,10 @@ void flatscreen_mouse_update();
 void flatscreen_input_init() {
 	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
-	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero)));
+	fltscr_head_pos = vec3{ 0,0.2f,0.4f };
+	fltscr_head_rot = vec3{ -21, 0.0001f, 0 };
+	input_head_pose = { fltscr_head_pos, quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z) };
+	render_set_cam_root(pose_matrix(input_head_pose));
 }
 
 ///////////////////////////////////////////
@@ -49,23 +40,11 @@ void flatscreen_input_shutdown() {
 ///////////////////////////////////////////
 
 void flatscreen_input_update() {
-#if WINDOWS_UWP
 	for (int32_t i = 0; i < key_MAX; i++) {
 		input_key_data.keys[i] = (uint8_t)button_make_state(
 			input_key_data.keys[i] & button_state_active,
-			uwp_key_down(i));
+			platform_key_down((key_)i));
 	}
-#else
-	uint8_t caps_lock = input_key_data.keys[key_caps_lock];
-	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = (uint8_t)button_make_state(
-			input_key_data.keys[i] & button_state_active,
-			GetKeyState(i)         & 0x8000);
-	}
-	input_key_data.keys[key_caps_lock] = (uint8_t)button_make_state(
-		caps_lock                  & button_state_active,
-		GetKeyState(key_caps_lock) & 0x1);
-#endif
 
 	flatscreen_mouse_update();
 
@@ -82,23 +61,25 @@ void flatscreen_input_update() {
 		if (vec3_magnitude_sq( movement ) != 0)
 			movement = vec3_normalize(movement);
 
-		// Apply movement to the camera
-		pose_t head = input_head();
-		head.position += head.orientation * movement * time_elapsedf() * fltscr_move_speed;
-
 		// head rotation
+		quat orientation;
 		if (input_key(key_mouse_right) & button_state_active) {
 			mouse_t mouse = input_mouse();
 			fltscr_head_rot.y -= mouse.pos_change.x * fltscr_rot_speed.x * time_elapsedf();
 			fltscr_head_rot.x -= mouse.pos_change.y * fltscr_rot_speed.y * time_elapsedf();
-			head.orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
 			vec2 prev_pt = mouse.pos - mouse.pos_change;
 			input_mouse_data.pos = prev_pt;
 			platform_set_cursor(prev_pt);
+		} else {
+			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 		}
+		// Apply movement to the camera
+		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
+		input_head_pose = { fltscr_head_pos, orientation };
 
-		render_set_view(pose_matrix(head));
+		render_set_cam_root(pose_matrix(input_head_pose));
 	}
 
 	pointer_t   *pointer_head = input_get_pointer(fltscr_gaze_pointer);

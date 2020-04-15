@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace StereoKit.Framework
+﻿namespace StereoKit.Framework
 {
-    public interface IStepper
-    {
-        bool Enabled { get; }
+	public interface IStepper
+	{
+		bool Enabled { get; }
 
-        bool Initialize();
+		bool Initialize();
 
-        void Step();
+		void Step();
 
-        void Shutdown();
-    }
+		void Shutdown();
+	}
 }

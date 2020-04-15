@@ -1,6 +1,7 @@
 #include "../../stereokit.h"
 #include "../platform/openxr.h"
 #include "../platform/openxr_input.h"
+#include "../input.h"
 #include "input_hand.h"
 
 #if WINDOWS_UWP
@@ -88,26 +89,25 @@ void hand_mirage_shutdown() {
 #if WINDOWS_UWP
 // Time conversion code from David Fields, thank you!
 static inline int64_t SourceDurationTicksToDestDurationTicks(int64_t sourceDurationInTicks, int64_t sourceTicksPerSecond, int64_t destTicksPerSecond) {
-    int64_t whole = (sourceDurationInTicks / sourceTicksPerSecond) * destTicksPerSecond;                          // 'whole' is rounded down in the target time units.
-    int64_t part  = (sourceDurationInTicks % sourceTicksPerSecond) * destTicksPerSecond / sourceTicksPerSecond;   // 'part' is the remainder in the target time units.
-    return whole + part;
+	int64_t whole = (sourceDurationInTicks / sourceTicksPerSecond) * destTicksPerSecond;                          // 'whole' is rounded down in the target time units.
+	int64_t part  = (sourceDurationInTicks % sourceTicksPerSecond) * destTicksPerSecond / sourceTicksPerSecond;   // 'part' is the remainder in the target time units.
+	return whole + part;
 }
 static inline TimeSpan TimeSpanFromQpcTicks(int64_t qpcTicks) {
-    static const int64_t qpcFrequency = [](){
-        LARGE_INTEGER frequency;
-        QueryPerformanceFrequency(&frequency);
-        return frequency.QuadPart;
-    }();
-    return TimeSpan{ SourceDurationTicksToDestDurationTicks(qpcTicks, qpcFrequency, winrt::clock::period::den) / winrt::clock::period::num };
+	static const int64_t qpcFrequency = [](){
+		LARGE_INTEGER frequency;
+		QueryPerformanceFrequency(&frequency);
+		return frequency.QuadPart;
+	}();
+	return TimeSpan{ SourceDurationTicksToDestDurationTicks(qpcTicks, qpcFrequency, winrt::clock::period::den) / winrt::clock::period::num };
 }
 #endif
 
 ///////////////////////////////////////////
 
-void hand_mirage_update_hands(int64_t win32_prediction_time) {
+void hand_mirage_update_hands(int64_t win32_prediction_time, bool update_tracked) {
 #if WINDOWS_UWP
-	if (!mirage_hand_support)
-		return;
+	if (!mirage_hand_support) return;
 
 	oxri_update_frame();
 
@@ -115,11 +115,13 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 	PerceptionTimestamp stamp = PerceptionTimestampHelper::FromSystemRelativeTargetTime(TimeSpanFromQpcTicks(win32_prediction_time));
 	IVectorView<SpatialInteractionSourceState> sources = mirage_interaction_manager.GetDetectedSourcesAtTimestamp(stamp);
 
+	bool hand_found[2] = { false,false };
 	for (auto sourceState : sources)
 	{
 		HandPose pose = sourceState.TryGetHandPose();
-		if (!pose || !mirage_spatial_stage)
+		if (!pose || !mirage_spatial_stage || sourceState.Properties().SourceLossRisk() >= 1) {
 			continue;
+		}
 
 		// Grab the joints from windows
 		JointPose               poses[27];
@@ -134,9 +136,10 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 				HandJointKind::LittleMetacarpal, HandJointKind::LittleProximal,   HandJointKind::LittleIntermediate, HandJointKind::LittleDistal, HandJointKind::LittleTip,
 				HandJointKind::Palm, HandJointKind::Wrist, },
 			poses);
-		
+
 		// Convert the data from their format to ours
 		if (gotJoints) {
+			hand_found[handed] = true;
 			SpatialInteractionSourceLocation location = sourceState.Properties().TryGetLocation(coordinates);
 
 			// Take it from Mirage coordinates to the origin
@@ -148,21 +151,23 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 			// Take it from the origin, to our coordinates
 			pose_t hand_to_world = {};
 			openxr_get_space(xr_hand_space[handed], hand_to_world);
-			
+
 			// Aaaand convert!
+			matrix root = render_get_cam_root();
 			for (size_t i = 0; i < 27; i++) {
 				memcpy(&mirage_hand_data[handed][i].position,    &poses[i].Position,    sizeof(vec3));
 				memcpy(&mirage_hand_data[handed][i].orientation, &poses[i].Orientation, sizeof(quat));
 				mirage_hand_data[handed][i].position    = hand_to_origin.orientation * (mirage_hand_data[handed][i].position - hand_to_origin.position);
-				mirage_hand_data[handed][i].position    = (hand_to_world.orientation * mirage_hand_data[handed][i].position) + hand_to_world.position; 
+				mirage_hand_data[handed][i].position    = (hand_to_world.orientation * mirage_hand_data[handed][i].position) + hand_to_world.position;
+				mirage_hand_data[handed][i].position    = matrix_mul_point(root, mirage_hand_data[handed][i].position);
 				mirage_hand_data[handed][i].orientation = mirage_hand_data[handed][i].orientation * hand_to_origin.orientation;
 				mirage_hand_data[handed][i].orientation = mirage_hand_data[handed][i].orientation * hand_to_world.orientation;
-				mirage_hand_data[handed][i].radius      = poses[i].Radius * 1.2f;
+				mirage_hand_data[handed][i].orientation = matrix_mul_rotation(root, mirage_hand_data[handed][i].orientation);
+				mirage_hand_data[handed][i].radius = (poses[i].Radius * 0.85f);
 			}
-			
+
 			// Copy the data into the input system
-			hand_t& inp_hand = (hand_t&)input_hand(handed);
-			inp_hand.tracked_state = button_state_active;
+			hand_t&       inp_hand   = (hand_t&)input_hand(handed);
 			hand_joint_t* hand_poses = input_hand_get_pose_buffer(handed);
 			memcpy(hand_poses, &mirage_hand_data[handed][0], sizeof(hand_joint_t) * 25);
 
@@ -173,6 +178,12 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 			log_warn("Couldn't get hand joints!");
 		}
 	}
+	if (update_tracked) {
+		for (size_t i = 0; i < handed_max; i++) {
+			hand_t &inp_hand = (hand_t &)input_hand((handed_)i);
+			inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, hand_found[i]);
+		}
+	}
 #endif
 }
 
@@ -181,7 +192,7 @@ void hand_mirage_update_hands(int64_t win32_prediction_time) {
 void hand_mirage_update_frame() {
 	if (xr_time == 0) return;
 
-	hand_mirage_update_hands(openxr_get_time());
+	hand_mirage_update_hands(openxr_get_time(), true);
 }
 
 ///////////////////////////////////////////
@@ -189,7 +200,7 @@ void hand_mirage_update_frame() {
 void hand_mirage_update_predicted() {
 	if (xr_time == 0) return;
 
-	hand_mirage_update_hands(openxr_get_time());
+	hand_mirage_update_hands(openxr_get_time(), false);
 	input_hand_update_meshes();
 }
 

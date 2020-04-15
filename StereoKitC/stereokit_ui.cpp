@@ -612,7 +612,7 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 
 	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center, text_align_center);
+	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
@@ -665,7 +665,7 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 
 	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
 	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, size, text, text_align_center, text_align_center);
+	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
@@ -912,13 +912,23 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 			
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.pinch_state & button_state_just_active) {
+				const hand_t &hand = input_hand((handed_)i);
+				vec3 finger_pos = vec3_lerp(
+					hand.fingers[0][4].position, 
+					hand.fingers[1][4].position, 0.3f);
+
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_palm_pos[i] = matrix_mul_point   ( to_local, input_hand((handed_)i).palm.position );
-				start_palm_rot[i] = matrix_mul_rotation( to_local, input_hand((handed_)i).palm.orientation);
+				start_palm_pos[i] = matrix_mul_point   ( to_local, finger_pos );
+				start_palm_rot[i] = matrix_mul_rotation( to_local, hand.palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
+				const hand_t &hand = input_hand((handed_)i);
+				vec3 finger_pos = vec3_lerp(
+					hand.fingers[0][4].position, 
+					hand.fingers[1][4].position, 0.3f);
+
 				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
@@ -928,17 +938,20 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 				
 				switch (move_type) {
 				case ui_move_exact: {
-					dest_rot = matrix_mul_rotation(to_local, input_hand((handed_)i).palm.orientation);
+					dest_rot = matrix_mul_rotation(to_local, hand.palm.orientation);
 					dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 				} break;
 				case ui_move_face_user: {
 					dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head().position));
 					dest_rot = quat_difference(start_aff_rot[i], dest_rot);
 				} break;
+				case ui_move_pos_only: {
+					dest_rot = quat_identity;
+				} break;
 				default: log_err("Unimplemented move type!"); break;
 				}
 
-				vec3 curr_pos = matrix_mul_point(to_local, input_hand((handed_)i).palm.position);
+				vec3 curr_pos = matrix_mul_point(to_local, finger_pos);
 				dest_pos = curr_pos + dest_rot * (start_aff_pos[i] - start_palm_pos[i]);
 				movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 				movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * dest_rot, 0.4f); 

@@ -17,7 +17,7 @@ namespace StereoKitTest
         public void Shutdown() => FilePicker.Hide();
 
         public void Update() {
-            UI.WindowBegin("Settings", ref menuPose, new Vec2(20,0) * Units.cm2m);
+            UI.WindowBegin("Settings", ref menuPose, new Vec2(20,0) * U.cm);
             if (model != null && UI.Button("Close")) { 
                 model = null;
                 ShowPicker();

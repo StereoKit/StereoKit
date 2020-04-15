@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{95B47C8E-3A66-483C-ABEE-950E6C2F621A}</ProjectGuid>
     <RootNamespace>StereoKitC</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <ProjectName>StereoKitC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -128,7 +128,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
-    <ClCompile Include="libraries\miniz.c" />
+    <ClCompile Include="libraries\miniz.cpp" />
     <ClCompile Include="libraries\ofbx.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
@@ -149,8 +149,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\hand\hand_mirage.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
     <ClCompile Include="systems\hand\hand_override.cpp" />
-    <ClCompile Include="systems\hand\hand_oxr_controller.cpp" />
     <ClCompile Include="systems\hand\hand_oxr_articulated.cpp" />
+    <ClCompile Include="systems\hand\hand_oxr_controller.cpp" />
     <ClCompile Include="systems\hand\input_hand.cpp" />
     <ClCompile Include="systems\hand\hand_leap.cpp" />
     <ClCompile Include="systems\input.cpp" />
@@ -213,8 +213,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\hand\hand_mirage.h" />
     <ClInclude Include="systems\hand\hand_mouse.h" />
     <ClInclude Include="systems\hand\hand_override.h" />
-    <ClInclude Include="systems\hand\hand_oxr_controller.h" />
     <ClInclude Include="systems\hand\hand_oxr_articulated.h" />
+    <ClInclude Include="systems\hand\hand_oxr_controller.h" />
     <ClInclude Include="systems\hand\input_hand.h" />
     <ClInclude Include="systems\hand\hand_poses.h" />
     <ClInclude Include="systems\hand\hand_leap.h" />
