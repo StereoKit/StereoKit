@@ -2,10 +2,18 @@
 
 class DemoRayMesh : ITest
 {
+	/// :CodeSample: Ray.Intersect
+	/// ## Ray Mesh Intersection
+	/// Here's an example of casting a Ray at a mesh someplace in world space,
+	/// transforming it into model space, calculating the intersection point,
+	/// and displaying it back in world space.
+	/// 
+	/// ![Ray Mesh Intersection]({{site.url}}/img/screenshots/RayMeshIntersect.jpg)
+	///
 	Mesh sphereMesh = Default.MeshSphere;
-	Mesh boxMesh  = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
-	Pose boxPose  = new Pose(0,     0,     -0.5f,  Quat.Identity);
-	Pose castPose = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
+	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
+	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
+	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
 
 	public void Update()
 	{
@@ -28,6 +36,7 @@ class DemoRayMesh : ITest
 			sphereMesh.Draw(Default.Material, Matrix.TS(transform * at, 0.02f));
 		}
 	}
+	/// :End:
 
 	public void Initialize() {
 		Tests.Screenshot(600, 600, "RayMeshIntersect.jpg", new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));

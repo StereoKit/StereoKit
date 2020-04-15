@@ -100,7 +100,7 @@
 		public static Sound SoundClick   { get; private set; }
 		/// <summary>A default click sound that lasts for 300ms. It's a 
 		/// procedurally generated sound based on a mouse release, with extra 
-		/// low frequencies in it.
+		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
 		internal static void Initialize()
