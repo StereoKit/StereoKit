@@ -20,7 +20,7 @@ class DemoText : ITest
         style = Text.MakeStyle(
             Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
             2 * Units.cm2m,
-            Material.Copy(DefaultIds.materialFont), 
+			Default.MaterialFont.Copy(), 
             Color.HSV(0.05f, 0.7f, 0.8f));
         /// :End:
     }

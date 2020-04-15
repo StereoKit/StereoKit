@@ -10,7 +10,7 @@ class DemoBasics : ITest
 
     public void Initialize()
     {
-        gltf = Model.FromFile("DamagedHelmet.gltf", Shader.Find(DefaultIds.shaderPbr));
+        gltf = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
 
         floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
         floorSolid.AddBox(new Vec3(20, 1, 20));
