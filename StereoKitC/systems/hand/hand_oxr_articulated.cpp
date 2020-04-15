@@ -117,6 +117,7 @@ void hand_oxra_update_joints() {
 			continue;
 
 		// Get joint poses from OpenXR
+		matrix root = render_get_cam_root();
 		for (int32_t j = 0; j < _countof(oxra_joints); j++) {
 			XrHandJointRadiusMSFT joint_radius   = { XR_TYPE_HAND_JOINT_RADIUS_MSFT };
 			XrSpaceLocation       space_location = { XR_TYPE_SPACE_LOCATION, &joint_radius };
@@ -124,7 +125,10 @@ void hand_oxra_update_joints() {
 
 			memcpy(&oxra_hand_joints[h][j].position,    &space_location.pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &space_location.pose.orientation, sizeof(quat));
-			oxra_hand_joints[h][j].radius = joint_radius.radius * 1.2f;
+			oxra_hand_joints[h][j].radius = joint_radius.radius * 0.85f;
+
+			oxra_hand_joints[h][j].position    = matrix_mul_point   (root, oxra_hand_joints[h][j].position);
+			oxra_hand_joints[h][j].orientation = matrix_mul_rotation(root, oxra_hand_joints[h][j].orientation);
 		}
 
 		// Copy the pose data into our hand
