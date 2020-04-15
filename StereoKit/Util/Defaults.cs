@@ -58,7 +58,11 @@
 		/// vertex colors, and UVs from (0,0) at vertex (-1,-1,0) to (1,1) at 
 		/// vertex (1,1,0).</summary>
 		public static Mesh MeshQuad   { get; private set; }
+		/// <summary>A cube with dimensions of (1,1,1), this is equivalent to
+		/// Mesh.GenerateCube(Vec3.One).</summary>
 		public static Mesh MeshCube   { get; private set; }
+		/// <summary>A sphere mesh with a diameter of 1. This is equivalent 
+		/// to Mesh.GenerateSphere(1,4).</summary>
 		public static Mesh MeshSphere { get; private set; }
 
 		/// <summary>This is a fast, general purpose shader. It uses a
@@ -84,9 +88,19 @@
 		/// <summary>A shader for projecting equirectangular textures onto 
 		/// cube faces! This is for equirectangular texture loading.</summary>
 		public static Shader ShaderEquirect { get; private set; }
+		/// <summary>A shader for UI or interactable elements, this'll be the
+		/// same as the Shader, but with an additional finger 'shadow' and 
+		/// distance circle effect that helps indicate finger distance from 
+		/// the surface of the object.</summary>
 		public static Shader ShaderUI       { get; private set; }
 
+		/// <summary>A default click sound that lasts for 300ms. It's a 
+		/// procedurally generated sound based on a mouse press, with extra 
+		/// low frequencies in it.</summary>
 		public static Sound SoundClick   { get; private set; }
+		/// <summary>A default click sound that lasts for 300ms. It's a 
+		/// procedurally generated sound based on a mouse release, with extra 
+		/// low frequencies in it.
 		public static Sound SoundUnclick { get; private set; }
 
 		internal static void Initialize()
