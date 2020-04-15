@@ -25,19 +25,19 @@ class Program
     /// somewhere in your application!
     /// 
     /// Here's the code for the window, and log tracking.
-    static Pose         demoLog     = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-    static List<string> demoLogList = new List<string>();
+    static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+    static List<string> logList = new List<string>();
     static void OnLog(LogLevel level, string text)
     {
-        if (demoLogList.Count > 10)
-            demoLogList.RemoveAt(demoLogList.Count - 1);
-        demoLogList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
+        if (logList.Count > 10)
+            logList.RemoveAt(logList.Count - 1);
+        logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
     }
     static void LogWindow()
     {
-        UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * U.cm);
-        for (int i = 0; i < demoLogList.Count; i++)
-            UI.Label(demoLogList[i], false);
+        UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
+        for (int i = 0; i < logList.Count; i++)
+            UI.Label(logList[i], false);
         UI.WindowEnd();
     }
     /// :End:
