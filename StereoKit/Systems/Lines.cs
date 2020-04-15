@@ -41,7 +41,7 @@ namespace StereoKit
         /// along 'Forward' vectors for each axis, not necessarily in the axis positive direction.</summary>
         /// <param name="atPose">What position and orientation do we want this axis widget at?</param>
         /// <param name="size">How long should the widget lines be, in meters?</param>
-        public static void AddAxis(Pose atPose, float size = Units.cm2m)
+        public static void AddAxis(Pose atPose, float size = U.cm)
         {
             Add(atPose.position, atPose.position + (atPose.orientation * Vec3.Forward) * size, new Color32(0, 0, 255, 255), size*0.1f);
             Add(atPose.position, atPose.position + (atPose.orientation * Vec3.Right)   * size, new Color32(255, 0, 0, 255), size*0.1f);

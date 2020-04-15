@@ -104,7 +104,7 @@ namespace StereoKit.Framework
         string     _path;
         string     _title;
         string[]   _separatedPath;
-        Pose       _windowPose = new Pose(new Vec3(-10,0,0)*Units.cm2m, Quat.LookDir(-Vec3.Forward));
+        Pose       _windowPose = new Pose(new Vec3(-10,0,0)*U.cm, Quat.LookDir(-Vec3.Forward));
         string     _resultName;
         string     _resultFolder;
 
@@ -174,7 +174,7 @@ namespace StereoKit.Framework
 
         public void Step()
         {
-            UI.WindowBegin(_title, ref _windowPose, new Vec2(40, 0) * Units.cm2m);
+            UI.WindowBegin(_title, ref _windowPose, new Vec2(40, 0) * U.cm);
 
             ShowPath();
 
@@ -215,7 +215,7 @@ namespace StereoKit.Framework
                 }
                 UI.SameLine();
                 UI.Label(_resultName, new Vec2(UI.AreaRemaining.x, UI.LineHeight) );
-                UI.Space(Units.cm2m * 1.5f);
+                UI.Space(U.cm * 1.5f);
             }
             else
             {
@@ -236,7 +236,7 @@ namespace StereoKit.Framework
                 Hide();
             }
             UI.SameLine();
-            UI.Input("saveFile", ref _resultName, new Vec2(25.5f *Units.cm2m, UI.LineHeight));
+            UI.Input("saveFile", ref _resultName, new Vec2(25.5f*U.cm, UI.LineHeight));
             UI.SameLine();
             if (UI.Button("Mic"))
             {

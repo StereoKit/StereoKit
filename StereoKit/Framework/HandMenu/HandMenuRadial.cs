@@ -135,7 +135,7 @@ namespace StereoKit.Framework
                (hand[FingerId.Ring, JointId.Tip ].position +
                 hand[FingerId.Ring, JointId.Root].position) * 0.5f;
             menuPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
-            menuPose.position   += menuPose.Forward*Units.cm2m;
+            menuPose.position   += menuPose.Forward*U.cm;
 
             // Draw the menu circle!
             Hierarchy.Push(menuPose.ToMatrix(activation));

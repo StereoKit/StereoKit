@@ -35,7 +35,7 @@ class Program
     }
     static void LogWindow()
     {
-        UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * Units.cm2m);
+        UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * U.cm);
         for (int i = 0; i < demoLogList.Count; i++)
             UI.Label(demoLogList[i], false);
         UI.WindowEnd();
@@ -104,7 +104,7 @@ class Program
             return;
 
         // Make a window for demo selection
-        UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));
+        UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
         for (int i = 0; i < Tests.DemoCount; i++)
         {
             string name = Tests.GetDemoName(i).Substring("Demo".Length);
@@ -134,16 +134,16 @@ class Program
     static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
     static void RulerWindow()
     {
-        UI.AffordanceBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*Units.cm2m), true);
+        UI.AffordanceBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
         Color32 color = Color.HSV(.6f, 0.5f, 1);
-        Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f) * Units.cm2m, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+        Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
         for (int d = 0; d <= 60; d+=1)
         {
             float x = d/2.0f;
             float size = d%2==0?1f:0.15f;
-            Lines.Add(new Vec3(15-x,2,-.6f)* Units.cm2m, new Vec3(15-x,2-size, -.6f) *Units.cm2m, color, Units.mm2m*0.5f);
+            Lines.Add(new Vec3(15-x,2,-.6f)*U.cm, new Vec3(15-x,2-size, -.6f)*U.cm, color, U.mm*0.5f);
             if (d%2==0 && d/2 != 30)
-                Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f) * Units.cm2m, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+                Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
         }
         UI.AffordanceEnd();
     }

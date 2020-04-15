@@ -28,33 +28,33 @@ class DemoUISettings : ITest
     void WindowSettings()
     {
         UI.Settings = defaultSettings;
-        UI.WindowBegin("Settings", ref settingsPose, new Vec2(24, 0) * Units.cm2m);
+        UI.WindowBegin("Settings", ref settingsPose, new Vec2(24, 0) * U.cm);
 
         UI.Label("Spacing");
         UI.Label("Padding"); UI.SameLine();
-        UI.HSlider("sl_padding", ref globalSettings.padding, 0, 40*Units.mm2m, 0);
+        UI.HSlider("sl_padding", ref globalSettings.padding, 0, 40*U.mm, 0);
         UI.Label("Gutter"); UI.SameLine();
-        UI.HSlider("sl_gutter", ref globalSettings.gutter, 0, 40*Units.mm2m, 0);
+        UI.HSlider("sl_gutter",  ref globalSettings.gutter,  0, 40*U.mm, 0);
 
         UI.Label("Depth"); UI.SameLine();
-        UI.HSlider("sl_depth", ref globalSettings.depth, 0, 40 * Units.mm2m, 0);
+        UI.HSlider("sl_depth",   ref globalSettings.depth,   0, 40*U.mm, 0);
 
         UI.Label("Backplate");
         UI.Label("Depth"); UI.SameLine();
         UI.HSlider("sl_pl_depth", ref globalSettings.backplateDepth, 0, 0.99f, 0);
         UI.Label("Border"); UI.SameLine();
-        UI.HSlider("sl_pl_border", ref globalSettings.backplateBorder, 0, 10 * Units.mm2m, 0);
+        UI.HSlider("sl_pl_border", ref globalSettings.backplateBorder, 0, 10 * U.mm, 0);
 
         UI.WindowEnd();
 
 
-        UI.WindowBegin("Color", ref colorPose, new Vec2(20, 0) * Units.cm2m);
+        UI.WindowBegin("Color", ref colorPose, new Vec2(20, 0) * U.cm);
 
-        UI.HSlider("x", ref colorScheme.x, 0, 1, 0, 18 * Units.cm2m);
-        UI.HSlider("y", ref colorScheme.y, 0, 1, 0, 18 * Units.cm2m);
-        UI.HSlider("z", ref colorScheme.z, 0, 1, 0, 18 * Units.cm2m);
+        UI.HSlider("x", ref colorScheme.x, 0, 1, 0, 18 * U.cm);
+        UI.HSlider("y", ref colorScheme.y, 0, 1, 0, 18 * U.cm);
+        UI.HSlider("z", ref colorScheme.z, 0, 1, 0, 18 * U.cm);
         Color color = Color.HSV(colorScheme.x, colorScheme.y, colorScheme.z);
-        Lines.Add(new Vec3(9, -16, 0) * Units.cm2m, new Vec3(-9, -16, 0) * Units.cm2m, color, .01f);
+        Lines.Add(new Vec3(9, -16, 0) * U.cm, new Vec3(-9, -16, 0) * U.cm, color, .01f);
         UI.ColorScheme = color;
 
         UI.WindowEnd();

@@ -27,4 +27,23 @@ namespace StereoKit
         /// multiplies by 1000.</summary>
         public const float m2mm = 1000;
     }
+	/// <summary>A shorthand class with unit multipliers. Helps make code a 
+	/// little more terse on occasions!.</summary>
+	public static class U
+	{
+		/// <summary> Converts centimeters to meters. There are 100cm in 1m. In StereoKit 
+		/// 1 unit is also 1 meter, so `25 * U.cm == 0.25`, 25 centimeters is .25 
+		/// meters/units. </summary>
+		public const float cm = 0.01f;
+		/// <summary> Converts millimeters to meters. There are 1000mm in 1m. In StereoKit 
+		/// 1 unit is 1 meter, so `250 * Units.mm2m == 0.25`, 250 millimeters is .25 
+		/// meters/units. </summary>
+		public const float mm = 0.001f;
+		/// <summary> StereoKit's default unit is meters, but sometimes it's 
+		/// nice to be explicit!</summary>
+		public const float m = 1.0f;
+		/// <summary>Converts meters to kilometers. There are 1000m in 1km, 
+		/// so this just multiplies by 1000.</summary>
+		public const float km = 1000f;
+	}
 }

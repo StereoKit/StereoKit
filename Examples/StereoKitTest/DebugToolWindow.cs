@@ -79,7 +79,7 @@ class DebugToolWindow
 
     public static void Step()
     {
-        UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*Units.cm2m);
+        UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*U.cm);
         if (UI.Button("Print Screenshot Pose")) HeadshotPose();
         if (UI.Button("Print Hand Pose")) HandshotPose();
         if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
@@ -128,7 +128,7 @@ class DebugToolWindow
     {
         Pose prev = recordingHead[recordingHead.Count - 1].pose;
         Quat diff = Quat.Difference(Input.Head.orientation, prev.orientation);
-        if (Vec3.DistanceSq(Input.Head.position, prev.position) > (2 * Units.cm2m * 2 * Units.cm2m) ||
+        if (Vec3.DistanceSq(Input.Head.position, prev.position) > (2 * U.cm * 2 * U.cm) ||
             (diff.w) * (diff.w) < (0.8f * 0.8f))
             recordingHead.Add((Time.Totalf, Input.Head));
         
@@ -205,7 +205,7 @@ class DebugToolWindow
 
     static void HeadshotPose()
     {
-        Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * Units.cm2m;
+        Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
         Vec3 fwd = pos + Input.Head.Forward;
         Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
         PreviewScreenshot(pos, fwd);
@@ -265,9 +265,9 @@ class DebugToolWindow
         if (!screenshotVisible)
             return;
 
-        UI.WindowBegin("Screenshot", ref screenshotPose, new Vec2(20,0)*Units.cm2m);
+        UI.WindowBegin("Screenshot", ref screenshotPose, new Vec2(20,0)*U.cm);
         if (screenshot != null)
-            UI.Image(screenshot, new Vec2(18,0) * Units.cm2m);
+            UI.Image(screenshot, new Vec2(18,0) * U.cm);
         if (UI.Button("Close"))
         { 
             screenshotVisible = false;
