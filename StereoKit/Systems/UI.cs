@@ -149,14 +149,16 @@ namespace StereoKit
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
 			=> NativeAPI.ui_button_round(id, image._inst, diameter);
         
-		/// <summary>A toggleable button! A button will expand to fit the text provided to it,
-		/// vertically and horizontally. Text is re-used as the id. Will return true any time 
-		/// the toggle value changes!</summary>
-		/// <param name="text">Text to display on the button, should be per-window unique as it 
-		/// will be used as the element id.</param>
-		/// <param name="value">The current state of the toggle button! True means it's toggled
-		/// on, and false means it's toggled off.</param>
-		/// <returns>Will return true any time the toggle value changes!</returns>
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes!
+		/// </summary>
+		/// <param name="text">Text to display on the button, should be per-
+		/// window unique as it will be used as the element id.</param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <returns>Will return true any time the toggle value changes!
+		/// </returns>
 		public static bool Toggle (string text, ref bool value)
 			=> NativeAPI.ui_toggle(text, ref value);
 
@@ -175,86 +177,105 @@ namespace StereoKit
 			return false;
 		}
 
-		/// <summary>A horizontal slider element! You can stick your finger in it, and slide the
-		/// value up and down.</summary>
-		/// <param name="id">A per-window unique id for tracking element state.</param>
-		/// <param name="value">The value that the slider will store slider state in.</param>
-		/// <param name="min">The minimum value the slider can set, left side of the slider.</param>
-		/// <param name="max">The maximum value the slider can set, right side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts at min, and increments by step.</param>
-		/// <param name="width">Physical width of the slider on the window.</param>
+		/// <summary>A horizontal slider element! You can stick your finger 
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">A per-window unique id for tracking element 
+		/// state.</param>
+		/// <param name="value">The value that the slider will store slider 
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, left side 
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, right 
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts 
+		/// at min, and increments by step.</param>
+		/// <param name="width">Physical width of the slider on the window.
+		/// </param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0) 
 			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width);
 
-		/// <summary>This begins a new UI group with its own layout! Much like a window, except
-		/// with a more flexible handle, and no header. You can draw the handle, but it will have
-		/// no text on it.</summary>
-		/// <param name="id">Id of the affordance group.</param>
-		/// <param name="pose">The pose state for the affordance! The user will be able to grab 
-		/// this affordance and move it around.</param>
-		/// <param name="handle">Size and location of the affordance handle, relative to the pose.</param>
-		/// <param name="drawHandle">Should this function draw the handle for you, or will you
-		/// draw that yourself?</param>
-		/// <param name="moveType">Describes how the affordance will move when dragged around.</param>
-		/// <returns>Returns true for every frame the user is grabbing the handle.</returns>
-		public static bool AffordanceBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle, moveType);
-
-		/// <summary>Finishes an affordance! Must be called after UI.AffordanceBegin() and all elements
-		/// have been drawn.</summary>
-		public static void AffordanceEnd   ()
-			=> NativeAPI.ui_affordance_end();
-
-		/// <summary>This begins and ends an affordance so you can just use 
-		/// its grabbable/moveable functionality! Behaves much like a window,
-		/// except with a more flexible handle, and no header. You can draw 
-		/// the handle, but it will have no text on it.</summary>
-		/// <param name="id">Id of the affordance group.</param>
-		/// <param name="pose">The pose state for the affordance! The user 
-		/// will be able to grab this affordance and move it around.</param>
-		/// <param name="handle">Size and location of the affordance handle, 
-		/// relative to the pose.</param>
-		/// <param name="drawHandle">Should this function draw the handle for 
-		/// you, or will you draw that yourself?</param>
-		/// <param name="moveType">Describes how the affordance will move
-		/// when dragged around.</param>
+		/// <summary>This begins a new UI group with its own layout! Much 
+		/// like a window, except with a more flexible handle, and no header.
+		/// You can draw the handle, but it will have no text on it. Returns 
+		/// true for every frame the user is grabbing the handle.</summary>
+		/// <param name="id">Id of the handle group.</param>
+		/// <param name="pose">The pose state for the handle! The user will 
+		/// be able to grab this handle and move it around.</param>
+		/// <param name="handle">Size and location of the handle, relative to 
+		/// the pose.</param>
+		/// <param name="drawHandle">Should this function draw the handle 
+		/// visual for you, or will you draw that yourself?</param>
+		/// <param name="moveType">Describes how the handle will move when 
+		/// dragged around.</param>
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
-		public static bool Affordance(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+			=> NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+
+		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
+		/// and all elements have been drawn.</summary>
+		public static void HandleEnd   ()
+			=> NativeAPI.ui_handle_end();
+
+		/// <summary>This begins and ends a handle so you can just use  its 
+		/// grabbable/moveable functionality! Behaves much like a window,
+		/// except with a more flexible handle, and no header. You can draw 
+		/// the handle, but it will have no text on it. Returns true for 
+		/// every frame the user is grabbing the handle.</summary>
+		/// <param name="id">Id of the handle group.</param>
+		/// <param name="pose">The pose state for the handle! The user will 
+		/// be able to grab this handle and move it around.</param>
+		/// <param name="handle">Size and location of the handle, relative to 
+		/// the pose.</param>
+		/// <param name="drawHandle">Should this function draw the handle for 
+		/// you, or will you draw that yourself?</param>
+		/// <param name="moveType">Describes how the handle will move when 
+		/// dragged around.</param>
+		/// <returns>Returns true for every frame the user is grabbing the 
+		/// handle.</returns>
+		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 		{
-			bool result = NativeAPI.ui_affordance_begin(id, ref pose, handle, drawHandle, moveType);
-			NativeAPI.ui_affordance_end();
+			bool result = NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+			NativeAPI.ui_handle_end();
 			return result;
 		}
 
-		/// <summary>Begins a new window! This will push a pose onto the transform stack, and all UI 
-		/// elements will be relative to that new pose. The pose is actually the top-center
-		/// of the window. Must be finished with a call to UI.WindowEnd().</summary>
-		/// <param name="text">Text to display on the window title, should be unique as it 
-		/// will be used as the window's id.</param>
-		/// <param name="pose">The pose state for the window! If showHeader is true, the user
-		/// will be able to grab this header and move it around.</param>
-		/// <param name="size">Physical size of the window! Should be set to a non-zero value, otherwise
-		/// it'll default to 32mm. If y is zero, it'll expand to contain all elements within it.</param>
-		/// <param name="showHeader">Should the window show a header bar? Header bar includes a title,
-		/// and is grabbable when it's visible.</param>
-		/// <param name="moveType">Describes how the affordance will move when dragged around.</param>
+		/// <summary>Begins a new window! This will push a pose onto the 
+		/// transform stack, and all UI elements will be relative to that new 
+		/// pose. The pose is actually the top-center of the window. Must be 
+		/// finished with a call to UI.WindowEnd().</summary>
+		/// <param name="text">Text to display on the window title, should be 
+		/// unique as it will be used as the window's id.</param>
+		/// <param name="pose">The pose state for the window! If showHeader 
+		/// is true, the user will be able to grab this header and move it 
+		/// around.</param>
+		/// <param name="size">Physical size of the window! Should be set to 
+		/// a non-zero value, otherwise it'll default to 32mm. If y is zero, 
+		/// it'll expand to contain all elements within it.</param>
+		/// <param name="showHeader">Should the window show a header bar? 
+		/// Header bar includes a title, and is grabbable when it's visible.
+		/// </param>
+		/// <param name="moveType">Describes how the window will move when 
+		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true, UIMove moveType = UIMove.FaceUser)
 			=> NativeAPI.ui_window_begin(text, ref pose, size, showHeader, moveType);
         
-		/// <summary>Finishes a window! Must be called after UI.WindowBegin() and all elements
-		/// have been drawn.</summary>
+		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
+		/// and all elements have been drawn.</summary>
 		public static void WindowEnd()
 			=> NativeAPI.ui_window_end();
 
-		/// <summary>Adds a root id to the stack for the following UI elements! This id is combined 
-		/// when hashing any following ids, to prevent id collisions in separate groups.</summary>
-		/// <param name="rootId">The root id to use until the following PopId call.</param>
+		/// <summary>Adds a root id to the stack for the following UI 
+		/// elements! This id is combined when hashing any following ids, to
+		/// prevent id collisions in separate groups.</summary>
+		/// <param name="rootId">The root id to use until the following PopId 
+		/// call.</param>
 		public static void PushId(string rootId) 
 			=> NativeAPI.ui_push_id(rootId);
 
-		/// <summary>Removes the last root id from the stack, and moves up to the one before it!</summary>
+		/// <summary>Removes the last root id from the stack, and moves up to 
+		/// the one before it!</summary>
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
 	}

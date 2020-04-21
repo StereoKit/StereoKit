@@ -82,7 +82,7 @@ namespace StereoKitTest
         bool LightHandle(int i)
         {
             UI.PushId("window"+i);
-            bool dirty = UI.AffordanceBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
+            bool dirty = UI.HandleBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
             UI.LayoutArea(new Vec3(6,-3,0)*U.cm, new Vec2(10, 0)*U.cm);
             if (lights[i].pose.position.Magnitude > 0.5f)
                 lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;
@@ -93,7 +93,7 @@ namespace StereoKitTest
             dirty = UI.HSlider("S", ref lights[i].color.y, 0, 1, 0, 10 * U.cm) || dirty;
             dirty = UI.HSlider("V", ref lights[i].color.z, 0, 1, 0, 10 * U.cm) || dirty;
             
-            UI.AffordanceEnd();
+            UI.HandleEnd();
             Lines.Add(
                 lights[i].pose.position, Vec3.Zero, 
                 Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 

@@ -107,7 +107,7 @@ class DemoUI : ITest
         /// 
         /// Mixed Reality also provides us with the opportunity to turn objects into interfaces!
         /// Instead of using the old 'window' paradigm, we can create 3D models and apply UI
-        /// elements to their surface! StereoKit uses 'affordances' to accomplish this, a grabbable
+        /// elements to their surface! StereoKit uses 'handles' to accomplish this, a grabbable
         /// area that behaves much like a window, but with a few more options for customizing
         /// layout and size.
         ///
@@ -120,10 +120,10 @@ class DemoUI : ITest
         /// And, similar to the window previously, here's how you would turn it into a grabbable 
         /// interface! This behaves the same, except we're defining where the grabbable region is
         /// specifically, and then drawing our own model instead of a plain bar. You'll also notice
-        /// we're drawing using an identity matrix. This takes advantage of how AffordanceBegin
-        /// pushes the affordance's pose onto the Hierarchy transform stack!
+        /// we're drawing using an identity matrix. This takes advantage of how HandleBegin
+        /// pushes the handle's pose onto the Hierarchy transform stack!
         /// 
-        UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds);
+        UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
         Renderer.Add(clipboard, Matrix.Identity);
         ///
         /// Once we've done that, we also need to define the layout area of the model, where UI 
@@ -149,9 +149,9 @@ class DemoUI : ITest
         UI.SameLine();
         if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
         ///
-        /// As with windows, Affordances need an End call.
+        /// As with windows, Handles need an End call.
         /// 
-        UI.AffordanceEnd();
+        UI.HandleEnd();
         /// 
         /// And there you go! That's how UI works in StereoKit, pretty simple, huh?
         /// For further reference, and more UI methods, check out the 
