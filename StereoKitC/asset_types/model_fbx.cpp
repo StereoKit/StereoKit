@@ -25,22 +25,22 @@ tex_t modelfmt_fbx_texture(const char *filename, const char *folder, const ofbx:
 	tex_t       result = nullptr;
 	char        tex_file[512];
 	const char *asset_filename;
-	struct stat check;
+	struct stat check = {};
 
 	sprintf_s(tex_file, "%s/%s", folder, tex_name);
 	asset_filename = assets_file(tex_file);
-	//if (stat(filename, &check) == 0)
+	if (stat(asset_filename, &check) == 0)
 		result = tex_create_file(tex_file);
 
 	if (result == nullptr) {
 		sprintf_s(tex_file, "%s/textures/%s", folder, tex_name);
 		asset_filename = assets_file(tex_file);
-		//if (stat(filename, &check) == 0)
+		if (stat(asset_filename, &check) == 0)
 			result = tex_create_file(tex_file);
 	}
 
 	if (result == nullptr)
-		log_warnf("Couldn't find texture: %s", tex_name);
+		log_warnf("Issue in '<~cyn>%s<~clr>', couldn't find texture: <~cyn>%s<~clr>", filename, tex_name);
 
 	free(tex_name);
 	return result;
@@ -50,12 +50,13 @@ tex_t modelfmt_fbx_texture(const char *filename, const char *folder, const ofbx:
 
 material_t modelfmt_fbx_material(const char *filename, const char *folder, shader_t shader, const ofbx::Material *mat) {
 	char id[512];
-	sprintf_s(id, 512, "%s/mat_%s", filename, mat->name);
+	sprintf_s(id, 512, "%s/mat/%s", filename, mat->name);
 	material_t result = material_find(id);
 	if (result != nullptr)
 		return result;
 
 	result = material_create(shader == nullptr ? shader_find("default/shader") : shader);
+	material_set_id(result, id);
 
 	tex_t diffuse  = modelfmt_fbx_texture(filename, folder, mat->getTexture(ofbx::Texture::DIFFUSE ), true);
 	tex_t normal   = modelfmt_fbx_texture(filename, folder, mat->getTexture(ofbx::Texture::NORMAL  ), false);
@@ -77,7 +78,7 @@ material_t modelfmt_fbx_material(const char *filename, const char *folder, shade
 
 mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const char *name, const ofbx::Geometry *geo) {
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh_%s", filename, name);
+	sprintf_s(id, 512, "%s/mesh/%s", filename, name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr)
 		return result;
@@ -100,7 +101,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 
 	if (source_uvs != nullptr)
 		for (int32_t i = 0; i < vert_count; i++)
-			verts[i].uv = { (float)source_uvs[i].x, (float)source_uvs[i].y };
+			verts[i].uv = { (float)source_uvs[i].x, 1-(float)source_uvs[i].y };
 
 	if (source_colors != nullptr)
 		for (int32_t i = 0; i < vert_count; i++)
@@ -148,10 +149,8 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 		material_t material = fbx_mesh->getMaterialCount() > 0 
 			? modelfmt_fbx_material(filename, folder, shader, fbx_mesh->getMaterial(0))
 			: material_find("default/material");
+
 		ofbx::Matrix transform = fbx_mesh->getGlobalTransform();
-		ofbx::Vec3 scale = fbx_mesh->getLocalScaling();
-		ofbx::Vec3 pos   = fbx_mesh->getLocalTranslation();
-		ofbx::Vec3 rot   = fbx_mesh->getLocalRotation();
 		matrix sk_transform;
 		for (int32_t m = 0; m < 4; m++) {
 			sk_transform.row[m].x = (float)transform.m[m*4];
@@ -159,16 +158,8 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 			sk_transform.row[m].z = (float)transform.m[m*4+2];
 			sk_transform.row[m].w = (float)transform.m[m*4+3];
 		}
-		
-		ofbx::Vec3 fbx_pivot = fbx_mesh->getScalingPivot();
-		vec3 pivot = { fbx_pivot.x, fbx_pivot.y, fbx_pivot.z };
-		matrix sk_scale = matrix_trs(-pivot) *  matrix_trs(vec3_zero, quat_identity, vec3_one * cm2m) * matrix_trs(pivot);
-		
-		model_add_subset(model, mesh, material, sk_transform * sk_scale);
-		/*matrix_trs(
-			vec3{ (float)pos.x, (float)pos.y, (float)pos.z } *cm2m, 
-			quat_from_angles(rot.x * rad2deg, rot.y * rad2deg, rot.z * rad2deg), 
-			vec3{(float)scale.x, (float)scale.y, (float)scale.z} *cm2m));*/
+
+		model_add_subset(model, mesh, material, sk_transform * matrix_trs(vec3_zero, quat_identity, vec3_one * cm2m));
 	}
 
 	free(folder);
