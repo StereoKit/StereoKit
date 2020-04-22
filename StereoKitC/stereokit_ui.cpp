@@ -974,7 +974,7 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 		}
 	}
 
-	if (draw) {
+	/*if (draw) {
 		ui_box(
 			handle.center+handle.dimensions/2, 
 			handle.dimensions, 
@@ -984,7 +984,7 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 			vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
 			skui_mat, skui_color_border * color);
 		ui_nextline();
-	}
+	}*/
 	return result;
 }
 
@@ -1006,10 +1006,13 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
 		ui_handle_begin(text, pose, { box_start, box_size }, true, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
-		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
+		//skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
+		skui_layers.back().offset.y -= skui_settings.padding;
 
-		ui_text(box_start + vec3{window_size.x/2-skui_settings.padding,box_size.y/2 - skui_settings.padding, -skui_settings.depth/2 - 2*mm2m}, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
-		
+		vec3 at = skui_layers.back().offset - vec3{ skui_settings.padding, skui_settings.padding, +skui_settings.depth*0.75f + 2*mm2m };
+		ui_text(at, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+		//ui_label(text);
+		skui_layers.back().offset.y -= ui_line_height();
 		ui_nextline();
 	} else {
 		ui_handle_begin(text, pose, { vec3_zero, vec3_zero }, false, move_type);
@@ -1020,6 +1023,21 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 ///////////////////////////////////////////
 
 void ui_window_end() {
+	layer_t &layer = skui_layers.back();
+	vec3 start = layer.offset_initial;
+	vec3 end = { layer.max_x, skui_layers.back().offset.y - skui_layers.back().line_height, start.z};
+	start.z += skui_settings.depth;
+	vec3 size = start - end;
+	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
+
+	ui_box(start, { size.x, ui_line_height(), size.z + skui_settings.depth*0.5f }, skui_mat, skui_palette[0]);
+	ui_box({ start.x, start.y - ui_line_height(), start.z }, {size.x, size.y-ui_line_height(), size.z}, skui_mat, skui_palette[1]);
+	ui_box(start + vec3{skui_settings.backplate_border, skui_settings.backplate_border, -size.z/4}, 
+		vec3{ size.x+skui_settings.backplate_border*2, size.y +skui_settings.backplate_border*2, size.z / 2 }, skui_mat, skui_color_border);
+	/*ui_box(
+		handle.center+handle.dimensions/2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -handle.dimensions.z/4 }, 
+		vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
+		skui_mat, skui_color_border * color);*/
 	ui_handle_end();
 }
 
