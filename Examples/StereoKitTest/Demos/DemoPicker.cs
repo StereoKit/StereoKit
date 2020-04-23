@@ -27,9 +27,9 @@ namespace StereoKitTest
             UI.WindowEnd();
 
             if (model != null) {
-                UI.AffordanceBegin("Model", ref modelPose, model.Bounds*modelScale*menuScale);
+                UI.HandleBegin("Model", ref modelPose, model.Bounds*modelScale*menuScale);
                 model.Draw(Matrix.TS(Vec3.Zero, modelScale*menuScale));
-                UI.AffordanceEnd();
+                UI.HandleEnd();
             }
         }
 
@@ -42,7 +42,8 @@ namespace StereoKitTest
                 new FileFilter("GLTF", "*.gltf"),
                 new FileFilter("GLB", "*.glb"),
                 new FileFilter("OBJ", "*.obj"),
-                new FileFilter("STL", "*.stl"));
+                new FileFilter("STL", "*.stl"),
+				new FileFilter("FBX", "*.fbx"));
         }
 
         private void LoadModel(string filename)

@@ -18,8 +18,8 @@ class DemoRayMesh : ITest
 	public void Update()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
-		UI.Affordance("Box",  ref boxPose,  boxMesh.Bounds);
-		UI.Affordance("Cast", ref castPose, sphereMesh.Bounds*0.03f);
+		UI.Handle("Box",  ref boxPose,  boxMesh.Bounds);
+		UI.Handle("Cast", ref castPose, sphereMesh.Bounds*0.03f);
 		boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix());
 		sphereMesh.Draw(Default.MaterialUI, castPose.ToMatrix(0.03f));
 		Lines.Add(castPose.position, boxPose.position, Color.White, 0.01f);

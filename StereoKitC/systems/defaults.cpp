@@ -31,6 +31,8 @@ font_t       sk_default_font;
 text_style_t sk_default_text_style;
 sound_t      sk_default_click;
 sound_t      sk_default_unclick;
+sound_t      sk_default_grab;
+sound_t      sk_default_ungrab;
 
 ///////////////////////////////////////////
 
@@ -168,9 +170,29 @@ bool defaults_init() {
 
 		return (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
 		}, .03f);
+	sk_default_grab = sound_generate([](float t){
+		float x = t / 0.04f;
+		float band1 = sinf(t*4000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
+		float band2 = sinf(t*6000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+		float band3 = sinf(t*1000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+		float band4 = sinf(t*400*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
+
+		return (band1*0.05f + band2*0.05f + band3*0.2f + band4*0.7f) * 0.1f;
+		}, .04f);
+	sk_default_ungrab = sound_generate([](float t){
+		float x = t / 0.04f;
+		float band1 = sinf(t*3000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
+		float band2 = sinf(t*5000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+		float band3 = sinf(t*800*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+		float band4 = sinf(t*300*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
+
+		return (band1*0.05f + band2*0.05f + band3*0.1f + band4*0.8f) * 0.1f;
+		}, .04f);
 
 	sound_set_id(sk_default_click,   "default/sound_click");
 	sound_set_id(sk_default_unclick, "default/sound_unclick");
+	sound_set_id(sk_default_grab,    "default/sound_grab");
+	sound_set_id(sk_default_ungrab,  "default/sound_ungrab");
 
 	return true;
 }

@@ -53,6 +53,8 @@ uint64_t        skui_input_target = 0;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
+sound_t         skui_snd_grab;
+sound_t         skui_snd_ungrab;
 
 ui_settings_t skui_settings = {
 	10 * mm2m, // padding
@@ -180,6 +182,8 @@ bool ui_init() {
 
 	skui_snd_interact   = sound_find("default/sound_click");
 	skui_snd_uninteract = sound_find("default/sound_unclick");
+	skui_snd_grab   = sound_find("default/sound_grab");
+	skui_snd_ungrab = sound_find("default/sound_ungrab");
 
 	return true;
 }
@@ -218,6 +222,8 @@ void ui_update() {
 void ui_shutdown() {
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
+	sound_release(skui_snd_grab);
+	sound_release(skui_snd_ungrab);
 	mesh_release(skui_box);
 	mesh_release(skui_cylinder);
 	material_release(skui_mat);
@@ -879,7 +885,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
 	bool result = false;
 	float color = 1;
@@ -912,6 +918,8 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 			
 			const hand_t &hand = input_hand((handed_)i);
 			if (hand.pinch_state & button_state_just_active) {
+				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
+
 				const hand_t &hand = input_hand((handed_)i);
 				vec3 finger_pos = vec3_lerp(
 					hand.fingers[0][4].position, 
@@ -958,6 +966,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 
 				if (hand.pinch_state & button_state_just_inactive) {
 					skui_hand[i].active = 0;
+					sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
 				}
 				ui_pop_pose();
 				ui_push_pose(movement, vec3{ 0,0,0 });
@@ -981,7 +990,7 @@ bool32_t ui_affordance_begin(const char *text, pose_t &movement, bounds_t handle
 
 ///////////////////////////////////////////
 
-void ui_affordance_end() {
+void ui_handle_end() {
 	ui_pop_pose();
 	ui_pop_id();
 }
@@ -995,7 +1004,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		vec2 size      = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
-		ui_affordance_begin(text, pose, { box_start, box_size }, true, move_type);
+		ui_handle_begin(text, pose, { box_start, box_size }, true, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 		skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 
@@ -1003,7 +1012,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		
 		ui_nextline();
 	} else {
-		ui_affordance_begin(text, pose, { vec3_zero, vec3_zero }, false, move_type);
+		ui_handle_begin(text, pose, { vec3_zero, vec3_zero }, false, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 	}
 }
@@ -1011,7 +1020,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_affordance_end();
+	ui_handle_end();
 }
 
 } // namespace sk

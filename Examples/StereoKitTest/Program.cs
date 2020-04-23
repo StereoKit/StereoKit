@@ -134,7 +134,7 @@ class Program
     static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
     static void RulerWindow()
     {
-        UI.AffordanceBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
+        UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
         Color32 color = Color.HSV(.6f, 0.5f, 1);
         Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
         for (int d = 0; d <= 60; d+=1)
@@ -145,6 +145,6 @@ class Program
             if (d%2==0 && d/2 != 30)
                 Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
         }
-        UI.AffordanceEnd();
+        UI.HandleEnd();
     }
 }
