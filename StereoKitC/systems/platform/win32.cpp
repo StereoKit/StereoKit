@@ -62,8 +62,7 @@ bool win32_init(const char *app_name) {
 
 	sk_info.display_type = display_opaque;
 
-	MSG      msg     = {0};
-	WNDCLASS wc      = {0}; 
+	WNDCLASS wc = {0}; 
 	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		switch(message) {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
