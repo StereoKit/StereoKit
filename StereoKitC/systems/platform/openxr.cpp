@@ -35,7 +35,7 @@ const char *xr_request_extensions[] = {
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
-	XR_MSFT_HAND_INTERACTION_PREVIEW_EXTENSION_NAME,
+	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_HAND_TRACKING_PREVIEW_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_PREVIEW_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_PREVIEW_EXTENSION_NAME,
@@ -101,7 +101,7 @@ bool openxr_init(const char *app_name) {
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
 	openxr_preferred_extensions(extension_count, extensions);
 
-	XrInstanceCreateInfo createInfo   = { XR_TYPE_INSTANCE_CREATE_INFO };
+	XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
 	createInfo.enabledExtensionCount = extension_count;
 	createInfo.enabledExtensionNames = extensions;
 	createInfo.applicationInfo.applicationVersion = 1;
@@ -110,9 +110,9 @@ bool openxr_init(const char *app_name) {
 	createInfo.applicationInfo.engineVersion = 
 		(SK_VERSION_MAJOR << 20)              |
 		(SK_VERSION_MINOR << 12 & 0x000FF000) |
-		(SK_VERSION_PATCH & 0x00000FFF);
+		(SK_VERSION_PATCH       & 0x00000FFF);
 
-	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
+	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
 	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
 	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
@@ -146,7 +146,7 @@ bool openxr_init(const char *app_name) {
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
 	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
-	xr_depth_lsr         = xr_depth_lsr_ext; // TODO: Find out how to verify this one
+	xr_depth_lsr         = xr_depth_lsr_ext;
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
@@ -191,12 +191,8 @@ bool openxr_init(const char *app_name) {
 		return false;
 	}
 
-	if (!openxr_views_create())
-		return false;
-	
-	if (!oxri_init())
-		return false;
-
+	if (!openxr_views_create()) return false;
+	if (!oxri_init()) return false;
 	return true;
 }
 

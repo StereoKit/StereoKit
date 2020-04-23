@@ -4,6 +4,8 @@
 /*
 ** Copyright (c) 2017-2020 The Khronos Group Inc.
 **
+** SPDX-License-Identifier: Apache-2.0
+**
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
 ** You may obtain a copy of the License at
@@ -302,7 +304,7 @@ XRAPI_ATTR XrResult XRAPI_CALL xrGetD3D11GraphicsRequirementsKHR(
 #ifdef XR_USE_GRAPHICS_API_D3D12
 
 #define XR_KHR_D3D12_enable 1
-#define XR_KHR_D3D12_enable_SPEC_VERSION  5
+#define XR_KHR_D3D12_enable_SPEC_VERSION  6
 #define XR_KHR_D3D12_ENABLE_EXTENSION_NAME "XR_KHR_D3D12_enable"
 typedef struct XrGraphicsBindingD3D12KHR {
     XrStructureType             type;
