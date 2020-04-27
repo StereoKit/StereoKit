@@ -172,6 +172,9 @@
     <ClCompile Include="systems\platform\openxr_view.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
+    <ClCompile Include="shaders_builtin\shader_builtin_ui_quadrant.cpp">
+      <Filter>shaders_builtin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -365,6 +368,12 @@
     <ClInclude Include="systems\platform\openxr_view.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\sort_list.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -412,6 +421,9 @@
       <Filter>shaders_builtin</Filter>
     </None>
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
   </ItemGroup>

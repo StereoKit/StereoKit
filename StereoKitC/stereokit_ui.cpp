@@ -52,6 +52,7 @@ vector<layer_t> skui_layers;
 mesh_t          skui_box = nullptr;
 mesh_t          skui_cylinder;
 material_t      skui_mat;
+material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 font_t          skui_font;
 text_style_t    skui_font_style;
@@ -110,6 +111,137 @@ void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position,
 
 ///////////////////////////////////////////
 
+void quadrantify(vert_t *verts, int32_t count, bool uvs) {
+	float left   =  1000;
+	float right  = -1000;
+	float top    = -1000;
+	float bottom =  1000;
+
+	for (int32_t i = 0; i < count; i++) {
+		if (verts[i].pos.x < left  ) left   = verts[i].pos.x;
+		if (verts[i].pos.x > right ) right  = verts[i].pos.x;
+		if (verts[i].pos.y < bottom) bottom = verts[i].pos.y;
+		if (verts[i].pos.y > top   ) top    = verts[i].pos.y;
+	}
+
+	for (int32_t i = 0; i < count; i++) {
+		float q_x = verts[i].pos.x / fabsf(verts[i].pos.x);
+		float q_y = verts[i].pos.y / fabsf(verts[i].pos.y);
+		if (verts[i].pos.x == 0) q_x = 0;
+		if (verts[i].pos.y == 0) q_y = 0;
+		if (uvs)
+			verts[i].uv = { q_x, q_y };
+		if      (q_x < 0) verts[i].pos.x -= left;
+		else if (q_x > 0) verts[i].pos.x -= right;
+		if      (q_y < 0) verts[i].pos.y -= bottom;
+		else if (q_y > 0) verts[i].pos.y -= top;
+	}
+}
+
+void ui_quadrant_mesh(float padding) {
+	if (skui_box == nullptr)
+		skui_box = mesh_create();
+	
+	padding = padding / 2;
+	/*vert_t verts[] = {
+		vert_t{ {0,-padding,-.5f}, {0,0,-1}, {-1, 1}, {255,255,255,255} },
+		vert_t{ {padding,0, -.5f}, {0,0,-1}, {-1, 1}, {255,255,255,255} },
+
+		vert_t{ {-padding,0,-.5f}, {0,0,-1}, { 1, 1}, {255,255,255,255} },
+		vert_t{ {0,-padding,-.5f}, {0,0,-1}, { 1, 1}, {255,255,255,255} },
+
+		vert_t{ {0,padding, -.5f}, {0,0,-1}, { 1,-1}, {255,255,255,255} },
+		vert_t{ {-padding,0,-.5f}, {0,0,-1}, { 1,-1}, {255,255,255,255} },
+
+		vert_t{ {padding,0,-.5f}, {0,0,-1}, {-1,-1}, {255,255,255,255} },
+		vert_t{ {0,padding,-.5f}, {0,0,-1}, {-1,-1}, {255,255,255,255} },};*/
+
+	float radius = padding;
+
+	vind_t subd = (vind_t)3*4;
+	int vert_count = subd * 5 + 2;
+	int ind_count  = subd * 18;
+	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
+
+	vind_t ind = 0;
+
+	for (vind_t i = 0; i < subd; i++) {
+		float u = 0, v = 0;
+
+		float ang = ((float)i / subd + (0.5f/subd)) * (float)3.14159f * 2;
+		float x = cosf(ang);
+		float y = sinf(ang);
+		vec3 normal  = {x,y,0};
+		vec3 top_pos = normal*radius*0.6f + vec3{0,0,0.5f};
+		vec3 ctr_pos = normal*radius;
+		vec3 bot_pos = normal*radius*0.6f - vec3{0,0,0.5f};
+
+		// strip first
+		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {0,255,255,255} };
+		verts[i * 5+1] = { ctr_pos,  normal, {u,v}, {0,255,255,255} };
+		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {0,255,255,255} };
+		// now circular faces
+		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
+		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
+
+		vind_t in = (i + 1) % subd;
+		// Top slice
+		inds[ind++] = i  * 5 + 3;
+		inds[ind++] = in * 5 + 3;
+		inds[ind++] = subd * 5;
+		// Bottom slice
+		inds[ind++] = subd * 5+1;
+		inds[ind++] = in * 5 + 4;
+		inds[ind++] = i  * 5 + 4;
+		// Now edge strip quad bottom
+		inds[ind++] = in * 5+1;
+		inds[ind++] = in * 5;
+		inds[ind++] = i  * 5;
+		inds[ind++] = i  * 5+1;
+		inds[ind++] = in * 5+1;
+		inds[ind++] = i  * 5;
+		// And edge strip quad top
+		inds[ind++] = in * 5+2;
+		inds[ind++] = in * 5+1;
+		inds[ind++] = i  * 5+1;
+		inds[ind++] = i  * 5+2;
+		inds[ind++] = in * 5+2;
+		inds[ind++] = i  * 5+1;
+	}
+	// center points for the circle
+	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
+	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
+	quadrantify(verts, vert_count, true);
+
+	mesh_set_verts(skui_box, verts, vert_count);
+	mesh_set_inds (skui_box, inds,  ind_count);
+
+	/*vert_t verts[] = {
+		vert_t{ {-1,1-padding,-.5f}, {0,0,-1}, {-1, 1}, {255,255,255,255} },
+		vert_t{ {-1+padding,1, -.5f}, {0,0,-1}, {-1, 1}, {255,255,255,255} },
+
+		vert_t{ {1-padding,1,-.5f}, {0,0,-1}, { 1, 1}, {255,255,255,255} },
+		vert_t{ {1,1-padding,-.5f}, {0,0,-1}, { 1, 1}, {255,255,255,255} },
+
+		vert_t{ {1,-1+padding, -.5f}, {0,0,-1}, { 1,-1}, {255,255,255,255} },
+		vert_t{ {1-padding,-1,-.5f}, {0,0,-1}, { 1,-1}, {255,255,255,255} },
+
+		vert_t{ {-1+padding,-1,-.5f}, {0,0,-1}, {-1,-1}, {255,255,255,255} },
+		vert_t{ {-1,-1+padding,-.5f}, {0,0,-1}, {-1,-1}, {255,255,255,255} },};
+	quadrantify(verts, _countof(verts), true);
+
+	vind_t inds[] = {
+		0,1,2, 0,2,3,
+		0,3,4, 0,4,7,
+		4,5,6, 4,6,7,
+	};
+	mesh_set_verts(skui_box, verts, _countof(verts));
+	mesh_set_inds (skui_box, inds,  _countof(inds ));*/
+}
+
+///////////////////////////////////////////
+
 inline bounds_t ui_size_box(vec3 top_left, vec3 dimensions) {
 	return { top_left - dimensions/2, dimensions };
 }
@@ -154,7 +286,9 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.depth            == 0) settings.depth   = 15 * mm2m;
 	if (settings.gutter           == 0) settings.gutter  = 20 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
-	skui_settings = settings;
+	skui_settings = settings; 
+
+	ui_quadrant_mesh(settings.padding);
 }
 
 ///////////////////////////////////////////
@@ -174,10 +308,13 @@ void ui_set_color(color128 color) {
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.8f, 0.5f, 1));
 
-	skui_box      = mesh_gen_cube(vec3_one);
+	ui_quadrant_mesh(skui_settings.padding);
+	//skui_box      = mesh_gen_cube(vec3{skui_settings.padding * 2,skui_settings.padding * 2,1});//mesh_gen_cylinder(skui_settings.padding * 2, 1,{ 0,0,1 }, 24);// mesh_gen_rounded_cube(vec3_one * skui_settings.padding * 2, skui_settings.padding * 2 * 0.2f, 2); // mesh_gen_cube(vec3_one);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find("default/material_ui");
-	skui_mat_dbg  = material_copy(skui_mat);
+	skui_mat_quad = material_find("default/material_ui_quadrant");
+	//material_set_wireframe(skui_mat_quad, true);
+	skui_mat_dbg  = material_copy(skui_mat_quad);
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
 
@@ -238,6 +375,7 @@ void ui_shutdown() {
 	mesh_release(skui_box);
 	mesh_release(skui_cylinder);
 	material_release(skui_mat);
+	material_release(skui_mat_quad);
 	material_release(skui_font_mat);
 	font_release(skui_font);
 }
@@ -629,8 +767,8 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 		color_blend = math_ease_overshoot(1, 1.5f, 10, t);
 	}
 
-	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
-	ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
+	//ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat_quad, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
@@ -682,8 +820,8 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 	}
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
-	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat, skui_palette[2] * color_blend);
-	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat, skui_color_border * color_blend);
+	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
+	ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat_quad, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
@@ -811,7 +949,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	}
 
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat, skui_palette[2] * (skui_input_target == id_hash ? 0.5f : 1.f) );
+	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * (skui_input_target == id_hash ? 0.5f : 1.f) );
 	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 	ui_nextline();
 
@@ -859,11 +997,11 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	ui_box(
 		vec3{ x, line_y, window_relative_pos.z }, 
 		vec3{ size.x, rule_size, rule_size }, 
-		skui_mat, skui_palette[2] * color);
+		skui_mat_quad, skui_palette[2] * color);
 	ui_box(
 		vec3{ x+back_size, line_y+back_size, window_relative_pos.z+mm2m }, 
 		vec3{ size.x+back_size*2, rule_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m }, 
-		skui_mat, skui_color_border * color);
+		skui_mat_quad, skui_color_border * color);
 	// Slide handle
 	ui_cylinder(
 		vec3{ x - slide_x_rel + size.y/4.f, slide_y, window_relative_pos.z}, 
@@ -990,11 +1128,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		ui_box(
 			handle.center+handle.dimensions/2, 
 			handle.dimensions, 
-			skui_mat, skui_palette[0] * color);
+			skui_mat_quad, skui_palette[0] * color);
 		ui_box(
 			handle.center+handle.dimensions/2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -handle.dimensions.z/4 }, 
 			vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
-			skui_mat, skui_color_border * color);
+			skui_mat_quad, skui_color_border * color);
 		ui_nextline();
 	}
 	return result;
@@ -1057,14 +1195,14 @@ void ui_window_end() {
 	vec3 size = start - end;
 	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
 
-	ui_box(start, { size.x, ui_line_height(), size.z + skui_settings.depth*0.5f }, skui_mat, skui_palette[0]);
-	ui_box({ start.x, start.y - ui_line_height(), start.z }, {size.x, size.y-ui_line_height(), size.z}, skui_mat, skui_palette[1]);
-	ui_box(start + vec3{skui_settings.backplate_border, skui_settings.backplate_border, -size.z/4}, 
-		vec3{ size.x+skui_settings.backplate_border*2, size.y +skui_settings.backplate_border*2, size.z / 2 }, skui_mat, skui_color_border);
+	ui_box(start, { size.x, ui_line_height(), size.z + skui_settings.depth*0.5f }, skui_mat_quad, skui_palette[0]);
+	ui_box({ start.x, start.y - ui_line_height(), start.z }, {size.x, size.y-ui_line_height(), size.z}, skui_mat_quad, skui_palette[1]);
+	//ui_box(start + vec3{skui_settings.backplate_border, skui_settings.backplate_border, -size.z/4}, 
+	//	vec3{ size.x+skui_settings.backplate_border*2, size.y +skui_settings.backplate_border*2, size.z / 2 }, skui_mat_quad, skui_color_border);
 	/*ui_box(
 		handle.center+handle.dimensions/2 + vec3{ skui_settings.backplate_border, skui_settings.backplate_border, -handle.dimensions.z/4 }, 
 		vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
-		skui_mat, skui_color_border * color);*/
+		skui_mat_quad, skui_color_border * color);*/
 	ui_handle_end();
 	ui_pop_id();
 }

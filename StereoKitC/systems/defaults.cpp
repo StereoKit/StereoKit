@@ -23,10 +23,12 @@ shader_t     sk_default_shader_unlit;
 shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
+shader_t     sk_default_shader_ui_quadrant;
 material_t   sk_default_material;
 material_t   sk_default_material_equirect;
 material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
+material_t   sk_default_material_ui_quadrant;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
 sound_t      sk_default_click;
@@ -110,13 +112,15 @@ bool defaults_init() {
 	sk_default_shader_font     = shader_create_mem((void*)shader_builtin_font,     sizeof(shader_builtin_font));
 	sk_default_shader_equirect = shader_create_mem((void*)shader_builtin_equirect, sizeof(shader_builtin_equirect));
 	sk_default_shader_ui       = shader_create_mem((void*)shader_builtin_ui,       sizeof(shader_builtin_ui));
+	sk_default_shader_ui_quadrant = shader_create_mem((void*)shader_builtin_ui_quadrant, sizeof(shader_builtin_ui_quadrant));
 	
 	if (sk_default_shader          == nullptr ||
 		sk_default_shader_pbr      == nullptr ||
 		sk_default_shader_unlit    == nullptr ||
 		sk_default_shader_font     == nullptr ||
 		sk_default_shader_equirect == nullptr ||
-		sk_default_shader_ui       == nullptr)
+		sk_default_shader_ui       == nullptr ||
+		sk_default_shader_ui_quadrant == nullptr)
 		return false;
 
 	shader_set_id(sk_default_shader,          "default/shader");
@@ -125,23 +129,27 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_font,     "default/shader_font");
 	shader_set_id(sk_default_shader_equirect, "default/shader_equirect");
 	shader_set_id(sk_default_shader_ui,       "default/shader_ui");
+	shader_set_id(sk_default_shader_ui_quadrant, "default/shader_ui_quadrant");
 	
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
 	sk_default_material_font     = material_create(sk_default_shader_font);
 	sk_default_material_ui       = material_create(sk_default_shader_ui);
+	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
 
 	if (sk_default_material          == nullptr ||
 		sk_default_material_equirect == nullptr ||
 		sk_default_material_font     == nullptr ||
-		sk_default_material_ui       == nullptr)
+		sk_default_material_ui       == nullptr ||
+		sk_default_material_ui_quadrant == nullptr)
 		return false;
 
 	material_set_id(sk_default_material,          "default/material");
 	material_set_id(sk_default_material_equirect, "default/equirect_convert");
 	material_set_id(sk_default_material_font,     "default/material_font");
 	material_set_id(sk_default_material_ui,       "default/material_ui");
+	material_set_id(sk_default_material_ui_quadrant, "default/material_ui_quadrant");
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
@@ -207,12 +215,14 @@ void defaults_shutdown() {
 	material_release(sk_default_material);
 	material_release(sk_default_material_font);
 	material_release(sk_default_material_ui);
+	material_release(sk_default_material_ui_quadrant);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_ui);
+	shader_release  (sk_default_shader_ui_quadrant);
 	mesh_release    (sk_default_quad);
 	tex_release     (sk_default_tex);
 	tex_release     (sk_default_tex_black);
