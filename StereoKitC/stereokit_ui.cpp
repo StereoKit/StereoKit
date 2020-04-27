@@ -4,6 +4,9 @@
 #include "systems/input.h"
 #include "libraries/stref.h"
 
+#define SL_IMPLEMENTATION
+#include "libraries/sort_list.h"
+
 #include <DirectXMath.h>
 using namespace DirectX;
 #include <vector>
@@ -12,6 +15,11 @@ using namespace std;
 ///////////////////////////////////////////
 
 namespace sk {
+
+struct ui_window_t {
+	pose_t pose;
+	vec2   size;
+};
 
 struct layer_t {
 	vec3   offset_initial;
@@ -38,9 +46,10 @@ struct ui_id_t {
 	uint64_t id;
 };
 
+ui_window_t    *skui_sl_windows = nullptr;
 vector<ui_id_t> skui_id_stack;
 vector<layer_t> skui_layers;
-mesh_t          skui_box;
+mesh_t          skui_box = nullptr;
 mesh_t          skui_cylinder;
 material_t      skui_mat;
 material_t      skui_mat_dbg;
@@ -80,7 +89,7 @@ uint64_t ui_hash(const char *string, uint64_t start_hash = 14695981039346656037)
 uint64_t ui_stack_hash(const char *string);
 
 // Layout
-void ui_push_pose  (pose_t pose, vec3 offset);
+void ui_push_pose  (ui_window_t &window, vec3 offset);
 void ui_pop_pose   ();
 void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding = true);
 void ui_reserve_box(vec2 size);
@@ -154,7 +163,7 @@ void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	
 	skui_palette[0] = color;
-	skui_palette[1] = color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y,          hsv.z * 0.7f, color.a);
+	skui_palette[1] = color_hsv(hsv.x, hsv.y * 0.5f,   hsv.z * 0.3f, color.a);
 	skui_palette[2] = color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.7f, color.a);
 	skui_palette[3] = color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.075f, hsv.z * 0.7f, color.a);
 	skui_palette[4] = color128{1, 1, 1, 1};
@@ -220,6 +229,8 @@ void ui_update() {
 ///////////////////////////////////////////
 
 void ui_shutdown() {
+	sl_free(skui_sl_windows);
+
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
 	sound_release(skui_snd_grab);
@@ -234,7 +245,9 @@ void ui_shutdown() {
 ///////////////////////////////////////////
 
 uint64_t ui_stack_hash(const char *string) {
-	return string_hash(string, skui_id_stack.back().id);
+	return skui_id_stack.size() > 0 
+		? string_hash(string, skui_id_stack.back().id) 
+		: string_hash(string);
 }
 
 ///////////////////////////////////////////
@@ -261,7 +274,7 @@ bool32_t ui_is_interacting(handed_ hand) {
 //////////////   Layout!   ////////////////
 ///////////////////////////////////////////
 
-void ui_push_pose(pose_t pose, vec3 offset) {
+void ui_push_pose(pose_t &pose, vec3 offset) {
 	vec3   right = pose.orientation * vec3_right;
 	matrix trs   = matrix_trs(pose.position + right*offset, pose.orientation);
 	hierarchy_push(trs);
@@ -885,8 +898,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 
 ///////////////////////////////////////////
 
-bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
-	uint64_t id = ui_push_id(text);
+bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	bool result = false;
 	float color = 1;
 
@@ -974,7 +986,7 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 		}
 	}
 
-	/*if (draw) {
+	if (draw) {
 		ui_box(
 			handle.center+handle.dimensions/2, 
 			handle.dimensions, 
@@ -984,27 +996,42 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 			vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
 			skui_mat, skui_color_border * color);
 		ui_nextline();
-	}*/
+	}
 	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
 }
 
 ///////////////////////////////////////////
 
 void ui_handle_end() {
 	ui_pop_pose();
-	ui_pop_id();
 }
 
 ///////////////////////////////////////////
 
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t show_header, ui_move_ move_type) {
-	if (window_size.x == 0) window_size.x = 32*cm2m;
+	uint64_t id = ui_push_id(text);
 
+	int32_t index = sl_indexof(skui_sl_windows, id);
+	if (index < 0) {
+		pose_t      head_pose  = input_head();
+		ui_window_t new_window = {};
+		new_window.pose.position    = head_pose.position + head_pose.orientation * vec3_forward * 0.45f;
+		new_window.pose.orientation = quat_lookat(new_window.pose.position, head_pose.position);
+		index = sl_insert(skui_sl_windows, index, id, new_window);
+	}
+	ui_window_t &window = skui_sl_windows[index];
+	
 	if (show_header) {
 		vec2 size      = text_size(text, skui_font_style);
 		vec3 box_start = vec3{ 0, 0, 0 };
 		vec3 box_size  = vec3{ window_size.x, size.y+skui_settings.padding*2, skui_settings.depth };
-		ui_handle_begin(text, pose, { box_start, box_size }, true, move_type);
+		_ui_handle_begin(id, window.pose, { box_start, box_size }, false, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 		//skui_layers.back().offset.y = -(box_size.y/2 + skui_settings.padding);
 		skui_layers.back().offset.y -= skui_settings.padding;
@@ -1015,7 +1042,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, bool32_t 
 		skui_layers.back().offset.y -= ui_line_height();
 		ui_nextline();
 	} else {
-		ui_handle_begin(text, pose, { vec3_zero, vec3_zero }, false, move_type);
+		ui_handle_begin(text, window.pose, { vec3_zero, vec3_zero }, false, move_type);
 		ui_layout_area({ window_size.x / 2,0,0 }, window_size);
 	}
 }
@@ -1039,6 +1066,7 @@ void ui_window_end() {
 		vec3{ handle.dimensions.x+skui_settings.backplate_border*2, handle.dimensions.y +skui_settings.backplate_border*2, handle.dimensions.z / 2 }, 
 		skui_mat, skui_color_border * color);*/
 	ui_handle_end();
+	ui_pop_id();
 }
 
 } // namespace sk
