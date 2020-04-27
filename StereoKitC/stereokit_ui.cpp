@@ -178,9 +178,9 @@ void ui_quadrant_mesh(float padding) {
 		vec3 bot_pos = normal*radius*0.6f - vec3{0,0,0.5f};
 
 		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {0,255,255,255} };
-		verts[i * 5+1] = { ctr_pos,  normal, {u,v}, {0,255,255,255} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {0,255,255,255} };
+		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
+		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
+		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
 		// now circular faces
 		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
 		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };

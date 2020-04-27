@@ -40,7 +40,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	output.view_id    = sk_inst[id].view_id;
-	output.color      = lerp(_color, sk_inst[id].color, input.color.r);
+	output.color      = lerp(_color, sk_inst[id].color, input.color.a);
 	output.color.rgb *= Lighting(output.normal);
 	return output;
 }
