@@ -214,7 +214,7 @@ namespace StereoKitTest
             menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 
             // And make a menu!
-            UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, false);
+            UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, UIWin.Empty);
             UI.Button("Test");
             UI.Button("That");
             UI.Button("Hand");
