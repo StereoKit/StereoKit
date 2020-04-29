@@ -253,13 +253,12 @@ namespace StereoKit
 		/// <param name="size">Physical size of the window! Should be set to 
 		/// a non-zero value, otherwise it'll default to 32mm. If y is zero, 
 		/// it'll expand to contain all elements within it.</param>
-		/// <param name="showHeader">Should the window show a header bar? 
-		/// Header bar includes a title, and is grabbable when it's visible.
-		/// </param>
+		/// <param name="windowType">Describes how the window should be drawn,
+		/// use a header, a body, neither, or both?</param>
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
-		public static void WindowBegin(string text, ref Pose pose, Vec2 size, bool showHeader = true, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin(text, ref pose, size, showHeader, moveType);
+		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
         
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>

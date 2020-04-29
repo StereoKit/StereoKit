@@ -140,6 +140,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="shaders_builtin\shader_builtin_pbr.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_skybox.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_ui.cpp" />
+    <ClCompile Include="shaders_builtin\shader_builtin_ui_quadrant.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_unlit.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
@@ -186,6 +187,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\miniz.h" />
     <ClInclude Include="libraries\ofbx.h" />
+    <ClInclude Include="libraries\sort_list.h" />
     <ClInclude Include="libraries\stb_ds.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />
@@ -203,6 +205,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="shaders_builtin\shader_builtin_pbr.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_skybox.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_unlit.h" />
     <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />
@@ -258,6 +261,11 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <FileType>Document</FileType>
     </None>
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

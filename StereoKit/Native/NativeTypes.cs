@@ -568,4 +568,21 @@ namespace StereoKit
 		/// discarding any rotation information.</summary>
 		PosOnly,
 	}
+
+	/// <summary>A description of what type of window to draw! This is a bit
+	/// flag, so it can contain multiple elements.</summary>
+	[Flags]
+	public enum UIWin
+	{
+		/// <summary>A normal window has a head and a body to it. Both can be
+		/// grabbed.</summary>
+		Normal = Head | Body,
+		/// <summary>No body, no head, none of the window will be grabbable.
+		/// Not really a flag, just set to this value.</summary>
+		Empty = 0,
+		/// <summary>Flag to include a head on the window.</summary>
+		Head = 1 << 0,
+		/// <summary>Flag to include a body on the window.</summary>
+		Body = 1 << 1,
+	}
 }
