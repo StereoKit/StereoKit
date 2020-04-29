@@ -494,7 +494,7 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 200,200,200,255 };
 		} 
-		data.verts[v  ].uv  = { 1.0f,1.0f };
+		data.verts[v  ].uv  = { x,1.0f };
 		data.verts[v++].col = { 255,255,255,255 };
 		}
 
