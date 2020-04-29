@@ -1147,10 +1147,11 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 	vec3 box_start = {}, box_size = {};
 	if (window.type & ui_win_head) {
 		float line = ui_line_height();
-		box_start = vec3{ 0, line/2, 0 };
+		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
 		box_size  = vec3{ window.size.x, line, skui_settings.depth*2 };
 	} 
 	if (window.type & ui_win_body) {
+		box_start.z = skui_settings.depth/2;
 		box_start.y -= window.size.y / 2;
 		box_size.x  = window.size.x;
 		box_size.y += window.size.y;
