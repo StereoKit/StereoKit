@@ -80,19 +80,19 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = Default.Material.Copy();
-        floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
-        floorMat[MatParamName.TexScale  ] = 16;
+        Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
+		floorMat.Transparency = Transparency.Blend;
+		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
-        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(20, 1, 20));
+        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
 
         demoSelectPose.position    = new Vec3(0, 0, -0.25f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
     }
     static void CommonUpdate()
     {
-        if (Input.Key(Key.Esc).IsJustActive())
+		if (Input.Key(Key.Esc).IsJustActive())
             StereoKitApp.Quit();
 
         // If we can't see the world, we'll draw a floor!
