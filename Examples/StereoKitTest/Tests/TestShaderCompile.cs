@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-class DemoShaderCompile : ITest
+class TestShaderCompile : ITest
 {
 	Material materialHLSL;
 	Material materialCompile;

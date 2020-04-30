@@ -610,6 +610,9 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	case tex_format_rgba32_linear: return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case tex_format_rgba64:        return DXGI_FORMAT_R16G16B16A16_UNORM;
 	case tex_format_rgba128:       return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	case tex_format_r8:            return DXGI_FORMAT_R8_UNORM;
+	case tex_format_r16:           return DXGI_FORMAT_R16_UNORM;
+	case tex_format_r32:           return DXGI_FORMAT_R32_FLOAT;
 	case tex_format_depth32:       return DXGI_FORMAT_D32_FLOAT;
 	case tex_format_depth16:       return DXGI_FORMAT_D16_UNORM;
 	case tex_format_depthstencil:  return DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -625,6 +628,9 @@ tex_format_ tex_get_tex_format(DXGI_FORMAT format) {
 	case DXGI_FORMAT_R8G8B8A8_UNORM:      return tex_format_rgba32_linear;
 	case DXGI_FORMAT_R16G16B16A16_UNORM:  return tex_format_rgba64;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:  return tex_format_rgba128;
+	case DXGI_FORMAT_R8_UNORM:            return tex_format_r8;
+	case DXGI_FORMAT_R16_UNORM:           return tex_format_r16;
+	case DXGI_FORMAT_R32_FLOAT:           return tex_format_r32;
 	case DXGI_FORMAT_D32_FLOAT:           return tex_format_depth32;
 	case DXGI_FORMAT_D16_UNORM:           return tex_format_depth16;
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return tex_format_depthstencil;
@@ -638,11 +644,14 @@ size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
 	case tex_format_depthstencil:
+	case tex_format_r32:
 	case tex_format_rgba32:
 	case tex_format_rgba32_linear: return sizeof(color32);
 	case tex_format_rgba64:        return sizeof(uint16_t)*4;
 	case tex_format_rgba128:       return sizeof(color128);
+	case tex_format_r16:
 	case tex_format_depth16:       return sizeof(uint16_t);
+	case tex_format_r8:            return sizeof(uint8_t);
 	default: return sizeof(color32);
 	}
 }

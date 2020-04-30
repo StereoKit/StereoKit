@@ -175,6 +175,20 @@ namespace StereoKit
 		/// expensive. Don't use this unless you know -exactly- what you're
 		/// doing.</summary>
 		Rgba128,
+		/// <summary>A single channel of data, with 8 bits per-pixel! This
+		/// can be great when you're only using one channel, and want to 
+		/// reduce memory usage. Values in the shader are always 0.0-1.0.
+		/// </summary>
+		R8,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. Values in the shader are always 0.0-1.0.
+		/// </summary>
+		R16,
+		/// <summary>A single channel of data, with 32 bits per-pixel! This 
+		/// basically treats each pixel as a generic float, so you can do all
+		/// sorts of strange and interesting things with this.</summary>
+		R32,
 		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
 		/// to store stencil information! Stencil data can be used for things
 		/// like clipping effects, deferred rendering, or shadow effects.</summary>

@@ -135,6 +135,72 @@ namespace StereoKit
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
+		/// <summary>Set the texture's pixels using a scalar array! This 
+		/// function sould only be called on textures with a format of R8.
+		/// You can call this as many times as you'd like, even with different 
+		/// widths and heights. Calling this multiple times will mark it as
+		/// dynamic on the graphics card. Calling this function can also 
+		/// result in building mip-maps, which has a non-zero cost: use 
+		/// TexType.ImageNomips when creating the Tex to avoid this.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two 
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		/// <param name="data">An array of 8 bit values, should be a length 
+		/// of `width*height`.</param>
+		public void SetColors(int width, int height, in byte[] data)
+		{
+			if (Format != TexFormat.R8)
+			{
+				Log.Err("Can't set a {0} format texture from byte data!", Format);
+				return;
+			}
+			NativeAPI.tex_set_colors(_inst, width, height, data);
+		}
+		/// <summary>Set the texture's pixels using a scalar array! This 
+		/// function sould only be called on textures with a format of R16.
+		/// You can call this as many times as you'd like, even with different 
+		/// widths and heights. Calling this multiple times will mark it as
+		/// dynamic on the graphics card. Calling this function can also 
+		/// result in building mip-maps, which has a non-zero cost: use 
+		/// TexType.ImageNomips when creating the Tex to avoid this.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two 
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		/// <param name="data">An array of 16 bit values, should be a length 
+		/// of `width*height`.</param>
+		public void SetColors(int width, int height, in ushort[] data)
+		{
+			if (Format != TexFormat.R16)
+			{
+				Log.Err("Can't set a {0} format texture from ushort data!", Format);
+				return;
+			}
+			NativeAPI.tex_set_colors(_inst, width, height, data);
+		}
+		/// <summary>Set the texture's pixels using a scalar array! This 
+		/// function sould only be called on textures with a format of R32.
+		/// You can call this as many times as you'd like, even with different 
+		/// widths and heights. Calling this multiple times will mark it as
+		/// dynamic on the graphics card. Calling this function can also 
+		/// result in building mip-maps, which has a non-zero cost: use 
+		/// TexType.ImageNomips when creating the Tex to avoid this.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two 
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		/// <param name="data">An array of 32 bit values, should be a length 
+		/// of `width*height`.</param>
+		public void SetColors(int width, int height, in float[] data)
+		{
+			if (Format != TexFormat.R32)
+			{
+				Log.Err("Can't set a {0} format texture from Color data!", Format);
+				return;
+			}
+			NativeAPI.tex_set_colors(_inst, width, height, data);
+		}
 		#endregion
 
 		#region Static Methods
