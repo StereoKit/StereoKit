@@ -19,7 +19,7 @@ function Get-Version {
 
     $result = "$major.$minor.$patch"
     if ($pre -ne 0) {
-        $result = "$result-preview$pre"
+        $result = "$result-preview.$pre"
     }
 
     return $result
