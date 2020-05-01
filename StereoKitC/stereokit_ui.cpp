@@ -1042,8 +1042,25 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		if (!skui_hand[i].tracked || (skui_hand[i].focused_prev != 0 && skui_hand[i].focused_prev != id))
 			continue;
 
+		const hand_t &hand = input_hand((handed_)i);
+		vec3 finger_pos_world = vec3_lerp(
+			hand.fingers[0][4].position,
+			hand.fingers[1][4].position, 0.3f);
+		vec3 finger_pos = matrix_mul_point( to_local, finger_pos_world );
+
+		vec3 from_pt = finger_pos;
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
 			skui_hand[i].focused = id;
+		} else {
+			vec3  head_pos = hierarchy_to_local_point(input_head_pose.position);
+			vec3  ray_to   = hierarchy_to_local_point(finger_pos_world);
+			ray_t far_ray  = { head_pos, ray_to - head_pos };
+			vec3  at;
+			if (bounds_ray_intersect(box, far_ray, &at) && vec3_magnitude_sq(at - head_pos) > 0.7f * 0.7f) {
+				skui_hand[i].focused = id;
+				from_pt = matrix_mul_point(to_local, hierarchy_to_world_point( vec3_zero ));
+				line_add(ray_to, vec3_zero, { 50,50,50,255 }, { 255,255,255,255 }, 0.002f);
+			}
 		}
 
 		if (skui_hand[i].focused == id || skui_hand[i].active_prev == id) {
@@ -1052,23 +1069,13 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			if (hand.pinch_state & button_state_just_active) {
 				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
-				const hand_t &hand = input_hand((handed_)i);
-				vec3 finger_pos = vec3_lerp(
-					hand.fingers[0][4].position, 
-					hand.fingers[1][4].position, 0.3f);
-
 				skui_hand[i].active = id;
 				start_aff_pos[i] = movement.position;
 				start_aff_rot[i] = movement.orientation;
-				start_palm_pos[i] = matrix_mul_point   ( to_local, finger_pos );
+				start_palm_pos[i] = from_pt;
 				start_palm_rot[i] = matrix_mul_rotation( to_local, hand.palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
-				const hand_t &hand = input_hand((handed_)i);
-				vec3 finger_pos = vec3_lerp(
-					hand.fingers[0][4].position, 
-					hand.fingers[1][4].position, 0.3f);
-
 				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
@@ -1091,7 +1098,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				default: log_err("Unimplemented move type!"); break;
 				}
 
-				vec3 curr_pos = matrix_mul_point(to_local, finger_pos);
+				vec3 curr_pos = finger_pos;
 				dest_pos = curr_pos + dest_rot * (start_aff_pos[i] - start_palm_pos[i]);
 				movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 				movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * dest_rot, 0.4f); 
