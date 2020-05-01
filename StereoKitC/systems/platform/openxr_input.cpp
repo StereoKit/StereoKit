@@ -1,5 +1,6 @@
 #include "openxr.h"
 #include "openxr_input.h"
+#include "../hand/hand_oxr_controller.h"
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -109,10 +110,45 @@ bool oxri_init() {
 		suggested_binds.interactionProfile     = profile_path;
 		suggested_binds.suggestedBindings      = &bindings[0];
 		suggested_binds.countSuggestedBindings = _countof(bindings);
-		result = xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
-		if (XR_FAILED(result)) {
-			log_infof("xrSuggestInteractionProfileBindings failed: [%s]", openxr_string(result));
-			return false;
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for WMR vs. HoloLens controllers
+			if (sk_info.display_type == display_opaque) {
+				xrc_offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
+				xrc_offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
+				xrc_offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
+				xrc_offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
+			} else {
+				xrc_offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
+				xrc_offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
+				xrc_offset_pos[handed_left ] = { 0, 0.005f, 0 };
+				xrc_offset_pos[handed_right] = { 0, 0.005f, 0 };
+			}
+		}
+	}
+
+	// oculus / touch_controller
+	{
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
+		XrActionSuggestedBinding bindings[] = {
+			{ xrc_pose_action,   pose_path  [0] }, { xrc_pose_action,   pose_path  [1] },
+			{ xrc_point_action,  point_path [0] }, { xrc_point_action,  point_path [1] },
+			{ xrc_select_action, select_path[0] }, { xrc_select_action, select_path[1] },
+			{ xrc_grip_action,   grip_path  [0] }, { xrc_grip_action,   grip_path  [1] },
+		};
+
+		xrStringToPath(xr_instance, "/interaction_profiles/oculus/touch_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = &bindings[0];
+		suggested_binds.countSuggestedBindings = _countof(bindings);
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for oculus touch controllers
+			xrc_offset_rot[handed_left ] = quat_from_angles(-20, 0, 0);
+			xrc_offset_rot[handed_right] = quat_from_angles(-20, 0, 0);
+			xrc_offset_pos[handed_left ] = { 0.01f, -0.01f, 0.025f };
+			xrc_offset_pos[handed_right] = { 0.01f, -0.01f, 0.025f };
 		}
 	}
 
@@ -130,11 +166,7 @@ bool oxri_init() {
 		suggested_binds.interactionProfile     = profile_path;
 		suggested_binds.suggestedBindings      = &bindings[0];
 		suggested_binds.countSuggestedBindings = _countof(bindings);
-		result = xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
-		if (XR_FAILED(result)) {
-			log_infof("xrSuggestInteractionProfileBindings failed: [%s]", openxr_string(result));
-			return false;
-		}
+		xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
 	}
 
 	// Create frames of reference for the pose actions

@@ -27,19 +27,6 @@ bool hand_oxrc_available() {
 ///////////////////////////////////////////
 
 void hand_oxrc_init() {
-	// Temporary orientation fix for WMR vs. HoloLens controllers
-	if (sk_info.display_type == display_opaque) {
-		xrc_offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
-		xrc_offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
-		xrc_offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
-		xrc_offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
-	} else {
-		xrc_offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
-		xrc_offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
-		xrc_offset_pos[handed_left ] = { 0, 0.005f, 0 };
-		xrc_offset_pos[handed_right] = { 0, 0.005f, 0 };
-	}
-
 	for (int32_t i = 1; i >= 0; i--) {
 		input_source_ hand = i == 0 ? input_source_hand_left : input_source_hand_right;
 		xrc_pointer_ids[i] = input_add_pointer(input_source_can_press | input_source_hand | hand);
