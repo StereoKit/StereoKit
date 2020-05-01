@@ -7,21 +7,19 @@ cbuffer ParamBuffer : register(b2) {
 	float4 color;
 };
 struct vsIn {
-	float4 pos : SV_POSITION;
-	float3 norm : NORMAL;
-	float2 uv : TEXCOORD0;
+	float4 pos   : SV_POSITION;
+	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
 };
 struct psIn {
-	float4 pos : SV_POSITION;
-	float4 color : COLOR0;
-	float3 normal : NORMAL;
-	float2 uv : TEXCOORD0;
-	uint view_id : SV_RenderTargetArrayIndex;
+	float4 pos     : SV_POSITION;
+	float4 color   : COLOR0;
+	float2 uv      : TEXCOORD0;
+	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
 // [texture] diffuse white
-Texture2D tex : register(t0);
+Texture2D    tex         : register(t0);
 SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
@@ -30,7 +28,6 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.pos   = mul(float4(world,         1), sk_viewproj[sk_inst[id].view_id]);
 
 	output.view_id = sk_inst[id].view_id;
-	output.normal  = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	output.uv      = input.uv;
 	output.color   = input.color * color;
 	return output;
@@ -58,13 +55,5 @@ float4 ps(psIn input, bool frontface : SV_IsFrontFace) : SV_TARGET{
 	float text_value = col.r;
 	clip(text_value-0.004); // .004 is 1/255, or one 8bit pixel value!
 
-	float3 albedo = input.color.rgb;
-	float3 normal = normalize(input.normal) * (frontface ? -1:1);
-
-	float w, h;
-	uint mip_levels;
-	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-	float3 irradiance = sk_cubemap.SampleLevel(tex_cube_sampler, normal, 0.8*mip_levels).rgb; // This should be Spherical Harmonics eventually
-
-	return float4(albedo, text_value);
+	return float4(input.color.rgb, text_value);
 }
