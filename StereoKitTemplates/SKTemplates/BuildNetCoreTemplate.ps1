@@ -12,6 +12,12 @@ Foreach-Object {
     ((Get-Content -path $_.FullName -Raw) -replace $from,$to) | Set-Content -Path ($out+$_.Name)
 }
 
+#...Assets shouldn't have any strings that need replaced
+$project = 'SKTemplate_NetCore\Assets\'
+$out     = $folder+'SKTemplate_NetCore\templatized\'
+New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
+Copy-Item ($folder+$project) -Destination $out -Recurse -Force
+
 # Replace names in the UWP project
 $from1 = 'SKTemplate_UWP_Name'
 $to1   = '$safeprojectname$'
@@ -47,5 +53,5 @@ New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
 Copy-Item ($folder+$project) -Destination $out -Recurse -Force
 
 # Now Zip everything, and put them in the templates folder!
-Compress-Archive -Path ($folder+"SKTemplate_NetCore\templatized\*.*") -DestinationPath ($folder+"SKTemplates\ProjectTemplates\StereoKit .Net Core.zip") -Force
+Compress-Archive -Path ($folder+"SKTemplate_NetCore\templatized\*.*"),($folder+"SKTemplate_NetCore\templatized\Assets\") -DestinationPath ($folder+"SKTemplates\ProjectTemplates\StereoKit .Net Core.zip") -Force
 Compress-Archive -Path ($folder+"SKTemplate_UWP\templatized\*.*"),($folder+"SKTemplate_UWP\templatized\Assets\"),($folder+"SKTemplate_UWP\templatized\Properties\") -DestinationPath ($folder+"SKTemplates\ProjectTemplates\StereoKit UWP.zip") -Force

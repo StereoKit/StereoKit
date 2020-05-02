@@ -20,6 +20,7 @@
   <TemplateContent>
     <Project TargetFileName="SKTemplate_UWP.csproj" File="SKTemplate_UWP.csproj" ReplaceParameters="true">
       <Folder Name="Assets" TargetFolderName="Assets">
+        <ProjectItem ReplaceParameters="false" TargetFileName="floor.hlsl">floor.hlsl</ProjectItem>
         <Folder Name="Logo" TargetFolderName="Logo">
           <ProjectItem ReplaceParameters="false" TargetFileName="Logo-150.png">Logo-150.png</ProjectItem>
           <ProjectItem ReplaceParameters="false" TargetFileName="Logo-16.png">Logo-16.png</ProjectItem>
