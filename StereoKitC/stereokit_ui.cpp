@@ -2,6 +2,7 @@
 #include "_stereokit_ui.h"
 #include "math.h"
 #include "systems/input.h"
+#include "systems/hand/input_hand.h"
 #include "libraries/stref.h"
 
 #define SL_IMPLEMENTATION
@@ -1052,14 +1053,17 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
 			skui_hand[i].focused = id;
 		} else {
-			vec3  head_pos = hierarchy_to_local_point(input_head_pose.position);
-			vec3  ray_to   = hierarchy_to_local_point(finger_pos_world);
-			ray_t far_ray  = { head_pos, ray_to - head_pos };
-			vec3  at;
-			if (bounds_ray_intersect(box, far_ray, &at) && vec3_magnitude_sq(at - head_pos) > 0.7f * 0.7f) {
-				skui_hand[i].focused = id;
-				from_pt = matrix_mul_point(to_local, hierarchy_to_world_point( vec3_zero ));
-				line_add(ray_to, vec3_zero, { 50,50,50,255 }, { 255,255,255,255 }, 0.002f);
+			pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
+			if (ptr->tracked & button_state_active) {
+				vec3  pos  = hierarchy_to_local_point    (ptr->ray.pos);
+				vec3  to   = hierarchy_to_local_direction(ptr->ray.dir);
+				ray_t far_ray  = { pos, to - pos };
+				vec3  at;
+				if (bounds_ray_intersect(box, far_ray, &at) && vec3_magnitude_sq(input_head_pose.position - hierarchy_to_world_point(at)) > 0.7f * 0.7f) {
+					skui_hand[i].focused = id;
+					from_pt = matrix_mul_point(to_local, hierarchy_to_world_point(vec3_zero));
+					line_add(pos*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
+				}
 			}
 		}
 

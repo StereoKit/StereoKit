@@ -19,7 +19,7 @@ bool hand_mouse_available() {
 ///////////////////////////////////////////
 
 void hand_mouse_init() {
-	mouse_pointer_id = input_add_pointer(input_source_hand | input_source_hand_right | input_source_gaze | input_source_gaze_cursor | input_source_can_press);
+	mouse_pointer_id = input_hand_pointer_id[handed_right];
 }
 
 ///////////////////////////////////////////

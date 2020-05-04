@@ -97,6 +97,7 @@ hand_system_t hand_sources[] = { // In order of priority
 };
 int32_t      hand_system = -1;
 hand_state_t hand_state[2];
+int32_t      input_hand_pointer_id[handed_max] = {-1, -1};
 
 void input_hand_update_mesh(handed_ hand);
 
@@ -161,6 +162,9 @@ void modify(pose_t *pose, vec3 offset) {
 }
 
 void input_hand_init() {
+	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
+	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
+
 	modify(&input_pose_fist   [0][0], {});
 	modify(&input_pose_neutral[0][0], {});
 	modify(&input_pose_point  [0][0], {});
@@ -263,6 +267,10 @@ void input_hand_update() {
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
+			
+			// draw hand rays
+			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
+			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, {50, 50, 50, 0}, 0.002f);
 		}
 
 		// Update hand physics

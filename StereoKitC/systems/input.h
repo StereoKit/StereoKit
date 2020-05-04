@@ -13,7 +13,7 @@ extern keyboard_t input_key_data;
 extern pose_t     input_head_pose;
 
 int        input_add_pointer(input_source_ source);
-pointer_t *input_get_pointer(int id);
+pointer_t *input_get_pointer(int32_t id);
 
 bool input_init    ();
 void input_shutdown();

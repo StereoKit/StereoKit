@@ -193,6 +193,24 @@ void hand_mirage_update_frame() {
 	if (xr_time == 0) return;
 
 	hand_mirage_update_hands(openxr_get_time(), true);
+
+	// Update the hand point pose
+	matrix root = render_get_cam_root();
+	for (uint32_t h = 0; h < handed_max; h++) {
+		const hand_t &hand = input_hand((handed_)h);
+		pose_t     point_pose = {};
+		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[h]);
+		pointer->tracked = hand.tracked_state;
+		pointer->state   = hand.pinch_state;
+		if (openxr_get_space(xrc_point_space[h], point_pose)) {
+			point_pose.position    = matrix_mul_point   (root, point_pose.position);
+			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
+
+			pointer->ray.pos = point_pose.position;
+			pointer->ray.dir = point_pose.orientation * vec3_forward;
+			pointer->orientation = point_pose.orientation;
+		}
+	}
 }
 
 ///////////////////////////////////////////

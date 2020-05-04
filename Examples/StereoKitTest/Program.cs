@@ -83,6 +83,7 @@ class Program
         Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
+		floorMat.QueueOffset = -11;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));

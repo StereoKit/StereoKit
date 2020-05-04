@@ -12,9 +12,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-quat xrc_offset_rot [2];
-vec3 xrc_offset_pos [2];
-int  xrc_pointer_ids[3];
+quat xrc_offset_rot[2];
+vec3 xrc_offset_pos[2];
 
 ///////////////////////////////////////////
 
@@ -27,11 +26,6 @@ bool hand_oxrc_available() {
 ///////////////////////////////////////////
 
 void hand_oxrc_init() {
-	for (int32_t i = 1; i >= 0; i--) {
-		input_source_ hand = i == 0 ? input_source_hand_left : input_source_hand_right;
-		xrc_pointer_ids[i] = input_add_pointer(input_source_can_press | input_source_hand | hand);
-	}
-	xrc_pointer_ids[2] = input_add_pointer(input_source_gaze | input_source_gaze_head);
 }
 
 ///////////////////////////////////////////
@@ -53,7 +47,7 @@ void hand_oxrc_update_frame() {
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
 		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = xrc_pose_action;
+		get_info.action = xrc_point_action;
 		xrGetActionStatePose(xr_session, &get_info, &point_state);
 
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
@@ -72,7 +66,7 @@ void hand_oxrc_update_frame() {
 
 		// Update the hand point pose
 		pose_t     point_pose = {};
-		pointer_t* pointer    = input_get_pointer(xrc_pointer_ids[hand]);
+		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
 		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
 		pointer->state   = button_make_state(pointer->state   & button_state_active, select_state.currentState);
 		if (openxr_get_space(xrc_point_space[hand], point_pose)) {
