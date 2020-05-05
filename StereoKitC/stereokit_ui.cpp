@@ -580,8 +580,8 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 	vec3    box_size  = vec3{ size.x, size.y, skui_settings.depth/2.f };
 	ui_box_interaction_1h(id,
 		box_start, box_size,
-		box_start + vec3{ 0,0, skui_settings.depth * 4 },
-		box_size  + vec3{ 0,0, skui_settings.depth * 4 },
+		box_start + vec3{ cm2m, cm2m, cm2m * 6 },
+		box_size  + vec3{ cm2m*2,cm2m*2, cm2m * 6 },
 		&focus_state, hand);
 
 	// If a hand is interacting, adjust the button surface accordingly
