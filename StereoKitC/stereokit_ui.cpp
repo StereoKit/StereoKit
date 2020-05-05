@@ -111,6 +111,7 @@ void ui_space       (float space);
 bool32_t ui_in_box            (vec3 pt1, vec3 pt2, bounds_t box);
 void     ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t &out_hand);
 void     ui_button_behavior   (vec3 window_relative_pos, vec2 size, uint64_t id, float& finger_offset, button_state_& button_state, button_state_& focus_state);
+bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused);
 
 // Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
@@ -528,6 +529,8 @@ void ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfoc
 		*out_focus_state = button_state_inactive;
 
 	for (int32_t i = 0; i < handed_max; i++) {
+		if (ui_is_hand_preoccupied((handed_)i, id, false))
+			continue;
 		bool was_focused = skui_hand[i].focused_prev == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
@@ -560,6 +563,15 @@ bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
 	if (skui_show_volumes)
 		render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
 	return bounds_line_contains(box, pt, pt_prev);
+}
+
+
+///////////////////////////////////////////
+
+bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused) {
+	const ui_hand_t &h = skui_hand[hand];
+	return (include_focused && h.focused_prev != 0 && h.focused_prev != for_el_id)
+		|| (h.active_prev  != 0 && h.active_prev  != for_el_id);
 }
 
 ///////////////////////////////////////////
@@ -1038,9 +1050,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	static quat start_aff_rot[2] = { quat_identity,quat_identity };
 	static vec3 start_palm_pos[2] = {};
 	static quat start_palm_rot[2] = { quat_identity,quat_identity };
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		// Skip this if something else has some focus!
-		if (!skui_hand[i].tracked || (skui_hand[i].focused_prev != 0 && skui_hand[i].focused_prev != id))
+		if (ui_is_hand_preoccupied((handed_)i, id, true))
 			continue;
 
 		const hand_t &hand = input_hand((handed_)i);
@@ -1083,6 +1095,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
+				skui_hand[i].focused = id;
 
 				quat dest_rot;
 				vec3 dest_pos;
