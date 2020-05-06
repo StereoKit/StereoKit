@@ -267,10 +267,6 @@ void input_hand_update() {
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
-			
-			// draw hand rays
-			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
-			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, {50, 50, 50, 0}, 0.002f);
 		}
 
 		// Update hand physics

@@ -338,6 +338,12 @@ void ui_update() {
 
 		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
+
+		// draw hand rays
+		if (skui_hand[i].focused_prev == 0) {
+			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
+			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
+		}
 	}
 
 	//char text[80];
@@ -1101,6 +1107,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						// Reset id to zero if we found a window that's within touching distance
 						ui_focus_set((handed_)i, 0, 10);
 					}
+					// If it was the item that won focus last frame, lets go with it!
 					if (skui_hand[i].focused_prev == id) {
 						matrix_mul_point(to_local, window_world);
 						line_add(far_ray.pos*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
