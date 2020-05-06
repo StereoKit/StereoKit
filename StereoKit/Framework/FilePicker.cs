@@ -191,17 +191,20 @@ namespace StereoKit.Framework
 		void ShowPath()
 		{
 			UI.Label("...\\");
+			UI.SameLine();
+			float width = UI.AreaRemaining.x;
 			for (int i = Math.Max(0, _separatedPath.Length - 3); i < _separatedPath.Length; i++)
 			{
-				UI.SameLine();
-				if (UI.Button(_separatedPath[i]))
+				if (UI.Button(_separatedPath[i], new Vec2(width/3, UI.LineHeight)))
 				{
 					string newPath = "";
 					for (int t = 0; t <= i; t++)
 						newPath += _separatedPath[t] + Path.DirectorySeparatorChar;
 					UpdateFolder(newPath);
 				}
+				UI.SameLine();
 			}
+			UI.NextLine();
 		}
 
 		void ShowOpenFile()

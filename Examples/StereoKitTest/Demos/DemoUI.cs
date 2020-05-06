@@ -64,7 +64,7 @@ class DemoUI : ITest
         /// We'll also use a toggle to turn the window's header on and off! The value from that toggle
         /// is passed in here via the showHeader field.
         /// 
-        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader?UIWin.Normal:UIWin.Head);
+        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader?UIWin.Normal:UIWin.Body);
         ///
         /// When you begin a window, all visual elements are now relative to that window! UI takes advantage
         /// of the Hierarchy class and pushes the window's pose onto the Hierarchy stack. Ending the window
