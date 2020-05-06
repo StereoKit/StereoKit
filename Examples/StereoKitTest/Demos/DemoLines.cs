@@ -27,7 +27,7 @@ namespace StereoKitTest
             /// :End:
             Hierarchy.Pop();
 
-            Hierarchy.Push(Matrix.T(0, 0.1f, 0));
+            Hierarchy.Push(Matrix.T(0, 0.1f, -0.5f));
             /// :CodeSample: Lines.Add
             Lines.Add(new LinePoint[]{ 
                 new LinePoint(new Vec3( 0.1f, 0,     0), Color.White, 0.01f),

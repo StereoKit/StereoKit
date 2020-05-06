@@ -88,7 +88,7 @@ class Program
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
         floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
 
-        demoSelectPose.position    = new Vec3(0, 0, -0.25f);
+        demoSelectPose.position    = new Vec3(0, 0, -0.4f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
     }
     static void CommonUpdate()
