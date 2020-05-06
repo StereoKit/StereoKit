@@ -37,6 +37,7 @@ struct hand_state_t {
 	hand_mesh_t mesh;
 	bool        visible;
 	bool        enabled;
+	bool        solid;
 };
 
 struct hand_system_t {
@@ -197,6 +198,7 @@ void input_hand_init() {
 	// Initialize the hands!
 	for (size_t i = 0; i < handed_max; i++) {
 		hand_state[i].visible  = true;
+		hand_state[i].solid    = true;
 		hand_state[i].material = hand_mat;
 		assets_addref(hand_state[i].material->header);
 
@@ -270,9 +272,11 @@ void input_hand_update() {
 		}
 
 		// Update hand physics
-		solid_set_enabled(hand_state[i].solids[0], tracked);
-		if (tracked) {
-			solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
+		if (hand_state[i].solid) {
+			solid_set_enabled(hand_state[i].solids[0], tracked);
+			if (tracked) {
+				solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
+			}
 		}
 	}
 }
@@ -563,6 +567,7 @@ void input_hand_solid(handed_ hand, bool32_t solid) {
 		return;
 	}
 
+	hand_state[hand].solid = solid;
 	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}
