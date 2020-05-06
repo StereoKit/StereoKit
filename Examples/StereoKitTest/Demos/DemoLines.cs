@@ -17,11 +17,13 @@ namespace StereoKitTest
 
         public void Update()
         {
-            /// :CodeSample: Lines.Add
-            Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
-            /// :End:
-            
-            Hierarchy.Push(Matrix.T(0,0.05f,0));
+			Hierarchy.Push(Matrix.T(0, 0, -0.5f));
+			/// :CodeSample: Lines.Add
+			Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
+			/// :End:
+			Hierarchy.Pop();
+
+			Hierarchy.Push(Matrix.T(0,0.05f,-0.5f));
             /// :CodeSample: Lines.Add
             Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, Color.Black, 0.01f);
             /// :End:
