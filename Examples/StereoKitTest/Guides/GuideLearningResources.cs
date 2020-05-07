@@ -27,5 +27,13 @@
 /// height data from an external API, and building a pedestal interface to
 /// interact with the content.
 /// 
+/// ## Test Projects
+/// 
+/// ### [Github Demos folder](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+/// 
+/// These are the demos I build to test StereoKit features and APIs! They 
+/// are occasionally documented, but frequently short and concise. They 
+/// can be great to check out for a focused example of certain parts of 
+/// the API!
 /// 
 /// :End:

@@ -1,37 +1,42 @@
 ---
 layout: default
 title: StereoKit
-description: StereoKit is an easy-to-use mixed reality library for building HoloLens and VR applications with C# and OpenXR!
+description: StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!
 ---
+<table style="max-width:34em;">
+<tr><td style="width:25%;">
+<img src="{{site.url}}/img/StereoKitLogoLight.svg" />
+</td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates">Install</a> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/maluoi/StereoKit/">View Source</a></p></td></tr></table>
 
-StereoKit is an easy-to-use mixed reality library for building HoloLens and VR applications with C# and OpenXR!
+<video autoplay loop muted><source src='{{site.url}}/img/SKHighlightReel.mp4' type='video/mp4'>Your browser doesn't seem to play .mp4s!</video>
 
-The getting started guide [can be found here]({{site.url}}/Pages/Guides/Getting-Started.html)! And a full example StereoKit application [can be found here on Github](https://github.com/maluoi/StereoKit-PaintTutorial)!
+## StereoKit Features:
+
+- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, eventually everywhere OpenXR is!
+- Builds your application in seconds, not minutes
+- Input: articulated hands, pointers, keyboard/mouse
+- Easy and powerful UI and interactions
+- Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, procedural
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
+- Runtime asset loading
+- Physics
+- Performance-by-default render pipeline
+- Flexible shader/material system
+- Documentation is generated directly from the source code, including screenshots
+
+## About
+
+StereoKit prioritizes mixed reality application development above all else! This allows us to focus on features such as a first class mixed reality input system, fast performance by default even on mobile devices, quick iteration time on-device, and a runtime asset pipeline that lets users and developers load real assets from the file-system. All of this and more are packaged in a terse API that's well documented, easy to learn, and easy to write.
 
 StereoKit is ready to use, but still early in its life! Keep track on [Twitter](https://twitter.com/koujaku/) for development news and gifs, or check [this blog](https://playdeck.net/project/stereokit) for more substantial updates! Can't find a feature you need for your project? Request it on [the issues page](https://github.com/maluoi/StereoKit/issues), and we'll prioritize getting you up and running!
 
-StereoKit is designed to solve issues that occur when using a game engine to create a Mixed Reality application or tool. Game engines are one of the few places you can currently go to get rendering functionality out of the box, but they lack features that would really streamline MR application development!
-
-![Screenshot]({{site.screen_url}}/FeatureImage.jpg)
-
-StereoKit Features:
-- Model formats: .gltf, .glb, .obj, .stl, procedural
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
-- Runtime asset loading
-- Platforms: HoloLens 2, Windows Mixed Reality, eventually everywhere OpenXR is!
-- Builds your application in seconds, not minutes
-- Input: articulated hands, pointers, keyboard/mouse
-- Physics
-- Easy and powerful UI and interactions
-- Performance-by-default render pipeline
-- Flexible shader/material system
-- All of the documentation is tested and generated from code, including screenshots
-
 ## Getting started
 
-Follow [this guide]({{site.url}}/Pages/Guides/Getting-Started.html) for a detailed introduction! This repository is the raw source for those who wish to build StereoKit themselves, the Visul Studio templates and the NuGet packages referenced in the guide are how most people should build their applications! 
+Follow [this guide]({{site.url}}/Pages/Guides/Getting-Started.html) for a detailed introduction! Or check out the [additional learning resources]({{site.url}}/Pages/Guides/Learning-Resources.html), sample projects that show how to build full StereoKit applications.
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
+
+![Hello World]({{site.url}}/img/StereoKitMin.gif)
 
 Interested in the [source for StereoKit](https://github.com/maluoi/StereoKit)? It's open and MIT licensed! You don't need to build from source to use it, but if you want to, it's there for you to modify or debug with!
 
