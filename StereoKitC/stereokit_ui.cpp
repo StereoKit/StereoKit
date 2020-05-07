@@ -1099,7 +1099,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				if (bounds_ray_intersect(box, far_ray, &at)) {
 					vec3  window_world = hierarchy_to_world_point(vec3_zero);
 					float curr_mag     = vec3_magnitude_sq(input_head_pose.position - window_world);
-					bool  inside_range = curr_mag > 0.8f * 0.8f;
+					bool  inside_range = curr_mag > 0.75f * 0.75f;
 					if (inside_range) {
 						// Add this window, but prioritize it based on its distance
 						ui_focus_set((handed_)i, id, curr_mag + 10);

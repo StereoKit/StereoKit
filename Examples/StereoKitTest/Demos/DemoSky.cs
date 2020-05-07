@@ -23,7 +23,9 @@ namespace StereoKitTest
         static Pose        windowPose = new Pose(new Vec3(0,0.1f,-0.3f), Quat.LookDir(-Vec3.Forward));
         static LightMode   mode       = LightMode.Lights;
         static Tex         cubemap    = null;
+		static Pose        previewPose = new Pose(0,-0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 
+		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
         Mesh       lightMesh     = Mesh.GenerateSphere(1);
         Material   lightProbeMat = Default.Material;
         Material   lightSrcMat   = new Material(Default.ShaderUnlit);
@@ -67,6 +69,8 @@ namespace StereoKitTest
             UI.WindowEnd();
 
             lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
+			UI.Handle("Preview", ref previewPose, previewModel.Bounds*0.1f);
+			previewModel.Draw(previewPose.ToMatrix(0.1f));
 
             if (mode == LightMode.Lights)
             { 

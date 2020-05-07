@@ -448,6 +448,11 @@ namespace StereoKit
 		/// <summary>Has the button just been released this frame?</summary>
 		/// <returns>True if released, false if not.</returns>
 		public static bool IsJustInactive(this BtnState state) => (state & BtnState.JustInactive) > 0;
+		/// <summary>Was the button either presses or released this frame?
+		/// </summary>
+		/// <returns>True if the state just changed this frame, false if not.
+		/// </returns>
+		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
