@@ -6,6 +6,6 @@ description: This display is opaque, with no view into the real world! This is e
 # [Display]({{site.url}}/Pages/Reference/Display.html).Opaque
 
 ## Description
-This display is opaque, with no view into the real world! This is equivalent
-to a VR headset, or a PC screen.
+This display is opaque, with no view into the real world!
+This is equivalent to a VR headset, or a PC screen.
 

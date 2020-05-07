@@ -33,10 +33,11 @@ same id, but a window cannot use the same id twice.
 
 |  |  |
 |--|--|
-|[AffordanceBegin]({{site.url}}/Pages/Reference/UI/AffordanceBegin.html)|This begins a new UI group with its own layout! Much like a window, except with a more flexible handle, and no header. You can draw the handle, but it will have no text on it.|
-|[AffordanceEnd]({{site.url}}/Pages/Reference/UI/AffordanceEnd.html)|Finishes an affordance! Must be called after UI.AffordanceBegin() and all elements have been drawn.|
 |[Button]({{site.url}}/Pages/Reference/UI/Button.html)|A pressable button! A button will expand to fit the text provided to it, vertically and horizontally. Text is re-used as the id. Will return true only on the first frame it is pressed!|
 |[ButtonRound]({{site.url}}/Pages/Reference/UI/ButtonRound.html)|A pressable button! A button will expand to fit the text provided to it, vertically and horizontally. Text is re-used as the id. Will return true only on the first frame it is pressed!|
+|[Handle]({{site.url}}/Pages/Reference/UI/Handle.html)|This begins and ends a handle so you can just use  its grabbable/moveable functionality! Behaves much like a window, except with a more flexible handle, and no header. You can draw the handle, but it will have no text on it. Returns true for every frame the user is grabbing the handle.|
+|[HandleBegin]({{site.url}}/Pages/Reference/UI/HandleBegin.html)|This begins a new UI group with its own layout! Much like a window, except with a more flexible handle, and no header. You can draw the handle, but it will have no text on it. Returns true for every frame the user is grabbing the handle.|
+|[HandleEnd]({{site.url}}/Pages/Reference/UI/HandleEnd.html)|Finishes a handle! Must be called after UI.HandleBegin() and all elements have been drawn.|
 |[HSlider]({{site.url}}/Pages/Reference/UI/HSlider.html)|A horizontal slider element! You can stick your finger in it, and slide the value up and down.|
 |[Image]({{site.url}}/Pages/Reference/UI/Image.html)|Adds an image to the UI!|
 |[IsInteracting]({{site.url}}/Pages/Reference/UI/IsInteracting.html)|Tells if the user is currently interacting with a UI element! This will be true if the hand has an active or focused UI element.|

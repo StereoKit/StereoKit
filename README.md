@@ -1,6 +1,6 @@
 ![StereoKit Logo](/Documentation/img/StereoKitWide.svg)
 
-An easy-to-use mixed reality library for building HoloLens and VR applications with C# and OpenXR!
+StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!
 
 The getting started guide [can be found here](https://stereokit.net/Pages/Guides/Getting-Started.html)!
 
@@ -8,20 +8,20 @@ StereoKit is ready to use, but still early in its life! Check out [this Twitter 
 
 StereoKit is designed to solve issues that occur when using a game engine to create a Mixed Reality application or tool. Game engines are one of the few places you can currently go to get rendering functionality out of the box, but they lack features that would really streamline MR application development!
 
-![Screenshot](/Documentation/img/SKScreenshot1.jpg)
+![Screenshot](/Documentation/img/FeatureImage.jpg)
 
 StereoKit Features:
-- Model formats: .gltf, .glb, .obj, .stl, procedural
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
-- Runtime asset loading
-- Platforms: HoloLens 2, Windows Mixed Reality, eventually everywhere OpenXR is!
+- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, eventually everywhere OpenXR is!
 - Builds your application in seconds, not minutes
 - Input: articulated hands, pointers, keyboard/mouse
+- Easy and powerful UI and interactions
+- Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, procedural
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
+- Runtime asset loading
 - Physics
-- Easy but powerful UI and interactions
 - Performance-by-default render pipeline
 - Flexible shader/material system
-- All of the [Documentation](https://stereokit.net/) is tested and generated from code, including screenshots
+- [Documentation](https://stereokit.net/) is generated directly from the source code, including screenshots
 
 ## Getting started
 

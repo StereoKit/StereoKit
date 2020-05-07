@@ -5,9 +5,9 @@ description: This class contains some convenience math functions! StereoKit typi
 ---
 # SKMath
 
-This class contains some convenience math functions! StereoKit
-typically uses floats instead of doubles, so you won't need to cast to
-and from using these methods.
+This class contains some convenience math functions!
+StereoKit typically uses floats instead of doubles, so you won't need
+to cast to and from using these methods.
 
 
 
@@ -24,8 +24,10 @@ and from using these methods.
 
 |  |  |
 |--|--|
+|[AngleDist]({{site.url}}/Pages/Reference/SKMath/AngleDist.html)|Calculates the minimum angle 'distance' between two angles. This covers wraparound cases like: the minimum distance between 10 and 350 is 20. Only works on angles in the range of 0-360.|
 |[Cos]({{site.url}}/Pages/Reference/SKMath/Cos.html)|Same as Math.Cos|
 |[Exp]({{site.url}}/Pages/Reference/SKMath/Exp.html)|Same as Math.Exp|
+|[Lerp]({{site.url}}/Pages/Reference/SKMath/Lerp.html)|Blends (Linear Interpolation) between two scalars, based on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp percent for you.|
 |[Sin]({{site.url}}/Pages/Reference/SKMath/Sin.html)|Same as Math.Sin|
 |[Sqrt]({{site.url}}/Pages/Reference/SKMath/Sqrt.html)|Same as Math.Sqrt|
 

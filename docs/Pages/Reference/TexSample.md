@@ -5,9 +5,10 @@ description: How does the shader grab pixels from the texture? Or more specifica
 ---
 # TexSample
 
-How does the shader grab pixels from the texture? Or more specifically,
-how does the shader grab colors between the provided pixels? If you'd like an
-in-depth explanation of these topics, check out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+How does the shader grab pixels from the texture? Or more
+specifically, how does the shader grab colors between the provided
+pixels? If you'd like an in-depth explanation of these topics, check
+out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
 by graphics wizard Ben Golus.
 
 

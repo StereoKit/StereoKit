@@ -6,7 +6,8 @@ description: This texture will generate mip-maps any time the contents change. M
 # [TexType]({{site.url}}/Pages/Reference/TexType.html).Mips
 
 ## Description
-This texture will generate mip-maps any time the contents change. Mip-maps
-are a list of textures that are each half the size of the one before them! This is
-used to prevent textures from 'sparkling' or aliasing in the distance.
+This texture will generate mip-maps any time the contents
+change. Mip-maps are a list of textures that are each half the
+size of the one before them! This is used to prevent textures from
+'sparkling' or aliasing in the distance.
 

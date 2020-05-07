@@ -5,7 +5,8 @@ description: This describes the type of display tech used on a Mixed Reality dev
 ---
 # Display
 
-This describes the type of display tech used on a Mixed Reality device.
+This describes the type of display tech used on a Mixed
+Reality device.
 
 
 

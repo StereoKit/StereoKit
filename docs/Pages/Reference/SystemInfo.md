@@ -12,7 +12,9 @@ Information about a system's capabilities and properties!
 
 |  |  |
 |--|--|
+|int [displayHeight]({{site.url}}/Pages/Reference/SystemInfo/displayHeight.html)|Height of the display surface, in pixels! For a stereo display, this will be the height of a single eye.|
 |[Display]({{site.url}}/Pages/Reference/Display.html) [displayType]({{site.url}}/Pages/Reference/SystemInfo/displayType.html)|The type of display this device has.|
+|int [displayWidth]({{site.url}}/Pages/Reference/SystemInfo/displayWidth.html)|Width of the display surface, in pixels! For a stereo display, this will be the width of a single eye.|
 
 
 

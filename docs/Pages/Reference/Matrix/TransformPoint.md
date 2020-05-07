@@ -14,8 +14,8 @@ description: Transforms a point through the Matrix! This is basically just multi
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) point|The point to transform.|
 |RETURNS: [Vec3]({{site.url}}/Pages/Reference/Vec3.html)|The point transformed by the Matrix.|
 
-Transforms a point through the Matrix! This is basically just multiplying
-a vector (x,y,z,1) with the Matrix.
+Transforms a point through the Matrix! This is basically
+just multiplying a vector (x,y,z,1) with the Matrix.
 
 
 

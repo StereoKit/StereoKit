@@ -49,7 +49,7 @@ We'll also use a toggle to turn the window's header on and off! The value from t
 is passed in here via the showHeader field.
 
 ```csharp
-UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * Units.cm2m, showHeader);
+UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader?UIWin.Normal:UIWin.Body);
 ```
 
 When you begin a window, all visual elements are now relative to that window! UI takes advantage
@@ -77,7 +77,7 @@ the `step` value to 0!
 ```csharp
 UI.Label("Slide");
 UI.SameLine();
-UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * Units.mm2m);
+UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * U.mm);
 ```
 
 Here's how you use a simple button! Just check it with an 'if'. Any UI method
@@ -101,7 +101,7 @@ UI.WindowEnd();
 
 Mixed Reality also provides us with the opportunity to turn objects into interfaces!
 Instead of using the old 'window' paradigm, we can create 3D models and apply UI
-elements to their surface! StereoKit uses 'affordances' to accomplish this, a grabbable
+elements to their surface! StereoKit uses 'handles' to accomplish this, a grabbable
 area that behaves much like a window, but with a few more options for customizing
 layout and size.
 
@@ -114,11 +114,11 @@ Model clipboard = Model.FromFile("Clipboard.glb");
 And, similar to the window previously, here's how you would turn it into a grabbable
 interface! This behaves the same, except we're defining where the grabbable region is
 specifically, and then drawing our own model instead of a plain bar. You'll also notice
-we're drawing using an identity matrix. This takes advantage of how AffordanceBegin
-pushes the affordance's pose onto the Hierarchy transform stack!
+we're drawing using an identity matrix. This takes advantage of how HandleBegin
+pushes the handle's pose onto the Hierarchy transform stack!
 
 ```csharp
-UI.AffordanceBegin("Clip", ref clipboardPose, clipboard.Bounds);
+UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
 Renderer.Add(clipboard, Matrix.Identity);
 ```
 
@@ -127,16 +127,16 @@ elements will go. This is different for each model, so you'll need to plan this 
 the size of your object!
 
 ```csharp
-UI.LayoutArea(new Vec3(12, 13, 0) * Units.cm2m, new Vec2(24, 30) * Units.cm2m);
+UI.LayoutArea(new Vec3(12, 15, 0) * U.cm, new Vec2(24, 30) * U.cm);
 ```
 
 Then after that? We can just add UI elements like normal!
 
 ```csharp
-UI.Image(logoSprite, new Vec2(22,0) * Units.cm2m);
+UI.Image(logoSprite, new Vec2(22,0) * U.cm);
 
 UI.Toggle("Toggle", ref clipToggle);
-UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * Units.cm2m);
+UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * U.cm);
 ```
 
 And while we're at it, here's a quick example of doing a radio button group! Not much
@@ -151,10 +151,10 @@ UI.SameLine();
 if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
 ```
 
-As with windows, Affordances need an End call.
+As with windows, Handles need an End call.
 
 ```csharp
-UI.AffordanceEnd();
+UI.HandleEnd();
 ```
 
 And there you go! That's how UI works in StereoKit, pretty simple, huh?

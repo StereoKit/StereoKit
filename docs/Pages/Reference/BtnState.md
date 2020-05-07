@@ -22,3 +22,19 @@ A bit-flag for the current state of a button input.
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [JustInactive]({{site.url}}/Pages/Reference/BtnState/JustInactive.html)|Has the button just been released? Only true for a single frame.|
 
 
+
+## Examples
+
+```csharp
+BtnState state = Input.Hand(Handed.Right).pinch;
+
+// You can check a BtnState using bit-flag logic
+if ((state & BtnState.Changed) > 0)
+	Log.Info("Pinch state just changed!");
+
+// Or you can check the same values with the extension methods, no
+// bit flag logic :)
+if (state.IsChanged())
+	Log.Info("Pinch state just changed!");
+```
+

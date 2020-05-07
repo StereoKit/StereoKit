@@ -17,6 +17,26 @@ description: A basic constructor, just copies the values in!
 |float w|W component of the vector.|
 
 A basic constructor, just copies the values in!
+<div class='signature' markdown='1'>
+ Vec4([Vec3]({{site.url}}/Pages/Reference/Vec3.html) xyz, float w)
+</div>
+
+|  |  |
+|--|--|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) xyz|X, Y and Z components of the vector.|
+|float w|W component of the vector.|
+
+A basic constructor, just copies the values in!
+<div class='signature' markdown='1'>
+ Vec4([Vec2]({{site.url}}/Pages/Reference/Vec2.html) xy, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) zw)
+</div>
+
+|  |  |
+|--|--|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) xy|X and Y components of the vector.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) zw|Z and W components of the vector.|
+
+A basic constructor, just copies the values in!
 
 
 

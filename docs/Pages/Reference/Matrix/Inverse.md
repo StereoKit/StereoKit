@@ -13,8 +13,8 @@ description: Creates an inverse matrix! If the matrix takes a point from a -> b,
 |--|--|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|An inverse matrix of the current one.|
 
-Creates an inverse matrix! If the matrix takes a point from a -> b, then
-its inverse takes the point from b -> a.
+Creates an inverse matrix! If the matrix takes a point
+from a -> b, then its inverse takes the point from b -> a.
 
 
 

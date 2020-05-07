@@ -11,10 +11,11 @@ static void PushId(string rootId)
 
 |  |  |
 |--|--|
-|string rootId|The root id to use until the following PopId call.|
+|string rootId|The root id to use until the following PopId              call.|
 
-Adds a root id to the stack for the following UI elements! This id is combined
-when hashing any following ids, to prevent id collisions in separate groups.
+Adds a root id to the stack for the following UI
+elements! This id is combined when hashing any following ids, to
+prevent id collisions in separate groups.
 
 
 

@@ -4,6 +4,7 @@ var documents =
 		{name : 'Guides',
 		 pages: [
 			{name : 'Getting Started'},
+			{name : 'Learning Resources'},
 			{name : 'User Interface'},
 			{name : 'Using Hands'},
 		]
@@ -34,6 +35,7 @@ var documents =
 			{name : 'BtnStateExtensions',
 			 pages: [
 				{name : 'IsActive'},
+				{name : 'IsChanged'},
 				{name : 'IsJustActive'},
 				{name : 'IsJustInactive'},
 			]
@@ -58,6 +60,8 @@ var documents =
 			 pages: [
 				{name : 'a'},
 				{name : 'b'},
+				{name : 'Black'},
+				{name : 'BlackTransparent'},
 				{name : 'g'},
 				{name : 'r'},
 				{name : 'White'},
@@ -70,26 +74,30 @@ var documents =
 				{name : 'None'},
 			]
 			},
-			{name : 'DefaultIds',
+			{name : 'Default',
 			 pages: [
-				{name : 'cubemap'},
-				{name : 'font'},
-				{name : 'material'},
-				{name : 'materialEquirect'},
-				{name : 'materialFont'},
-				{name : 'materialHand'},
-				{name : 'materialUI'},
-				{name : 'quad'},
-				{name : 'shader'},
-				{name : 'shaderEquirect'},
-				{name : 'shaderFont'},
-				{name : 'shaderPbr'},
-				{name : 'shaderUnlit'},
-				{name : 'tex'},
-				{name : 'texBlack'},
-				{name : 'texFlat'},
-				{name : 'texGray'},
-				{name : 'texRough'},
+				{name : 'Cubemap'},
+				{name : 'Material'},
+				{name : 'MaterialEquirect'},
+				{name : 'MaterialFont'},
+				{name : 'MaterialHand'},
+				{name : 'MaterialUI'},
+				{name : 'MeshCube'},
+				{name : 'MeshQuad'},
+				{name : 'MeshSphere'},
+				{name : 'Shader'},
+				{name : 'ShaderEquirect'},
+				{name : 'ShaderFont'},
+				{name : 'ShaderPbr'},
+				{name : 'ShaderUI'},
+				{name : 'ShaderUnlit'},
+				{name : 'SoundClick'},
+				{name : 'SoundUnclick'},
+				{name : 'Tex'},
+				{name : 'TexBlack'},
+				{name : 'TexFlat'},
+				{name : 'TexGray'},
+				{name : 'TexRough'},
 			]
 			},
 			{name : 'Display',
@@ -256,6 +264,7 @@ var documents =
 				{name : 'B'},
 				{name : 'Backspace'},
 				{name : 'C'},
+				{name : 'CapsLock'},
 				{name : 'Ctrl'},
 				{name : 'D'},
 				{name : 'Decimal'},
@@ -377,6 +386,7 @@ var documents =
 				{name : 'QueueOffset'},
 				{name : 'Shader'},
 				{name : 'Transparency'},
+				{name : 'Wireframe'},
 				{name : 'Material'},
 				{name : 'Copy'},
 				{name : 'Find'},
@@ -416,6 +426,7 @@ var documents =
 				{name : 'T'},
 				{name : 'TransformDirection'},
 				{name : 'TransformPoint'},
+				{name : 'TransformRay'},
 				{name : 'TRS'},
 				{name : 'TS'},
 			]
@@ -423,6 +434,7 @@ var documents =
 			{name : 'Mesh',
 			 pages: [
 				{name : 'Bounds'},
+				{name : 'KeepData'},
 				{name : 'Mesh'},
 				{name : 'Draw'},
 				{name : 'Find'},
@@ -444,6 +456,7 @@ var documents =
 				{name : 'Draw'},
 				{name : 'Find'},
 				{name : 'FromFile'},
+				{name : 'FromMemory'},
 				{name : 'FromMesh'},
 				{name : 'GetMaterial'},
 				{name : 'GetMesh'},
@@ -517,11 +530,13 @@ var documents =
 				{name : 'direction'},
 				{name : 'position'},
 				{name : 'Ray'},
+				{name : 'FromTo'},
 				{name : 'Intersect'},
 			]
 			},
 			{name : 'Renderer',
 			 pages: [
+				{name : 'CameraRoot'},
 				{name : 'EnableSky'},
 				{name : 'SkyLight'},
 				{name : 'SkyTex'},
@@ -529,7 +544,6 @@ var documents =
 				{name : 'Blit'},
 				{name : 'Screenshot'},
 				{name : 'SetClip'},
-				{name : 'SetView'},
 			]
 			},
 			{name : 'Runtime',
@@ -541,6 +555,7 @@ var documents =
 			{name : 'Settings',
 			 pages: [
 				{name : 'assetsFolder'},
+				{name : 'disableFlatscreenMRSim'},
 				{name : 'flatscreenHeight'},
 				{name : 'flatscreenPosX'},
 				{name : 'flatscreenPosY'},
@@ -550,9 +565,11 @@ var documents =
 			{name : 'Shader',
 			 pages: [
 				{name : 'Name'},
+				{name : 'Compile'},
 				{name : 'Find'},
 				{name : 'FromFile'},
 				{name : 'FromHLSL'},
+				{name : 'FromMemory'},
 			]
 			},
 			{name : 'SHLight',
@@ -565,8 +582,10 @@ var documents =
 			 pages: [
 				{name : 'Pi'},
 				{name : 'Tau'},
+				{name : 'AngleDist'},
 				{name : 'Cos'},
 				{name : 'Exp'},
+				{name : 'Lerp'},
 				{name : 'Sin'},
 				{name : 'Sqrt'},
 			]
@@ -651,7 +670,9 @@ var documents =
 			},
 			{name : 'SystemInfo',
 			 pages: [
+				{name : 'displayHeight'},
 				{name : 'displayType'},
+				{name : 'displayWidth'},
 			]
 			},
 			{name : 'Tex',
@@ -668,6 +689,7 @@ var documents =
 				{name : 'FromCubemapEquirectangular'},
 				{name : 'FromCubemapFile'},
 				{name : 'FromFile'},
+				{name : 'FromMemory'},
 				{name : 'GenCubemap'},
 				{name : 'SetColors'},
 			]
@@ -684,6 +706,9 @@ var documents =
 				{name : 'Depth16'},
 				{name : 'Depth32'},
 				{name : 'DepthStencil'},
+				{name : 'R16'},
+				{name : 'R32'},
+				{name : 'R8'},
 				{name : 'Rgba128'},
 				{name : 'Rgba32'},
 				{name : 'Rgba32Linear'},
@@ -748,6 +773,14 @@ var documents =
 				{name : 'None'},
 			]
 			},
+			{name : 'U',
+			 pages: [
+				{name : 'cm'},
+				{name : 'km'},
+				{name : 'm'},
+				{name : 'mm'},
+			]
+			},
 			{name : 'UI',
 			 pages: [
 				{name : 'AreaRemaining'},
@@ -755,10 +788,11 @@ var documents =
 				{name : 'LineHeight'},
 				{name : 'Settings'},
 				{name : 'ShowVolumes'},
-				{name : 'AffordanceBegin'},
-				{name : 'AffordanceEnd'},
 				{name : 'Button'},
 				{name : 'ButtonRound'},
+				{name : 'Handle'},
+				{name : 'HandleBegin'},
+				{name : 'HandleEnd'},
 				{name : 'HSlider'},
 				{name : 'Image'},
 				{name : 'IsInteracting'},
@@ -781,6 +815,7 @@ var documents =
 			 pages: [
 				{name : 'Exact'},
 				{name : 'FaceUser'},
+				{name : 'PosOnly'},
 			]
 			},
 			{name : 'UISettings',
@@ -790,6 +825,14 @@ var documents =
 				{name : 'depth'},
 				{name : 'gutter'},
 				{name : 'padding'},
+			]
+			},
+			{name : 'UIWin',
+			 pages: [
+				{name : 'Body'},
+				{name : 'Empty'},
+				{name : 'Head'},
+				{name : 'Normal'},
 			]
 			},
 			{name : 'Units',
@@ -811,6 +854,11 @@ var documents =
 				{name : 'y'},
 				{name : 'Zero'},
 				{name : 'Vec2'},
+				{name : 'Angle'},
+				{name : 'AngleBetween'},
+				{name : 'Distance'},
+				{name : 'DistanceSq'},
+				{name : 'Dot'},
 				{name : 'Normalize'},
 				{name : 'Normalized'},
 			]

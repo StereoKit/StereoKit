@@ -50,3 +50,23 @@ try out the static Color.HSV method instead!
 |[HSV]({{site.url}}/Pages/Reference/Color/HSV.html)|Creates a Red/Green/Blue color from Hue/Saturation/Value information.|
 |[LAB]({{site.url}}/Pages/Reference/Color/LAB.html)|Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models human perception, and has significantly more accurate to perception lightness values, so this is an excellent color space for color operations that wish to preserve color brightness properly. Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1 range. If you hate it, let me know why!|
 
+
+## Examples
+
+```csharp
+// You can create a color using Red, Green, Blue, Alpha values,
+// but it's often a great recipe for making a bad color.
+Color color = new Color(1,0,0,1); // Red
+
+// Hue, Saturation, Value, Alpha is a more natural way of picking
+// colors. The commentdocs have a list of important values for Hue,
+// to make it a little easier to pick the hue you want.
+color = Color.HSV(0, 1, 1, 1); // Red
+
+// And there's a few static colors available if you need 'em.
+color = Color.White;
+
+// You can also implicitly convert Color to a Color32!
+Color32 color32 = color;
+```
+

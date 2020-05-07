@@ -5,10 +5,10 @@ description: This is the texture asset class! This encapsulates 2D images, textu
 ---
 # Tex
 
-This is the texture asset class! This encapsulates 2D images, texture arrays,
-cubemaps, and rendertargets! It can load any image format that stb_image can, (jpg, png,
-tga, bmp, psd, gif, hdr, pic) plus more later on, and you can also create textures
-procedurally.
+This is the texture asset class! This encapsulates 2D images,
+texture arrays, cubemaps, and rendertargets! It can load any image
+format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
+plus more later on, and you can also create textures procedurally.
 
 
 
@@ -41,5 +41,6 @@ procedurally.
 |[FromCubemapEquirectangular]({{site.url}}/Pages/Reference/Tex/FromCubemapEquirectangular.html)|Creates a cubemap texture from a single equirectangular image! You know, the ones that look like an unwrapped globe with the poles all streetched out. It uses some fancy shaders and texture blitting to create 6 faces from the equirectangular image.|
 |[FromCubemapFile]({{site.url}}/Pages/Reference/Tex/FromCubemapFile.html)|Creates a cubemap texture from 6 different image files! If you have a single equirectangular image, use Tex.FromEquirectangular instead. Asset Id will be the first filename.|
 |[FromFile]({{site.url}}/Pages/Reference/Tex/FromFile.html)|Loads an image file directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the same as the filename.|
+|[FromMemory]({{site.url}}/Pages/Reference/Tex/FromMemory.html)|Loads an image file stored in memory directly into a texture! Supported formats are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the same as the filename.|
 |[GenCubemap]({{site.url}}/Pages/Reference/Tex/GenCubemap.html)|Generates a cubemap texture from a gradient and a direction! These are entirely suitable for skyboxes, which you can set via Renderer.SkyTex.|
 
