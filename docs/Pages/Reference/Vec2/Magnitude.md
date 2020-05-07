@@ -6,6 +6,7 @@ description: Magnitude is the length of the vector! Or the distance from the ori
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).Magnitude
 
 ## Description
-Magnitude is the length of the vector! Or the distance from the origin
-to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.
+Magnitude is the length of the vector! Or the distance
+from the origin to this point. Uses Math.Sqrt, so it's not dirt
+cheap or anything.
 

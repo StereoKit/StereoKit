@@ -94,7 +94,8 @@ void assets_set_id(asset_header_t &header, const char *id) {
 
 void assets_set_id(asset_header_t &header, uint64_t id) {
 #if _DEBUG
-	assert(assets_find(id, header.type) == nullptr);
+	asset_header_t *other = (asset_header_t *)assets_find(id, header.type);
+	assert(other == nullptr);
 #endif
 	header.id = id;
 }
@@ -166,7 +167,7 @@ const char *assets_file(const char *file_name) {
 		ch++;
 	}
 
-	sprintf_s(assets_file_buffer, "%s\\%s", sk_settings.assets_folder, file_name);
+	sprintf_s(assets_file_buffer, "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
 }
 

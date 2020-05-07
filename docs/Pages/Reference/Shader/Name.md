@@ -6,5 +6,6 @@ description: The name of the shader, provided in the shader file itself. Not the
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).Name
 
 ## Description
-The name of the shader, provided in the shader file itself. Not the filename or id.
+The name of the shader, provided in the shader file
+itself. Not the filename or id.
 

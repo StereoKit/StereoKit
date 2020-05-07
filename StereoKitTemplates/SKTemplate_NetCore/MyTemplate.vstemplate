@@ -21,6 +21,9 @@
   <TemplateContent>
     <Project TargetFileName="SKTemplate_NetCore.csproj" File="SKTemplate_NetCore.csproj" ReplaceParameters="true">
       <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
+      <Folder Name="Assets">
+        <ProjectItem ReplaceParameters="false" TargetFileName="floor.hlsl">floor.hlsl</ProjectItem>
+      </Folder>
     </Project>
   </TemplateContent>
 </VSTemplate>

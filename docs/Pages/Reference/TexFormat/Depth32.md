@@ -6,6 +6,6 @@ description: 32 bits of data per depth value! This is pretty detailed, and is ex
 # [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html).Depth32
 
 ## Description
-32 bits of data per depth value! This is pretty detailed, and is excellent for experiences
-that have a very far view distance.
+32 bits of data per depth value! This is pretty detailed,
+and is excellent for experiences that have a very far view distance.
 

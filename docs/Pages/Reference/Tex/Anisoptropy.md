@@ -6,6 +6,7 @@ description: When SampleMode is set to Anisotropic, this is the number of sample
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Anisoptropy
 
 ## Description
-When SampleMode is set to Anisotropic, this is the number of samples the GPU takes to figure
-out the correct color. Default is 4, and 16 is pretty high.
+When SampleMode is set to Anisotropic, this is the number
+of samples the GPU takes to figure out the correct color. Default
+is 4, and 16 is pretty high.
 

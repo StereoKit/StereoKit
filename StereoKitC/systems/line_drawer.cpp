@@ -25,10 +25,11 @@ bool line_drawer_init() {
 	line_mesh = mesh_create();
 	mesh_set_id(line_mesh, "render/line_mesh");
 
-	shader_t line_shader = shader_create(sk_shader_builtin_lines);
+	shader_t line_shader = shader_create_mem((void*)shader_builtin_lines, sizeof(shader_builtin_lines));
 	shader_set_id(line_shader, "render/line_shader");
 	line_material = material_create(line_shader);
 	material_set_id(line_material, "render/line_material");
+	material_set_transparency(line_material, transparency_blend);
 	shader_release(line_shader);
 	return true;
 }

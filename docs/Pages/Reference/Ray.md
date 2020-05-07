@@ -5,8 +5,9 @@ description: A position and a direction indicating a ray through space! This is 
 ---
 # Ray
 
-A position and a direction indicating a ray through space! This
-is a great tool for intersection testing with geometrical shapes.
+A position and a direction indicating a ray through space!
+This is a great tool for intersection testing with geometrical
+shapes.
 
 
 ## Instance Fields and Properties
@@ -25,4 +26,10 @@ is a great tool for intersection testing with geometrical shapes.
 |[Intersect]({{site.url}}/Pages/Reference/Ray/Intersect.html)|Checks the intersection of this ray with a plane!|
 
 
+
+## Static Methods
+
+|  |  |
+|--|--|
+|[FromTo]({{site.url}}/Pages/Reference/Ray/FromTo.html)|A convenience function that creates a ray from point a, towards point b. Resulting direction is not normalized.|
 

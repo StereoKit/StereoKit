@@ -6,6 +6,7 @@ description: This texture can be rendered to! This is great for textures that mi
 # [TexType]({{site.url}}/Pages/Reference/TexType.html).Rendertarget
 
 ## Description
-This texture can be rendered to! This is great for textures that might be
-passed in as a target to Renderer.Blit, or other such situations.
+This texture can be rendered to! This is great for textures
+that might be passed in as a target to Renderer.Blit, or other
+such situations.
 

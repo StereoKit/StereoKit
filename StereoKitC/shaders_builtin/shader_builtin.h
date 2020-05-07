@@ -1,10 +1,11 @@
 #pragma once
 
-extern const char *sk_shader_builtin_skybox;
-extern const char *sk_shader_builtin_pbr;
-extern const char *sk_shader_builtin_default;
-extern const char *sk_shader_builtin_unlit;
-extern const char *sk_shader_builtin_equirect;
-extern const char *sk_shader_builtin_font;
-extern const char *sk_shader_builtin_lines;
-extern const char *sk_shader_builtin_ui;
+#include "shader_builtin_skybox.h"
+#include "shader_builtin_pbr.h"
+#include "shader_builtin_default.h"
+#include "shader_builtin_unlit.h"
+#include "shader_builtin_equirect.h"
+#include "shader_builtin_font.h"
+#include "shader_builtin_lines.h"
+#include "shader_builtin_ui.h"
+#include "shader_builtin_ui_quadrant.h"

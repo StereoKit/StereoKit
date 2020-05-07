@@ -5,9 +5,9 @@ using StereoKit;
 class Program 
 {
 #if WINDOWS_UWP
-    const string Root = "Assets";
+    public const string Root = "Assets";
 #else
-    const string Root = "../../../Examples/Assets";
+    public const string Root = "../../../Examples/Assets";
 #endif
 
     static Model  floorMesh;
@@ -25,19 +25,19 @@ class Program
     /// somewhere in your application!
     /// 
     /// Here's the code for the window, and log tracking.
-    static Pose         demoLog     = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-    static List<string> demoLogList = new List<string>();
+    static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+    static List<string> logList = new List<string>();
     static void OnLog(LogLevel level, string text)
     {
-        if (demoLogList.Count > 10)
-            demoLogList.RemoveAt(demoLogList.Count - 1);
-        demoLogList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
+        if (logList.Count > 10)
+            logList.RemoveAt(logList.Count - 1);
+        logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
     }
     static void LogWindow()
     {
-        UI.WindowBegin("Log", ref demoLog, new Vec2(40, 0) * Units.cm2m);
-        for (int i = 0; i < demoLogList.Count; i++)
-            UI.Label(demoLogList[i], false);
+        UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
+        for (int i = 0; i < logList.Count; i++)
+            UI.Label(logList[i], false);
         UI.WindowEnd();
     }
     /// :End:
@@ -55,6 +55,7 @@ class Program
         Log.Subscribe(OnLog);
         /// :End:
         Log.Filter = LogLevel.Diagnostic;
+        Log.Write(LogLevel.Diagnostic, "Temp path: " + System.IO.Path.GetTempPath());
         StereoKitApp.settings.assetsFolder = Program.Root;
         if (!StereoKitApp.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.MixedReality,  true))
             Environment.Exit(1);
@@ -79,18 +80,22 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = Default.Material.Copy();
-        floorMat[MatParamName.DiffuseTex] = Tex.FromFile("Floor.png");
-        floorMat[MatParamName.TexScale  ] = 16;
+        Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
+		floorMat.Transparency = Transparency.Blend;
+		floorMat.SetVector("radius", new Vec4(5,10,0,0));
+		floorMat.QueueOffset = -11;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
-        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(20, 1, 20));
+        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
 
-        demoSelectPose.position    = new Vec3(0, 0, -0.25f);
+        demoSelectPose.position    = new Vec3(0, 0, -0.4f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
     }
     static void CommonUpdate()
     {
+		if (Input.Key(Key.Esc).IsJustActive())
+            StereoKitApp.Quit();
+
         // If we can't see the world, we'll draw a floor!
         if (StereoKitApp.System.displayType == Display.Opaque)
             Renderer.Add(floorMesh, floorTr, Color.White);
@@ -100,7 +105,7 @@ class Program
             return;
 
         // Make a window for demo selection
-        UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * Units.cm2m, 0));
+        UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
         for (int i = 0; i < Tests.DemoCount; i++)
         {
             string name = Tests.GetDemoName(i).Substring("Demo".Length);
@@ -130,17 +135,17 @@ class Program
     static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
     static void RulerWindow()
     {
-        UI.AffordanceBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*Units.cm2m), true);
+        UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
         Color32 color = Color.HSV(.6f, 0.5f, 1);
-        Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f) * Units.cm2m, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+        Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
         for (int d = 0; d <= 60; d+=1)
         {
             float x = d/2.0f;
             float size = d%2==0?1f:0.15f;
-            Lines.Add(new Vec3(15-x,2,-.6f)* Units.cm2m, new Vec3(15-x,2-size, -.6f) *Units.cm2m, color, Units.mm2m*0.5f);
+            Lines.Add(new Vec3(15-x,2,-.6f)*U.cm, new Vec3(15-x,2-size, -.6f)*U.cm, color, U.mm*0.5f);
             if (d%2==0 && d/2 != 30)
-                Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f) * Units.cm2m, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+                Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
         }
-        UI.AffordanceEnd();
+        UI.HandleEnd();
     }
 }

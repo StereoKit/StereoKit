@@ -1,9 +1,9 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
+#include "log.h"
 
 #include "systems/render.h"
-#include "systems/d3d.h"
 #include "systems/input.h"
 #include "systems/physics.h"
 #include "systems/system.h"
@@ -173,12 +173,16 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
 
 	sk_initialized = systems_initialize();
+	if (!sk_initialized) log_show_any_fail_reason();
+	else                 log_clear_any_fail_reason();
 	return sk_initialized;
 }
 
 ///////////////////////////////////////////
 
 void sk_shutdown() {
+	log_show_any_fail_reason();
+
 	systems_shutdown();
 	sk_initialized = false;
 }
@@ -198,7 +202,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 250));
+		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 100));
 	return sk_run;
 }
 

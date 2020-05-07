@@ -6,6 +6,7 @@ description: Red/Green/Blue/Transparency data channels, at 16 bits per-channel! 
 # [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html).Rgba64
 
 ## Description
-Red/Green/Blue/Transparency data channels, at 16 bits per-channel! This is not
-common, but you might encounter it with raw photos, or HDR images.
+Red/Green/Blue/Transparency data channels, at 16 bits
+per-channel! This is not common, but you might encounter it with
+raw photos, or HDR images.
 

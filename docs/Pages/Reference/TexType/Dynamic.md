@@ -6,6 +6,7 @@ description: This texture's data will be updated frequently from the CPU (not re
 # [TexType]({{site.url}}/Pages/Reference/TexType.html).Dynamic
 
 ## Description
-This texture's data will be updated frequently from the CPU (not renders)!
-This ensures the graphics card stores it someplace where writes are easy to do quickly.
+This texture's data will be updated frequently from the
+CPU (not renders)! This ensures the graphics card stores it
+someplace where writes are easy to do quickly.
 

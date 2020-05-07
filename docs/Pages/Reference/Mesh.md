@@ -34,6 +34,7 @@ Mesh indices are stored as unsigned shorts, so they cap out at 65,535. This limi
 |  |  |
 |--|--|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Mesh/Bounds.html)|This is a bounding box that encapsulates the Mesh! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh vertices, you can also override this to suit your needs.|
+|bool [KeepData]({{site.url}}/Pages/Reference/Mesh/KeepData.html)|Should StereoKit keep the mesh data on the CPU for later access, or collision detection? Defaults to true. If you set this to false before setting data, the data won't be stored. If you call this after setting data, that stored data will be freed! If you set this to true again later on, it will not contain data until it's set again.|
 
 
 ## Static Methods

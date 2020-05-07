@@ -39,6 +39,10 @@ void input_leap_thread(void *arg);
 ///////////////////////////////////////////
 
 bool hand_leap_present() {
+	// We don't want leap hands in flatscreen
+	if (sk_active_runtime() != runtime_mixedreality)
+		return false;
+
 	if (leap_checked)
 		return leap_has_device;
 	leap_checked = true;
@@ -83,6 +87,15 @@ void hand_leap_update_frame() {
 			memcpy(pose, &leap_hands[i], sizeof(hand_joint_t) * 25);
 			inp_hand.palm  = pose_t{ leap_hands[i][25].position, leap_hands[i][25].orientation };
 			inp_hand.wrist = pose_t{ leap_hands[i][26].position, leap_hands[i][26].orientation };
+
+			pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
+			ptr->tracked = inp_hand.tracked_state;
+			ptr->state   = inp_hand.pinch_state;
+			vec3 ray_from = vec3_lerp(
+				inp_hand.fingers[0][4].position,
+				inp_hand.fingers[1][4].position, 0.3f);
+			ptr->ray = { ray_from, vec3_normalize( ray_from - (input_head_pose.position - vec3_up*0.1f) ) };
+			ptr->orientation = quat_lookat(ptr->ray.pos, ptr->ray.pos + ptr->ray.dir);
 		}
 		leap_lock = false;
 		input_hand_update_meshes();

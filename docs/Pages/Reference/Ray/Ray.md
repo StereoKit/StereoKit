@@ -12,10 +12,10 @@ description: Basic initialization constructor! Just copies the parameters into t
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|The position or origin point of the Ray.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction|The direction the ray is facing, typically does not require being             a unit vector, or normalized direction.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction|The direction the ray is facing,              typically does not require being a unit vector, or normalized              direction.|
 
-Basic initialization constructor! Just copies the parameters
-into the fields.
+Basic initialization constructor! Just copies the
+parameters into the fields.
 
 
 

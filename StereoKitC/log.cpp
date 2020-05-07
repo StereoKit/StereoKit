@@ -1,25 +1,24 @@
 #include "stereokit.h"
-#include "_stereokit.h"
+#include "log.h"
 #include "libraries/stref.h"
+#include "libraries/stb_ds.h"
+#include "systems/platform/platform_utils.h"
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
-#include <string.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-#include <vector>
-using namespace std;
 
 namespace sk {
 
 ///////////////////////////////////////////
 
-vector<void(*)(log_, const char*)> log_listeners;
+typedef void(*log_listener_t)(log_, const char *);
+log_listener_t *log_listeners = nullptr;
 
 log_        log_filter = log_inform;
 log_colors_ log_colors = log_colors_ansi;
+
+char       *log_fail_reason_str = nullptr;
+int32_t     log_fail_confidence = -1;
 
 const char *log_colorkeys_c[] = {
 	"blk",
@@ -180,10 +179,10 @@ void log_write(log_ level, const char *text) {
 		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
 	// Send the plain-text version out to the listeners as well
-	for (size_t i = 0; i < log_listeners.size(); i++) {
+	for (size_t i = 0; i < arrlen( log_listeners ); i++) {
 		log_listeners[i](level, colored_text);
 	}
-	OutputDebugStringA(colored_text);
+	platform_debug_output(colored_text);
 	free(colored_text);
 	
 	free(full_text);
@@ -254,16 +253,61 @@ void log_set_colors(log_colors_ colors) {
 
 ///////////////////////////////////////////
 
+void log_fail_reason(int32_t confidence, const char *fail_reason) {
+	log_err(fail_reason);
+
+	if (confidence <= log_fail_confidence)
+		return;
+
+	free(log_fail_reason_str);
+	log_fail_confidence = confidence;
+	log_fail_reason_str = string_copy(fail_reason);
+}
+
+///////////////////////////////////////////
+
+void log_fail_reasonf(int32_t confidence, const char *fail_reason, ...) {
+	va_list args;
+	va_start(args, fail_reason);
+	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
+	char* buffer = (char*)malloc(length + 2);
+	vsnprintf(buffer, length + 2, fail_reason, args);
+
+	log_fail_reason(confidence, buffer);
+	free(buffer);
+	va_end(args);
+}
+
+///////////////////////////////////////////
+
+void log_show_any_fail_reason() {
+	if (log_fail_confidence == -1)
+		return;
+
+	platform_msgbox_err(log_fail_reason_str, "StereoKit Failure");
+	log_clear_any_fail_reason();
+}
+
+///////////////////////////////////////////
+
+void log_clear_any_fail_reason() {
+	free(log_fail_reason_str);
+	log_fail_confidence = -1;
+	log_fail_reason_str = nullptr;
+}
+
+///////////////////////////////////////////
+
 void log_subscribe(void (*on_log)(log_, const char*)) {
-	log_listeners.push_back(on_log);
+	arrput(log_listeners, on_log);
 }
 
 ///////////////////////////////////////////
 
 void log_unsubscribe(void (*on_log)(log_, const char*)) {
-	for (size_t i = 0; i < log_listeners.size(); i++) {
+	for (size_t i = 0; i < arrlen(log_listeners); i++) {
 		if (log_listeners[i] == on_log) {
-			log_listeners.erase(log_listeners.begin() + i);
+			arrdel(log_listeners, i);
 			break;
 		}
 	}

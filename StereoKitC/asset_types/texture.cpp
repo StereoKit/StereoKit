@@ -1,6 +1,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/d3d.h"
+#include "../systems/platform/platform_utils.h"
 #include "../libraries/stref.h"
 #include "../math.h"
 #include "../spherical_harmonics.h"
@@ -29,7 +30,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
-		log_err("Can't add a zbuffer to a non-rendertarget texture!");
+		log_err("tex_add_zbuffer can't add a zbuffer to a non-rendertarget texture!");
 		return nullptr;
 	}
 
@@ -41,6 +42,23 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 		tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->array_size);
 	}
 	return texture->depth_buffer;
+}
+
+///////////////////////////////////////////
+
+void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
+	if (!(texture->type & tex_type_rendertarget)) {
+		log_err("tex_set_zbuffer can't add a zbuffer to a non-rendertarget texture!");
+		return;
+	}
+	if (!(depth_texture->type & tex_type_depth)) {
+		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
+		return;
+	}
+	assets_addref(depth_texture->header);
+	if (texture->depth_buffer != nullptr)
+		tex_release(texture->depth_buffer);
+	texture->depth_buffer = depth_texture;
 }
 
 ///////////////////////////////////////////
@@ -69,32 +87,53 @@ void tex_set_id(tex_t tex, const char *id) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file(const char *file, bool32_t srgb_data) {
-	tex_t result = tex_find(file);
-	if (result != nullptr)
-		return result;
-
-	bool     is_hdr   = stbi_is_hdr(assets_file(file));
+tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
+	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, data_size);
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *data     =  is_hdr ? 
-		(uint8_t *)stbi_loadf(assets_file(file), &width, &height, &channels, 4):
-		(uint8_t *)stbi_load (assets_file(file), &width, &height, &channels, 4);
+	uint8_t *col_data =  is_hdr ? 
+		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, data_size, &width, &height, &channels, 4):
+		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, data_size, &width, &height, &channels, 4);
 
-	if (data == nullptr) {
-		log_warnf("Couldn't load image file: %s", file);
+	if (col_data == nullptr) {
+		log_warn("Couldn't parse image data!");
 		return nullptr;
 	}
 	tex_format_ format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 	if (is_hdr) format = tex_format_rgba128;
 
-	result = tex_create(tex_type_image, format);
-	
-	tex_set_colors(result, width, height, data);
-	tex_set_id(result, file);
-	free(data);
+	tex_t result = tex_create(tex_type_image, format);
 
+	tex_set_colors(result, width, height, col_data);
+	free(col_data);
+
+	DX11ResType(result->resource, "tex_view");
+	DX11ResType(result->texture,  "tex_src" );
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_file(const char *file, bool32_t srgb_data) {
+	tex_t result = tex_find(file);
+	if (result != nullptr)
+		return result;
+
+	void  *file_data;
+	size_t file_size;
+	if (!platform_read_file(assets_file(file), file_data, file_size))
+		return nullptr;
+
+	result = tex_create_mem(file_data, file_size, srgb_data);
+	free(file_data);
+
+	if (result == nullptr) {
+		log_warnf("Issue loading file [%s]", file);
+		return nullptr;
+	}
+	tex_set_id(result, file);
+	
 	return result;
 }
 
@@ -194,28 +233,6 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 		free(data[i]);
 	}
 
-	return result;
-}
-
-///////////////////////////////////////////
-
-tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
-
-	int      channels = 0;
-	int      width    = 0;
-	int      height   = 0;
-	uint8_t *col_data =  stbi_load_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
-
-	if (col_data == nullptr) {
-		return nullptr;
-	}
-	tex_t result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-
-	tex_set_colors(result, width, height, col_data);
-	free(col_data);
-
-	DX11ResType(result->resource, "tex_view");
-	DX11ResType(result->texture,  "tex_src" );
 	return result;
 }
 
@@ -593,6 +610,9 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 	case tex_format_rgba32_linear: return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case tex_format_rgba64:        return DXGI_FORMAT_R16G16B16A16_UNORM;
 	case tex_format_rgba128:       return DXGI_FORMAT_R32G32B32A32_FLOAT;
+	case tex_format_r8:            return DXGI_FORMAT_R8_UNORM;
+	case tex_format_r16:           return DXGI_FORMAT_R16_UNORM;
+	case tex_format_r32:           return DXGI_FORMAT_R32_FLOAT;
 	case tex_format_depth32:       return DXGI_FORMAT_D32_FLOAT;
 	case tex_format_depth16:       return DXGI_FORMAT_D16_UNORM;
 	case tex_format_depthstencil:  return DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -602,15 +622,36 @@ DXGI_FORMAT tex_get_native_format(tex_format_ format) {
 
 ///////////////////////////////////////////
 
+tex_format_ tex_get_tex_format(DXGI_FORMAT format) {
+	switch (format) {
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return tex_format_rgba32;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:      return tex_format_rgba32_linear;
+	case DXGI_FORMAT_R16G16B16A16_UNORM:  return tex_format_rgba64;
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:  return tex_format_rgba128;
+	case DXGI_FORMAT_R8_UNORM:            return tex_format_r8;
+	case DXGI_FORMAT_R16_UNORM:           return tex_format_r16;
+	case DXGI_FORMAT_R32_FLOAT:           return tex_format_r32;
+	case DXGI_FORMAT_D32_FLOAT:           return tex_format_depth32;
+	case DXGI_FORMAT_D16_UNORM:           return tex_format_depth16;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return tex_format_depthstencil;
+	default: log_errf("tex_get_tex_format received an unrecognized format %d", format); return (tex_format_)0;
+	}
+}
+
+///////////////////////////////////////////
+
 size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
 	case tex_format_depthstencil:
+	case tex_format_r32:
 	case tex_format_rgba32:
 	case tex_format_rgba32_linear: return sizeof(color32);
 	case tex_format_rgba64:        return sizeof(uint16_t)*4;
 	case tex_format_rgba128:       return sizeof(color128);
+	case tex_format_r16:
 	case tex_format_depth16:       return sizeof(uint16_t);
+	case tex_format_r8:            return sizeof(uint8_t);
 	default: return sizeof(color32);
 	}
 }

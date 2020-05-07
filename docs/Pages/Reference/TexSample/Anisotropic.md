@@ -6,6 +6,6 @@ description: This helps reduce texture blurriness when a surface is viewed at an
 # [TexSample]({{site.url}}/Pages/Reference/TexSample.html).Anisotropic
 
 ## Description
-This helps reduce texture blurriness when a surface is viewed at an
-extreme angle!
+This helps reduce texture blurriness when a surface is
+viewed at an extreme angle!
 

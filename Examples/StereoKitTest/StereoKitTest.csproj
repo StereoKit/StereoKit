@@ -83,6 +83,13 @@
   <ItemGroup>
     <Compile Include="DebugToolWindow.cs" />
     <Compile Include="Demos\DemoBasics.cs" />
+    <Compile Include="Demos\DemoRayMesh.cs" />
+    <Compile Include="Docs\DocBounds.cs" />
+    <Compile Include="Docs\DocBtnState.cs" />
+    <Compile Include="Docs\DocColor.cs" />
+    <Compile Include="Guides\GuideLearningResources.cs" />
+    <Compile Include="Tests\TestAssetsFromMemory.cs" />
+    <Compile Include="Tests\TestShaderCompile.cs" />
     <Compile Include="Demos\DemoSound.cs" />
     <Compile Include="Demos\DemoTextures.cs" />
     <Compile Include="Docs\DocDebug.cs" />
@@ -98,6 +105,7 @@
     <Compile Include="Demos\DemoText.cs" />
     <Compile Include="Demos\DemoUI.cs" />
     <Compile Include="Docs\DocHand.cs" />
+    <Compile Include="Tests\TestSingleChannelTextures.cs" />
     <Compile Include="Tests\TestTextureCrash.cs" />
     <None Include="Guides\GuideGettingStarted.cs" />
     <Compile Include="Demos\DemoUISettings.cs" />

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../stereokit.h"
-#include "../asset_types/sprite.h"
 
 namespace sk {
 

@@ -9,8 +9,8 @@ description: Finishes a window! Must be called after UI.WindowBegin() and all el
 static void WindowEnd()
 </div>
 
-Finishes a window! Must be called after UI.WindowBegin() and all elements
-have been drawn.
+Finishes a window! Must be called after UI.WindowBegin()
+and all elements have been drawn.
 
 
 

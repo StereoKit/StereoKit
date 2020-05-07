@@ -17,17 +17,19 @@ namespace StereoKitTest
 
         public void Update()
         {
-            /// :CodeSample: Lines.Add
-            Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
-            /// :End:
-            
-            Hierarchy.Push(Matrix.T(0,0.05f,0));
+			Hierarchy.Push(Matrix.T(0, 0, -0.5f));
+			/// :CodeSample: Lines.Add
+			Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
+			/// :End:
+			Hierarchy.Pop();
+
+			Hierarchy.Push(Matrix.T(0,0.05f,-0.5f));
             /// :CodeSample: Lines.Add
             Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, Color.Black, 0.01f);
             /// :End:
             Hierarchy.Pop();
 
-            Hierarchy.Push(Matrix.T(0, 0.1f, 0));
+            Hierarchy.Push(Matrix.T(0, 0.1f, -0.5f));
             /// :CodeSample: Lines.Add
             Lines.Add(new LinePoint[]{ 
                 new LinePoint(new Vec3( 0.1f, 0,     0), Color.White, 0.01f),
@@ -38,7 +40,7 @@ namespace StereoKitTest
             Hierarchy.Pop();
 
             
-            UI.WindowBegin("Settings", ref windowPose, new Vec2(20,0)*Units.cm2m);
+            UI.WindowBegin("Settings", ref windowPose, new Vec2(20,0)*U.cm);
             if (UI.Button("Clear")) {
                 drawList  .Clear();
                 drawPoints.Clear();
@@ -51,25 +53,25 @@ namespace StereoKitTest
 
         void DrawMenu()
         {
-            UI.AffordanceBegin("PaletteMenu", ref palettePose, paletteModel.Bounds);
+            UI.HandleBegin("PaletteMenu", ref palettePose, paletteModel.Bounds);
             paletteModel.Draw(Matrix.Identity);
 
             Pose p = new Pose(Vec3.Zero, Quat.FromAngles(90, 0, 0));
-            UI.AffordanceBegin("LineSlider", ref p, new Bounds());
-            UI.HSliderAt("Size", ref lineSize, 0.001f, 0.02f, 0, new Vec3(6,-1,0) * Units.cm2m, new Vec2(8,2) * Units.cm2m);
-            Lines.Add(new Vec3(6, 1, -1) * Units.cm2m, new Vec3(-2,1,-1) * Units.cm2m, activeColor, lineSize);
-            UI.AffordanceEnd();
+            UI.HandleBegin("LineSlider", ref p, new Bounds());
+            UI.HSliderAt("Size", ref lineSize, 0.001f, 0.02f, 0, new Vec3(6,-1,0) * U.cm, new Vec2(8,2) * U.cm);
+            Lines.Add(new Vec3(6, 1, -1) * U.cm, new Vec3(-2,1,-1) * U.cm, activeColor, lineSize);
+            UI.HandleEnd();
 
-            if (UI.VolumeAt("White", new Bounds(new Vec3(4, 0, 7) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
+            if (UI.VolumeAt("White", new Bounds(new Vec3(4, 0, 7) * U.cm, new Vec3(4,2,4) * U.cm)))
                 SetColor(Color.White);
-            if (UI.VolumeAt("Red",   new Bounds(new Vec3(9, 0, 3) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
+            if (UI.VolumeAt("Red",   new Bounds(new Vec3(9, 0, 3) * U.cm, new Vec3(4,2,4) * U.cm)))
                 SetColor(new Color(1,0,0));
-            if (UI.VolumeAt("Green", new Bounds(new Vec3(9, 0,-3) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
+            if (UI.VolumeAt("Green", new Bounds(new Vec3(9, 0,-3) * U.cm, new Vec3(4,2,4) * U.cm)))
                 SetColor(new Color(0,1,0));
-            if (UI.VolumeAt("Blue",  new Bounds(new Vec3(3, 0,-6) * Units.cm2m, new Vec3(4,2,4) * Units.cm2m)))
+            if (UI.VolumeAt("Blue",  new Bounds(new Vec3(3, 0,-6) * U.cm, new Vec3(4,2,4) * U.cm)))
                 SetColor(new Color(0,0,1));
 
-            UI.AffordanceEnd();
+            UI.HandleEnd();
         }
         void SetColor(Color color)
         {
@@ -86,7 +88,6 @@ namespace StereoKitTest
             Hand hand = Input.Hand(handed);
             Vec3 tip  = hand[FingerId.Index, JointId.Tip].position;
             tip = prevTip + (tip-prevTip) * 0.3f;
-            const float minDist = 2 * Units.cm2m;
 
             if (hand.IsJustPinched && !UI.IsInteracting(handed)) { 
                 if (drawPoints.Count > 0)

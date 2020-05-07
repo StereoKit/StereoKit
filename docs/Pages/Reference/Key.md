@@ -21,6 +21,7 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [B]({{site.url}}/Pages/Reference/Key/B.html)|b/B|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Backspace]({{site.url}}/Pages/Reference/Key/Backspace.html)|Backspace|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [C]({{site.url}}/Pages/Reference/Key/C.html)|c/C|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [CapsLock]({{site.url}}/Pages/Reference/Key/CapsLock.html)|This behaves a little differently! This tells the toggle state of caps lock, rather than the key state itself.|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Ctrl]({{site.url}}/Pages/Reference/Key/Ctrl.html)|Left or right Control key|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [D]({{site.url}}/Pages/Reference/Key/D.html)|d/D|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Decimal]({{site.url}}/Pages/Reference/Key/Decimal.html)|Numpad '.', NOT the same as character '.'|

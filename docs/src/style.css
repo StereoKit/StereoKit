@@ -69,6 +69,14 @@ p {
     max-width: 30em;
     padding-left: 2em;
 }
+ul {
+    max-width: 30em;
+}
+video {
+    max-width: 30em;
+    padding-left: 2em;
+    padding-top: 2em;
+}
 
 h1:after
 {

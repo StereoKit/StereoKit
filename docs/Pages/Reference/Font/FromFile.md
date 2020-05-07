@@ -31,9 +31,9 @@ In initialization, we can create the style from a font, a size, a
 material, and a base color.
 ```csharp
 style = Text.MakeStyle(
-    Font.FromFile("C:/Windows/Fonts/Gabriola.ttf"), 
-    2 * Units.cm2m,
-    Material.Copy(DefaultIds.materialFont), 
+    Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
+    2 * U.cm,
+lt.MaterialFont.Copy(), 
     Color.HSV(0.05f, 0.7f, 0.8f));
 ```
 Then it's pretty trivial to just draw some text on the screen! Just call

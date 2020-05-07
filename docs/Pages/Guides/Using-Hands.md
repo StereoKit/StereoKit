@@ -81,11 +81,11 @@ public static void DrawHandMenu(Handed handed)
 
     // Position the menu relative to the palm
     Pose menuPose = Input.Hand(handed).palm;
-    menuPose.position += menuPose.Right * offset * Units.cm2m;
-    menuPose.position += menuPose.Up * (size.y/2) * Units.cm2m;
+    menuPose.position += menuPose.Right * offset * U.cm;
+    menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 
     // And make a menu!
-    UI.WindowBegin("HandMenu", ref menuPose, size * Units.cm2m, false);
+    UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, UIWin.Empty);
     UI.Button("Test");
     UI.Button("That");
     UI.Button("Hand");

@@ -6,5 +6,6 @@ description: Creates a flat, Win32 window, and simulates some MR functionality. 
 # [Runtime]({{site.url}}/Pages/Reference/Runtime.html).Flatscreen
 
 ## Description
-Creates a flat, Win32 window, and simulates some MR functionality. Great for debugging.
+Creates a flat, Win32 window, and simulates some MR
+functionality. Great for debugging.
 

@@ -22,7 +22,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
 
 	char id[512];
-	sprintf_s(id, 512, "%s/node_%d_%s", filename, node_id, m->name);
+	sprintf_s(id, 512, "%s/mesh/%d_%s", filename, node_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -35,7 +35,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
 		size_t             offset = buff->offset + attr->data->offset;
-
+		
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
@@ -63,8 +63,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			for (size_t v = 0; v < attr->data->count; v++) {
-				color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
-				memcpy(&verts[v].col, col, sizeof(color32));
+				color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
+				verts[v].col = color_to_32(*col);
 			}
 		}
 	}
@@ -115,7 +115,7 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			sprintf_s(dest, dest_length, "%s/image%d", filename, (int)i);
+			sprintf_s(dest, dest_length, "%s/tex/%d", filename, (int)i);
 			return;
 		}
 	}
@@ -169,7 +169,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	// Check if we've already loaded this material
 	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	sprintf_s(id, 512, "%s/%s", filename, mat_name);
+	sprintf_s(id, 512, "%s/mat/%s", filename, mat_name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;
@@ -185,18 +185,21 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
-		if (tex != nullptr)
+		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture))
 			material_set_texture(result, "diffuse", gltf_parsetexture(data, tex->image, filename, true));
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
-		if (tex != nullptr)
+		if (tex != nullptr && material_has_param(result, "metal", material_param_texture))
 			material_set_texture(result, "metal", gltf_parsetexture(data, tex->image, filename, false));
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
-		material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
+		if (material_has_param(result, "color", material_param_color128))
+			material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
 
-		material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
-		material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
+		if (material_has_param(result, "metallic",  material_param_float))
+			material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
+		if (material_has_param(result, "roughness", material_param_float))
+			material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
@@ -206,15 +209,15 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_transparency(result, transparency_clip);
 
 	tex = material->normal_texture.texture;
-	if (tex != nullptr)
+	if (tex != nullptr && material_has_param(result, "normal", material_param_texture))
 		material_set_texture(result, "normal", gltf_parsetexture(data, tex->image, filename, false));
 
 	tex = material->occlusion_texture.texture;
-	if (tex != nullptr)
+	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture))
 		material_set_texture(result, "occlusion", gltf_parsetexture(data, tex->image, filename, false));
 
 	tex = material->emissive_texture.texture;
-	if (tex != nullptr)
+	if (tex != nullptr && material_has_param(result, "emission", material_param_texture))
 		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename, true));
 
 	return result;

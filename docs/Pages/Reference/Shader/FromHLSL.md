@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Shader.FromHLSL
-description: Creates a shader from a piece of HLSL code! Shader stuff like this may change in the future, since HLSL may not be all that portable. Also, before compiling the shader code, StereoKit hashes the contents, and looks to see if it has that shader cached. If so, it'll just load that instead of compiling it again.
+description: Creates a shader from a piece of HLSL code! Shader stuff like this may change in the future, since HLSL may not be all that portable. Also, before compiling the shader code, StereoKit hashes the contents, and looks to see if it has that shader cached. If so, it'll just load that instead of compiling it again. The Id will be the shader's internal name.
 ---
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).FromHLSL
 
@@ -11,14 +11,15 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) FromHLSL(string hlsl)
 
 |  |  |
 |--|--|
-|string hlsl|A vertex and pixel shader written in HLSL, check the shader             guides for more on this later!|
+|string hlsl|A vertex and pixel shader written in HLSL,              check the shader guides for more on this later!|
 |RETURNS: [Shader]({{site.url}}/Pages/Reference/Shader.html)|A shader from the given code, or null if it failed to load/compile.|
 
-Creates a shader from a piece of HLSL code! Shader stuff like this may
-change in the future, since HLSL may not be all that portable. Also, before
-compiling the shader code, StereoKit hashes the contents, and looks to see if
-it has that shader cached. If so, it'll just load that instead of compiling it
-again.
+Creates a shader from a piece of HLSL code! Shader stuff
+like this may change in the future, since HLSL may not be all that
+portable. Also, before compiling the shader code, StereoKit hashes
+the contents, and looks to see if it has that shader cached. If
+so, it'll just load that instead of compiling it again. The Id
+will be the shader's internal name.
 
 
 

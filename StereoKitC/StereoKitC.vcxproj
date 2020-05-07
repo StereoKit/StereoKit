@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{95B47C8E-3A66-483C-ABEE-950E6C2F621A}</ProjectGuid>
     <RootNamespace>StereoKitC</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <ProjectName>StereoKitC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -115,10 +115,12 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="asset_types\material.cpp" />
     <ClCompile Include="asset_types\mesh.cpp" />
     <ClCompile Include="asset_types\model.cpp" />
+    <ClCompile Include="asset_types\model_fbx.cpp" />
     <ClCompile Include="asset_types\model_gltf.cpp" />
     <ClCompile Include="asset_types\model_obj.cpp" />
     <ClCompile Include="asset_types\model_stl.cpp" />
     <ClCompile Include="asset_types\shader.cpp" />
+    <ClCompile Include="asset_types\shader_file.cpp" />
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
@@ -126,6 +128,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
+    <ClCompile Include="libraries\miniz.cpp" />
+    <ClCompile Include="libraries\ofbx.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="math.cpp" />
@@ -136,6 +140,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="shaders_builtin\shader_builtin_pbr.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_skybox.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_ui.cpp" />
+    <ClCompile Include="shaders_builtin\shader_builtin_ui_quadrant.cpp" />
     <ClCompile Include="shaders_builtin\shader_builtin_unlit.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
@@ -152,10 +157,13 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
+    <ClCompile Include="systems\platform\openxr_input.cpp" />
+    <ClCompile Include="systems\platform\openxr_view.cpp" />
     <ClCompile Include="systems\platform\platform.cpp" />
+    <ClCompile Include="systems\platform\platform_utils.cpp" />
     <ClCompile Include="systems\platform\uwp.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
-    <ClCompile Include="systems\platform\win32_input.cpp" />
+    <ClCompile Include="systems\platform\flatscreen_input.cpp" />
     <ClCompile Include="systems\render.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
@@ -168,6 +176,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="asset_types\mesh.h" />
     <ClInclude Include="asset_types\model.h" />
     <ClInclude Include="asset_types\shader.h" />
+    <ClInclude Include="asset_types\shader_file.h" />
     <ClInclude Include="asset_types\sound.h" />
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
@@ -176,14 +185,28 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\dr_wav.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\miniaudio.h" />
+    <ClInclude Include="libraries\miniz.h" />
+    <ClInclude Include="libraries\ofbx.h" />
+    <ClInclude Include="libraries\sort_list.h" />
     <ClInclude Include="libraries\stb_ds.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />
     <ClInclude Include="libraries\stb_rect_pack.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_default.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_equirect.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_font.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_include.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_lines.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_pbr.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_skybox.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_unlit.h" />
     <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stereokit_ui.h" />
@@ -201,16 +224,50 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\openxr.h" />
     <ClInclude Include="systems\platform\openxr_extensions.h" />
+    <ClInclude Include="systems\platform\openxr_input.h" />
+    <ClInclude Include="systems\platform\openxr_view.h" />
     <ClInclude Include="systems\platform\platform.h" />
+    <ClInclude Include="systems\platform\platform_utils.h" />
     <ClInclude Include="systems\platform\uwp.h" />
     <ClInclude Include="systems\platform\win32.h" />
-    <ClInclude Include="systems\platform\win32_input.h" />
+    <ClInclude Include="systems\platform\flatscreen_input.h" />
     <ClInclude Include="systems\render.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders_builtin\shader_builtin_default.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_equirect.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_font.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_lines.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_pbr.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_skybox.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_ui.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

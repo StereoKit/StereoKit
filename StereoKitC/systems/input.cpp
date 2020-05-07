@@ -35,7 +35,7 @@ int input_add_pointer(input_source_ source) {
 
 ///////////////////////////////////////////
 
-pointer_t *input_get_pointer(int id) {
+pointer_t *input_get_pointer(int32_t id) {
 	return &input_pointers[id];
 }
 

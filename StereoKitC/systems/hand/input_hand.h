@@ -28,6 +28,8 @@ enum hand_system_ {
 	hand_system_override
 };
 
+extern int32_t input_hand_pointer_id[handed_max];
+
 hand_system_ input_hand_get_system();
 void input_hand_refresh_system();
 

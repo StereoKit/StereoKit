@@ -6,7 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StereoKit" Version="0.*" />
+    <PackageReference Include="StereoKit" Version="0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

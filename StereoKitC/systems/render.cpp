@@ -76,7 +76,8 @@ render_inst_buffer                render_instance_buffers[] = { { 1 }, { 5 }, { 
 vector<render_item_t>  render_queue;
 shaderargs_t           render_shader_globals;
 shaderargs_t           render_shader_blit;
-matrix                 render_default_camera_tr;
+matrix                 render_camera_root = matrix_identity;
+matrix                 render_camera_root_inv = matrix_identity;
 matrix                 render_default_camera_proj;
 vec2                   render_clip_planes = {0.01f, 50};
 render_global_buffer_t render_global_buffer;
@@ -121,19 +122,28 @@ void render_set_clip(float near_plane, float far_plane) {
 void render_update_projection() {
 	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
 		90 * deg2rad, 
-		(float)d3d_screen_width/d3d_screen_height, 
+		(float)sk_system_info().display_width/sk_system_info().display_height, 
 		render_clip_planes.x, 
 		render_clip_planes.y), &render_default_camera_proj);
 }
 
 ///////////////////////////////////////////
 
-void render_set_view(const matrix &cam_transform) {
-	vec3 pos = matrix_mul_point    (cam_transform, vec3_zero);
-	vec3 dir = matrix_mul_direction(cam_transform, vec3_forward);
-	input_head_pose = {pos, quat_lookat(pos, pos+dir)};
-	
-	matrix_inverse(cam_transform, render_default_camera_tr);
+matrix render_get_projection() {
+	return render_default_camera_proj;
+}
+
+///////////////////////////////////////////
+
+matrix render_get_cam_root() {
+	return render_camera_root;
+}
+
+///////////////////////////////////////////
+
+void render_set_cam_root(const matrix &cam_root) {
+	render_camera_root = cam_root;
+	matrix_inverse(render_camera_root, render_camera_root_inv);
 }
 
 ///////////////////////////////////////////
@@ -219,7 +229,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count) {
 	size_t queue_size = render_queue.size();
-	if (queue_size == 0) return;
+	if (queue_size == 0 || view_count == 0) return;
 
 	// Sort the draw list
 	sort(render_queue.begin(), render_queue.end(), [](const render_item_t &a, const render_item_t &b) -> bool { 
@@ -292,12 +302,6 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		}
 		item = next;
 	}
-}
-
-///////////////////////////////////////////
-
-void render_draw() {
-	render_draw_matrix(&render_default_camera_tr, &render_default_camera_proj, 1);
 }
 
 ///////////////////////////////////////////
@@ -377,14 +381,13 @@ bool render_initialize() {
 
 	// Setup a default camera
 	render_set_clip(render_clip_planes.x, render_clip_planes.y);
-	render_set_view(matrix_trs(vec3{ 0,0.2f,0.4f }, quat_lookat({ 0,0.2f,0.4f }, vec3_zero), vec3_one));
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_find("default/quad");
+	render_blit_quad = mesh_find("default/mesh_quad");
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
-	shader_t sky_shader = shader_create(sk_shader_builtin_skybox);
+	shader_t sky_shader = shader_create_mem((void*)shader_builtin_skybox, sizeof(shader_builtin_skybox));
 	shader_set_id(sky_shader, "render/skybox_shader");
 	render_sky_mesh = mesh_gen_sphere(1, 3);
 	mesh_set_id(render_sky_mesh, "render/skybox_mesh");
@@ -585,7 +588,7 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	matrix mat;
-	matrix_mul(render_default_camera_tr, render_default_camera_proj, mat);
+	matrix_mul(render_camera_root_inv, render_default_camera_proj, mat);
 	matrix_inverse(mat, mat);
 	return matrix_mul_point(mat, normalized_screen_pt);
 }

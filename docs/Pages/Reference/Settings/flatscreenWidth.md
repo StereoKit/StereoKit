@@ -6,5 +6,6 @@ description: If using Runtime.Flatscreen, the pixel size of the window on the sc
 # [Settings]({{site.url}}/Pages/Reference/Settings.html).flatscreenWidth
 
 ## Description
-If using Runtime.Flatscreen, the pixel size of the window on the screen.
+If using Runtime.Flatscreen, the pixel size of the
+window on the screen.
 

@@ -40,7 +40,6 @@ public static class Tests
             activeScene = nextScene;
         if (activeScene == null)
             activeScene = (ITest)Activator.CreateInstance(allTests[testIndex]);
-        activeScene.Initialize();
         sceneTime = Time.Totalf;
     }
     public static void Update()

@@ -21,8 +21,7 @@ namespace StereoKitTest
         public void Update()
         {
             Pose curr = poseCache[0];
-            UI.AffordanceBegin("Model", ref curr, model.Bounds * 0.1f);
-            UI.AffordanceEnd();
+            UI.Handle("Model", ref curr, model.Bounds * 0.1f);
 
             for (int y = 0; y < 5; y++)
             {

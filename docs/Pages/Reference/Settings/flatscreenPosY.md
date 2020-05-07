@@ -6,5 +6,6 @@ description: If using Runtime.Flatscreen, the pixel position of the window on th
 # [Settings]({{site.url}}/Pages/Reference/Settings.html).flatscreenPosY
 
 ## Description
-If using Runtime.Flatscreen, the pixel position of the window on the screen.
+If using Runtime.Flatscreen, the pixel position of the
+window on the screen.
 

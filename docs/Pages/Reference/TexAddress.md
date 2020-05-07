@@ -5,8 +5,9 @@ description: What happens when the shader asks for a texture coordinate that's o
 ---
 # TexAddress
 
-What happens when the shader asks for a texture coordinate that's outside
-the texture?? Believe it or not, this happens plenty often!
+What happens when the shader asks for a texture coordinate
+that's outside the texture?? Believe it or not, this happens plenty
+often!
 
 
 

@@ -80,6 +80,7 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\floor.hlsl" />
     <Content Include="Assets\Logo\Logo-150.png" />
     <Content Include="Assets\Logo\Logo-16.png" />
     <Content Include="Assets\Logo\Logo-310.png" />
@@ -98,8 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.9" />
-    <PackageReference Include="StereoKit" Version="0.*" />
-    <!--Match any version before 1.0-->
+    <PackageReference Include="StereoKit" Version="0.2" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '16.0' ">
     <VisualStudioVersion>16.0</VisualStudioVersion>
