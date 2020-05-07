@@ -22,6 +22,10 @@ namespace StereoKit
 
 		/// <summary>Pure opaque white! Same as (255,255,255,255).</summary>
 		public static readonly Color32 White = new Color32(255, 255, 255, 255);
+		/// <summary>Pure opaque black! Same as (0,0,0,255).</summary>
+		public static readonly Color32 Black = new Color32(0, 0, 0, 255);
+		/// <summary>Pure transparent black! Same as (0,0,0,0).</summary>
+		public static readonly Color32 BlackTransparent = new Color32(0, 0, 0, 0);
 	}
 
 	/// <summary>A color value stored as 4 floats with values that are generally between
@@ -120,6 +124,20 @@ namespace StereoKit
 		/// <returns>An RGBA color constructed from the LAB values.</returns>
 		public static Color LAB(float l, float a, float b, float opacity = 1)
 			=> NativeAPI.color_lab(l, a, b, opacity);
+
+		/// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
+		/// human perception, and has significantly more accurate to perception lightness values, so this is 
+		/// an excellent color space for color operations that wish to preserve color brightness properly. 
+		/// Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1
+		/// range. If you hate it, let me know why!</summary>
+		/// <param name="lab">For convenience, XYZ is LAB.
+		/// Lightness of the color! Range is 0-1.
+		/// 'a' is from red to green. Range is 0-1.
+		/// 'b' is from blue to yellow. Range is 0-1.</param>
+		/// <param name="opacity">The opacity copied into the final color!</param>
+		/// <returns>An RGBA color constructed from the LAB values.</returns>
+		public static Color LAB(Vec3 lab, float opacity = 1)
+			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
 		public static implicit operator Color32(Color c) 
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
