@@ -88,7 +88,7 @@ class DemoUI : ITest
         /// 
         UI.Label("Slide");
         UI.SameLine();
-        UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * Units.mm2m);
+        UI.HSlider("slider", ref slider, 0, 1, 0.2f, 72 * U.mm);
         ///
         /// Here's how you use a simple button! Just check it with an 'if'. Any UI method
         /// will return true on the frame when their value or state has changed.
