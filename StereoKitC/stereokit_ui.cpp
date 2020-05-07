@@ -457,7 +457,7 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 vec2 ui_area_remaining() {
 	layer_t &layer = skui_layers.back();
 	return vec2{
-		fmaxf(0, layer.size.x - layer.offset.x),
+		fmaxf(0, fmax(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - layer.offset.x),
 		fmaxf(0, layer.size.y - layer.offset.y)
 	};
 }
@@ -740,7 +740,7 @@ void ui_label_sz(const char *text, vec2 size) {
 	ui_reserve_box(size);
 	ui_nextline();
 
-	ui_text(offset, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	ui_text(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 }
 
 ///////////////////////////////////////////
@@ -754,7 +754,7 @@ void ui_label(const char *text, bool32_t use_padding) {
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
 	ui_nextline();
-	ui_text(offset - vec3{pad, pad, 2*mm2m }, txt_size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	ui_text(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 }
 
 ///////////////////////////////////////////
