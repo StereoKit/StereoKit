@@ -12,6 +12,7 @@
 /// - [Windows OpenXR runtime](https://www.microsoft.com/store/productId/9n5cvvl23qbt) - Install *and enable* this on your desktop and device!
 /// - Or Oculus's preview runtime
 ///   - Oculus's OpenXR runtime has a trickier setup, since it's still in preview. See [here](https://github.com/maluoi/StereoKit/issues/41#issuecomment-574438421) for details!
+///   - StereoKit works with Oculus v17+, you may need to be on the beta channel to get v17!
 /// - [StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates) - The fastest way to set up a StereoKit project!
 ///   - You can also directly install the [NuGet package](https://www.nuget.org/packages/StereoKit) into your project of choice.
 /// - Enable Developer Mode (for UWP/HoloLens builds)
