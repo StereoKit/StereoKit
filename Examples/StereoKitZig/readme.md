@@ -10,7 +10,7 @@ Build the x64 release build of StereoKitC through Visual Studio, this will creat
 
 Then, you'll need [Zig](https://ziglang.org/download/)! Store it someplace nice (I put it in `C:\Tools\Zig)`, and either remember that folder for console commands, or add that folder to your PATH.
 
-Then you can use this in the command line to compile and execute the application. See [build.zig](/build.zig) for the build process, and [main.zig](/main.zig) for the application code!
+Then you can use this in the command line to compile and execute the application. See [build.zig](build.zig) for the build process, and [main.zig](main.zig) for the application code!
 
 `zig build run`
 
