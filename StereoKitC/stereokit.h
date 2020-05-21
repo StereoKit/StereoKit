@@ -116,28 +116,29 @@ typedef struct rect {
 typedef struct quat {
 	float x, y, z, w;
 } quat;
-typedef struct matrix {
-	struct vec4 row[4];
+typedef union matrix {
+	vec4 row[4];
+	float m[16];
 } matrix;
 typedef struct ray_t {
-	struct vec3 pos;
-	struct vec3 dir;
+	vec3 pos;
+	vec3 dir;
 } ray_t;
 typedef struct bounds_t {
-	struct vec3 center;
-	struct vec3 dimensions;
+	vec3 center;
+	vec3 dimensions;
 } bounds_t;
 typedef struct plane_t {
-	struct vec3 normal;
+	vec3  normal;
 	float d;
 } plane_t;
 typedef struct sphere_t {
-	struct vec3 center;
+	vec3  center;
 	float radius;
 } sphere_t;
 typedef struct pose_t {
-	struct vec3 position;
-	struct quat orientation;
+	vec3 position;
+	quat orientation;
 } pose_t;
 
 SK_API vec3 vec3_cross(const sk_ref(vec3) a, const sk_ref(vec3) b);
@@ -228,11 +229,7 @@ static const vec3 vec3_up       = { 0,1, 0 };
 static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
-#if __cplusplus
-static const matrix matrix_identity = { vec4{1,0,0,0}, vec4{0,1,0,0}, vec4{0,0,1,0}, vec4{0,0,0,1} };
-#else
-static const matrix matrix_identity = { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} };
-#endif
+static const matrix matrix_identity = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
