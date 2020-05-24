@@ -155,12 +155,16 @@ namespace StereoKit
 	/// good default here is Rgba32.</summary>
 	public enum TexFormat
 	{
+		/// <summary>A default zero value for TexFormat! Unitialized formats
+		/// will get this value and **** **** up so you know to assign it
+		/// properly :)</summary>
+		None = 0,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in sRGB color space. This is what you'll want most of
 		/// the time you're dealing with color images! Matches well with the 
 		/// Color32 struct! If you're storing normals, rough/metal, or
 		/// anything else, use Rgba32Linear.</summary>
-		Rgba32 = 0,
+		Rgba32,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the 

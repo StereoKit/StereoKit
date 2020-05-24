@@ -353,7 +353,8 @@ typedef enum tex_type_ {
 SK_MakeFlag(tex_type_);
 
 typedef enum tex_format_ {
-	tex_format_rgba32 = 0,
+	tex_format_none = 0,
+	tex_format_rgba32,
 	tex_format_rgba32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
