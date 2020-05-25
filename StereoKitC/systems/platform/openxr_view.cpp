@@ -478,6 +478,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 	xrWaitSwapchainImage(layer.swapchain_depth.handle, &wait_info);
 
 	// And now we'll iterate through each viewpoint, and render it!
+	vec2 clip_planes = render_get_clip();
 	for (uint32_t i = 0; i < layer.view_count; i++) {
 		// Set up our rendering information for the viewpoint we're using right now!
 		XrCompositionLayerProjectionView &view = layer.view_layers[i];
@@ -493,8 +494,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 			XrCompositionLayerDepthInfoKHR &depth = layer.view_depths[i];
 			depth.minDepth = 0;
 			depth.maxDepth = 1;
-			depth.nearZ    = 0.1f;
-			depth.farZ     = 50;
+			depth.nearZ    = clip_planes.x;
+			depth.farZ     = clip_planes.y;
 			depth.subImage.imageArrayIndex  = i;
 			depth.subImage.swapchain        = layer.swapchain_depth.handle;
 			depth.subImage.imageRect.offset = { 0, 0 };
@@ -503,7 +504,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		}
 
 		float xr_projection[16];
-		openxr_projection(view.fov, 0.1f, 50, xr_projection);
+		openxr_projection(view.fov, clip_planes.x, clip_planes.y, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
 		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
 		view_tr = view_tr * render_get_cam_root();

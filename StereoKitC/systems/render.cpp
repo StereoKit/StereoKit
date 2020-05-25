@@ -135,6 +135,12 @@ matrix render_get_projection() {
 
 ///////////////////////////////////////////
 
+vec2 render_get_clip() {
+	return render_clip_planes;
+}
+
+///////////////////////////////////////////
+
 matrix render_get_cam_root() {
 	return render_camera_root;
 }
