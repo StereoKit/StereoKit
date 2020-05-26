@@ -595,6 +595,7 @@ SK_API void     render_set_cam_root  (const sk_ref(matrix) cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_info);
+SK_API void     render_set_clear_color(color32 color);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
 SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));

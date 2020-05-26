@@ -514,7 +514,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 	// Call the rendering callback with our view and swapchain info
 	tex_t target = layer.swapchain_color.textures[color_id];
 	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? color32{ 0,0,0,255 } 
+		? render_get_clear_color() 
 		: color32{ 0,0,0,0   });
 	tex_rtarget_set_active(target);
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)layer.swapchain_color.width, (float)layer.swapchain_color.height);

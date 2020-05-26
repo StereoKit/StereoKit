@@ -35,6 +35,14 @@ namespace StereoKit
 			set => NativeAPI.render_enable_skytex(value);
 		}
 
+		/// <summary>This is the color the renderer will clear the screen to
+		/// when beginning to draw a new frame. This is ignored on displays 
+		/// with transparent screens</summary>
+		public static Color32 ClearColor
+		{
+			set => NativeAPI.render_set_clear_color(value);
+		}
+
 		/// <summary>Sets and gets the root transform of the camera! This
 		/// will be the identity matrix by default. The user's head  location
 		/// will then be relative to this point. This is great to use if 

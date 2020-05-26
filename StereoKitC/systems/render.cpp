@@ -85,6 +85,7 @@ mesh_t                 render_blit_quad;
 render_stats_t         render_stats = {};
 tex_t                  render_default_tex;
 vec4                   render_lighting[9] = {};
+color32                render_clear_color = {0,0,0,255};
 
 vector<render_screenshot_t>  render_screenshot_list;
 
@@ -192,6 +193,18 @@ void render_enable_skytex(bool32_t show_sky) {
 
 bool32_t render_enabled_skytex() {
 	return render_sky_show;
+}
+
+///////////////////////////////////////////
+
+void render_set_clear_color(color32 color) {
+	render_clear_color = color;
+}
+
+//////////////////////////////////////////
+
+color32 render_get_clear_color() {
+	return render_clear_color;
 }
 
 ///////////////////////////////////////////
@@ -347,7 +360,7 @@ void render_check_screenshots() {
 		// Setup to render the screenshot
 		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)w, (float)h);
 		d3d_context->RSSetViewports(1, &viewport);
-		tex_rtarget_clear(render_capture_surface, color32{0,0,0,255});
+		tex_rtarget_clear(render_capture_surface, render_clear_color);
 		tex_rtarget_set_active(render_capture_surface);
 		
 		// Render!
