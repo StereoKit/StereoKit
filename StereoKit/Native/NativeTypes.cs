@@ -70,6 +70,13 @@ namespace StereoKit
 		/// <summary>Height of the display surface, in pixels! For a stereo
 		/// display, this will be the height of a single eye.</summary>
 		public int displayHeight;
+		/// <summary>Does the device we're currently on have the spatial 
+		/// graph bridge extension? The extension is provided through the 
+		/// function `Pose.FromSpatialNode`. This allows OpenXR to talk with 
+		/// certain windows APIs, such as the QR code API that provides Graph
+		/// Node GUIDs for the pose.</summary>
+		public  bool spatialBridge { get => _spatialBridge > 0; }
+		private int _spatialBridge;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>

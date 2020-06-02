@@ -74,12 +74,15 @@ void device_display_delete(device_display_t &display) {
 
 XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
 XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
 uint32_t                                   xr_display_count      = 0;
 device_display_t                          *xr_displays           = nullptr;
 XrViewConfigurationType                   *xr_display_types      = nullptr;
+XrSecondaryViewConfigurationStateMSFT     *xr_display_2nd_states = nullptr;
+XrSecondaryViewConfigurationLayerInfoMSFT *xr_display_2nd_layers = nullptr;
 
 ///////////////////////////////////////////
 
@@ -97,6 +100,7 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO:                              return "PrimaryMono";
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO:                            return "PrimaryStereo";
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO:                        return "PrimaryQuad_Varjo";
+	case XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT: return "SecondaryMonoFPO_Msft";
 	default: return "N/A";
 	}
 }
@@ -131,6 +135,12 @@ bool openxr_views_create() {
 	for (uint32_t t = 0; t < count; t++) {
 		for (uint32_t r = 0; r < _countof(xr_request_displays); r++) {
 			if (types[t] == xr_request_displays[r]) {
+				if (types[t] != xr_display_primary) {
+					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
+					state.active                = false;
+					state.viewConfigurationType = types[t];
+					arrput(xr_display_2nd_states, state);
+				}
 				arrput(xr_display_types, types[t]);
 				arrput(xr_displays,      device_display_t{});
 				if (!openxr_create_view(types[t], arrlast(xr_displays)))
@@ -164,6 +174,8 @@ void openxr_views_destroy() {
 	}
 	arrfree(xr_displays);
 	arrfree(xr_display_types);
+	arrfree(xr_display_2nd_states);
+	arrfree(xr_display_2nd_layers);
 }
 
 ///////////////////////////////////////////
@@ -279,6 +291,13 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT 
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
+	// If it's a secondary view, let OpenXR know
+	XrSecondaryViewConfigurationSwapchainCreateInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SWAPCHAIN_CREATE_INFO_MSFT };
+	if (type != xr_display_primary) {
+		secondary.viewConfigurationType = type;
+		swapchain_info.next = &secondary;
+	}
+
 	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle), 
 		"xrCreateSwapchain failed [%s]");
 
@@ -381,8 +400,14 @@ bool openxr_render_frame() {
 	// Block until the previous frame is finished displaying, and is ready for another one.
 	// Also returns a prediction of when the next frame will be displayed, for use with predicting
 	// locations of controllers, viewpoints, etc.
-	XrFrameWaitInfo                             wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
-	XrFrameState                                frame_state      = { XR_TYPE_FRAME_STATE };
+	XrFrameWaitInfo                            wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
+	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
+	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
+	if (xr_display_count > 1) {
+		secondary_states.viewConfigurationCount  = xr_display_count - 1;
+		secondary_states.viewConfigurationStates = xr_display_2nd_states;
+		frame_state.next = &secondary_states;
+	}
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
 		"xrWaitFrame [%s]");
 
@@ -391,6 +416,17 @@ bool openxr_render_frame() {
 		xr_session_state == XR_SESSION_STATE_VISIBLE || 
 		xr_session_state == XR_SESSION_STATE_FOCUSED;
 	xr_displays[0].active = session_active;
+
+	// Check each secondary display to see if it's active or not
+	for (uint32_t i = 1; i < xr_display_count; i++) {
+		if (xr_displays[i].active != xr_display_2nd_states[i - 1].active) {
+			xr_displays[i].active  = xr_display_2nd_states[i - 1].active;
+
+			if (xr_displays[i].active) {
+				openxr_update_swapchains(xr_displays[i]);
+			}
+		}
+	}
 
 	// Must be called before any rendering is done! This can return some interesting flags, like 
 	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
@@ -408,14 +444,28 @@ bool openxr_render_frame() {
 
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
+	arrsetlen(xr_display_2nd_layers, 0);
+	
 	for (size_t i = 0; i < xr_display_count; i++) {
 		if (!xr_displays[i].active) continue;
 
+		if (xr_displays[i].type != xr_display_primary) {
+			XrSecondaryViewConfigurationLayerInfoMSFT layer = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
+			layer.viewConfigurationType = xr_displays[i].type;
+			layer.environmentBlendMode  = xr_displays[i].blend;
+			layer.layerCount            = 1;
+			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
+			arrput(xr_display_2nd_layers, layer);
+		}
 		openxr_render_layer(xr_time, xr_displays[i]);
 	}
 
 	render_clear();
 
+	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
+	end_second.viewConfigurationLayersInfo = xr_display_2nd_layers;
+	end_second.viewConfigurationCount      = arrlen(xr_display_2nd_layers);
+	
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
 	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
@@ -423,6 +473,8 @@ bool openxr_render_frame() {
 	end_info.environmentBlendMode = xr_displays[0].blend;
 	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
 	end_info.layers               = &layer;
+	if (end_second.viewConfigurationCount > 0)
+		end_info.next = &end_second;
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
 	return true;

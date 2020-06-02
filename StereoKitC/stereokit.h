@@ -74,6 +74,7 @@ typedef struct system_info_t {
 	display_ display_type;
 	int32_t  display_width;
 	int32_t  display_height;
+	bool32_t spatial_bridge;
 } system_info_t;
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
@@ -729,6 +730,10 @@ SK_API void                  input_hand_material(handed_ hand, material_t materi
 SK_API void input_subscribe  (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_fire_event (input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer);
+
+///////////////////////////////////////////
+
+SK_API pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]);
 
 ///////////////////////////////////////////
 

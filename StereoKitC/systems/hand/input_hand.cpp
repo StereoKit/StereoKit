@@ -8,6 +8,7 @@
 #include "hand_leap.h"
 #include "hand_override.h"
 #include "hand_oxr_controller.h"
+#include "hand_oxr_articulated.h"
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
@@ -58,11 +59,11 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_frame,
 		hand_override_update_predicted },
 	{ hand_system_oxr_articulated, false,
-		[]() {return false;},
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr },
+		hand_oxra_available,
+		hand_oxra_init,
+		hand_oxra_shutdown,
+		hand_oxra_update_frame,
+		hand_oxra_update_predicted },
 	{ hand_system_mirage, false,
 		hand_mirage_available,
 		hand_mirage_init,

@@ -314,13 +314,17 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void    input_hand_material(Handed hand, IntPtr material);
 
 		///////////////////////////////////////////
-        
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose pose_from_spatial([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_unsubscribe(InputSource source, BtnState evt, InputEventCallback event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_fire_event (InputSource source, BtnState evt, IntPtr pointer);
 
 		///////////////////////////////////////////
-            
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_write      (LogLevel level, string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallback on_log);

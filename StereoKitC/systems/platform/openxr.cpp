@@ -35,9 +35,17 @@ const char *xr_request_extensions[] = {
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
+	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
+	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
+	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
+	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
+	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
 };
 bool xr_depth_lsr     = false;
 bool xr_depth_lsr_ext = false;
+bool xr_articulated_hands     = false;
+bool xr_articulated_hands_ext = false;
+bool xr_spatial_bridge_ext = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -94,7 +102,7 @@ bool openxr_init(const char *app_name) {
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
 	openxr_preferred_extensions(extension_count, extensions);
 
-	XrInstanceCreateInfo createInfo   = { XR_TYPE_INSTANCE_CREATE_INFO };
+	XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
 	createInfo.enabledExtensionCount = extension_count;
 	createInfo.enabledExtensionNames = extensions;
 	createInfo.applicationInfo.applicationVersion = 1;
@@ -103,9 +111,9 @@ bool openxr_init(const char *app_name) {
 	createInfo.applicationInfo.engineVersion = 
 		(SK_VERSION_MAJOR << 20)              |
 		(SK_VERSION_MINOR << 12 & 0x000FF000) |
-		(SK_VERSION_PATCH & 0x00000FFF);
+		(SK_VERSION_PATCH       & 0x00000FFF);
 
-	createInfo.applicationInfo.apiVersion         = XR_CURRENT_API_VERSION;
+	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
 	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
 	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
@@ -132,11 +140,14 @@ bool openxr_init(const char *app_name) {
 	}
 
 	// Figure out what this device is capable of!
-	XrSystemProperties                 properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemProperties                properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemHandTrackingPropertiesEXT tracking_properties = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
+	properties.next = &tracking_properties;
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
-	xr_depth_lsr         = xr_depth_lsr_ext; // TODO: Find out how to verify this one
+	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
+	xr_depth_lsr         = xr_depth_lsr_ext;
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
@@ -181,12 +192,8 @@ bool openxr_init(const char *app_name) {
 		return false;
 	}
 
-	if (!openxr_views_create())
-		return false;
-	
-	if (!oxri_init())
-		return false;
-
+	if (!openxr_views_create()) return false;
+	if (!oxri_init()) return false;
 	return true;
 }
 
@@ -217,6 +224,8 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	if (out_extensions != nullptr) {
 		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
+			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_articulated_hands_ext = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME  ) == 0) sk_info.spatial_bridge   = true;
 		}
 	}
 
@@ -316,6 +325,14 @@ void openxr_poll_events() {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = xr_display_types[0];
 
+				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
+				if (xr_display_count > 1) {
+					secondary.next                          = nullptr;
+					secondary.viewConfigurationCount        = xr_display_count-1;
+					secondary.enabledViewConfigurationTypes = xr_display_types+1;
+					begin_info.next = &secondary;
+				}
+
 				xrBeginSession(xr_session, &begin_info);
 				xr_running = true;
 				log_diag("OpenXR session begin.");
@@ -358,6 +375,27 @@ bool32_t openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time) {
 		return true;
 	}
 	return false;
+}
+
+///////////////////////////////////////////
+
+pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
+	if (!sk_info.spatial_bridge) {
+		log_warn("This system doesn't support the spatial bridge! Check StereoKitApp.System.spatialBridge.");
+		return { {0,0,0}, {0,0,0,1} };
+	}
+
+	XrSpace                               space;
+	pose_t                                result     = {};
+	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
+	space_info.nodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	space_info.pose     = { {0,0,0,1}, {0,0,0} };
+	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
+
+	xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space);
+
+	openxr_get_space(space, result);
+	return result;
 }
 
 } // namespace sk
