@@ -241,6 +241,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="shaders_builtin\shader_builtin_default.hlsl">
       <FileType>Document</FileType>
     </None>
