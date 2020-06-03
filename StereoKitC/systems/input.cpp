@@ -1,14 +1,12 @@
 #include "../stereokit.h"
 #include "input.h"
 #include "hand/input_hand.h"
+#include "../libraries/array.h"
 
 #ifndef SK_NO_FLATSCREEN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-#include <vector>
-using namespace std;
 
 namespace sk {
 
@@ -20,8 +18,8 @@ struct input_event_t {
 	void (*event_callback)(input_source_ source, button_state_ evt, const pointer_t &pointer);
 };
 
-vector<input_event_t> input_listeners;
-vector<pointer_t>     input_pointers;
+array_t<input_event_t>input_listeners  = {};
+array_t<pointer_t>    input_pointers   = {};
 mouse_t               input_mouse_data = {};
 keyboard_t            input_key_data   = {};
 pose_t                input_head_pose  = { vec3_zero, quat_identity };
@@ -29,8 +27,7 @@ pose_t                input_head_pose  = { vec3_zero, quat_identity };
 ///////////////////////////////////////////
 
 int input_add_pointer(input_source_ source) {
-	input_pointers.push_back({ source, button_state_inactive });
-	return (int)input_pointers.size() - 1;
+	return input_pointers.add({ source, button_state_inactive });
 }
 
 ///////////////////////////////////////////
@@ -43,7 +40,7 @@ pointer_t *input_get_pointer(int32_t id) {
 
 int input_pointer_count(input_source_ filter) {
 	int result = 0;
-	for (size_t i = 0; i < input_pointers.size(); i++) {
+	for (size_t i = 0; i < input_pointers.count; i++) {
 		if (input_pointers[i].source & filter)
 			result += 1;
 	}
@@ -54,7 +51,7 @@ int input_pointer_count(input_source_ filter) {
 
 pointer_t input_pointer(int32_t index, input_source_ filter) {
 	int curr = 0;
-	for (size_t i = 0; i < input_pointers.size(); i++) {
+	for (size_t i = 0; i < input_pointers.count; i++) {
 		if (input_pointers[i].source & filter) {
 			if (curr == index)
 				return input_pointers[i];
@@ -67,17 +64,17 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 ///////////////////////////////////////////
 
 void input_subscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
-	input_listeners.push_back({ source, event, event_callback });
+	input_listeners.add({ source, event, event_callback });
 }
 
 ///////////////////////////////////////////
 
 void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
-	for (int i = (int)input_listeners.size()-1; i >= 0; i--) {
+	for (int i = input_listeners.count-1; i >= 0; i--) {
 		if (input_listeners[i].source         == source && 
 			input_listeners[i].event          == event  && 
 			input_listeners[i].event_callback == event_callback) {
-			input_listeners.erase(input_listeners.begin() + i);
+			input_listeners.remove(i);
 		}
 	}
 }
@@ -85,7 +82,7 @@ void input_unsubscribe(input_source_ source, button_state_ event, void (*event_c
 ///////////////////////////////////////////
 
 void input_fire_event(input_source_ source, button_state_ event, const pointer_t &pointer) {
-	for (size_t i = 0; i < input_listeners.size(); i++) {
+	for (size_t i = 0; i < input_listeners.count; i++) {
 		if (input_listeners[i].source & source && input_listeners[i].event & event) {
 			input_listeners[i].event_callback(source, event, pointer);
 		}
@@ -102,8 +99,8 @@ bool input_init() {
 ///////////////////////////////////////////
 
 void input_shutdown() {
-	input_pointers .clear();
-	input_listeners.clear();
+	input_pointers .free();
+	input_listeners.free();
 	input_hand_shutdown();
 }
 

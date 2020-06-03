@@ -5,9 +5,7 @@
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../math.h"
-
-#include <vector>
-using namespace std;
+#include "../libraries/array.h"
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -16,8 +14,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-vector<_text_style_t> text_styles;
-vector<text_buffer_t> text_buffers;
+array_t<_text_style_t> text_styles  = {};
+array_t<text_buffer_t> text_buffers = {};
 
 ///////////////////////////////////////////
 
@@ -54,7 +52,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	text_buffer_t *buffer = nullptr;
 	
 	// Find or make a buffer for this style
-	for (size_t i = 0; i < text_buffers.size(); i++) {
+	for (size_t i = 0; i < text_buffers.count; i++) {
 		if (text_buffers[i].id == id) {
 			buffer = &text_buffers[i];
 			index  = i;
@@ -62,8 +60,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 		}
 	}
 	if (buffer == nullptr) {
-		text_buffers.push_back({});
-		index  = text_buffers.size() - 1;
+		index  = text_buffers.add({});
 		buffer = &text_buffers[index];
 
 		buffer->mesh     = mesh_create();
@@ -85,9 +82,8 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	style.color           = color;
 	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.5f;
-	text_styles.push_back(style);
-
-	return (text_style_t)(text_styles.size() - 1);
+	
+	return (text_style_t)text_styles.add(style);
 }
 
 ///////////////////////////////////////////
@@ -315,7 +311,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
-		matrix_mul(transform, hierarchy_stack.back().transform, tr);
+		matrix_mul(transform, hierarchy_stack.last().transform, tr);
 	} else {
 		math_matrix_to_fast(transform, &tr);
 	}
@@ -394,7 +390,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 ///////////////////////////////////////////
 
 void text_update() {
-	for (size_t i = 0; i < text_buffers.size(); i++) {
+	for (size_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -410,14 +406,16 @@ void text_update() {
 ///////////////////////////////////////////
 
 void text_shutdown() {
-	for (size_t i = 0; i < text_buffers.size(); i++) {
+	for (size_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		mesh_release(buffer.mesh);
 		font_release(buffer.font);
 		material_release(buffer.material);
 		free(buffer.verts);
 	}
-	text_buffers.clear();
+
+	text_styles .free();
+	text_buffers.free();
 }
 
 } // namespace sk

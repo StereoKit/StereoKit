@@ -20,9 +20,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <vector>
-
-using namespace std;
 
 namespace sk {
 
@@ -326,10 +323,10 @@ void openxr_poll_events() {
 				begin_info.primaryViewConfigurationType = xr_display_types[0];
 
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
-				if (xr_display_count > 1) {
+				if (xr_display_types.count > 1) {
 					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_count-1;
-					secondary.enabledViewConfigurationTypes = xr_display_types+1;
+					secondary.viewConfigurationCount        = xr_display_types.count-1;
+					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
 					begin_info.next = &secondary;
 				}
 

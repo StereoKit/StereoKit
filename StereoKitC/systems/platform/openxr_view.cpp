@@ -9,7 +9,6 @@
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/d3d.h"
-#include "../../libraries/stb_ds.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -78,11 +77,10 @@ XrViewConfigurationType xr_request_displays[] = {
 };
 XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
-uint32_t                                   xr_display_count      = 0;
-device_display_t                          *xr_displays           = nullptr;
-XrViewConfigurationType                   *xr_display_types      = nullptr;
-XrSecondaryViewConfigurationStateMSFT     *xr_display_2nd_states = nullptr;
-XrSecondaryViewConfigurationLayerInfoMSFT *xr_display_2nd_layers = nullptr;
+array_t<device_display_t>                          xr_displays           = {};
+array_t<XrViewConfigurationType>                   xr_display_types      = {};
+array_t<XrSecondaryViewConfigurationStateMSFT>     xr_display_2nd_states = {};
+array_t<XrSecondaryViewConfigurationLayerInfoMSFT> xr_display_2nd_layers = {};
 
 ///////////////////////////////////////////
 
@@ -139,19 +137,18 @@ bool openxr_views_create() {
 					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
 					state.active                = false;
 					state.viewConfigurationType = types[t];
-					arrput(xr_display_2nd_states, state);
+					xr_display_2nd_states.add(state);
 				}
-				arrput(xr_display_types, types[t]);
-				arrput(xr_displays,      device_display_t{});
-				if (!openxr_create_view(types[t], arrlast(xr_displays)))
+				xr_display_types.add(types[t]);
+				xr_displays     .add(device_display_t{});
+				if (!openxr_create_view(types[t], xr_displays.last()))
 					return false;
 			}
 		}
 	}
 	free(types);
-	xr_display_count = arrlen(xr_displays);
 
-	if (xr_display_count == 0) {
+	if (xr_displays.count == 0) {
 		log_info("No valid display configurations were found!");
 		return false;
 	}
@@ -169,13 +166,13 @@ bool openxr_views_create() {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
-	for (size_t i = 0; i < arrlen(xr_displays); i++) {
+	for (size_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(xr_displays[i]);
 	}
-	arrfree(xr_displays);
-	arrfree(xr_display_types);
-	arrfree(xr_display_2nd_states);
-	arrfree(xr_display_2nd_layers);
+	xr_displays          .free();
+	xr_display_types     .free();
+	xr_display_2nd_states.free();
+	xr_display_2nd_layers.free();
 }
 
 ///////////////////////////////////////////
@@ -403,9 +400,9 @@ bool openxr_render_frame() {
 	XrFrameWaitInfo                            wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
 	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
 	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
-	if (xr_display_count > 1) {
-		secondary_states.viewConfigurationCount  = xr_display_count - 1;
-		secondary_states.viewConfigurationStates = xr_display_2nd_states;
+	if (xr_displays.count > 1) {
+		secondary_states.viewConfigurationCount  = xr_displays.count - 1;
+		secondary_states.viewConfigurationStates = &xr_display_2nd_states[0];
 		frame_state.next = &secondary_states;
 	}
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
@@ -418,7 +415,7 @@ bool openxr_render_frame() {
 	xr_displays[0].active = session_active;
 
 	// Check each secondary display to see if it's active or not
-	for (uint32_t i = 1; i < xr_display_count; i++) {
+	for (uint32_t i = 1; i < xr_displays.count; i++) {
 		if (xr_displays[i].active != xr_display_2nd_states[i - 1].active) {
 			xr_displays[i].active  = xr_display_2nd_states[i - 1].active;
 
@@ -444,9 +441,9 @@ bool openxr_render_frame() {
 
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
-	arrsetlen(xr_display_2nd_layers, 0);
+	xr_display_2nd_layers.clear();
 	
-	for (size_t i = 0; i < xr_display_count; i++) {
+	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
 		if (xr_displays[i].type != xr_display_primary) {
@@ -455,7 +452,7 @@ bool openxr_render_frame() {
 			layer.environmentBlendMode  = xr_displays[i].blend;
 			layer.layerCount            = 1;
 			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
-			arrput(xr_display_2nd_layers, layer);
+			xr_display_2nd_layers.add(layer);
 		}
 		openxr_render_layer(xr_time, xr_displays[i]);
 	}
@@ -463,8 +460,8 @@ bool openxr_render_frame() {
 	render_clear();
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
-	end_second.viewConfigurationLayersInfo = xr_display_2nd_layers;
-	end_second.viewConfigurationCount      = arrlen(xr_display_2nd_layers);
+	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
+	end_second.viewConfigurationCount      = xr_display_2nd_layers.count;
 	
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];

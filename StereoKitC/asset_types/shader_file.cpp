@@ -2,7 +2,7 @@
 #include "shader.h"
 
 #include "../libraries/stref.h"
-#include "../libraries/stb_ds.h"
+#include "../libraries/array.h"
 #include "../systems/defaults.h"
 
 namespace sk {
@@ -77,8 +77,8 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 	stref_t file = stref_make(hlsl);
 	stref_t line = {};
 
-	shaderargs_desc_item_t  *buffer_items = nullptr;
-	shader_tex_slots_item_t *tex_items    = nullptr;
+	array_t<shaderargs_desc_item_t>  buffer_items = {};
+	array_t<shader_tex_slots_item_t> tex_items    = {};
 
 	size_t buffer_size = 0;
 	while (stref_nextline(file, line)) {
@@ -142,11 +142,11 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 				}
 			}
 
-			arrput(buffer_items, item);
+			buffer_items.add(item);
 		} if (stref_equals(stripped_word, "texture")) {
 
 			shader_tex_slots_item_t item;
-			item.slot = arrlen(tex_items);
+			item.slot = tex_items.count;
 			if (stref_nextword(curr, word)) {
 				item.name = stref_copy(word);
 				item.id   = stref_hash(word);
@@ -161,7 +161,7 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 				item.default_tex  = tex_find("default/tex");
 			}
 
-			arrput(tex_items, item);
+			tex_items.add(item);
 		} if (stref_equals(stripped_word, "name")) {
 			if (!stref_nextword(curr, word))
 				continue;
@@ -171,24 +171,24 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 
 	out_desc = {};
 	out_desc.buffer_size = (int)buffer_size;
-	size_t data_size = sizeof(shaderargs_desc_item_t) * arrlen(buffer_items);
+	size_t data_size = sizeof(shaderargs_desc_item_t) * buffer_items.count;
 	if (data_size > 0) {
-		out_desc.item_count = arrlen(buffer_items);
+		out_desc.item_count = buffer_items.count;
 		out_desc.item       = (shaderargs_desc_item_t *)malloc(data_size);
-		memcpy(out_desc.item, buffer_items, data_size);
+		memcpy(out_desc.item, buffer_items.data, data_size);
 	}
 	shader_init_buffer(out_desc);
 
 	out_slots = {};
-	data_size = sizeof(shader_tex_slots_item_t) * arrlen(tex_items);
+	data_size = sizeof(shader_tex_slots_item_t) * tex_items.count;
 	if (data_size > 0) {
-		out_slots.tex_count = arrlen(tex_items);
+		out_slots.tex_count = tex_items.count;
 		out_slots.tex       = (shader_tex_slots_item_t*)malloc(data_size);
-		memcpy(out_slots.tex, tex_items, data_size);
+		memcpy(out_slots.tex, tex_items.data, data_size);
 	}
 
-	arrfree(tex_items);
-	arrfree(buffer_items);
+	tex_items.free();
+	buffer_items.free();
 }
 
 ///////////////////////////////////////////

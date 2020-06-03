@@ -3,9 +3,7 @@
 #include "physics.h"
 #include "../stereokit.h"
 #include "../_stereokit.h"
-
-#include <vector>
-using namespace std;
+#include "../libraries/array.h"
 
 #pragma warning(push)
 #pragma warning( disable: 4244 4267 4100 )
@@ -24,7 +22,7 @@ struct solid_move_t {
 	Vector3 old_velocity;
 	Vector3 old_rot_velocity;
 };
-vector<solid_move_t> solid_moves;
+array_t<solid_move_t> solid_moves = {};
 
 struct physics_shape_asset_t {
 	int64_t id;
@@ -37,7 +35,7 @@ double physics_step = 1 / 90.0;
 
 DynamicsWorld *physics_world;
 
-vector<physics_shape_asset_t> physics_shapes;
+array_t<physics_shape_asset_t> physics_shapes = {};
 
 ///////////////////////////////////////////
 
@@ -51,6 +49,9 @@ bool physics_init() {
 ///////////////////////////////////////////
 
 void physics_shutdown() {
+	solid_moves   .free();
+	physics_shapes.free();
+
 	delete physics_world;
 }
 
@@ -65,7 +66,7 @@ void physics_update() {
 		frames = (int32_t)(0.5f/physics_step);
 
 	// Calculate move velocities for objects that need to be at their destination by the end of this function!
-	for (size_t i = 0; i < solid_moves.size(); i++) {
+	for (size_t i = 0; i < solid_moves.count; i++) {
 		solid_move_t &move = solid_moves[i];
 		// Position
 		move.old_velocity  = move.body->getLinearVelocity();
@@ -93,7 +94,7 @@ void physics_update() {
 	}
 
 	// Reset moved objects back to their original values, and clear out our list
-	for (size_t i = 0; i < solid_moves.size(); i++) {
+	for (size_t i = 0; i < solid_moves.count; i++) {
 		solid_moves[i].body->setLinearVelocity (solid_moves[i].old_velocity);
 		solid_moves[i].body->setAngularVelocity(solid_moves[i].old_rot_velocity);
 	}
@@ -186,7 +187,7 @@ void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
 
 void solid_move(solid_t solid, const vec3 &position, const quat &rotation) {
 	RigidBody *body = (RigidBody *)solid;
-	solid_moves.push_back(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)});
+	solid_moves.add(solid_move_t{body, Vector3(position.x, position.y, position.z), Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)});
 }
 
 ///////////////////////////////////////////

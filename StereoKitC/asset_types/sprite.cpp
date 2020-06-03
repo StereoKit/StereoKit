@@ -4,8 +4,7 @@
 #include "../libraries/stref.h"
 #include "../systems/sprite_drawer.h"
 
-#include <vector>
-using namespace std;
+#include <stdio.h>
 
 namespace sk {
 
