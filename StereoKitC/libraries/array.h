@@ -9,7 +9,7 @@ struct array_t {
 	int32_t count;
 	int32_t capacity;
 
-	int32_t    add(const T &item)        { count += 1; if (count >= capacity) { resize(capacity * 2 < 4 ? 4 : capacity * 2); } ((T*)data)[count - 1] = item; return count - 1; }
+	int32_t    add(const T &item)        { if (count+1 >= capacity) { resize(capacity * 2 < 4 ? 4 : capacity * 2); } ((T*)data)[count] = item; count += 1; return count - 1; }
 	void       clear()                   { count = 0; }
 	void       each(void (*e)(T &))      { for (int32_t i=0; i<count; i++) e(((T*)data)[i]); }
 	T         &last() const              { return ((T*)data)[count - 1]; }
@@ -32,11 +32,18 @@ struct array_t {
 //////////////////////////////////////
 
 template <typename T>
-void array_t<T>::resize(int32_t to_capacity) { 
-	capacity = to_capacity;  
-	data     = realloc(data, sizeof(T) * capacity); 
-	if (count > capacity) 
-		count = capacity; 
+void array_t<T>::resize(int32_t to_capacity) {
+	if (count > to_capacity) 
+		count = to_capacity;
+
+	void  *old_memory = data;
+	void  *new_memory = malloc(sizeof(T) * to_capacity); 
+	memcpy(new_memory, old_memory, sizeof(T) * count);
+
+	data = new_memory;
+	::free(old_memory);
+
+	capacity = to_capacity;
 }
 
 //////////////////////////////////////
