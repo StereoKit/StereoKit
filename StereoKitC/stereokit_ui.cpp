@@ -121,12 +121,11 @@ void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position,
 
 ///////////////////////////////////////////
 
-void quadrantify(vert_t *verts, int32_t count, bool uvs) {
-	float left   =  1000;
-	float right  = -1000;
-	float top    = -1000;
-	float bottom =  1000;
-
+void quadrantify(vert_t *verts, int32_t count) {
+	float left   =  FLT_MAX;
+	float right  = -FLT_MIN;
+	float top    = -FLT_MIN;
+	float bottom =  FLT_MAX;
 	for (int32_t i = 0; i < count; i++) {
 		if (verts[i].pos.x < left  ) left   = verts[i].pos.x;
 		if (verts[i].pos.x > right ) right  = verts[i].pos.x;
@@ -135,16 +134,16 @@ void quadrantify(vert_t *verts, int32_t count, bool uvs) {
 	}
 
 	for (int32_t i = 0; i < count; i++) {
-		float q_x = verts[i].pos.x / fabsf(verts[i].pos.x);
-		float q_y = verts[i].pos.y / fabsf(verts[i].pos.y);
-		if (verts[i].pos.x == 0) q_x = 0;
-		if (verts[i].pos.y == 0) q_y = 0;
-		if (uvs)
-			verts[i].uv = { q_x, q_y };
-		if      (q_x < 0) verts[i].pos.x -= left;
-		else if (q_x > 0) verts[i].pos.x -= right;
-		if      (q_y < 0) verts[i].pos.y -= bottom;
-		else if (q_y > 0) verts[i].pos.y -= top;
+		float quadrant_x = verts[i].pos.x / fabsf(verts[i].pos.x);
+		float quadrant_y = verts[i].pos.y / fabsf(verts[i].pos.y);
+		if (verts[i].pos.x == 0) quadrant_x = 0;
+		if (verts[i].pos.y == 0) quadrant_y = 0;
+
+		verts[i].uv = vec2{ quadrant_x, quadrant_y };
+		if      (quadrant_x < 0) verts[i].pos.x -= left;
+		else if (quadrant_x > 0) verts[i].pos.x -= right;
+		if      (quadrant_y < 0) verts[i].pos.y -= bottom;
+		else if (quadrant_y > 0) verts[i].pos.y -= top;
 	}
 }
 
@@ -209,7 +208,7 @@ void ui_quadrant_mesh(float padding) {
 	// center points for the circle
 	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
 	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	quadrantify(verts, vert_count, true);
+	quadrantify(verts, vert_count);
 
 	mesh_set_verts(skui_box, verts, vert_count);
 	mesh_set_inds (skui_box, inds,  ind_count);
