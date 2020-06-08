@@ -71,6 +71,7 @@ matrix                 render_camera_root     = matrix_identity;
 matrix                 render_camera_root_inv = matrix_identity;
 matrix                 render_default_camera_proj;
 vec2                   render_clip_planes = {0.01f, 50};
+float                  render_fov         = 90;
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 tex_t                  render_default_tex;
@@ -110,9 +111,16 @@ void render_set_clip(float near_plane, float far_plane) {
 
 ///////////////////////////////////////////
 
+void render_set_fov(float field_of_view_degrees) {
+	render_fov = field_of_view_degrees;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
 void render_update_projection() {
 	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
-		90 * deg2rad, 
+		render_fov * deg2rad, 
 		(float)sk_system_info().display_width/sk_system_info().display_height, 
 		render_clip_planes.x, 
 		render_clip_planes.y), &render_default_camera_proj);
@@ -333,7 +341,7 @@ void render_check_screenshots() {
 
 		matrix proj;
 		math_fast_to_matrix(XMMatrixPerspectiveFovRH(
-			90 * deg2rad, 
+			render_fov * deg2rad, 
 			(float)w/h, 
 			render_clip_planes.x, 
 			render_clip_planes.y), &proj);

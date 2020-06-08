@@ -106,6 +106,13 @@ namespace StereoKit
 		public static void SetClip(float nearPlane = 0.01f, float farPlane = 50)
 			=> NativeAPI.render_set_clip(nearPlane, farPlane);
 
+		/// <summary>Only works for flatscreen! This updates the camera's 
+		/// projection matrix with a new field of view.</summary>
+		/// <param name="fieldOfViewDegrees">Horizontal field of view in
+		/// degrees.</param>
+		public static void SetFOV(float fieldOfViewDegrees)
+			=> NativeAPI.render_set_fov(fieldOfViewDegrees);
+
 		/// <summary>Renders a Material onto a rendertarget texture! StereoKit uses a 4 vert quad stretched
 		/// over the surface of the texture, and renders the material onto it to the texture.</summary>
 		/// <param name="toRendertarget">A texture that's been set up as a render target!</param>
