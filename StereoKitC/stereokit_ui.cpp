@@ -148,8 +148,10 @@ void quadrantify(vert_t *verts, int32_t count) {
 }
 
 void ui_quadrant_mesh(float padding) {
-	if (skui_box == nullptr)
+	if (skui_box == nullptr) {
 		skui_box = mesh_create();
+		mesh_set_id(skui_box, "default/mesh_ui_button");
+	}
 	
 	float radius = padding / 2;
 	skui_box_min = { padding, padding, 0 };
