@@ -73,7 +73,8 @@ function renderFolder(folder, parent, hierarchy) {
         var expander = document.createElement("input");
         expander.className = "tree-branch-check";
         expander.type      = "checkbox";
-        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); console.log(folder.name); };
+        expander.setAttribute('aria-label', "Expand " + folder.name);
+        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); };
         folder.check = expander;
         folderItem.appendChild(expander);
 

@@ -24,7 +24,7 @@
         </header>
 
         <div id="search-bar">
-            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.." />
+            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.." aria-label="docs search box" />
             <span onclick="var input = document.getElementById('search'); input.value = ''; updateSearch(''); console.log(input);"></span>
         </div>
 
