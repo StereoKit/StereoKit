@@ -399,7 +399,7 @@ bool render_initialize() {
 	render_set_clip(render_clip_planes.x, render_clip_planes.y);
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_find("default/mesh_quad");
+	render_blit_quad = mesh_find(default_id_mesh_quad);
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
@@ -413,7 +413,7 @@ bool render_initialize() {
 	material_set_cull        (render_sky_mat, cull_front);
 	shader_release(sky_shader);
 
-	render_default_tex = tex_find("default/tex");
+	render_default_tex = tex_find(default_id_tex);
 	render_list_stack.add(render_list_create());
 
 	return true;

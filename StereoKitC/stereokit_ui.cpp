@@ -150,7 +150,7 @@ void quadrantify(vert_t *verts, int32_t count) {
 void ui_quadrant_mesh(float padding) {
 	if (skui_box == nullptr) {
 		skui_box = mesh_create();
-		mesh_set_id(skui_box, "default/mesh_ui_button");
+		mesh_set_id(skui_box, default_id_mesh_ui_button);
 	}
 	
 	float radius = padding / 2;
@@ -288,25 +288,25 @@ bool ui_init() {
 	skui_box_dbg  = mesh_gen_cube(vec3_one);
 	//skui_box      = mesh_gen_cube(vec3{skui_settings.padding * 2,skui_settings.padding * 2,1});//mesh_gen_cylinder(skui_settings.padding * 2, 1,{ 0,0,1 }, 24);// mesh_gen_rounded_cube(vec3_one * skui_settings.padding * 2, skui_settings.padding * 2 * 0.2f, 2); // mesh_gen_cube(vec3_one);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
-	skui_mat      = material_find("default/material_ui");
-	skui_mat_quad = material_find("default/material_ui_quadrant");
+	skui_mat      = material_find(default_id_material_ui);
+	skui_mat_quad = material_find(default_id_material_ui_quadrant);
 	//material_set_wireframe(skui_mat_quad, true);
 	skui_mat_dbg  = material_copy(skui_mat);
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
 
-	skui_font_mat   = material_find("default/material_font");
+	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
-	skui_font       = font_find("default/font");
+	skui_font       = font_find(default_id_font);
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
 	
 	skui_layers  .add({});
 	skui_id_stack.add({ STREF_HASH_START });
 
-	skui_snd_interact   = sound_find("default/sound_click");
-	skui_snd_uninteract = sound_find("default/sound_unclick");
-	skui_snd_grab   = sound_find("default/sound_grab");
-	skui_snd_ungrab = sound_find("default/sound_ungrab");
+	skui_snd_interact   = sound_find(default_id_sound_click);
+	skui_snd_uninteract = sound_find(default_id_sound_unclick);
+	skui_snd_grab   = sound_find(default_id_sound_grab);
+	skui_snd_ungrab = sound_find(default_id_sound_ungrab);
 
 	return true;
 }

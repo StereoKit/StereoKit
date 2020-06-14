@@ -152,7 +152,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	if (equirect == nullptr)
 		return nullptr;
 	equirect->header.id = string_hash("temp/equirectid");
-	material_t convert_material = material_find("default/equirect_convert");
+	material_t convert_material = material_find(default_id_material_equirect);
 
 	material_set_texture( convert_material, "source", equirect );
 

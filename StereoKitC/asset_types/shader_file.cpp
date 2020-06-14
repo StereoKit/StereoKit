@@ -63,12 +63,12 @@ void  shader_init_buffer (shaderargs_desc_t &desc);
 ///////////////////////////////////////////
 
 tex_t shader_stref_to_tex(const stref_t &tex_name) {
-	if      (stref_equals(tex_name, "white")) return tex_find("default/tex");
-	else if (stref_equals(tex_name, "black")) return tex_find("default/tex_black");
-	else if (stref_equals(tex_name, "gray" )) return tex_find("default/tex_gray");
-	else if (stref_equals(tex_name, "flat" )) return tex_find("default/tex_flat");
-	else if (stref_equals(tex_name, "rough")) return tex_find("default/tex_rough");
-	else                                      return tex_find("default/tex");
+	if      (stref_equals(tex_name, "white")) return tex_find(default_id_tex);
+	else if (stref_equals(tex_name, "black")) return tex_find(default_id_tex_black);
+	else if (stref_equals(tex_name, "gray" )) return tex_find(default_id_tex_gray);
+	else if (stref_equals(tex_name, "flat" )) return tex_find(default_id_tex_flat);
+	else if (stref_equals(tex_name, "rough")) return tex_find(default_id_tex_rough);
+	else                                      return tex_find(default_id_tex);
 }
 
 ///////////////////////////////////////////
@@ -158,7 +158,7 @@ void shader_file_parse(const char *hlsl, char **out_name, shaderargs_desc_t &out
 				item.default_tex  = shader_stref_to_tex(word);
 			} else {
 				item.default_name = string_copy("white");
-				item.default_tex  = tex_find("default/tex");
+				item.default_tex  = tex_find(default_id_tex);
 			}
 
 			tex_items.add(item);

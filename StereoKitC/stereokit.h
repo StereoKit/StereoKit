@@ -764,6 +764,39 @@ SK_API void log_set_colors(log_colors_ colors);
 SK_API void log_subscribe  (void (*on_log)(log_, const char*));
 SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
 
+///////////////////////////////////////////
+
+static const char *default_id_material             = "default/material";
+static const char *default_id_material_equirect    = "default/equirect_convert";
+static const char *default_id_material_font        = "default/material_font";
+static const char *default_id_material_hand        = "default/material_hand";
+static const char *default_id_material_ui          = "default/material_ui";
+static const char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+static const char *default_id_tex       = "default/tex";
+static const char *default_id_tex_black = "default/tex_black";
+static const char *default_id_tex_gray  = "default/tex_gray";
+static const char *default_id_tex_flat  = "default/tex_flat";
+static const char *default_id_tex_rough = "default/tex_rough";
+static const char *default_id_cubemap   = "default/cubemap";
+static const char *default_id_font      = "default/font";
+static const char *default_id_mesh_quad      = "default/mesh_quad";
+static const char *default_id_mesh_cube      = "default/mesh_cube";
+static const char *default_id_mesh_sphere    = "default/mesh_sphere";
+static const char *default_id_mesh_lefthand  = "default/mesh_lefthand";
+static const char *default_id_mesh_righthand = "default/mesh_righthand";
+static const char *default_id_mesh_ui_button = "default/mesh_ui_button";
+static const char *default_id_shader             = "default/shader";
+static const char *default_id_shader_pbr         = "default/shader_pbr";
+static const char *default_id_shader_unlit       = "default/shader_unlit";
+static const char *default_id_shader_font        = "default/shader_font";
+static const char *default_id_shader_equirect    = "default/shader_equirect";
+static const char *default_id_shader_ui          = "default/shader_ui";
+static const char *default_id_shader_ui_quadrant = "default/shader_ui_quadrant";
+static const char *default_id_sound_click   = "default/sound_click";
+static const char *default_id_sound_unclick = "default/sound_unclick";
+static const char *default_id_sound_grab    = "default/sound_grab";
+static const char *default_id_sound_ungrab  = "default/sound_ungrab";
+
 #ifdef __cplusplus
 } // namespace sk
 #endif

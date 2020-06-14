@@ -55,7 +55,7 @@ material_t modelfmt_fbx_material(const char *filename, const char *folder, shade
 	if (result != nullptr)
 		return result;
 
-	result = material_create(shader == nullptr ? shader_find("default/shader") : shader);
+	result = material_create(shader == nullptr ? shader_find(default_id_shader) : shader);
 	material_set_id(result, id);
 
 	tex_t diffuse  = modelfmt_fbx_texture(filename, folder, mat->getTexture(ofbx::Texture::DIFFUSE ), true);
@@ -148,7 +148,7 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 		mesh_t     mesh     = modelfmt_fbx_geometry(filename, folder, fbx_mesh->name, fbx_mesh->getGeometry());
 		material_t material = fbx_mesh->getMaterialCount() > 0 
 			? modelfmt_fbx_material(filename, folder, shader, fbx_mesh->getMaterial(0))
-			: material_find("default/material");
+			: material_find(default_id_material);
 
 		ofbx::Matrix transform = fbx_mesh->getGlobalTransform();
 		matrix sk_transform;
