@@ -57,7 +57,12 @@ void hand_oxra_update_joints() {
 		XrHandJointsLocateInfoEXT locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
+
+		XrHandJointLocationEXT joint_locations[XR_HAND_JOINT_COUNT_EXT];
 		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
+		locations.isActive = XR_FALSE;
+		locations.jointCount = XR_HAND_JOINT_COUNT_EXT;
+		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
 		// Update the tracking state of the hand
