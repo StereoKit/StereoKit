@@ -152,16 +152,16 @@ class DemoUI : ITest
         /// As with windows, Handles need an End call.
         /// 
         UI.HandleEnd();
-        /// 
-        /// And there you go! That's how UI works in StereoKit, pretty simple, huh?
-        /// For further reference, and more UI methods, check out the 
-        /// [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
-        /// 
-        /// If you'd like to see the complete code for this sample, 
-        /// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoUI.cs)!
-        /// :End:
-    }
+		/// 
+		/// And there you go! That's how UI works in StereoKit, pretty simple, huh?
+		/// For further reference, and more UI methods, check out the 
+		/// [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
+		/// 
+		/// If you'd like to see the complete code for this sample, 
+		/// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
+		/// :End:
+	}
 
-    public void Initialize() { }
+	public void Initialize() { }
     public void Shutdown() { }
 }
