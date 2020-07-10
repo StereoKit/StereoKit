@@ -178,6 +178,7 @@
     <ClCompile Include="systems\hand\hand_oxr_articulated.cpp">
       <Filter>systems\hand</Filter>
     </ClCompile>
+    <ClCompile Include="systems\render_sort.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -380,6 +381,10 @@
     <ClInclude Include="systems\hand\hand_oxr_articulated.h">
       <Filter>systems\hand</Filter>
     </ClInclude>
+    <ClInclude Include="systems\render_sort.h" />
+    <ClInclude Include="libraries\array.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -432,5 +437,6 @@
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
