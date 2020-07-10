@@ -5,14 +5,14 @@
 
 template <typename T>
 struct array_t {
-	void   *data;
+	T      *data;
 	int32_t count;
 	int32_t capacity;
 
-	int32_t    add(const T &item)        { if (count+1 >= capacity) { resize(capacity * 2 < 4 ? 4 : capacity * 2); } ((T*)data)[count] = item; count += 1; return count - 1; }
+	int32_t    add(const T &item)        { if (count+1 >= capacity) { resize(capacity * 2 < 4 ? 4 : capacity * 2); } data[count] = item; count += 1; return count - 1; }
 	void       clear()                   { count = 0; }
-	void       each(void (*e)(T &))      { for (int32_t i=0; i<count; i++) e(((T*)data)[i]); }
-	T         &last() const              { return ((T*)data)[count - 1]; }
+	void       each(void (*e)(T &))      { for (int32_t i=0; i<count; i++) e(data[i]); }
+	T         &last() const              { return data[count - 1]; }
 	void       pop()                     { remove(count - 1); }
 	void       resize(int32_t to_capacity);
 	void       free();
@@ -21,9 +21,9 @@ struct array_t {
 	void       insert(int32_t at, const T &item);
 	void       reverse();
 
-	inline void set        (int32_t id, T &val) { ((T*)data)[id] = val; }
-	inline T   &get        (int32_t id) const   { return ((T*)data)[id]; }
-	inline T   &operator[] (int32_t id) const   { return ((T*)data)[id]; }
+	inline void set        (int32_t id, T &val) { data[id] = val; }
+	inline T   &get        (int32_t id) const   { return data[id]; }
+	inline T   &operator[] (int32_t id) const   { return data[id]; }
 };
 
 #include <assert.h>
@@ -40,7 +40,7 @@ void array_t<T>::resize(int32_t to_capacity) {
 	void  *new_memory = malloc(sizeof(T) * to_capacity); 
 	memcpy(new_memory, old_memory, sizeof(T) * count);
 
-	data = new_memory;
+	data = (T*)new_memory;
 	::free(old_memory);
 
 	capacity = to_capacity;
