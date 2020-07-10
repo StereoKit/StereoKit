@@ -339,6 +339,12 @@ void openxr_poll_events() {
 			case XR_SESSION_STATE_LOSS_PENDING: sk_run = false;              break;
 			}
 		} break;
+		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
+			XrEventDataInteractionProfileChanged *changed = (XrEventDataInteractionProfileChanged*)&event_buffer;
+			if (changed->session == xr_session) {
+				oxri_update_interaction_profile();
+			}
+		} break;
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
