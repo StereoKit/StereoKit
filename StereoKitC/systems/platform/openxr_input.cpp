@@ -331,7 +331,7 @@ void oxri_set_profile(handed_ hand, XrPath profile) {
 		if (xrc_profile_offsets[i].profile == profile) {
 			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset_pos[hand];
 			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset_rot[hand];
-			log_diagf("Switched %s hand profile to %s", hand == handed_left ? "left" : "right", xrc_profile_offsets[i].name);
+			log_diagf("Switched %s controller profile to %s", hand == handed_left ? "left" : "right", xrc_profile_offsets[i].name);
 			break;
 		}
 	}
@@ -346,7 +346,8 @@ void oxri_update_interaction_profile() {
 
 	XrInteractionProfileState active_profile = { XR_TYPE_INTERACTION_PROFILE_STATE };
 	for (int32_t h = 0; h < handed_max; h++) {
-		xrGetCurrentInteractionProfile(xr_session, path[h], &active_profile);
+		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, path[h], &active_profile)))
+			continue;
 		if (active_profile.interactionProfile != xrc_active_profile[h])
 			oxri_set_profile((handed_)h, active_profile.interactionProfile);
 	}
