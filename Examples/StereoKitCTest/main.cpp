@@ -50,8 +50,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 	settings_t settings = {};
 	sprintf_s(settings.assets_folder, assets_folder);
 	sk_set_settings(settings);
+	log_set_filter(log_diagnostic);
 
-	if (!sk_init("StereoKit C", runtime_flatscreen))
+	if (!sk_init("StereoKit C", runtime_mixedreality))
 		return 1;
 
 	common_init();
