@@ -23,14 +23,15 @@ XrSpace     xr_hand_space  [2] = {};
 XrPath      xrc_pose_path  [2];
 
 struct xrc_profile_info_t {
+	const char *name;
 	XrPath profile;
 	quat   offset_rot[2];
 	vec3   offset_pos[2];
 };
 array_t<xrc_profile_info_t> xrc_profile_offsets = {};
-XrPath                      xrc_active_profile  = 0xFFFFFFFF;
+XrPath                      xrc_active_profile[2] = { 0xFFFFFFFF, 0xFFFFFFFF };
 
-void oxri_set_profile(XrPath profile);
+void oxri_set_profile(handed_ hand, XrPath profile);
 
 ///////////////////////////////////////////
 
@@ -130,6 +131,7 @@ bool oxri_init() {
 			// Orientation fix for WMR vs. HoloLens controllers
 			xrc_profile_info_t info;
 			info.profile = profile_path;
+			info.name    = "microsoft/motion_controller";
 			if (sk_info.display_type == display_opaque) {
 				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
 				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
@@ -142,7 +144,6 @@ bool oxri_init() {
 				info.offset_pos[handed_right] = { 0, 0.005f, 0 };
 			}
 			xrc_profile_offsets.add(info);
-			log_info("Input suggestion: microsoft");
 		}
 	}
 
@@ -167,12 +168,12 @@ bool oxri_init() {
 			// Orientation fix for HTC Vive controllers
 			xrc_profile_info_t info;
 			info.profile = profile_path;
+			info.name    = "htc/vive_controller";
 			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
 			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
 			info.offset_pos[handed_left ] = {0.0f, -0.05f, 0.085f };
 			info.offset_pos[handed_right] = {0.0f, -0.05f, 0.085f };
 			xrc_profile_offsets.add(info);
-			log_info("Input suggestion: htc");
 		}
 	}
 
@@ -197,12 +198,12 @@ bool oxri_init() {
 			// Orientation fix for Valve Index controllers
 			xrc_profile_info_t info;
 			info.profile = profile_path;
-			info.offset_rot[handed_left ] = quat_from_angles(-20, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-20, 0, 0);
-			info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.025f };
-			info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.025f };
+			info.name    = "valve/index_controller";
+			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
+			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
+			info.offset_pos[handed_left ] = { 0.0f, -0.05f, 0.085f };
+			info.offset_pos[handed_right] = { 0.0f, -0.05f, 0.085f };
 			xrc_profile_offsets.add(info);
-			log_info("Input suggestion: vive");
 		}
 	}
 
@@ -227,12 +228,12 @@ bool oxri_init() {
 			// Orientation fix for oculus touch controllers
 			xrc_profile_info_t info;
 			info.profile = profile_path;
+			info.name    = "oculus/touch_controller";
 			info.offset_rot[handed_left ] = quat_from_angles(-20, 0, 0);
 			info.offset_rot[handed_right] = quat_from_angles(-20, 0, 0);
 			info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.025f };
 			info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.025f };
 			xrc_profile_offsets.add(info);
-			log_info("Input suggestion: Oculus");
 		}
 	}
 
@@ -253,12 +254,12 @@ bool oxri_init() {
 		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
+			info.name    = "khr/simple_controller";
 			info.offset_rot[handed_left ] = quat_identity;
 			info.offset_rot[handed_right] = quat_identity;;
 			info.offset_pos[handed_left ] = vec3_zero;
 			info.offset_pos[handed_right] = vec3_zero;
 			xrc_profile_offsets.add(info);
-			log_info("Input suggestion: KHR Fallback");
 		}
 	}
 
@@ -295,7 +296,8 @@ bool oxri_init() {
 		return false;
 	}
 
-	oxri_set_profile(xrc_active_profile);
+	oxri_set_profile(handed_left,  xrc_active_profile[handed_left ]);
+	oxri_set_profile(handed_right, xrc_active_profile[handed_right]);
 	return true;
 }
 
@@ -323,32 +325,31 @@ void oxri_update_frame() {
 
 ///////////////////////////////////////////
 
-void oxri_set_profile(XrPath profile) {
-	xrc_active_profile = profile;
+void oxri_set_profile(handed_ hand, XrPath profile) {
+	xrc_active_profile[hand] = profile;
 	for (int32_t i = 0; i < xrc_profile_offsets.count; i++) {
 		if (xrc_profile_offsets[i].profile == profile) {
-			xrc_offset_pos[0] = xrc_profile_offsets[i].offset_pos[0];
-			xrc_offset_pos[1] = xrc_profile_offsets[i].offset_pos[1];
-			xrc_offset_rot[0] = xrc_profile_offsets[i].offset_rot[0];
-			xrc_offset_rot[1] = xrc_profile_offsets[i].offset_rot[1];
-			log_info("!!Switched profiles!!");
+			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset_pos[hand];
+			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset_rot[hand];
+			log_diagf("Switched %s hand profile to %s", hand == handed_left ? "left" : "right", xrc_profile_offsets[i].name);
 			break;
 		}
 	}
-	
 }
 
 ///////////////////////////////////////////
 
 void oxri_update_interaction_profile() {
-	XrPath path;
-	xrStringToPath(xr_instance, "/user/hand/left",  &path);
+	XrPath path[2];
+	xrStringToPath(xr_instance, "/user/hand/left",  &path[handed_left]);
+	xrStringToPath(xr_instance, "/user/hand/right", &path[handed_right]);
+
 	XrInteractionProfileState active_profile = { XR_TYPE_INTERACTION_PROFILE_STATE };
-	xrGetCurrentInteractionProfile(xr_session, path, &active_profile);
-	log_infof("Switching to profile %llu, %d available", active_profile.interactionProfile, xrc_profile_offsets.count);
-	
-	if (active_profile.interactionProfile != xrc_active_profile)
-		oxri_set_profile(active_profile.interactionProfile);
+	for (int32_t h = 0; h < handed_max; h++) {
+		xrGetCurrentInteractionProfile(xr_session, path[h], &active_profile);
+		if (active_profile.interactionProfile != xrc_active_profile[h])
+			oxri_set_profile((handed_)h, active_profile.interactionProfile);
+	}
 }
 
 } // namespace sk
