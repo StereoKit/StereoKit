@@ -146,6 +146,10 @@ bool openxr_init(const char *app_name) {
 	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
 	xr_depth_lsr         = xr_depth_lsr_ext;
 
+	if (xr_articulated_hands)   log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_depth_lsr)           log_diag("OpenXR depth LSR ext enabled!");
+	if (sk_info.spatial_bridge) log_diag("OpenXR spatial bridge ext enabled!");
+
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
 	xr_check(xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
