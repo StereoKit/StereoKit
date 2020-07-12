@@ -53,8 +53,9 @@ namespace StereoKitDocumenter
                     }
                 }
             }
-            if (curr != null)
-                Console.WriteLine("Missing an :End: in documentation code sample!");
+            if (curr != null) { 
+                Console.WriteLine("Missing an :End: in documentation code sample for " + curr.Name + "!");
+			}
         }
 
         private static DocExample FindDoc(string docName)
