@@ -7,6 +7,7 @@ var documents =
 			{name : 'Learning Resources'},
 			{name : 'User Interface'},
 			{name : 'Using Hands'},
+			{name : 'Using QR Codes'},
 		]
 		},
 		{name : 'Reference',
@@ -537,6 +538,7 @@ var documents =
 			{name : 'Renderer',
 			 pages: [
 				{name : 'CameraRoot'},
+				{name : 'ClearColor'},
 				{name : 'EnableSky'},
 				{name : 'SkyLight'},
 				{name : 'SkyTex'},
@@ -544,6 +546,7 @@ var documents =
 				{name : 'Blit'},
 				{name : 'Screenshot'},
 				{name : 'SetClip'},
+				{name : 'SetFOV'},
 			]
 			},
 			{name : 'Runtime',
@@ -673,6 +676,7 @@ var documents =
 				{name : 'displayHeight'},
 				{name : 'displayType'},
 				{name : 'displayWidth'},
+				{name : 'spatialBridge'},
 			]
 			},
 			{name : 'Tex',
@@ -706,6 +710,7 @@ var documents =
 				{name : 'Depth16'},
 				{name : 'Depth32'},
 				{name : 'DepthStencil'},
+				{name : 'None'},
 				{name : 'R16'},
 				{name : 'R32'},
 				{name : 'R8'},
