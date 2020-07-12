@@ -1,9 +1,11 @@
 #include "stereokit.h"
 #include "log.h"
 #include "libraries/stref.h"
-#include "libraries/stb_ds.h"
+#include "libraries/array.h"
 #include "systems/platform/platform_utils.h"
 
+#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -12,7 +14,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 typedef void(*log_listener_t)(log_, const char *);
-log_listener_t *log_listeners = nullptr;
+array_t<log_listener_t> log_listeners = {};
 
 log_        log_filter = log_inform;
 log_colors_ log_colors = log_colors_ansi;
@@ -179,7 +181,7 @@ void log_write(log_ level, const char *text) {
 		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
 	// Send the plain-text version out to the listeners as well
-	for (size_t i = 0; i < arrlen( log_listeners ); i++) {
+	for (size_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i](level, colored_text);
 	}
 	platform_debug_output(colored_text);
@@ -299,15 +301,15 @@ void log_clear_any_fail_reason() {
 ///////////////////////////////////////////
 
 void log_subscribe(void (*on_log)(log_, const char*)) {
-	arrput(log_listeners, on_log);
+	log_listeners.add(on_log);
 }
 
 ///////////////////////////////////////////
 
 void log_unsubscribe(void (*on_log)(log_, const char*)) {
-	for (size_t i = 0; i < arrlen(log_listeners); i++) {
+	for (size_t i = 0; i < log_listeners.count; i++) {
 		if (log_listeners[i] == on_log) {
-			arrdel(log_listeners, i);
+			log_listeners.remove(i);
 			break;
 		}
 	}

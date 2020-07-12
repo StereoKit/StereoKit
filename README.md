@@ -11,7 +11,7 @@ StereoKit is designed to solve issues that occur when using a game engine to cre
 ![Screenshot](/Documentation/img/FeatureImage.jpg)
 
 StereoKit Features:
-- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, eventually everywhere OpenXR is!
+- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, SteamVR, eventually everywhere OpenXR is!
 - Builds your application in seconds, not minutes
 - Input: articulated hands, pointers, keyboard/mouse
 - Easy and powerful UI and interactions

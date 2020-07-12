@@ -56,11 +56,11 @@ tex_t defaults_texture(const char *id, color32 color) {
 
 bool defaults_init() {
 	// Textures
-	sk_default_tex       = defaults_texture("default/tex",       {255,255,255,255});
-	sk_default_tex_black = defaults_texture("default/tex_black", {0,0,0,255}      );
-	sk_default_tex_gray  = defaults_texture("default/tex_gray",  {128,128,128,255});
-	sk_default_tex_flat  = defaults_texture("default/tex_flat",  {128,128,255,255}); // Default for normal maps
-	sk_default_tex_rough = defaults_texture("default/tex_rough", {0,0,255,255}    ); // Default for metal/roughness maps
+	sk_default_tex       = defaults_texture(default_id_tex,       {255,255,255,255});
+	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,255}      );
+	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {128,128,128,255});
+	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {128,128,255,255}); // Default for normal maps
+	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,0,255,255}    ); // Default for metal/roughness maps
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||
@@ -82,7 +82,7 @@ bool defaults_init() {
 		{-0.11f, -0.13f, -0.13f},
 	} };
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16);
-	tex_set_id(sk_default_cubemap, "default/cubemap");
+	tex_set_id(sk_default_cubemap, default_id_cubemap);
 	render_set_skytex(sk_default_cubemap);
 	render_set_skylight(lighting);
 	render_enable_skytex(true);
@@ -98,12 +98,12 @@ bool defaults_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);
-	mesh_set_id   (sk_default_quad, "default/mesh_quad");
+	mesh_set_id   (sk_default_quad, default_id_mesh_quad);
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
 	
-	mesh_set_id(sk_default_cube,   "default/mesh_cube");
-	mesh_set_id(sk_default_sphere, "default/mesh_sphere");
+	mesh_set_id(sk_default_cube,   default_id_mesh_cube);
+	mesh_set_id(sk_default_sphere, default_id_mesh_sphere);
 
 	// Shaders
 	sk_default_shader          = shader_create_mem((void*)shader_builtin_default,  sizeof(shader_builtin_default));
@@ -123,13 +123,13 @@ bool defaults_init() {
 		sk_default_shader_ui_quadrant == nullptr)
 		return false;
 
-	shader_set_id(sk_default_shader,          "default/shader");
-	shader_set_id(sk_default_shader_pbr,      "default/shader_pbr");
-	shader_set_id(sk_default_shader_unlit,    "default/shader_unlit");
-	shader_set_id(sk_default_shader_font,     "default/shader_font");
-	shader_set_id(sk_default_shader_equirect, "default/shader_equirect");
-	shader_set_id(sk_default_shader_ui,       "default/shader_ui");
-	shader_set_id(sk_default_shader_ui_quadrant, "default/shader_ui_quadrant");
+	shader_set_id(sk_default_shader,          default_id_shader);
+	shader_set_id(sk_default_shader_pbr,      default_id_shader_pbr);
+	shader_set_id(sk_default_shader_unlit,    default_id_shader_unlit);
+	shader_set_id(sk_default_shader_font,     default_id_shader_font);
+	shader_set_id(sk_default_shader_equirect, default_id_shader_equirect);
+	shader_set_id(sk_default_shader_ui,       default_id_shader_ui);
+	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
 	
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
@@ -145,11 +145,11 @@ bool defaults_init() {
 		sk_default_material_ui_quadrant == nullptr)
 		return false;
 
-	material_set_id(sk_default_material,          "default/material");
-	material_set_id(sk_default_material_equirect, "default/equirect_convert");
-	material_set_id(sk_default_material_font,     "default/material_font");
-	material_set_id(sk_default_material_ui,       "default/material_ui");
-	material_set_id(sk_default_material_ui_quadrant, "default/material_ui_quadrant");
+	material_set_id(sk_default_material,          default_id_material);
+	material_set_id(sk_default_material_equirect, default_id_material_equirect);
+	material_set_id(sk_default_material_font,     default_id_material_font);
+	material_set_id(sk_default_material_ui,       default_id_material_ui);
+	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
@@ -157,7 +157,7 @@ bool defaults_init() {
 	sk_default_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
 	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color32{ 255,255,255,255 });
 
-	font_set_id(sk_default_font, "default/font");
+	font_set_id(sk_default_font, default_id_font);
 
 	// Sounds
 	sk_default_click = sound_generate([](float t){
@@ -197,10 +197,10 @@ bool defaults_init() {
 		return (band1*0.05f + band2*0.05f + band3*0.1f + band4*0.8f) * 0.1f;
 		}, .04f);
 
-	sound_set_id(sk_default_click,   "default/sound_click");
-	sound_set_id(sk_default_unclick, "default/sound_unclick");
-	sound_set_id(sk_default_grab,    "default/sound_grab");
-	sound_set_id(sk_default_ungrab,  "default/sound_ungrab");
+	sound_set_id(sk_default_click,   default_id_sound_click);
+	sound_set_id(sk_default_unclick, default_id_sound_unclick);
+	sound_set_id(sk_default_grab,    default_id_sound_grab);
+	sound_set_id(sk_default_ungrab,  default_id_sound_ungrab);
 
 	return true;
 }

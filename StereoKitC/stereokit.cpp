@@ -49,7 +49,7 @@ int64_t sk_timev_raw      = 0;
 
 ///////////////////////////////////////////
 
-void sk_set_settings(settings_t &settings) {
+void sk_set_settings(const settings_t &settings) {
 	if (sk_initialized) {
 		log_err("Settings need set before initialization! Please call this -before- sk_init.");
 		return;

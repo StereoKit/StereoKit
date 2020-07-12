@@ -84,7 +84,7 @@ void line_addv(line_point_t start, line_point_t end) {
 	end  .thickness *= 0.5f;
 
 	if (hierarchy_enabled) {
-		matrix &transform = hierarchy_stack.back().transform;
+		matrix &transform = hierarchy_stack.last().transform;
 		start.pt = matrix_mul_point(transform, start.pt);
 		end  .pt = matrix_mul_point(transform, end.pt);
 	}

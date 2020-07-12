@@ -18,4 +18,10 @@ Information about a system's capabilities and properties!
 
 
 
+## Static Fields and Properties
+
+|  |  |
+|--|--|
+|bool [spatialBridge]({{site.url}}/Pages/Reference/SystemInfo/spatialBridge.html)|Does the device we're currently on have the spatial graph bridge extension? The extension is provided through the function `Pose.FromSpatialNode`. This allows OpenXR to talk with certain windows APIs, such as the QR code API that provides Graph Node GUIDs for the pose.|
+
 

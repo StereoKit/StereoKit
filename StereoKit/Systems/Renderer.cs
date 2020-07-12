@@ -35,6 +35,14 @@ namespace StereoKit
 			set => NativeAPI.render_enable_skytex(value);
 		}
 
+		/// <summary>This is the color the renderer will clear the screen to
+		/// when beginning to draw a new frame. This is ignored on displays 
+		/// with transparent screens</summary>
+		public static Color32 ClearColor
+		{
+			set => NativeAPI.render_set_clear_color(value);
+		}
+
 		/// <summary>Sets and gets the root transform of the camera! This
 		/// will be the identity matrix by default. The user's head  location
 		/// will then be relative to this point. This is great to use if 
@@ -97,6 +105,13 @@ namespace StereoKit
 		/// not true distance, but rather Z-axis distance from zero in View Space coordinates!</param>
 		public static void SetClip(float nearPlane = 0.01f, float farPlane = 50)
 			=> NativeAPI.render_set_clip(nearPlane, farPlane);
+
+		/// <summary>Only works for flatscreen! This updates the camera's 
+		/// projection matrix with a new field of view.</summary>
+		/// <param name="fieldOfViewDegrees">Horizontal field of view in
+		/// degrees.</param>
+		public static void SetFOV(float fieldOfViewDegrees)
+			=> NativeAPI.render_set_fov(fieldOfViewDegrees);
 
 		/// <summary>Renders a Material onto a rendertarget texture! StereoKit uses a 4 vert quad stretched
 		/// over the surface of the texture, and renders the material onto it to the texture.</summary>

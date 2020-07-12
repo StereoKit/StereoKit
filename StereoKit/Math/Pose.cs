@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -70,6 +71,9 @@ namespace StereoKit
 		/// <returns>A new pose, blended between a and b based on percent!</returns>
 		public static Pose Lerp(Pose a, Pose b, float percent)
 			=> new Pose(Vec3.Lerp(a.position, b.position, percent), Quat.Slerp(a.orientation, b.orientation, percent));
+
+		public static Pose FromSpatialNode(Guid spatialNodeGuid)
+			=> NativeAPI.pose_from_spatial(spatialNodeGuid.ToByteArray());
 
 		public override string ToString()
 			=> string.Format("{0}, {1}", position, Forward);

@@ -9,7 +9,6 @@
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/d3d.h"
-#include "../../libraries/stb_ds.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -74,12 +73,14 @@ void device_display_delete(device_display_t &display) {
 
 XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
 XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 
-uint32_t                                   xr_display_count      = 0;
-device_display_t                          *xr_displays           = nullptr;
-XrViewConfigurationType                   *xr_display_types      = nullptr;
+array_t<device_display_t>                          xr_displays           = {};
+array_t<XrViewConfigurationType>                   xr_display_types      = {};
+array_t<XrSecondaryViewConfigurationStateMSFT>     xr_display_2nd_states = {};
+array_t<XrSecondaryViewConfigurationLayerInfoMSFT> xr_display_2nd_layers = {};
 
 ///////////////////////////////////////////
 
@@ -97,6 +98,7 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO:                              return "PrimaryMono";
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO:                            return "PrimaryStereo";
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO:                        return "PrimaryQuad_Varjo";
+	case XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT: return "SecondaryMonoFPO_Msft";
 	default: return "N/A";
 	}
 }
@@ -131,17 +133,22 @@ bool openxr_views_create() {
 	for (uint32_t t = 0; t < count; t++) {
 		for (uint32_t r = 0; r < _countof(xr_request_displays); r++) {
 			if (types[t] == xr_request_displays[r]) {
-				arrput(xr_display_types, types[t]);
-				arrput(xr_displays,      device_display_t{});
-				if (!openxr_create_view(types[t], arrlast(xr_displays)))
+				if (types[t] != xr_display_primary) {
+					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
+					state.active                = false;
+					state.viewConfigurationType = types[t];
+					xr_display_2nd_states.add(state);
+				}
+				xr_display_types.add(types[t]);
+				xr_displays     .add(device_display_t{});
+				if (!openxr_create_view(types[t], xr_displays.last()))
 					return false;
 			}
 		}
 	}
 	free(types);
-	xr_display_count = arrlen(xr_displays);
 
-	if (xr_display_count == 0) {
+	if (xr_displays.count == 0) {
 		log_info("No valid display configurations were found!");
 		return false;
 	}
@@ -159,11 +166,13 @@ bool openxr_views_create() {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
-	for (size_t i = 0; i < arrlen(xr_displays); i++) {
+	for (size_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(xr_displays[i]);
 	}
-	arrfree(xr_displays);
-	arrfree(xr_display_types);
+	xr_displays          .free();
+	xr_display_types     .free();
+	xr_display_2nd_states.free();
+	xr_display_2nd_layers.free();
 }
 
 ///////////////////////////////////////////
@@ -279,6 +288,13 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT 
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
+	// If it's a secondary view, let OpenXR know
+	XrSecondaryViewConfigurationSwapchainCreateInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SWAPCHAIN_CREATE_INFO_MSFT };
+	if (type != xr_display_primary) {
+		secondary.viewConfigurationType = type;
+		swapchain_info.next = &secondary;
+	}
+
 	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle), 
 		"xrCreateSwapchain failed [%s]");
 
@@ -381,8 +397,14 @@ bool openxr_render_frame() {
 	// Block until the previous frame is finished displaying, and is ready for another one.
 	// Also returns a prediction of when the next frame will be displayed, for use with predicting
 	// locations of controllers, viewpoints, etc.
-	XrFrameWaitInfo                             wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
-	XrFrameState                                frame_state      = { XR_TYPE_FRAME_STATE };
+	XrFrameWaitInfo                            wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
+	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
+	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
+	if (xr_displays.count > 1) {
+		secondary_states.viewConfigurationCount  = xr_displays.count - 1;
+		secondary_states.viewConfigurationStates = &xr_display_2nd_states[0];
+		frame_state.next = &secondary_states;
+	}
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
 		"xrWaitFrame [%s]");
 
@@ -391,6 +413,17 @@ bool openxr_render_frame() {
 		xr_session_state == XR_SESSION_STATE_VISIBLE || 
 		xr_session_state == XR_SESSION_STATE_FOCUSED;
 	xr_displays[0].active = session_active;
+
+	// Check each secondary display to see if it's active or not
+	for (uint32_t i = 1; i < xr_displays.count; i++) {
+		if (xr_displays[i].active != xr_display_2nd_states[i - 1].active) {
+			xr_displays[i].active  = xr_display_2nd_states[i - 1].active;
+
+			if (xr_displays[i].active) {
+				openxr_update_swapchains(xr_displays[i]);
+			}
+		}
+	}
 
 	// Must be called before any rendering is done! This can return some interesting flags, like 
 	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
@@ -408,14 +441,28 @@ bool openxr_render_frame() {
 
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
-	for (size_t i = 0; i < xr_display_count; i++) {
+	xr_display_2nd_layers.clear();
+	
+	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
+		if (xr_displays[i].type != xr_display_primary) {
+			XrSecondaryViewConfigurationLayerInfoMSFT layer = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
+			layer.viewConfigurationType = xr_displays[i].type;
+			layer.environmentBlendMode  = xr_displays[i].blend;
+			layer.layerCount            = 1;
+			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
+			xr_display_2nd_layers.add(layer);
+		}
 		openxr_render_layer(xr_time, xr_displays[i]);
 	}
 
 	render_clear();
 
+	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
+	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
+	end_second.viewConfigurationCount      = xr_display_2nd_layers.count;
+	
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
 	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
@@ -423,6 +470,8 @@ bool openxr_render_frame() {
 	end_info.environmentBlendMode = xr_displays[0].blend;
 	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
 	end_info.layers               = &layer;
+	if (end_second.viewConfigurationCount > 0)
+		end_info.next = &end_second;
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
 	return true;
@@ -478,6 +527,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 	xrWaitSwapchainImage(layer.swapchain_depth.handle, &wait_info);
 
 	// And now we'll iterate through each viewpoint, and render it!
+	vec2 clip_planes = render_get_clip();
 	for (uint32_t i = 0; i < layer.view_count; i++) {
 		// Set up our rendering information for the viewpoint we're using right now!
 		XrCompositionLayerProjectionView &view = layer.view_layers[i];
@@ -493,8 +543,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 			XrCompositionLayerDepthInfoKHR &depth = layer.view_depths[i];
 			depth.minDepth = 0;
 			depth.maxDepth = 1;
-			depth.nearZ    = 0.1f;
-			depth.farZ     = 50;
+			depth.nearZ    = clip_planes.x;
+			depth.farZ     = clip_planes.y;
 			depth.subImage.imageArrayIndex  = i;
 			depth.subImage.swapchain        = layer.swapchain_depth.handle;
 			depth.subImage.imageRect.offset = { 0, 0 };
@@ -503,7 +553,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		}
 
 		float xr_projection[16];
-		openxr_projection(view.fov, 0.1f, 50, xr_projection);
+		openxr_projection(view.fov, clip_planes.x, clip_planes.y, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
 		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
 		view_tr = view_tr * render_get_cam_root();
@@ -513,7 +563,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 	// Call the rendering callback with our view and swapchain info
 	tex_t target = layer.swapchain_color.textures[color_id];
 	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? color32{ 0,0,0,255 } 
+		? render_get_clear_color() 
 		: color32{ 0,0,0,0   });
 	tex_rtarget_set_active(target);
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)layer.swapchain_color.width, (float)layer.swapchain_color.height);

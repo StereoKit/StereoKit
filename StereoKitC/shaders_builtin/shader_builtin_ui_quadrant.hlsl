@@ -7,17 +7,17 @@ cbuffer ParamBuffer : register(b2) {
 	float4 _color;
 };
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float4 color : COLOR0;
-	float3 norm : NORMAL;
-	float2 uv   : TEXCOORD0;
+	float4 pos      : SV_POSITION;
+	float4 color    : COLOR0;
+	float3 norm     : NORMAL;
+	float2 quadrant : TEXCOORD0;
 };
 struct psIn {
-	float4 pos   : SV_POSITION;
-	float4 color : COLOR0;
-	float4 world : TEXCOORD1;
-	float3 normal: NORMAL;
-	uint view_id : SV_RenderTargetArrayIndex;
+	float4 pos     : SV_POSITION;
+	float4 color   : COLOR0;
+	float4 world   : TEXCOORD1;
+	float3 normal  : NORMAL;
+	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
@@ -29,14 +29,17 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 		length(world_mat._11_12_13),
 		length(world_mat._21_22_23)
 	);
+	// Restore scale to 1
 	world_mat[0] = world_mat[0] / scale.x;
 	world_mat[1] = world_mat[1] / scale.y;
-	output.world.zw = input.pos.zw;
-	output.world.xy = input.pos.xy + input.uv * scale * 0.5;
+	// Translate the position using the quadrant (TEXCOORD0) information and 
+	// the extracted scale.
+	float4 sized_pos;
+	sized_pos.xy = input.pos.xy + input.quadrant * scale * 0.5;
+	sized_pos.zw = input.pos.zw;
 
-	output.world = mul(output.world, world_mat);
-	output.pos   = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
-
+	output.world  = mul(sized_pos, world_mat);
+	output.pos    = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
 	output.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	output.view_id    = sk_inst[id].view_id;

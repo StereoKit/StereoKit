@@ -122,7 +122,7 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
 	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
 
-	model_add_subset(model, mesh, shader == nullptr ? material_find("default/material") : material_create(shader), matrix_identity);
+	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
 

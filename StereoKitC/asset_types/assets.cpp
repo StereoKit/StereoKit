@@ -10,17 +10,16 @@
 #include "sprite.h"
 #include "sound.h"
 #include "../libraries/stref.h"
+#include "../libraries/array.h"
 
 #include <stdio.h>
 #include <assert.h>
-#include <vector>
-using namespace std;
 
 namespace sk {
 
 ///////////////////////////////////////////
 
-vector<asset_header_t *> assets;
+array_t<asset_header_t *> assets = {};
 
 ///////////////////////////////////////////
 
@@ -31,7 +30,7 @@ void *assets_find(const char *id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void *assets_find(uint64_t id, asset_type_ type) {
-	size_t count = assets.size();
+	size_t count = assets.count;
 	for (size_t i = 0; i < count; i++) {
 		if (assets[i]->id == id && assets[i]->type == type)
 			return assets[i];
@@ -69,15 +68,15 @@ void *assets_allocate(asset_type_ type) {
 	}
 
 	char name[64];
-	sprintf_s(name, "auto/asset_%d", (int)assets.size());
+	sprintf_s(name, "auto/asset_%d", assets.count);
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
 	header->type  = type;
 	header->refs += 1;
 	header->id    = string_hash(name);
-	header->index = assets.size();
-	assets.push_back(header);
+	header->index = assets.count;
+	assets.add(header);
 	return header;
 }
 
@@ -130,9 +129,9 @@ void  assets_releaseref(asset_header_t &asset) {
 	}
 
 	// Remove it from our list of assets
-	for (size_t i = 0; i < assets.size(); i++) {
+	for (size_t i = 0; i < assets.count; i++) {
 		if (assets[i] == &asset) {
-			assets.erase(assets.begin() + i);
+			assets.remove(i);
 			break;
 		}
 	}
@@ -147,8 +146,8 @@ void  assets_releaseref(asset_header_t &asset) {
 ///////////////////////////////////////////
 
 void  assets_shutdown_check() {
-	if (assets.size() > 0) {
-		log_errf("%d unreleased assets still found in the asset manager!", (int)assets.size());
+	if (assets.count > 0) {
+		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
 	}
 }
 

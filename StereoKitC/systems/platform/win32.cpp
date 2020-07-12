@@ -184,7 +184,7 @@ void win32_step_end() {
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex_rtarget_clear(win32_target, {0,0,0,255});
+	tex_rtarget_clear(win32_target, render_get_clear_color());
 	tex_rtarget_set_active(win32_target);
 
 	input_update_predicted();

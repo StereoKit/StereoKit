@@ -5,11 +5,9 @@
 #include "../asset_types/mesh.h"
 #include "../asset_types/assets.h"
 
+#include "../libraries/array.h"
 #include "../hierarchy.h"
 #include "../math.h"
-
-#include <vector>
-using namespace std;
 
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -18,14 +16,14 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-vector<sprite_buffer_t> sprite_buffers;
-mesh_t                  sprite_quad;
+array_t<sprite_buffer_t> sprite_buffers = {};
+mesh_t                   sprite_quad;
 
 ///////////////////////////////////////////
 
 void sprite_drawer_add_buffer(material_t material) {
-	sprite_buffers.push_back({});
-	sprite_buffer_t &buffer = sprite_buffers[sprite_buffers.size() - 1];
+	sprite_buffers.add({});
+	sprite_buffer_t &buffer = sprite_buffers.last();
 	buffer.material = material;
 	buffer.mesh     = mesh_create();
 }
@@ -78,7 +76,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	// Get the heirarchy based transform
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.back().transform, at, tr);
+		matrix_mul(hierarchy_stack.last().transform, at, tr);
 	} else {
 		math_matrix_to_fast(at, &tr);
 	}
@@ -117,7 +115,7 @@ bool sprite_drawer_init() {
 ///////////////////////////////////////////
 
 void sprite_drawer_update() {
-	for (size_t i = 0; i < sprite_buffers.size(); i++) {
+	for (size_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -134,7 +132,7 @@ void sprite_drawer_update() {
 
 void sprite_drawer_shutdown() {
 	mesh_release(sprite_quad);
-	for (size_t i = 0; i < sprite_buffers.size(); i++) {
+	for (size_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);

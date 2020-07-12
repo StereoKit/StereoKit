@@ -8,6 +8,7 @@
 #include "hand_leap.h"
 #include "hand_override.h"
 #include "hand_oxr_controller.h"
+#include "hand_oxr_articulated.h"
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
@@ -58,11 +59,11 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_frame,
 		hand_override_update_predicted },
 	{ hand_system_oxr_articulated, false,
-		[]() {return false;},
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr },
+		hand_oxra_available,
+		hand_oxra_init,
+		hand_oxra_shutdown,
+		hand_oxra_update_frame,
+		hand_oxra_update_predicted },
 	{ hand_system_mirage, false,
 		hand_mirage_available,
 		hand_mirage_init,
@@ -172,8 +173,8 @@ void input_hand_init() {
 	modify(&input_pose_pinch  [0][0], 
 		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_runtime() == runtime_flatscreen ? 1 : 0.5f));
 
-	material_t hand_mat = material_copy_id("default/material");
-	material_set_id          (hand_mat, "default/material_hand");
+	material_t hand_mat = material_copy_id(default_id_material);
+	material_set_id          (hand_mat, default_id_material_hand);
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
@@ -508,8 +509,8 @@ void input_hand_update_mesh(handed_ hand) {
 
 		data.mesh = mesh_create();
 		mesh_set_id(data.mesh, hand == handed_left
-			? "default/mesh_lefthand"
-			: "default/mesh_righthand");
+			? default_id_mesh_lefthand
+			: default_id_mesh_righthand);
 		mesh_set_inds(data.mesh, data.inds, data.ind_count);
 	}
 

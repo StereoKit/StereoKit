@@ -175,7 +175,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		return result;
 	}
 
-	result = shader == nullptr ? material_copy_id("default/material") : material_create(shader);
+	result = shader == nullptr ? material_copy_id(default_id_material) : material_create(shader);
 	material_set_id(result, id);
 
 	// If it's a null material, we can just stop here

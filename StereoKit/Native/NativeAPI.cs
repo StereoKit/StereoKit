@@ -261,11 +261,13 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clip      (float near_plane, float far_plane);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_fov       (float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix render_get_cam_root  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_cam_root  (Matrix cam_root);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skytex    (IntPtr sky_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr render_get_skytex    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skylight  (in SphericalHarmonics lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clear_color(Color32 color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_enable_skytex (bool show_sky);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   render_enabled_skytex();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_add_mesh      (IntPtr mesh, IntPtr material, in Matrix transform, Color color);
@@ -313,13 +315,17 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void    input_hand_material(Handed hand, IntPtr material);
 
 		///////////////////////////////////////////
-        
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose pose_from_spatial([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_unsubscribe(InputSource source, BtnState evt, InputEventCallback event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_fire_event (InputSource source, BtnState evt, IntPtr pointer);
 
 		///////////////////////////////////////////
-            
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_write      (LogLevel level, string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallback on_log);
