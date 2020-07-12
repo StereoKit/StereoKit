@@ -7,7 +7,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 2
-#define SK_VERSION_PATCH 0
+#define SK_VERSION_PATCH 1
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(_DLL)
