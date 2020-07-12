@@ -84,14 +84,14 @@ function renderFolder(folder, parent, hierarchy) {
 
     // Link to the actual document
     var link = document.createElement("a");
-    link.href      = "{{site.url}}/"+hierarchy+"/"+folder.name.replaceall(" ", "-")+".html";
+    link.href      = "{{site.url}}/"+hierarchy+"/"+folder.name.replaceAll(" ", "-")+".html";
     link.innerText = folder.name;
     folderItem.appendChild(link);
 
     // Render sub-folders
     if (hasChildren) {
         // Update the URL hierarchy
-        hierarchy += "/"+folder.name.replaceall(" ", "-");
+        hierarchy += "/"+folder.name.replaceAll(" ", "-");
 
         // We need a sub-menu for the folding to work
         var subList = document.createElement("ul");
