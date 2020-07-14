@@ -122,9 +122,6 @@
     <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\StereoKitC.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Condition="'$(Platform)' == 'x64'" Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\LeapC.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">

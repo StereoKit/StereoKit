@@ -23,8 +23,6 @@ enum hand_system_ {
 	hand_system_mouse,
 	hand_system_oxr_controllers,
 	hand_system_oxr_articulated,
-	hand_system_mirage,
-	hand_system_leap,
 	hand_system_override
 };
 

@@ -4,8 +4,6 @@
 #include "hand_poses.h"
 
 #include "hand_mouse.h"
-#include "hand_mirage.h"
-#include "hand_leap.h"
 #include "hand_override.h"
 #include "hand_oxr_controller.h"
 #include "hand_oxr_articulated.h"
@@ -64,20 +62,6 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxra_shutdown,
 		hand_oxra_update_frame,
 		hand_oxra_update_predicted },
-	{ hand_system_mirage, false,
-		hand_mirage_available,
-		hand_mirage_init,
-		hand_mirage_shutdown,
-		hand_mirage_update_frame,
-		hand_mirage_update_predicted },
-#ifndef SK_NO_LEAP_MOTION
-	{ hand_system_leap, false,
-		hand_leap_present,
-		hand_leap_init,
-		hand_leap_shutdown,
-		hand_leap_update_frame,
-		hand_leap_update_predicted },
-#endif
 	{ hand_system_oxr_controllers, false,
 		hand_oxrc_available,
 		hand_oxrc_init,
@@ -135,8 +119,6 @@ void input_hand_refresh_system() {
 
 		const char *source_name = "N/A";
 		switch (hand_sources[hand_system].system) {
-		case hand_system_leap:            source_name = "Leap"; break;
-		case hand_system_mirage:          source_name = "UWP Articulated"; break;
 		case hand_system_mouse:           source_name = "Mouse"; break;
 		case hand_system_none:            source_name = "None"; break;
 		case hand_system_override:        source_name = "Override"; break;

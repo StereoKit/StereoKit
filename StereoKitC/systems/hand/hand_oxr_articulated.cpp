@@ -33,7 +33,7 @@ void hand_oxra_init() {
 		info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
-			log_warnf("xrCreateHandTrackerMSFT failed: [%s]", openxr_string(result));
+			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
 			return;
 		}
 	}

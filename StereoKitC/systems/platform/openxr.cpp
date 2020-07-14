@@ -11,7 +11,6 @@
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/hand/input_hand.h"
-#include "../../systems/hand/hand_leap.h"
 #include "../../asset_types/texture.h"
 
 #include <openxr/openxr.h>

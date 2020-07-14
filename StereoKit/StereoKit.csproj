@@ -61,7 +61,6 @@
 
     <!-- Win32 DLLs -->
     <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\LeapC.dll" PackagePath="runtimes\win-x64\native\" />
     <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
 
     <!-- UWP DLLs -->
