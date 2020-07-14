@@ -38,6 +38,9 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
 };
+const char *xr_request_layers[] = {
+	"XR_APILAYER_ULTRALEAP_hand_tracking",
+};
 bool xr_depth_lsr     = false;
 bool xr_depth_lsr_ext = false;
 bool xr_articulated_hands     = false;
@@ -62,6 +65,7 @@ xr_hand_state_         xr_hand_state = xr_hand_state_uncertain;
 
 XrReferenceSpaceType openxr_preferred_space();
 void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
+void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
 
 ///////////////////////////////////////////
 
@@ -99,9 +103,16 @@ bool openxr_init(const char *app_name) {
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
 	openxr_preferred_extensions(extension_count, extensions);
 
+	uint32_t layer_count = 0;
+	openxr_preferred_layers(layer_count, nullptr);
+	const char **layers = (const char**)malloc(sizeof(char *) * layer_count);
+	openxr_preferred_layers(layer_count, layers);
+
 	XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
 	createInfo.enabledExtensionCount = extension_count;
 	createInfo.enabledExtensionNames = extensions;
+	createInfo.enabledApiLayerCount = layer_count;
+	createInfo.enabledApiLayerNames = layers;
 	createInfo.applicationInfo.applicationVersion = 1;
 
 	// Use a version Id formatted as 0xMMMiiPPP
@@ -116,6 +127,7 @@ bool openxr_init(const char *app_name) {
 	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
 
 	free(extensions);
+	free(layers);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
@@ -231,6 +243,38 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	}
 
 	free(exts);
+}
+
+///////////////////////////////////////////
+
+void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers) {
+	// Find what extensions are available on this system!
+	uint32_t layer_count = 0;
+	xrEnumerateApiLayerProperties(0, &layer_count, nullptr);
+	XrApiLayerProperties *layers = (XrApiLayerProperties *)malloc(sizeof(XrApiLayerProperties) * layer_count);
+	for (uint32_t i = 0; i < layer_count; i++) layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
+	xrEnumerateApiLayerProperties(layer_count, &layer_count, layers);
+
+	if (out_layers == nullptr) {
+		for (uint32_t i = 0; i < layer_count; i++) {
+			log_diagf("oxr layer found: %s", layers[i].layerName);
+		}
+	}
+
+	// Count how many there are, and copy them out
+	out_layer_count = 0;
+	for (int32_t e = 0; e < _countof(xr_request_layers); e++) {
+		for (uint32_t i = 0; i < layer_count; i++) {
+			if (strcmp(layers[i].layerName, xr_request_layers[e]) == 0) {
+				if (out_layers != nullptr)
+					out_layers[out_layer_count] = xr_request_layers[e];
+				out_layer_count += 1;
+				break;
+			}
+		}
+	}
+
+	free(layers);
 }
 
 ///////////////////////////////////////////
