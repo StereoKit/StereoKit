@@ -39,7 +39,7 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
 };
 const char *xr_request_layers[] = {
-	"XR_APILAYER_ULTRALEAP_hand_tracking",
+	"",
 };
 bool xr_depth_lsr     = false;
 bool xr_depth_lsr_ext = false;
