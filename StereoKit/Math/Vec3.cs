@@ -15,13 +15,23 @@ namespace StereoKit
 		/// <summary>Vector components.</summary>
 		public float x, y, z;
 
-		/// <summary>Magnitude is the length of the vector! Or the distance from the origin
-		/// to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.</summary>
+		/// <summary>Magnitude is the length of the vector! The distance from
+		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap 
+		/// or anything.</summary>
 		public float Magnitude => SKMath.Sqrt(x*x + y*y + z*z);
+		/// <summary>This is the length, or magnitude of the vector! The 
+		/// distance from the origin to this point. Uses Math.Sqrt, so it's 
+		/// not dirt cheap or anything.</summary>
+		public float Length => SKMath.Sqrt(x*x + y*y + z*z);
         
-		/// <summary>This is the squared magnitude of the vector! It skips the Sqrt call, and
-		/// just gives you the squared version for speedy calculations that can work with it squared.</summary>
+		/// <summary>This is the squared magnitude of the vector! It skips 
+		/// the Sqrt call, and just gives you the squared version for speedy
+		/// calculations that can work with it squared.</summary>
 		public float MagnitudeSq => x*x + y*y + z*z;
+		/// <summary>This is the squared length of the vector! It skips the 
+		/// Sqrt call, and just gives you the squared version for speedy 
+		/// calculations that can work with it squared.</summary>
+		public float LengthSq => x*x + y*y + z*z;
 
 		public Vec2 XY { get => new Vec2(x,y); set { x = value.x; y = value.y; } }
 		public Vec2 YZ { get => new Vec2(y,z); set { y = value.x; z = value.y; } }
