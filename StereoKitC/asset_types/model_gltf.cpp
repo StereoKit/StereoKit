@@ -106,10 +106,14 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 
 void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
-		char *last1 = strrchr((char*)filename, '/');
-		char *last2 = strrchr((char*)filename, '\\');
-		char *last  = max(last1, last2);
-		sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+		char *last1 = strrchr((char *)filename, '/');
+		char *last2 = strrchr((char *)filename, '\\');
+		char *last = max(last1, last2);
+		if (last == nullptr) {
+			sprintf_s(dest, dest_length, "%s", image->uri);
+		} else {
+			sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+		}
 		return;
 	}
 
