@@ -15,9 +15,6 @@
     <Copy SkipUnchangedFiles = "true"
           SourceFiles        = "$(SKPackageRoot)runtimes\win-x64\native\StereoKitC.dll"
           DestinationFolder  = "$(OutDir)" />
-    <Copy SkipUnchangedFiles = "true"
-          SourceFiles        = "$(SKPackageRoot)runtimes\win-x64\native\LeapC.dll"
-          DestinationFolder  = "$(OutDir)" />
   </Target>
 
 </Project>
