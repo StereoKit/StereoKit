@@ -188,6 +188,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\miniz.h" />
     <ClInclude Include="libraries\ofbx.h" />
+    <ClInclude Include="libraries\sk_gpu.h" />
     <ClInclude Include="libraries\sort_list.h" />
     <ClInclude Include="libraries\stb_ds.h" />
     <ClInclude Include="libraries\stb_image.h" />
