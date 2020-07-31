@@ -14,11 +14,10 @@ Before we get started, you'll need some software! You may have some of this alre
   - .NET Desktop development
   - Universal Windows Platform development
   - .NET Core cross-platform development
-- [Windows OpenXR runtime](https://www.microsoft.com/store/productId/9n5cvvl23qbt) - Install *and enable* this on your desktop and device!
-- Or Oculus's preview runtime
-  - Oculus's OpenXR runtime has a trickier setup, since it's still in preview. See [here](https://github.com/maluoi/StereoKit/issues/41#issuecomment-574438421) for details!
-- Or SteamVR's preview runtime
-  - Setup is [here](https://store.steampowered.com/newshub/app/250820/view/2396425843528787269). SteamVR's runtime is young still, I've run into issues when using it with WMR/Oculus headsets.
+- An OpenXR runtime, pick one or more:
+  - [Windows Mixed Reality's runtime](https://docs.microsoft.com/en-us/windows/mixed-reality/openxr) - Ensure [this](https://www.microsoft.com/store/productId/9n5cvvl23qbt) is installed and enabled!
+  - [Oculus's runtime](https://developer.oculus.com/documentation/native/pc/dg-openxr/) - Requires v19 or later
+  - [SteamVR's runtime](https://steamcommunity.com/games/250820/announcements/detail/2522527900755718764) - See [their setup](https://store.steampowered.com/newshub/app/250820/view/2396425843528787269)
 - [StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates) - The fastest way to set up a StereoKit project!
   - You can also directly install the [NuGet package](https://www.nuget.org/packages/StereoKit) into your project of choice.
 - Enable Developer Mode (for UWP/HoloLens builds)
