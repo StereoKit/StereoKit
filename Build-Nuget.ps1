@@ -4,6 +4,7 @@ param(
 )
 
 $vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
+$vsExe = $vsExe -replace ".exe", ".com"
 
 function Get-Version {
     $fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
