@@ -171,8 +171,8 @@ bool oxri_init() {
 			info.name    = "htc/vive_controller";
 			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
 			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
-			info.offset_pos[handed_left ] = {0.0f, -0.05f, 0.085f };
-			info.offset_pos[handed_right] = {0.0f, -0.05f, 0.085f };
+			info.offset_pos[handed_left ] = {-0.035f, -0.00f, 0.00f };
+			info.offset_pos[handed_right] = {0.035f, -0.00f, 0.00f };
 			xrc_profile_offsets.add(info);
 		}
 	}
@@ -201,8 +201,8 @@ bool oxri_init() {
 			info.name    = "valve/index_controller";
 			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
 			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
-			info.offset_pos[handed_left ] = { 0.0f, -0.05f, 0.085f };
-			info.offset_pos[handed_right] = { 0.0f, -0.05f, 0.085f };
+			info.offset_pos[handed_left ] = {-0.035f, -0.00f, 0.00f };
+			info.offset_pos[handed_right] = { 0.035f, -0.00f, 0.00f };
 			xrc_profile_offsets.add(info);
 		}
 	}

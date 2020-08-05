@@ -34,6 +34,8 @@ void hand_oxra_init() {
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
+			xr_articulated_hands = false;
+			input_hand_refresh_system();
 			return;
 		}
 	}

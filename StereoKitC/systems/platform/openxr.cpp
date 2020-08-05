@@ -58,7 +58,6 @@ XrTime         xr_time          = 0;
 
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
-xr_hand_state_         xr_hand_state = xr_hand_state_uncertain;
 
 ///////////////////////////////////////////
 
