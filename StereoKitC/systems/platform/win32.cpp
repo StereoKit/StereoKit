@@ -6,7 +6,6 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <dxgi1_2.h>
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -20,10 +19,10 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-HWND             win32_window    = nullptr;
-tex_t            win32_target    = {};
-IDXGISwapChain1 *win32_swapchain = {};
-float            win32_scroll    = 0;
+HWND            win32_window    = nullptr;
+tex_t           win32_target    = {};
+skr_swapchain_t win32_swapchain = {};
+float           win32_scroll    = 0;
 
 // For managing window resizing
 bool win32_check_resize = true;
@@ -40,15 +39,7 @@ void win32_resize(int width, int height) {
 	sk_info.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	if (win32_swapchain != nullptr) {
-		tex_releasesurface(win32_target);
-		win32_swapchain->ResizeBuffers(0, (UINT)sk_info.display_width, (UINT)sk_info.display_height, DXGI_FORMAT_UNKNOWN, 0);
-		ID3D11Texture2D *back_buffer;
-		win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-		tex_setsurface(win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-		back_buffer->Release();
-	}
-
+	skr_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
 	render_update_projection();
 }
 
@@ -120,33 +111,9 @@ bool win32_init(const char *app_name) {
 		nullptr);
 	if( !win32_window ) return false;
 
-	// Create a swapchain for the window
-	DXGI_SWAP_CHAIN_DESC1 sd = { };
-	sd.BufferCount = 2;
-	sd.Width       = sk_info.display_width;
-	sd.Height      = sk_info.display_height;
-	sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	sd.SampleDesc.Count = 1;
-	
-	IDXGIDevice2  *dxgi_device;  d3d_device  ->QueryInterface(__uuidof(IDXGIDevice2),  (void **)&dxgi_device);
-	IDXGIAdapter  *dxgi_adapter; dxgi_device ->GetParent     (__uuidof(IDXGIAdapter),  (void **)&dxgi_adapter);
-	IDXGIFactory2 *dxgi_factory; dxgi_adapter->GetParent     (__uuidof(IDXGIFactory2), (void **)&dxgi_factory);
-
-	dxgi_factory->CreateSwapChainForHwnd(d3d_device, win32_window, &sd, nullptr, nullptr, &win32_swapchain);
-	ID3D11Texture2D *back_buffer;
-	win32_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-
-	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32_linear);
-	tex_set_id     (win32_target, "stereokit/system/rendertarget");
-	tex_setsurface (win32_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-	tex_add_zbuffer(win32_target, tex_format_depth16);
-
-	back_buffer ->Release();
-	dxgi_factory->Release();
-	dxgi_adapter->Release();
-	dxgi_device ->Release();
+	if (!skr_init(app_name, win32_window, nullptr))
+		return false;
+	win32_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
 
 	flatscreen_input_init();
 
@@ -157,10 +124,8 @@ bool win32_init(const char *app_name) {
 
 void win32_shutdown() {
 	flatscreen_input_shutdown();
-	tex_release(win32_target);
-	win32_swapchain->Release();
-
-	d3d_shutdown();
+	skr_swapchain_destroy(&win32_swapchain);
+	skr_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -179,13 +144,10 @@ void win32_step_begin() {
 ///////////////////////////////////////////
 
 void win32_step_end() {
-	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
-	d3d_context->RSSetViewports(1, &viewport);
-
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex_rtarget_clear(win32_target, render_get_clear_color());
-	tex_rtarget_set_active(win32_target);
+	color32    col      = render_get_clear_color();
+	skr_tex_t *target   = skr_swapchain_get_next(&win32_swapchain);
+	float      color[4] = {col.r/255.f, col.b/255.f, col.g/255.f, col.a/255.f};
+	skr_set_render_target(color, true, target);
 
 	input_update_predicted();
 
@@ -199,7 +161,7 @@ void win32_step_end() {
 ///////////////////////////////////////////
 
 void win32_vsync() {
-	win32_swapchain->Present(1, 0);
+	skr_swapchain_present(&win32_swapchain);
 }
 
 ///////////////////////////////////////////

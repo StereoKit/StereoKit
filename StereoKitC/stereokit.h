@@ -7,8 +7,8 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 2
-#define SK_VERSION_PATCH 1
-#define SK_VERSION_PRERELEASE 0
+#define SK_VERSION_PATCH 2
+#define SK_VERSION_PRERELEASE 1
 
 #if defined(_DLL)
 #define SK_EXIMPORT dllexport
@@ -357,6 +357,8 @@ typedef enum tex_format_ {
 	tex_format_none = 0,
 	tex_format_rgba32,
 	tex_format_rgba32_linear,
+	tex_fmt_bgra32,
+	tex_fmt_bgra32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
 	tex_format_r8,
@@ -392,11 +394,7 @@ SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
 SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
-SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
-SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
-SK_API void *tex_get_resource        (tex_t texture);
-SK_API void  tex_set_resource        (tex_t texture, void *surface);
 SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
 SK_API tex_t tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)  lookup, int32_t face_size);
 SK_API tex_format_  tex_get_format    (tex_t texture);

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <d3d11.h>
-
+#include "../libraries/sk_gpu_inc.h"
 #include "../stereokit.h"
 #include "assets.h"
 
@@ -15,7 +14,8 @@ struct shaderargs_data_t {
 };
 
 struct shaderargs_t {
-	ID3D11Buffer *const_buffer;
+	//ID3D11Buffer *const_buffer;
+	skr_buffer_t const_buffer;
 	int buffer_slot;
 	int buffer_size;
 };
@@ -51,9 +51,12 @@ struct shader_tex_slots_t {
 
 struct _shader_t {
 	asset_header_t      header;
-	ID3D11VertexShader *vshader;
-	ID3D11PixelShader  *pshader;
-	ID3D11InputLayout  *vert_layout;
+	skr_shader_stage_t  pshader;
+	skr_shader_stage_t  vshader;
+	skr_shader_t        shader;
+	//ID3D11VertexShader *vshader;
+	//ID3D11PixelShader  *pshader;
+	//ID3D11InputLayout  *vert_layout;
 	shaderargs_t        args;
 	shaderargs_desc_t   args_desc;
 	shader_tex_slots_t  tex_slots;
@@ -66,6 +69,6 @@ void shader_destroy_parsedata(shader_t shader);
 void shaderargs_create    (shaderargs_t &args, size_t buffer_size, int buffer_slot);
 void shaderargs_destroy   (shaderargs_t &args);
 void shaderargs_set_data  (shaderargs_t &args, void *data, size_t buffer_size = 0);
-void shaderargs_set_active(shaderargs_t &args, bool include_ps = true);
+void shaderargs_set_active(shaderargs_t &args);
 
 } // namespace sk

@@ -173,6 +173,9 @@
       <Filter>systems\hand</Filter>
     </ClCompile>
     <ClCompile Include="systems\render_sort.cpp" />
+    <ClCompile Include="libraries\sk_gpu_inc.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -371,6 +374,12 @@
     </ClInclude>
     <ClInclude Include="systems\render_sort.h" />
     <ClInclude Include="libraries\array.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\sk_gpu.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\sk_gpu_inc.h">
       <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>

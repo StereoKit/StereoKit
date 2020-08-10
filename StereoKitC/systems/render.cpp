@@ -1,6 +1,6 @@
 #include "render.h"
 #include "render_sort.h"
-#include "d3d.h"
+#include "../libraries/sk_gpu_inc.h"
 #include "../libraries/stref.h"
 #include "../math.h"
 #include "../spherical_harmonics.h"
@@ -279,14 +279,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 
 	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
 	shaderargs_set_active(render_shader_globals);
-	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	if (render_sky_cubemap != nullptr) {
+	/*if (render_sky_cubemap != nullptr) {
 		d3d_context->VSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
 		d3d_context->VSSetShaderResources(11, 1, &render_sky_cubemap->resource);
 		d3d_context->PSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
 		d3d_context->PSSetShaderResources(11, 1, &render_sky_cubemap->resource);
-	}
+	}*/
 
 	render_item_t *item          = &render_list->queue[0];
 	material_t     last_material = item->material;
@@ -306,7 +305,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 			size_t offsets = 0, count = 0;
 			do {
 				shaderargs_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
-				shaderargs_set_active(*instances, false);
+				shaderargs_set_active(*instances); // TODO: this used to skip pixel shaders, and may still be a good idea!
 				render_draw_item((int)count);
 			} while (offsets != 0);
 			render_instance_list.clear();
@@ -330,6 +329,7 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 ///////////////////////////////////////////
 
 void render_check_screenshots() {
+	skr_tex_t *old_target = skr_get_render_target();
 	for (size_t i = 0; i < render_screenshot_list.count; i++) {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
@@ -351,19 +351,21 @@ void render_check_screenshots() {
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
-		tex_set_colors(render_capture_surface, w, h, buffer);
+		tex_set_colors (render_capture_surface, w, h, buffer);
 		tex_add_zbuffer(render_capture_surface);
 
 		// Setup to render the screenshot
-		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)w, (float)h);
-		d3d_context->RSSetViewports(1, &viewport);
-		tex_rtarget_clear(render_capture_surface, render_clear_color);
-		tex_rtarget_set_active(render_capture_surface);
+		float color[4] = {
+			render_clear_color.r / 255.f,
+			render_clear_color.g / 255.f,
+			render_clear_color.b / 255.f,
+			render_clear_color.a / 255.f };
+		skr_set_render_target(color, true, &render_capture_surface->tex);
 		
 		// Render!
 		render_draw_queue(&view, &proj, 1);
-		tex_rtarget_set_active(nullptr);
-
+		skr_set_render_target({}, false, nullptr);
+		
 		// And save the screenshot to file
 		tex_get_data(render_capture_surface, buffer, size);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 85);
@@ -371,6 +373,7 @@ void render_check_screenshots() {
 		free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
+	skr_set_render_target({}, false, old_target);
 }
 
 ///////////////////////////////////////////
@@ -457,20 +460,17 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_blit(tex_t to, material_t material) {
-	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)to->width, (float)to->height);
-	d3d_context->RSSetViewports(1, &viewport);
-
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex_rtarget_clear(to, { 0,0,0,0 });
-	tex_rtarget_set_active(to);
+	skr_tex_t *old_target = skr_get_render_target();
+	float      color[4]   = { 0,0,0,0 };
+	skr_set_render_target(color, true, &to->tex);
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
-	data.width  = (float)to->width;
-	data.height = (float)to->height;
-	data.pixel_width  = 1.0f / to->width;
-	data.pixel_height = 1.0f / to->height;
+	data.width  = (float)to->tex.width;
+	data.height = (float)to->tex.height;
+	data.pixel_width  = 1.0f / to->tex.width;
+	data.pixel_height = 1.0f / to->tex.height;
 
 	// Setup render states for blitting
 	shaderargs_set_data  (render_shader_blit, &data);
@@ -481,11 +481,11 @@ void render_blit(tex_t to, material_t material) {
 	// And draw to it!
 	render_draw_item(1);
 
-	tex_rtarget_set_active(nullptr);
+	skr_set_render_target(color, false, old_target);
 
 	render_last_material = nullptr;
-	render_last_mesh = nullptr;
-	render_last_shader = nullptr;
+	render_last_mesh     = nullptr;
+	render_last_shader   = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -549,9 +549,7 @@ void render_set_shader(shader_t shader) {
 	render_last_shader = shader;
 	render_list_stack.last()->stats.swaps_shader++;
 
-	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
-	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
-	d3d_context->IASetInputLayout(shader->vert_layout);
+	skr_shader_set(&shader->shader);
 }
 
 ///////////////////////////////////////////
@@ -562,14 +560,7 @@ void render_set_mesh(mesh_t mesh) {
 	render_last_mesh = mesh;
 	render_list_stack.last()->stats.swaps_mesh++;
 
-	UINT strides[] = { sizeof(vert_t) };
-	UINT offsets[] = { 0 };
-	d3d_context->IASetVertexBuffers(0, 1, &mesh->vert_buffer, strides, offsets);
-#ifdef SK_32BIT_INDICES
-	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R32_UINT, 0);
-#else
-	d3d_context->IASetIndexBuffer  (mesh->ind_buffer, DXGI_FORMAT_R16_UINT, 0);
-#endif
+	skr_mesh_set(&mesh->mesh);
 }
 
 ///////////////////////////////////////////
@@ -579,7 +570,7 @@ void render_draw_item(int count) {
 	list->stats.draw_calls++;
 	list->stats.draw_instances += count;
 
-	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_draw, count, 0, 0, 0);
+	skr_draw(0, render_last_mesh->ind_draw, count);
 }
 
 ///////////////////////////////////////////
@@ -622,8 +613,9 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 ///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
-	*device  = d3d_device;
-	*context = d3d_context;
+	log_warn("render_get_device not implemented for sk_gpu!");
+	*device  = nullptr; //d3d_device;
+	*context = nullptr; //d3d_context;
 }
 
 ///////////////////////////////////////////

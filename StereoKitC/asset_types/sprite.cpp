@@ -55,7 +55,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
-	result->aspect = image->width / (float)image->height;
+	result->aspect = image->tex.width / (float)image->tex.height;
 	if (result->aspect > 1) // Width is larger than height
 		result->dimensions_normalized = { 1, 1.f / result->aspect };
 	else                    // Height is larger than, or equal to width
