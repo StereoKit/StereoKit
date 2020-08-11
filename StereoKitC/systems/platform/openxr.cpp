@@ -156,6 +156,11 @@ bool openxr_init(const char *app_name) {
 	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
 	xr_depth_lsr         = xr_depth_lsr_ext;
 
+	// SteamVR misreports hand-tracking
+	if (strstr(properties.systemName, "SteamVR") != nullptr) {
+		xr_articulated_hands = false;
+	}
+
 	if (xr_articulated_hands)   log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_depth_lsr)           log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.spatial_bridge) log_diag("OpenXR spatial bridge ext enabled!");
