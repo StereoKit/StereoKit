@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../stereokit.h"
+#include "../libraries/sk_gpu_inc.h"
 #include "assets.h"
 #include "shader.h"
 
@@ -14,8 +15,7 @@ struct _material_t {
 	cull_             cull;
 	bool32_t          wireframe;
 	int32_t           queue_offset;
-	ID3D11BlendState      *blend_state;
-	ID3D11RasterizerState *rasterizer_state;
+	skr_pipeline_t    pipeline;
 };
 
 void   material_destroy   (material_t material);

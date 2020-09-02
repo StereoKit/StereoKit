@@ -84,9 +84,21 @@ enum skr_el_semantic_ {
 };
 
 enum skr_shader_ {
-	skr_shader_vertex,
-	skr_shader_pixel,
+	skr_shader_vertex = 1 << 0,
+	skr_shader_pixel  = 1 << 1,
 };
+
+typedef enum skr_transparency_ {
+	skr_transparency_none = 1,
+	skr_transparency_blend,
+	skr_transparency_clip,
+} skr_transparency_;
+
+typedef enum skr_cull_ {
+	skr_cull_back = 0,
+	skr_cull_front,
+	skr_cull_none,
+} skr_cull_;
 
 typedef struct skr_vert_t {
 	float   pos [3];
@@ -95,9 +107,47 @@ typedef struct skr_vert_t {
 	uint8_t col [4];
 } skr_vert_t;
 
+typedef struct skr_shader_bind_t {
+	uint16_t slot;
+	uint16_t stage_bits;
+} skr_shader_bind_t;
+
+typedef struct skr_shader_meta_var_t {
+	char     name [32];
+	char     extra[64];
+	size_t   offset;
+	size_t   size;
+} skr_shader_meta_var_t;
+
+typedef struct skr_shader_meta_buffer_t {
+	char              name[32];
+	skr_shader_bind_t bind;
+	size_t            size;
+	void             *defaults;
+	uint32_t               var_count;
+	skr_shader_meta_var_t *vars;
+} skr_shader_meta_buffer_t;
+
+typedef struct skr_shader_meta_texture_t {
+	char              name [32];
+	char              extra[64];
+	skr_shader_bind_t bind;
+	size_t            size;
+} skr_shader_meta_texture_t;
+
+typedef struct skr_shader_meta_t {
+	char                       name[256];
+	uint32_t                   buffer_count;
+	skr_shader_meta_buffer_t  *buffers;
+	uint32_t                   texture_count;
+	skr_shader_meta_texture_t *textures;
+	int32_t                    references;
+} skr_shader_meta_t;
+
 ///////////////////////////////////////////
 
 #if defined(SKR_DIRECT3D11)
+
 
 #include <d3d11.h>
 #include <dxgi1_6.h>
@@ -121,9 +171,21 @@ typedef struct skr_shader_stage_t {
 } skr_shader_stage_t;
 
 typedef struct skr_shader_t {
+	skr_shader_meta_t  *meta;
 	ID3D11VertexShader *vertex;
 	ID3D11PixelShader  *pixel;
 } skr_shader_t;
+
+typedef struct skr_pipeline_t {
+	skr_transparency_ transparency;
+	skr_cull_         cull;
+	bool              wireframe;
+	ID3D11VertexShader    *vertex;
+	ID3D11PixelShader     *pixel;
+	ID3D11BlendState      *blend;
+	ID3D11RasterizerState *rasterize;
+	skr_buffer_t           globals; // TODO: implement this!!
+} skr_pipeline_t;
 
 typedef struct skr_tex_t {
 	int32_t width;
@@ -184,8 +246,18 @@ typedef struct skr_shader_stage_t {
 } skr_shader_stage_t;
 
 typedef struct skr_shader_t {
-	uint32_t program;
+	skr_shader_meta_t *meta;
+	uint32_t           vertex;
+	uint32_t           pixel;
+	uint32_t           program;
 } skr_shader_t;
+
+typedef struct skr_pipeline_t {
+	skr_transparency_ transparency;
+	skr_cull_         cull;
+	bool              wireframe;
+	skr_shader_t      shader;
+} skr_pipeline_t;
 
 typedef struct skr_tex_t {
 	int32_t       width;
@@ -223,6 +295,9 @@ typedef struct skr_swapchain_t {
 
 int32_t             skr_init                (const char *app_name, void *hwnd, void *adapter_id);
 void                skr_shutdown            ();
+void                skr_log_callback        (void (*callback)(const char *text));
+void                skr_file_read_callback  (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
+
 void                skr_draw_begin          ();
 skr_platform_data_t skr_get_platform_data   ();
 void                skr_set_render_target   (float clear_color[4], bool clear, skr_tex_t *render_target);
@@ -230,24 +305,37 @@ skr_tex_t          *skr_get_render_target   ();
 void                skr_draw                (int32_t index_start, int32_t index_count, int32_t instance_count);
 int64_t             skr_tex_fmt_to_native   (skr_tex_fmt_ format);
 skr_tex_fmt_        skr_tex_fmt_from_native (int64_t format);
-void                skr_log_callback        (void (*callback)(const char *text));
 
 skr_buffer_t        skr_buffer_create       (const void *data, uint32_t size_bytes, skr_buffer_type_ type, skr_use_ use);
 bool                skr_buffer_is_valid     (const skr_buffer_t *buffer);
 void                skr_buffer_update       (      skr_buffer_t *buffer, const void *data, uint32_t size_bytes);
-void                skr_buffer_set          (const skr_buffer_t *buffer, uint32_t slot, uint32_t stride, uint32_t offset);
+void                skr_buffer_set          (const skr_buffer_t *buffer, skr_shader_bind_t slot, uint32_t stride, uint32_t offset);
 void                skr_buffer_destroy      (      skr_buffer_t *buffer);
 
 skr_mesh_t          skr_mesh_create         (const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer);
 void                skr_mesh_set            (const skr_mesh_t *mesh);
 void                skr_mesh_destroy        (      skr_mesh_t *mesh);
 
-skr_shader_stage_t  skr_shader_stage_create (const uint8_t *shader_data, size_t shader_size, skr_shader_ type);
+skr_shader_stage_t  skr_shader_stage_create (const void *shader_data, size_t shader_size, skr_shader_ type);
 void                skr_shader_stage_destroy(skr_shader_stage_t *stage);
 
-skr_shader_t        skr_shader_create       (const skr_shader_stage_t *vertex, const skr_shader_stage_t *pixel);
-void                skr_shader_set          (const skr_shader_t *shader);
-void                skr_shader_destroy      (      skr_shader_t *shader);
+skr_shader_t        skr_shader_create_file    (const char *sks_filename);
+skr_shader_t        skr_shader_create_mem     (void *sks_data, size_t sks_data_size);
+skr_shader_t        skr_shader_create_manual  (skr_shader_meta_t *meta, skr_shader_stage_t v_shader, skr_shader_stage_t p_shader);
+skr_shader_bind_t   skr_shader_get_tex_bind   (const skr_shader_t *shader, const char *name);
+skr_shader_bind_t   skr_shader_get_buffer_bind(const skr_shader_t *shader, const char *name);
+void                skr_shader_destroy        (      skr_shader_t *shader);
+
+skr_pipeline_t      skr_pipeline_create          (skr_shader_t *shader);
+void                skr_pipeline_set             (const skr_pipeline_t *pipeline);
+void                skr_pipeline_set_texture     ();
+void                skr_pipeline_set_transparency(      skr_pipeline_t *pipeline, skr_transparency_ transparency);
+void                skr_pipeline_set_cull        (      skr_pipeline_t *pipeline, skr_cull_ cull);
+void                skr_pipeline_set_wireframe   (      skr_pipeline_t *pipeline, bool wireframe);
+skr_transparency_   skr_pipeline_get_transparency(const skr_pipeline_t *pipeline);
+skr_cull_           skr_pipeline_get_cull        (const skr_pipeline_t *pipeline);
+bool                skr_pipeline_get_wireframe   (const skr_pipeline_t *pipeline);
+void                skr_pipeline_destroy         (      skr_pipeline_t *pipeline);
 
 skr_swapchain_t     skr_swapchain_create    (skr_tex_fmt_ format, skr_tex_fmt_ depth_format, int32_t width, int32_t height);
 void                skr_swapchain_resize    (      skr_swapchain_t *swapchain, int32_t width, int32_t height);
@@ -262,18 +350,48 @@ void                skr_tex_set_depth       (      skr_tex_t *tex, skr_tex_t *de
 void                skr_tex_settings        (      skr_tex_t *tex, skr_tex_address_ address, skr_tex_sample_ sample, int32_t anisotropy);
 void                skr_tex_set_data        (      skr_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
 void                skr_tex_get_data        (      skr_tex_t *tex);
-void                skr_tex_set_active      (const skr_tex_t *tex, int32_t slot);
+void                skr_tex_set_active      (const skr_tex_t *tex, skr_shader_bind_t bind);
 void                skr_tex_destroy         (      skr_tex_t *tex);
 
 ///////////////////////////////////////////
 // API independant functions             //
 ///////////////////////////////////////////
 
-void skr_log(const char *text);
+typedef enum skr_shader_lang_ {
+	skr_shader_lang_hlsl,
+	skr_shader_lang_spirv,
+	skr_shader_lang_glsl,
+} skr_shader_lang_;
+
+typedef struct skr_shader_file_stage_t {
+	skr_shader_lang_ language;
+	skr_shader_      stage;
+	size_t           code_size;
+	void            *code;
+} skr_shader_file_stage_t;
+
+typedef struct skr_shader_file_t {
+	skr_shader_meta_t       *meta;
+	uint32_t                 stage_count;
+	skr_shader_file_stage_t *stages;
+} skr_shader_file_t;
 
 ///////////////////////////////////////////
-// Implementation                        //
+
+void               skr_log(const char *text);
+
+bool               skr_shader_file_load        (const char *file, skr_shader_file_t *out_file);
+bool               skr_shader_file_load_mem    (void *data, size_t size, skr_shader_file_t *out_file);
+skr_shader_stage_t skr_shader_file_create_stage(const skr_shader_file_t *file, skr_shader_ stage);
+void               skr_shader_file_destroy     (      skr_shader_file_t *file);
+
+void               skr_shader_meta_reference   (      skr_shader_meta_t *meta);
+void               skr_shader_meta_release     (      skr_shader_meta_t *meta);
+
 ///////////////////////////////////////////
+// Implementations!                      //
+///////////////////////////////////////////
+
 #ifdef SKR_IMPL
 #ifdef SKR_DIRECT3D11
 
@@ -489,11 +607,16 @@ void skr_buffer_update(skr_buffer_t *buffer, const void *data, uint32_t size_byt
 
 /////////////////////////////////////////// 
 
-void skr_buffer_set(const skr_buffer_t *buffer, uint32_t slot, uint32_t stride, uint32_t offset) {
+void skr_buffer_set(const skr_buffer_t *buffer, skr_shader_bind_t bind, uint32_t stride, uint32_t offset) {
 	switch (buffer->type) {
-	case skr_buffer_type_vertex:   d3d_context->IASetVertexBuffers  (slot, 1, &buffer->buffer, &stride, &offset); break;
+	case skr_buffer_type_vertex:   d3d_context->IASetVertexBuffers  (bind.slot, 1, &buffer->buffer, &stride, &offset); break;
 	case skr_buffer_type_index:    d3d_context->IASetIndexBuffer    (buffer->buffer, DXGI_FORMAT_R32_UINT, offset); break;
-	case skr_buffer_type_constant: d3d_context->VSSetConstantBuffers(slot, 1, &buffer->buffer); d3d_context->PSSetConstantBuffers(slot, 1, &buffer->buffer); break;
+	case skr_buffer_type_constant: {
+		if (bind.stage_bits & skr_shader_vertex)
+			d3d_context->VSSetConstantBuffers(bind.slot, 1, &buffer->buffer);
+		if (bind.stage_bits & skr_shader_pixel)
+			d3d_context->PSSetConstantBuffers(bind.slot, 1, &buffer->buffer);
+	} break;
 	}
 }
 
@@ -532,7 +655,7 @@ void skr_mesh_destroy(skr_mesh_t *mesh) {
 /////////////////////////////////////////// 
 
 #include <stdio.h>
-skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shader_size, skr_shader_ type) {
+skr_shader_stage_t skr_shader_stage_create(const void *file_data, size_t shader_size, skr_shader_ type) {
 	skr_shader_stage_t result = {};
 	result.type = type;
 
@@ -543,16 +666,27 @@ skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shad
 	flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
-	ID3DBlob *compiled, *errors;
-	if (FAILED(D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, type == skr_shader_pixel ? "ps" : "vs", type == skr_shader_pixel ? "ps_5_0" : "vs_5_0", flags, 0, &compiled, &errors))) {
-		skr_log("Error - D3DCompile failed:");
-		skr_log((char *)errors->GetBufferPointer());
+	ID3DBlob   *compiled = nullptr;
+	const void *buffer;
+	size_t      buffer_size;
+	if (shader_size >= 4 && memcmp(file_data, "DXBC", 4) == 0) {
+		buffer      = file_data;
+		buffer_size = shader_size;
+	} else {
+		ID3DBlob *errors;
+		if (FAILED(D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, type == skr_shader_pixel ? "ps" : "vs", type == skr_shader_pixel ? "ps_5_0" : "vs_5_0", flags, 0, &compiled, &errors))) {
+			skr_log("Error - D3DCompile failed:");
+			skr_log((char *)errors->GetBufferPointer());
+		}
+		if (errors) errors->Release();
+
+		buffer      = compiled->GetBufferPointer();
+		buffer_size = compiled->GetBufferSize();
 	}
-	if (errors) errors->Release();
 
 	switch(type) {
-	case skr_shader_vertex: d3d_device->CreateVertexShader(compiled->GetBufferPointer(), compiled->GetBufferSize(), nullptr, (ID3D11VertexShader**)&result.shader); break;
-	case skr_shader_pixel : d3d_device->CreatePixelShader (compiled->GetBufferPointer(), compiled->GetBufferSize(), nullptr, (ID3D11PixelShader **)&result.shader); break;
+	case skr_shader_vertex: d3d_device->CreateVertexShader(buffer, buffer_size, nullptr, (ID3D11VertexShader**)&result.shader); break;
+	case skr_shader_pixel : d3d_device->CreatePixelShader (buffer, buffer_size, nullptr, (ID3D11PixelShader **)&result.shader); break;
 	}
 
 	if (d3d_vert_layout == nullptr && type == skr_shader_vertex) {
@@ -563,9 +697,9 @@ skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shad
 			{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"SV_RenderTargetArrayIndex" ,  0, DXGI_FORMAT_R8_UINT,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0} };
-		d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), compiled->GetBufferPointer(), compiled->GetBufferSize(), &d3d_vert_layout);
+		d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), buffer, buffer_size, &d3d_vert_layout);
 	}
-	compiled->Release();
+	if (compiled) compiled->Release();
 
 	return result;
 }
@@ -579,37 +713,147 @@ void skr_shader_stage_destroy(skr_shader_stage_t *shader) {
 	}
 }
 
+///////////////////////////////////////////
+// skr_shader_t                          //
+///////////////////////////////////////////
+
+skr_shader_t skr_shader_create_manual(skr_shader_meta_t *meta, skr_shader_stage_t v_shader, skr_shader_stage_t p_shader) {
+	skr_shader_t result = {};
+	result.meta   = meta;
+	result.vertex = (ID3D11VertexShader*)v_shader.shader;
+	result.pixel  = (ID3D11PixelShader *)p_shader.shader;
+	skr_shader_meta_reference(result.meta);
+	if (result.vertex) result.vertex->AddRef();
+	if (result.pixel ) result.pixel ->AddRef();
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+void skr_shader_destroy(skr_shader_t *shader) {
+	if (shader->vertex) shader->vertex->Release();
+	if (shader->pixel ) shader->pixel ->Release();
+	*shader = {};
+}
+
+///////////////////////////////////////////
+// skr_pipeline                          //
 /////////////////////////////////////////// 
 
-skr_shader_t skr_shader_create(const skr_shader_stage_t *vertex, const skr_shader_stage_t *pixel) {
-	skr_shader_t result = {};
-	if (pixel) {
-		result.pixel = (ID3D11PixelShader *)pixel->shader;
-		result.pixel->AddRef();
+void skr_pipeline_update_blend(skr_pipeline_t *pipeline) {
+	if (pipeline->blend) pipeline->blend->Release();
+
+	D3D11_BLEND_DESC desc_blend = {};
+	desc_blend.AlphaToCoverageEnable  = false;
+	desc_blend.IndependentBlendEnable = false;
+	desc_blend.RenderTarget[0].BlendEnable           = pipeline->transparency == skr_transparency_blend;
+	desc_blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	desc_blend.RenderTarget[0].SrcBlend              = D3D11_BLEND_SRC_ALPHA;
+	desc_blend.RenderTarget[0].DestBlend             = D3D11_BLEND_INV_SRC_ALPHA;
+	desc_blend.RenderTarget[0].BlendOp               = D3D11_BLEND_OP_ADD;
+	desc_blend.RenderTarget[0].SrcBlendAlpha         = D3D11_BLEND_ONE;
+	desc_blend.RenderTarget[0].DestBlendAlpha        = D3D11_BLEND_ZERO;
+	desc_blend.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
+	d3d_device->CreateBlendState(&desc_blend, &pipeline->blend);
+}
+
+/////////////////////////////////////////// 
+
+void skr_pipeline_update_rasterizer(skr_pipeline_t *pipeline) {
+	if (pipeline->rasterize) pipeline->rasterize->Release();
+
+	D3D11_RASTERIZER_DESC desc_rasterizer = {};
+	desc_rasterizer.FillMode              = pipeline->wireframe ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
+	desc_rasterizer.FrontCounterClockwise = true;
+	switch (pipeline->cull) {
+	case skr_cull_none:  desc_rasterizer.CullMode = D3D11_CULL_NONE;  break;
+	case skr_cull_front: desc_rasterizer.CullMode = D3D11_CULL_FRONT; break;
+	case skr_cull_back:  desc_rasterizer.CullMode = D3D11_CULL_BACK;  break;
 	}
-	if (vertex) {
-		result.vertex = (ID3D11VertexShader *)vertex->shader;
-		result.vertex->AddRef();
-	}
+	d3d_device->CreateRasterizerState(&desc_rasterizer, &pipeline->rasterize);
+}
+
+/////////////////////////////////////////// 
+
+skr_pipeline_t skr_pipeline_create(skr_shader_t *shader) {
+	skr_pipeline_t result = {};
+	result.transparency = skr_transparency_none;
+	result.cull         = skr_cull_back;
+	result.wireframe    = false;
+	result.vertex       = shader->vertex;
+	result.pixel        = shader->pixel;
+	if (result.vertex) result.vertex->AddRef();
+	if (result.pixel ) result.pixel ->AddRef();
+
+	skr_pipeline_update_blend     (&result);
+	skr_pipeline_update_rasterizer(&result);
 	return result;
 }
 
 /////////////////////////////////////////// 
 
-void skr_shader_set(const skr_shader_t *program) {
-	d3d_context->VSSetShader(program->vertex, nullptr, 0);
-	d3d_context->PSSetShader(program->pixel,  nullptr, 0);
+void skr_pipeline_set(const skr_pipeline_t *pipeline) {
+	d3d_context->OMSetBlendState(pipeline->blend,  nullptr, 0xFFFFFFFF);
+	d3d_context->RSSetState     (pipeline->rasterize);
+	d3d_context->VSSetShader    (pipeline->vertex, nullptr, 0);
+	d3d_context->PSSetShader    (pipeline->pixel,  nullptr, 0);
 }
 
 /////////////////////////////////////////// 
 
-void skr_shader_destroy(skr_shader_t *program) {
-	if (program->pixel ) program->pixel ->Release();
-	if (program->vertex) program->vertex->Release();
-	*program = {};
+void skr_pipeline_set_transparency(skr_pipeline_t *pipeline, skr_transparency_ transparency) {
+	if (pipeline->transparency != transparency) {
+		pipeline->transparency  = transparency;
+		skr_pipeline_update_blend(pipeline);
+	}
 }
 
 /////////////////////////////////////////// 
+void skr_pipeline_set_cull(skr_pipeline_t *pipeline, skr_cull_ cull) {
+	if (pipeline->cull != cull) {
+		pipeline->cull  = cull;
+		skr_pipeline_update_rasterizer(pipeline);
+	}
+}
+/////////////////////////////////////////// 
+void skr_pipeline_set_wireframe(skr_pipeline_t *pipeline, bool wireframe) {
+	if (pipeline->wireframe != wireframe) {
+		pipeline->wireframe  = wireframe;
+		skr_pipeline_update_rasterizer(pipeline);
+	}
+}
+/////////////////////////////////////////// 
+
+skr_transparency_ skr_pipeline_get_transparency(const skr_pipeline_t *pipeline) {
+	return pipeline->transparency;
+}
+
+/////////////////////////////////////////// 
+
+skr_cull_ skr_pipeline_get_cull(const skr_pipeline_t *pipeline) {
+	return pipeline->cull;
+}
+
+/////////////////////////////////////////// 
+
+bool skr_pipeline_get_wireframe(const skr_pipeline_t *pipeline) {
+	return pipeline->wireframe;
+}
+
+///////////////////////////////////////////
+
+void skr_pipeline_destroy(skr_pipeline_t *pipeline) {
+	if (pipeline->blend    ) pipeline->blend    ->Release();
+	if (pipeline->rasterize) pipeline->rasterize->Release();
+	if (pipeline->vertex   ) pipeline->vertex   ->Release();
+	if (pipeline->pixel    ) pipeline->pixel    ->Release();
+	*pipeline = {};
+}
+
+///////////////////////////////////////////
+// skr_swapchain                         //
+///////////////////////////////////////////
 
 skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_format, int32_t width, int32_t height) {
 	skr_swapchain_t result = {};
@@ -959,12 +1203,23 @@ void skr_tex_set_data(skr_tex_t *tex, void **data_frames, int32_t data_frame_cou
 
 /////////////////////////////////////////// 
 
-void skr_tex_set_active(const skr_tex_t *texture, int32_t slot) {
+void skr_tex_set_active(const skr_tex_t *texture, skr_shader_bind_t bind) {
 	if (texture != nullptr) {
-		d3d_context->PSSetSamplers       (slot, 1, &texture->sampler);
-		d3d_context->PSSetShaderResources(slot, 1, &texture->resource);
+		if (bind.stage_bits & skr_shader_pixel) {
+			d3d_context->PSSetSamplers       (bind.slot, 1, &texture->sampler);
+			d3d_context->PSSetShaderResources(bind.slot, 1, &texture->resource);
+		}
+		if (bind.stage_bits & skr_shader_vertex) {
+			d3d_context->VSSetSamplers       (bind.slot, 1, &texture->sampler);
+			d3d_context->VSSetShaderResources(bind.slot, 1, &texture->resource);
+		}
 	} else {
-		d3d_context->PSSetShaderResources(slot, 0, nullptr);
+		if (bind.stage_bits & skr_shader_pixel) {
+			d3d_context->PSSetShaderResources(bind.slot, 0, nullptr);
+		}
+		if (bind.stage_bits & skr_shader_vertex) {
+			d3d_context->VSSetShaderResources(bind.slot, 0, nullptr);
+		}
 	}
 }
 
@@ -1182,6 +1437,10 @@ HGLRC gl_hrc;
 #define GL_VERSION 0x1F02
 #define GL_CULL_FACE 0x0B44
 #define GL_BACK 0x0405
+#define GL_FRONT 0x0404
+#define GL_FRONT_AND_BACK 0x0408
+#define GL_LINE 0x1B01
+#define GL_FILL 0x1B02
 #define GL_DEPTH_TEST 0x0B71
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE_CUBE_MAP 0x8513
@@ -1221,6 +1480,8 @@ HGLRC gl_hrc;
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_DEPTH_ATTACHMENT 0x8D00
 #define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
+
+#define GL_BLEND 0x0BE2
 
 #define GL_RED 0x1903
 #define GL_RGBA 0x1908
@@ -1314,6 +1575,8 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
 	GLE(void,     ClearColor,              float r, float g, float b, float a) \
 	GLE(void,     Clear,                   uint32_t mask) \
 	GLE(void,     Enable,                  uint32_t cap) \
+	GLE(void,     Disable,                 uint32_t cap) \
+	GLE(void,     PolygonMode,             uint32_t face, uint32_t mode) \
 	GLE(uint32_t, GetError,                ) \
     GLE(void,     GetProgramiv,            uint32_t program, uint32_t pname, int32_t *params) \
     GLE(uint32_t, CreateShader,            uint32_t type) \
@@ -1321,6 +1584,7 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
     GLE(void,     CompileShader,           uint32_t shader) \
     GLE(void,     GetShaderiv,             uint32_t shader, uint32_t pname, int32_t *params) \
     GLE(void,     GetShaderInfoLog,        uint32_t shader, int32_t bufSize, int32_t *length, char *infoLog) \
+	GLE(void,     GetProgramInfoLog,       uint32_t program, int32_t maxLength, int32_t *length, char *infoLog) \
     GLE(void,     DeleteShader,            uint32_t shader) \
     GLE(uint32_t, CreateProgram,           void) \
     GLE(void,     AttachShader,            uint32_t program, uint32_t shader) \
@@ -1756,9 +2020,9 @@ void skr_buffer_update(skr_buffer_t *buffer, const void *data, uint32_t size_byt
 
 /////////////////////////////////////////// 
 
-void skr_buffer_set(const skr_buffer_t *buffer, uint32_t slot, uint32_t stride, uint32_t offset) {
+void skr_buffer_set(const skr_buffer_t *buffer, skr_shader_bind_t bind, uint32_t stride, uint32_t offset) {
 	if (buffer->type == GL_UNIFORM_BUFFER)
-		glBindBufferBase(buffer->type, slot, buffer->buffer); 
+		glBindBufferBase(buffer->type, bind.slot, buffer->buffer); 
 	else
 		glBindBuffer(buffer->type, buffer->buffer);
 }
@@ -1809,12 +2073,14 @@ void skr_mesh_destroy(skr_mesh_t *mesh) {
 
 /////////////////////////////////////////// 
 
-skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shader_size, skr_shader_ type) {
+skr_shader_stage_t skr_shader_stage_create(const void *file_data, size_t shader_size, skr_shader_ type) {
+	const char *file_chars = (const char *)file_data;
+
 	skr_shader_stage_t result = {}; 
 	result.type = type;
 
 	// Include terminating character
-	if (shader_size > 0 && file_data[shader_size-1] != '\0')
+	if (shader_size > 0 && file_chars[shader_size-1] != '\0')
 		shader_size += 1;
 
 	uint32_t gl_type = 0;
@@ -1828,20 +2094,20 @@ skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shad
 	const int32_t prefix_gl_size = strlen(prefix_gl);
 	const char   *prefix_es      = "#version 300 es";
 	const int32_t prefix_es_size = strlen(prefix_es);
-	char         *final_data = (char*)file_data;
+	char         *final_data = (char*)file_chars;
 	bool          needs_free = false;
 #if __ANDROID__
-	if (shader_size >= prefix_gl_size && memcmp(prefix_gl, file_data, prefix_gl_size) == 0) {
+	if (shader_size >= prefix_gl_size && memcmp(prefix_gl, file_chars, prefix_gl_size) == 0) {
 		final_data = (char*)malloc(sizeof(char) * ((shader_size-prefix_gl_size)+prefix_es_size));
 		memcpy(final_data, prefix_es, prefix_es_size);
-		memcpy(&final_data[prefix_es_size], &file_data[prefix_gl_size], shader_size - prefix_gl_size);
+		memcpy(&final_data[prefix_es_size], &file_chars[prefix_gl_size], shader_size - prefix_gl_size);
 		needs_free = true;
 	}
 #else
-	if (shader_size >= prefix_es_size && memcmp(prefix_es, file_data, prefix_es_size) == 0) {
+	if (shader_size >= prefix_es_size && memcmp(prefix_es, file_chars, prefix_es_size) == 0) {
 		final_data = (char*)malloc(sizeof(char) * ((shader_size-prefix_es_size)+prefix_gl_size));
 		memcpy(final_data, prefix_gl, prefix_gl_size);
-		memcpy(&final_data[prefix_gl_size], &file_data[prefix_es_size], shader_size - prefix_es_size);
+		memcpy(&final_data[prefix_gl_size], &file_chars[prefix_es_size], shader_size - prefix_es_size);
 		needs_free = true;
 	}
 #endif
@@ -1874,18 +2140,24 @@ skr_shader_stage_t skr_shader_stage_create(const uint8_t *file_data, size_t shad
 /////////////////////////////////////////// 
 
 void skr_shader_stage_destroy(skr_shader_stage_t *shader) {
-	glDeleteShader(shader->shader);
+	//glDeleteShader(shader->shader);
 	*shader = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
+// skr_shader_t                          //
+///////////////////////////////////////////
 
-skr_shader_t skr_shader_create(const skr_shader_stage_t *vertex, const skr_shader_stage_t *pixel) {
+skr_shader_t skr_shader_create_manual(skr_shader_meta_t *meta, skr_shader_stage_t v_shader, skr_shader_stage_t p_shader) {
 	skr_shader_t result = {};
+	result.meta   = meta;
+	result.vertex = v_shader.shader;
+	result.pixel  = p_shader.shader;
+	skr_shader_meta_reference(result.meta);
 
 	result.program = glCreateProgram();
-	if (vertex) glAttachShader(result.program, vertex->shader);
-	if (pixel)  glAttachShader(result.program, pixel->shader);
+	if (result.vertex) glAttachShader(result.program, result.vertex);
+	if (result.pixel)  glAttachShader(result.program, result.pixel);
 	glLinkProgram (result.program);
 
 	// check for errors?
@@ -1896,7 +2168,7 @@ skr_shader_t skr_shader_create(const skr_shader_stage_t *vertex, const skr_shade
 
 		glGetProgramiv(result.program, GL_INFO_LOG_LENGTH, &length);
 		log = (char*)malloc(length);
-		glGetShaderInfoLog(result.program, length, &err, log);
+		glGetProgramInfoLog(result.program, length, &err, log);
 
 		skr_log("Unable to compile shader program:");
 		skr_log(log);
@@ -1906,17 +2178,103 @@ skr_shader_t skr_shader_create(const skr_shader_stage_t *vertex, const skr_shade
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
-void skr_shader_set(const skr_shader_t *program) {
-	glUseProgram(program->program);
+void skr_shader_destroy(skr_shader_t *shader) {
+	glDeleteProgram(shader->program);
+	glDeleteShader (shader->vertex);
+	glDeleteShader (shader->pixel);
+	*shader = {};
+}
+
+///////////////////////////////////////////
+// skr_pipeline                          //
+///////////////////////////////////////////
+
+skr_pipeline_t skr_pipeline_create(skr_shader_t *shader) {
+	skr_pipeline_t result = {};
+	result.transparency = skr_transparency_none;
+	result.cull         = skr_cull_none;
+	result.wireframe    = false;
+	result.shader       = *shader;
+
+	return result;
 }
 
 /////////////////////////////////////////// 
 
-void skr_shader_destroy(skr_shader_t *program) {
-	glDeleteProgram(program->program);
-	*program = {};
+void skr_pipeline_set(const skr_pipeline_t *pipeline) {
+	glUseProgram(pipeline->shader.program);
+	
+	switch (pipeline->transparency) {
+	case skr_transparency_blend: {
+		glEnable(GL_BLEND);
+	}break;
+	case skr_transparency_clip:
+	case skr_transparency_none: {
+		glDisable(GL_BLEND);
+	}break;
+	}
+
+	switch (pipeline->cull) {
+	case skr_cull_back: {
+		glEnable  (GL_CULL_FACE);
+		glCullFace(GL_BACK);
+	} break;
+	case skr_cull_front: {
+		glEnable  (GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+	} break;
+	case skr_cull_none: {
+		glDisable(GL_CULL_FACE);
+	} break;
+	}
+	
+#ifndef __ANDROID__
+	if (pipeline->wireframe) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	} else {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+#endif
+}
+
+/////////////////////////////////////////// 
+
+void skr_pipeline_set_transparency(skr_pipeline_t *pipeline, skr_transparency_ transparency) {
+	pipeline->transparency = transparency;
+}
+
+/////////////////////////////////////////// 
+void skr_pipeline_set_cull(skr_pipeline_t *pipeline, skr_cull_ cull) {
+	pipeline->cull = cull;
+}
+/////////////////////////////////////////// 
+void skr_pipeline_set_wireframe(skr_pipeline_t *pipeline, bool wireframe) {
+	pipeline->wireframe = wireframe;
+}
+/////////////////////////////////////////// 
+
+skr_transparency_ skr_pipeline_get_transparency(const skr_pipeline_t *pipeline) {
+	return pipeline->transparency;
+}
+
+/////////////////////////////////////////// 
+
+skr_cull_ skr_pipeline_get_cull(const skr_pipeline_t *pipeline) {
+	return pipeline->cull;
+}
+
+/////////////////////////////////////////// 
+
+bool skr_pipeline_get_wireframe(const skr_pipeline_t *pipeline) {
+	return pipeline->wireframe;
+}
+
+///////////////////////////////////////////
+
+void skr_pipeline_destroy(skr_pipeline_t *pipeline) {
+	*pipeline = {};
 }
 
 ///////////////////////////////////////////
@@ -2088,15 +2446,19 @@ void skr_tex_set_data(skr_tex_t *tex, void **data_frames, int32_t data_frame_cou
 
 /////////////////////////////////////////// 
 
-void skr_tex_set_active(const skr_tex_t *texture, int32_t slot) {
+void skr_tex_set_active(const skr_tex_t *texture, skr_shader_bind_t bind) {
 	uint32_t target = texture == nullptr || texture->type != skr_tex_type_cubemap 
 		? GL_TEXTURE_2D
 		: GL_TEXTURE_CUBE_MAP;
 
-	glActiveTexture(GL_TEXTURE0 + slot);
+	// Added this in to fix textures initially? Removed it after I switched to
+	// explicit binding locations in GLSL. This may need further attention? I
+	// have no idea what's happening here!
+	//if (texture)
+	//	glUniform1i(bind.slot, bind.slot);
+
+	glActiveTexture(GL_TEXTURE0 + bind.slot);
 	glBindTexture  (target, texture == nullptr ? 0 : texture->texture);
-	if (texture)
-		glUniform1i(slot, slot);
 }
 
 /////////////////////////////////////////// 
@@ -2196,6 +2558,14 @@ uint32_t skr_tex_fmt_to_gl_type(skr_tex_fmt_ format) {
 // Common Code                           //
 ///////////////////////////////////////////
 
+#include <malloc.h>
+#include <string.h>
+#include <stdio.h>
+
+#if __ANDROID__
+#include <android/asset_manager.h>
+#endif
+
 void (*_skr_log)(const char *text);
 void skr_log_callback(void (*callback)(const char *text)) {
 	_skr_log = callback;
@@ -2204,4 +2574,219 @@ void skr_log(const char *text) {
 	if (_skr_log) _skr_log(text);
 }
 
+///////////////////////////////////////////
+
+bool (*_skr_read_file)(const char *filename, void **out_data, size_t *out_size);
+void skr_file_read_callback(bool (*callback)(const char *filename, void **out_data, size_t *out_size)) {
+	_skr_read_file = callback;
+}
+bool skr_read_file(const char *filename, void **out_data, size_t *out_size) {
+	if (_skr_read_file) return _skr_read_file(filename, out_data, out_size);
+#if _WIN32
+	FILE *fp;
+	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
+		return false;
+	}
+
+	fseek(fp, 0L, SEEK_END);
+	*out_size = ftell(fp);
+	rewind(fp);
+
+	*out_data = malloc(*out_size);
+	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
+	fread (*out_data, *out_size, 1, fp);
+	fclose(fp);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+///////////////////////////////////////////
+
+bool skr_shader_file_load(const char *file, skr_shader_file_t *out_file) {
+	void  *data = nullptr;
+	size_t size = 0;
+
+	if (!skr_read_file(file, &data, &size))
+		return false;
+
+	bool result = skr_shader_file_load_mem(data, size, out_file);
+	free(data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_file) {
+	const char    *prefix  = "SKSHADER";
+	const uint16_t version = 1;
+	const uint8_t *bytes   = (uint8_t*)data;
+	// check the first 5 bytes to see if this is a SKS shader file
+	if (size < 10 || memcmp(bytes, prefix, 8) != 0 || memcmp(&bytes[8], &version, sizeof(uint16_t)) != 0)
+		return false;
+
+	uint32_t at = 10;
+	memcpy(&out_file->stage_count, &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
+	out_file->stages = (skr_shader_file_stage_t*)malloc(sizeof(skr_shader_file_stage_t) * out_file->stage_count);
+
+	out_file->meta = (skr_shader_meta_t*)malloc(sizeof(skr_shader_meta_t));
+	*out_file->meta = {};
+	skr_shader_meta_reference(out_file->meta);
+	memcpy( out_file->meta->name,          &bytes[at], sizeof(out_file->meta->name)); at += sizeof(out_file->meta->name);
+	memcpy(&out_file->meta->buffer_count,  &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
+	memcpy(&out_file->meta->texture_count, &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
+	out_file->meta->buffers  = (skr_shader_meta_buffer_t *)malloc(sizeof(skr_shader_meta_buffer_t ) * out_file->meta->buffer_count );
+	out_file->meta->textures = (skr_shader_meta_texture_t*)malloc(sizeof(skr_shader_meta_texture_t) * out_file->meta->texture_count);
+
+	for (uint32_t i = 0; i < out_file->meta->buffer_count; i++) {
+		skr_shader_meta_buffer_t *buffer = &out_file->meta->buffers[i];
+		memcpy( buffer->name,      &bytes[at], sizeof(buffer->name)); at += sizeof(buffer->name);
+		memcpy(&buffer->bind,      &bytes[at], sizeof(buffer->bind)); at += sizeof(buffer->bind);
+		memcpy(&buffer->size,      &bytes[at], sizeof(buffer->size)); at += sizeof(buffer->size);
+		memcpy(&buffer->var_count, &bytes[at], sizeof(buffer->size)); at += sizeof(buffer->var_count);
+		buffer->defaults = malloc(buffer->size);
+		//memcpy(&buffer->defaults,     &bytes[at], buffer->size);         at += buffer->size;
+		buffer->vars = (skr_shader_meta_var_t*)malloc(sizeof(skr_shader_meta_var_t) * buffer->var_count);
+
+		for (uint32_t t = 0; t < buffer->var_count; t++) {
+			skr_shader_meta_var_t *var = &buffer->vars[t];
+			memcpy( var->name,   &bytes[at], sizeof(var->name ));  at += sizeof(var->name  );
+			memcpy( var->extra,  &bytes[at], sizeof(var->extra));  at += sizeof(var->extra );
+			memcpy(&var->offset, &bytes[at], sizeof(var->offset)); at += sizeof(var->offset);
+			memcpy(&var->size,   &bytes[at], sizeof(var->size));   at += sizeof(var->size  );
+		}
+	}
+
+	for (uint32_t i = 0; i < out_file->meta->texture_count; i++) {
+		skr_shader_meta_texture_t *tex = &out_file->meta->textures[i];
+		memcpy( tex->name,  &bytes[at], sizeof(tex->name )); at += sizeof(tex->name );
+		memcpy( tex->extra, &bytes[at], sizeof(tex->extra)); at += sizeof(tex->extra);
+		memcpy(&tex->bind,  &bytes[at], sizeof(tex->bind )); at += sizeof(tex->bind );
+	}
+
+	for (uint32_t i = 0; i < out_file->stage_count; i++) {
+		skr_shader_file_stage_t *stage = &out_file->stages[i];
+		memcpy( &stage->language, &bytes[at], sizeof(stage->language)); at += sizeof(stage->language);
+		memcpy( &stage->stage,    &bytes[at], sizeof(stage->stage));    at += sizeof(stage->stage);
+		memcpy( &stage->code_size,&bytes[at], sizeof(stage->code_size));at += sizeof(stage->code_size);
+
+		stage->code = malloc(stage->code_size);
+		memcpy(stage->code, &bytes[at], stage->code_size); at += stage->code_size;
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+skr_shader_stage_t skr_shader_file_create_stage(const skr_shader_file_t *file, skr_shader_ stage) {
+	skr_shader_lang_ language;
+#if defined(SKR_DIRECT3D11) || defined(SKR_DIRECT3D12)
+	language = skr_shader_lang_hlsl;
+#elif defined(SKR_OPENGL)
+	language = skr_shader_lang_glsl;
+#elif defined(SKR_VULKAN)
+	language = skr_shader_lang_spirv;
+#endif
+
+	for (uint32_t i = 0; i < file->stage_count; i++) {
+		if (file->stages[i].language == language && file->stages[i].stage == stage)
+			return skr_shader_stage_create(file->stages[i].code, file->stages[i].code_size, stage);
+	}
+	skr_log("Couldn't find a shader stage in shader file!");
+	return {};
+}
+
+///////////////////////////////////////////
+
+void skr_shader_file_destroy(skr_shader_file_t *file) {
+	for (uint32_t i = 0; i < file->stage_count; i++) {
+		free(file->stages[i].code);
+	}
+	free(file->stages);
+	skr_shader_meta_release(file->meta);
+	*file = {};
+}
+
+///////////////////////////////////////////
+
+void skr_shader_meta_reference(skr_shader_meta_t *meta) {
+	meta->references += 1;
+}
+
+///////////////////////////////////////////
+
+void skr_shader_meta_release(skr_shader_meta_t *meta) {
+	meta->references -= 1;
+	if (meta->references == 0) {
+		for (uint32_t i = 0; i < meta->buffer_count; i++) {
+			free(meta->buffers[i].vars);
+			free(meta->buffers[i].defaults);
+		}
+		free(meta->buffers);
+		free(meta->textures);
+		memset(meta, 0, sizeof(skr_shader_meta_t));
+	}
+}
+
+///////////////////////////////////////////
+// skr_shader_t                          //
+///////////////////////////////////////////
+
+skr_shader_t skr_shader_create_file(const char *sks_filename) {
+	skr_shader_file_t file;
+	if (!skr_shader_file_load(sks_filename, &file))
+		return {};
+
+	skr_shader_stage_t vs     = skr_shader_file_create_stage(&file, skr_shader_vertex);
+	skr_shader_stage_t ps     = skr_shader_file_create_stage(&file, skr_shader_pixel);
+	skr_shader_t       result = skr_shader_create_manual(file.meta, vs, ps );
+
+	skr_shader_stage_destroy(&vs);
+	skr_shader_stage_destroy(&ps);
+	skr_shader_file_destroy (&file);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+skr_shader_t skr_shader_create_mem(void *sks_data, size_t sks_data_size) {
+	skr_shader_file_t file;
+	if (!skr_shader_file_load_mem(sks_data, sks_data_size, &file))
+		return {};
+
+	skr_shader_stage_t vs     = skr_shader_file_create_stage(&file, skr_shader_vertex);
+	skr_shader_stage_t ps     = skr_shader_file_create_stage(&file, skr_shader_pixel);
+	skr_shader_t       result = skr_shader_create_manual( file.meta, vs, ps );
+
+	skr_shader_stage_destroy(&vs);
+	skr_shader_stage_destroy(&ps);
+	skr_shader_file_destroy (&file);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+skr_shader_bind_t skr_shader_get_tex_bind(const skr_shader_t *shader, const char *name) {
+	for (uint32_t i = 0; i < shader->meta->texture_count; i++) {
+		if (strcmp(name, shader->meta->textures[i].name) == 0)
+			return shader->meta->textures[i].bind;
+	}
+	return {};
+}
+
+///////////////////////////////////////////
+
+skr_shader_bind_t skr_shader_get_buffer_bind(const skr_shader_t *shader, const char *name) {
+	for (uint32_t i = 0; i < shader->meta->buffer_count; i++) {
+		if (strcmp(name, shader->meta->buffers[i].name) == 0)
+			return shader->meta->buffers[i].bind;
+	}
+	return {};
+}
 #endif // SKR_IMPL

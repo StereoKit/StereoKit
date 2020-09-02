@@ -16,9 +16,6 @@
     <ClCompile Include="systems\platform\win32.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
-    <ClCompile Include="systems\d3d.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\input.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -199,9 +196,6 @@
     </ClInclude>
     <ClInclude Include="systems\platform\win32.h">
       <Filter>systems\platform</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\d3d.h">
-      <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\input.h">
       <Filter>systems</Filter>

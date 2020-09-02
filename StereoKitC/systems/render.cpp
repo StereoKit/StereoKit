@@ -528,17 +528,8 @@ void render_set_material(material_t material) {
 		d3d_context->VSSetSamplers       (0, material->shader->tex_slots.tex_count, samplers);
 		d3d_context->VSSetShaderResources(0, material->shader->tex_slots.tex_count, resources);
 	}
-
-	if (material->alpha_mode == transparency_none) {
-		d3d_context->OMSetBlendState(0,0, 0xFFFFFFFF);
-	} else {
-		d3d_context->OMSetBlendState(material->blend_state, nullptr, 0xFFFFFFFF);
-	}
-	if (material->rasterizer_state != nullptr) {
-		d3d_context->RSSetState(material->rasterizer_state);
-	} else {
-		d3d_context->RSSetState(d3d_rasterstate);
-	}
+	
+	skr_pipeline_set(&material->pipeline);
 }
 
 ///////////////////////////////////////////

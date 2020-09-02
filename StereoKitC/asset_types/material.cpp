@@ -1,6 +1,5 @@
 #include "material.h"
 #include "texture.h"
-#include "../systems/d3d.h"
 #include "../libraries/stref.h"
 
 #include <stdio.h>
@@ -91,8 +90,7 @@ material_t material_copy(material_t material) {
 		if (result->args.textures[i] != nullptr)
 			assets_addref(result->args.textures[i]->header);
 	}
-	if (result->rasterizer_state != nullptr) result->rasterizer_state->AddRef();
-	if (result->blend_state      != nullptr) result->blend_state->AddRef();
+	result->pipeline = skr_pipeline_copy(&material->pipeline);
 
 	return result;
 }
@@ -100,7 +98,7 @@ material_t material_copy(material_t material) {
 ///////////////////////////////////////////
 
 material_t material_copy_id(const char *id) {
-	material_t src = material_find(id);
+	material_t src    = material_find(id);
 	material_t result = material_copy(src);
 	material_release(src);
 	return result;
@@ -122,7 +120,7 @@ void material_destroy(material_t material) {
 			tex_release(material->args.textures[i]);
 	}
 	shader_release(material->shader);
-	if (material->blend_state != nullptr) material->blend_state->Release();
+	skr_pipeline_destroy(&material->pipeline);
 	free(material->args.buffer);
 	free(material->args.textures);
 	*material = {};
@@ -199,53 +197,19 @@ shader_t material_get_shader(material_t material) {
 ///////////////////////////////////////////
 
 void material_set_transparency(material_t material, transparency_ mode) {
-	if (material->blend_state != nullptr)
-		material->blend_state->Release();
-	D3D11_BLEND_DESC desc_blend = {};
-	desc_blend.AlphaToCoverageEnable  = false;
-	desc_blend.IndependentBlendEnable = false;
-	desc_blend.RenderTarget[0].BlendEnable = mode == transparency_blend;
-	desc_blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	desc_blend.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	desc_blend.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	desc_blend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	desc_blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	desc_blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	desc_blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-
-	d3d_device->CreateBlendState(&desc_blend, &material->blend_state);
-	material->alpha_mode = mode;
-}
-
-///////////////////////////////////////////
-
-void material_update_rasterizer(material_t material) {
-	if (material->rasterizer_state != nullptr)
-		material->rasterizer_state->Release();
-	D3D11_RASTERIZER_DESC desc_rasterizer = {};
-	desc_rasterizer.FillMode = material->wireframe ? D3D11_FILL_WIREFRAME : D3D11_FILL_SOLID;
-	switch (material->cull) {
-	case cull_none:  desc_rasterizer.CullMode = D3D11_CULL_NONE;  break;
-	case cull_front: desc_rasterizer.CullMode = D3D11_CULL_FRONT; break;
-	case cull_back:  desc_rasterizer.CullMode = D3D11_CULL_BACK;  break;
-	}
-	desc_rasterizer.FrontCounterClockwise = true;
-
-	d3d_device->CreateRasterizerState(&desc_rasterizer, &material->rasterizer_state);
+	skr_pipeline_set_transparency(&material->pipeline, (skr_transparency_)mode);
 }
 
 ///////////////////////////////////////////
 
 void material_set_cull(material_t material, cull_ mode) {
-	material->cull = mode;
-	material_update_rasterizer(material);
+	skr_pipeline_set_cull(&material->pipeline, (skr_cull_)mode);
 }
 
 ///////////////////////////////////////////
 
 void material_set_wireframe(material_t material, bool32_t wireframe) {
-	material->wireframe = wireframe;
-	material_update_rasterizer(material);
+	skr_pipeline_set_wireframe(&material->pipeline, wireframe);
 }
 
 ///////////////////////////////////////////

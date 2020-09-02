@@ -11,7 +11,6 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../render.h"
-#include "../d3d.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
 
@@ -48,10 +47,7 @@ void win32_resize(int width, int height) {
 bool win32_init(const char *app_name) {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
-	if (!d3d_init(nullptr))
-		return false;
-
-	sk_info.display_type = display_opaque;
+	sk_info.display_type   = display_opaque;
 
 	WNDCLASS wc = {0}; 
 	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -131,8 +127,6 @@ void win32_shutdown() {
 ///////////////////////////////////////////
 
 void win32_step_begin() {
-	d3d_update();
-
 	MSG msg = {0};
 	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -144,6 +138,8 @@ void win32_step_begin() {
 ///////////////////////////////////////////
 
 void win32_step_end() {
+	skr_draw_begin();
+
 	color32    col      = render_get_clear_color();
 	skr_tex_t *target   = skr_swapchain_get_next(&win32_swapchain);
 	float      color[4] = {col.r/255.f, col.b/255.f, col.g/255.f, col.a/255.f};
