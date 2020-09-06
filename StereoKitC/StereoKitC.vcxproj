@@ -134,15 +134,6 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="math.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_default.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_equirect.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_font.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_lines.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_pbr.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_skybox.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_ui.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_ui_quadrant.cpp" />
-    <ClCompile Include="shaders_builtin\shader_builtin_unlit.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stereokit_ui.cpp" />
@@ -200,16 +191,15 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="log.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_default.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_equirect.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_font.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_include.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_lines.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_skybox.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_ui.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_equirect.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_font.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_lines.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_pbr.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_skybox.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_unlit.hlsl.h" />
     <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stereokit_ui.h" />
@@ -244,32 +234,57 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <None Include="cpp.hint" />
     <None Include="shaders_builtin\shader_builtin_default.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_equirect.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_font.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_lines.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_pbr.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_skybox.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_ui.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <FileType>Document</FileType>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
+      <Outputs>%(FullPath).sks</Outputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

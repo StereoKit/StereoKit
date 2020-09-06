@@ -1,11 +1,12 @@
-// [name] sk/default_ui
+#include "stereokit.hlslinc"
 
-#include <stereokit>
+//--name = sk/default_ui
+//--color:color = 1, 1, 1, 1
+//--diffuse     = white
+float4       color;
+Texture2D    diffuse   : register(t0);
+SamplerState diffuse_s : register(s0);
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1, 1, 1, 1}
-	float4 _color;
-};
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
@@ -21,10 +22,6 @@ struct psIn {
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
-// [texture] diffuse white
-Texture2D    tex         : register(t0);
-SamplerState tex_sampler : register(s0);
-
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
 	output.world = mul(input .pos,   sk_inst[id].world);
@@ -34,7 +31,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	output.view_id    = sk_inst[id].view_id;
 	output.uv         = input.uv;
-	output.color      = _color * input.col * sk_inst[id].color;
+	output.color      = color * input.col * sk_inst[id].color;
 	output.color.rgb *= Lighting(output.normal);
 	return output;
 }
@@ -52,5 +49,5 @@ float4 ps(psIn input) : SV_TARGET {
 	float  pct = pow(1-dist, 5);
 	float4 col = float4(lerp(input.color.rgb, float3(1,1,1), pct*0.6 + (ring*pct)), input.color.a);
 
-	return tex.Sample(tex_sampler, input.uv) * col; 
+	return diffuse.Sample(diffuse_s, input.uv) * col; 
 }

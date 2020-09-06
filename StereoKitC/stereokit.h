@@ -790,6 +790,7 @@ static const char *default_id_shader_font        = "default/shader_font";
 static const char *default_id_shader_equirect    = "default/shader_equirect";
 static const char *default_id_shader_ui          = "default/shader_ui";
 static const char *default_id_shader_ui_quadrant = "default/shader_ui_quadrant";
+static const char *default_id_shader_sky         = "default/shader_sky";
 static const char *default_id_sound_click   = "default/sound_click";
 static const char *default_id_sound_unclick = "default/sound_unclick";
 static const char *default_id_sound_grab    = "default/sound_grab";

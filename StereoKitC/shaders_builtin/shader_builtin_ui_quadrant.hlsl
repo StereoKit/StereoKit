@@ -1,11 +1,10 @@
-// [name] sk/default_ui_quadrant
+#include "stereokit.hlslinc"
 
-#include <stereokit>
+//--name = sk/default_ui_quadrant
+//--color:color = 1, 1, 1, 1
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1, 1, 1, 1}
-	float4 _color;
-};
+float4 color;
+
 struct vsIn {
 	float4 pos      : SV_POSITION;
 	float4 color    : COLOR0;
@@ -43,7 +42,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	output.view_id    = sk_inst[id].view_id;
-	output.color      = lerp(_color, sk_inst[id].color, input.color.a);
+	output.color      = lerp(color, sk_inst[id].color, input.color.a);
 	output.color.rgb *= Lighting(output.normal);
 	return output;
 }

@@ -1,11 +1,10 @@
-// [name] sk/skybox
+#include "stereokit.hlslinc"
 
-#include <stereokit>
+//--name = sk/skybox
+//--blur = 0
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] float blur 0.0
-	float blur;
-};
+float blur;
+
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL0;
@@ -35,7 +34,7 @@ psOut ps(vsIn input) {
 	uint mip_levels;
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 
-	result.color = sk_cubemap.SampleLevel(tex_cube_sampler, input.norm, blur*mip_levels);
+	result.color = sk_cubemap.SampleLevel(sk_cubemap_s, input.norm, blur * mip_levels);
 	result.depth = 0.99999;
 	return result;
 }

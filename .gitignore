@@ -338,6 +338,7 @@ ASALocalRun/
 
 # Ignore cached shader blobs
 */Assets/cache
+StereoKitC/shaders_builtin/*.sks
 
 _site/
 .jekyll-cache/

@@ -1,4 +1,15 @@
 // [name] sk/blit/equirect_convert
+//--up      = 0,1,0,0
+//--right   = 1,0,0,0
+//--forward = 0,0,-1,0
+//--source  = white
+
+float4       up;
+float4       right;
+float4       forward;
+Texture2D    source   : register(t0);
+SamplerState source_s : register(s0);
+
 cbuffer GlobalBuffer : register(b0) {
 	float4x4 sk_view[2];
 	float4x4 sk_proj[2];
@@ -16,14 +27,6 @@ cbuffer TransformBuffer : register(b1) {
 	float sk_pixel_height;
 };
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] vector up {0,1,0,0}
-	float4 up;
-	// [param] vector right {1,0,0,0}
-	float4 right;
-	// [param] vector forward {0,0,-1,0}
-	float4 forward;
-};
 struct vsIn {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
@@ -32,10 +35,6 @@ struct psIn {
 	float4 pos : SV_POSITION;
 	float3 norm : TEXCOORD0;
 };
-
-// [texture] source white
-Texture2D source : register(t0);
-SamplerState source_sampler : register(s0);
 
 static const float2 invAtan = float2(0.1591, 0.3183);
 float2 ToEquirect(float3 v) {
@@ -55,6 +54,6 @@ psIn vs(vsIn input) {
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float4 color = source.Sample(source_sampler, ToEquirect(normalize(input.norm)));
+	float4 color = source.Sample(source_s, ToEquirect(normalize(input.norm)));
 	return color;
 }

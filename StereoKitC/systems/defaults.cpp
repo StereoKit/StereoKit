@@ -106,30 +106,33 @@ bool defaults_init() {
 	mesh_set_id(sk_default_sphere, default_id_mesh_sphere);
 
 	// Shaders
-	sk_default_shader          = shader_create_mem((void*)shader_builtin_default,  sizeof(shader_builtin_default));
-	sk_default_shader_pbr      = shader_create_mem((void*)shader_builtin_pbr,      sizeof(shader_builtin_pbr));
-	sk_default_shader_unlit    = shader_create_mem((void*)shader_builtin_unlit,    sizeof(shader_builtin_unlit));
-	sk_default_shader_font     = shader_create_mem((void*)shader_builtin_font,     sizeof(shader_builtin_font));
-	sk_default_shader_equirect = shader_create_mem((void*)shader_builtin_equirect, sizeof(shader_builtin_equirect));
-	sk_default_shader_ui       = shader_create_mem((void*)shader_builtin_ui,       sizeof(shader_builtin_ui));
-	sk_default_shader_ui_quadrant = shader_create_mem((void*)shader_builtin_ui_quadrant, sizeof(shader_builtin_ui_quadrant));
-	
-	if (sk_default_shader          == nullptr ||
-		sk_default_shader_pbr      == nullptr ||
-		sk_default_shader_unlit    == nullptr ||
-		sk_default_shader_font     == nullptr ||
-		sk_default_shader_equirect == nullptr ||
-		sk_default_shader_ui       == nullptr ||
-		sk_default_shader_ui_quadrant == nullptr)
+	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
+	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
+	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
+	sk_default_shader_equirect    = shader_create_mem((void*)sks_shader_builtin_equirect_hlsl,    sizeof(sks_shader_builtin_equirect_hlsl));
+	sk_default_shader_ui          = shader_create_mem((void*)sks_shader_builtin_ui_hlsl,          sizeof(sks_shader_builtin_ui_hlsl));
+	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
+	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
+
+	if (sk_default_shader             == nullptr ||
+		sk_default_shader_pbr         == nullptr ||
+		sk_default_shader_unlit       == nullptr ||
+		sk_default_shader_font        == nullptr ||
+		sk_default_shader_equirect    == nullptr ||
+		sk_default_shader_ui          == nullptr ||
+		sk_default_shader_ui_quadrant == nullptr ||
+		sk_default_shader_sky         == nullptr)
 		return false;
 
-	shader_set_id(sk_default_shader,          default_id_shader);
-	shader_set_id(sk_default_shader_pbr,      default_id_shader_pbr);
-	shader_set_id(sk_default_shader_unlit,    default_id_shader_unlit);
-	shader_set_id(sk_default_shader_font,     default_id_shader_font);
-	shader_set_id(sk_default_shader_equirect, default_id_shader_equirect);
-	shader_set_id(sk_default_shader_ui,       default_id_shader_ui);
+	shader_set_id(sk_default_shader,             default_id_shader);
+	shader_set_id(sk_default_shader_pbr,         default_id_shader_pbr);
+	shader_set_id(sk_default_shader_unlit,       default_id_shader_unlit);
+	shader_set_id(sk_default_shader_font,        default_id_shader_font);
+	shader_set_id(sk_default_shader_equirect,    default_id_shader_equirect);
+	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
+	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
@@ -223,6 +226,7 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_quadrant);
+	shader_release  (sk_default_shader_sky);
 	mesh_release    (sk_default_quad);
 	tex_release     (sk_default_tex);
 	tex_release     (sk_default_tex_black);

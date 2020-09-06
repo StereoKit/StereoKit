@@ -1,51 +1,45 @@
-// [name] sk/default_pbr
+#include "stereokit.hlslinc"
 
-#include <stereokit>
+//--name = sk/default_pbr
+//--color:color = 1,1,1,1
+//--metallic    = 0
+//--roughness   = 1
+//--tex_scale   = 1
+float4 color;
+float  metallic;
+float  roughness;
+float  tex_scale;
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1,1,1,1}
-	float4 _color;
-	// [param] float metallic 0
-	float metallic;
-	// [param] float roughness 1
-	float roughness;
-	// [param] float tex_scale 1
-	float tex_scale;
-};
+//--diffuse   = white
+//--emission  = black
+//--metal     = white
+//--normal    = flat
+//--occlusion = white
+Texture2D    diffuse     : register(t0);
+SamplerState diffuse_s   : register(s0);
+Texture2D    emission    : register(t1);
+SamplerState emission_s  : register(s1);
+Texture2D    metal       : register(t2);
+SamplerState metal_s     : register(s2);
+Texture2D    normal      : register(t3);
+SamplerState normal_s    : register(s3);
+Texture2D    occlusion   : register(t4);
+SamplerState occlusion_s : register(s4);
+
 struct vsIn {
-	float4 pos : SV_POSITION;
-	float3 norm : NORMAL;
-	float2 uv : TEXCOORD0;
+	float4 pos   : SV_POSITION;
+	float3 norm  : NORMAL;
+	float2 uv    : TEXCOORD0;
 	float3 color : COLOR0;
 };
 struct psIn {
-	float4 pos : SV_POSITION;
-	float3 color : COLOR0;
+	float4 pos    : SV_POSITION;
+	float3 color  : COLOR0;
 	float3 normal : NORMAL;
-	float2 uv : TEXCOORD0;
-	float3 world : TEXCOORD1;
+	float2 uv     : TEXCOORD0;
+	float3 world  : TEXCOORD1;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
-
-// [texture] diffuse white
-Texture2D tex : register(t0);
-SamplerState tex_sampler : register(s0);
-
-// [texture] emission black
-Texture2D tex_emission : register(t1);
-SamplerState tex_e_sampler : register(s1);
-
-// [texture] metal white
-Texture2D tex_metal : register(t2);
-SamplerState tex_metal_sampler : register(s2);
-
-// [texture] normal flat
-Texture2D tex_normal : register(t3);
-SamplerState tex_normal_sampler : register(s3);
-
-// [texture] occlusion white
-Texture2D tex_occ : register(t4);
-SamplerState tex_occ_sampler : register(s4);
 
 float3 sRGBToLinear(float3 sRGB);
 float3 LinearTosRGB(float3 lin);
@@ -65,36 +59,36 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.view_id = sk_inst[id].view_id;
 	output.normal  = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	output.uv      = input.uv * tex_scale;
-	output.color   = input.color * sk_inst[id].color.rgb * _color.rgb;
+	output.color   = input.color * sk_inst[id].color.rgb * color.rgb;
 	return output;
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float3 albedo      = tex         .Sample(tex_sampler,       input.uv).rgb * input.color.rgb;
-	float3 emissive    = tex_emission.Sample(tex_e_sampler,     input.uv).rgb;
-	float3 metal_rough = tex_metal   .Sample(tex_metal_sampler, input.uv).rgb; // b is metallic, rough is g
-	float3 tex_norm    = tex_normal  .Sample(tex_normal_sampler,input.uv).xyz * 2 - 1;
-	//float  occlusion   = tex_occ     .Sample(tex_occ_sampler,input.uv).r;
+	float3 albedo      = diffuse  .Sample(diffuse_s,  input.uv).rgb * input.color.rgb;
+	float3 emissive    = emission .Sample(emission_s, input.uv).rgb;
+	float3 metal_rough = metal    .Sample(metal_s,    input.uv).rgb; // b is metallic, rough is g
+	float3 tex_norm    = normal   .Sample(normal_s,   input.uv).xyz * 2 - 1;
+	//float  occ       = occlusion.Sample(occlusion_s,input.uv).r;
 
 	float metal = metal_rough.b * metallic;
 	float rough = max(1-(metal_rough.g * roughness), 0.001);
 
-	float3 normal = normalize(input.normal);
+	float3 p_norm = normalize(input.normal);
 	float3 view   = normalize(sk_camera_pos[input.view_id].xyz - input.world);
-	tex_norm = mul(tex_norm, CotangentFrame(normal, -view, input.uv));
-	normal   = normalize(tex_norm);
+	tex_norm = mul(tex_norm, CotangentFrame(p_norm, -view, input.uv));
+	p_norm   = normalize(tex_norm);
 	float3 light    = float3(1,1,1);//-normalize(sk_light.xyz);
-	float3 half_vec =  normalize(light + normal);
-	float  NdotL    = (dot(normal,light));
-	float  NdotV    = (dot(normal,view));
+	float3 half_vec =  normalize(light + p_norm);
+	float  NdotL    = (dot(p_norm,light));
+	float  NdotV    = (dot(p_norm,view));
 
 	float w, h;
 	uint mip_levels;
 	sk_cubemap.GetDimensions(0, w, h, mip_levels);
 
-	float3 reflection = reflect(-view, normal);
-	float3 irradiance = Lighting(normal);
-	float3 reflection_color = sk_cubemap.SampleLevel(tex_cube_sampler, reflection, 3*(1-rough)*mip_levels).rgb;
+	float3 reflection = reflect(-view, p_norm);
+	float3 irradiance = Lighting(p_norm);
+	float3 reflection_color = sk_cubemap.SampleLevel(sk_cubemap_s, reflection, 3 * (1 - rough) * mip_levels).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
@@ -118,7 +112,7 @@ float4 ps(psIn input) : SV_TARGET{
 	// l is the vector from the surface to the light position (light direction)
 	// v is view direction, or direction from the surface to the camera
 	// h is the half vector, h = normalize(l + v)
-	float  D = DistributionGGX(normal, half_vec, rough);
+	float  D = DistributionGGX(p_norm, half_vec, rough);
 	float3 F = FresnelSchlick(max(NdotV, 0), albedo, metal);
 	float  G = GeometrySmith(max(NdotL, 0), max(NdotV, 0), rough);
 	float3 specular =
@@ -147,7 +141,7 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 diffuse = (albedo*irradiance);
 	float3 ambient = diffuse_contribution * diffuse + reflection_color*F;
 	float3 reflectance = ambient;// + (diffuse_contribution * albedo / 3.14159) * sk_light_color.rgb * saturate(NdotL);
-	return float4(reflectance + emissive, _color.a);
+	return float4(reflectance + emissive, color.a);
 }
 
 // From: http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
