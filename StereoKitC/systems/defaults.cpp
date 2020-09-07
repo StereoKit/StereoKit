@@ -24,6 +24,8 @@ shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
 shader_t     sk_default_shader_ui_quadrant;
+shader_t     sk_default_shader_sky;
+shader_t     sk_default_shader_lines;
 material_t   sk_default_material;
 material_t   sk_default_material_equirect;
 material_t   sk_default_material_font;
@@ -114,6 +116,7 @@ bool defaults_init() {
 	sk_default_shader_ui          = shader_create_mem((void*)sks_shader_builtin_ui_hlsl,          sizeof(sks_shader_builtin_ui_hlsl));
 	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
 	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
+	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_pbr         == nullptr ||
@@ -122,7 +125,8 @@ bool defaults_init() {
 		sk_default_shader_equirect    == nullptr ||
 		sk_default_shader_ui          == nullptr ||
 		sk_default_shader_ui_quadrant == nullptr ||
-		sk_default_shader_sky         == nullptr)
+		sk_default_shader_sky         == nullptr ||
+		sk_default_shader_lines       == nullptr)
 		return false;
 
 	shader_set_id(sk_default_shader,             default_id_shader);
@@ -133,6 +137,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
+	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
 	
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);

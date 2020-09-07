@@ -21,6 +21,7 @@ extern shader_t     sk_default_shader_font;
 extern shader_t     sk_default_shader_equirect;
 extern shader_t     sk_default_shader_ui;
 extern shader_t     sk_default_shader_sky;
+extern shader_t     sk_default_shader_lines;
 extern material_t   sk_default_material;
 extern material_t   sk_default_material_equirect;
 extern material_t   sk_default_material_font;

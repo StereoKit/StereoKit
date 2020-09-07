@@ -38,7 +38,7 @@ namespace StereoKit
 		/// <summary>This is the color the renderer will clear the screen to
 		/// when beginning to draw a new frame. This is ignored on displays 
 		/// with transparent screens</summary>
-		public static Color32 ClearColor
+		public static Color ClearColor
 		{
 			set => NativeAPI.render_set_clear_color(value);
 		}

@@ -61,7 +61,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
-		skr_buffer_update(&mesh->vert_buffer, vertices, sizeof(vert_t)*vertex_count);
+		skr_buffer_set_contents(&mesh->vert_buffer, vertices, sizeof(vert_t)*vertex_count);
 	}
 
 	mesh->vert_count = vertex_count;
@@ -126,7 +126,7 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
-		skr_buffer_update(&mesh->ind_buffer, indices, sizeof(vind_t) * index_count);
+		skr_buffer_set_contents(&mesh->ind_buffer, indices, sizeof(vind_t) * index_count);
 	}
 
 	mesh->ind_count = index_count;

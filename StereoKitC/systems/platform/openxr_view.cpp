@@ -8,7 +8,6 @@
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
-#include "../../systems/d3d.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -257,8 +256,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 		}
 
 		// Update our textures with the new swapchain display surfaces
-		tex_setsurface (display.swapchain_color.textures[s], display.swapchain_color.images[s].texture, display.color_format);
-		tex_setsurface (display.swapchain_depth.textures[s], display.swapchain_depth.images[s].texture, display.depth_format);
+		tex_set_surface(display.swapchain_color.textures[s], display.swapchain_color.images[s].texture, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.swapchain_color.surface_count);
+		tex_set_surface(display.swapchain_depth.textures[s], display.swapchain_depth.images[s].texture, display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.swapchain_depth.surface_count);
 		tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
 	}
 
@@ -443,6 +442,7 @@ bool openxr_render_frame() {
 	// If the session is active, lets render our layer in the compositor!
 	xr_display_2nd_layers.clear();
 	
+	skr_draw_begin();
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
@@ -561,13 +561,11 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 	}
 
 	// Call the rendering callback with our view and swapchain info
-	tex_t target = layer.swapchain_color.textures[color_id];
-	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? render_get_clear_color() 
-		: color32{ 0,0,0,0   });
-	tex_rtarget_set_active(target);
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)layer.swapchain_color.width, (float)layer.swapchain_color.height);
-	d3d_context->RSSetViewports(1, &viewport);
+	tex_t    target = layer.swapchain_color.textures[color_id];
+	color128 col    = sk_info.display_type == display_opaque
+		? render_get_clear_color()
+		: color128{ 0,0,0,0 };
+	skr_tex_target_bind(&target->tex, true, &col.r);
 
 	render_draw_matrix(layer.view_transforms, layer.view_projections, layer.view_count);
 

@@ -357,8 +357,8 @@ typedef enum tex_format_ {
 	tex_format_none = 0,
 	tex_format_rgba32,
 	tex_format_rgba32_linear,
-	tex_fmt_bgra32,
-	tex_fmt_bgra32_linear,
+	tex_format_bgra32,
+	tex_format_bgra32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
 	tex_format_r8,
@@ -428,8 +428,6 @@ SK_API shader_t    shader_create_hlsl (const char *hlsl);
 SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
-SK_API bool32_t    shader_set_code    (shader_t shader, void *data, size_t data_size);
-SK_API bool32_t    shader_set_codefile(shader_t shader, const char *filename);
 SK_API void        shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
@@ -595,7 +593,7 @@ SK_API void     render_set_cam_root  (const sk_ref(matrix) cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_info);
-SK_API void     render_set_clear_color(color32 color);
+SK_API void     render_set_clear_color(color128 color);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
 SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));
@@ -791,6 +789,7 @@ static const char *default_id_shader_equirect    = "default/shader_equirect";
 static const char *default_id_shader_ui          = "default/shader_ui";
 static const char *default_id_shader_ui_quadrant = "default/shader_ui_quadrant";
 static const char *default_id_shader_sky         = "default/shader_sky";
+static const char *default_id_shader_lines       = "default/shader_lines";
 static const char *default_id_sound_click   = "default/sound_click";
 static const char *default_id_sound_unclick = "default/sound_unclick";
 static const char *default_id_sound_grab    = "default/sound_grab";

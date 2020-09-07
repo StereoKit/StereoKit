@@ -61,6 +61,16 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 
 ///////////////////////////////////////////
 
+void tex_set_surface(tex_t texture, void *native_surface, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
+	if (skr_tex_is_valid(&texture->tex))
+		skr_tex_destroy (&texture->tex);
+	texture->format = tex_get_tex_format(native_fmt);;
+	texture->tex    = skr_tex_from_native(native_surface, skr_tex_type_rendertarget, skr_tex_fmt_from_native(native_fmt), width, height, surface_count);
+	
+}
+
+///////////////////////////////////////////
+
 tex_t tex_find(const char *id) {
 	tex_t result = (tex_t)assets_find(id, asset_type_texture);
 	if (result != nullptr) {
@@ -263,11 +273,11 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		else if (texture->type & tex_type_rendertarget) type = skr_tex_type_rendertarget;
 		texture->tex = skr_tex_create(type, use, format, use_mips);
 
-		skr_tex_set_data(&texture->tex, data, data_count, width, height);
+		skr_tex_set_contents(&texture->tex, data, data_count, width, height);
 		if (texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
-		skr_tex_set_data(&texture->tex, data, data_count, width, height);
+		skr_tex_set_contents(&texture->tex, data, data_count, width, height);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
@@ -379,6 +389,16 @@ size_t tex_format_size(tex_format_ format) {
 	case tex_format_r8:            return sizeof(uint8_t);
 	default: return sizeof(color32);
 	}
+}
+
+///////////////////////////////////////////
+
+tex_format_ tex_get_tex_format(int64_t native_fmt) {
+	skr_tex_fmt_ skr_fmt = skr_tex_fmt_from_native(native_fmt);
+
+	// tex_format_ should be kept to match skr_tex_fmt_, so this should 
+	// always be valid.
+	return (tex_format_)skr_fmt;
 }
 
 ///////////////////////////////////////////

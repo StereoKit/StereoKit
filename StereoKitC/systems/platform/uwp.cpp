@@ -7,16 +7,14 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
-#include "../d3d.h"
 #include "../render.h"
 #include "../input.h"
 #include "flatscreen_input.h"
 
 namespace sk {
 
-void            *uwp_window    = nullptr;
-tex_t            uwp_target    = {};
-IDXGISwapChain1 *uwp_swapchain = {};
+HWND            uwp_window    = nullptr;
+skr_swapchain_t uwp_swapchain = {};
 
 }
 
@@ -150,36 +148,18 @@ public:
 			std::swap(sk_info.display_width, sk_info.display_height);
 		}
 
-		auto windowPtr = static_cast<::IUnknown*>(winrt::get_abi(window));
-		//uwp_window = (void*)windowPtr;
-
-		// Create a swapchain for the window
-		DXGI_SWAP_CHAIN_DESC1 sd = { };
-		sd.BufferCount = 2;
-		sd.Width       = sk_info.display_width;
-		sd.Height      = sk_info.display_height;
-		sd.Format      = DXGI_FORMAT_R8G8B8A8_UNORM;
-		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		sd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		sd.SampleDesc.Count = 1;
-
-		IDXGIDevice2  *dxgi_device;  d3d_device  ->QueryInterface(__uuidof(IDXGIDevice2),  (void **)&dxgi_device);
-		IDXGIAdapter  *dxgi_adapter; dxgi_device ->GetParent     (__uuidof(IDXGIAdapter),  (void **)&dxgi_adapter);
-		IDXGIFactory2 *dxgi_factory; dxgi_adapter->GetParent     (__uuidof(IDXGIFactory2), (void **)&dxgi_factory);
-
-		dxgi_factory->CreateSwapChainForCoreWindow(d3d_device, windowPtr, &sd, nullptr, &uwp_swapchain);
-		ID3D11Texture2D *back_buffer;
-		uwp_swapchain->GetBuffer(0, __uuidof(**(&back_buffer)), reinterpret_cast<void **>(&back_buffer));
-
-		uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32_linear);
-		tex_set_id     (uwp_target, "stereokit/system/rendertarget");
-		tex_setsurface (uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-		tex_add_zbuffer(uwp_target, tex_format_depth16);
-
-		back_buffer ->Release();
-		dxgi_factory->Release();
-		dxgi_adapter->Release();
-		dxgi_device ->Release();
+		// Get the HWND of the UWP window
+		// https://kennykerr.ca/2012/11/09/windows-8-whered-you-put-my-hwnd/
+		struct __declspec(uuid("45D64A29-A63E-4CB6-B498-5781D298CB4F")) __declspec(novtable)
+			ICoreWindowInterop : ::IUnknown
+		{
+			virtual HRESULT __stdcall get_WindowHandle(HWND * hwnd) = 0;
+			virtual HRESULT __stdcall put_MessageHandled(unsigned char) = 0;
+		};
+		ICoreWindowInterop *interop;
+		((::IUnknown &)(window)).QueryInterface(__uuidof(ICoreWindowInterop), (void **)&interop);
+		interop->get_WindowHandle(&uwp_window);
+		
 
 		initialized = true;
 		valid = true;
@@ -364,15 +344,7 @@ private:
 		sk_info.display_height = outputHeight;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
-		if (uwp_swapchain != nullptr) {
-			tex_releasesurface(uwp_target);
-			uwp_swapchain->ResizeBuffers(0, (UINT)sk_info.display_width, (UINT)sk_info.display_height, DXGI_FORMAT_UNKNOWN, 0);
-			ID3D11Texture2D *back_buffer;
-			uwp_swapchain->GetBuffer(0, __uuidof(**(&back_buffer)), reinterpret_cast<void **>(&back_buffer));
-			tex_setsurface(uwp_target, back_buffer, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-			back_buffer->Release();
-		}
-
+		skr_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
 		render_update_projection();
 	}
 };
@@ -420,13 +392,10 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_init(const char *) {
+bool uwp_init(const char *app_name) {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
-	if (!d3d_init(nullptr))
-		return false;
-
-	sk_info.display_type = display_opaque;
+	sk_info.display_type   = display_opaque;
 
 	_beginthread(window_thread, 0, nullptr);
 	
@@ -434,22 +403,24 @@ bool uwp_init(const char *) {
 		Sleep(1);
 	}
 
+	if (!skr_init(app_name, uwp_window, nullptr))
+		return false;
+	uwp_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
+
 	flatscreen_input_init();
 	return ViewProvider::inst->valid;
 }
 
 void uwp_step_begin() {
-	d3d_update();
 	flatscreen_input_update();
 }
 void uwp_step_end() { 
-	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
-	d3d_context->RSSetViewports(1, &viewport);
+	skr_draw_begin();
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex_rtarget_clear(uwp_target, render_get_clear_color());
-	tex_rtarget_set_active(uwp_target);
+	color128 color = render_get_clear_color();
+	skr_tex_t *target = skr_swapchain_get_next(&uwp_swapchain);
+	skr_tex_target_bind(target, true, &color.r);
 
 	input_update_predicted();
 
@@ -460,17 +431,15 @@ void uwp_step_end() {
 	render_clear();
 }
 void uwp_vsync() {
-	uwp_swapchain->Present(1, 0);
+	skr_swapchain_present(&uwp_swapchain);
 }
 
 void uwp_shutdown() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
-	tex_release(uwp_target);
-	uwp_swapchain->Release();
-
-	d3d_shutdown();
+	skr_swapchain_destroy(&uwp_swapchain);
+	skr_shutdown();
 }
 
 }

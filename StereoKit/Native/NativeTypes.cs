@@ -177,6 +177,8 @@ namespace StereoKit
 		/// of the time you're dealing with color data! Matches well with the 
 		/// Color32 struct.</summary>
 		Rgba32Linear,
+		Bgra32,
+		Bgra32Linear,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
 		/// per-channel! This is not common, but you might encounter it with
 		/// raw photos, or HDR images.</summary>

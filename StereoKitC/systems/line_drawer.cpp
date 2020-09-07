@@ -1,6 +1,5 @@
 #include "line_drawer.h"
 #include "../stereokit.h"
-#include "../shaders_builtin/shader_builtin.h"
 #include "../math.h"
 #include "../hierarchy.h"
 
@@ -25,12 +24,9 @@ bool line_drawer_init() {
 	line_mesh = mesh_create();
 	mesh_set_id(line_mesh, "render/line_mesh");
 
-	shader_t line_shader = shader_create_mem((void*)shader_builtin_lines, sizeof(shader_builtin_lines));
-	shader_set_id(line_shader, "render/line_shader");
-	line_material = material_create(line_shader);
+	line_material = material_create(shader_find(default_id_shader_lines));
 	material_set_id(line_material, "render/line_material");
 	material_set_transparency(line_material, transparency_blend);
-	shader_release(line_shader);
 	return true;
 }
 

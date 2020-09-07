@@ -39,22 +39,36 @@ inline size_t material_param_size(material_param_ type) {
 ///////////////////////////////////////////
 
 void material_create_arg_defaults(material_t material, shader_t shader) {
-	material->args.buffer   = malloc(shader->args.buffer_size);
-	material->args.textures = (tex_t*)malloc(sizeof(tex_t)*shader->tex_slots.tex_count);
-	memset(material->args.buffer,   0, shader->args.buffer_size);
-	memset(material->args.textures, 0, sizeof(tex_t) * shader->tex_slots.tex_count);
+	const skr_shader_meta_t        *meta      = shader->shader.meta;
+	const skr_shader_meta_buffer_t *buff_info = meta->global_buffer_id != -1
+		? &meta->buffers[meta->global_buffer_id]
+		: nullptr;
+	size_t buff_size = buff_info ? buff_info->size : 0;
 
-	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
-		shaderargs_desc_item_t &item = shader->args_desc.item[i];
-		if (item.default_value != nullptr)
-			memcpy((uint8_t*)material->args.buffer + item.offset, item.default_value, item.size);
+	if (buff_size != 0) {
+		material->args.buffer       = malloc(buff_size);
+		material->args.buffer_size  = buff_size;
+		material->args.buffer_bind  = buff_info->bind;
+		material->args.buffer_dirty = true;
+		material->args.buffer_gpu   = skr_buffer_create(nullptr, buff_size, skr_buffer_type_constant, skr_use_dynamic);
+		if (buff_info->defaults != nullptr)
+			memcpy(material->args.buffer, buff_info->defaults, buff_size);
+		else
+			memset(material->args.buffer, 0, buff_size);
+	}
+	if (meta->texture_count > 0) {
+		material->args.textures      = (tex_t      *)malloc(sizeof(tex_t)      * meta->texture_count);
+		material->args.texture_binds = (skr_bind_t *)malloc(sizeof(skr_bind_t) * meta->texture_count);
+		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
+		for (size_t i = 0; i < meta->texture_count; i++) {
+			material->args.texture_binds[i] = meta->textures[i].bind;
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
 material_t material_create(shader_t shader) {
-
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
 	result->alpha_mode = transparency_none;
@@ -81,16 +95,23 @@ material_t material_copy(material_t material) {
 	result->header        = tmp_header;
 	result->args.buffer   = tmp_buffer;
 	result->args.textures = tmp_textures;
-	memcpy(result->args.buffer,   material->args.buffer,   material->shader->args.buffer_size);
-	memcpy(result->args.textures, material->args.textures, sizeof(tex_t) * material->shader->tex_slots.tex_count);
+	result->args.buffer_gpu = skr_buffer_create(nullptr, material->args.buffer_size, skr_buffer_type_constant, skr_use_dynamic);
+	memcpy(result->args.buffer,        material->args.buffer,        material->args.buffer_size);
+	memcpy(result->args.textures,      material->args.textures,      sizeof(tex_t)      * material->args.texture_count);
+	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skr_bind_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
 	assets_addref(result->shader->header);
-	for (size_t i = 0; i < result->shader->tex_slots.tex_count; i++) {
+	for (size_t i = 0; i < result->args.texture_count; i++) {
 		if (result->args.textures[i] != nullptr)
 			assets_addref(result->args.textures[i]->header);
 	}
-	result->pipeline = skr_pipeline_copy(&material->pipeline);
+
+	// Copy over the material's pipeline
+	result->pipeline = skr_pipeline_create(&material->shader->shader);
+	skr_pipeline_set_cull        (&result->pipeline, skr_pipeline_get_cull        (&material->pipeline));
+	skr_pipeline_set_transparency(&result->pipeline, skr_pipeline_get_transparency(&material->pipeline));
+	skr_pipeline_set_wireframe   (&result->pipeline, skr_pipeline_get_wireframe   (&material->pipeline));
 
 	return result;
 }
@@ -115,7 +136,7 @@ void material_release(material_t material) {
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
-	for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
+	for (size_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i] != nullptr)
 			tex_release(material->args.textures[i]);
 	}
@@ -123,28 +144,8 @@ void material_destroy(material_t material) {
 	skr_pipeline_destroy(&material->pipeline);
 	free(material->args.buffer);
 	free(material->args.textures);
+	free(material->args.texture_binds);
 	*material = {};
-}
-
-///////////////////////////////////////////
-
-shaderargs_desc_item_t *find_desc(shader_t shader, uint64_t id) {
-	for (size_t i = 0; i < shader->args_desc.item_count; i++) {
-		if (shader->args_desc.item[i].id == id) {
-			return &shader->args_desc.item[i];
-		}
-	}
-	return nullptr;
-}
-
-///////////////////////////////////////////
-
-shaderargs_desc_item_t *find_desc(shader_t shader, const char *name) {
-	uint64_t                id     = string_hash(name);
-	shaderargs_desc_item_t *result = find_desc(shader, id);
-	if (result == nullptr)
-		log_diagf("Can't find shader parameter %s in %s!", name, shader->name);
-	return result;
 }
 
 ///////////////////////////////////////////
@@ -157,21 +158,22 @@ void material_set_shader(material_t material, shader_t shader) {
 	if (material->shader != nullptr && shader != nullptr) {
 		shader_t old_shader   = material->shader;
 		void    *old_buffer   = material->args.buffer;
-		tex_t *old_textures = material->args.textures;
+		tex_t   *old_textures = material->args.textures;
 		material_create_arg_defaults(material, shader);
 
 		// Copy old param values
-		for (size_t i = 0; i < old_shader->args_desc.item_count; i++) {
-			shaderargs_desc_item_t &item     = old_shader->args_desc.item[i];
-			shaderargs_desc_item_t *new_slot = find_desc(shader, item.id);
+		int32_t count = skr_shader_get_var_count(&old_shader->shader);
+		for (int32_t i = 0; i < count; i++) {
+			const skr_shader_meta_var_t *item     = skr_shader_get_var_info(&old_shader->shader, i);
+			const skr_shader_meta_var_t *new_slot = skr_shader_get_var_info(&material->shader->shader, skr_shader_get_var_index_h(&material->shader->shader, item->name_hash));
 			if (new_slot != nullptr)
 				memcpy( (uint8_t *)material->args.buffer + new_slot->offset, 
-						(uint8_t *)old_buffer            + item.offset, new_slot->size);
+						(uint8_t *)old_buffer            + item->offset, new_slot->size);
 		}
 
 		// Do the same for textures
-		for (size_t i = 0; i < old_shader->tex_slots.tex_count; i++) {
-			material_set_texture_id(material, old_shader->tex_slots.tex[i].id, old_textures[i]);
+		for (uint32_t i = 0; i < old_shader->shader.meta->texture_count; i++) {
+			material_set_texture(material, old_shader->shader.meta->textures[i].name, old_textures[i]);
 			tex_release(old_textures[i]);
 		}
 
@@ -221,53 +223,62 @@ void material_set_queue_offset(material_t material, int32_t offset) {
 ///////////////////////////////////////////
 
 void material_set_float(material_t material, const char *name, float value) {
-	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
-	if (desc != nullptr)
-		*(float *)((uint8_t*)material->args.buffer + desc->offset) = value;
+	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+	
+	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
 ///////////////////////////////////////////
 
 void material_set_color32(material_t material, const char *name, color32 value) {
-	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
-	if (desc != nullptr)
-		*(color128 *)((uint8_t *)material->args.buffer + desc->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
+	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
 }
 
 ///////////////////////////////////////////
 
 void material_set_color(material_t material, const char *name, color128 value) {
-	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
-	if (desc != nullptr)
-		*(color128 *)((uint8_t*)material->args.buffer + desc->offset) = value;
+	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector(material_t material, const char *name, vec4 value) {
-	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
-	if (desc != nullptr)
-		*(vec4 *)((uint8_t*)material->args.buffer + desc->offset) = value;
+	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
 ///////////////////////////////////////////
 
 void material_set_matrix(material_t material, const char *name, matrix value) {
-	shaderargs_desc_item_t *desc = find_desc(material->shader, name);
-	if (desc != nullptr)
-		*(matrix *)((uint8_t*)material->args.buffer + desc->offset) = value;
+	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
-	for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
-		if (material->shader->tex_slots.tex[i].id == id) {
-			int slot = material->shader->tex_slots.tex[i].slot;
-			if (material->args.textures[slot] != value) {
-				if (material->args.textures[slot] != nullptr)
-					tex_release(material->args.textures[slot]);
-				material->args.textures[slot] = value;
+	for (uint32_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
+		if (string_hash(material->shader->shader.meta->name) == id) {
+			if (material->args.textures[i] != value) {
+				if (material->args.textures[i] != nullptr)
+					tex_release(material->args.textures[i]);
+				material->args.textures[i] = value;
 				if (value != nullptr)
 					assets_addref(value->header);
 			}
@@ -290,12 +301,12 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 	uint64_t id = string_hash(name);
 
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
-			if (material->shader->tex_slots.tex[i].id == id)
+		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
+			if (material->shader->shader.meta->textures[i].name_hash == id)
 				return true;
 		}
 	} else {
-		if (find_desc(material->shader, id) != nullptr)
+		if (skr_shader_get_var_index(&material->shader->shader, name) != -1)
 			return true;
 	}
 	return false;
@@ -313,10 +324,10 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 	if (type == material_param_texture) {
 		material_set_texture_id(material, id, (tex_t)value);
 	} else {
-		shaderargs_desc_item_t *desc = find_desc(material->shader, id);
-		if (desc != nullptr) {
-			size_t size = material_param_size(type);
-			memcpy(((uint8_t *)material->args.buffer + desc->offset), value, size);
+		int32_t i = skr_shader_get_var_index_h(&material->shader->shader, id);
+		if (i != -1) {
+			const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+			memcpy(((uint8_t *)material->args.buffer + info->offset), value, info->size);
 		}
 	}
 }
@@ -331,17 +342,17 @@ bool32_t material_get_param(material_t material, const char *name, material_para
 
 bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->tex_slots.tex_count; i++) {
-			if (material->shader->tex_slots.tex[i].id == id) {
-				memcpy(out_value, material->args.textures[material->shader->tex_slots.tex[i].slot], sizeof(tex_t));
+		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
+			if (material->shader->shader.meta->textures[i].name_hash == id) {
+				memcpy(out_value, material->args.textures[i], sizeof(tex_t));
 				return true;
 			}
 		}
 	} else {
-		shaderargs_desc_item_t *desc = find_desc(material->shader, id);
-		if (desc != nullptr) {
-			size_t size = material_param_size(type);
-			memcpy(out_value, ((uint8_t *)material->args.buffer + desc->offset), size);
+		int32_t i = skr_shader_get_var_index_h(&material->shader->shader, id);
+		if (i != -1) {
+			const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+			memcpy(out_value, ((uint8_t *)material->args.buffer + info->offset), info->size);
 			return true;
 		}
 	}
@@ -351,15 +362,19 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 ///////////////////////////////////////////
 
 void material_get_param_info(material_t material, int index, char **out_name, material_param_ *out_type) {
-	shaderargs_desc_item_t &item = material->shader->args_desc.item[index];
-	if (out_type != nullptr) *out_type = item.type;
-	if (out_name != nullptr) *out_name = item.name;
+	skr_shader_meta_var_t *info = &material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].vars[index];
+	if (out_type != nullptr) *out_type = (material_param_)0; //TODO: implement this // info->type;
+	if (out_name != nullptr) *out_name = info->name;
+	log_warn("material_get_param_info doesn't implement type yet.");
 }
 
 ///////////////////////////////////////////
 
 int material_get_param_count(material_t material) {
-	return material->shader->args_desc.item_count;
+	if (material->shader->shader.meta->global_buffer_id == -1)
+		return 0;
+
+	return material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].var_count;
 }
 
 } // namespace sk

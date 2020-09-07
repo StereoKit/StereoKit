@@ -7,7 +7,6 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../log.h"
-#include "../../systems/d3d.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../systems/hand/input_hand.h"
@@ -165,13 +164,13 @@ bool openxr_init(const char *app_name) {
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
 	xr_check(xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
 		"xrGetD3D11GraphicsRequirementsKHR failed [%s]");
-	if (!d3d_init(&requirement.adapterLuid))
+	if (skr_init(app_name, nullptr, &requirement.adapterLuid))
 		return false;
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
 	XrGraphicsBindingD3D11KHR d3d_binding = { XR_TYPE_GRAPHICS_BINDING_D3D11_KHR };
-	d3d_binding.device = d3d_device;
+	d3d_binding.device = (ID3D11Device*)skr_get_platform_data().d3d11_device;
 	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
 	sessionInfo.next     = &d3d_binding;
 	sessionInfo.systemId = xr_system_id;
@@ -332,13 +331,12 @@ void openxr_shutdown() {
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
 	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
 
-	d3d_shutdown();
+	skr_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_begin() {
-	d3d_update();
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();

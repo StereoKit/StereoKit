@@ -19,7 +19,6 @@ namespace sk {
 ///////////////////////////////////////////
 
 HWND            win32_window    = nullptr;
-tex_t           win32_target    = {};
 skr_swapchain_t win32_swapchain = {};
 float           win32_scroll    = 0;
 
@@ -140,10 +139,9 @@ void win32_step_begin() {
 void win32_step_end() {
 	skr_draw_begin();
 
-	color32    col      = render_get_clear_color();
-	skr_tex_t *target   = skr_swapchain_get_next(&win32_swapchain);
-	float      color[4] = {col.r/255.f, col.b/255.f, col.g/255.f, col.a/255.f};
-	skr_set_render_target(color, true, target);
+	color128   col    = render_get_clear_color();
+	skr_tex_t *target = skr_swapchain_get_next(&win32_swapchain);
+	skr_tex_target_bind(target, true, &col.r);
 
 	input_update_predicted();
 
