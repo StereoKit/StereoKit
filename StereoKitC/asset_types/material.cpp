@@ -3,6 +3,8 @@
 #include "../libraries/stref.h"
 
 #include <stdio.h>
+#include <malloc.h>
+#include <string.h>
 
 namespace sk {
 
@@ -62,6 +64,13 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
 		for (size_t i = 0; i < meta->texture_count; i++) {
 			material->args.texture_binds[i] = meta->textures[i].bind;
+
+			if      (string_eq(meta->textures[i].name, "white")) material->args.textures[i] = tex_find(default_id_tex);
+			else if (string_eq(meta->textures[i].name, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
+			else if (string_eq(meta->textures[i].name, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
+			else if (string_eq(meta->textures[i].name, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
+			else if (string_eq(meta->textures[i].name, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
+			else                                                 material->args.textures[i] = tex_find(default_id_tex);
 		}
 	}
 }
@@ -73,7 +82,8 @@ material_t material_create(shader_t shader) {
 	assets_addref(shader->header);
 	result->alpha_mode = transparency_none;
 	result->shader     = shader;
-	
+	result->pipeline   = skr_pipeline_create(&result->shader->shader);
+
 	material_set_cull(result, cull_back);
 	material_create_arg_defaults(result, shader);
 

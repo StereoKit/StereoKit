@@ -7,6 +7,8 @@
 #include "../math.h"
 #include "../libraries/array.h"
 
+#include <ctype.h>
+
 #include <directxmath.h> // Matrix math functions and objects
 using namespace DirectX;
 

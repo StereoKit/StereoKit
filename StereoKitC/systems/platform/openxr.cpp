@@ -26,7 +26,7 @@ namespace sk {
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 
 const char *xr_request_extensions[] = {
-	XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
+	XR_GFX_EXTENSION,
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
@@ -161,18 +161,32 @@ bool openxr_init(const char *app_name) {
 	if (sk_info.spatial_bridge) log_diag("OpenXR spatial bridge ext enabled!");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
-	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
-	xr_check(xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
-		"xrGetD3D11GraphicsRequirementsKHR failed [%s]");
-	if (skr_init(app_name, nullptr, &requirement.adapterLuid))
+	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
+		"xrGetGraphicsRequirementsKHR failed [%s]");
+	void *luid = nullptr;
+#ifdef XR_USE_GRAPHICS_API_D3D11
+	luid = (void *)&requirement.adapterLuid;
+#endif
+	if (skr_init(app_name, nullptr, luid))
 		return false;
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
-	XrGraphicsBindingD3D11KHR d3d_binding = { XR_TYPE_GRAPHICS_BINDING_D3D11_KHR };
-	d3d_binding.device = (ID3D11Device*)skr_get_platform_data().d3d11_device;
+	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
+	skr_platform_data_t platform = skr_get_platform_data();
+#if defined(XR_USE_GRAPHICS_API_OPENGL)
+	gfx_binding.hDC   = (HDC  )platform.gl_hdc;
+	gfx_binding.hGLRC = (HGLRC)platform.gl_hrc;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	gfx_binding.egl_display = platform.egl_display;
+	gfx_binding.egl_surface = platform.egl_surface;
+	gfx_binding.egl_context = platform.egl_context;
+#elif defined(XR_USE_GRAPHICS_API_D3D11)
+	gfx_binding.device = (ID3D11Device*)platform.d3d11_device;
+#endif
 	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-	sessionInfo.next     = &d3d_binding;
+	sessionInfo.next     = &gfx_binding;
 	sessionInfo.systemId = xr_system_id;
 	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
 

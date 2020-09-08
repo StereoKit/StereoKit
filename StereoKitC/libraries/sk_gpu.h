@@ -199,7 +199,6 @@ typedef struct skr_pipeline_t {
 	ID3D11PixelShader     *pixel;
 	ID3D11BlendState      *blend;
 	ID3D11RasterizerState *rasterize;
-	skr_buffer_t           globals; // TODO: implement this!!
 } skr_pipeline_t;
 
 typedef struct skr_tex_t {
@@ -244,6 +243,7 @@ typedef struct skr_buffer_t {
 
 typedef struct skr_mesh_t {
 	uint32_t index_buffer;
+	uint32_t vert_buffer;
 	uint32_t layout;
 } skr_mesh_t;
 
@@ -324,6 +324,8 @@ void                skr_buffer_bind         (const skr_buffer_t *buffer, skr_bin
 void                skr_buffer_destroy      (      skr_buffer_t *buffer);
 
 skr_mesh_t          skr_mesh_create         (const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer);
+void                skr_mesh_set_verts      (      skr_mesh_t *mesh, const skr_buffer_t *vert_buffer);
+void                skr_mesh_set_inds       (      skr_mesh_t *mesh, const skr_buffer_t *ind_buffer);
 void                skr_mesh_bind           (const skr_mesh_t *mesh);
 void                skr_mesh_destroy        (      skr_mesh_t *mesh);
 
@@ -366,7 +368,7 @@ void                skr_tex_settings        (      skr_tex_t *tex, skr_tex_addre
 void                skr_tex_set_contents    (      skr_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
 void                skr_tex_get_contents    (      skr_tex_t *tex);
 void                skr_tex_bind            (const skr_tex_t *tex, skr_bind_t bind);
-void                skr_tex_target_bind     (      skr_tex_t *render_target, bool clear, float clear_color[4]);
+void                skr_tex_target_bind     (      skr_tex_t *render_target, bool clear, const float *clear_color_4);
 skr_tex_t          *skr_tex_target_get      ();
 void                skr_tex_destroy         (      skr_tex_t *tex);
 int64_t             skr_tex_fmt_to_native   (skr_tex_fmt_ format);
@@ -548,7 +550,7 @@ skr_platform_data_t skr_get_platform_data() {
 
 ///////////////////////////////////////////
 
-void skr_tex_target_bind(skr_tex_t *render_target, bool clear, float clear_color[4]) {
+void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clear_color_4) {
 	d3d_active_rendertarget = render_target;
 
 	if (render_target == nullptr) {
@@ -562,7 +564,7 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, float clear_color
 	d3d_context->RSSetViewports(1, &viewport);
 
 	if (clear) {
-		d3d_context->ClearRenderTargetView(render_target->target_view, clear_color);
+		d3d_context->ClearRenderTargetView(render_target->target_view, clear_color_4);
 		if (render_target->depth_tex != nullptr)
 			d3d_context->ClearDepthStencilView(render_target->depth_tex->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
@@ -653,10 +655,28 @@ void skr_buffer_destroy(skr_buffer_t *buffer) {
 
 skr_mesh_t skr_mesh_create(const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer) {
 	skr_mesh_t result = {};
-	result.ind_buffer  = ind_buffer ->buffer;
-	result.vert_buffer = vert_buffer->buffer;
+	result.ind_buffer  = ind_buffer  ? ind_buffer ->buffer : nullptr;
+	result.vert_buffer = vert_buffer ? vert_buffer->buffer : nullptr;
+	if (result.ind_buffer ) result.ind_buffer ->AddRef();
+	if (result.vert_buffer) result.vert_buffer->AddRef();
 
 	return result;
+}
+
+/////////////////////////////////////////// 
+
+void skr_mesh_set_verts(skr_mesh_t *mesh, const skr_buffer_t *vert_buffer) {
+	if (mesh->vert_buffer) mesh->vert_buffer->Release();
+	mesh->vert_buffer = vert_buffer->buffer;
+	if (mesh->vert_buffer) mesh->vert_buffer->AddRef();
+}
+
+/////////////////////////////////////////// 
+
+void skr_mesh_set_inds(skr_mesh_t *mesh, const skr_buffer_t *ind_buffer) {
+	if (mesh->ind_buffer) mesh->ind_buffer->Release();
+	mesh->ind_buffer = ind_buffer->buffer;
+	if (mesh->ind_buffer) mesh->ind_buffer->AddRef();
 }
 
 /////////////////////////////////////////// 
@@ -671,6 +691,8 @@ void skr_mesh_bind(const skr_mesh_t *mesh) {
 /////////////////////////////////////////// 
 
 void skr_mesh_destroy(skr_mesh_t *mesh) {
+	if (mesh->ind_buffer ) mesh->ind_buffer ->Release();
+	if (mesh->vert_buffer) mesh->vert_buffer->Release();
 	*mesh = {};
 }
 
@@ -1974,7 +1996,7 @@ void skr_draw_begin() {
 
 ///////////////////////////////////////////
 
-void skr_tex_target_bind(skr_tex_t *render_target, bool clear, float clear_color[4]) {
+void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clear_color_4) {
 	gl_active_rendertarget = render_target;
 	gl_current_framebuffer = render_target == nullptr ? 0 : render_target->framebuffer;
 
@@ -1986,7 +2008,7 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, float clear_color
 	}
 
 	if (clear) {
-		glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+		glClearColor(clear_color_4[0], clear_color_4[1], clear_color_4[2], clear_color_4[3]);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 }
@@ -2068,7 +2090,8 @@ void skr_buffer_destroy(skr_buffer_t *buffer) {
 
 skr_mesh_t skr_mesh_create(const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer) {
 	skr_mesh_t result = {};
-	result.index_buffer = ind_buffer->buffer;
+	result.index_buffer = ind_buffer  ? ind_buffer ->buffer : 0;
+	result.vert_buffer  = vert_buffer ? vert_buffer->buffer : 0;
 
 	// Create a vertex layout
 	glGenVertexArrays(1, &result.layout);
@@ -2089,8 +2112,21 @@ skr_mesh_t skr_mesh_create(const skr_buffer_t *vert_buffer, const skr_buffer_t *
 
 /////////////////////////////////////////// 
 
+void skr_mesh_set_verts(skr_mesh_t *mesh, const skr_buffer_t *vert_buffer) {
+	mesh->vert_buffer = vert_buffer->buffer;
+}
+
+/////////////////////////////////////////// 
+
+void skr_mesh_set_inds(skr_mesh_t *mesh, const skr_buffer_t *ind_buffer) {
+	mesh->index_buffer = ind_buffer->buffer;
+}
+
+/////////////////////////////////////////// 
+
 void skr_mesh_bind(const skr_mesh_t *mesh) {
 	glBindVertexArray(mesh->layout);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vert_buffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->index_buffer);
 }
 
@@ -2723,9 +2759,10 @@ bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_fi
 
 		size_t default_size = 0;
 		memcpy(&default_size, &bytes[at], sizeof(buffer->size)); at += sizeof(buffer->size);
+		buffer->defaults = nullptr;
 		if (default_size != 0) {
 			buffer->defaults = malloc(buffer->size);
-			memcpy(&buffer->defaults, &bytes[at], default_size); at += default_size;
+			memcpy(buffer->defaults, &bytes[at], default_size); at += default_size;
 		}
 		buffer->vars = (skr_shader_meta_var_t*)malloc(sizeof(skr_shader_meta_var_t) * buffer->var_count);
 		buffer->name_hash = skr_hash(buffer->name);

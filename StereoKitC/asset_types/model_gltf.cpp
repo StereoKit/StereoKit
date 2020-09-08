@@ -2,8 +2,7 @@
 
 #include "model.h"
 #include "texture.h"
-
-#include <math.h>
+#include "../math.h"
 
 #pragma warning( disable : 26451 )
 #define CGLTF_IMPLEMENTATION
@@ -108,7 +107,7 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
 		char *last1 = strrchr((char *)filename, '/');
 		char *last2 = strrchr((char *)filename, '\\');
-		char *last = max(last1, last2);
+		char *last  = (char*)maxi((uint64_t)last1, (uint64_t)last2);
 		if (last == nullptr) {
 			sprintf_s(dest, dest_length, "%s", image->uri);
 		} else {

@@ -9,6 +9,7 @@
 #include "../systems/platform/platform_utils.h"
 
 #include <stdio.h>
+#include <string.h>
 
 namespace sk {
 

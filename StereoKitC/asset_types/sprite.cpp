@@ -3,8 +3,10 @@
 #include "texture.h"
 #include "../libraries/stref.h"
 #include "../systems/sprite_drawer.h"
+#include "../math.h"
 
 #include <stdio.h>
+#include <malloc.h>
 
 namespace sk {
 
@@ -98,7 +100,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 		// Add a sprite to the list
 		if (map->sprite_count + 1 > map->sprite_cap) {
-			map->sprite_cap = max(1, map->sprite_cap * 2);
+			map->sprite_cap = maxi(1, map->sprite_cap * 2);
 			map->sprites    = (sprite_t *)realloc(map->sprites, map->sprite_cap);
 		}
 		map->sprites[map->sprite_count] = result;

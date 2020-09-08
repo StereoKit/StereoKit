@@ -1,4 +1,5 @@
 #include "../../stereokit.h"
+#include "../../math.h"
 #include "../input.h"
 #include "input_hand.h"
 #include "hand_poses.h"
@@ -10,6 +11,9 @@
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
+
+#include <malloc.h>
+#include <string.h>
 
 namespace sk {
 
@@ -499,7 +503,7 @@ void input_hand_update_mesh(handed_ hand) {
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
-		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][max(0,j-1)];
+		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
 		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
 		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 

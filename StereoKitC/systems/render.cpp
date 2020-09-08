@@ -244,6 +244,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 	for (int i = 0; i < model->subset_count; i++) {
 		render_item_t item;
 		item.mesh     = &model->subsets[i].mesh->gpu_mesh;
+		item.mesh_inds= model->subsets[i].mesh->ind_count;
 		item.material = model->subsets[i].material;
 		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
@@ -388,7 +389,7 @@ bool render_initialize() {
 
 	render_default_tex = tex_find(default_id_tex);
 	render_list_primary = render_list_create();
-	render_list_stack.add(render_list_primary);
+	render_list_push(render_list_primary);
 
 	return true;
 }
@@ -589,7 +590,6 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 
 	size_t count = list->queue.count;
 	if (count == 0) {
-		skr_tex_target_bind(nullptr, false, nullptr);
 		list->state = render_list_state_rendered;
 		return;
 	}
@@ -612,15 +612,11 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 
 		// If the next item is not the same as the current run of render 
 		// items, we'll collect the instances, and submit them to draw!
-		render_item_t *next       = i+1>=count?nullptr:&list->queue[i+1];
-		bool           fresh_mesh = last_mesh != next->mesh;
-		if (next == nullptr || last_material != next->material || fresh_mesh) {
+		render_item_t *next = i+1>=count?nullptr:&list->queue[i+1];
+		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
 			render_set_material(item->material);
-
-			if (fresh_mesh) {
-				skr_mesh_bind(item->mesh);
-				list->stats.swaps_mesh++;
-			}
+			skr_mesh_bind(item->mesh);
+			list->stats.swaps_mesh++;
 
 			// Collect and draw instances
 			size_t offsets = 0, count = 0;

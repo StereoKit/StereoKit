@@ -55,8 +55,12 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 
 inline int32_t  maxi(int32_t  a, int32_t  b) { return a > b ? a : b; }
 inline uint32_t maxi(uint32_t a, uint32_t b) { return a > b ? a : b; }
+inline int64_t  maxi(int64_t  a, int64_t  b) { return a > b ? a : b; }
+inline uint64_t maxi(uint64_t a, uint64_t b) { return a > b ? a : b; }
 inline int32_t  mini(int32_t  a, int32_t  b) { return a < b ? a : b; }
 inline uint32_t mini(uint32_t a, uint32_t b) { return a < b ? a : b; }
+inline int64_t  mini(int64_t  a, int64_t  b) { return a < b ? a : b; }
+inline uint64_t mini(uint64_t a, uint64_t b) { return a < b ? a : b; }
 
 inline float math_lerp   (float a, float b, float t) { return a + (b - a) * t; }
 inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fminf(1,t); }
@@ -67,6 +71,8 @@ inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-
 vec3 bounds_corner (const bounds_t &bounds, int32_t index8);
 vec3 math_cubemap_corner(int i);
 
-
+#ifndef _countof
+#define _countof(array) (sizeof(array) / sizeof(array[0]))
+#endif
 
 } // namespace sk

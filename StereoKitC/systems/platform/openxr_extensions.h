@@ -1,12 +1,6 @@
 #pragma once
 
-#ifndef XR_USE_PLATFORM_WIN32
-#define XR_USE_PLATFORM_WIN32
-#endif
-#ifndef XR_USE_GRAPHICS_API_D3D11
-#define XR_USE_GRAPHICS_API_D3D11
-#endif
-
+#include "openxr.h"
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
@@ -16,7 +10,7 @@
     _(xrDestroySpatialAnchorMSFT)                \
     _(xrConvertWin32PerformanceCounterToTimeKHR) \
     _(xrConvertTimeToWin32PerformanceCounterKHR) \
-    _(xrGetD3D11GraphicsRequirementsKHR)         \
+    _(xrGetGraphicsRequirementsKHR)              \
     _(xrGetVisibilityMaskKHR)                    \
     _(xrCreateHandTrackerEXT)                    \
     _(xrDestroyHandTrackerEXT)                   \

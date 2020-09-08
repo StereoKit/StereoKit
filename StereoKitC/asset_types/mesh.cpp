@@ -1,18 +1,17 @@
 #include "../stereokit.h"
+#include "../math.h"
 #include "mesh.h"
 #include "assets.h"
 
 #include <stdio.h>
+#include <string.h>
+#include <malloc.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-ID3D11InputLayout *vert_t_layout = nullptr;
 
 ///////////////////////////////////////////
 
@@ -47,7 +46,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 		mesh->vert_buffer   = skr_buffer_create(vertices, vertex_count * sizeof(vert_t), skr_buffer_type_vertex, skr_use_static);
 		if (!skr_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
-
+		skr_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
 	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -57,7 +56,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 		mesh->vert_buffer   = skr_buffer_create(vertices, vertex_count * sizeof(vert_t), skr_buffer_type_vertex, skr_use_dynamic);
 		if (!skr_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
-
+		skr_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
@@ -109,20 +108,20 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 		// Create a static vertex buffer the first time we call this function!
 		mesh->ind_dynamic  = false;
 		mesh->ind_capacity = index_count;
-		skr_buffer_create(indices, sizeof(vind_t) * index_count, skr_buffer_type_index, skr_use_static);
+		mesh->ind_buffer   = skr_buffer_create(indices, sizeof(vind_t) * index_count, skr_buffer_type_index, skr_use_static);
 		if (!skr_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create index buffer");
-
+		skr_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
 	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
 		skr_buffer_destroy(&mesh->ind_buffer);
 		mesh->ind_dynamic  = true;
 		mesh->ind_capacity = index_count;
-		skr_buffer_create(indices, sizeof(vind_t) * index_count, skr_buffer_type_index, skr_use_dynamic);
+		mesh->ind_buffer   = skr_buffer_create(indices, sizeof(vind_t) * index_count, skr_buffer_type_index, skr_use_dynamic);
 		if (!skr_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create dynamic index buffer");
-
+		skr_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
@@ -183,6 +182,7 @@ void mesh_set_id(mesh_t mesh, const char *id) {
 
 mesh_t mesh_create() {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
+	result->gpu_mesh = skr_mesh_create(nullptr, nullptr);
 	return result;
 }
 
@@ -306,7 +306,7 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
@@ -356,7 +356,7 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
@@ -427,7 +427,7 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
@@ -560,7 +560,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 	if (subd % 2 == 1) // need an even number of subdivisions
 		subd += 1;
 

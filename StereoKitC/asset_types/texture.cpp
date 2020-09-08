@@ -264,7 +264,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		if (!different_size && !dynamic)
 			texture->type &= tex_type_dynamic;
 
-		skr_tex_fmt_  format   = (skr_tex_fmt_)texture->type;
+		skr_tex_fmt_  format   = (skr_tex_fmt_)texture->format;
 		skr_use_      use      = texture->type & tex_type_dynamic ? skr_use_dynamic  : skr_use_static;
 		skr_mip_      use_mips = texture->type & tex_type_mips    ? skr_mip_generate : skr_mip_none;
 		skr_tex_type_ type     = skr_tex_type_image;
