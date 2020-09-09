@@ -97,15 +97,17 @@ material_t material_copy(material_t material) {
 	// Make a new empty material
 	material_t result = material_create(material->shader);
 	// Store allocated memory temporarily
-	void          *tmp_buffer   = result->args.buffer;
-	tex_t         *tmp_textures = result->args.textures;
+	void          *tmp_buffer        = result->args.buffer;
+	tex_t         *tmp_textures      = result->args.textures;
+	skr_bind_t    *tmp_texture_binds = result->args.texture_binds;
 	asset_header_t tmp_header   = result->header;
 
 	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
 	memcpy(result, material, sizeof(_material_t));
-	result->header        = tmp_header;
-	result->args.buffer   = tmp_buffer;
-	result->args.textures = tmp_textures;
+	result->header             = tmp_header;
+	result->args.buffer        = tmp_buffer;
+	result->args.textures      = tmp_textures;
+	result->args.texture_binds = tmp_texture_binds;
 	result->args.buffer_gpu = skr_buffer_create(nullptr, (uint32_t)material->args.buffer_size, skr_buffer_type_constant, skr_use_dynamic);
 	memcpy(result->args.buffer,        material->args.buffer,        material->args.buffer_size);
 	memcpy(result->args.textures,      material->args.textures,      sizeof(tex_t)      * material->args.texture_count);
