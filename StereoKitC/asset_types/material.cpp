@@ -210,18 +210,21 @@ shader_t material_get_shader(material_t material) {
 ///////////////////////////////////////////
 
 void material_set_transparency(material_t material, transparency_ mode) {
+	material->alpha_mode = mode;
 	skr_pipeline_set_transparency(&material->pipeline, (skr_transparency_)mode);
 }
 
 ///////////////////////////////////////////
 
 void material_set_cull(material_t material, cull_ mode) {
+	material->cull = mode;
 	skr_pipeline_set_cull(&material->pipeline, (skr_cull_)mode);
 }
 
 ///////////////////////////////////////////
 
 void material_set_wireframe(material_t material, bool32_t wireframe) {
+	material->wireframe = wireframe;
 	skr_pipeline_set_wireframe(&material->pipeline, wireframe);
 }
 

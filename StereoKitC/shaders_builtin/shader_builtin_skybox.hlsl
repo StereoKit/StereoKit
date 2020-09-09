@@ -7,9 +7,9 @@ float blur;
 
 struct vsIn {
 	float4 pos  : SV_Position;
-	float3 norm : NORMAL;
-	float4 col  : COLOR;
+	float3 norm : NORMAL0;
 	float2 uv   : TEXCOORD0;
+	float4 col  : COLOR0;
 };
 struct psIn {
 	float4 pos  : SV_Position;

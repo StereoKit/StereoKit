@@ -8,15 +8,15 @@ Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
 struct vsIn {
-	float4 pos  : SV_Position;
-	float3 norm : NORMAL;
-	float4 color: COLOR;
-	float2 uv   : TEXCOORD0;
+	float4 pos   : SV_Position;
+	float3 norm  : NORMAL0;
+	float2 uv    : TEXCOORD0;
+	float4 color : COLOR0;
 };
 struct psIn {
 	float4 pos     : SV_Position;
-	float4 color   : COLOR0;
 	float2 uv      : TEXCOORD0;
+	float4 color   : COLOR0;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 

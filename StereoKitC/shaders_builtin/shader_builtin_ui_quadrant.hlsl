@@ -7,14 +7,14 @@ float4 color;
 
 struct vsIn {
 	float4 pos      : SV_Position;
-	float4 color    : COLOR0;
-	float3 norm     : NORMAL;
+	float3 norm     : NORMAL0;
 	float2 quadrant : TEXCOORD0;
+	float4 color    : COLOR0;
 };
 struct psIn {
 	float4 pos     : SV_Position;
+	float3 normal  : NORMAL0;
 	float4 color   : COLOR0;
-	float3 normal  : NORMAL;
 	float4 world   : TEXCOORD1;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
@@ -47,7 +47,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return output;
 }
 
-float4 ps(psIn input) : SV_TARGET {
+float4 ps(psIn input) : SV_TARGET{
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {

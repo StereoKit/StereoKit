@@ -9,16 +9,16 @@ SamplerState diffuse_s : register(s0);
 
 struct vsIn {
 	float4 pos  : SV_Position;
-	float3 norm : NORMAL;
-	float4 col  : COLOR;
+	float3 norm : NORMAL0;
 	float2 uv   : TEXCOORD0;
+	float4 col  : COLOR0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
+	float3 normal: NORMAL0;
+	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
 	float4 world : TEXCOORD1;
-	float3 normal: NORMAL;
-	float2 uv    : TEXCOORD0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -32,10 +32,12 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.view_id    = sk_inst[id].view_id;
 	output.uv         = input.uv;
 	output.color      = color * input.col * sk_inst[id].color;
-	output.color.rgb *= Lighting(output.normal);
+	output.color.rgb  = Lighting(output.normal);
 	return output;
 }
-float4 ps(psIn input) : SV_TARGET {
+float4 ps(psIn input) : SV_TARGET{
+	return input.color;
+
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {
