@@ -45,7 +45,7 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	const skr_shader_meta_buffer_t *buff_info = meta->global_buffer_id != -1
 		? &meta->buffers[meta->global_buffer_id]
 		: nullptr;
-	size_t buff_size = buff_info ? buff_info->size : 0;
+	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
 
 	if (buff_size != 0) {
 		material->args.buffer       = malloc(buff_size);
@@ -59,6 +59,7 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 			memset(material->args.buffer, 0, buff_size);
 	}
 	if (meta->texture_count > 0) {
+		material->args.texture_count = meta->texture_count;
 		material->args.textures      = (tex_t      *)malloc(sizeof(tex_t)      * meta->texture_count);
 		material->args.texture_binds = (skr_bind_t *)malloc(sizeof(skr_bind_t) * meta->texture_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
@@ -105,14 +106,14 @@ material_t material_copy(material_t material) {
 	result->header        = tmp_header;
 	result->args.buffer   = tmp_buffer;
 	result->args.textures = tmp_textures;
-	result->args.buffer_gpu = skr_buffer_create(nullptr, material->args.buffer_size, skr_buffer_type_constant, skr_use_dynamic);
+	result->args.buffer_gpu = skr_buffer_create(nullptr, (uint32_t)material->args.buffer_size, skr_buffer_type_constant, skr_use_dynamic);
 	memcpy(result->args.buffer,        material->args.buffer,        material->args.buffer_size);
 	memcpy(result->args.textures,      material->args.textures,      sizeof(tex_t)      * material->args.texture_count);
 	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skr_bind_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
 	assets_addref(result->shader->header);
-	for (size_t i = 0; i < result->args.texture_count; i++) {
+	for (int32_t i = 0; i < result->args.texture_count; i++) {
 		if (result->args.textures[i] != nullptr)
 			assets_addref(result->args.textures[i]->header);
 	}
@@ -146,7 +147,7 @@ void material_release(material_t material) {
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
-	for (size_t i = 0; i < material->args.texture_count; i++) {
+	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i] != nullptr)
 			tex_release(material->args.textures[i]);
 	}
@@ -284,7 +285,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
 	for (uint32_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
-		if (string_hash(material->shader->shader.meta->name) == id) {
+		if (material->shader->shader.meta->textures[i].name_hash == id) {
 			if (material->args.textures[i] != value) {
 				if (material->args.textures[i] != nullptr)
 					tex_release(material->args.textures[i]);

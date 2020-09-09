@@ -89,13 +89,13 @@ void tex_set_id(tex_t tex, const char *id) {
 ///////////////////////////////////////////
 
 tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
-	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, data_size);
+	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size);
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
 	uint8_t *col_data =  is_hdr ? 
-		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, data_size, &width, &height, &channels, 4):
-		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, data_size, &width, &height, &channels, 4);
+		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4):
+		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
 
 	if (col_data == nullptr) {
 		log_warn("Couldn't parse image data!");

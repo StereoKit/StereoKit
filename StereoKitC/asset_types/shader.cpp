@@ -38,6 +38,8 @@ const char *shader_get_name(shader_t shader) {
 ///////////////////////////////////////////
 
 bool32_t shader_compile(const char *hlsl, const char *opt_filename, void *&out_data, size_t &out_size) {
+	out_data = nullptr;
+	out_size = 0;
 	log_err("sk_gpu doesn't implement shader compile yet!");
 
 	return false;

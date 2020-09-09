@@ -460,7 +460,7 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 vec2 ui_area_remaining() {
 	layer_t &layer = skui_layers.last();
 	return vec2{
-		fmaxf(0, fmax(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - layer.offset.x),
+		fmaxf(0, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - layer.offset.x),
 		fmaxf(0, layer.size.y - layer.offset.y)
 	};
 }
@@ -995,7 +995,7 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	float      color  = 1;
 
 	// Find sizes of slider elements
-	float rule_size = fmax(skui_settings.padding, size.y / 6.f);
+	float rule_size = fmaxf(skui_settings.padding, size.y / 6.f);
 	vec3  box_start = window_relative_pos + vec3{ 0, 0, skui_settings.depth };
 	vec3  box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
 

@@ -122,7 +122,7 @@ void platform_set_cursor(vec2 window_pos) {
 #if WINDOWS_UWP
 	uwp_set_mouse(window_pos);
 #elif _MSC_VER
-	POINT pt = { window_pos.x, window_pos.y };
+	POINT pt = { (LONG)window_pos.x, (LONG)window_pos.y };
 	ClientToScreen((HWND)win32_hwnd(), &pt);
 	SetCursorPos  (pt.x, pt.y);
 #endif

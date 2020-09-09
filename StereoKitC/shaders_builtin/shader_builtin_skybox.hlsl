@@ -3,14 +3,16 @@
 //--name = sk/skybox
 //--blur = 0
 
-float blur;
+float blur; 
 
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float3 norm : NORMAL0;
+	float4 pos  : SV_Position;
+	float3 norm : NORMAL;
+	float4 col  : COLOR;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
-	float4 pos  : SV_POSITION;
+	float4 pos  : SV_Position;
 	float3 norm : NORMAL0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };

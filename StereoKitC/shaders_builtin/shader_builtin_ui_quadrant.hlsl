@@ -6,16 +6,16 @@
 float4 color;
 
 struct vsIn {
-	float4 pos      : SV_POSITION;
+	float4 pos      : SV_Position;
 	float4 color    : COLOR0;
 	float3 norm     : NORMAL;
 	float2 quadrant : TEXCOORD0;
 };
 struct psIn {
-	float4 pos     : SV_POSITION;
+	float4 pos     : SV_Position;
 	float4 color   : COLOR0;
-	float4 world   : TEXCOORD1;
 	float3 normal  : NORMAL;
+	float4 world   : TEXCOORD1;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 

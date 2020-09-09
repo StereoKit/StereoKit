@@ -27,10 +27,10 @@ Texture2D    occlusion   : register(t4);
 SamplerState occlusion_s : register(s4);
 
 struct vsIn {
-	float4 pos   : SV_POSITION;
-	float3 norm  : NORMAL;
-	float2 uv    : TEXCOORD0;
-	float3 color : COLOR0;
+	float4 pos  : SV_Position;
+	float3 norm : NORMAL;
+	float4 color: COLOR;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
 	float4 pos    : SV_POSITION;
@@ -59,7 +59,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.view_id = sk_inst[id].view_id;
 	output.normal  = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	output.uv      = input.uv * tex_scale;
-	output.color   = input.color * sk_inst[id].color.rgb * color.rgb;
+	output.color   = input.color.rgb * sk_inst[id].color.rgb * color.rgb;
 	return output;
 }
 

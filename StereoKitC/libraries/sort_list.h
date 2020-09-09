@@ -15,8 +15,8 @@ void    _sl_free   (void **list);
 #ifdef SL_IMPLEMENTATION
 
 struct _sl_header_t {
-	uint32_t  cap;
-	uint32_t  count;
+	int32_t   cap;
+	int32_t   count;
 	uint64_t *hash_table;
 };
 

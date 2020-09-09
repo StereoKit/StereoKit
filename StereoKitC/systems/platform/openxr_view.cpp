@@ -192,7 +192,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	out_view.view_depths      = (XrCompositionLayerDepthInfoKHR  *)malloc(sizeof(XrCompositionLayerDepthInfoKHR)   * out_view.view_cap);
 	out_view.view_transforms  = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
 	out_view.view_projections = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
-	for (int32_t i = 0; i < out_view.view_cap; i++) {
+	for (uint32_t i = 0; i < out_view.view_cap; i++) {
 		out_view.views      [i] = { XR_TYPE_VIEW };
 		out_view.view_layers[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		out_view.view_depths[i] = { XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR };
@@ -225,7 +225,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, samples)) return false;
 	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, samples)) return false;
 
-	for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+	for (int32_t s = 0; s < display.swapchain_color.surface_count; s++) {
 		// If we don't have textures for the swapchain, create them
 		if (display.swapchain_color.textures[s] == nullptr) {
 			display.swapchain_color.textures[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
@@ -394,7 +394,7 @@ bool openxr_render_frame() {
 	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
 	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
 	if (xr_displays.count > 1) {
-		secondary_states.viewConfigurationCount  = xr_displays.count - 1;
+		secondary_states.viewConfigurationCount  = (uint32_t)xr_displays.count - 1;
 		secondary_states.viewConfigurationStates = &xr_display_2nd_states[0];
 		frame_state.next = &secondary_states;
 	}
@@ -455,7 +455,7 @@ bool openxr_render_frame() {
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
-	end_second.viewConfigurationCount      = xr_display_2nd_layers.count;
+	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
 	
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];

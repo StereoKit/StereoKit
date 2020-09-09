@@ -106,6 +106,7 @@ bool win32_init(const char *app_name) {
 		nullptr);
 	if( !win32_window ) return false;
 
+	skr_callback_log(log_diag);
 	if (!skr_init(app_name, win32_window, nullptr))
 		return false;
 	win32_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);

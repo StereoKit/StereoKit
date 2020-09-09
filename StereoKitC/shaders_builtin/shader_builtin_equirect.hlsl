@@ -1,4 +1,4 @@
-// [name] sk/blit/equirect_convert
+//--name = sk/blit/equirect_convert
 //--up      = 0,1,0,0
 //--right   = 1,0,0,0
 //--forward = 0,0,-1,0
@@ -28,8 +28,10 @@ cbuffer TransformBuffer : register(b1) {
 };
 
 struct vsIn {
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD0;
+	float4 pos  : SV_Position;
+	float3 norm : NORMAL;
+	float4 col  : COLOR;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
 	float4 pos : SV_POSITION;

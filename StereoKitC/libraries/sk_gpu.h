@@ -125,8 +125,8 @@ typedef struct skr_shader_meta_var_t {
 	char     name [32];
 	uint64_t name_hash;
 	char     extra[64];
-	size_t   offset;
-	size_t   size;
+	uint32_t offset;
+	uint32_t size;
 	uint16_t type;
 	uint16_t type_count;
 } skr_shader_meta_var_t;
@@ -135,7 +135,7 @@ typedef struct skr_shader_meta_buffer_t {
 	char       name[32];
 	uint64_t   name_hash;
 	skr_bind_t bind;
-	size_t     size;
+	uint32_t   size;
 	void      *defaults;
 	uint32_t               var_count;
 	skr_shader_meta_var_t *vars;
@@ -146,7 +146,6 @@ typedef struct skr_shader_meta_texture_t {
 	uint64_t   name_hash;
 	char       extra[64];
 	skr_bind_t bind;
-	size_t     size;
 } skr_shader_meta_texture_t;
 
 typedef struct skr_shader_meta_t {
@@ -214,7 +213,6 @@ typedef struct skr_tex_t {
 	ID3D11ShaderResourceView *resource;
 	ID3D11RenderTargetView   *target_view;
 	ID3D11DepthStencilView   *depth_view;
-	skr_tex_t                *depth_tex;
 } skr_tex_t;
 
 typedef struct skr_swapchain_t {
@@ -320,7 +318,7 @@ void                skr_draw                (int32_t index_start, int32_t index_
 skr_buffer_t        skr_buffer_create       (const void *data, uint32_t size_bytes, skr_buffer_type_ type, skr_use_ use);
 bool                skr_buffer_is_valid     (const skr_buffer_t *buffer);
 void                skr_buffer_set_contents (      skr_buffer_t *buffer, const void *data, uint32_t size_bytes);
-void                skr_buffer_bind         (const skr_buffer_t *buffer, skr_bind_t slot, uint32_t stride, uint32_t offset);
+void                skr_buffer_bind         (const skr_buffer_t *buffer, skr_bind_t slot_vc, uint32_t stride_v, uint32_t offset_vi);
 void                skr_buffer_destroy      (      skr_buffer_t *buffer);
 
 skr_mesh_t          skr_mesh_create         (const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer);
@@ -388,7 +386,7 @@ typedef enum skr_shader_lang_ {
 typedef struct skr_shader_file_stage_t {
 	skr_shader_lang_ language;
 	skr_stage_       stage;
-	size_t           code_size;
+	uint32_t         code_size;
 	void            *code;
 } skr_shader_file_stage_t;
 
@@ -435,13 +433,14 @@ void               skr_shader_meta_release     (      skr_shader_meta_t *meta);
 
 ///////////////////////////////////////////
 
-ID3D11Device          *d3d_device      = nullptr;
-ID3D11DeviceContext   *d3d_context     = nullptr;
-ID3D11InfoQueue       *d3d_info        = nullptr;
-ID3D11InputLayout     *d3d_vert_layout = nullptr;
-ID3D11RasterizerState *d3d_rasterstate = nullptr;
-void                  *d3d_hwnd        = nullptr;
-skr_tex_t             *d3d_active_rendertarget = nullptr;
+ID3D11Device            *d3d_device      = nullptr;
+ID3D11DeviceContext     *d3d_context     = nullptr;
+ID3D11InfoQueue         *d3d_info        = nullptr;
+ID3D11InputLayout       *d3d_vert_layout = nullptr;
+ID3D11RasterizerState   *d3d_rasterstate = nullptr;
+ID3D11DepthStencilState *d3d_depthstate  = nullptr;
+void                    *d3d_hwnd        = nullptr;
+skr_tex_t               *d3d_active_rendertarget = nullptr;
 
 ///////////////////////////////////////////
 
@@ -520,6 +519,24 @@ int32_t skr_init(const char *app_name, void *hwnd, void *adapter_id) {
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
 	d3d_context->RSSetState(d3d_rasterstate);
 
+	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
+	desc_depthstate.DepthEnable    = true;
+	desc_depthstate.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	desc_depthstate.DepthFunc      = D3D11_COMPARISON_LESS;
+	desc_depthstate.StencilEnable    = false;
+	desc_depthstate.StencilReadMask  = 0xFF;
+	desc_depthstate.StencilWriteMask = 0xFF;
+	desc_depthstate.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+	desc_depthstate.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	desc_depthstate.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
+	desc_depthstate.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
+	desc_depthstate.BackFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+	desc_depthstate.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	desc_depthstate.BackFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
+	desc_depthstate.BackFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
+	d3d_device->CreateDepthStencilState(&desc_depthstate, &d3d_depthstate);
+	d3d_context->OMSetDepthStencilState(d3d_depthstate, 1);
+
 	return 1;
 }
 
@@ -527,6 +544,7 @@ int32_t skr_init(const char *app_name, void *hwnd, void *adapter_id) {
 
 void skr_shutdown() {
 	if (d3d_rasterstate) { d3d_rasterstate->Release(); d3d_rasterstate = nullptr; }
+	if (d3d_depthstate ) { d3d_depthstate ->Release(); d3d_depthstate  = nullptr; }
 	if (d3d_info     ) { d3d_info     ->Release(); d3d_info      = nullptr; }
 	if (d3d_context  ) { d3d_context  ->Release(); d3d_context   = nullptr; }
 	if (d3d_device   ) { d3d_device   ->Release(); d3d_device    = nullptr; }
@@ -565,10 +583,12 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clea
 
 	if (clear) {
 		d3d_context->ClearRenderTargetView(render_target->target_view, clear_color_4);
-		if (render_target->depth_tex != nullptr)
-			d3d_context->ClearDepthStencilView(render_target->depth_tex->depth_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		if (&render_target->depth_view) {
+			UINT clear_flags = D3D11_CLEAR_DEPTH;
+			d3d_context->ClearDepthStencilView(render_target->depth_view, clear_flags, 1.0f, 0);
+		}
 	}
-	d3d_context->OMSetRenderTargets(1, &render_target->target_view, render_target->depth_tex == nullptr ? nullptr : render_target->depth_tex->depth_view);
+	d3d_context->OMSetRenderTargets(1, &render_target->target_view, render_target->depth_view);
 }
 
 ///////////////////////////////////////////
@@ -932,6 +952,7 @@ skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_for
 	result.target = skr_tex_from_native(back_buffer, skr_tex_type_rendertarget, format, width, height, 1);
 	result.depth  = skr_tex_create(skr_tex_type_depth, skr_use_static, depth_format, skr_mip_none);
 	skr_tex_set_contents(&result.depth, nullptr, 1, width, height);
+	skr_tex_set_depth   (&result.target, &result.depth);
 	back_buffer->Release();
 
 	dxgi_factory->Release();
@@ -1031,7 +1052,9 @@ bool skr_tex_is_valid(const skr_tex_t *tex) {
 
 void skr_tex_set_depth(skr_tex_t *tex, skr_tex_t *depth) {
 	if (depth->type == skr_tex_type_depth) {
-		tex->depth_tex = depth;
+		if (tex->depth_view) tex->depth_view->Release();
+		tex->depth_view = depth->depth_view;
+		tex->depth_view->AddRef();
 	} else {
 		skr_log("Can't bind a depth texture to a non-rendertarget");
 	}
@@ -1203,7 +1226,9 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 
 		D3D11_SUBRESOURCE_DATA *tex_mem = nullptr;
 		if (data_frames != nullptr && data_frames[0] != nullptr) {
-			tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc(data_frame_count * mip_levels * sizeof(D3D11_SUBRESOURCE_DATA));
+			tex_mem = (D3D11_SUBRESOURCE_DATA *)malloc((int64_t)data_frame_count * mip_levels * sizeof(D3D11_SUBRESOURCE_DATA));
+			if (!tex_mem) { skr_log("Out of memory"); return;  }
+
 			for (int32_t i = 0; i < data_frame_count; i++) {
 				tex_mem[i*mip_levels] = {};
 				tex_mem[i*mip_levels].pSysMem     = data_frames[i];
@@ -1242,7 +1267,7 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 		for (int i = 0; i < height; i++) {
 			memcpy(dest_line, src_line, (size_t)width * px_size);
 			dest_line += tex_mem.RowPitch;
-			src_line  += (UINT)(px_size * width);
+			src_line  += px_size * (uint64_t)width;
 		}
 		d3d_context->Unmap(tex->texture, 0);
 	}
@@ -1294,8 +1319,9 @@ void skr_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 	*out_width  = w = max(1, (1 << w) >> 1);
 	*out_height = h = max(1, (1 << h) >> 1);
 
-	*out_data = (T*)malloc(w * h * sizeof(T) * 4);
-	memset(*out_data, 0, w * h * sizeof(T) * 4);
+	*out_data = (T*)malloc((int64_t)w * h * sizeof(T) * 4);
+	if (*out_data == nullptr) { skr_log("Out of memory"); return; }
+	memset(*out_data, 0, (int64_t)w * h * sizeof(T) * 4);
 	T *result = *out_data;
 
 	for (int32_t y = 0; y < height; y++) {
@@ -1324,8 +1350,9 @@ void skr_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int3
 	*out_width  = w = (1 << w) >> 1;
 	*out_height = h = (1 << h) >> 1;
 
-	*out_data = (T*)malloc(w * h * sizeof(T));
-	memset(*out_data, 0, w * h * sizeof(T));
+	*out_data = (T*)malloc((int64_t)w * h * sizeof(T));
+	if (*out_data == nullptr) { skr_log("Out of memory"); return; }
+	memset(*out_data, 0, (int64_t)w * h * sizeof(T));
 	T *result = *out_data;
 
 	for (int32_t y = 0; y < height; y++) {
@@ -2157,9 +2184,9 @@ skr_shader_stage_t skr_shader_stage_create(const void *file_data, size_t shader_
 
 	// Convert the prefix if it doesn't match the GL version we're using
 	const char   *prefix_gl      = "#version 450";
-	const int32_t prefix_gl_size = strlen(prefix_gl);
+	const size_t  prefix_gl_size = strlen(prefix_gl);
 	const char   *prefix_es      = "#version 300 es";
-	const int32_t prefix_es_size = strlen(prefix_es);
+	const size_t  prefix_es_size = strlen(prefix_es);
 	char         *final_data = (char*)file_chars;
 	bool          needs_free = false;
 #if __ANDROID__
@@ -2505,7 +2532,7 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 			skr_log("sk_gpu: cubemaps need 6 data frames");
 			return;
 		}
-		for (size_t f = 0; f < 6; f++)
+		for (int32_t f = 0; f < 6; f++)
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X+f , 0, format, width, height, 0, layout, type, data_frames[f]);
 	} else {
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
@@ -2737,18 +2764,23 @@ bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_fi
 	
 	const uint8_t *bytes = (uint8_t*)data;
 	size_t at = 10;
-	memcpy(&out_file->stage_count, &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
+	memcpy(&out_file->stage_count, &bytes[at], sizeof(out_file->stage_count)); at += sizeof(out_file->stage_count);
 	out_file->stages = (skr_shader_file_stage_t*)malloc(sizeof(skr_shader_file_stage_t) * out_file->stage_count);
+	if (out_file->stages == nullptr) { skr_log("Out of memory"); return false; }
 
 	out_file->meta = (skr_shader_meta_t*)malloc(sizeof(skr_shader_meta_t));
+	if (out_file->meta == nullptr) { skr_log("Out of memory"); return false; }
 	*out_file->meta = {};
 	out_file->meta->global_buffer_id = -1;
 	skr_shader_meta_reference(out_file->meta);
-	memcpy( out_file->meta->name,          &bytes[at], sizeof(out_file->meta->name)); at += sizeof(out_file->meta->name);
-	memcpy(&out_file->meta->buffer_count,  &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
-	memcpy(&out_file->meta->texture_count, &bytes[at], sizeof(uint32_t)); at += sizeof(uint32_t);
+	memcpy( out_file->meta->name,          &bytes[at], sizeof(out_file->meta->name         )); at += sizeof(out_file->meta->name);
+	memcpy(&out_file->meta->buffer_count,  &bytes[at], sizeof(out_file->meta->buffer_count )); at += sizeof(out_file->meta->buffer_count);
+	memcpy(&out_file->meta->texture_count, &bytes[at], sizeof(out_file->meta->texture_count)); at += sizeof(out_file->meta->texture_count);
 	out_file->meta->buffers  = (skr_shader_meta_buffer_t *)malloc(sizeof(skr_shader_meta_buffer_t ) * out_file->meta->buffer_count );
 	out_file->meta->textures = (skr_shader_meta_texture_t*)malloc(sizeof(skr_shader_meta_texture_t) * out_file->meta->texture_count);
+	if (out_file->meta->buffers == nullptr || out_file->meta->textures == nullptr) { skr_log("Out of memory"); return false; }
+	memset(out_file->meta->buffers,  0, sizeof(skr_shader_meta_buffer_t ) * out_file->meta->buffer_count);
+	memset(out_file->meta->textures, 0, sizeof(skr_shader_meta_texture_t) * out_file->meta->texture_count);
 
 	for (uint32_t i = 0; i < out_file->meta->buffer_count; i++) {
 		skr_shader_meta_buffer_t *buffer = &out_file->meta->buffers[i];
@@ -2757,7 +2789,7 @@ bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_fi
 		memcpy(&buffer->size,      &bytes[at], sizeof(buffer->size));      at += sizeof(buffer->size);
 		memcpy(&buffer->var_count, &bytes[at], sizeof(buffer->var_count)); at += sizeof(buffer->var_count);
 
-		size_t default_size = 0;
+		uint32_t default_size = 0;
 		memcpy(&default_size, &bytes[at], sizeof(buffer->size)); at += sizeof(buffer->size);
 		buffer->defaults = nullptr;
 		if (default_size != 0) {
@@ -2765,6 +2797,8 @@ bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_fi
 			memcpy(buffer->defaults, &bytes[at], default_size); at += default_size;
 		}
 		buffer->vars = (skr_shader_meta_var_t*)malloc(sizeof(skr_shader_meta_var_t) * buffer->var_count);
+		if (buffer->vars == nullptr) { skr_log("Out of memory"); return false; }
+		memset(buffer->vars, 0, sizeof(skr_shader_meta_var_t) * buffer->var_count);
 		buffer->name_hash = skr_hash(buffer->name);
 
 		for (uint32_t t = 0; t < buffer->var_count; t++) {
@@ -2796,8 +2830,12 @@ bool skr_shader_file_load_mem(void *data, size_t size, skr_shader_file_t *out_fi
 		memcpy( &stage->stage,    &bytes[at], sizeof(stage->stage));    at += sizeof(stage->stage);
 		memcpy( &stage->code_size,&bytes[at], sizeof(stage->code_size));at += sizeof(stage->code_size);
 
-		stage->code = malloc(stage->code_size);
-		memcpy(stage->code, &bytes[at], stage->code_size); at += stage->code_size;
+		stage->code = 0;
+		if (stage->code_size > 0) {
+			stage->code = malloc(stage->code_size);
+			if (stage->code == nullptr) { skr_log("Out of memory"); return false; }
+			memcpy(stage->code, &bytes[at], stage->code_size); at += stage->code_size;
+		}
 	}
 
 	return true;

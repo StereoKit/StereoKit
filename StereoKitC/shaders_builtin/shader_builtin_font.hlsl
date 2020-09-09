@@ -8,12 +8,13 @@ Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
 struct vsIn {
-	float4 pos   : SV_POSITION;
-	float2 uv    : TEXCOORD0;
-	float4 color : COLOR0;
+	float4 pos  : SV_Position;
+	float3 norm : NORMAL;
+	float4 color: COLOR;
+	float2 uv   : TEXCOORD0;
 };
 struct psIn {
-	float4 pos     : SV_POSITION;
+	float4 pos     : SV_Position;
 	float4 color   : COLOR0;
 	float2 uv      : TEXCOORD0;
 	uint   view_id : SV_RenderTargetArrayIndex;
@@ -30,7 +31,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return output;
 }
 
-float4 ps(psIn input, bool frontface : SV_IsFrontFace) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET{
 	// From an excellent article about text rendering by Ben Golus:
 	// https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec
 	float2 dx = ddx(input.uv);

@@ -45,7 +45,7 @@ struct render_blit_data_t {
 	float pixel_height;
 };
 struct render_inst_buffer {
-	size_t       max;
+	int32_t      max;
 	skr_buffer_t buffer;
 };
 struct render_screenshot_t {
@@ -485,7 +485,8 @@ void render_set_material(material_t material) {
 
 	// Bind the material textures
 	for (size_t i = 0; i < material->args.texture_count; i++) {
-		skr_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
+		if (material->args.texture_binds[i].slot != render_list_sky_bind.slot)
+			skr_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
 	}
 
 	// And bind the pipeline
@@ -494,16 +495,16 @@ void render_set_material(material_t material) {
 
 ///////////////////////////////////////////
 
-skr_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, size_t &offset, size_t &out_count) {
+skr_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
-	size_t size  = list.count - offset;
-	size_t index = 0;
-	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
+	int32_t size  = list.count - offset;
+	int32_t index = 0;
+	for (int32_t i = 0; i < _countof(render_instance_buffers); i++) {
 		index = i;
 		if (render_instance_buffers[i].max >= size)
 			break;
 	}
-	size_t start = offset;
+	int32_t start = offset;
 
 	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
 	if (size > render_instance_buffers[index].max) {
@@ -619,7 +620,7 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 			list->stats.swaps_mesh++;
 
 			// Collect and draw instances
-			size_t offsets = 0, count = 0;
+			int32_t offsets = 0, count = 0;
 			do {
 				skr_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
 				skr_buffer_bind(instances, render_list_inst_bind, 0, 0);

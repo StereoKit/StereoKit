@@ -232,60 +232,69 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="shaders_builtin\shader_builtin_default.hlsl">
+    <CustomBuild Include="shaders_builtin\shader_builtin_default.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_equirect.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_equirect.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_font.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_font.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_lines.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_lines.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_pbr.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_pbr.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_skybox.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_skybox.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_ui.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_ui.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
-    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
+    <CustomBuild Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <FileType>Document</FileType>
       <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
-    </None>
+      <Message>Compiling shader: %(FullPath)</Message>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

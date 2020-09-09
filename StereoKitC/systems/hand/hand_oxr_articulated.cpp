@@ -75,7 +75,7 @@ void hand_oxra_update_joints() {
 
 		// Get joint poses from OpenXR
 		matrix root = render_get_cam_root();
-		for (int32_t j = 0; j < locations.jointCount; j++) {
+		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
 			oxra_hand_joints[h][j].radius = locations.jointLocations[j].radius * 0.85f;

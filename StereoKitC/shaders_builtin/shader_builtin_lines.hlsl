@@ -8,9 +8,9 @@ Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float4 col  : COLOR;
+	float4 pos  : SV_Position;
 	float3 norm : NORMAL;
+	float4 col  : COLOR;
 	float2 uv   : TEXCOORD0;
 };
 struct psIn {
