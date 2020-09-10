@@ -517,8 +517,7 @@ int32_t skr_init(const char *app_name, void *hwnd, void *adapter_id) {
 	desc_rasterizer.CullMode = D3D11_CULL_BACK;
 	desc_rasterizer.FrontCounterClockwise = true;
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
-	d3d_context->RSSetState(d3d_rasterstate);
-
+	
 	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
 	desc_depthstate.DepthEnable    = true;
 	desc_depthstate.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -535,7 +534,6 @@ int32_t skr_init(const char *app_name, void *hwnd, void *adapter_id) {
 	desc_depthstate.BackFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
 	desc_depthstate.BackFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
 	d3d_device->CreateDepthStencilState(&desc_depthstate, &d3d_depthstate);
-	d3d_context->OMSetDepthStencilState(d3d_depthstate, 1);
 
 	return 1;
 }
@@ -553,6 +551,8 @@ void skr_shutdown() {
 ///////////////////////////////////////////
 
 void skr_draw_begin() {
+	d3d_context->RSSetState            (d3d_rasterstate);
+	d3d_context->OMSetDepthStencilState(d3d_depthstate, 1);
 	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	d3d_context->IASetInputLayout      (d3d_vert_layout);
 }
@@ -583,7 +583,7 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clea
 
 	if (clear) {
 		d3d_context->ClearRenderTargetView(render_target->target_view, clear_color_4);
-		if (&render_target->depth_view) {
+		if (render_target->depth_view) {
 			UINT clear_flags = D3D11_CLEAR_DEPTH;
 			d3d_context->ClearDepthStencilView(render_target->depth_view, clear_flags, 1.0f, 0);
 		}
@@ -640,8 +640,10 @@ bool skr_buffer_is_valid(const skr_buffer_t *buffer) {
 /////////////////////////////////////////// 
 
 void skr_buffer_set_contents(skr_buffer_t *buffer, const void *data, uint32_t size_bytes) {
-	if (buffer->use != skr_use_dynamic)
+	if (buffer->use != skr_use_dynamic) {
+		skr_log("Attempting to dynamically set contents of a static buffer!");
 		return;
+	}
 
 	D3D11_MAPPED_SUBRESOURCE resource;
 	d3d_context->Map(buffer->buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
@@ -945,11 +947,22 @@ skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_for
 	IDXGIAdapter  *dxgi_adapter; dxgi_device ->GetParent     (__uuidof(IDXGIAdapter),  (void **)&dxgi_adapter);
 	IDXGIFactory2 *dxgi_factory; dxgi_adapter->GetParent     (__uuidof(IDXGIFactory2), (void **)&dxgi_factory);
 
-	dxgi_factory->CreateSwapChainForHwnd(d3d_device, (HWND)d3d_hwnd, &swapchain_desc, nullptr, nullptr, &result.d3d_swapchain);
+	if (FAILED(dxgi_factory->CreateSwapChainForHwnd(d3d_device, (HWND)d3d_hwnd, &swapchain_desc, nullptr, nullptr, &result.d3d_swapchain))) {
+		skr_log("sk_gpu couldn't create swapchain!");
+		return {};
+	}
+
+	// Set the target view to an sRGB format for proper presentation of 
+	// linear color data.
+	skr_tex_fmt_ target_fmt = format;
+	switch (format) {
+	case skr_tex_fmt_bgra32_linear: target_fmt = skr_tex_fmt_bgra32; break;
+	case skr_tex_fmt_rgba32_linear: target_fmt = skr_tex_fmt_rgba32; break;
+	}
 
 	ID3D11Texture2D *back_buffer;
 	result.d3d_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-	result.target = skr_tex_from_native(back_buffer, skr_tex_type_rendertarget, format, width, height, 1);
+	result.target = skr_tex_from_native(back_buffer, skr_tex_type_rendertarget, target_fmt, width, height, 1);
 	result.depth  = skr_tex_create(skr_tex_type_depth, skr_use_static, depth_format, skr_mip_none);
 	skr_tex_set_contents(&result.depth, nullptr, 1, width, height);
 	skr_tex_set_depth   (&result.target, &result.depth);
@@ -982,6 +995,7 @@ void skr_swapchain_resize(skr_swapchain_t *swapchain, int32_t width, int32_t hei
 	swapchain->target = skr_tex_from_native(back_buffer, skr_tex_type_rendertarget, target_fmt, width, height, 1);
 	swapchain->depth  = skr_tex_create(skr_tex_type_depth, skr_use_static, depth_fmt, skr_mip_none);
 	skr_tex_set_contents(&swapchain->depth, nullptr, 1, width, height);
+	skr_tex_set_depth   (&swapchain->target, &swapchain->depth);
 	back_buffer->Release();
 }
 
@@ -1502,6 +1516,7 @@ HGLRC gl_hrc;
 #define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
 #define WGL_CONTEXT_FLAGS_ARB             0x2094
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+#define GL_FRAMEBUFFER_SRGB               0x8DB9
 
 #define GL_DEPTH_BUFFER_BIT 0x00000100
 #define GL_COLOR_BUFFER_BIT 0x00004000
@@ -1992,6 +2007,7 @@ int32_t skr_init(const char *app_name, void *app_hwnd, void *adapter_id) {
 	glEnable  (GL_DEPTH_TEST);  
 	glEnable  (GL_CULL_FACE);
 	glCullFace(GL_BACK);
+	glEnable  (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	
 	return 1;
 }
@@ -2030,8 +2046,10 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clea
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
+		glDisable(GL_FRAMEBUFFER_SRGB); 
 	} else {
 		glViewport(0, 0, gl_width, gl_height);
+		glEnable(GL_FRAMEBUFFER_SRGB); 
 	}
 
 	if (clear) {
@@ -2090,10 +2108,12 @@ bool skr_buffer_is_valid(const skr_buffer_t *buffer) {
 /////////////////////////////////////////// 
 
 void skr_buffer_set_contents(skr_buffer_t *buffer, const void *data, uint32_t size_bytes) {
-	if (buffer->use != skr_use_dynamic)
+	if (buffer->use != skr_use_dynamic) {
+		skr_log("Attempting to dynamically set contents of a static buffer!");
 		return;
+	}
 
-	glBindBuffer(buffer->type, buffer->buffer);
+	glBindBuffer   (buffer->type, buffer->buffer);
 	glBufferSubData(buffer->type, 0, size_bytes, data);
 }
 
@@ -2117,22 +2137,8 @@ void skr_buffer_destroy(skr_buffer_t *buffer) {
 
 skr_mesh_t skr_mesh_create(const skr_buffer_t *vert_buffer, const skr_buffer_t *ind_buffer) {
 	skr_mesh_t result = {};
-	result.index_buffer = ind_buffer  ? ind_buffer ->buffer : 0;
-	result.vert_buffer  = vert_buffer ? vert_buffer->buffer : 0;
-
-	// Create a vertex layout
-	glGenVertexArrays(1, &result.layout);
-	glBindVertexArray(result.layout);
-	// enable the vertex data for the shader
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	// tell the shader how our vertex data binds to the shader inputs
-	glVertexAttribPointer(0, 3, GL_FLOAT, 0, sizeof(skr_vert_t), nullptr);
-	glVertexAttribPointer(1, 3, GL_FLOAT, 0, sizeof(skr_vert_t), (void*)(sizeof(float) * 3));
-	glVertexAttribPointer(2, 2, GL_FLOAT, 0, sizeof(skr_vert_t), (void*)(sizeof(float) * 6));
-	glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, 1, sizeof(skr_vert_t), (void*)(sizeof(float) * 8));
+	skr_mesh_set_verts(&result, vert_buffer);
+	skr_mesh_set_inds (&result, ind_buffer);
 
 	return result;
 }
@@ -2140,13 +2146,35 @@ skr_mesh_t skr_mesh_create(const skr_buffer_t *vert_buffer, const skr_buffer_t *
 /////////////////////////////////////////// 
 
 void skr_mesh_set_verts(skr_mesh_t *mesh, const skr_buffer_t *vert_buffer) {
-	mesh->vert_buffer = vert_buffer->buffer;
+	mesh->vert_buffer = vert_buffer ? vert_buffer->buffer : 0;
+	if (mesh->vert_buffer != 0) {
+		if (mesh->layout != 0) {
+			glDeleteVertexArrays(1, &mesh->layout);
+			mesh->layout = 0;
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, mesh->vert_buffer);
+
+		// Create a vertex layout
+		glGenVertexArrays(1, &mesh->layout);
+		glBindVertexArray(mesh->layout);
+		// enable the vertex data for the shader
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
+		// tell the shader how our vertex data binds to the shader inputs
+		glVertexAttribPointer(0, 3, GL_FLOAT, 0, sizeof(skr_vert_t), nullptr);
+		glVertexAttribPointer(1, 3, GL_FLOAT, 0, sizeof(skr_vert_t), (void*)(sizeof(float) * 3));
+		glVertexAttribPointer(2, 2, GL_FLOAT, 0, sizeof(skr_vert_t), (void*)(sizeof(float) * 6));
+		glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, 1, sizeof(skr_vert_t), (void*)(sizeof(float) * 8));
+	}
 }
 
 /////////////////////////////////////////// 
 
 void skr_mesh_set_inds(skr_mesh_t *mesh, const skr_buffer_t *ind_buffer) {
-	mesh->index_buffer = ind_buffer->buffer;
+	mesh->index_buffer = ind_buffer ? ind_buffer->buffer : 0;
 }
 
 /////////////////////////////////////////// 

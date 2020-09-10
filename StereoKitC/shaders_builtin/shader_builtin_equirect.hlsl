@@ -10,7 +10,7 @@ float4       forward;
 Texture2D    source   : register(t0);
 SamplerState source_s : register(s0);
 
-cbuffer GlobalBuffer : register(b0) {
+cbuffer GlobalBuffer : register(b1) {
 	float4x4 sk_view[2];
 	float4x4 sk_proj[2];
 	float4x4 sk_viewproj[2];
@@ -20,7 +20,7 @@ cbuffer GlobalBuffer : register(b0) {
 	float4   sk_fingertip[2];
 	float    sk_time;
 };
-cbuffer TransformBuffer : register(b1) {
+cbuffer TransformBuffer : register(b2) {
 	float sk_width;
 	float sk_height;
 	float sk_pixel_width;

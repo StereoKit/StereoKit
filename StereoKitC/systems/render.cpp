@@ -89,9 +89,9 @@ mesh_t     render_last_mesh;
 array_t< render_list_t> render_list_stack  = {};
 array_t<_render_list_t> render_lists       = {};
 render_list_t           render_list_active = -1;
-skr_bind_t              render_list_global_bind = { 0,  skr_stage_vertex | skr_stage_pixel };
-skr_bind_t              render_list_inst_bind   = { 1,  skr_stage_vertex | skr_stage_pixel };
-skr_bind_t              render_list_blit_bind   = { 1,  skr_stage_vertex | skr_stage_pixel };
+skr_bind_t              render_list_global_bind = { 1,  skr_stage_vertex | skr_stage_pixel };
+skr_bind_t              render_list_inst_bind   = { 2,  skr_stage_vertex | skr_stage_pixel };
+skr_bind_t              render_list_blit_bind   = { 2,  skr_stage_vertex | skr_stage_pixel };
 skr_bind_t              render_list_sky_bind    = { 11, skr_stage_vertex | skr_stage_pixel };
 
 ///////////////////////////////////////////
@@ -613,10 +613,10 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 
 		// If the next item is not the same as the current run of render 
 		// items, we'll collect the instances, and submit them to draw!
-		render_item_t *next = i+1>=count?nullptr:&list->queue[i+1];
+		render_item_t *next = i+1>=count ? nullptr : &list->queue[i+1];
 		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
 			render_set_material(item->material);
-			skr_mesh_bind(item->mesh);
+			skr_mesh_bind      (item->mesh);
 			list->stats.swaps_mesh++;
 
 			// Collect and draw instances
@@ -626,7 +626,7 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 				skr_buffer_bind(instances, render_list_inst_bind, 0, 0);
 
 				skr_draw(0, item->mesh_inds, count);
-				list->stats.draw_calls++;
+				list->stats.draw_calls     += 1;
 				list->stats.draw_instances += count;
 
 			} while (offsets != 0);

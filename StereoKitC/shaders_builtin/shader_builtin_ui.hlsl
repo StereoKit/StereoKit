@@ -32,12 +32,10 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.view_id    = sk_inst[id].view_id;
 	output.uv         = input.uv;
 	output.color      = color * input.col * sk_inst[id].color;
-	output.color.rgb  = Lighting(output.normal);
+	output.color.rgb *= Lighting(output.normal);
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET{
-	return input.color;
-
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {

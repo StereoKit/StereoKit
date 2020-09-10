@@ -14,6 +14,8 @@ struct vsIn {
 struct psIn {
 	float4 pos  : SV_Position;
 	float3 norm : NORMAL0;
+	float2 uv   : TEXCOORD0;
+	float4 col  : COLOR0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 struct psOut {
@@ -26,6 +28,8 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.pos     = mul(float4(input.pos.xyz, 0), sk_viewproj[sk_inst[id].view_id]);
 	output.view_id = sk_inst[id].view_id;
 	output.norm    = input.norm;
+	output.uv = 0;
+	output.col = 0;
 	return output;
 }
 

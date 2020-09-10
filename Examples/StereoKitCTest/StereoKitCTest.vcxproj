@@ -89,6 +89,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\StereoKitC\StereoKitC.vcxproj">
       <Project>{95b47c8e-3a66-483c-abee-950e6c2f621a}</Project>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
