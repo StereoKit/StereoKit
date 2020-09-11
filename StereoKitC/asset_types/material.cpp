@@ -66,12 +66,12 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		for (size_t i = 0; i < meta->texture_count; i++) {
 			material->args.texture_binds[i] = meta->textures[i].bind;
 
-			if      (string_eq(meta->textures[i].name, "white")) material->args.textures[i] = tex_find(default_id_tex);
-			else if (string_eq(meta->textures[i].name, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
-			else if (string_eq(meta->textures[i].name, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
-			else if (string_eq(meta->textures[i].name, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
-			else if (string_eq(meta->textures[i].name, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
-			else                                                 material->args.textures[i] = tex_find(default_id_tex);
+			if      (string_eq(meta->textures[i].extra, "white")) material->args.textures[i] = tex_find(default_id_tex);
+			else if (string_eq(meta->textures[i].extra, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
+			else if (string_eq(meta->textures[i].extra, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
+			else if (string_eq(meta->textures[i].extra, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
+			else if (string_eq(meta->textures[i].extra, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
+			else                                                  material->args.textures[i] = tex_find(default_id_tex);
 		}
 	}
 }
