@@ -297,6 +297,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
     </CustomBuild>
+    <None Include="shaders_builtin\stereokit.hlslinc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

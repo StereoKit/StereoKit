@@ -1,9 +1,6 @@
 #include "stereokit.hlslinc"
 
 //--name = sk/skybox
-//--blur = 0
-
-float blur; 
 
 struct vsIn {
 	float4 pos  : SV_Position;
@@ -25,22 +22,19 @@ struct psOut {
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	output.pos     = mul(float4(input.pos.xyz, 0), sk_viewproj[sk_inst[id].view_id]);
+	output.pos     = float4(input.pos.xyz,1);
 	output.view_id = sk_inst[id].view_id;
-	output.norm    = input.norm;
-	output.uv = 0;
+	output.uv  = 0;
 	output.col = 0;
+
+	float4 proj_inv = mul(output.pos, sk_proj_inv[output.view_id]);
+	output.norm = mul(float4(proj_inv.xyz, 0), transpose(sk_view[output.view_id])).xyz;
 	return output;
 }
 
 psOut ps(vsIn input) {
 	psOut result;
-
-	float w, h;
-	uint mip_levels;
-	sk_cubemap.GetDimensions(0, w, h, mip_levels);
-
-	result.color = sk_cubemap.SampleLevel(sk_cubemap_s, input.norm, blur * mip_levels);
+	result.color = sk_cubemap.Sample(sk_cubemap_s, input.norm);
 	result.depth = 0.99999;
 	return result;
 }

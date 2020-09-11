@@ -31,6 +31,7 @@ struct render_transform_buffer_t {
 struct render_global_buffer_t {
 	XMMATRIX view[2];
 	XMMATRIX proj[2];
+	XMMATRIX proj_inv[2];
 	XMMATRIX viewproj[2];
 	vec4     lighting[9];
 	vec4     camera_pos[2];
@@ -262,7 +263,8 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		math_matrix_to_fast(views      [i], &view_f      );
 		math_matrix_to_fast(projections[i], &projection_f);
 
-		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
+		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
+		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
 
 		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
 		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
@@ -271,6 +273,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 
 		render_global_buffer.view    [i] = XMMatrixTranspose(view_f);
 		render_global_buffer.proj    [i] = XMMatrixTranspose(projection_f);
+		render_global_buffer.proj_inv[i] = XMMatrixTranspose(proj_inv);
 		render_global_buffer.viewproj[i] = XMMatrixTranspose(view_f * projection_f);
 	}
 
@@ -380,12 +383,20 @@ bool render_initialize() {
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
-	render_sky_mesh = mesh_gen_sphere(1, 3);
-	mesh_set_id(render_sky_mesh, "render/skybox_mesh");
+	render_sky_mesh = mesh_create();
+	vind_t inds [] = {2,1,0, 3,2,0};
+	vert_t verts[] = {
+		vert_t{ {-1, 1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
+		vert_t{ { 1, 1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
+		vert_t{ { 1,-1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
+		vert_t{ {-1,-1,1}, {0,0,1}, {0,0}, {255,255,255,255} }, };
+	mesh_set_inds (render_sky_mesh, inds,  _countof(inds));
+	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
+	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
+
 	render_sky_mat  = material_create(shader_find(default_id_shader_sky));
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
-	material_set_cull        (render_sky_mat, cull_front);
 
 	render_default_tex = tex_find(default_id_tex);
 	render_list_primary = render_list_create();

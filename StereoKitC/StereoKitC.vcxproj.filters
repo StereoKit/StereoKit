@@ -372,6 +372,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="shaders_builtin\stereokit.hlslinc">
+      <Filter>shaders_builtin</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="shaders_builtin\shader_builtin_font.hlsl">
