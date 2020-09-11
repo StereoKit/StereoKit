@@ -168,7 +168,8 @@ bool openxr_init(const char *app_name) {
 #ifdef XR_USE_GRAPHICS_API_D3D11
 	luid = (void *)&requirement.adapterLuid;
 #endif
-	if (skr_init(app_name, nullptr, luid))
+	skr_callback_log(log_diag);
+	if (!skr_init(app_name, nullptr, luid))
 		return false;
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.

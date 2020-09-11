@@ -36,8 +36,9 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	char id[64];
 	assets_unique_name(asset_type_texture, "zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
-	tex_set_id(texture->depth_buffer, id);
+	tex_set_id       (texture->depth_buffer, id);
 	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count);
+	skr_tex_set_depth(&texture->tex, &texture->depth_buffer->tex);
 	
 	return texture->depth_buffer;
 }
@@ -57,16 +58,24 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 	if (texture->depth_buffer != nullptr)
 		tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
+
+	skr_tex_set_depth(&texture->tex, &depth_texture->tex);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
 	if (skr_tex_is_valid(&texture->tex))
 		skr_tex_destroy (&texture->tex);
-	texture->format = tex_get_tex_format(native_fmt);;
-	texture->tex    = skr_tex_from_native(native_surface, skr_tex_type_rendertarget, skr_tex_fmt_from_native(native_fmt), width, height, surface_count);
-	
+
+	skr_tex_type_ skr_type = skr_tex_type_image;
+	if      (type & tex_type_cubemap     ) skr_type = skr_tex_type_cubemap;
+	else if (type & tex_type_depth       ) skr_type = skr_tex_type_depth;
+	else if (type & tex_type_rendertarget) skr_type = skr_tex_type_rendertarget;
+
+	texture->type   = type;
+	texture->format = tex_get_tex_format (native_fmt);
+	texture->tex    = skr_tex_from_native(native_surface, skr_type, skr_tex_fmt_from_native(native_fmt), width, height, surface_count);
 }
 
 ///////////////////////////////////////////
