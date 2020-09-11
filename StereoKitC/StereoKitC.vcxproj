@@ -70,7 +70,8 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lib\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+      <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
 xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
@@ -99,7 +100,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)lib\bin\$(Platform)\*.dll" "$(TargetDir)" /d /k /y
+      <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
 xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
