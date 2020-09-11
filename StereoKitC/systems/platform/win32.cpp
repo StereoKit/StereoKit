@@ -93,14 +93,21 @@ bool win32_init(const char *app_name) {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name;
 	if( !RegisterClass(&wc) ) return false;
+
+	RECT r;
+	r.left   = sk_settings.flatscreen_pos_x;
+	r.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
+	r.top    = sk_settings.flatscreen_pos_y;
+	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
+	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindow(
 		wc.lpszClassName, 
 		app_name, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
-		sk_settings.flatscreen_pos_x, 
-		sk_settings.flatscreen_pos_y, 
-		sk_info.display_width, 
-		sk_info.display_height, 
+		max(0,r.left), 
+		max(0,r.top), 
+		r.right  - r.left, 
+		r.bottom - r.top, 
 		0, 0, 
 		wc.hInstance, 
 		nullptr);

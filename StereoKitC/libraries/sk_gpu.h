@@ -2412,6 +2412,11 @@ void skr_pipeline_destroy(skr_pipeline_t *pipeline) {
 
 skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_format, int32_t width, int32_t height) {
 	skr_swapchain_t result = {};
+
+	int32_t viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	result.width  = viewport[2];
+	result.height = viewport[3];
 	return result;
 }
 
