@@ -1517,6 +1517,22 @@ HGLRC gl_hrc;
 #define WGL_CONTEXT_FLAGS_ARB             0x2094
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
 #define GL_FRAMEBUFFER_SRGB               0x8DB9
+#define GL_VIEWPORT                       0x0BA2
+
+#define GL_ZERO 0
+#define GL_ONE  1
+#define GL_SRC_COLOR                0x0300
+#define GL_ONE_MINUS_SRC_COLOR      0x0301
+#define GL_SRC_ALPHA                0x0302
+#define GL_ONE_MINUS_SRC_ALPHA      0x0303
+#define GL_DST_ALPHA                0x0304
+#define GL_ONE_MINUS_DST_ALPHA      0x0305
+#define GL_DST_COLOR                0x0306
+#define GL_ONE_MINUS_DST_COLOR      0x0307
+#define GL_CONSTANT_COLOR           0x8001
+#define GL_ONE_MINUS_CONSTANT_COLOR 0x8002
+#define GL_CONSTANT_ALPHA           0x8003
+#define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 
 #define GL_DEPTH_BUFFER_BIT 0x00000100
 #define GL_COLOR_BUFFER_BIT 0x00004000
@@ -1677,6 +1693,7 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
     GLE(void,     ShaderSource,            uint32_t shader, int32_t count, const char* const *string, const int32_t *length) \
     GLE(void,     CompileShader,           uint32_t shader) \
     GLE(void,     GetShaderiv,             uint32_t shader, uint32_t pname, int32_t *params) \
+	GLE(void,     GetIntegerv,             uint32_t pname, int32_t *params) \
     GLE(void,     GetShaderInfoLog,        uint32_t shader, int32_t bufSize, int32_t *length, char *infoLog) \
 	GLE(void,     GetProgramInfoLog,       uint32_t program, int32_t maxLength, int32_t *length, char *infoLog) \
     GLE(void,     DeleteShader,            uint32_t shader) \
@@ -1721,6 +1738,8 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
 	GLE(void,     BufferSubData,           uint32_t target, int64_t offset, int32_t size, const void *data) \
 	GLE(void,     Viewport,                int32_t x, int32_t y, int32_t width, int32_t height) \
 	GLE(void,     CullFace,                uint32_t mode) \
+	GLE(void,     BlendFunc,               uint32_t sfactor, uint32_t dfactor) \
+	GLE(void,     BlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint32_t srcAlpha, uint32_t dstAlpha) \
 	GLE(const char *, GetString,           uint32_t name)
 
 #define GLE(ret, name, ...) typedef ret GLDECL name##proc(__VA_ARGS__); static name##proc * gl##name;
@@ -2004,10 +2023,11 @@ int32_t skr_init(const char *app_name, void *app_hwnd, void *adapter_id) {
 #endif // _DEBUG
 	
 	// Some default behavior
-	glEnable  (GL_DEPTH_TEST);  
-	glEnable  (GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glEnable  (GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable   (GL_DEPTH_TEST);  
+	glEnable   (GL_CULL_FACE);
+	glCullFace (GL_BACK);
+	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 	
 	return 1;
 }
@@ -2417,6 +2437,7 @@ skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_for
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	result.width  = viewport[2];
 	result.height = viewport[3];
+
 	return result;
 }
 
