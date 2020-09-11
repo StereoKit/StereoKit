@@ -48,7 +48,6 @@ void hand_mouse_update_frame() {
 
 	ray_t ray = {};
 	if (ray_from_mouse(input_mouse_data.pos, ray)) {
-		ray.dir = vec3_normalize(ray.dir);
 		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
 
 		hand_pos     = ray.pos + ray.dir * (0.6f + mouse_hand_scroll * 0.00025f);

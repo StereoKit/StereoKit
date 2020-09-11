@@ -357,11 +357,12 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			p->position    = vec3_lerp (p->position,    dest_pose[f * 5 + j].position,    delta);
 			p->orientation = quat_slerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
 		} }
+		vec3 finger_off = hand_state[handedness].pose_blend[1][4].position;
 	
 		for (size_t f = 0; f < 5; f++) {
 			const pose_t *finger = &hand_state[handedness].pose_blend[f][0];
 		for (size_t j = 0; j < 5; j++) {
-			vec3 pos = finger[j].position;
+			vec3 pos = finger[j].position - finger_off;
 			quat rot = finger[j].orientation;
 			if (handedness == handed_right) {
 				// mirror along x axis, our pose data is for left hand
