@@ -92,7 +92,7 @@ render_list_t           render_list_active = -1;
 skr_bind_t              render_list_global_bind = { 1,  skr_stage_vertex | skr_stage_pixel };
 skr_bind_t              render_list_inst_bind   = { 2,  skr_stage_vertex | skr_stage_pixel };
 skr_bind_t              render_list_blit_bind   = { 2,  skr_stage_vertex | skr_stage_pixel };
-skr_bind_t              render_list_sky_bind    = { 11, skr_stage_vertex | skr_stage_pixel };
+skr_bind_t              render_list_sky_bind    = { 11, skr_stage_pixel };
 
 ///////////////////////////////////////////
 
@@ -477,11 +477,13 @@ void render_set_material(material_t material) {
 	render_lists[render_list_active].stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
-	if (material->args.buffer_dirty) {
-		skr_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, material->args.buffer_size);
-		material->args.buffer_dirty = false;
+	if (material->args.buffer != nullptr) {
+		if (material->args.buffer_dirty) {
+			skr_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, material->args.buffer_size);
+			material->args.buffer_dirty = false;
+		}
+		skr_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0, 0);
 	}
-	skr_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0, 0);
 
 	// Bind the material textures
 	for (size_t i = 0; i < material->args.texture_count; i++) {
