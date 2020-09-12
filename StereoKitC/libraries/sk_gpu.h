@@ -282,6 +282,7 @@ typedef struct skr_tex_t {
 	skr_mip_      mips;
 	uint32_t      texture;
 	uint32_t      framebuffer;
+	uint32_t      gl_target;
 } skr_tex_t;
 
 typedef struct skr_platform_data_t {
@@ -1553,6 +1554,7 @@ HGLRC gl_hrc;
 #define GL_FILL 0x1B02
 #define GL_DEPTH_TEST 0x0B71
 #define GL_TEXTURE_2D 0x0DE1
+#define GL_TEXTURE_2D_ARRAY 0x8C1A
 #define GL_TEXTURE_CUBE_MAP 0x8513
 #define GL_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
 #define GL_TEXTURE_CUBE_MAP_ARRAY 0x9009
@@ -1711,11 +1713,12 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
 	GLE(void,     GenTextures,             int32_t n, uint32_t *textures) \
 	GLE(void,     GenFramebuffers,         int32_t n, uint32_t *ids) \
 	GLE(void,     DeleteFramebuffers,      int32_t n, uint32_t *ids) \
-	GLE(void,     FramebufferTexture2D,    uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int32_t level) \
-	GLE(void,     DeleteTextures,          int32_t n, const uint32_t *textures) \
-	GLE(void,     BindTexture,             uint32_t target, uint32_t texture) \
 	GLE(void,     BindFramebuffer,         uint32_t target, uint32_t framebuffer) \
 	GLE(void,     FramebufferTexture,      uint32_t target, uint32_t attachment, uint32_t texture, int32_t level) \
+	GLE(void,     FramebufferTexture2D,    uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int32_t level) \
+	GLE(void,     FramebufferTextureLayer, uint32_t target, uint32_t attachment, uint32_t texture, int32_t level, int32_t layer) \
+	GLE(void,     DeleteTextures,          int32_t n, const uint32_t *textures) \
+	GLE(void,     BindTexture,             uint32_t target, uint32_t texture) \
     GLE(void,     TexParameteri,           uint32_t target, uint32_t pname, int32_t param) \
 	GLE(void,     GetInternalformativ,     uint32_t target, uint32_t internalformat, uint32_t pname, int32_t bufSize, int32_t *params)\
 	GLE(void,     GetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_t pname, int32_t *params) \
@@ -2481,13 +2484,22 @@ skr_tex_t skr_tex_from_native(void *native_tex, skr_tex_type_ type, skr_tex_fmt_
 	result.width       = width;
 	result.height      = height;
 	result.array_count = array_count;
+	result.gl_target = type == skr_tex_type_cubemap 
+		? GL_TEXTURE_CUBE_MAP 
+		: array_count > 1 
+			? GL_TEXTURE_2D_ARRAY
+			: GL_TEXTURE_2D;
 
 	if (type == skr_tex_type_rendertarget) {
 		glGenFramebuffers(1, &result.framebuffer);
 
-		glBindFramebuffer     (GL_FRAMEBUFFER, result.framebuffer);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, result.texture, 0); 
-		glBindFramebuffer     (GL_FRAMEBUFFER, gl_current_framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, result.framebuffer);
+		if (array_count != 1) {
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result.texture, 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result.gl_target, result.texture, 0);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
 	
 	return result;
@@ -2497,10 +2509,13 @@ skr_tex_t skr_tex_from_native(void *native_tex, skr_tex_type_ type, skr_tex_fmt_
 
 skr_tex_t skr_tex_create(skr_tex_type_ type, skr_use_ use, skr_tex_fmt_ format, skr_mip_ mip_maps) {
 	skr_tex_t result = {};
-	result.type   = type;
-	result.use    = use;
-	result.format = format;
-	result.mips   = mip_maps;
+	result.type      = type;
+	result.use       = use;
+	result.format    = format;
+	result.mips      = mip_maps;
+	result.gl_target = type == skr_tex_type_cubemap 
+		? GL_TEXTURE_CUBE_MAP 
+		: GL_TEXTURE_2D;
 
 	glGenTextures(1, &result.texture);
 	skr_tex_settings(&result, type == skr_tex_type_cubemap ? skr_tex_address_clamp : skr_tex_address_repeat, skr_tex_sample_linear, 1);
@@ -2521,11 +2536,17 @@ bool skr_tex_is_valid(const skr_tex_t *tex) {
 /////////////////////////////////////////// 
 
 void skr_tex_set_depth(skr_tex_t *tex, skr_tex_t *depth) {
-	bool stencil = depth->format == skr_tex_fmt_depthstencil;
 	if (tex->type == skr_tex_type_rendertarget) {
-		glBindFramebuffer     (GL_FRAMEBUFFER, tex->framebuffer);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, stencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth->texture, 0); 
-		glBindFramebuffer     (GL_FRAMEBUFFER, gl_current_framebuffer);
+		uint32_t attach = depth->format == skr_tex_fmt_depthstencil 
+			? GL_DEPTH_STENCIL_ATTACHMENT 
+			: GL_DEPTH_ATTACHMENT;
+		glBindFramebuffer(GL_FRAMEBUFFER, tex->framebuffer);
+		if (tex->array_count != 1) {
+			glFramebufferTexture(GL_FRAMEBUFFER, attach , depth->texture, 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, attach, tex->gl_target, depth->texture, 0);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	} else {
 		skr_log("Can't bind a depth texture to a non-rendertarget");
 	}
@@ -2534,10 +2555,7 @@ void skr_tex_set_depth(skr_tex_t *tex, skr_tex_t *depth) {
 /////////////////////////////////////////// 
 
 void skr_tex_settings(skr_tex_t *tex, skr_tex_address_ address, skr_tex_sample_ sample, int32_t anisotropy) {
-	uint32_t target = tex->type == skr_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
-		: GL_TEXTURE_2D;
-	glBindTexture(target, tex->texture);
+	glBindTexture(tex->gl_target, tex->texture);
 
 	uint32_t mode;
 	switch (address) {
@@ -2552,31 +2570,31 @@ void skr_tex_settings(skr_tex_t *tex, skr_tex_address_ address, skr_tex_sample_ 
 	case skr_tex_sample_linear:     filter = GL_LINEAR;  min_filter = tex->mips == skr_mip_generate ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR; break; // Technically trilinear
 	case skr_tex_sample_point:      filter = GL_NEAREST; min_filter = GL_NEAREST;              break;
 	case skr_tex_sample_anisotropic:filter = GL_LINEAR;  min_filter = tex->mips == skr_mip_generate ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR; break;
-	default: filter = GL_LINEAR;
+	default: filter = GL_LINEAR; min_filter = GL_LINEAR;
 	}
 
-	glTexParameteri(target, GL_TEXTURE_WRAP_S,     mode  );	
-	glTexParameteri(target, GL_TEXTURE_WRAP_T,     mode  );
+	glTexParameteri(tex->gl_target, GL_TEXTURE_WRAP_S,     mode  );	
+	glTexParameteri(tex->gl_target, GL_TEXTURE_WRAP_T,     mode  );
 	if (tex->type == skr_tex_type_cubemap) {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, mode);
 	}
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter);
-	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filter);
+	glTexParameteri(tex->gl_target, GL_TEXTURE_MIN_FILTER, min_filter);
+	glTexParameteri(tex->gl_target, GL_TEXTURE_MAG_FILTER, filter);
 #ifdef _WIN32
-	glTexParameterf(target, GL_TEXTURE_MAX_ANISOTROPY, sample == skr_tex_sample_anisotropic ? anisotropy : 1.0f);
+	glTexParameterf(tex->gl_target, GL_TEXTURE_MAX_ANISOTROPY, sample == skr_tex_sample_anisotropic ? anisotropy : 1.0f);
 #endif
 }
 
 /////////////////////////////////////////// 
 
 void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
-	uint32_t target = tex->type == skr_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
-		: GL_TEXTURE_2D;
 	tex->width       = width;
 	tex->height      = height;
 	tex->array_count = data_frame_count;
-	glBindTexture(target, tex->texture);
+	if (tex->type != skr_tex_type_cubemap && tex->array_count > 1)
+		tex->gl_target = GL_TEXTURE_2D_ARRAY;
+
+	glBindTexture(tex->gl_target, tex->texture);
 
 	uint32_t format = (uint32_t)skr_tex_fmt_to_native(tex->format);
 	uint32_t type   = skr_tex_fmt_to_gl_type         (tex->format);
@@ -2592,30 +2610,32 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 	}
 	if (tex->mips == skr_mip_generate)
-		glGenerateMipmap(target);
+		glGenerateMipmap(tex->gl_target);
 
 	if (tex->type == skr_tex_type_rendertarget) {
-		glBindFramebuffer     (GL_FRAMEBUFFER, tex->framebuffer);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex->texture, 0); 
-		glBindFramebuffer     (GL_FRAMEBUFFER, gl_current_framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, tex->framebuffer);
+		if (tex->array_count != 1) {
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->texture, 0);
+		} else {
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->gl_target, tex->texture, 0);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
 }
 
 /////////////////////////////////////////// 
 
 void skr_tex_bind(const skr_tex_t *texture, skr_bind_t bind) {
-	uint32_t target = texture == nullptr || texture->type != skr_tex_type_cubemap 
-		? GL_TEXTURE_2D
-		: GL_TEXTURE_CUBE_MAP;
-
 	// Added this in to fix textures initially? Removed it after I switched to
 	// explicit binding locations in GLSL. This may need further attention? I
 	// have no idea what's happening here!
 	//if (texture)
 	//	glUniform1i(bind.slot, bind.slot);
 
-	glActiveTexture(GL_TEXTURE0 + bind.slot);
-	glBindTexture  (target, texture == nullptr ? 0 : texture->texture);
+	if (texture) {
+		glActiveTexture(GL_TEXTURE0 + bind.slot);
+		glBindTexture  (texture->gl_target, texture->texture);
+	}
 }
 
 /////////////////////////////////////////// 
