@@ -168,7 +168,13 @@ bool openxr_init(const char *app_name) {
 #ifdef XR_USE_GRAPHICS_API_D3D11
 	luid = (void *)&requirement.adapterLuid;
 #endif
-	skr_callback_log(log_diag);
+	skr_callback_log([](skr_log_ level, const char *text) {
+		switch (level) {
+		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
+		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
+		case skr_log_critical: log_errf("sk_gpu: %s", text); break;
+		}
+	});
 	if (!skr_init(app_name, nullptr, luid))
 		return false;
 
@@ -177,14 +183,14 @@ bool openxr_init(const char *app_name) {
 	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
 	skr_platform_data_t platform = skr_get_platform_data();
 #if defined(XR_USE_GRAPHICS_API_OPENGL)
-	gfx_binding.hDC   = (HDC  )platform.gl_hdc;
-	gfx_binding.hGLRC = (HGLRC)platform.gl_hrc;
+	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
+	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-	gfx_binding.egl_display = platform.egl_display;
-	gfx_binding.egl_surface = platform.egl_surface;
-	gfx_binding.egl_context = platform.egl_context;
+	gfx_binding.egl_display = platform._egl_display;
+	gfx_binding.egl_surface = platform._egl_surface;
+	gfx_binding.egl_context = platform._egl_context;
 #elif defined(XR_USE_GRAPHICS_API_D3D11)
-	gfx_binding.device = (ID3D11Device*)platform.d3d11_device;
+	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
 #endif
 	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
 	sessionInfo.next     = &gfx_binding;

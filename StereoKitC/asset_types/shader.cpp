@@ -64,7 +64,7 @@ shader_t shader_create_mem(void *data, size_t data_size) {
 	if (result != nullptr)
 		return result;
 
-	skr_shader_t shader = skr_shader_create_mem(data, data_size);
+	skr_shader_t shader = skr_shader_create_memory(data, data_size);
 	if (!skr_shader_is_valid(&shader)) {
 		skr_shader_destroy(&shader);
 		return nullptr;

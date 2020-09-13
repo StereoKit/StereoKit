@@ -113,7 +113,13 @@ bool win32_init(const char *app_name) {
 		nullptr);
 	if( !win32_window ) return false;
 
-	skr_callback_log(log_diag);
+	skr_callback_log([](skr_log_ level, const char *text) {
+		switch (level) {
+		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
+		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
+		case skr_log_critical: log_errf("sk_gpu: %s", text); break;
+		}
+	});
 	if (!skr_init(app_name, win32_window, nullptr))
 		return false;
 	win32_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);

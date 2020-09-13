@@ -41,8 +41,8 @@ inline size_t material_param_size(material_param_ type) {
 ///////////////////////////////////////////
 
 void material_create_arg_defaults(material_t material, shader_t shader) {
-	const skr_shader_meta_t        *meta      = shader->shader.meta;
-	const skr_shader_meta_buffer_t *buff_info = meta->global_buffer_id != -1
+	const skr_shader_meta_t   *meta      = shader->shader.meta;
+	const skr_shader_buffer_t *buff_info = meta->global_buffer_id != -1
 		? &meta->buffers[meta->global_buffer_id]
 		: nullptr;
 	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
@@ -177,8 +177,8 @@ void material_set_shader(material_t material, shader_t shader) {
 		// Copy old param values
 		int32_t count = skr_shader_get_var_count(&old_shader->shader);
 		for (int32_t i = 0; i < count; i++) {
-			const skr_shader_meta_var_t *item     = skr_shader_get_var_info(&old_shader->shader, i);
-			const skr_shader_meta_var_t *new_slot = skr_shader_get_var_info(&material->shader->shader, skr_shader_get_var_index_h(&material->shader->shader, item->name_hash));
+			const skr_shader_var_t *item     = skr_shader_get_var_info(&old_shader->shader, i);
+			const skr_shader_var_t *new_slot = skr_shader_get_var_info(&material->shader->shader, skr_shader_get_var_index_h(&material->shader->shader, item->name_hash));
 			if (new_slot != nullptr)
 				memcpy( (uint8_t *)material->args.buffer + new_slot->offset, 
 						(uint8_t *)old_buffer            + item->offset, new_slot->size);
@@ -242,7 +242,7 @@ void material_set_float(material_t material, const char *name, float value) {
 	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 	
-	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
@@ -252,7 +252,7 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
-	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
 }
 
@@ -262,7 +262,7 @@ void material_set_color(material_t material, const char *name, color128 value) {
 	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
-	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
@@ -272,7 +272,7 @@ void material_set_vector(material_t material, const char *name, vec4 value) {
 	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
-	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
@@ -282,7 +282,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 	int32_t i = skr_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
-	const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+	const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
 }
 
@@ -342,7 +342,7 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 	} else {
 		int32_t i = skr_shader_get_var_index_h(&material->shader->shader, id);
 		if (i != -1) {
-			const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+			const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 			memcpy(((uint8_t *)material->args.buffer + info->offset), value, info->size);
 		}
 	}
@@ -367,7 +367,7 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 	} else {
 		int32_t i = skr_shader_get_var_index_h(&material->shader->shader, id);
 		if (i != -1) {
-			const skr_shader_meta_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
+			const skr_shader_var_t *info = skr_shader_get_var_info(&material->shader->shader, i);
 			memcpy(out_value, ((uint8_t *)material->args.buffer + info->offset), info->size);
 			return true;
 		}
@@ -378,7 +378,7 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 ///////////////////////////////////////////
 
 void material_get_param_info(material_t material, int index, char **out_name, material_param_ *out_type) {
-	skr_shader_meta_var_t *info = &material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].vars[index];
+	skr_shader_var_t *info = &material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].vars[index];
 	if (out_type != nullptr) *out_type = (material_param_)0; //TODO: implement this // info->type;
 	if (out_name != nullptr) *out_name = info->name;
 	log_warn("material_get_param_info doesn't implement type yet.");
