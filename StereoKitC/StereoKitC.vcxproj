@@ -132,7 +132,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniz.cpp" />
     <ClCompile Include="libraries\ofbx.cpp" />
-    <ClCompile Include="libraries\sk_gpu_inc.cpp" />
+    <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="math.cpp" />
@@ -182,7 +182,6 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\miniz.h" />
     <ClInclude Include="libraries\ofbx.h" />
     <ClInclude Include="libraries\sk_gpu.h" />
-    <ClInclude Include="libraries\sk_gpu_inc.h" />
     <ClInclude Include="libraries\sort_list.h" />
     <ClInclude Include="libraries\stb_ds.h" />
     <ClInclude Include="libraries\stb_image.h" />

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../stereokit.h"
-#include "../libraries/sk_gpu_inc.h"
+#include "../libraries/sk_gpu.h"
 #include "../libraries/array.h"
 #include <directxmath.h>
 

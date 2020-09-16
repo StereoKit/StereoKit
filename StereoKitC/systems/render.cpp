@@ -1,6 +1,6 @@
 #include "render.h"
 #include "render_sort.h"
-#include "../libraries/sk_gpu_inc.h"
+#include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../math.h"
 #include "../spherical_harmonics.h"

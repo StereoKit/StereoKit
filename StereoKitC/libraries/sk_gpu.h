@@ -1,9 +1,34 @@
+/*Licensed under MIT or Public Domain. See bottom of file for details.
+	Author - Nick Klingensmith - @koujaku - https://twitter.com/koujaku
+	Repository - https://github.com/maluoi/sk_gpu
+
+sk_gpu.h
+
+	Docs are not yet here as the project is still somewhat in flight, but check
+	out some of the example projects in the repository for reference! They're 
+	pretty clean as is :)
+
+	Note: this is currently an amalgamated file, so it's best to modify the 
+	individual files in the repository if making modifications.
+*/
+
 #pragma once
 
-//#define SKR_VULKAN
-//#define SKR_DIRECT3D12
-//#define SKR_DIRECT3D11
-//#define SKR_OPENGL
+// You can force sk_gpu to use a specific API, but if you don't, it'll pick
+// an API appropriate for the platform it's being compiled for!
+//
+//#define SKR_FORCE_DIRECT3D11
+//#define SKR_FORCE_OPENGL
+
+#if   defined( SKR_FORCE_DIRECT3D11 )
+#define SKR_DIRECT3D11
+#elif defined( SKR_FORCE_OPENGL )
+#define SKR_OPENGL
+#elif defined( _WIN32 )
+#define SKR_DIRECT3D11
+#else
+#define SKR_OPENGL
+#endif
 
 #include <stdint.h>
 #include <stddef.h>
@@ -240,7 +265,6 @@ typedef struct skr_platform_data_t {
 
 #elif defined(SKR_OPENGL)
 
-
 #define SKR_MANUAL_SRGB
 
 ///////////////////////////////////////////
@@ -429,8 +453,8 @@ void               skr_shader_meta_release     (skr_shader_meta_t *meta);
 ///////////////////////////////////////////
 
 #ifdef SKR_IMPL
-#ifdef SKR_DIRECT3D11
 
+#ifdef SKR_DIRECT3D11
 ///////////////////////////////////////////
 // Direct3D11 Implementation             //
 ///////////////////////////////////////////
@@ -1469,8 +1493,8 @@ const char *skr_semantic_to_d3d(skr_el_semantic_ semantic) {
 }
 
 #endif
-#ifdef SKR_OPENGL
 
+#ifdef SKR_OPENGL
 ///////////////////////////////////////////
 // OpenGL Implementation                 //
 ///////////////////////////////////////////
@@ -1496,8 +1520,9 @@ EGLConfig  egl_config;
 #elif _WIN32
 #pragma comment(lib, "opengl32.lib")
 
-#define EMSCRIPTEN_KEEPALIVE
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 
 HWND  gl_hwnd;
@@ -1702,68 +1727,68 @@ HGLRC gl_hrc;
 typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, int32_t severity, int32_t length, const char* message, const void* userParam);
 
 #define GL_API \
-    GLE(void,     glLinkProgram,             uint32_t program) \
-	GLE(void,     glClearColor,              float r, float g, float b, float a) \
-	GLE(void,     glClear,                   uint32_t mask) \
-	GLE(void,     glEnable,                  uint32_t cap) \
-	GLE(void,     glDisable,                 uint32_t cap) \
-	GLE(void,     glPolygonMode,             uint32_t face, uint32_t mode) \
-	GLE(uint32_t, glGetError,                ) \
-    GLE(void,     glGetProgramiv,            uint32_t program, uint32_t pname, int32_t *params) \
-    GLE(uint32_t, glCreateShader,            uint32_t type) \
-    GLE(void,     glShaderSource,            uint32_t shader, int32_t count, const char* const *string, const int32_t *length) \
-    GLE(void,     glCompileShader,           uint32_t shader) \
-    GLE(void,     glGetShaderiv,             uint32_t shader, uint32_t pname, int32_t *params) \
-	GLE(void,     glGetIntegerv,             uint32_t pname, int32_t *params) \
-    GLE(void,     glGetShaderInfoLog,        uint32_t shader, int32_t bufSize, int32_t *length, char *infoLog) \
-	GLE(void,     glGetProgramInfoLog,       uint32_t program, int32_t maxLength, int32_t *length, char *infoLog) \
-    GLE(void,     glDeleteShader,            uint32_t shader) \
-    GLE(uint32_t, glCreateProgram,           void) \
-    GLE(void,     glAttachShader,            uint32_t program, uint32_t shader) \
-    GLE(void,     glDetachShader,            uint32_t program, uint32_t shader) \
-    GLE(void,     glUseProgram,              uint32_t program) \
-    GLE(uint32_t, glGetUniformBlockIndex,    uint32_t program, const char *uniformBlockName) \
-    GLE(void,     glDeleteProgram,           uint32_t program) \
-    GLE(void,     glGenVertexArrays,         int32_t n, uint32_t *arrays) \
-    GLE(void,     glBindVertexArray,         uint32_t array) \
-    GLE(void,     glBufferData,              uint32_t target, int32_t size, const void *data, uint32_t usage) \
-    GLE(void,     glGenBuffers,              int32_t n, uint32_t *buffers) \
-    GLE(void,     glBindBuffer,              uint32_t target, uint32_t buffer) \
-    GLE(void,     glDeleteBuffers,           int32_t n, const uint32_t *buffers) \
-	GLE(void,     glGenTextures,             int32_t n, uint32_t *textures) \
-	GLE(void,     glGenFramebuffers,         int32_t n, uint32_t *ids) \
-	GLE(void,     glDeleteFramebuffers,      int32_t n, uint32_t *ids) \
-	GLE(void,     glBindFramebuffer,         uint32_t target, uint32_t framebuffer) \
-	GLE(void,     glFramebufferTexture,      uint32_t target, uint32_t attachment, uint32_t texture, int32_t level) \
-	GLE(void,     glFramebufferTexture2D,    uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int32_t level) \
-	GLE(void,     glFramebufferTextureLayer, uint32_t target, uint32_t attachment, uint32_t texture, int32_t level, int32_t layer) \
-	GLE(void,     glDeleteTextures,          int32_t n, const uint32_t *textures) \
-	GLE(void,     glBindTexture,             uint32_t target, uint32_t texture) \
-    GLE(void,     glTexParameteri,           uint32_t target, uint32_t pname, int32_t param) \
-	GLE(void,     glGetInternalformativ,     uint32_t target, uint32_t internalformat, uint32_t pname, int32_t bufSize, int32_t *params)\
-	GLE(void,     glGetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_t pname, int32_t *params) \
-	GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float param) \
-	GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
-    GLE(void,     glActiveTexture,           uint32_t texture) \
-	GLE(void,     glGenerateMipmap,          uint32_t target) \
-    GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
-    GLE(int32_t,  glGetUniformLocation,      uint32_t program, const char *name) \
-    GLE(void,     glUniform4f,               int32_t location, float v0, float v1, float v2, float v3) \
-    GLE(void,     glUniform4fv,              int32_t location, int32_t count, const float *value) \
-    GLE(void,     glDeleteVertexArrays,      int32_t n, const uint32_t *arrays) \
-    GLE(void,     glEnableVertexAttribArray, uint32_t index) \
-    GLE(void,     glVertexAttribPointer,     uint32_t index, int32_t size, uint32_t type, uint8_t normalized, int32_t stride, const void *pointer) \
-    GLE(void,     glUniform1i,               int32_t location, int32_t v0) \
-	GLE(void,     glDrawElementsInstanced,   uint32_t mode, int32_t count, uint32_t type, const void *indices, int32_t primcount) \
-	GLE(void,     glDrawElements,            uint32_t mode, int32_t count, uint32_t type, const void *indices) \
-	GLE(void,     glDebugMessageCallback,    GLDEBUGPROC callback, const void *userParam) \
-	GLE(void,     glBindBufferBase,          uint32_t target, uint32_t index, uint32_t buffer) \
-	GLE(void,     glBufferSubData,           uint32_t target, int64_t offset, int32_t size, const void *data) \
-	GLE(void,     glViewport,                int32_t x, int32_t y, int32_t width, int32_t height) \
-	GLE(void,     glCullFace,                uint32_t mode) \
-	GLE(void,     glBlendFunc,               uint32_t sfactor, uint32_t dfactor) \
-	GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint32_t srcAlpha, uint32_t dstAlpha) \
-	GLE(const char *, glGetString,           uint32_t name)
+GLE(void,     glLinkProgram,             uint32_t program) \
+GLE(void,     glClearColor,              float r, float g, float b, float a) \
+GLE(void,     glClear,                   uint32_t mask) \
+GLE(void,     glEnable,                  uint32_t cap) \
+GLE(void,     glDisable,                 uint32_t cap) \
+GLE(void,     glPolygonMode,             uint32_t face, uint32_t mode) \
+GLE(uint32_t, glGetError,                ) \
+GLE(void,     glGetProgramiv,            uint32_t program, uint32_t pname, int32_t *params) \
+GLE(uint32_t, glCreateShader,            uint32_t type) \
+GLE(void,     glShaderSource,            uint32_t shader, int32_t count, const char* const *string, const int32_t *length) \
+GLE(void,     glCompileShader,           uint32_t shader) \
+GLE(void,     glGetShaderiv,             uint32_t shader, uint32_t pname, int32_t *params) \
+GLE(void,     glGetIntegerv,             uint32_t pname, int32_t *params) \
+GLE(void,     glGetShaderInfoLog,        uint32_t shader, int32_t bufSize, int32_t *length, char *infoLog) \
+GLE(void,     glGetProgramInfoLog,       uint32_t program, int32_t maxLength, int32_t *length, char *infoLog) \
+GLE(void,     glDeleteShader,            uint32_t shader) \
+GLE(uint32_t, glCreateProgram,           void) \
+GLE(void,     glAttachShader,            uint32_t program, uint32_t shader) \
+GLE(void,     glDetachShader,            uint32_t program, uint32_t shader) \
+GLE(void,     glUseProgram,              uint32_t program) \
+GLE(uint32_t, glGetUniformBlockIndex,    uint32_t program, const char *uniformBlockName) \
+GLE(void,     glDeleteProgram,           uint32_t program) \
+GLE(void,     glGenVertexArrays,         int32_t n, uint32_t *arrays) \
+GLE(void,     glBindVertexArray,         uint32_t array) \
+GLE(void,     glBufferData,              uint32_t target, int32_t size, const void *data, uint32_t usage) \
+GLE(void,     glGenBuffers,              int32_t n, uint32_t *buffers) \
+GLE(void,     glBindBuffer,              uint32_t target, uint32_t buffer) \
+GLE(void,     glDeleteBuffers,           int32_t n, const uint32_t *buffers) \
+GLE(void,     glGenTextures,             int32_t n, uint32_t *textures) \
+GLE(void,     glGenFramebuffers,         int32_t n, uint32_t *ids) \
+GLE(void,     glDeleteFramebuffers,      int32_t n, uint32_t *ids) \
+GLE(void,     glBindFramebuffer,         uint32_t target, uint32_t framebuffer) \
+GLE(void,     glFramebufferTexture,      uint32_t target, uint32_t attachment, uint32_t texture, int32_t level) \
+GLE(void,     glFramebufferTexture2D,    uint32_t target, uint32_t attachment, uint32_t textarget, uint32_t texture, int32_t level) \
+GLE(void,     glFramebufferTextureLayer, uint32_t target, uint32_t attachment, uint32_t texture, int32_t level, int32_t layer) \
+GLE(void,     glDeleteTextures,          int32_t n, const uint32_t *textures) \
+GLE(void,     glBindTexture,             uint32_t target, uint32_t texture) \
+GLE(void,     glTexParameteri,           uint32_t target, uint32_t pname, int32_t param) \
+GLE(void,     glGetInternalformativ,     uint32_t target, uint32_t internalformat, uint32_t pname, int32_t bufSize, int32_t *params)\
+GLE(void,     glGetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_t pname, int32_t *params) \
+GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float param) \
+GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
+GLE(void,     glActiveTexture,           uint32_t texture) \
+GLE(void,     glGenerateMipmap,          uint32_t target) \
+GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
+GLE(int32_t,  glGetUniformLocation,      uint32_t program, const char *name) \
+GLE(void,     glUniform4f,               int32_t location, float v0, float v1, float v2, float v3) \
+GLE(void,     glUniform4fv,              int32_t location, int32_t count, const float *value) \
+GLE(void,     glDeleteVertexArrays,      int32_t n, const uint32_t *arrays) \
+GLE(void,     glEnableVertexAttribArray, uint32_t index) \
+GLE(void,     glVertexAttribPointer,     uint32_t index, int32_t size, uint32_t type, uint8_t normalized, int32_t stride, const void *pointer) \
+GLE(void,     glUniform1i,               int32_t location, int32_t v0) \
+GLE(void,     glDrawElementsInstanced,   uint32_t mode, int32_t count, uint32_t type, const void *indices, int32_t primcount) \
+GLE(void,     glDrawElements,            uint32_t mode, int32_t count, uint32_t type, const void *indices) \
+GLE(void,     glDebugMessageCallback,    GLDEBUGPROC callback, const void *userParam) \
+GLE(void,     glBindBufferBase,          uint32_t target, uint32_t index, uint32_t buffer) \
+GLE(void,     glBufferSubData,           uint32_t target, int64_t offset, int32_t size, const void *data) \
+GLE(void,     glViewport,                int32_t x, int32_t y, int32_t width, int32_t height) \
+GLE(void,     glCullFace,                uint32_t mode) \
+GLE(void,     glBlendFunc,               uint32_t sfactor, uint32_t dfactor) \
+GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint32_t srcAlpha, uint32_t dstAlpha) \
+GLE(const char *, glGetString,           uint32_t name)
 
 #define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
 GL_API
@@ -2542,6 +2567,8 @@ void main() {
 /////////////////////////////////////////// 
 
 void skr_swapchain_resize(skr_swapchain_t *swapchain, int32_t width, int32_t height) {
+	swapchain->width  = width;
+	swapchain->height = height;
 	gl_width  = width;
 	gl_height = height;
 }
@@ -3184,3 +3211,44 @@ const skr_shader_var_t *skr_shader_get_var_info(const skr_shader_t *shader, int3
 	return &buffer->vars[var_id];
 }
 #endif // SKR_IMPL
+/*
+------------------------------------------------------------------------------
+This software is available under 2 licenses -- choose whichever you prefer.
+------------------------------------------------------------------------------
+ALTERNATIVE A - MIT License
+Copyright (c) 2020 Nick Klingensmith
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+------------------------------------------------------------------------------
+ALTERNATIVE B - Public Domain (www.unlicense.org)
+This is free and unencumbered software released into the public domain.
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+software, either in source code form or as a compiled binary, for any purpose,
+commercial or non-commercial, and by any means.
+In jurisdictions that recognize copyright laws, the author or authors of this
+software dedicate any and all copyright interest in the software to the public
+domain. We make this dedication for the benefit of the public at large and to
+the detriment of our heirs and successors. We intend this dedication to be an
+overt act of relinquishment in perpetuity of all present and future rights to
+this software under copyright law.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+------------------------------------------------------------------------------
+*/

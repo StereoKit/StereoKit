@@ -143,7 +143,7 @@
       <Filter>systems\hand</Filter>
     </ClCompile>
     <ClCompile Include="systems\render_sort.cpp" />
-    <ClCompile Include="libraries\sk_gpu_inc.cpp">
+    <ClCompile Include="libraries\sk_gpu.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
   </ItemGroup>
@@ -314,9 +314,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\sk_gpu.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\sk_gpu_inc.h">
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h">
