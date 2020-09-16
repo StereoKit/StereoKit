@@ -6,6 +6,7 @@
 //#define SKR_OPENGL
 
 #include <stdint.h>
+#include <stddef.h>
 
 ///////////////////////////////////////////
 
@@ -240,6 +241,8 @@ typedef struct skr_platform_data_t {
 #elif defined(SKR_OPENGL)
 
 
+#define SKR_MANUAL_SRGB
+
 ///////////////////////////////////////////
 
 typedef struct skr_buffer_t {
@@ -290,7 +293,16 @@ typedef struct skr_tex_t {
 typedef struct skr_swapchain_t {
 	int32_t  width;
 	int32_t  height;
-	uint32_t _framebuffer;
+
+#if defined(__EMSCRIPTEN__) && defined(SKR_MANUAL_SRGB)
+	skr_tex_t      _surface;
+	skr_tex_t      _surface_depth;
+	skr_shader_t   _convert_shader;
+	skr_pipeline_t _convert_pipe;
+	skr_buffer_t   _quad_vbuff;
+	skr_buffer_t   _quad_ibuff;
+	skr_mesh_t     _quad_mesh;
+#endif
 } skr_swapchain_t;
 
 typedef struct skr_platform_data_t {
@@ -382,6 +394,7 @@ typedef enum skr_shader_lang_ {
 	skr_shader_lang_hlsl,
 	skr_shader_lang_spirv,
 	skr_shader_lang_glsl,
+	skr_shader_lang_glsl_web,
 } skr_shader_lang_;
 
 typedef struct skr_shader_file_stage_t {
@@ -1464,6 +1477,7 @@ const char *skr_semantic_to_d3d(skr_el_semantic_ semantic) {
 
 #include <malloc.h>
 #include <stdio.h>
+#include <string.h>
 
 ///////////////////////////////////////////
 
@@ -1514,9 +1528,8 @@ HGLRC gl_hrc;
 #define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
 #define WGL_CONTEXT_FLAGS_ARB             0x2094
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
-#define GL_FRAMEBUFFER_SRGB               0x8DB9
-#define GL_VIEWPORT                       0x0BA2
 
+#define GL_BLEND 0x0BE2
 #define GL_ZERO 0
 #define GL_ONE  1
 #define GL_SRC_COLOR                0x0300
@@ -1532,6 +1545,9 @@ HGLRC gl_hrc;
 #define GL_CONSTANT_ALPHA           0x8003
 #define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 
+#define GL_INVALID_INDEX 0xFFFFFFFFu
+#define GL_FRAMEBUFFER_SRGB 0x8DB9
+#define GL_VIEWPORT         0x0BA2
 #define GL_DEPTH_BUFFER_BIT 0x00000100
 #define GL_COLOR_BUFFER_BIT 0x00004000
 #define GL_ARRAY_BUFFER 0x8892
@@ -1540,8 +1556,6 @@ HGLRC gl_hrc;
 #define GL_STATIC_DRAW 0x88E4
 #define GL_DYNAMIC_DRAW 0x88E8
 #define GL_TRIANGLES 0x0004
-#define GL_DEBUG_OUTPUT 0x92E0
-#define GL_DEBUG_OUTPUT_SYNCHRONOUS 0x8242
 #define GL_VERSION 0x1F02
 #define GL_CULL_FACE 0x0B44
 #define GL_BACK 0x0405
@@ -1590,13 +1604,10 @@ HGLRC gl_hrc;
 #define GL_DEPTH_ATTACHMENT 0x8D00
 #define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
 
-#define GL_BLEND 0x0BE2
-
 #define GL_RED 0x1903
 #define GL_RGBA 0x1908
 #define GL_DEPTH_COMPONENT 0x1902
 #define GL_DEPTH_STENCIL 0x84F9
-
 #define GL_R8_SNORM 0x8F94
 #define GL_RG8_SNORM 0x8F95
 #define GL_RGB8_SNORM 0x8F96
@@ -1646,7 +1657,6 @@ HGLRC gl_hrc;
 #define GL_DEPTH_COMPONENT16 0x81A5
 #define GL_DEPTH_COMPONENT32F 0x8CAC
 #define GL_DEPTH24_STENCIL8 0x88F0
-
 #define GL_BYTE 0x1400
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_SHORT 0x1402
@@ -1662,12 +1672,12 @@ HGLRC gl_hrc;
 #define GL_LINK_STATUS 0x8B82
 #define GL_INFO_LOG_LENGTH 0x8B84
 
+#define GL_DEBUG_OUTPUT                0x92E0
+#define GL_DEBUG_OUTPUT_SYNCHRONOUS    0x8242
 #define GL_DEBUG_SEVERITY_NOTIFICATION 0x826B
-#define GL_DEBUG_SEVERITY_HIGH 0x9146
-#define GL_DEBUG_SEVERITY_MEDIUM 0x9147
-#define GL_DEBUG_SEVERITY_LOW 0x9148
-
-//#endif
+#define GL_DEBUG_SEVERITY_HIGH         0x9146
+#define GL_DEBUG_SEVERITY_MEDIUM       0x9147
+#define GL_DEBUG_SEVERITY_LOW          0x9148
 
 #if defined(_WIN32) || defined(__ANDROID__)
 
@@ -1712,6 +1722,7 @@ typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, 
     GLE(void,     glAttachShader,            uint32_t program, uint32_t shader) \
     GLE(void,     glDetachShader,            uint32_t program, uint32_t shader) \
     GLE(void,     glUseProgram,              uint32_t program) \
+    GLE(uint32_t, glGetUniformBlockIndex,    uint32_t program, const char *uniformBlockName) \
     GLE(void,     glDeleteProgram,           uint32_t program) \
     GLE(void,     glGenVertexArrays,         int32_t n, uint32_t *arrays) \
     GLE(void,     glBindVertexArray,         uint32_t array) \
@@ -1918,13 +1929,16 @@ int32_t gl_init_win32(void *app_hwnd) {
 ///////////////////////////////////////////
 
 int32_t gl_init_emscripten() {
+	// Some reference code:
+	// https://github.com/emscripten-core/emscripten/blob/master/tests/glbook/Common/esUtil.c
+	// https://github.com/emscripten-core/emscripten/tree/master/tests/minimal_webgl
 #ifdef __EMSCRIPTEN__
 	EmscriptenWebGLContextAttributes attrs;
 	emscripten_webgl_init_context_attributes(&attrs);
-	attrs.alpha = true;
-	attrs.depth = true;
+	attrs.alpha                     = false;
+	attrs.depth                     = true;
 	attrs.enableExtensionsByDefault = true;
-	attrs.majorVersion = 2;
+	attrs.majorVersion              = 2;
 	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("canvas", &attrs);
 	emscripten_webgl_make_context_current(ctx);
 #endif // __EMSCRIPTEN__
@@ -1993,12 +2007,14 @@ int32_t skr_init(const char *app_name, void *app_hwnd, void *adapter_id) {
 		return result;
 
 	// Load OpenGL function pointers
+#ifndef __EMSCRIPTEN__
 	gl_load_extensions();
+#endif
 
 	skr_log(skr_log_info, "Using OpenGL");
-	skr_log(skr_log_info, glGetString(GL_VERSION));
+	skr_log(skr_log_info, (char*)glGetString(GL_VERSION));
 
-#if _DEBUG
+#if _DEBUG && !defined(__EMSCRIPTEN__)
 	skr_log(skr_log_info, "Debug info enabled.");
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
@@ -2012,6 +2028,11 @@ int32_t skr_init(const char *app_name, void *app_hwnd, void *adapter_id) {
 		}
 	}, nullptr);
 #endif // _DEBUG
+
+	int32_t viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	gl_width  = viewport[2];
+	gl_height = viewport[3];
 	
 	// Some default behavior
 	glEnable   (GL_DEPTH_TEST);  
@@ -2059,10 +2080,14 @@ void skr_tex_target_bind(skr_tex_t *render_target, bool clear, const float *clea
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
+#ifndef __EMSCRIPTEN__
 		glDisable(GL_FRAMEBUFFER_SRGB); 
+#endif
 	} else {
 		glViewport(0, 0, gl_width, gl_height);
+#ifndef __EMSCRIPTEN__
 		glEnable(GL_FRAMEBUFFER_SRGB); 
+#endif
 	}
 
 	if (clear) {
@@ -2225,27 +2250,27 @@ skr_shader_stage_t skr_shader_stage_create(const void *file_data, size_t shader_
 	}
 
 	// Convert the prefix if it doesn't match the GL version we're using
+#if _WIN32
 	const char   *prefix_gl      = "#version 450";
+#elif __ANDROID__
+	const char   *prefix_gl      = "#version 320 es";
+#elif __EMSCRIPTEN__
+	const char   *prefix_gl      = "#version 300 es";
+#endif
 	const size_t  prefix_gl_size = strlen(prefix_gl);
-	const char   *prefix_es      = "#version 320 es";
-	const size_t  prefix_es_size = strlen(prefix_es);
 	char         *final_data = (char*)file_chars;
 	bool          needs_free = false;
-#if __ANDROID__
-	if (shader_size >= prefix_gl_size && memcmp(prefix_gl, file_chars, prefix_gl_size) == 0) {
-		final_data = (char*)malloc(sizeof(char) * ((shader_size-prefix_gl_size)+prefix_es_size));
-		memcpy(final_data, prefix_es, prefix_es_size);
-		memcpy(&final_data[prefix_es_size], &file_chars[prefix_gl_size], shader_size - prefix_gl_size);
-		needs_free = true;
-	}
-#else
-	if (shader_size >= prefix_es_size && memcmp(prefix_es, file_chars, prefix_es_size) == 0) {
-		final_data = (char*)malloc(sizeof(char) * ((shader_size-prefix_es_size)+prefix_gl_size));
+
+	if (shader_size >= prefix_gl_size && memcmp(prefix_gl, file_chars, prefix_gl_size) != 0) {
+		const char *end = file_chars;
+		while (*end != '\n' && *end != '\r' && *end != '\0') end++;
+		size_t version_size = end - file_chars;
+
+		final_data = (char*)malloc(sizeof(char) * ((shader_size-version_size)+prefix_gl_size));
 		memcpy(final_data, prefix_gl, prefix_gl_size);
-		memcpy(&final_data[prefix_gl_size], &file_chars[prefix_es_size], shader_size - prefix_es_size);
+		memcpy(&final_data[prefix_gl_size], &file_chars[version_size], shader_size - version_size);
 		needs_free = true;
 	}
-#endif
 
 	// create and compile the vertex shader
 	result._shader = glCreateShader(gl_type);
@@ -2311,6 +2336,27 @@ skr_shader_t skr_shader_create_manual(skr_shader_meta_t *meta, skr_shader_stage_
 
 		glDeleteProgram(result._program);
 		result._program = 0;
+	} else {
+#if __EMSCRIPTEN__
+		for (size_t i = 0; i < meta->buffer_count; i++) {
+			char t_name[64];
+			sprintf(t_name, "type_%s", meta->buffers[i].name);
+			uint32_t slot = glGetUniformBlockIndex(result._program, t_name);
+			glUniformBlockBinding(result._program, slot, slot);
+
+			if (slot == GL_INVALID_INDEX) {
+				skr_log(skr_log_warning, "Couldn't find uinform block index for:");
+				skr_log(skr_log_warning, meta->buffers[i].name);
+			} else {
+				meta->buffers[i].bind.slot = (uint16_t)slot;
+			}
+		}
+		glUseProgram(result._program);
+		for (size_t i = 0; i < meta->texture_count; i++) {
+			uint32_t loc = glGetUniformLocation(result._program, meta->textures[i].name);
+			glUniform1i(loc , meta->textures[i].bind.slot);
+		}
+#endif
 	}
 
 	return result;
@@ -2375,7 +2421,7 @@ void skr_pipeline_bind(const skr_pipeline_t *pipeline) {
 	} break;
 	}
 	
-#ifndef __ANDROID__
+#ifdef _WIN32
 	if (pipeline->wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	} else {
@@ -2432,6 +2478,64 @@ skr_swapchain_t skr_swapchain_create(skr_tex_fmt_ format, skr_tex_fmt_ depth_for
 	result.width  = viewport[2];
 	result.height = viewport[3];
 
+#if defined(__EMSCRIPTEN__) && defined(SKR_MANUAL_SRGB)
+	const char *vs = R"_(#version 300 es
+layout(location = 0) in vec4 in_var_SV_POSITION;
+layout(location = 1) in vec3 in_var_NORMAL;
+layout(location = 2) in vec2 in_var_TEXCOORD0;
+layout(location = 3) in vec4 in_var_COLOR;
+
+out vec2 fs_var_TEXCOORD0;
+
+void main() {
+    gl_Position = in_var_SV_POSITION;
+    fs_var_TEXCOORD0 = in_var_TEXCOORD0;
+})_";
+	const char *ps = R"_(#version 300 es
+precision mediump float;
+precision highp int;
+
+uniform highp sampler2D tex;
+
+in highp vec2 fs_var_TEXCOORD0;
+layout(location = 0) out highp vec4 out_var_SV_TARGET;
+
+void main() {
+	vec4 color = texture(tex, fs_var_TEXCOORD0);
+    out_var_SV_TARGET = vec4(pow(color.xyz, vec3(1.0 / 2.2)), color.w);
+})_";
+
+	skr_shader_meta_t *meta = (skr_shader_meta_t *)malloc(sizeof(skr_shader_meta_t));
+	*meta = {};
+	meta->texture_count = 1;
+	meta->textures = (skr_shader_texture_t*)malloc(sizeof(skr_shader_texture_t));
+	meta->textures[0].bind = { 0, skr_stage_pixel };
+	strcpy(meta->textures[0].name, "tex");
+	meta->textures[0].name_hash = skr_hash(meta->textures[0].name);
+
+	skr_shader_stage_t v_stage = skr_shader_stage_create(vs, strlen(vs), skr_stage_vertex);
+	skr_shader_stage_t p_stage = skr_shader_stage_create(ps, strlen(ps), skr_stage_pixel);
+	result._convert_shader = skr_shader_create_manual(meta, v_stage, p_stage);
+	result._convert_pipe   = skr_pipeline_create(&result._convert_shader);
+
+	result._surface = skr_tex_create(skr_tex_type_rendertarget, skr_use_dynamic, skr_tex_fmt_rgba32, skr_mip_none);
+	skr_tex_set_contents(&result._surface, nullptr, 1, gl_width, gl_height);
+
+	result._surface_depth = skr_tex_create(skr_tex_type_depth, skr_use_dynamic, depth_format, skr_mip_none);
+	skr_tex_set_contents(&result._surface_depth, nullptr, 1, gl_width, gl_height);
+	skr_tex_attach_depth(&result._surface, &result._surface_depth);
+
+	skr_vert_t quad_verts[] = { 
+		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
+		{ { 1, 1,0}, {0,0,1}, {1,1}, {255,255,255,255} },
+		{ { 1,-1,0}, {0,0,1}, {1,0}, {255,255,255,255} },
+		{ {-1,-1,0}, {0,0,1}, {0,0}, {255,255,255,255} } };
+	uint32_t quad_inds[] = { 2,1,0, 3,2,0 };
+	result._quad_vbuff = skr_buffer_create(quad_verts, sizeof(quad_verts), skr_buffer_type_vertex, skr_use_static);
+	result._quad_ibuff = skr_buffer_create(quad_inds,  sizeof(quad_inds ), skr_buffer_type_index,  skr_use_static);
+	result._quad_mesh  = skr_mesh_create(&result._quad_vbuff, &result._quad_ibuff);
+#endif
+	
 	return result;
 }
 
@@ -2449,13 +2553,24 @@ void skr_swapchain_present(skr_swapchain_t *swapchain) {
 	SwapBuffers(gl_hdc);
 #elif __ANDROID__
 	eglSwapBuffers(egl_display, egl_surface);
+#elif defined(__EMSCRIPTEN__) && defined(SKR_MANUAL_SRGB)
+	float clear[4] = { 0,0,0,1 };
+	skr_tex_target_bind(nullptr, true, clear);
+	skr_tex_bind      (&swapchain->_surface, {0, skr_stage_pixel});
+	skr_mesh_bind     (&swapchain->_quad_mesh);
+	skr_pipeline_bind (&swapchain->_convert_pipe);
+	skr_draw          (0, 6, 1);
 #endif
 }
 
 /////////////////////////////////////////// 
 
 skr_tex_t *skr_swapchain_get_next(skr_swapchain_t *swapchain) {
+#if defined(__EMSCRIPTEN__) && defined(SKR_MANUAL_SRGB)
+	return &swapchain->_surface;
+#else
 	return nullptr;
+#endif
 }
 
 /////////////////////////////////////////// 
@@ -2486,7 +2601,11 @@ skr_tex_t skr_tex_create_from_existing(void *native_tex, skr_tex_type_ type, skr
 
 		glBindFramebuffer(GL_FRAMEBUFFER, result._framebuffer);
 		if (array_count != 1) {
+#ifndef __EMSCRIPTEN__
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0);
+#else
+			skr_log(skr_log_critical, "sk_gpu doesn't support array textures with WebGL?");
+#endif
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._target, result._texture, 0);
 		}
@@ -2533,7 +2652,11 @@ void skr_tex_attach_depth(skr_tex_t *tex, skr_tex_t *depth) {
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->array_count != 1) {
+#ifndef __EMSCRIPTEN__
 			glFramebufferTexture(GL_FRAMEBUFFER, attach , depth->_texture, 0);
+#else
+			skr_log(skr_log_critical, "sk_gpu doesn't support array textures with WebGL?");
+#endif
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, attach, tex->_target, depth->_texture, 0);
 		}
@@ -2606,7 +2729,11 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 	if (tex->type == skr_tex_type_rendertarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->array_count != 1) {
+#ifndef __EMSCRIPTEN__
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0);
+#else
+			skr_log(skr_log_critical, "sk_gpu doesn't support array textures with WebGL?");
+#endif
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, 0);
 		}
@@ -2774,9 +2901,9 @@ bool skr_read_file(const char *filename, void **out_data, size_t *out_size) {
 ///////////////////////////////////////////
 
 uint64_t skr_hash(const char *string) {
-	uint64_t hash = 14695981039346656037;
+	uint64_t hash = 14695981039346656037UL;
 	uint8_t  c;
-	while (c = *string++)
+	while ((c = *string++))
 		hash = (hash ^ c) * 1099511628211;
 	return hash;
 }
@@ -2913,7 +3040,11 @@ skr_shader_stage_t skr_shader_file_create_stage(const skr_shader_file_t *file, s
 #if defined(SKR_DIRECT3D11) || defined(SKR_DIRECT3D12)
 	language = skr_shader_lang_hlsl;
 #elif defined(SKR_OPENGL)
-	language = skr_shader_lang_glsl;
+	#ifdef __EMSCRIPTEN__
+		language = skr_shader_lang_glsl_web;
+	#else
+		language = skr_shader_lang_glsl;
+	#endif
 #elif defined(SKR_VULKAN)
 	language = skr_shader_lang_spirv;
 #endif
