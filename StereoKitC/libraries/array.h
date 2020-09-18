@@ -153,8 +153,8 @@ struct array_t {
 	// Linear search methods
 
 	int64_t     index_of   (const T &item) const                                              { for (size_t i = 0; i < count; i++) if (memcmp(data[i], item, sizeof(T)) == 0) return i; return -1; }
-	template <typename T, typename D>
-	int64_t     index_where(const D T::*key, const D &item) const                             { const size_t offset = (size_t)&((T*)0->*key); for (size_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
+	template <typename _T, typename D>
+	int64_t     index_where(const D _T::*key, const D &item) const                            { const size_t offset = (size_t)&((_T*)0->*key); for (size_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
 	int64_t     index_where(bool (*c)(const T &item, void *user_data), void *user_data) const { for (size_t i=0; i<count; i++) if (c(data[i], user_data)) return i; return -1;}
 	int64_t     index_where(bool (*c)(const T &item)) const                                   { for (size_t i=0; i<count; i++) if (c(data[i]))            return i; return -1;}
 
@@ -164,9 +164,9 @@ struct array_t {
 	int64_t binary_search(const T &item) const;
 
 	// Extra template parameters mean this needs completely defined right here
-	template <typename T, typename D>
-	int64_t binary_search(const D T::*key, const D &item) const {
-		array_view_t<D> view = array_view_t<D>{data, count, sizeof(T), (size_t)&((T*)nullptr->*key)};
+	template <typename _T, typename D>
+	int64_t binary_search(const D _T::*key, const D &item) const {
+		array_view_t<D> view = array_view_t<D>{data, count, sizeof(_T), (size_t)&((_T*)nullptr->*key)};
 		int64_t l = 0, r = view.count - 1;
 		while (l <= r) {
 			int64_t mid = (l+r) / 2;
@@ -180,22 +180,22 @@ struct array_t {
 	//////////////////////////////////////
 	// Sort methods
 
-	void sort     (int32_t (*compare)(const T&a, const T&b)) { qsort(data, count, sizeof(T), (_CoreCrtNonSecureSearchSortCompareFunction)compare); }
+	void sort     (int32_t (*compare)(const T&a, const T&b)) { qsort(data, count, sizeof(T), (int (*)(void const*, void const*))compare); }
 	void sort     ()                                         { qsort(data, count, sizeof(T), [](const void *a, const void *b) {T fa = *(T*)a, fb = *(T*)b; return (int32_t)((fa > fb) - (fa < fb));}); }
 	void sort_desc()                                         { qsort(data, count, sizeof(T), [](const void *a, const void *b) {T fa = *(T*)a, fb = *(T*)b; return (int32_t)((fa < fb) - (fa > fb));}); }
 
-	template <typename T, typename D, D T::*key>
+	template <typename _T, typename D, D _T::*key>
 	void sort()  {
-		qsort((uint8_t*)data, count, sizeof(T), [](const void *a, const void *b) { 
-			size_t offset = (size_t)&((T*)0->*key); // would love for a way to constexpr this
+		qsort((uint8_t*)data, count, sizeof(_T), [](const void *a, const void *b) { 
+			size_t offset = (size_t)&((_T*)0->*key); // would love for a way to constexpr this
 			D fa = *(D*)((uint8_t*)a + offset), fb = *(D*)((uint8_t*)b + offset); return (int32_t)((fa > fb) - (fa < fb)); 
 		}); 
 	}
 
-	template <typename T, typename D, D T::*key>
+	template <typename _T, typename D, D _T::*key>
 	void sort_desc()  {
-		qsort((uint8_t*)data, count, sizeof(T), [](const void *a, const void *b) { 
-			size_t offset = (size_t)&((T*)0->*key); // would love for a way to constexpr this
+		qsort((uint8_t*)data, count, sizeof(_T), [](const void *a, const void *b) { 
+			size_t offset = (size_t)&((_T*)0->*key); // would love for a way to constexpr this
 			D fa = *(D*)((uint8_t*)a + offset), fb = *(D*)((uint8_t*)b + offset); return (int32_t)((fa < fb) - (fa > fb)); 
 		}); 
 	}

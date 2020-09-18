@@ -48,7 +48,7 @@ int main() {
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 #endif
 	settings_t settings = {};
-	sprintf_s(settings.assets_folder, assets_folder);
+	snprintf(settings.assets_folder, sizeof(settings.assets_folder), assets_folder);
 	sk_set_settings(settings);
 	log_set_filter(log_diagnostic);
 

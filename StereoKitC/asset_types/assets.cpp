@@ -41,11 +41,11 @@ void *assets_find(uint64_t id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
-	sprintf_s(dest, dest_size, "%s", root_name);
+	snprintf(dest, dest_size, "%s", root_name);
 	uint64_t id    = string_hash(dest);
 	int      count = 1;
 	while (assets_find(dest, type) != nullptr) {
-		sprintf_s(dest, dest_size, "%s%d", root_name, count);
+		snprintf(dest, dest_size, "%s%d", root_name, count);
 		id = string_hash(dest);
 		count += 1;
 	}
@@ -68,7 +68,7 @@ void *assets_allocate(asset_type_ type) {
 	}
 
 	char name[64];
-	sprintf_s(name, "auto/asset_%zu", assets.count);
+	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
@@ -166,7 +166,7 @@ const char *assets_file(const char *file_name) {
 		ch++;
 	}
 
-	sprintf_s(assets_file_buffer, "%s/%s", sk_settings.assets_folder, file_name);
+	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
 }
 

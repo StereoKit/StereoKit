@@ -39,7 +39,7 @@ void sprite_set_id(sprite_t sprite, const char *id) {
 
 material_t sprite_create_material(int index_id) {
 	char id[64];
-	sprintf_s(id, 64, "render/sprite_mat_%d", index_id);
+	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);
 	material_t result = material_create(shader_find(default_id_shader_unlit));
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);

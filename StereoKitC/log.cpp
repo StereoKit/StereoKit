@@ -170,7 +170,7 @@ void log_write(log_ level, const char *text) {
 
 	size_t len       = strlen(tag) + strlen(text) + 10;
 	char  *full_text = (char*)malloc(len * sizeof(char));
-	sprintf_s(full_text, len, "[SK %s] %s\n", tag, text);
+	snprintf(full_text, len, "[SK %s] %s\n", tag, text);
 
 	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
 	printf(colored_text);

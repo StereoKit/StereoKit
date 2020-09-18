@@ -348,7 +348,7 @@ void ui_update() {
 	}
 
 	//char text[80];
-	//sprintf_s(text, "%llu - %llu", skui_hand[handed_right].focused_prev, skui_hand[handed_right].active_prev);
+	//snprintf(text, sizeof(text), "%llu - %llu", skui_hand[handed_right].focused_prev, skui_hand[handed_right].active_prev);
 	//text_add_at(text, matrix_trs(skui_hand[handed_right].finger_world));
 }
 

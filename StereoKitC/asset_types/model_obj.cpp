@@ -98,7 +98,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 	}
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh", filename);
+	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
 	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define STREF_HASH_START 14695981039346656037
+#define STREF_HASH_START 14695981039346656037UL
 
 struct stref_t {
 	const char *start;

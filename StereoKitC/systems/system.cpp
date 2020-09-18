@@ -201,19 +201,19 @@ void systems_shutdown() {
 
 		if (systems[index].func_initialize != nullptr) {
 			float ms = (float)((double)systems[index].profile_start_duration / 1000000.0);
-			sprintf_s(start_time, 24, "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
-		}else sprintf_s(start_time, 24, "          ");
+			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
+		} else snprintf(start_time, sizeof(start_time), "          ");
 
 		if (systems[index].func_update != nullptr) {
 			float ms = (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 1000000.0);
 			// Exception for FramePresent, since it includes vsync time
-			sprintf_s(update_time, 24, "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[index].name, "FramePresent") ? "<~RED>":"", ms);
-		} else sprintf_s(update_time, 24, "        ");
+			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[index].name, "FramePresent") ? "<~RED>":"", ms);
+		} else snprintf(update_time, sizeof(update_time), "        ");
 
 		if (systems[index].func_shutdown != nullptr) {
 			float ms = (float)((double)systems[index].profile_shutdown_duration / 1000000.0);
-			sprintf_s(shutdown_time, 24, "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
-		} else sprintf_s(shutdown_time, 24, "         ");
+			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
+		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
 		
 		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}

@@ -21,7 +21,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh/%d_%s", filename, node_id, m->name);
+	snprintf(id, sizeof(id), "%s/mesh/%d_%s", filename, node_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -109,21 +109,21 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 		char *last2 = strrchr((char *)filename, '\\');
 		char *last  = (char*)maxi((uint64_t)last1, (uint64_t)last2);
 		if (last == nullptr) {
-			sprintf_s(dest, dest_length, "%s", image->uri);
+			snprintf(dest, dest_length, "%s", image->uri);
 		} else {
-			sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+			snprintf(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
 		}
 		return;
 	}
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			sprintf_s(dest, dest_length, "%s/tex/%d", filename, (int)i);
+			snprintf(dest, dest_length, "%s/tex/%d", filename, (int)i);
 			return;
 		}
 	}
 
-	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
+	snprintf(dest, dest_length, "%s/unknown_image", filename);
 }
 
 ///////////////////////////////////////////
@@ -172,7 +172,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	// Check if we've already loaded this material
 	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	sprintf_s(id, 512, "%s/mat/%s", filename, mat_name);
+	snprintf(id, sizeof(id), "%s/mat/%s", filename, mat_name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;

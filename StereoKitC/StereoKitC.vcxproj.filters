@@ -118,9 +118,6 @@
     <ClCompile Include="systems\platform\flatscreen_input.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
-    <ClCompile Include="asset_types\shader_file.cpp">
-      <Filter>asset_types</Filter>
-    </ClCompile>
     <ClCompile Include="asset_types\model_fbx.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
@@ -284,9 +281,6 @@
     </ClInclude>
     <ClInclude Include="systems\platform\flatscreen_input.h">
       <Filter>systems\platform</Filter>
-    </ClInclude>
-    <ClInclude Include="asset_types\shader_file.h">
-      <Filter>asset_types</Filter>
     </ClInclude>
     <ClInclude Include="libraries\miniz.h">
       <Filter>libraries</Filter>

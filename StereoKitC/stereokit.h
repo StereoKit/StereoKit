@@ -10,15 +10,30 @@
 #define SK_VERSION_PATCH 2
 #define SK_VERSION_PRERELEASE 1
 
-#if defined(_DLL)
-#define SK_EXIMPORT dllexport
+#if defined(_DLL) || defined(BUILDING_DLL)
+	#ifdef __GNUC__
+	//#define SK_EXIMPORT __attribute__((dllexport))
+	#define SK_EXIMPORT
+	#else
+	#define SK_EXIMPORT __declspec(dllexport)
+	#endif
 #else
-#define SK_EXIMPORT dllimport
+	#ifdef __GNUC__
+	//#define SK_EXIMPORT __attribute__((dllimport))
+	#define SK_EXIMPORT
+	#else
+	#define SK_EXIMPORT __declspec(dllimport)
+	#endif
+#endif
+
+#ifdef __GNUC__
+#define SK_DECL 
+#else
+#define SK_DECL __declspec
 #endif
 
 #ifdef __cplusplus
-#define SK_API extern "C" __declspec(SK_EXIMPORT)
-#define SK_API_S __declspec(SK_EXIMPORT)
+#define SK_EXTERN extern "C"
 #define sk_default(x) = x
 #define sk_ref(x) x&
 #define sk_ref_arr(x) x*&
@@ -29,14 +44,15 @@ inline enumType  operator& (enumType  a, enumType b)        { return static_cast
 inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return a; } \
 inline enumType  operator~ (const enumType& a)              { return static_cast<enumType>(~static_cast<int>(a)); }
 #else
-#define SK_API __declspec(SK_EXIMPORT)
-#define SK_API_S __declspec(SK_EXIMPORT)
+#define SK_EXTERN
 #define sk_default(x)
 #define sk_ref(x) x*
 #define sk_ref_arr(x) x**
 #define SK_MakeFlag(enumType)
 #endif
 
+#define SK_API SK_EXTERN SK_EXIMPORT
+#define SK_API_S SK_EXTERN SK_EXIMPORT
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 
 #include <stdint.h>
