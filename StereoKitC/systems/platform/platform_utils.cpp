@@ -96,7 +96,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
-	((uint8_t *)out_data)[*out_size] = 0;
+	((uint8_t *)*out_data)[*out_size] = 0;
 
 	return true;
 }
