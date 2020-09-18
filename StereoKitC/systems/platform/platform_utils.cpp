@@ -15,11 +15,13 @@
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #endif
-#if _MSC_VER
+#if _WIN32
 #include "win32.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 namespace sk {
@@ -152,6 +154,16 @@ bool platform_key_down(key_ key) {
 
 void platform_debug_output(const char *text) {
 	OutputDebugStringA(text);
+}
+
+///////////////////////////////////////////
+
+void platform_sleep(int ms) { 
+#ifdef _WIN32
+	Sleep(ms);
+#else
+	usleep(ms * 1000);
+#endif
 }
 
 }

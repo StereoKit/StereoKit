@@ -8,6 +8,7 @@
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
+#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>

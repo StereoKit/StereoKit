@@ -4,6 +4,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../libraries/stb_rect_pack.h"
 #include "../libraries/stb_truetype.h"
+#include "../systems/platform/platform_utils.h"
 
 #include <stdio.h>
 

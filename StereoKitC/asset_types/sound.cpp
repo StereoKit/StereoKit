@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "../asset_types/assets.h"
+#include "../systems/platform/platform_utils.h"
 #include "sound.h"
 
 #define DR_WAV_IMPLEMENTATION

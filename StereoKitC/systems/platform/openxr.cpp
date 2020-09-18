@@ -11,6 +11,7 @@
 #include "../../systems/input.h"
 #include "../../systems/hand/input_hand.h"
 #include "../../asset_types/texture.h"
+#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>

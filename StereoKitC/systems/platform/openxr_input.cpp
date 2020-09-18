@@ -2,6 +2,7 @@
 #include "openxr_input.h"
 #include "../hand/hand_oxr_controller.h"
 
+#include "platform_utils.h"
 #include "../../libraries/array.h"
 #include "../../stereokit.h"
 #include "../../_stereokit.h"

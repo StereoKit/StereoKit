@@ -12,6 +12,7 @@
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
 #include "../systems/input.h"
+#include "../systems/platform/platform_utils.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libraries/stb_image_write.h"

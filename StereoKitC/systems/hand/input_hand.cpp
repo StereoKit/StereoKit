@@ -11,6 +11,7 @@
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
+#include "../platform/platform_utils.h"
 
 #include <malloc.h>
 #include <string.h>

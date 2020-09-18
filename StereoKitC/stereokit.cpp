@@ -12,10 +12,8 @@
 #include "systems/line_drawer.h"
 #include "systems/defaults.h"
 #include "systems/platform/platform.h"
+#include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
-
-#include <thread> // sleep_for
-using namespace std;
 
 #include <chrono>
 using namespace std::chrono;
@@ -202,7 +200,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		this_thread::sleep_for(milliseconds(sk_focused ? 1 : 100));
+		platform_sleep(sk_focused ? 1 : 100);
 	return sk_run;
 }
 
