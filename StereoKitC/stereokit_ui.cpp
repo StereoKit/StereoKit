@@ -94,7 +94,7 @@ color128 skui_palette[5];
 
 ///////////////////////////////////////////
 
-uint64_t ui_hash(const char *string, uint64_t start_hash = 14695981039346656037);
+uint64_t ui_hash(const char *string, uint64_t start_hash = 14695981039346656037UL);
 uint64_t ui_stack_hash(const char *string);
 
 // Layout

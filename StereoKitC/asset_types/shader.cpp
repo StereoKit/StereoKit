@@ -87,7 +87,7 @@ shader_t shader_create_file(const char *filename) {
 	// Load from file
 	void  *data;
 	size_t size;
-	if (!platform_read_file(assets_file(filename), data, size))
+	if (!platform_read_file(assets_file(filename), &data, &size))
 		return nullptr;
 
 	return shader_create_mem(data, size);

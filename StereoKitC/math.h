@@ -71,8 +71,4 @@ inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-
 vec3 bounds_corner (const bounds_t &bounds, int32_t index8);
 vec3 math_cubemap_corner(int i);
 
-#ifndef _countof
-#define _countof(array) (sizeof(array) / sizeof(array[0]))
-#endif
-
 } // namespace sk

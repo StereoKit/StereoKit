@@ -129,7 +129,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 	void  *file_data;
 	size_t file_size;
-	if (!platform_read_file(assets_file(file), file_data, file_size))
+	if (!platform_read_file(assets_file(file), &file_data, &file_size))
 		return nullptr;
 
 	result = tex_create_mem(file_data, file_size, srgb_data);

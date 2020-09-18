@@ -30,20 +30,10 @@ font_t font_create(const char *file) {
 	result = (font_t)assets_allocate(asset_type_font);
 	assets_set_id(result->header, file);
 
-	FILE *fp;
-	if (fopen_s(&fp, assets_file(file), "rb") != 0 || fp == nullptr)
+	unsigned char *data;
+	size_t length;
+	if (!platform_read_file(file, (void**)&data, &length))
 		return nullptr;
-
-	// Get length of file
-	fseek(fp, 0L, SEEK_END);
-	size_t length = ftell(fp);
-	rewind(fp);
-
-	// Read the data
-	unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) *length);
-	if (data == nullptr) { fclose(fp); return nullptr; }
-	fread(data, 1, length, fp);
-	fclose(fp);
 
 	// Load and pack font data
 	const int w = 512;

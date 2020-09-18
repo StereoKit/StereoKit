@@ -72,9 +72,9 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-bool platform_read_file(const char *filename, void *&out_data, size_t &out_size) {
-	out_data = nullptr;
-	out_size = 0;
+bool platform_read_file(const char *filename, void **out_data, size_t *out_size) {
+	*out_data = nullptr;
+	*out_size = 0;
 
 	// Open file
 	FILE *fp;
@@ -85,18 +85,18 @@ bool platform_read_file(const char *filename, void *&out_data, size_t &out_size)
 
 	// Get length of file
 	fseek(fp, 0L, SEEK_END);
-	out_size = ftell(fp);
+	*out_size = ftell(fp);
 	rewind(fp);
 
 	// Read the data
-	out_data = malloc(out_size+1);
-	if (out_data == nullptr) { out_size = 0; fclose(fp); return false; }
-	fread (out_data, 1, out_size, fp);
+	*out_data = malloc(*out_size+1);
+	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
+	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
-	((uint8_t *)out_data)[out_size] = 0;
+	((uint8_t *)out_data)[*out_size] = 0;
 
 	return true;
 }
