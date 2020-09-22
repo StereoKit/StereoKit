@@ -8,6 +8,7 @@
 #include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 
+#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -1,5 +1,6 @@
 #include "stereokit.h"
 
+#include <malloc.h>
 #include <string.h>
 #include <math.h>
 #include "math.h"

@@ -64,7 +64,7 @@ void *assets_allocate(asset_type_ type) {
 	case asset_type_font:     size = sizeof(_font_t);     break;
 	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
 	case asset_type_sound:    size = sizeof(_sound_t);    break;
-	default: throw "Unimplemented asset type!";
+	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	char name[64];
@@ -110,8 +110,10 @@ void  assets_addref(asset_header_t &asset) {
 void  assets_releaseref(asset_header_t &asset) {
 	// Manage the reference count
 	asset.refs -= 1;
-	if (asset.refs < 0)
-		throw "Released too many references to asset!";
+	if (asset.refs < 0) {
+		log_err("Released too many references to asset!");
+		abort();
+	}
 	if (asset.refs != 0)
 		return;
 
@@ -125,7 +127,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	case asset_type_font:     font_destroy    ((font_t    )&asset); break;
 	case asset_type_sprite:   sprite_destroy  ((sprite_t  )&asset); break;
 	case asset_type_sound:    sound_destroy   ((sound_t   )&asset); break;
-	default: throw "Unimplemented asset type!";
+	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	// Remove it from our list of assets
