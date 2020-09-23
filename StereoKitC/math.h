@@ -1,7 +1,11 @@
 #pragma once
 
 #include "stereokit.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
 #include <DirectXMath.h>
+#pragma clang diagnostic pop
 
 namespace sk {
 	

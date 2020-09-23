@@ -64,12 +64,12 @@ void flatscreen_input_update() {
 		// head rotation
 		quat orientation;
 		if (input_key(key_mouse_right) & button_state_active) {
-			mouse_t mouse = input_mouse();
-			fltscr_head_rot.y -= mouse.pos_change.x * fltscr_rot_speed.x * time_elapsedf();
-			fltscr_head_rot.x -= mouse.pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			const mouse_t *mouse = input_mouse();
+			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
+			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
 			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
-			vec2 prev_pt = mouse.pos - mouse.pos_change;
+			vec2 prev_pt = mouse->pos - mouse->pos_change;
 			input_mouse_data.pos = prev_pt;
 			platform_set_cursor(prev_pt);
 		} else {
@@ -82,12 +82,12 @@ void flatscreen_input_update() {
 		render_set_cam_root(pose_matrix(input_head_pose));
 	}
 
-	pointer_t   *pointer_head = input_get_pointer(fltscr_gaze_pointer);
-	pose_t       head         = input_head();
+	pointer_t    *pointer_head = input_get_pointer(fltscr_gaze_pointer);
+	const pose_t *head         = input_head();
 
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = head.position;
-	pointer_head->ray.dir = head.orientation * vec3_forward;
+	pointer_head->ray.pos = head->position;
+	pointer_head->ray.dir = head->orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////

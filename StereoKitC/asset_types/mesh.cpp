@@ -315,7 +315,6 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	vec3 right = vec3_cross(plane_normal, plane_top_direction);
 	vec3 up    = vec3_cross(plane_normal, right);
-	vec2 size  = dimensions / 2;
 
 	// Make vertices
 	for (vind_t y = 0; y < subd; y++) {

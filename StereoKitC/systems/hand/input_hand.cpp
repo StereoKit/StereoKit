@@ -94,8 +94,8 @@ void input_hand_update_mesh(handed_ hand);
 
 ///////////////////////////////////////////
 
-const hand_t &input_hand(handed_ hand) {
-	return hand_state[hand].info;
+const hand_t *input_hand(handed_ hand) {
+	return &hand_state[hand].info;
 }
 
 ///////////////////////////////////////////

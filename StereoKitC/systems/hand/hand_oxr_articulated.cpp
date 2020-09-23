@@ -66,8 +66,8 @@ void hand_oxra_update_joints() {
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
 		// Update the tracking state of the hand
-		hand_t& inp_hand = (hand_t&)input_hand((handed_)h);
-		inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, locations.isActive);
+		hand_t *inp_hand = (hand_t*)input_hand((handed_)h);
+		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, locations.isActive);
 
 		// Not tracked? Then we don't care about the pose!
 		if (!locations.isActive)
@@ -90,8 +90,8 @@ void hand_oxra_update_joints() {
 		memcpy(&pose[0], &oxra_hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t)); // Thumb metacarpal is duplicated at the same location
 
 		static const quat face_forward = quat_from_angles(-90,0,0);
-		inp_hand.palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
-		inp_hand.wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
+		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 	}
 }
 

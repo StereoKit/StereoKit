@@ -32,17 +32,17 @@ void hand_mouse_shutdown() {
 void hand_mouse_update_frame() {
 	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
 
-	const hand_t &hand = input_hand(handed_right);
-	vec3 hand_pos     = hand.palm.position;
-	quat hand_rot     = hand.palm.orientation;
+	const hand_t *hand = input_hand(handed_right);
+	vec3 hand_pos     = hand->palm.position;
+	quat hand_rot     = hand->palm.orientation;
 	bool l_pressed    = false;
 	bool r_pressed    = false;
 	bool hand_tracked = false;
 	vec3 pointer_dir  = pointer_cursor->ray.dir;
 
-	bool was_tracked   = hand.tracked_state & button_state_active;
-	bool was_l_pressed = hand.pinch_state   & button_state_active;
-	bool was_r_pressed = hand.grip_state    & button_state_active;
+	bool was_tracked   = hand->tracked_state & button_state_active;
+	bool was_l_pressed = hand->pinch_state   & button_state_active;
+	bool was_r_pressed = hand->grip_state    & button_state_active;
 
 	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * time_elapsedf_unscaled() * 8;
 

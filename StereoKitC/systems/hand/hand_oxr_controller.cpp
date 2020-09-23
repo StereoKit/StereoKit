@@ -90,9 +90,9 @@ void hand_oxrc_update_frame() {
 		}
 
 		// Get event poses, and fire our own events for them
-		const hand_t& curr_hand = input_hand((handed_)hand);
+		const hand_t *curr_hand = input_hand((handed_)hand);
 		pose_t pose = {};
-		if (curr_hand.pinch_state & button_state_changed &&
+		if (curr_hand->pinch_state & button_state_changed &&
 			openxr_get_space(xrc_point_space[hand], pose, select_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point   (root, pose.position);
 			pose.orientation = matrix_mul_rotation(root, pose.orientation);
@@ -102,10 +102,10 @@ void hand_oxrc_update_frame() {
 			event_pointer.ray.dir     = pose.orientation * vec3_forward;
 			event_pointer.orientation = pose.orientation;
 
-			input_fire_event(event_pointer.source, curr_hand.pinch_state & ~button_state_active, event_pointer);
+			input_fire_event(event_pointer.source, curr_hand->pinch_state & ~button_state_active, event_pointer);
 
 		}
-		if (curr_hand.grip_state & button_state_changed &&
+		if (curr_hand->grip_state & button_state_changed &&
 			openxr_get_space(xrc_point_space[hand], pose, grip_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point   (root, pose.position);
 			pose.orientation = matrix_mul_rotation(root, pose.orientation);
@@ -115,10 +115,10 @@ void hand_oxrc_update_frame() {
 			event_pointer.ray.dir = pose.orientation * vec3_forward;
 			event_pointer.orientation = pose.orientation;
 
-			input_fire_event(event_pointer.source, curr_hand.grip_state & ~button_state_active, event_pointer);
+			input_fire_event(event_pointer.source, curr_hand->grip_state & ~button_state_active, event_pointer);
 
 		}
-		if (curr_hand.tracked_state & button_state_changed) {
+		if (curr_hand->tracked_state & button_state_changed) {
 			input_fire_event(pointer->source, pointer->tracked & ~button_state_active, *pointer);
 		}
 	}

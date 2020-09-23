@@ -246,7 +246,7 @@ static const vec3 vec3_up       = { 0,1, 0 };
 static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
-static const matrix matrix_identity = { vec4{1,0,0,0}, vec4{0,1,0,0}, vec4{0,0,1,0}, vec4{0,0,0,1} };
+static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -624,8 +624,8 @@ SK_API void     hierarchy_push       (const sk_ref(matrix) transform);
 SK_API void     hierarchy_pop        ();
 SK_API void     hierarchy_set_enabled(bool32_t enabled);
 SK_API bool32_t hierarchy_is_enabled ();
-SK_API const sk_ref(matrix) hierarchy_to_world();
-SK_API const sk_ref(matrix) hierarchy_to_local();
+SK_API const matrix *hierarchy_to_world();
+SK_API const matrix *hierarchy_to_local();
 SK_API vec3     hierarchy_to_local_point    (const sk_ref(vec3) world_pt);
 SK_API vec3     hierarchy_to_local_direction(const sk_ref(vec3) world_dir);
 SK_API quat     hierarchy_to_local_rotation (const sk_ref(quat) world_orientation);
@@ -731,10 +731,10 @@ typedef enum key_ {
 
 SK_API int                   input_pointer_count(input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer      (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const sk_ref(hand_t)  input_hand         (handed_ hand);
+SK_API const hand_t         *input_hand         (handed_ hand);
 SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
-SK_API const sk_ref(pose_t)  input_head         ();
-SK_API const sk_ref(mouse_t) input_mouse        ();
+SK_API const pose_t         *input_head         ();
+SK_API const mouse_t        *input_mouse        ();
 SK_API button_state_         input_key          (key_ key);
 SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid   (handed_ hand, bool32_t solid);

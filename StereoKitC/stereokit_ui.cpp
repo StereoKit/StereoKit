@@ -322,26 +322,26 @@ void ui_update() {
 	skui_layers[0] = {};
 
 	for (size_t i = 0; i < handed_max; i++) {
-		const hand_t &hand = input_hand((handed_)i);
+		const hand_t *hand = input_hand((handed_)i);
 
 		skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
-		skui_hand[i].finger_world      = hand.fingers[1][4].position;
+		skui_hand[i].finger_world      = hand->fingers[1][4].position;
 		skui_hand[i].focused_prev = skui_hand[i].focused;
 		skui_hand[i].active_prev  = skui_hand[i].active;
 
 		skui_hand[i].focus_priority = FLT_MAX;
 		skui_hand[i].focused = 0;
 		skui_hand[i].active  = 0;
-		skui_hand[i].finger       = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
-		skui_hand[i].finger_prev  = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
-		skui_hand[i].tracked      = hand.tracked_state & button_state_active;
+		skui_hand[i].finger       = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
+		skui_hand[i].finger_prev  = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
+		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
 
 		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
 		// draw hand rays
 		if (skui_hand[i].focused_prev == 0 && skui_hand[i].tracked 
-			&& vec3_dot(hand.palm.orientation * vec3_forward, hand.palm.position - input_head().position)) {
+			&& vec3_dot(hand->palm.orientation * vec3_forward, hand->palm.position - input_head()->position)) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
 			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
 		}
@@ -417,8 +417,8 @@ void ui_push_pose(pose_t &pose, vec3 offset) {
 
 	layer_t &layer = skui_layers.last();
 	for (size_t i = 0; i < handed_max; i++) {
-		layer.finger_pos [i] = skui_hand[i].finger      = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world);
-		layer.finger_prev[i] = skui_hand[i].finger_prev = matrix_mul_point(hierarchy_to_local(), skui_hand[i].finger_world_prev);
+		layer.finger_pos [i] = skui_hand[i].finger      = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
+		layer.finger_prev[i] = skui_hand[i].finger_prev = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
 	}
 }
 
@@ -719,7 +719,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 			continue;
 
 		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, bounds)) {
-			button_state_ state = input_hand((handed_)i).pinch_state;
+			button_state_ state = input_hand((handed_)i)->pinch_state;
 			if (state != button_state_active) {
 				result = state;
 				out_hand = (handed_)i;
@@ -952,7 +952,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 		bool shift = input_key(key_shift) & button_state_active;
 		if (input_key(key_backspace) & button_state_just_active) {
 			size_t len = strlen(buffer);
-			if (len >= 0) {
+			if (len > 0) {
 				buffer[len - 1] = '\0';
 				result = true;
 			}
@@ -1066,7 +1066,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	bool result = false;
 	float color = 1;
 
-	matrix to_local = hierarchy_to_local();
+	matrix to_local = *hierarchy_to_local();
 	ui_push_pose(movement, vec3{ 0,0,0 });
 
 	// If the handle is scale of zero, we don't actually want to draw or interact with it
@@ -1086,10 +1086,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		if (ui_is_hand_preoccupied((handed_)i, id, false))
 			continue;
 
-		const hand_t &hand = input_hand((handed_)i);
+		const hand_t *hand = input_hand((handed_)i);
 		vec3 finger_pos_world = vec3_lerp(
-			hand.fingers[0][4].position,
-			hand.fingers[1][4].position, 0.3f);
+			hand->fingers[0][4].position,
+			hand->fingers[1][4].position, 0.3f);
 		vec3 finger_pos = matrix_mul_point( to_local, finger_pos_world );
 
 		vec3 from_pt = finger_pos;
@@ -1125,15 +1125,15 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 		if (skui_hand[i].focused_prev == id || skui_hand[i].active_prev == id) {
 			
-			const hand_t &hand = input_hand((handed_)i);
-			if (hand.pinch_state & button_state_just_active) {
+			const hand_t *hand = input_hand((handed_)i);
+			if (hand->pinch_state & button_state_just_active) {
 				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
 				skui_hand[i].active = id;
 				start_aff_pos [i] = movement.position;
 				start_aff_rot [i] = movement.orientation;
 				start_palm_pos[i] = from_pt;
-				start_palm_rot[i] = matrix_mul_rotation( to_local, hand.palm.orientation);
+				start_palm_rot[i] = matrix_mul_rotation( to_local, hand->palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 				color = 1.5f;
@@ -1146,11 +1146,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				
 				switch (move_type) {
 				case ui_move_exact: {
-					dest_rot = matrix_mul_rotation(to_local, hand.palm.orientation);
+					dest_rot = matrix_mul_rotation(to_local, hand->palm.orientation);
 					dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 				} break;
 				case ui_move_face_user: {
-					dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head().position));
+					dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head()->position));
 					dest_rot = quat_difference(start_aff_rot[i], dest_rot);
 				} break;
 				case ui_move_pos_only: {
@@ -1164,7 +1164,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 				movement.orientation = quat_slerp(movement.orientation, start_aff_rot[i] * dest_rot, 0.4f); 
 
-				if (hand.pinch_state & button_state_just_inactive) {
+				if (hand->pinch_state & button_state_just_inactive) {
 					skui_hand[i].active = 0;
 					sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
 				}
@@ -1203,7 +1203,6 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 
 	int32_t index = sl_indexof(skui_sl_windows, id);
 	if (index < 0) {
-		pose_t      head_pose  = input_head();
 		ui_window_t new_window = {};
 		new_window.size = window_size;
 		index = sl_insert(skui_sl_windows, index, id, new_window);

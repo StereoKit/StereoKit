@@ -118,8 +118,8 @@ void input_update_predicted() {
 
 ///////////////////////////////////////////
 
-const mouse_t &input_mouse() {
-	return input_mouse_data;
+const mouse_t *input_mouse() {
+	return &input_mouse_data;
 }
 
 ///////////////////////////////////////////
@@ -130,8 +130,8 @@ button_state_ input_key(key_ key) {
 
 ///////////////////////////////////////////
 
-const pose_t &input_head() {
-	return input_head_pose;
+const pose_t *input_head() {
+	return &input_head_pose;
 }
 
 } // namespace sk {

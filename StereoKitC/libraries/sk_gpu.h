@@ -1258,8 +1258,9 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 	tex->width       = width;
 	tex->height      = height;
 	tex->array_count = data_frame_count;
+	bool mips = tex->mips == skr_mip_generate && (width & (width - 1)) == 0 && (height & (height - 1)) == 0;
 
-	uint32_t mip_levels = (tex->mips == skr_mip_generate ? (uint32_t)log2(width) + 1 : 1);
+	uint32_t mip_levels = (mips ? (uint32_t)log2(width) + 1 : 1);
 	uint32_t px_size    = skr_tex_fmt_size(tex->format);
 
 	if (tex->_texture == nullptr) {
@@ -1286,7 +1287,7 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 				tex_mem[i*mip_levels].pSysMem     = data_frames[i];
 				tex_mem[i*mip_levels].SysMemPitch = (UINT)(px_size * width);
 
-				if (tex->mips == skr_mip_generate) {
+				if (mips) {
 					skr_make_mips(&tex_mem[i*mip_levels], data_frames[i], tex->format, width, height, mip_levels);
 				}
 			}
@@ -2365,7 +2366,7 @@ skr_shader_t skr_shader_create_manual(skr_shader_meta_t *meta, skr_shader_stage_
 #if __EMSCRIPTEN__
 		for (size_t i = 0; i < meta->buffer_count; i++) {
 			char t_name[64];
-			sprintf(t_name, "type_%s", meta->buffers[i].name);
+			snprintf(t_name, 64, "type_%s", meta->buffers[i].name);
 			uint32_t slot = glGetUniformBlockIndex(result._program, t_name);
 			glUniformBlockBinding(result._program, slot, slot);
 

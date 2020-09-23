@@ -826,12 +826,12 @@ static void* cgltf_calloc(cgltf_options* options, size_t element_size, cgltf_siz
 {
 	if (SIZE_MAX / element_size < count)
 	{
-		return NULL;
+		return nullptr;
 	}
 	void* result = options->memory.alloc(options->memory.user_data, element_size * count);
 	if (!result)
 	{
-		return NULL;
+		return nullptr;
 	}
 	memset(result, 0, element_size * count);
 	return result;
@@ -911,17 +911,17 @@ cgltf_result cgltf_parse(const cgltf_options* options, const void* data, cgltf_s
 		return cgltf_result_data_too_short;
 	}
 
-	if (options == NULL)
+	if (options == nullptr)
 	{
 		return cgltf_result_invalid_options;
 	}
 
 	cgltf_options fixed_options = *options;
-	if (fixed_options.memory.alloc == NULL)
+	if (fixed_options.memory.alloc == nullptr)
 	{
 		fixed_options.memory.alloc = &cgltf_default_alloc;
 	}
-	if (fixed_options.memory.free == NULL)
+	if (fixed_options.memory.free == nullptr)
 	{
 		fixed_options.memory.free = &cgltf_default_free;
 	}
@@ -1038,7 +1038,7 @@ cgltf_result cgltf_parse(const cgltf_options* options, const void* data, cgltf_s
 
 cgltf_result cgltf_parse_file(const cgltf_options* options, const char* path, cgltf_data** out_data)
 {
-	if (options == NULL)
+	if (options == nullptr)
 	{
 		return cgltf_result_invalid_options;
 	}
@@ -1046,7 +1046,7 @@ cgltf_result cgltf_parse_file(const cgltf_options* options, const char* path, cg
 	void (*memory_free)(void*, void*) = options->memory.free ? options->memory.free : &cgltf_default_free;
 	cgltf_result (*file_read)(const struct cgltf_memory_options*, const struct cgltf_file_options*, const char*, cgltf_size*, void**) = options->file.read ? options->file.read : &cgltf_default_file_read;
 
-	void* file_data = NULL;
+	void* file_data = nullptr;
 	cgltf_size file_size = 0;
 	cgltf_result result = file_read(&options->memory, &options->file, path, &file_size, &file_data);
 	if (result != cgltf_result_success)
@@ -1103,12 +1103,12 @@ static cgltf_result cgltf_load_buffer_file(const cgltf_options* options, cgltf_s
 	// after combining, the tail of the resulting path is a uri; decode_uri converts it into path
 	cgltf_decode_uri(path + strlen(path) - strlen(uri));
 
-	void* file_data = NULL;
+	void* file_data = nullptr;
 	cgltf_result result = file_read(&options->memory, &options->file, path, &size, &file_data);
 
 	memory_free(options->memory.user_data, path);
 
-	*out_data = (result == cgltf_result_success) ? file_data : NULL;
+	*out_data = (result == cgltf_result_success) ? file_data : nullptr;
 
 	return result;
 }
@@ -1201,12 +1201,12 @@ void cgltf_decode_uri(char* uri)
 
 cgltf_result cgltf_load_buffers(const cgltf_options* options, cgltf_data* data, const char* gltf_path)
 {
-	if (options == NULL)
+	if (options == nullptr)
 	{
 		return cgltf_result_invalid_options;
 	}
 
-	if (data->buffers_count && data->buffers[0].data == NULL && data->buffers[0].uri == NULL && data->bin)
+	if (data->buffers_count && data->buffers[0].data == nullptr && data->buffers[0].uri == nullptr && data->bin)
 	{
 		if (data->bin_size < data->buffers[0].size)
 		{
@@ -1225,7 +1225,7 @@ cgltf_result cgltf_load_buffers(const cgltf_options* options, cgltf_data* data, 
 
 		const char* uri = data->buffers[i].uri;
 
-		if (uri == NULL)
+		if (uri == nullptr)
 		{
 			continue;
 		}
@@ -1248,7 +1248,7 @@ cgltf_result cgltf_load_buffers(const cgltf_options* options, cgltf_data* data, 
 				return cgltf_result_unknown_format;
 			}
 		}
-		else if (strstr(uri, "://") == NULL && gltf_path)
+		else if (strstr(uri, "://") == nullptr && gltf_path)
 		{
 			cgltf_result res = cgltf_load_buffer_file(options, data->buffers[i].size, uri, gltf_path, &data->buffers[i].data);
 
@@ -1452,7 +1452,7 @@ cgltf_result cgltf_validate(cgltf_data* data)
 	for (cgltf_size i = 0; i < data->nodes_count; ++i)
 	{
 		cgltf_node* p1 = data->nodes[i].parent;
-		cgltf_node* p2 = p1 ? p1->parent : NULL;
+		cgltf_node* p2 = p1 ? p1->parent : nullptr;
 
 		while (p1 && p2)
 		{
@@ -1462,7 +1462,7 @@ cgltf_result cgltf_validate(cgltf_data* data)
 			}
 
 			p1 = p1->parent;
-			p2 = p2->parent ? p2->parent->parent : NULL;
+			p2 = p2->parent ? p2->parent->parent : nullptr;
 		}
 	}
 
@@ -1993,12 +1993,12 @@ cgltf_bool cgltf_accessor_read_float(const cgltf_accessor* accessor, cgltf_size 
 	{
 		return 0;
 	}
-	if (accessor->buffer_view == NULL)
+	if (accessor->buffer_view == nullptr)
 	{
 		memset(out, 0, element_size * sizeof(cgltf_float));
 		return 1;
 	}
-	if (accessor->buffer_view->buffer->data == NULL)
+	if (accessor->buffer_view->buffer->data == nullptr)
 	{
 		return 0;
 	}
@@ -2012,7 +2012,7 @@ cgltf_size cgltf_accessor_unpack_floats(const cgltf_accessor* accessor, cgltf_fl
 {
 	cgltf_size floats_per_element = cgltf_num_components(accessor->type);
 	cgltf_size available_floats = accessor->count * floats_per_element;
-	if (out == NULL)
+	if (out == nullptr)
 	{
 		return available_floats;
 	}
@@ -2037,7 +2037,7 @@ cgltf_size cgltf_accessor_unpack_floats(const cgltf_accessor* accessor, cgltf_fl
 	{
 		const cgltf_accessor_sparse* sparse = &dense.sparse;
 
-		if (sparse->indices_buffer_view->buffer->data == NULL || sparse->values_buffer_view->buffer->data == NULL)
+		if (sparse->indices_buffer_view->buffer->data == nullptr || sparse->values_buffer_view->buffer->data == nullptr)
 		{
 			return 0;
 		}
@@ -2118,12 +2118,12 @@ cgltf_bool cgltf_accessor_read_uint(const cgltf_accessor* accessor, cgltf_size i
     {
         return 0;
     }
-    if (accessor->buffer_view == NULL)
+    if (accessor->buffer_view == nullptr)
     {
         memset(out, 0, element_size * sizeof( cgltf_uint ));
         return 1;
     }
-    if (accessor->buffer_view->buffer->data == NULL)
+    if (accessor->buffer_view->buffer->data == nullptr)
     {
         return 0;
     }
@@ -2139,11 +2139,11 @@ cgltf_size cgltf_accessor_read_index(const cgltf_accessor* accessor, cgltf_size 
 	{
 		return 0; // This is an error case, but we can't communicate the error with existing interface.
 	}
-	if (accessor->buffer_view == NULL)
+	if (accessor->buffer_view == nullptr)
 	{
 		return 0;
 	}
-	if (accessor->buffer_view->buffer->data == NULL)
+	if (accessor->buffer_view->buffer->data == nullptr)
 	{
 		return 0; // This is an error case, but we can't communicate the error with existing interface.
 	}
@@ -5151,7 +5151,7 @@ cgltf_result cgltf_parse_json(cgltf_options* options, const uint8_t* json_chunk,
 
 	if (options->json_token_count == 0)
 	{
-		int token_count = jsmn_parse(&parser, (const char*)json_chunk, size, NULL, 0);
+		int token_count = jsmn_parse(&parser, (const char*)json_chunk, size, nullptr, 0);
 
 		if (token_count <= 0)
 		{
@@ -5412,7 +5412,7 @@ static jsmntok_t *jsmn_alloc_token(jsmn_parser *parser,
 				   jsmntok_t *tokens, size_t num_tokens) {
 	jsmntok_t *tok;
 	if (parser->toknext >= num_tokens) {
-		return NULL;
+		return nullptr;
 	}
 	tok = &tokens[parser->toknext++];
 	tok->start = tok->end = -1;
@@ -5466,12 +5466,12 @@ static int jsmn_parse_primitive(jsmn_parser *parser, const char *js,
 #endif
 
 found:
-	if (tokens == NULL) {
+	if (tokens == nullptr) {
 		parser->pos--;
 		return 0;
 	}
 	token = jsmn_alloc_token(parser, tokens, num_tokens);
-	if (token == NULL) {
+	if (token == nullptr) {
 		parser->pos = start;
 		return JSMN_ERROR_NOMEM;
 	}
@@ -5500,11 +5500,11 @@ static int jsmn_parse_string(jsmn_parser *parser, const char *js,
 
 		/* Quote: end of string */
 		if (c == '\"') {
-			if (tokens == NULL) {
+			if (tokens == nullptr) {
 				return 0;
 			}
 			token = jsmn_alloc_token(parser, tokens, num_tokens);
-			if (token == NULL) {
+			if (token == nullptr) {
 				parser->pos = start;
 				return JSMN_ERROR_NOMEM;
 			}
@@ -5568,11 +5568,11 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 		switch (c) {
 		case '{': case '[':
 			count++;
-			if (tokens == NULL) {
+			if (tokens == nullptr) {
 				break;
 			}
 			token = jsmn_alloc_token(parser, tokens, num_tokens);
-			if (token == NULL)
+			if (token == nullptr)
 				return JSMN_ERROR_NOMEM;
 			if (parser->toksuper != -1) {
 				tokens[parser->toksuper].size++;
@@ -5585,7 +5585,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 			parser->toksuper = parser->toknext - 1;
 			break;
 		case '}': case ']':
-			if (tokens == NULL)
+			if (tokens == nullptr)
 				break;
 			type = (c == '}' ? JSMN_OBJECT : JSMN_ARRAY);
 #ifdef JSMN_PARENT_LINKS
@@ -5637,7 +5637,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 			r = jsmn_parse_string(parser, js, len, tokens, num_tokens);
 			if (r < 0) return r;
 			count++;
-			if (parser->toksuper != -1 && tokens != NULL)
+			if (parser->toksuper != -1 && tokens != nullptr)
 				tokens[parser->toksuper].size++;
 			break;
 		case '\t' : case '\r' : case '\n' : case ' ':
@@ -5646,7 +5646,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 			parser->toksuper = parser->toknext - 1;
 			break;
 		case ',':
-			if (tokens != NULL && parser->toksuper != -1 &&
+			if (tokens != nullptr && parser->toksuper != -1 &&
 					tokens[parser->toksuper].type != JSMN_ARRAY &&
 					tokens[parser->toksuper].type != JSMN_OBJECT) {
 #ifdef JSMN_PARENT_LINKS
@@ -5669,7 +5669,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 		case '5': case '6': case '7' : case '8': case '9':
 		case 't': case 'f': case 'n' :
 			/* And they must not be keys of the object */
-			if (tokens != NULL && parser->toksuper != -1) {
+			if (tokens != nullptr && parser->toksuper != -1) {
 				jsmntok_t *t = &tokens[parser->toksuper];
 				if (t->type == JSMN_OBJECT ||
 						(t->type == JSMN_STRING && t->size != 0)) {
@@ -5683,7 +5683,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 			r = jsmn_parse_primitive(parser, js, len, tokens, num_tokens);
 			if (r < 0) return r;
 			count++;
-			if (parser->toksuper != -1 && tokens != NULL)
+			if (parser->toksuper != -1 && tokens != nullptr)
 				tokens[parser->toksuper].size++;
 			break;
 
@@ -5695,7 +5695,7 @@ static int jsmn_parse(jsmn_parser *parser, const char *js, size_t len,
 		}
 	}
 
-	if (tokens != NULL) {
+	if (tokens != nullptr) {
 		for (i = parser->toknext - 1; i >= 0; i--) {
 			/* Unmatched opened object or array */
 			if (tokens[i].start != -1 && tokens[i].end == -1) {

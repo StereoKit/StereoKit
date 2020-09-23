@@ -173,7 +173,7 @@ void log_write(log_ level, const char *text) {
 	snprintf(full_text, len, "[SK %s] %s\n", tag, text);
 
 	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
-	printf(colored_text);
+	printf("%s", colored_text);
 	
 	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
 	if (log_colors != log_colors_none) {

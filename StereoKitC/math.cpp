@@ -109,7 +109,7 @@ bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 	float x = (((screen_pixel_pos.x / (float)sk_system_info().display_width ) - 0.5f) *  2.f);
 	float y = (((screen_pixel_pos.y / (float)sk_system_info().display_height) - 0.5f) * -2.f);
 	if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
-		out_ray.pos = input_head().position;
+		out_ray.pos = input_head()->position;
 		out_ray.dir = vec3{ x, y, 1.0f };
 		out_ray.dir = render_unproject_pt(out_ray.dir);
 		out_ray.dir = vec3_normalize(out_ray.dir);

@@ -4,10 +4,14 @@
 #include "texture.h"
 #include "../math.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#pragma warning(push)
 #pragma warning( disable : 26451 )
 #define CGLTF_IMPLEMENTATION
 #include "../libraries/cgltf.h"
-#pragma warning( default: 26451 )
+#pragma warning(pop)
+#pragma clang diagnostic pop
 
 namespace sk {
 
@@ -248,7 +252,7 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
-	cgltf_data*   data    = NULL;
+	cgltf_data*   data    = nullptr;
 	const char *model_file = assets_file(filename);
 	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
 		return false;

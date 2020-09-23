@@ -360,7 +360,7 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 	if (type == material_param_texture) {
 		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
 			if (material->shader->shader.meta->textures[i].name_hash == id) {
-				memcpy(out_value, material->args.textures[i], sizeof(tex_t));
+				memcpy(out_value, &material->args.textures[i], sizeof(tex_t));
 				return true;
 			}
 		}

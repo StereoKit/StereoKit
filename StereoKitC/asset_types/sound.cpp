@@ -130,7 +130,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
     // contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
     // doing that in this example.
 
-    vec3 head_pos = input_head().position;
+    vec3 head_pos = input_head()->position;
 
     ma_uint32 tempCapInFrames = _countof(au_mix_temp) / CHANNEL_COUNT;
     ma_uint32 total_frames_read = 0;
@@ -273,7 +273,7 @@ bool sound_init() {
 ///////////////////////////////////////////
 
 void sound_update() {
-    matrix head = pose_matrix(input_head());
+    matrix head = pose_matrix(*input_head());
     matrix_inverse(head, au_head_transform);
 }
 

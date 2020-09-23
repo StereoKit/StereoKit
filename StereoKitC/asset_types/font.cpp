@@ -64,7 +64,7 @@ font_t font_create(const char *file) {
 			chars[i].xadvance/size,
 		};
 	}
-	result->character_height = fabsf(chars['T'].yoff/size);
+	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
 
 	// Convert to color data
 	color32 *colors = (color32*)malloc(w * h * sizeof(color32));

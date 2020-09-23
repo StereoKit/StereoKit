@@ -32,14 +32,14 @@ void hand_override_shutdown() {
 
 void hand_override_update_frame() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		hand_t &inp_hand = (hand_t&)input_hand((handed_)h);
-		inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, override_hand[h]);
+		hand_t *inp_hand = (hand_t*)input_hand((handed_)h);
+		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, override_hand[h]);
 
 		if (override_hand[h]) {
 			hand_joint_t *pose = input_hand_get_pose_buffer((handed_)h);
 			memcpy(pose, &override_joints[h], sizeof(hand_joint_t) * 25);
-			inp_hand.palm  = pose_t{ override_joints[h][25].position, override_joints[h][25].orientation };
-			inp_hand.wrist = pose_t{ override_joints[h][26].position, override_joints[h][26].orientation };
+			inp_hand->palm  = pose_t{ override_joints[h][25].position, override_joints[h][25].orientation };
+			inp_hand->wrist = pose_t{ override_joints[h][26].position, override_joints[h][26].orientation };
 		}
 	}
 	input_hand_update_meshes();

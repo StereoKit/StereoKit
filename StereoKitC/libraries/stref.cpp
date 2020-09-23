@@ -318,10 +318,7 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 
 	char *curr = (char*)(word.start + word.length);
 	if (*curr == separator) curr++;
-	while (*curr == ' ' || *curr == '\t') { 
-		if (*curr == separator && separator != ' ') {
-			int x = 0;
-		}
+	while (*curr == ' ' || *curr == '\t') {
 		curr++; 
 	}
 	if ( *curr == '\n' || *curr == '\r' || *curr == '\0') return false;
@@ -402,7 +399,7 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 uint64_t  string_hash(const char* string, uint64_t start_hash) {
 	uint64_t hash = start_hash;
 	uint8_t  c;
-	while (c = *string++)
+	while ((c = *string++))
 		hash = (hash ^ c) * 1099511628211;
 	return hash;
 }
@@ -412,7 +409,7 @@ uint64_t  string_hash(const char* string, uint64_t start_hash) {
 ///////////////////////////////////////////
 
 uint64_t stref_hash(const stref_t &ref) {
-	uint64_t hash = 14695981039346656037;
+	uint64_t hash = 14695981039346656037UL;
 	uint8_t  c;
 	for (uint32_t i=0; i<ref.length; i++) {
 		c = *(ref.start + i);
