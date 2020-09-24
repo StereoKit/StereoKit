@@ -6,6 +6,7 @@
 #define DR_WAV_IMPLEMENTATION
 #include "../libraries/dr_wav.h"   /* Enables WAV decoding. */
 
+#define MA_NO_OPENSL
 #define MINIAUDIO_IMPLEMENTATION
 #include "../libraries/miniaudio.h"
 

@@ -47,11 +47,13 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Clang_5_0</PlatformToolset>
+    <AndroidAPILevel>android-26</AndroidAPILevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Clang_5_0</PlatformToolset>
+    <AndroidAPILevel>android-26</AndroidAPILevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -142,7 +144,7 @@
       <ExceptionHandling>Enabled</ExceptionHandling>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;openxr_loader;EGL;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalOptions>
       </AdditionalOptions>
       <VerboseOutput>false</VerboseOutput>
@@ -158,7 +160,7 @@
       </AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;openxr_loader;EGL;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalOptions>
       </AdditionalOptions>
       <VerboseOutput>false</VerboseOutput>
