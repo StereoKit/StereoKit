@@ -98,9 +98,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
   </PropertyGroup>
@@ -140,7 +142,11 @@
       <ExceptionHandling>Enabled</ExceptionHandling>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;EGL;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <VerboseOutput>false</VerboseOutput>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -152,7 +158,11 @@
       </AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;EGL;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <VerboseOutput>false</VerboseOutput>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
