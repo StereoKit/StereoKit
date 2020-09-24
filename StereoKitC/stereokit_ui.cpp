@@ -9,6 +9,7 @@
 #define SL_IMPLEMENTATION
 #include "libraries/sort_list.h"
 
+#include <math.h>
 #include <float.h>
 #include <DirectXMath.h>
 using namespace DirectX;
@@ -25,25 +26,25 @@ struct ui_window_t {
 
 struct layer_t {
 	ui_window_t *window;
-	vec3   offset_initial;
-	vec3   offset;
-	vec2   size;
-	float  line_height;
-	float  max_x;
-	vec3 finger_pos[handed_max];
-	vec3 finger_prev[handed_max];
+	vec3         offset_initial;
+	vec3         offset;
+	vec2         size;
+	float        line_height;
+	float        max_x;
+	vec3         finger_pos[handed_max];
+	vec3         finger_prev[handed_max];
 };
 struct ui_hand_t {
-	vec3            finger;
-	vec3            finger_prev;
-	vec3            finger_world;
-	vec3            finger_world_prev;
-	bool            tracked;
-	uint64_t        focused_prev = {};
-	uint64_t        focused = {};
-	float           focus_priority;
-	uint64_t        active_prev = {};
-	uint64_t        active = {};
+	vec3     finger;
+	vec3     finger_prev;
+	vec3     finger_world;
+	vec3     finger_world_prev;
+	bool     tracked;
+	uint64_t focused_prev = {};
+	uint64_t focused = {};
+	float    focus_priority;
+	uint64_t active_prev = {};
+	uint64_t active = {};
 };
 
 struct ui_id_t {

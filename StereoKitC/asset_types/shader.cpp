@@ -1,14 +1,7 @@
 #include "../stereokit.h"
-#include "../_stereokit.h"
-#include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 #include "shader.h"
 #include "assets.h"
-
-#include <stdio.h>
-#include <assert.h>
-#include <direct.h>   // for _mkdir
-#include <sys/stat.h> // for stat
 
 namespace sk {
 

@@ -8,12 +8,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
-	return i1 + (vSize+1) * (i2 + (nSize+1) * i3);
-}
-
-///////////////////////////////////////////
-
 int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, array_t<vec2> *uvs, hashmap_t<vert_t, vind_t> *indmap, array_t<vert_t> *mesh_verts) {
 	if (uvs  ->count == 0) uvs  ->add(vec2{ 0,0 }  );
 	if (norms->count == 0) norms->add(vec3{ 0,1,0 });
@@ -40,7 +34,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 	hashmap_t<vert_t, vind_t> indmap = {};
 	
 	vec3 in;
-	int inds[12];
+	int inds[12] = {};
 
 	stref_t data = stref_make((const char *)file_data);
 	stref_t line = {};

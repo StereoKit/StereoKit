@@ -1,5 +1,5 @@
 #ifndef SK_NO_FLATSCREEN
-#ifndef WINDOWS_UWP
+#if defined(_WIN32) && !defined(WINDOWS_UWP)
 
 #include "win32.h"
 #include "flatscreen_input.h"
@@ -180,5 +180,5 @@ void *win32_hwnd() {
 
 } // namespace sk
 
-#endif // WINDOWS_UWP
+#endif // defined(_WIN32) && !defined(WINDOWS_UWP)
 #endif // SK_NO_FLATSCREEN

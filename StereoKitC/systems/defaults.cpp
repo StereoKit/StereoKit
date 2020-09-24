@@ -92,11 +92,10 @@ bool defaults_init() {
 	// Default rendering quad
 	sk_default_quad = mesh_create();
 	vert_t verts[4] = {
-		vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
-		vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
-		vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
-		vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
-	};
+		{ vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
+		{ vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
+		{ vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} }, };
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);

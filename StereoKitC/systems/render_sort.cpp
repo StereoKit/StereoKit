@@ -9,7 +9,9 @@
 #include <string.h>
 #include <assert.h>
 
+#if _WIN32
 #include <intrin.h>
+#endif
 
 using namespace sk;
 
@@ -84,10 +86,14 @@ void radix_sort7(render_item_t *a, size_t count)
 			render_item_t value = from[i];
 			size_t index = (value.sort_id >> shift) & RADIX_MASK;
 			*queue_ptrs[index]++ = value;
+#ifdef _WIN32
 #ifdef _M_ARM
 			__prefetch (queue_ptrs[index] + 1);
 #elif !defined(WINDOWS_UWP)
 			_m_prefetch(queue_ptrs[index] + 1);
+#endif
+#else
+			__builtin_prefetch(queue_ptrs[index] + 1);
 #endif
 		}
 

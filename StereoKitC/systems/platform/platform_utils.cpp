@@ -15,13 +15,19 @@
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #endif
+
 #if _WIN32
 #include "win32.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#else
+#endif
+
+#if __ANDROID__
 #include <unistd.h>
+#include <android/log.h>
+#include <android/asset_manager.h>
+#include <errno.h>
 #endif
 
 namespace sk {
@@ -77,11 +83,33 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	*out_size = 0;
 
 	// Open file
+#if __ANDROID__
+	static AAssetManager *android_asset_manager = nullptr;
+	if (android_asset_manager == nullptr)
+		log_err("Haven't initialized android info yet!");
+
+	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
+	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
+	if (!asset) 
+		return false;
+
+	FILE *fp = funopen(asset, 
+		[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); }, 
+		[](void *cookie, const char *buf, int size) {return EACCES; }, 
+		[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); }, 
+		[](void *cookie) { AAsset_close((AAsset *)cookie); return 0; } );
+
+	if (fp == nullptr) {
+		log_errf("Can't find file %s!", filename);
+		return false;
+	}
+#else
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
 		log_errf("Can't find file %s!", filename);
 		return false;
 	}
+#endif
 
 	// Get length of file
 	fseek(fp, 0L, SEEK_END);
@@ -93,6 +121,10 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
 	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
+
+#if __ANDROID__
+	AAsset_close(asset);
+#endif
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
@@ -145,15 +177,21 @@ float platform_get_scroll() {
 bool platform_key_down(key_ key) {
 #if WINDOWS_UWP
 	return uwp_key_down(key);
-#else
+#elif _WIN32
 	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
+#else
+	return false;
 #endif
 }
 
 ///////////////////////////////////////////
 
 void platform_debug_output(const char *text) {
+#if _WIN32
 	OutputDebugStringA(text);
+#else
+	__android_log_write(ANDROID_LOG_INFO, "StereoKit", text); 
+#endif
 }
 
 ///////////////////////////////////////////

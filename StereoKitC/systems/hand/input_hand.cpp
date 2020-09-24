@@ -13,6 +13,7 @@
 #include "../../asset_types/material.h"
 #include "../platform/platform_utils.h"
 
+#include <math.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -44,15 +45,15 @@ struct hand_state_t {
 	bool        solid;
 };
 
-struct hand_system_t {
+typedef struct hand_system_t {
 	hand_system_ system;
 	bool         initialized;
-	bool (*available)()        = nullptr;
-	void (*init)()             = nullptr;
-	void (*shutdown)()         = nullptr;
-	void (*update_frame)()     = nullptr;
-	void (*update_predicted)() = nullptr;
-};
+	bool (*available)();
+	void (*init)();
+	void (*shutdown)();
+	void (*update_frame)();
+	void (*update_predicted)();
+} hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override, false,

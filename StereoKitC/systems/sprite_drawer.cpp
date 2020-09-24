@@ -9,7 +9,7 @@
 #include "../hierarchy.h"
 #include "../math.h"
 
-#include <directxmath.h> // Matrix math functions and objects
+#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {
@@ -99,10 +99,10 @@ bool sprite_drawer_init() {
 	// Default rendering quad
 	sprite_quad = mesh_create();
 	vert_t verts[4] = {
-		vec3{0, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
-		vec3{1, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
-		vec3{1,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
-		vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
+		{ vec3{0, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
+		{ vec3{1, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{1,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} },
+		{ vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id   (sprite_quad, "render/sprite_quad");

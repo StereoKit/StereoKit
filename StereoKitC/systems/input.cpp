@@ -3,11 +3,6 @@
 #include "hand/input_hand.h"
 #include "../libraries/array.h"
 
-#ifndef SK_NO_FLATSCREEN
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 namespace sk {
 
 ///////////////////////////////////////////

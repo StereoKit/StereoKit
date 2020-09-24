@@ -4,19 +4,20 @@
 #include "../../libraries/sk_gpu.h"
 
 #ifdef __ANDROID__
+	#include <android/native_activity.h>
+	#include <time.h>
 	#define XR_USE_PLATFORM_ANDROID
-
+	#define XR_USE_TIMESPEC
+	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
-
 #elif _WIN32
 	#define XR_USE_PLATFORM_WIN32
-
+	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
 	#if defined(SKR_OPENGL)
 		#define XR_USE_GRAPHICS_API_OPENGL
 	#elif defined(SKR_DIRECT3D11)
 		#define XR_USE_GRAPHICS_API_D3D11
 	#endif
-
 #endif
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
@@ -76,7 +77,7 @@
 
 #include <stdint.h>
 
-#define xr_check(xResult, message, ...) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof(message, openxr_string(xr_call_result), __VA_ARGS__); return false;}}
+#define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof(message, openxr_string(xr_call_result)); return false;}}
 
 namespace sk {
 

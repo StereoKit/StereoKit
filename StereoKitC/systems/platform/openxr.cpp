@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 namespace sk {
 
@@ -29,7 +30,7 @@ XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_extensions[] = {
 	XR_GFX_EXTENSION,
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
-	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
+	XR_TIME_EXTENSION,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
@@ -89,9 +90,15 @@ const char *openxr_string(XrResult result) {
 ///////////////////////////////////////////
 
 int64_t openxr_get_time() {
+#ifdef XR_USE_TIMESPEC
+	struct timespec time;
+	xr_extensions.xrConvertTimeToTimespecTimeKHR(xr_instance, xr_time, &time);
+	return time.tv_sec*1000000000 + time.tv_nsec;
+#else
 	LARGE_INTEGER time;
 	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, xr_time, &time);
 	return time.QuadPart;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -121,8 +128,8 @@ bool openxr_init(const char *app_name) {
 		(SK_VERSION_PATCH       & 0x00000FFF);
 
 	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
-	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
+	snprintf(createInfo.applicationInfo.applicationName, sizeof(createInfo.applicationInfo.applicationName), "%s", app_name);
+	snprintf(createInfo.applicationInfo.engineName, sizeof(createInfo.applicationInfo.engineName), "StereoKit");
 	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
 
 	free(extensions);
@@ -187,9 +194,9 @@ bool openxr_init(const char *app_name) {
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
 	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-	gfx_binding.egl_display = platform._egl_display;
-	gfx_binding.egl_surface = platform._egl_surface;
-	gfx_binding.egl_context = platform._egl_context;
+	gfx_binding.display = (EGLDisplay)platform._egl_display;
+	gfx_binding.config  = (EGLConfig )platform._egl_config;
+	gfx_binding.context = (EGLContext)platform._egl_context;
 #elif defined(XR_USE_GRAPHICS_API_D3D11)
 	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
 #endif

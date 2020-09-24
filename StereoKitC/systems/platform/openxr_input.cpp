@@ -8,6 +8,7 @@
 #include "../../_stereokit.h"
 
 #include <openxr/openxr.h>
+#include <stdio.h>
 
 namespace sk {
 
@@ -43,8 +44,8 @@ bool oxri_init() {
 	xrc_offset_rot[1] = quat_identity;
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
-	strcpy_s(actionset_info.actionSetName,          "input");
-	strcpy_s(actionset_info.localizedActionSetName, "Input");
+	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
+	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
 	XrResult result = xrCreateActionSet(xr_instance, &actionset_info, &xrc_action_set);
 	xrStringToPath(xr_instance, "/user/hand/left",  &xrc_hand_subaction_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right", &xrc_hand_subaction_path[1]);
@@ -59,8 +60,8 @@ bool oxri_init() {
 	action_info.countSubactionPaths = _countof(xrc_hand_subaction_path);
 	action_info.subactionPaths      = xrc_hand_subaction_path;
 	action_info.actionType          = XR_ACTION_TYPE_POSE_INPUT;
-	strcpy_s(action_info.actionName,          "hand_pose");
-	strcpy_s(action_info.localizedActionName, "Hand Pose");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_pose");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Pose");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_pose_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -69,8 +70,8 @@ bool oxri_init() {
 
 	// Create an action to track the pointing position and orientation!
 	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-	strcpy_s(action_info.actionName,          "hand_point");
-	strcpy_s(action_info.localizedActionName, "Hand Point");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_point");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Point");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_point_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -80,8 +81,8 @@ bool oxri_init() {
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	strcpy_s(action_info.actionName,          "select");
-	strcpy_s(action_info.localizedActionName, "Select");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "select");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Select");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_select_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -89,8 +90,8 @@ bool oxri_init() {
 	}
 
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	strcpy_s(action_info.actionName,          "grip");
-	strcpy_s(action_info.localizedActionName, "Grip");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_grip_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));

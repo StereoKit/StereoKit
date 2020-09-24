@@ -9,7 +9,7 @@
 
 #include <ctype.h>
 
-#include <directxmath.h> // Matrix math functions and objects
+#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {
@@ -142,7 +142,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		const char *curr = start;
 		float width = 0;
 		while (*curr != '\n' && *curr != '\0') {
-			width += step.style->font->characters[*curr].xadvance;
+			width += step.style->font->characters[(int)*curr].xadvance;
 			curr++;
 		}
 		if (out_char_count != nullptr)
@@ -172,7 +172,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 			break;
 
 		// Advance by character width
-		font_char_t &char_info = step.style->font->characters[curr];
+		font_char_t &char_info = step.style->font->characters[(int)curr];
 		float next_width = char_info.xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
@@ -227,7 +227,7 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 }
 
 void text_step_position(char ch, const char *start, text_stepper_t &step) {
-	font_char_t &char_info = step.style->font->characters[ch];
+	font_char_t &char_info = step.style->font->characters[(int)ch];
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
 		text_step_next_line(start+1, step);
@@ -379,7 +379,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	text_step_next_line(text, step);
 	for (int32_t i=0; i<text_length; i++) {
 		if (!isspace(text[i])) {
-			font_char_t &char_info = step.style->font->characters[text[i]];
+			font_char_t &char_info = step.style->font->characters[(int)text[i]];
 			if (clip)
 				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
 			else
