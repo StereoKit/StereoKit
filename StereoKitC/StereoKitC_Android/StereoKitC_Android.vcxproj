@@ -144,7 +144,7 @@
       <ExceptionHandling>Enabled</ExceptionHandling>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;openxr_loader;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;reactphysics3d;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalOptions>
       </AdditionalOptions>
       <VerboseOutput>false</VerboseOutput>
@@ -160,7 +160,7 @@
       </AdditionalOptions>
     </ClCompile>
     <Link>
-      <LibraryDependencies>m;openxr_loader;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>m;openxr_loader;reactphysics3d;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalOptions>
       </AdditionalOptions>
       <VerboseOutput>false</VerboseOutput>

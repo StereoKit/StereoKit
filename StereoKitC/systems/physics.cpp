@@ -7,7 +7,7 @@
 
 #pragma warning(push)
 #pragma warning( disable: 4244 4267 4100 )
-#include <reactphysics3d.h>
+#include <reactphysics3d/reactphysics3d.h>
 using namespace reactphysics3d;
 #pragma warning(pop)
 
@@ -33,7 +33,8 @@ struct physics_shape_asset_t {
 double physics_sim_time = 0;
 double physics_step = 1 / 90.0;
 
-DynamicsWorld *physics_world;
+PhysicsCommon physics_common;
+PhysicsWorld *physics_world;
 
 array_t<physics_shape_asset_t> physics_shapes = {};
 
@@ -41,8 +42,7 @@ array_t<physics_shape_asset_t> physics_shapes = {};
 
 bool physics_init() {
 
-	WorldSettings settings;
-	physics_world = new DynamicsWorld(Vector3(0,-9.81f,0), settings);
+	physics_world = physics_common.createPhysicsWorld();
 	return true;
 }
 
@@ -52,7 +52,7 @@ void physics_shutdown() {
 	solid_moves   .free();
 	physics_shapes.free();
 
-	delete physics_world;
+	physics_common.destroyPhysicsWorld(physics_world);
 }
 
 ///////////////////////////////////////////
@@ -115,20 +115,16 @@ void solid_release(solid_t solid) {
 	if (solid == nullptr)
 		return;
 
-	RigidBody        *body  = (RigidBody*)solid;
-	const ProxyShape *shape = body->getProxyShapesList();
-	while (shape != nullptr) {
-		const CollisionShape *asset = shape->getCollisionShape();
-
-		CollisionShapeName name = asset->getName();
-		if (name == CollisionShapeName::BOX || name == CollisionShapeName::SPHERE || name == CollisionShapeName::CAPSULE)
-			delete asset;
-		else
-			log_warn("Haven't added support for all physics shapes yet!");
-
-		shape = shape->getNext();
+	RigidBody *body  = (RigidBody*)solid;
+	for (uint i = body->getNbColliders(); i >= 0; i--) {
+		const Collider *c = body->getCollider(i);
+		switch (c->getCollisionShape()->getName()) {
+		case CollisionShapeName::BOX:     physics_common.destroyBoxShape    ((BoxShape     *)c); break;
+		case CollisionShapeName::SPHERE:  physics_common.destroySphereShape ((SphereShape  *)c); break;
+		case CollisionShapeName::CAPSULE: physics_common.destroyCapsuleShape((CapsuleShape *)c); break;
+		default:log_warn("Haven't added support for all physics shapes yet!");
+		}
 	}
-
 	physics_world->destroyRigidBody((RigidBody *)solid);
 }
 
@@ -136,24 +132,24 @@ void solid_release(solid_t solid) {
 
 void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3 *offset) {
 	RigidBody   *body   = (RigidBody*)solid;
-	SphereShape *sphere = new SphereShape(diameter/2);
-	body->addCollisionShape(sphere, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
+	SphereShape *sphere = physics_common.createSphereShape(diameter/2);
+	body->addCollider(sphere, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
 }
 
 ///////////////////////////////////////////
 
 void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const vec3 *offset) {
 	RigidBody *body = (RigidBody*)solid;
-	BoxShape  *box  = new BoxShape(Vector3{ dimensions.x / 2, dimensions.y / 2,dimensions.z / 2 });
-	body->addCollisionShape(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
+	BoxShape  *box  = physics_common.createBoxShape(Vector3{ dimensions.x / 2, dimensions.y / 2,dimensions.z / 2 });
+	body->addCollider(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
 }
 
 ///////////////////////////////////////////
 
 void solid_add_capsule(solid_t solid, float diameter, float height, float kilograms, const vec3 *offset) {
 	RigidBody    *body    = (RigidBody*)solid;
-	CapsuleShape *capsule = new CapsuleShape(diameter/2, height);
-	body->addCollisionShape(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
+	CapsuleShape *capsule = physics_common.createCapsuleShape(diameter/2, height);
+	body->addCollider(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
 }
 
 ///////////////////////////////////////////
@@ -180,7 +176,7 @@ void solid_set_enabled(solid_t solid, bool32_t enabled) {
 void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
 	RigidBody *body = (RigidBody *)solid;Transform t = Transform((Vector3 &)position, (Quaternion &)rotation);
 	body->setTransform(t);
-	body->setIsSleeping(false);
+	//body->setIsSleeping(false);
 }
 
 ///////////////////////////////////////////
