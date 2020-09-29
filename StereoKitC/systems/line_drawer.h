@@ -2,7 +2,7 @@
 
 namespace sk {
 
-bool line_drawer_init    ();
+bool line_drawer_init    (void *arg);
 void line_drawer_update  ();
 void line_drawer_shutdown();
 

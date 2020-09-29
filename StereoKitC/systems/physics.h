@@ -2,7 +2,7 @@
 
 namespace sk {
 
-bool physics_init();
+bool physics_init(void *arg);
 void physics_shutdown();
 void physics_update();
 

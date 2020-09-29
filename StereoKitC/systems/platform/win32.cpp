@@ -1,4 +1,3 @@
-#ifndef SK_NO_FLATSCREEN
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 
 #include "win32.h"
@@ -43,7 +42,7 @@ void win32_resize(int width, int height) {
 
 ///////////////////////////////////////////
 
-bool win32_init(const char *app_name) {
+bool win32_init(void *from_window) {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -91,7 +90,7 @@ bool win32_init(const char *app_name) {
 	};
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = app_name;
+	wc.lpszClassName = sk_app_name;
 	if( !RegisterClass(&wc) ) return false;
 
 	RECT r;
@@ -102,7 +101,7 @@ bool win32_init(const char *app_name) {
 	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindow(
 		wc.lpszClassName, 
-		app_name, 
+		sk_app_name, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
 		max(0,r.left), 
 		max(0,r.top), 
@@ -117,10 +116,10 @@ bool win32_init(const char *app_name) {
 		switch (level) {
 		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
 		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf("sk_gpu: %s", text); break;
+		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skr_init(app_name, win32_window, nullptr))
+	if (!skr_init(sk_app_name, win32_window, nullptr))
 		return false;
 	win32_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
 
@@ -181,4 +180,3 @@ void *win32_hwnd() {
 } // namespace sk
 
 #endif // defined(_WIN32) && !defined(WINDOWS_UWP)
-#endif // SK_NO_FLATSCREEN

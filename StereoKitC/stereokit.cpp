@@ -11,6 +11,8 @@
 #include "systems/sprite_drawer.h"
 #include "systems/line_drawer.h"
 #include "systems/defaults.h"
+#include "systems/platform/win32.h"
+#include "systems/platform/uwp.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
@@ -89,6 +91,12 @@ void sk_app_update() {
 ///////////////////////////////////////////
 
 bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
+	return sk_init_from(nullptr, app_name, runtime_preference, fallback);
+}
+
+///////////////////////////////////////////
+
+bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
 	sk_runtime          = runtime_preference;
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
@@ -100,75 +108,150 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 
 	sk_update_timer();
 
-	systems_add("Platform", nullptr, 0, nullptr, 0, platform_init, nullptr, platform_shutdown);
+	// Platform related systems
+	system_t sys_platform         = { "Platform" };
+	system_t sys_platform_begin   = { "FrameBegin" };
+	system_t sys_platform_render  = { "FrameRender" };
+	system_t sys_platform_present = { "FramePresent" };
 
-	const char *default_deps[] = {"Platform"};
-	systems_add("Defaults", default_deps, _countof(default_deps), nullptr, 0, defaults_init, nullptr, defaults_shutdown);
+#if defined(WINDOWS_UWP)
+	sys_platform        .func_initialize = uwp_init;
+	sys_platform        .func_shutdown   = uwp_shutdown;
+	sys_platform_begin  .func_update     = uwp_step_begin;
+	sys_platform_render .func_update     = uwp_step_end;
+	sys_platform_present.func_update     = uwp_vsync;
+#elif defined(_WIN32)
+	sys_platform        .func_initialize = win32_init;
+	sys_platform        .func_shutdown   = win32_shutdown;
+	sys_platform_begin  .func_update     = win32_step_begin;
+	sys_platform_render .func_update     = win32_step_end;
+	sys_platform_present.func_update     = win32_vsync;
+#elif defined(__ANDROID__)
+#endif
 
+	const char *frame_present_update_deps[] = {"FrameRender"};
+	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
+	sys_platform        .initialize_arg  = window;
+	sys_platform_render .init_dependencies     = frame_render_update_deps;
+	sys_platform_render .init_dependency_count = _countof(frame_render_update_deps);
+	sys_platform_present.init_dependencies     = frame_present_update_deps;
+	sys_platform_present.init_dependency_count = _countof(frame_present_update_deps);
+	
+	systems_add(&sys_platform);
+	systems_add(&sys_platform_begin);
+	systems_add(&sys_platform_render);
+	systems_add(&sys_platform_present);
+
+	// Rest of the systems
+	system_t sys_defaults = { "Defaults" };
+	const char *default_deps[] = { "Platform" };
+	sys_defaults.init_dependencies     = default_deps;
+	sys_defaults.init_dependency_count = _countof(default_deps);
+	sys_defaults.func_initialize       = defaults_init;
+	sys_defaults.func_shutdown         = defaults_shutdown;
+	systems_add(&sys_defaults);
+
+	system_t sys_ui = { "UI" };
 	const char *ui_deps       [] = {"Defaults"};
 	const char *ui_update_deps[] = {"Input"};
-	systems_add("UI", 
-		ui_deps,        _countof(ui_deps), 
-		ui_update_deps, _countof(ui_update_deps), 
-		ui_init, ui_update, ui_shutdown);
+	sys_ui.init_dependencies       = ui_deps;
+	sys_ui.init_dependency_count   = _countof(ui_deps);
+	sys_ui.update_dependencies     = ui_update_deps;
+	sys_ui.update_dependency_count = _countof(ui_update_deps);
+	sys_ui.func_initialize         = ui_init;
+	sys_ui.func_update             = ui_update;
+	sys_ui.func_shutdown           = ui_shutdown;
+	systems_add(&sys_ui);
 
-	const char *physics_deps[] = {"Defaults"};
+	system_t sys_physics = { "Physics" };
+	const char *physics_deps       [] = {"Defaults"};
 	const char *physics_update_deps[] = {"Input", "FrameBegin"};
-	systems_add("Physics",  
-		physics_deps,        _countof(physics_deps), 
-		physics_update_deps, _countof(physics_update_deps), 
-		physics_init, physics_update, physics_shutdown);
+	sys_physics.init_dependencies       = physics_deps;
+	sys_physics.init_dependency_count   = _countof(physics_deps);
+	sys_physics.update_dependencies     = physics_update_deps;
+	sys_physics.update_dependency_count = _countof(physics_update_deps);
+	sys_physics.func_initialize         = physics_init;
+	sys_physics.func_update             = physics_update;
+	sys_physics.func_shutdown           = physics_shutdown;
+	systems_add(&sys_physics);
 
-	const char *renderer_deps[] = {"Platform", "Defaults"};
+	system_t sys_renderer = { "Renderer" };
+	const char *renderer_deps       [] = {"Platform", "Defaults"};
 	const char *renderer_update_deps[] = {"Physics", "FrameBegin"};
-	systems_add("Renderer",  
-		renderer_deps,        _countof(renderer_deps), 
-		renderer_update_deps, _countof(renderer_update_deps),
-		render_initialize, render_update, render_shutdown);
+	sys_renderer.init_dependencies       = renderer_deps;
+	sys_renderer.init_dependency_count   = _countof(renderer_deps);
+	sys_renderer.update_dependencies     = renderer_update_deps;
+	sys_renderer.update_dependency_count = _countof(renderer_update_deps);
+	sys_renderer.func_initialize         = render_init;
+	sys_renderer.func_update             = render_update;
+	sys_renderer.func_shutdown           = render_shutdown;
+	systems_add(&sys_renderer);
 
-	const char *sound_deps[] = {"Platform"};
+	system_t sys_sound = { "Sound" };
+	const char *sound_deps       [] = {"Platform"};
 	const char *sound_update_deps[] = {"Platform"};
-	systems_add("Sound",  
-		sound_deps,        _countof(sound_deps), 
-		sound_update_deps, _countof(sound_update_deps),
-		sound_init, sound_update, sound_shutdown);
+	sys_sound.init_dependencies       = sound_deps;
+	sys_sound.init_dependency_count   = _countof(sound_deps);
+	sys_sound.update_dependencies     = sound_update_deps;
+	sys_sound.update_dependency_count = _countof(sound_update_deps);
+	sys_sound.func_initialize         = sound_init;
+	sys_sound.func_update             = sound_update;
+	sys_sound.func_shutdown           = sound_shutdown;
+	systems_add(&sys_sound);
 
-	const char *input_deps[] = {"Platform", "Defaults"};
+	system_t sys_input = { "Input" };
+	const char *input_deps       [] = {"Platform", "Defaults"};
 	const char *input_update_deps[] = {"FrameBegin"};
-	systems_add("Input",  
-		input_deps,        _countof(input_deps), 
-		input_update_deps, _countof(input_update_deps), 
-		input_init, input_update, input_shutdown);
+	sys_input.init_dependencies       = input_deps;
+	sys_input.init_dependency_count   = _countof(input_deps);
+	sys_input.update_dependencies     = input_update_deps;
+	sys_input.update_dependency_count = _countof(input_update_deps);
+	sys_input.func_initialize         = input_init;
+	sys_input.func_update             = input_update;
+	sys_input.func_shutdown           = input_shutdown;
+	systems_add(&sys_input);
 
-	const char *text_deps[] = {"Defaults"};
+	system_t sys_text = { "Text" };
+	const char *text_deps       [] = {"Defaults"};
 	const char *text_update_deps[] = {"App"};
-	systems_add("Text",  
-		text_deps,        _countof(text_deps), 
-		text_update_deps, _countof(text_update_deps), 
-		nullptr, text_update, text_shutdown);
+	sys_text.init_dependencies       = text_deps;
+	sys_text.init_dependency_count   = _countof(text_deps);
+	sys_text.update_dependencies     = text_update_deps;
+	sys_text.update_dependency_count = _countof(text_update_deps);
+	sys_text.func_update             = text_update;
+	sys_text.func_shutdown           = text_shutdown;
+	systems_add(&sys_text);
 
-	const char *sprite_deps[] = {"Defaults"};
+	system_t sys_sprite = { "Sprites" };
+	const char *sprite_deps       [] = {"Defaults"};
 	const char *sprite_update_deps[] = {"App"};
-	systems_add("Sprites",  
-		sprite_deps,        _countof(sprite_deps), 
-		sprite_update_deps, _countof(sprite_update_deps), 
-		sprite_drawer_init, sprite_drawer_update, sprite_drawer_shutdown);
+	sys_sprite.init_dependencies       = sprite_deps;
+	sys_sprite.init_dependency_count   = _countof(sprite_deps);
+	sys_sprite.update_dependencies     = sprite_update_deps;
+	sys_sprite.update_dependency_count = _countof(sprite_update_deps);
+	sys_sprite.func_initialize         = sprite_drawer_init;
+	sys_sprite.func_update             = sprite_drawer_update;
+	sys_sprite.func_shutdown           = sprite_drawer_shutdown;
+	systems_add(&sys_sprite);
 
-	const char *line_deps[] = {"Defaults"};
+	system_t sys_lines = { "Lines" };
+	const char *line_deps       [] = {"Defaults"};
 	const char *line_update_deps[] = {"App"};
-	systems_add("Lines",  
-		line_deps,        _countof(line_deps), 
-		line_update_deps, _countof(line_update_deps), 
-		line_drawer_init, line_drawer_update, line_drawer_shutdown);
+	sys_lines.init_dependencies       = line_deps;
+	sys_lines.init_dependency_count   = _countof(line_deps);
+	sys_lines.update_dependencies     = line_update_deps;
+	sys_lines.update_dependency_count = _countof(line_update_deps);
+	sys_lines.func_initialize         = line_drawer_init;
+	sys_lines.func_update             = line_drawer_update;
+	sys_lines.func_shutdown           = line_drawer_shutdown;
+	systems_add(&sys_lines);
 
-	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
-	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
-
-	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
-	const char *platform_end_deps[] = {"App", "Text", "Sprites", "Lines"};
-	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
-	const char *platform_present_deps[] = {"FrameRender"};
-	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
+	system_t sys_app = { "App" };
+	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
+	sys_app.update_dependencies     = app_update_deps;
+	sys_app.update_dependency_count = _countof(app_update_deps);
+	sys_app.func_update             = sk_app_update;
+	systems_add(&sys_app);
 
 	sk_initialized = systems_initialize();
 	if (!sk_initialized) log_show_any_fail_reason();

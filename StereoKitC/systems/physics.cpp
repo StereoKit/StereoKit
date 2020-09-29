@@ -40,7 +40,7 @@ array_t<physics_shape_asset_t> physics_shapes = {};
 
 ///////////////////////////////////////////
 
-bool physics_init() {
+bool physics_init(void *) {
 
 	physics_world = physics_common.createPhysicsWorld();
 	return true;
@@ -116,7 +116,7 @@ void solid_release(solid_t solid) {
 		return;
 
 	RigidBody *body  = (RigidBody*)solid;
-	for (uint i = body->getNbColliders(); i >= 0; i--) {
+	/*for (int i = body->getNbColliders()-1; i >= 0; i--) {
 		const Collider *c = body->getCollider(i);
 		switch (c->getCollisionShape()->getName()) {
 		case CollisionShapeName::BOX:     physics_common.destroyBoxShape    ((BoxShape     *)c); break;
@@ -124,7 +124,7 @@ void solid_release(solid_t solid) {
 		case CollisionShapeName::CAPSULE: physics_common.destroyCapsuleShape((CapsuleShape *)c); break;
 		default:log_warn("Haven't added support for all physics shapes yet!");
 		}
-	}
+	}*/
 	physics_world->destroyRigidBody((RigidBody *)solid);
 }
 

@@ -53,7 +53,7 @@ void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();
 
-bool render_initialize();
+bool render_init(void *arg);
 void render_update();
 void render_shutdown();
 

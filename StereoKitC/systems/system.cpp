@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "../libraries/stref.h"
+#include "../libraries/array.h"
 #include "../stereokit.h"
 
 #include <chrono>
@@ -18,10 +19,8 @@ struct sort_dependency_t {
 	int32_t  count;
 };
 
-system_t *systems           = nullptr;
-int32_t  *system_init_order = nullptr;
-int32_t   system_count = 0;
-int32_t   system_cap   = 0;
+array_t<system_t> systems           = {};
+int32_t          *system_init_order = nullptr;
 
 ///////////////////////////////////////////
 
@@ -33,29 +32,14 @@ int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, i
 
 ///////////////////////////////////////////
 
-void systems_add(const char *name, const char **init_dependencies, int32_t init_dependency_count, const char **update_dependencies, int32_t update_dependency_count, bool (*func_initialize)(void), void (*func_update)(void), void (*func_shutdown)(void)) {
-	if (system_count + 1 > system_cap) {
-		system_cap = system_cap < 1 ? 1 : system_cap;
-		system_cap = system_cap * 2;
-		systems = (system_t*)realloc(systems, sizeof(system_t) * system_cap);
-	}
-
-	systems[system_count] = {};
-	systems[system_count].init_dependencies       = init_dependencies;
-	systems[system_count].init_dependency_count   = init_dependency_count;
-	systems[system_count].update_dependencies     = update_dependencies;
-	systems[system_count].update_dependency_count = update_dependency_count;
-	systems[system_count].name             = name;
-	systems[system_count].func_initialize  = func_initialize;
-	systems[system_count].func_update      = func_update;
-	systems[system_count].func_shutdown    = func_shutdown;
-	system_count += 1;
+void systems_add(const system_t *system) {
+	systems.add(*system);
 }
 
 ///////////////////////////////////////////
 
 int32_t systems_find(const char *name) {
-	for (int32_t i = 0; i < system_count; i++) {
+	for (int32_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
 			return i;
 	}
@@ -69,8 +53,8 @@ bool systems_sort() {
 	int32_t result = 0;
 	
 	// Turn dependency names into indices for update
-	sort_dependency_t *update_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * system_count);
-	for (size_t i = 0; i < system_count; i++) {
+	sort_dependency_t *update_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * systems.count);
+	for (size_t i = 0; i < systems.count; i++) {
 		update_ids[i].count = systems[i].update_dependency_count;
 		update_ids[i].ids   = (int32_t*)malloc(sizeof(int32_t) * systems[i].update_dependency_count);
 
@@ -87,16 +71,16 @@ bool systems_sort() {
 	if (result == 0) {
 		int32_t *update_order = nullptr;
 
-		result = topological_sort(update_ids, system_count, &update_order);
+		result = topological_sort(update_ids, systems.count, &update_order);
 		if (result != 0) log_errf("Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
-		else array_reorder((void**)&systems, sizeof(system_t), system_count, update_order);
+		else array_reorder((void**)&systems, sizeof(system_t), systems.count, update_order);
 
 		free(update_order);
 	}
 
 	// Turn dependency names into indices for init
-	sort_dependency_t *init_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * system_count);
-	for (size_t i = 0; i < system_count; i++) {
+	sort_dependency_t *init_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * systems.count);
+	for (size_t i = 0; i < systems.count; i++) {
 		init_ids[i].count = systems[i].init_dependency_count;
 		init_ids[i].ids   = (int32_t*)malloc(sizeof(int32_t) * systems[i].init_dependency_count);
 
@@ -111,12 +95,12 @@ bool systems_sort() {
 
 	// Sort the init order
 	if (result == 0) {
-		result = topological_sort(init_ids, system_count, &system_init_order);
+		result = topological_sort(init_ids, systems.count, &system_init_order);
 		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
 
 	// Release memory
-	for (size_t i = 0; i < system_count; i++) {
+	for (size_t i = 0; i < systems.count; i++) {
 		free(init_ids  [i].ids);
 		free(update_ids[i].ids);
 	}
@@ -132,13 +116,13 @@ bool systems_initialize() {
 	if (!systems_sort())
 		return false;
 
-	for (int32_t i = 0; i < system_count; i++) {
+	for (int32_t i = 0; i < systems.count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
 			// start timing
 			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
-			if (!systems[index].func_initialize()) {
+			if (!systems[index].func_initialize(systems[index].initialize_arg)) {
 				log_errf("System %s failed to initialize!", systems[index].name);
 				return false;
 			}
@@ -155,7 +139,7 @@ bool systems_initialize() {
 ///////////////////////////////////////////
 
 void systems_update() {
-	for (int32_t i = 0; i < system_count; i++) {
+	for (int32_t i = 0; i < systems.count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
 			time_point<high_resolution_clock> start = high_resolution_clock::now();
@@ -174,7 +158,7 @@ void systems_update() {
 ///////////////////////////////////////////
 
 void systems_shutdown() {
-	for (int32_t i = system_count-1; i >= 0; i--) {
+	for (int32_t i = systems.count-1; i >= 0; i--) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_shutdown != nullptr) {
 			// start timing
@@ -192,7 +176,7 @@ void systems_shutdown() {
 	log_info("<~BLK>______________________________________________________<~clr>");
 	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
-	for (int32_t i = 0; i < system_count; i++) {
+	for (int32_t i = 0; i < systems.count; i++) {
 		int32_t index = i;
 
 		char start_time[24];
@@ -219,9 +203,8 @@ void systems_shutdown() {
 	}
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 
-	free(systems);
+	systems.free();
 	free(system_init_order);
-	systems = nullptr;
 }
 
 ///////////////////////////////////////////

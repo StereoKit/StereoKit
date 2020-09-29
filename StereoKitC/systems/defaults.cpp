@@ -56,7 +56,7 @@ tex_t defaults_texture(const char *id, color32 color) {
 
 ///////////////////////////////////////////
 
-bool defaults_init() {
+bool defaults_init(void *) {
 	// Textures
 	sk_default_tex       = defaults_texture(default_id_tex,       {255,255,255,255});
 	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,255}      );

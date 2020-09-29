@@ -282,7 +282,7 @@ void ui_set_color(color128 color) {
 
 ///////////////////////////////////////////
 
-bool ui_init() {
+bool ui_init(void *) {
 	ui_set_color(color_hsv(0.07f, 0.8f, 0.5f, 1));
 
 	ui_quadrant_mesh(skui_settings.padding);

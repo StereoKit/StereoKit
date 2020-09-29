@@ -368,7 +368,7 @@ void render_clear() {
 
 ///////////////////////////////////////////
 
-bool render_initialize() {
+bool render_init(void *) {
 	render_shader_globals = skr_buffer_create(nullptr, sizeof(render_global_buffer_t), skr_buffer_type_constant, skr_use_dynamic);
 	render_shader_blit    = skr_buffer_create(nullptr, sizeof(render_blit_data_t),     skr_buffer_type_constant, skr_use_dynamic);;
 

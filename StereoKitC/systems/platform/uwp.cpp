@@ -1,4 +1,3 @@
-#ifndef SK_NO_FLATSCREEN
 #ifdef WINDOWS_UWP
 
 #include <dxgi1_2.h>
@@ -150,16 +149,17 @@ public:
 
 		// Get the HWND of the UWP window
 		// https://kennykerr.ca/2012/11/09/windows-8-whered-you-put-my-hwnd/
-		struct __declspec(uuid("45D64A29-A63E-4CB6-B498-5781D298CB4F")) __declspec(novtable)
-			ICoreWindowInterop : ::IUnknown
+		struct 
+		__declspec(uuid("45D64A29-A63E-4CB6-B498-5781D298CB4F")) 
+		__declspec(novtable)
+		ICoreWindowInterop : ::IUnknown
 		{
 			virtual HRESULT __stdcall get_WindowHandle(HWND * hwnd) = 0;
 			virtual HRESULT __stdcall put_MessageHandled(unsigned char) = 0;
 		};
-		ICoreWindowInterop *interop;
-		((::IUnknown &)(window)).QueryInterface(__uuidof(ICoreWindowInterop), (void **)&interop);
-		interop->get_WindowHandle(&uwp_window);
-		
+		winrt::com_ptr<ICoreWindowInterop> interop {};
+		winrt::check_hresult(winrt::get_unknown(window)->QueryInterface(interop.put()));
+		winrt::check_hresult(interop->get_WindowHandle(&uwp_window));
 
 		initialized = true;
 		valid = true;
@@ -392,7 +392,7 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_init(const char *app_name) {
+bool uwp_init(void *from_window) {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -403,7 +403,7 @@ bool uwp_init(const char *app_name) {
 		Sleep(1);
 	}
 
-	if (!skr_init(app_name, uwp_window, nullptr))
+	if (!skr_init(sk_app_name, uwp_window, nullptr))
 		return false;
 	uwp_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
 
@@ -445,4 +445,3 @@ void uwp_shutdown() {
 }
 
 #endif // WINDOWS_UWP
-#endif // SK_NO_FLATSCREEN

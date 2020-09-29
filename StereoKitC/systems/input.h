@@ -15,7 +15,7 @@ extern pose_t     input_head_pose;
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int32_t id);
 
-bool input_init    ();
+bool input_init    (void *arg);
 void input_shutdown();
 void input_update  ();
 void input_update_predicted();

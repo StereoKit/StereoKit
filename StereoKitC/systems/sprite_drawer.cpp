@@ -94,7 +94,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 ///////////////////////////////////////////
 
-bool sprite_drawer_init() {
+bool sprite_drawer_init(void *) {
 
 	// Default rendering quad
 	sprite_quad = mesh_create();

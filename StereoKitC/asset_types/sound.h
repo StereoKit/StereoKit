@@ -17,7 +17,7 @@ struct sound_inst_t {
 	float   volume;
 };
 
-bool sound_init();
+bool sound_init(void *arg);
 void sound_update();
 void sound_shutdown();
 

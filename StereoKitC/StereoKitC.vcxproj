@@ -112,6 +112,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="android.cpp" />
     <ClCompile Include="asset_types\assets.cpp" />
     <ClCompile Include="asset_types\font.cpp" />
     <ClCompile Include="asset_types\material.cpp" />
@@ -162,6 +163,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\text.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="android.h" />
     <ClInclude Include="asset_types\assets.h" />
     <ClInclude Include="asset_types\font.h" />
     <ClInclude Include="asset_types\material.h" />

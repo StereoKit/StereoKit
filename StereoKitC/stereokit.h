@@ -1,9 +1,6 @@
 #pragma once
 
 #define SK_32BIT_INDICES
-// #define SK_NO_FLATSCREEN
-// #define SK_NO_LEAP_MOTION
-// #define SK_NO_RUNTIME_SHADER_COMPILE
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 2
@@ -94,6 +91,7 @@ typedef struct system_info_t {
 } system_info_t;
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
+SK_API bool32_t      sk_init_from     (void *window, const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
 SK_API void          sk_shutdown      ();
 SK_API void          sk_quit          ();
 SK_API bool32_t      sk_step          (void (*app_update)(void));

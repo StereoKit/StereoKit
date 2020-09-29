@@ -1,7 +1,7 @@
 #pragma once
 
 namespace sk {
-bool uwp_init(const char *app_name);
+bool uwp_init(void *from_window);
 void uwp_step_begin();
 void uwp_step_end();
 void uwp_vsync();

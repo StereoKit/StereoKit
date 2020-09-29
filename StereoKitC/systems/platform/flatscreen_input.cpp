@@ -1,5 +1,3 @@
-#ifndef SK_NO_FLATSCREEN
-
 #include "../../_stereokit.h"
 #include "platform_utils.h"
 #include "flatscreen_input.h"
@@ -119,5 +117,3 @@ bool flatscreen_is_simulating_movement() {
 }
 
 } // namespace sk
-
-#endif // SK_NO_FLATSCREEN
