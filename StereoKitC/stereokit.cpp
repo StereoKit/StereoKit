@@ -138,10 +138,10 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	const char *frame_present_update_deps[] = {"FrameRender"};
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
 	sys_platform        .initialize_arg  = window;
-	sys_platform_render .init_dependencies     = frame_render_update_deps;
-	sys_platform_render .init_dependency_count = _countof(frame_render_update_deps);
-	sys_platform_present.init_dependencies     = frame_present_update_deps;
-	sys_platform_present.init_dependency_count = _countof(frame_present_update_deps);
+	sys_platform_render .update_dependencies     = frame_render_update_deps;
+	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
+	sys_platform_present.update_dependencies     = frame_present_update_deps;
+	sys_platform_present.update_dependency_count = _countof(frame_present_update_deps);
 	
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);

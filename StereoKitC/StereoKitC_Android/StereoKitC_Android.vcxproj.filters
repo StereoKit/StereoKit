@@ -118,4 +118,7 @@
     <ClInclude Include="..\shaders_builtin\*.h" />
     <ClInclude Include="..\shaders_builtin\*.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib\bin\arm64-v8a\Release\libopenxr_loader.so" />
+  </ItemGroup>
 </Project>

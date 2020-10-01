@@ -7,6 +7,9 @@ android_app* app;
 bool app_visible = false;
 bool app_run = true;
 
+mesh_t mesh;
+material_t mat;
+
 static int32_t engine_handle_input(android_app*, AInputEvent* event) {
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
 		return 1;
@@ -25,8 +28,11 @@ static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 			log_set_filter(log_diagnostic);
 			app_run = sk_init_from(evt_app->window, "StereoKitCTest_Android", runtime_mixedreality, true);
 			app_visible = app_run;
-			//app_run = skr_init("StereoKitCTest", app->window, nullptr);
-			__android_log_print(ANDROID_LOG_INFO, "StereoKit", "Initialization finished!");
+
+			if (app_run) {
+				mesh = mesh_gen_rounded_cube(vec3_one, 0.2f, 3);
+				mat  = material_find(default_id_material);
+			}
 		}
 		break;
 	case APP_CMD_SAVE_STATE:   break;
@@ -61,8 +67,12 @@ void android_main(struct android_app* state) {
 			}
 		}
 
-		__android_log_print(ANDROID_LOG_INFO, "StereoKit", "StereoKit Step");
-		if (app_visible) sk_step([]() {__android_log_print(ANDROID_LOG_INFO, "StereoKit", "StereoKit internal step");});
+		if (app_visible) sk_step([]() {
+			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
+
+			vec3 pos = { cosf(time_getf())*2, 1, sinf(time_getf())*2 };
+			render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3_zero)));
+		});
 	}
 
 	sk_shutdown();

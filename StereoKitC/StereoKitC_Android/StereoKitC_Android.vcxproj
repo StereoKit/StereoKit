@@ -142,6 +142,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>Enabled</ExceptionHandling>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <LibraryDependencies>m;openxr_loader;reactphysics3d;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
@@ -195,6 +196,9 @@
     <ClInclude Include="..\systems\platform\*.h" />
     <ClInclude Include="..\systems\hand\*.h" />
     <ClInclude Include="..\shaders_builtin\*.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib\bin\arm64-v8a\Release\libopenxr_loader.so" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
