@@ -16,7 +16,14 @@ ANativeWindow*   android_window;
 skr_swapchain_t  android_swapchain;
 
 bool android_init(void *from_window) {
-	android_window = (ANativeWindow*)from_window; // this, or activity??
+	struct android_info_t {
+		ANativeActivity *activity;
+		ANativeWindow *window;
+	};
+	android_info_t *info = (android_info_t *)from_window;
+	android_window = info->window; // this, or activity??
+	android_activity = info->activity;
+
 
 	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {

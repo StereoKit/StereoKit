@@ -1,4 +1,5 @@
 #include <stereokit.h>
+#include <stereokit_ui.h>
 using namespace sk;
 //#define SKR_IMPL
 //#include "../../../StereoKitC/libraries/sk_gpu.h"
@@ -26,11 +27,16 @@ static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 			//engine_init_display();
 			//engine_draw_frame();
 			log_set_filter(log_diagnostic);
-			app_run = sk_init_from(evt_app->window, "StereoKitCTest_Android", runtime_mixedreality, true);
+			struct android_info_t {
+				ANativeActivity *activity;
+				ANativeWindow *window;
+			};
+			android_info_t info = { evt_app->activity, evt_app->window };
+			app_run = sk_init_from(&info, "StereoKitCTest_Android", runtime_mixedreality, true);
 			app_visible = app_run;
 
 			if (app_run) {
-				mesh = mesh_gen_rounded_cube(vec3_one, 0.2f, 3);
+				mesh = mesh_gen_rounded_cube(vec3_one*.4f, 0.05f, 4);
 				mat  = material_find(default_id_material);
 			}
 		}
@@ -50,7 +56,7 @@ void android_main(struct android_app* state) {
 	app_run = true;// sk_init_from(app->window, "StereoKitCTest_Android", runtime_mixedreality, true);
 
 	while (app_run) {
-		// If not animating, we will block forever waiting for events.
+		// If not animating, we will block forever waiting for events.                    
 		// If animating, we loop until all events are read, then continue
 		// to draw the next frame of animation.
 		int events;
@@ -70,8 +76,13 @@ void android_main(struct android_app* state) {
 		if (app_visible) sk_step([]() {
 			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
 
-			vec3 pos = { cosf(time_getf())*2, 1, sinf(time_getf())*2 };
-			render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3_zero)));
+			vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };
+			render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3{0,0.25f,0})));
+
+			pose_t pose = { vec3{0,0.5f,0}, quat_identity };
+			ui_window_begin("Hello!", pose);
+			ui_button("play");
+			ui_window_end();
 		});
 	}
 

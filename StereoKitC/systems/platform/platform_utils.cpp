@@ -1,4 +1,5 @@
 #include "platform_utils.h"
+#include "android.h"
 
 #include "../../stereokit.h"
 #include "../../log.h"
@@ -84,20 +85,21 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 	// Open file
 #if __ANDROID__
-	static AAssetManager *android_asset_manager = nullptr;
-	if (android_asset_manager == nullptr)
+	if (android_activity->assetManager == nullptr)
 		log_errf("Trying to load %s, but haven't initialized android info yet!", filename);
 
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
-	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
-	if (!asset) 
-		return false;
-
-	FILE *fp = funopen(asset, 
-		[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); }, 
-		[](void *cookie, const char *buf, int size) {return EACCES; }, 
-		[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); }, 
-		[](void *cookie) { AAsset_close((AAsset *)cookie); return 0; } );
+	AAsset *asset = AAssetManager_open(android_activity->assetManager, filename, 0);
+	FILE   *fp;
+	if (asset) {
+		fp = funopen(asset, 
+			[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); }, 
+			[](void *cookie, const char *buf, int size) {return EACCES; }, 
+			[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); }, 
+			[](void *cookie) { AAsset_close((AAsset *)cookie); return 0; } );
+	} else {
+		fp = fopen(filename, "rb");
+	}
 
 	if (fp == nullptr) {
 		log_errf("Can't find file %s!", filename);
@@ -123,7 +125,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	fclose(fp);
 
 #if __ANDROID__
-	AAsset_close(asset);
+	if (asset) AAsset_close(asset);
 #endif
 
 	// Stick an end string 0 character at the end in case the caller wants
@@ -167,8 +169,10 @@ void platform_set_cursor(vec2 window_pos) {
 float platform_get_scroll() {
 #if WINDOWS_UWP
 	return uwp_get_scroll();
-#elif _MSC_VER
+#elif _WIN32
 	return win32_scroll;
+#else
+	return 0;
 #endif
 }
 
