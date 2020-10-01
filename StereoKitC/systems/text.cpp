@@ -4,7 +4,7 @@
 #include "../asset_types/assets.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
-#include "../math.h"
+#include "../sk_math.h"
 #include "../libraries/array.h"
 
 #include <ctype.h>

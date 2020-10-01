@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include "../math.h"
+#include "../sk_math.h"
 #include "model.h"
 #include "mesh.h"
 #include "material.h"

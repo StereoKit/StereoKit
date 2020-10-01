@@ -1,7 +1,7 @@
 #include "model.h"
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
-#include "../math.h"
+#include "../sk_math.h"
 
 #include <stdio.h>
 

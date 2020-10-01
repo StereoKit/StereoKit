@@ -1,6 +1,6 @@
 #include "stereokit.h"
 #include "hierarchy.h"
-#include "math.h"
+#include "sk_math.h"
 #include "libraries/array.h"
 
 #include <DirectXMath.h> // Matrix math functions and objects

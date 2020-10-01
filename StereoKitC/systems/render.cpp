@@ -2,7 +2,7 @@
 #include "render_sort.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
-#include "../math.h"
+#include "../sk_math.h"
 #include "../spherical_harmonics.h"
 #include "../stereokit.h"
 #include "../hierarchy.h"

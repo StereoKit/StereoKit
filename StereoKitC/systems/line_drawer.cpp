@@ -1,6 +1,6 @@
 #include "line_drawer.h"
 #include "../stereokit.h"
-#include "../math.h"
+#include "../sk_math.h"
 #include "../hierarchy.h"
 
 #include <stdlib.h>

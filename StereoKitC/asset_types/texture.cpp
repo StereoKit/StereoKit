@@ -2,7 +2,7 @@
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/stref.h"
-#include "../math.h"
+#include "../sk_math.h"
 #include "../spherical_harmonics.h"
 #include "texture.h"
 

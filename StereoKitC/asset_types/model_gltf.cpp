@@ -2,7 +2,7 @@
 
 #include "model.h"
 #include "texture.h"
-#include "../math.h"
+#include "../sk_math.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"

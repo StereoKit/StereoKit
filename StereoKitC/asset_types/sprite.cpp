@@ -3,7 +3,7 @@
 #include "texture.h"
 #include "../libraries/stref.h"
 #include "../systems/sprite_drawer.h"
-#include "../math.h"
+#include "../sk_math.h"
 
 #include <stdio.h>
 #include <malloc.h>

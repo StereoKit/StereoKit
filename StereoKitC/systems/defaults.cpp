@@ -161,11 +161,15 @@ bool defaults_init(void *) {
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
 	// Text!
-	sk_default_font       = font_create("C:/Windows/Fonts/segoeui.ttf");
+#if __ANDROID__
+	//sk_default_font = font_create("/system/fonts/DroidSans.ttf");
+#else
+	sk_default_font = font_create("C:/Windows/Fonts/segoeui.ttf");
+
 	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color32{ 255,255,255,255 });
 
 	font_set_id(sk_default_font, default_id_font);
-
+#endif
 	// Sounds
 	sk_default_click = sound_generate([](float t){
 		float x = t / 0.03f;

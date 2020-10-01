@@ -1,6 +1,6 @@
 #include "stereokit_ui.h"
 #include "_stereokit_ui.h"
-#include "math.h"
+#include "sk_math.h"
 #include "systems/input.h"
 #include "systems/hand/input_hand.h"
 #include "libraries/stref.h"
@@ -296,11 +296,11 @@ bool ui_init(void *) {
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
 
-	skui_font_mat   = material_find(default_id_material_font);
+	/*skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
-	
+	*/
 	skui_layers  .add({});
 	skui_id_stack.add({ STREF_HASH_START });
 

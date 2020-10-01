@@ -86,7 +86,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 #if __ANDROID__
 	static AAssetManager *android_asset_manager = nullptr;
 	if (android_asset_manager == nullptr)
-		log_err("Haven't initialized android info yet!");
+		log_errf("Trying to load %s, but haven't initialized android info yet!", filename);
 
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
@@ -186,11 +186,16 @@ bool platform_key_down(key_ key) {
 
 ///////////////////////////////////////////
 
-void platform_debug_output(const char *text) {
+void platform_debug_output(log_ level, const char *text) {
 #if _WIN32
 	OutputDebugStringA(text);
 #else
-	__android_log_write(ANDROID_LOG_INFO, "StereoKit", text); 
+	int32_t priority = ANDROID_LOG_INFO;
+	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
+	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
+	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
+	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
+	__android_log_write(priority, "StereoKit", text); 
 #endif
 }
 

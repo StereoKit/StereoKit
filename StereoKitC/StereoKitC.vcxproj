@@ -112,7 +112,6 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="android.cpp" />
     <ClCompile Include="asset_types\assets.cpp" />
     <ClCompile Include="asset_types\font.cpp" />
     <ClCompile Include="asset_types\material.cpp" />
@@ -135,7 +134,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="log.cpp" />
-    <ClCompile Include="math.cpp" />
+    <ClCompile Include="sk_math.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stereokit_ui.cpp" />
@@ -148,6 +147,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\input.cpp" />
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
+    <ClCompile Include="systems\platform\android.cpp" />
     <ClCompile Include="systems\platform\openxr.cpp" />
     <ClCompile Include="systems\platform\openxr_input.cpp" />
     <ClCompile Include="systems\platform\openxr_view.cpp" />
@@ -163,7 +163,6 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\text.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="android.h" />
     <ClInclude Include="asset_types\assets.h" />
     <ClInclude Include="asset_types\font.h" />
     <ClInclude Include="asset_types\material.h" />
@@ -189,7 +188,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="math.h" />
+    <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_equirect.hlsl.h" />
@@ -213,6 +212,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\input.h" />
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
+    <ClInclude Include="systems\platform\android.h" />
     <ClInclude Include="systems\platform\openxr.h" />
     <ClInclude Include="systems\platform\openxr_extensions.h" />
     <ClInclude Include="systems\platform\openxr_input.h" />

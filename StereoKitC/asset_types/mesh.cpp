@@ -1,5 +1,5 @@
 #include "../stereokit.h"
-#include "../math.h"
+#include "../sk_math.h"
 #include "mesh.h"
 #include "assets.h"
 
@@ -355,7 +355,7 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = maxi(0,(int32_t)subd) + 2;
+	subd = maxi((int32_t)0,(int32_t)subd) + 2;
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;

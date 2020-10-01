@@ -64,7 +64,8 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 
 float4 ps(psIn input) : SV_TARGET{
-	float3 albedo      = diffuse  .Sample(diffuse_s,  input.uv).rgb * input.color.rgb;
+	return diffuse.Sample(diffuse_s, input.uv) * float4(input.color,1);
+	/*float3 albedo      = diffuse  .Sample(diffuse_s,  input.uv).rgb * input.color.rgb;
 	float3 emissive    = emission .Sample(emission_s, input.uv).rgb;
 	float3 metal_rough = metal    .Sample(metal_s,    input.uv).rgb; // b is metallic, rough is g
 	float3 tex_norm    = normal   .Sample(normal_s,   input.uv).xyz * 2 - 1;
@@ -88,7 +89,7 @@ float4 ps(psIn input) : SV_TARGET{
 
 	float3 reflection = reflect(-view, p_norm);
 	float3 irradiance = Lighting(p_norm);
-	float3 reflection_color = sk_cubemap.SampleLevel(sk_cubemap_s, reflection, 3 * (1 - rough) * mip_levels).rgb;
+	float3 reflection_color = float3(1, 1, 1);//sk_cubemap.SampleLevel(sk_cubemap_s, reflection, 3 * (1 - rough) * mip_levels).rgb;
 
 	// Lighting an object is a combination of two types of light reflections,
 	// a diffuse reflection, and a specular reflection. These reflections
@@ -141,7 +142,7 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 diffuse = (albedo*irradiance);
 	float3 ambient = diffuse_contribution * diffuse + reflection_color*F;
 	float3 reflectance = ambient;// + (diffuse_contribution * albedo / 3.14159) * sk_light_color.rgb * saturate(NdotL);
-	return float4(reflectance + emissive, color.a);
+	return float4(reflectance + emissive, color.a);*/
 }
 
 // From: http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html

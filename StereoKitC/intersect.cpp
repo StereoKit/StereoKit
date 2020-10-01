@@ -1,6 +1,6 @@
 #include "stereokit.h"
 
-#include "math.h"
+#include "sk_math.h"
 
 #include <DirectXMath.h>
 using namespace DirectX;

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "stereokit.h"
-
 namespace sk {
 
-bool android_init      (const char *app_name);
+bool android_init      (void *from_window);
 void android_shutdown  ();
 void android_step_begin();
 void android_step_end  ();

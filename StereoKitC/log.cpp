@@ -184,7 +184,7 @@ void log_write(log_ level, const char *text) {
 	for (size_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i](level, colored_text);
 	}
-	platform_debug_output(colored_text);
+	platform_debug_output(level, colored_text);
 	free(colored_text);
 	
 	free(full_text);

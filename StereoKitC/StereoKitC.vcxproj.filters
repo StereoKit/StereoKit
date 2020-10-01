@@ -4,9 +4,6 @@
     <ClCompile Include="stereokit.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="math.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="log.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -145,8 +142,11 @@
     <ClCompile Include="systems\render_sort.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="android.cpp">
+    <ClCompile Include="systems\platform\android.cpp">
       <Filter>systems\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="sk_math.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -222,9 +222,6 @@
     </ClInclude>
     <ClInclude Include="systems\sprite_drawer.h">
       <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="math.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="stereokit_ui.h" />
     <ClInclude Include="libraries\stref.h">
@@ -341,8 +338,11 @@
     <ClInclude Include="systems\render_sort.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="android.h">
+    <ClInclude Include="systems\platform\android.h">
       <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="sk_math.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -13,6 +13,7 @@
 #include "systems/defaults.h"
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
+#include "systems/platform/android.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
@@ -109,9 +110,9 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	sk_update_timer();
 
 	// Platform related systems
-	system_t sys_platform         = { "Platform" };
-	system_t sys_platform_begin   = { "FrameBegin" };
-	system_t sys_platform_render  = { "FrameRender" };
+	system_t sys_platform         = { "Platform"     };
+	system_t sys_platform_begin   = { "FrameBegin"   };
+	system_t sys_platform_render  = { "FrameRender"  };
 	system_t sys_platform_present = { "FramePresent" };
 
 #if defined(WINDOWS_UWP)
@@ -127,6 +128,11 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	sys_platform_render .func_update     = win32_step_end;
 	sys_platform_present.func_update     = win32_vsync;
 #elif defined(__ANDROID__)
+	sys_platform        .func_initialize = android_init;
+	sys_platform        .func_shutdown   = android_shutdown;
+	sys_platform_begin  .func_update     = android_step_begin;
+	sys_platform_render .func_update     = android_step_end;
+	sys_platform_present.func_update     = android_vsync;
 #endif
 
 	const char *frame_present_update_deps[] = {"FrameRender"};
