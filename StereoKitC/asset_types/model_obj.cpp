@@ -16,7 +16,7 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 	int64_t index = indmap->contains(v);
 	if (index < 0) {
 		index = mesh_verts->add(v);
-		indmap->ensure(v, index);
+		indmap->add_or_set(v, index);
 	} else {
 		index = indmap->items[index];
 	}
