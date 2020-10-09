@@ -42,7 +42,13 @@ void win32_resize(int width, int height) {
 
 ///////////////////////////////////////////
 
-bool win32_init(void *from_window) {
+bool win32_setup(void *from_window) {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool win32_init() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;

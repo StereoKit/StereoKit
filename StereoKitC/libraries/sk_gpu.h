@@ -141,6 +141,11 @@ typedef enum skr_log_ {
 	skr_log_critical,
 } skr_log_;
 
+typedef enum skr_cap_ {
+	skr_cap_tex_layer_select = 1,
+	skr_cap_wireframe,
+};
+
 typedef struct skr_vert_t {
 	float   pos [3];
 	float   norm[3];
@@ -305,6 +310,7 @@ typedef struct skr_tex_t {
 	int32_t       width;
 	int32_t       height;
 	int32_t       array_count;
+	int32_t       array_start;
 	skr_use_      use;
 	skr_tex_type_ type;
 	skr_tex_fmt_  format;
@@ -348,6 +354,7 @@ void                skr_shutdown                 ();
 void                skr_callback_log             (void (*callback)(skr_log_ level, const char *text));
 void                skr_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
 skr_platform_data_t skr_get_platform_data        ();
+bool                skr_capability               (skr_cap_ capability);
 
 void                skr_draw_begin               ();
 void                skr_draw                     (int32_t index_start, int32_t index_count, int32_t instance_count);
@@ -396,6 +403,7 @@ skr_tex_t          *skr_swapchain_get_next       (      skr_swapchain_t *swapcha
 void                skr_swapchain_destroy        (      skr_swapchain_t *swapchain);
 
 skr_tex_t           skr_tex_create_from_existing (void *native_tex, skr_tex_type_ type, skr_tex_fmt_ format, int32_t width, int32_t height, int32_t array_count);
+skr_tex_t           skr_tex_create_from_layer    (void *native_tex, skr_tex_type_ type, skr_tex_fmt_ format, int32_t width, int32_t height, int32_t array_layer);
 skr_tex_t           skr_tex_create               (skr_tex_type_ type, skr_use_ use, skr_tex_fmt_ format, skr_mip_ mip_maps);
 bool                skr_tex_is_valid             (const skr_tex_t *tex);
 void                skr_tex_attach_depth         (      skr_tex_t *tex, skr_tex_t *depth);
@@ -483,7 +491,7 @@ skr_tex_t               *d3d_active_rendertarget = nullptr;
 ///////////////////////////////////////////
 
 uint32_t skr_tex_fmt_size (skr_tex_fmt_ format);
-bool     skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, uint32_t array_size, bool use_in_shader);
+bool     skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, bool is_array, uint32_t array_start, uint32_t array_size, bool use_in_shader);
 
 template <typename T>
 void skr_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
@@ -602,6 +610,20 @@ skr_platform_data_t skr_get_platform_data() {
 	result._d3d11_device = d3d_device;
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+bool skr_capability(skr_cap_ capability) {
+	switch (capability) {
+	case skr_cap_tex_layer_select: {
+		D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
+		d3d_device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS3, &options, sizeof(options));
+		return options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer;
+	} break;
+	case skr_cap_wireframe: return true;
+	default: return false;
+	}
 }
 
 ///////////////////////////////////////////
@@ -1074,7 +1096,28 @@ skr_tex_t skr_tex_create_from_existing(void *native_tex, skr_tex_type_ type, skr
 	result.height      = color_desc.Height;
 	result.array_count = color_desc.ArraySize;
 	result.format      = override_format != 0 ? override_format : skr_tex_fmt_from_native(color_desc.Format);
-	skr_tex_make_view(&result, color_desc.MipLevels, color_desc.ArraySize, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
+	skr_tex_make_view(&result, color_desc.MipLevels, array_count > 1, 0, color_desc.ArraySize, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
+
+	return result;
+}
+
+/////////////////////////////////////////// 
+
+skr_tex_t skr_tex_create_from_layer(void *native_tex, skr_tex_type_ type, skr_tex_fmt_ override_format, int32_t width, int32_t height, int32_t array_layer) {
+	skr_tex_t result = {};
+	result.type     = type;
+	result.use      = skr_use_static;
+	result._texture = (ID3D11Texture2D *)native_tex;
+	result._texture->AddRef();
+
+	// Get information about the image!
+	D3D11_TEXTURE2D_DESC color_desc;
+	result._texture->GetDesc(&color_desc);
+	result.width       = color_desc.Width;
+	result.height      = color_desc.Height;
+	result.array_count = 1;
+	result.format      = override_format != 0 ? override_format : skr_tex_fmt_from_native(color_desc.Format);
+	skr_tex_make_view(&result, color_desc.MipLevels, true, array_layer, 1, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
 
 	return result;
 }
@@ -1187,7 +1230,7 @@ void skr_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, void *curr_data, skr_tex_fmt
 
 ///////////////////////////////////////////
 
-bool skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, uint32_t array_size, bool use_in_shader) {
+bool skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, bool is_array, uint32_t array_start, uint32_t array_size, bool use_in_shader) {
 	DXGI_FORMAT format = (DXGI_FORMAT)skr_tex_fmt_to_native(tex->format);
 
 	if (tex->type != skr_tex_type_depth) {
@@ -1196,10 +1239,11 @@ bool skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, uint32_t array_size, 
 		if (tex->type == skr_tex_type_cubemap) {
 			res_desc.TextureCube.MipLevels = mip_count;
 			res_desc.ViewDimension         = D3D11_SRV_DIMENSION_TEXTURECUBE;
-		} else if (array_size > 1) {
-			res_desc.Texture2DArray.MipLevels = mip_count;
-			res_desc.Texture2DArray.ArraySize = array_size;
-			res_desc.ViewDimension            = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		} else if (is_array) {
+			res_desc.Texture2DArray.MipLevels       = mip_count;
+			res_desc.Texture2DArray.FirstArraySlice = array_start;
+			res_desc.Texture2DArray.ArraySize       = array_size;
+			res_desc.ViewDimension                  = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		} else {
 			res_desc.Texture2D.MipLevels = mip_count;
 			res_desc.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -1212,9 +1256,10 @@ bool skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, uint32_t array_size, 
 	} else {
 		D3D11_DEPTH_STENCIL_VIEW_DESC stencil_desc = {};
 		stencil_desc.Format = format;
-		if (tex->type == skr_tex_type_cubemap || array_size > 1) {
-			stencil_desc.Texture2DArray.ArraySize = array_size;
-			stencil_desc.ViewDimension            = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		if (tex->type == skr_tex_type_cubemap || is_array) {
+			stencil_desc.Texture2DArray.FirstArraySlice = array_start;
+			stencil_desc.Texture2DArray.ArraySize       = array_size;
+			stencil_desc.ViewDimension                  = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		} else {
 			stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		}
@@ -1227,9 +1272,10 @@ bool skr_tex_make_view(skr_tex_t *tex, uint32_t mip_count, uint32_t array_size, 
 	if (tex->type == skr_tex_type_rendertarget) {
 		D3D11_RENDER_TARGET_VIEW_DESC target_desc = {};
 		target_desc.Format = format;
-		if (tex->type == skr_tex_type_cubemap || array_size > 1) {
-			target_desc.Texture2DArray.ArraySize = array_size;
-			target_desc.ViewDimension            = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		if (tex->type == skr_tex_type_cubemap || is_array) {
+			target_desc.Texture2DArray.FirstArraySlice = array_start;
+			target_desc.Texture2DArray.ArraySize       = array_size;
+			target_desc.ViewDimension                  = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		} else {
 			target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		}
@@ -1306,7 +1352,7 @@ void skr_tex_set_contents(skr_tex_t *tex, void **data_frames, int32_t data_frame
 			free(tex_mem);
 		}
 
-		skr_tex_make_view(tex, mip_levels, data_frame_count, true);
+		skr_tex_make_view(tex, mip_levels, data_frame_count > 1, 0, data_frame_count, true);
 	} else {
 		// For dynamic textures, just upload the new value into the texture!
 		D3D11_MAPPED_SUBRESOURCE tex_mem = {};
@@ -1697,6 +1743,8 @@ HGLRC gl_hrc;
 #define GL_COMPILE_STATUS 0x8B81
 #define GL_LINK_STATUS 0x8B82
 #define GL_INFO_LOG_LENGTH 0x8B84
+#define GL_NUM_EXTENSIONS 0x821D
+#define GL_EXTENSIONS 0x1F03
 
 #define GL_DEBUG_OUTPUT                0x92E0
 #define GL_DEBUG_OUTPUT_SYNCHRONOUS    0x8242
@@ -1789,7 +1837,8 @@ GLE(void,     glViewport,                int32_t x, int32_t y, int32_t width, in
 GLE(void,     glCullFace,                uint32_t mode) \
 GLE(void,     glBlendFunc,               uint32_t sfactor, uint32_t dfactor) \
 GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint32_t srcAlpha, uint32_t dstAlpha) \
-GLE(const char *, glGetString,           uint32_t name)
+GLE(const char *, glGetString,           uint32_t name) \
+GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 
 #define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
 GL_API
@@ -2145,6 +2194,26 @@ skr_platform_data_t skr_get_platform_data() {
 
 ///////////////////////////////////////////
 
+bool skr_capability(skr_cap_ capability) {
+	bool (*check_ext)(const char *name) = [](const char *name) {
+		int32_t ct;
+		glGetIntegerv(GL_NUM_EXTENSIONS, &ct);
+		for (int32_t i = 0; i < ct; i++) {
+			if (strcmp(name, glGetStringi(GL_EXTENSIONS, i)) == 0)
+				return true;
+		}
+		return false;
+	};
+
+	switch (capability) {
+	case skr_cap_tex_layer_select: return check_ext("GL_AMD_vertex_shader_layer");
+	case skr_cap_wireframe:        return glPolygonMode != nullptr;
+	default: return false;
+	}
+}
+
+///////////////////////////////////////////
+
 void skr_draw(int32_t index_start, int32_t index_count, int32_t instance_count) {
 	glDrawElementsInstanced(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, (void*)(index_start*sizeof(uint32_t)), instance_count);
 }
@@ -2356,7 +2425,9 @@ skr_shader_t skr_shader_create_manual(skr_shader_meta_t *meta, skr_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		skr_log(skr_log_warning, "Unable to compile shader program:");
+		char text[128];
+		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
+		skr_log(skr_log_warning, text);
 		skr_log(skr_log_warning, log);
 		free(log);
 
@@ -2645,6 +2716,33 @@ skr_tex_t skr_tex_create_from_existing(void *native_tex, skr_tex_type_ type, skr
 
 /////////////////////////////////////////// 
 
+skr_tex_t skr_tex_create_from_layer(void *native_tex, skr_tex_type_ type, skr_tex_fmt_ format, int32_t width, int32_t height, int32_t array_layer) {
+	skr_tex_t result = {};
+	result.type        = type;
+	result.use         = skr_use_static;
+	result.mips        = skr_mip_none;
+	result.format      = format;
+	result.width       = width;
+	result.height      = height;
+	result.array_count = 1;
+	result.array_start = array_layer;
+	result._texture    = (uint32_t)(uint64_t)native_tex;
+	result._target     = type == skr_tex_type_cubemap 
+		? GL_TEXTURE_CUBE_MAP
+		: GL_TEXTURE_2D_ARRAY;
+
+	if (type == skr_tex_type_rendertarget) {
+		glGenFramebuffers(1, &result._framebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, result._framebuffer);
+		glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0, array_layer);
+		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
+	}
+
+	return result;
+}
+
+/////////////////////////////////////////// 
+
 skr_tex_t skr_tex_create(skr_tex_type_ type, skr_use_ use, skr_tex_fmt_ format, skr_mip_ mip_maps) {
 	skr_tex_t result = {};
 	result.type    = type;
@@ -2679,12 +2777,16 @@ void skr_tex_attach_depth(skr_tex_t *tex, skr_tex_t *depth) {
 			? GL_DEPTH_STENCIL_ATTACHMENT 
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
-		if (tex->array_count != 1) {
+		if (tex->_target == GL_TEXTURE_2D_ARRAY) {
+			if (tex->array_count == 1) {
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, tex->array_start);
+			} else {
 #ifndef __EMSCRIPTEN__
-			glFramebufferTexture(GL_FRAMEBUFFER, attach , depth->_texture, 0);
+				glFramebufferTexture(GL_FRAMEBUFFER, attach, depth->_texture, 0);
 #else
-			skr_log(skr_log_critical, "sk_gpu doesn't support array textures with WebGL?");
+				skr_log(skr_log_critical, "sk_gpu doesn't support array textures with WebGL?");
 #endif
+			}
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, attach, tex->_target, depth->_texture, 0);
 		}

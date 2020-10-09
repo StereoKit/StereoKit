@@ -80,6 +80,22 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 ///////////////////////////////////////////
 
+void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_index) {
+	if (skr_tex_is_valid(&texture->tex))
+		skr_tex_destroy (&texture->tex);
+
+	skr_tex_type_ skr_type = skr_tex_type_image;
+	if      (type & tex_type_cubemap     ) skr_type = skr_tex_type_cubemap;
+	else if (type & tex_type_depth       ) skr_type = skr_tex_type_depth;
+	else if (type & tex_type_rendertarget) skr_type = skr_tex_type_rendertarget;
+
+	texture->type   = type;
+	texture->format = tex_get_tex_format(native_fmt);
+	texture->tex    = skr_tex_create_from_layer(native_surface, skr_type, skr_tex_fmt_from_native(native_fmt), width, height, surface_index);
+}
+
+///////////////////////////////////////////
+
 tex_t tex_find(const char *id) {
 	tex_t result = (tex_t)assets_find(id, asset_type_texture);
 	if (result != nullptr) {

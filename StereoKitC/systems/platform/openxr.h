@@ -87,7 +87,7 @@ enum xr_hand_state_ {
 	xr_hand_state_unavailable,
 };
 
-bool openxr_init          (const char *app_name);
+bool openxr_init          (void *window);
 void openxr_shutdown      ();
 void openxr_step_begin    ();
 void openxr_step_end      ();

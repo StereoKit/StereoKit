@@ -392,7 +392,10 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_init(void *from_window) {
+bool uwp_setup(void *from_window) {
+}
+
+bool uwp_init() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;

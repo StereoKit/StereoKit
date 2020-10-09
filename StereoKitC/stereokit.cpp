@@ -14,6 +14,7 @@
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
 #include "systems/platform/android.h"
+#include "systems/platform/openxr.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
@@ -115,29 +116,34 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	system_t sys_platform_render  = { "FrameRender"  };
 	system_t sys_platform_present = { "FramePresent" };
 
+	sys_platform.func_initialize = platform_init;
+	sys_platform.initialize_arg  = window;
+
+	if (sk_runtime == runtime_mixedreality) {
+		sys_platform        .func_shutdown   = openxr_shutdown;
+		sys_platform_begin  .func_update     = openxr_step_begin;
+		sys_platform_render .func_update     = openxr_step_end;
+	} else {
 #if defined(WINDOWS_UWP)
-	sys_platform        .func_initialize = uwp_init;
-	sys_platform        .func_shutdown   = uwp_shutdown;
-	sys_platform_begin  .func_update     = uwp_step_begin;
-	sys_platform_render .func_update     = uwp_step_end;
-	sys_platform_present.func_update     = uwp_vsync;
+		sys_platform        .func_shutdown   = uwp_shutdown;
+		sys_platform_begin  .func_update     = uwp_step_begin;
+		sys_platform_render .func_update     = uwp_step_end;
+		sys_platform_present.func_update     = uwp_vsync;
 #elif defined(_WIN32)
-	sys_platform        .func_initialize = win32_init;
-	sys_platform        .func_shutdown   = win32_shutdown;
-	sys_platform_begin  .func_update     = win32_step_begin;
-	sys_platform_render .func_update     = win32_step_end;
-	sys_platform_present.func_update     = win32_vsync;
+		sys_platform        .func_shutdown   = win32_shutdown;
+		sys_platform_begin  .func_update     = win32_step_begin;
+		sys_platform_render .func_update     = win32_step_end;
+		sys_platform_present.func_update     = win32_vsync;
 #elif defined(__ANDROID__)
-	sys_platform        .func_initialize = android_init;
-	sys_platform        .func_shutdown   = android_shutdown;
-	sys_platform_begin  .func_update     = android_step_begin;
-	sys_platform_render .func_update     = android_step_end;
-	sys_platform_present.func_update     = android_vsync;
+		sys_platform        .func_shutdown   = android_shutdown;
+		sys_platform_begin  .func_update     = android_step_begin;
+		sys_platform_render .func_update     = android_step_end;
+		sys_platform_present.func_update     = android_vsync;
 #endif
+	}
 
 	const char *frame_present_update_deps[] = {"FrameRender"};
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
-	sys_platform        .initialize_arg  = window;
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
 	sys_platform_present.update_dependencies     = frame_present_update_deps;

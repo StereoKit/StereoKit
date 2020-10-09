@@ -44,11 +44,12 @@ cd Release_arm64-v8a
 "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe"^
  -G"Ninja"^
  -DCMAKE_MAKE_PROGRAM="C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/ninja.exe"^
- -DCMAKE_TOOLCHAIN_FILE=C:/Users/progr/AppData/Local/Android/Sdk/ndk/21.3.6528147/build/cmake/android.toolchain.cmake^
+ -DCMAKE_TOOLCHAIN_FILE=C:/Microsoft/AndroidNDK64/android-ndk-r16b/build/cmake/android.toolchain.cmake^
  -DANDROID_ABI=arm64-v8a^
- -DANDROID_NATIVE_API_LEVEL=26^
+ -DANDROID_NATIVE_API_LEVEL=24^
  -DANDROID_TOOLCHAIN=clang^
  -DCMAKE_BUILD_TYPE=Release^
+ -DANDROID_STL=c++_static^
  ../
  "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build . --config Release
  xcopy /Y /F libreactphysics3d.a "../../../StereoKitC/lib/bin/arm64-v8a/Release/libreactphysics3d.a"
@@ -59,11 +60,12 @@ cd Debug_arm64-v8a
 "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe"^
  -G"Ninja"^
  -DCMAKE_MAKE_PROGRAM="C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/ninja.exe"^
- -DCMAKE_TOOLCHAIN_FILE=C:/Users/progr/AppData/Local/Android/Sdk/ndk/21.3.6528147/build/cmake/android.toolchain.cmake^
+ -DCMAKE_TOOLCHAIN_FILE=C:/Microsoft/AndroidNDK64/android-ndk-r16b/build/cmake/android.toolchain.cmake^
  -DANDROID_ABI=arm64-v8a^
- -DANDROID_NATIVE_API_LEVEL=26^
+ -DANDROID_NATIVE_API_LEVEL=24^
  -DANDROID_TOOLCHAIN=clang^
  -DCMAKE_BUILD_TYPE=Debug^
+ -DANDROID_STL=c++_static^
  ../
  "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build .
  xcopy /Y /F libreactphysics3d.a "../../../StereoKitC/lib/bin/arm64-v8a/Debug/libreactphysics3d.a"

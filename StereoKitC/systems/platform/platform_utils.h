@@ -2,7 +2,7 @@
 
 #include "../../stereokit.h"
 
-#ifndef _WIN32
+#ifndef _countof
 #define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
 

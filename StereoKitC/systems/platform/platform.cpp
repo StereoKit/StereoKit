@@ -3,20 +3,31 @@
 #include "../../_stereokit.h"
 #include "win32.h"
 #include "uwp.h"
+#include "android.h"
 #include "openxr.h"
 
 namespace sk {
-	/*
+
 ///////////////////////////////////////////
 
 bool platform_init(void *from_window) {
+#if __ANDROID__
+	android_setup(from_window);
+#elif WINDOWS_UWP
+	uwp_setup    (from_window);
+#elif _WIN32
+	win32_setup  (from_window);
+#endif
+
 	// Create a runtime
 	bool result = sk_runtime == runtime_mixedreality ?
-		openxr_init(sk_app_name) :
-#if WINDOWS_UWP
-		uwp_init(sk_app_name);
-#else
-		win32_init(sk_app_name);
+		openxr_init (from_window) :
+#if __ANDROID__
+		android_init();
+#elif WINDOWS_UWP
+		uwp_init    ();
+#elif _WIN32
+		win32_init  ();
 #endif
 
 	if (!result)
@@ -26,65 +37,15 @@ bool platform_init(void *from_window) {
 	if (!result && sk_runtime_fallback && sk_runtime != runtime_flatscreen) {
 		log_infof("Runtime falling back to Flatscreen");
 		sk_runtime = runtime_flatscreen;
-#if WINDOWS_UWP
-		result     = uwp_init   (sk_app_name);
-#else
-		result     = win32_init (sk_app_name);
+#if __ANDROID__
+		result     = android_init();
+#elif WINDOWS_UWP
+		result     = uwp_init    ();
+#elif _WIN32
+		result     = win32_init  ();
 #endif
 	}
 	return result;
 }
 
-///////////////////////////////////////////
-
-void platform_shutdown() {
-	switch (sk_runtime) {
-#if WINDOWS_UWP
-	case runtime_flatscreen:   uwp_shutdown   (); break;
-#else
-	case runtime_flatscreen:   win32_shutdown (); break;
-#endif
-	case runtime_mixedreality: openxr_shutdown(); break;
-	}
-}
-
-///////////////////////////////////////////
-
-void platform_begin_frame() {
-	switch (sk_runtime) {
-#if WINDOWS_UWP
-	case runtime_flatscreen:   uwp_step_begin   (); break;
-#else
-	case runtime_flatscreen:   win32_step_begin (); break;
-#endif
-	case runtime_mixedreality: openxr_step_begin(); break;
-	}
-}
-
-///////////////////////////////////////////
-
-void platform_end_frame() {
-	switch (sk_runtime) {
-#if WINDOWS_UWP
-	case runtime_flatscreen:   uwp_step_end   (); break;
-#else
-	case runtime_flatscreen:   win32_step_end (); break;
-#endif
-	case runtime_mixedreality: openxr_step_end(); break;
-	}
-}
-
-///////////////////////////////////////////
-
-void platform_present() {
-	switch (sk_runtime) {
-#if WINDOWS_UWP
-	case runtime_flatscreen:   uwp_vsync  (); break;
-#else
-	case runtime_flatscreen:   win32_vsync(); break;
-#endif
-	case runtime_mixedreality: break;
-	}
-}
-*/
 } // namespace sk

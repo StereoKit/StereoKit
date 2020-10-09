@@ -7,12 +7,16 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../log.h"
-#include "../../systems/render.h"
-#include "../../systems/input.h"
-#include "../../systems/hand/input_hand.h"
 #include "../../asset_types/texture.h"
+#include "../render.h"
+#include "../input.h"
+#include "../hand/input_hand.h"
+#include "android.h"
 #include "platform_utils.h"
 
+#ifdef __ANDROID__
+#include <openxr/openxr_oculus.h>
+#endif
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
@@ -37,6 +41,9 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
+#ifdef __ANDROID__
+	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
+#endif
 };
 const char *xr_request_layers[] = {
 	"",
@@ -103,7 +110,24 @@ int64_t openxr_get_time() {
 
 ///////////////////////////////////////////
 
-bool openxr_init(const char *app_name) {
+bool openxr_init(void *window) {
+
+#ifdef __ANDROID__
+	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
+	xrGetInstanceProcAddr(
+		XR_NULL_HANDLE,
+		"xrInitializeLoaderKHR",
+		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
+
+	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
+	init_android.applicationVM      = android_activity->vm;
+	init_android.applicationContext = android_activity->clazz;
+	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
+		log_fail_reasonf(90, "Failed to initialize OpenXR loader");
+		return false;
+	}
+#endif
+
 	uint32_t extension_count = 0;
 	openxr_preferred_extensions(extension_count, nullptr);
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
@@ -114,23 +138,29 @@ bool openxr_init(const char *app_name) {
 	const char **layers = (const char**)malloc(sizeof(char *) * layer_count);
 	openxr_preferred_layers(layer_count, layers);
 
-	XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
-	createInfo.enabledExtensionCount = extension_count;
-	createInfo.enabledExtensionNames = extensions;
-	createInfo.enabledApiLayerCount = layer_count;
-	createInfo.enabledApiLayerNames = layers;
-	createInfo.applicationInfo.applicationVersion = 1;
+	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
+	create_info.enabledExtensionCount = extension_count;
+	create_info.enabledExtensionNames = extensions;
+	create_info.enabledApiLayerCount  = layer_count;
+	create_info.enabledApiLayerNames  = layers;
+	create_info.applicationInfo.applicationVersion = 1;
 
 	// Use a version Id formatted as 0xMMMiiPPP
-	createInfo.applicationInfo.engineVersion = 
+	create_info.applicationInfo.engineVersion = 
 		(SK_VERSION_MAJOR << 20)              |
 		(SK_VERSION_MINOR << 12 & 0x000FF000) |
 		(SK_VERSION_PATCH       & 0x00000FFF);
 
-	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	snprintf(createInfo.applicationInfo.applicationName, sizeof(createInfo.applicationInfo.applicationName), "%s", app_name);
-	snprintf(createInfo.applicationInfo.engineName, sizeof(createInfo.applicationInfo.engineName), "StereoKit");
-	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
+	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
+#ifdef __ANDROID__
+	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
+	create_android.applicationVM       = android_activity->vm;
+	create_android.applicationActivity = android_activity->clazz;
+	create_info.next = (void*)&create_android;
+#endif
+	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
 	free(extensions);
 	free(layers);
@@ -175,16 +205,25 @@ bool openxr_init(const char *app_name) {
 	void *luid = nullptr;
 #ifdef XR_USE_GRAPHICS_API_D3D11
 	luid = (void *)&requirement.adapterLuid;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	log_diagf("OpenXR requires GLES v%d.%d.%d - v%d.%d.%d", 
+		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
+		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
 #endif
 	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {
 		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
 		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf("sk_gpu: %s", text); break;
+		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skr_init(app_name, nullptr, luid))
+#if __ANDROID__
+	if (!skr_init(sk_app_name, android_window, luid))
 		return false;
+#else 
+	if (!skr_init(sk_app_name, window, luid))
+		return false;
+#endif
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events

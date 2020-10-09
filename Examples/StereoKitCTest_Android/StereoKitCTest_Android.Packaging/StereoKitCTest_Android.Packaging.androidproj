@@ -125,9 +125,7 @@
     <AntProjectPropertiesFile Include="project.properties" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\StereoKitCTest_Android.NativeActivity\StereoKitCTest_Android.NativeActivity.vcxproj">
-      <Project>{12fc8aff-066e-45cd-a039-f0245522ff67}</Project>
-    </ProjectReference>
+    <ProjectReference Include="..\StereoKitCTest_Android.NativeActivity\StereoKitCTest_Android.NativeActivity.vcxproj" />
   </ItemGroup>
   <Import Project="$(AndroidTargetsPath)\Android.targets" />
   <ImportGroup Label="ExtensionTargets" />
