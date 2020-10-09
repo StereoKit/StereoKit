@@ -328,7 +328,7 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
 	hand.palm.orientation = quat_from_angles(
@@ -359,7 +359,9 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			p->position    = vec3_lerp (p->position,    dest_pose[f * 5 + j].position,    delta);
 			p->orientation = quat_slerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
 		} }
-		vec3 finger_off = hand_state[handedness].pose_blend[1][4].position;
+		vec3 finger_off = center_on_finger 
+			? hand_state[handedness].pose_blend[1][4].position
+			: vec3_zero;
 	
 		for (size_t f = 0; f < 5; f++) {
 			const pose_t *finger = &hand_state[handedness].pose_blend[f][0];

@@ -19,8 +19,7 @@ vec3 xrc_offset_pos[2];
 
 bool hand_oxrc_available() {
 	return sk_active_runtime() == runtime_mixedreality 
-		&& xr_session          != XR_NULL_HANDLE 
-		&& xr_hand_state       == xr_hand_state_unavailable;
+		&& xr_session          != XR_NULL_HANDLE;
 }
 
 ///////////////////////////////////////////
@@ -86,7 +85,7 @@ void hand_oxrc_update_frame() {
 
 			hand_pose.orientation = xrc_offset_rot[hand] * hand_pose.orientation;
 			hand_pose.position   += hand_pose.orientation * xrc_offset_pos[hand];
-			input_hand_sim((handed_)hand, hand_pose.position, hand_pose.orientation, pose_state.isActive, select_state.currentState, grip_state.currentState);
+			input_hand_sim((handed_)hand, false, hand_pose.position, hand_pose.orientation, pose_state.isActive, select_state.currentState, grip_state.currentState);
 		}
 
 		// Get event poses, and fire our own events for them

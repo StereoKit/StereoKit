@@ -231,10 +231,10 @@ bool oxri_init() {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
 			info.name    = "oculus/touch_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-20, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-20, 0, 0);
-			info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.025f };
-			info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.025f };
+			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
+			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
+			info.offset_pos[handed_left ] = {-0.03f, 0.01f, 0.00f };
+			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
 			xrc_profile_offsets.add(info);
 		}
 	}

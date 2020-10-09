@@ -66,7 +66,6 @@ XrTime         xr_time          = 0;
 
 XrEnvironmentBlendMode xr_blend;
 XrReferenceSpaceType   xr_refspace;
-xr_hand_state_         xr_hand_state = xr_hand_state_uncertain;
 
 ///////////////////////////////////////////
 
@@ -301,6 +300,10 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 
 	// Flag any extensions the app will need to know about
 	if (out_extensions != nullptr) {
+		for (uint32_t i = 0; i < ext_count; i++) {
+			log_diagf("OpenXR ext: %s", exts[i].extensionName);
+		}
+
 		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
 			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_articulated_hands_ext = true;
