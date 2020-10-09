@@ -52,6 +52,7 @@ void render_draw_matrix (const matrix *views, const matrix *projs, int32_t view_
 void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();
+const char *render_fmt_name(tex_format_ format);
 
 bool render_init(void *arg);
 void render_update();

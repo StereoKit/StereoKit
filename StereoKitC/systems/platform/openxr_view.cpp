@@ -171,10 +171,10 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
 
 	// Debug print the view and format info
-	log_diagf("Creating view: %s color:%ul depth:%ul", 
+	log_diagf("Creating view: %s color:%s depth:%s", 
 		openxr_view_name(view_type), 
-		out_view.color_format,  
-		out_view.depth_format);
+		render_fmt_name((tex_format_)skr_tex_fmt_from_native( out_view.color_format )),  
+		render_fmt_name((tex_format_)skr_tex_fmt_from_native( out_view.depth_format )));
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!

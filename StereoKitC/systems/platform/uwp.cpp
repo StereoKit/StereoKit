@@ -408,7 +408,13 @@ bool uwp_init() {
 
 	if (!skr_init(sk_app_name, uwp_window, nullptr))
 		return false;
-	uwp_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
+
+	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
+	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
+	uwp_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	sk_info.display_width  = uwp_swapchain.width;
+	sk_info.display_height = uwp_swapchain.height;
+	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
 	return ViewProvider::inst->valid;

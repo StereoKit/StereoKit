@@ -139,6 +139,26 @@ void render_update_projection() {
 
 ///////////////////////////////////////////
 
+const char *render_fmt_name(tex_format_ format) {
+	switch (format) {
+	case tex_format_bgra32:        return "bgra32_sRGB";
+	case tex_format_bgra32_linear: return "bgra32_linear";
+	case tex_format_rgba32:        return "rgba32_sRGB";
+	case tex_format_rgba32_linear: return "rgba32_linear";
+	case tex_format_rgba64:        return "rgba64";
+	case tex_format_rgba128:       return "rgba128";
+	case tex_format_r8:            return "r8";
+	case tex_format_r16:           return "r16";
+	case tex_format_r32:           return "r32";
+	case tex_format_depthstencil:  return "depth24_stencil8";
+	case tex_format_depth32:       return "depth32";
+	case tex_format_depth16:       return "depth16";
+	default:                       return "Unknown";
+	}
+}
+
+///////////////////////////////////////////
+
 matrix render_get_projection() {
 	return render_default_camera_proj;
 }

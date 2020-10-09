@@ -127,7 +127,13 @@ bool win32_init() {
 	});
 	if (!skr_init(sk_app_name, win32_window, nullptr))
 		return false;
-	win32_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
+
+	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
+	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
+	win32_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	sk_info.display_width  = win32_swapchain.width;
+	sk_info.display_height = win32_swapchain.height;
+	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
 

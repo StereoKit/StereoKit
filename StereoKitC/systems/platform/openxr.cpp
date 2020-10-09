@@ -48,11 +48,11 @@ const char *xr_request_extensions[] = {
 const char *xr_request_layers[] = {
 	"",
 };
-bool xr_depth_lsr     = false;
-bool xr_depth_lsr_ext = false;
+bool xr_depth_lsr             = false;
+bool xr_depth_lsr_ext         = false;
 bool xr_articulated_hands     = false;
 bool xr_articulated_hands_ext = false;
-bool xr_spatial_bridge_ext = false;
+bool xr_spatial_bridge_ext    = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -70,7 +70,7 @@ XrReferenceSpaceType   xr_refspace;
 ///////////////////////////////////////////
 
 XrReferenceSpaceType openxr_preferred_space();
-void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
+bool                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
 void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
 
 ///////////////////////////////////////////
@@ -128,7 +128,10 @@ bool openxr_init(void *window) {
 #endif
 
 	uint32_t extension_count = 0;
-	openxr_preferred_extensions(extension_count, nullptr);
+	if (!openxr_preferred_extensions(extension_count, nullptr)) {
+		log_fail_reasonf(90, "Couldn't load an OpenXR runtime");
+		return false;
+	}
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
 	openxr_preferred_extensions(extension_count, extensions);
 
@@ -168,6 +171,7 @@ bool openxr_init(void *window) {
 	// OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -180,6 +184,7 @@ bool openxr_init(void *window) {
 	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -217,11 +222,15 @@ bool openxr_init(void *window) {
 		}
 	});
 #if __ANDROID__
-	if (!skr_init(sk_app_name, android_window, luid))
+	if (!skr_init(sk_app_name, android_window, luid)) {
+		openxr_shutdown();
 		return false;
+	}
 #else 
-	if (!skr_init(sk_app_name, window, luid))
+	if (!skr_init(sk_app_name, window, luid)) {
+		openxr_shutdown();
 		return false;
+	}
 #endif
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
@@ -246,6 +255,7 @@ bool openxr_init(void *window) {
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -258,6 +268,7 @@ bool openxr_init(void *window) {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -267,20 +278,24 @@ bool openxr_init(void *window) {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
-	if (!openxr_views_create()) return false;
-	if (!oxri_init()) return false;
+	if (!openxr_views_create() || !oxri_init()) {
+		openxr_shutdown();
+		return false;
+	}
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
+bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
 	// Find what extensions are available on this system!
 	uint32_t ext_count = 0;
-	xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr);
+	if (XR_FAILED(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr)))
+		return false;
 	XrExtensionProperties *exts = (XrExtensionProperties *)malloc(sizeof(XrExtensionProperties) * ext_count);
 	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
@@ -312,6 +327,8 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	}
 
 	free(exts);
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -326,7 +343,7 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 
 	if (out_layers == nullptr) {
 		for (uint32_t i = 0; i < layer_count; i++) {
-			log_diagf("oxr layer found: %s", layers[i].layerName);
+			log_diagf("OpenXR layer found: %s", layers[i].layerName);
 		}
 	}
 

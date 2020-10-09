@@ -43,10 +43,12 @@ bool android_init() {
 		return false;
 	log_diag("sk_gpu initialized!");
 
-	android_swapchain = skr_swapchain_create(skr_tex_fmt_rgba32_linear, skr_tex_fmt_depth16, sk_info.display_width, sk_info.display_height);
+	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
+	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
+	android_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
-	log_diag("swapchain created!");
+	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
 	return true;
