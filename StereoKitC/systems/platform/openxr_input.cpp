@@ -80,7 +80,7 @@ bool oxri_init() {
 
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
-	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
 	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "select");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Select");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_select_action);
@@ -89,7 +89,7 @@ bool oxri_init() {
 		return false;
 	}
 
-	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
 	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_grip_action);
@@ -116,8 +116,8 @@ bool oxri_init() {
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
 			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
@@ -153,8 +153,8 @@ bool oxri_init() {
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
 			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
@@ -240,6 +240,7 @@ bool oxri_init() {
 	}
 
 	// khr / simple_controller
+#ifndef __ANDROID__
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
@@ -264,6 +265,7 @@ bool oxri_init() {
 			xrc_profile_offsets.add(info);
 		}
 	}
+#endif
 
 	// Create frames of reference for the pose actions
 	for (int32_t i = 0; i < 2; i++) {
