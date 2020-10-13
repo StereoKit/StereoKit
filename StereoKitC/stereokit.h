@@ -83,6 +83,14 @@ typedef enum display_ {
 	display_passthrough,
 } display_;
 
+typedef struct sk_android_info_t {
+	void *java_vm;       // JavaVM*
+	void *jni_env;       // JNIEnv*
+	void *window;        // ANativeWindow*
+	void *activity;      // jobject
+	void *asset_manager; // AAssetManager*
+} sk_android_info_t;
+
 typedef struct system_info_t {
 	display_ display_type;
 	int32_t  display_width;

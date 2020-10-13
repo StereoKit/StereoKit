@@ -1,5 +1,6 @@
 #ifdef __ANDROID__
 
+#include "../../log.h"
 #include "android.h"
 #include "openxr.h"
 #include "flatscreen_input.h"
@@ -9,23 +10,84 @@
 #include "../../libraries/sk_gpu.h"
 
 #include <android/native_activity.h>
+#include <android/native_window_jni.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 
 namespace sk {
 
-ANativeActivity* android_activity;
-ANativeWindow*   android_window;
-skr_swapchain_t  android_swapchain;
+JavaVM           *android_vm       = nullptr;
+JNIEnv           *android_env      = nullptr;
+jobject           android_activity = nullptr;
+ANativeWindow    *android_window   = nullptr;
+AAssetManager    *android_asset_manager = nullptr;
+skr_swapchain_t   android_swapchain;
+
+///////////////////////////////////////////
+
+extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+	android_vm = vm;
+
+	// Get the java environment from the VM
+	if (android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6) != JNI_OK) {
+		log_fail_reason(95, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
+	}
+
+	return JNI_VERSION_1_6;
+}
+extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
+	return JNI_OnLoad(vm, reserved);
+}
 
 ///////////////////////////////////////////
 
 bool android_setup(void *from_window) {
-	struct android_info_t {
-		ANativeActivity *activity;
-		ANativeWindow   *window;
-	};
-	android_info_t *info = (android_info_t *)from_window;
-	android_window   = info->window;
-	android_activity = info->activity;
+	sk_android_info_t *android_info = (sk_android_info_t*)from_window;
+	if (android_info != nullptr) {
+		android_vm            = (JavaVM*)android_info->java_vm;
+		android_env           = (JNIEnv*)android_info->jni_env;
+		android_activity      = (jobject)android_info->activity;
+		android_asset_manager = (AAssetManager *)android_info->asset_manager;
+		android_window        = (ANativeWindow *)android_info->window;
+		if (android_vm == nullptr || android_env == nullptr || android_activity == nullptr ||
+			android_asset_manager == nullptr || android_window == nullptr) {
+			log_fail_reason(95,  "sk_android_info_t wasn't filled out entirely!");
+			return false;
+		} else return true;
+	}
+
+	if (android_vm == nullptr) {
+		log_fail_reason(95,  "Couldn't find the Java VM, you should manually load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary");
+		return false;
+	}
+	if (android_env == nullptr) {
+		return false;
+	}
+
+	// Find the current android activity
+	jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
+	jmethodID curr_activity_thread = android_env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
+	jobject   at                   = android_env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
+	jmethodID get_application = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
+	android_activity          = android_env->CallObjectMethod(at, get_application);
+	if (android_activity == nullptr) {
+		log_fail_reason(95,  "Couldn't find the current Android application context!");
+		return false;
+	}
+
+	// Get the asset manager for loading files
+	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_thread, "getAssets", "()Landroid/content/res/AssetManager;");
+	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
+	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
+	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
+	if (android_asset_manager == nullptr) {
+		log_fail_reason(95,  "Couldn't get the asset manager!");
+		return false;
+	}
+
+	// Find the window surface??
+	android_window = (ANativeWindow*)android_info->window;// ANativeWindow_fromSurface(android_env, nullptr);
+
 	return true;
 }
 

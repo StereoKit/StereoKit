@@ -85,11 +85,8 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 	// Open file
 #if __ANDROID__
-	if (android_activity->assetManager == nullptr)
-		log_errf("Trying to load %s, but haven't initialized android info yet!", filename);
-
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
-	AAsset *asset = AAssetManager_open(android_activity->assetManager, filename, 0);
+	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
 	FILE   *fp;
 	if (asset) {
 		fp = funopen(asset, 

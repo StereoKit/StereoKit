@@ -119,8 +119,8 @@ bool openxr_init(void *window) {
 		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
 
 	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
-	init_android.applicationVM      = android_activity->vm;
-	init_android.applicationContext = android_activity->clazz;
+	init_android.applicationVM      = android_vm;
+	init_android.applicationContext = android_activity;
 	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
 		log_fail_reasonf(90, "Failed to initialize OpenXR loader");
 		return false;
@@ -158,8 +158,8 @@ bool openxr_init(void *window) {
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #ifdef __ANDROID__
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
-	create_android.applicationVM       = android_activity->vm;
-	create_android.applicationActivity = android_activity->clazz;
+	create_android.applicationVM       = android_vm;
+	create_android.applicationActivity = android_activity;
 	create_info.next = (void*)&create_android;
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);

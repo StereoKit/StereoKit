@@ -27,11 +27,13 @@ static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 			//engine_init_display();
 			//engine_draw_frame();
 			log_set_filter(log_diagnostic);
-			struct android_info_t {
-				ANativeActivity *activity;
-				ANativeWindow *window;
-			};
-			android_info_t info = { evt_app->activity, evt_app->window };
+
+			sk_android_info_t info = {};
+			info.java_vm       = evt_app->activity->vm;
+			info.jni_env       = evt_app->activity->env;
+			info.asset_manager = evt_app->activity->assetManager;
+			info.activity      = evt_app->activity->clazz;
+			info.window        = evt_app->window;
 			app_run = sk_init_from(&info, "StereoKitCTest_Android", runtime_mixedreality, true);
 			app_visible = app_run;
 
@@ -48,6 +50,7 @@ static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 	}
 }
 
+pose_t pose = { vec3{0,0.5f,0}, quat_identity };
 void android_main(struct android_app* state) {
 	app = state;
 	app->onAppCmd     = engine_handle_cmd;
@@ -76,10 +79,11 @@ void android_main(struct android_app* state) {
 		if (app_visible) sk_step([]() {
 			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
 
-			vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };
-			render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3{0,0.25f,0})));
+			if (sk_active_runtime() == runtime_flatscreen) {
+				vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };
+				render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3{0,0.25f,0})));
+			}
 
-			pose_t pose = { vec3{0,0.5f,0}, quat_identity };
 			ui_window_begin("Hello!", pose);
 			ui_button("play");
 			ui_window_end();

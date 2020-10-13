@@ -6,8 +6,10 @@
 
 namespace sk {
 
-extern ANativeActivity* android_activity;
-extern ANativeWindow*   android_window;
+extern JavaVM        *android_vm;
+extern jobject        android_activity;
+extern ANativeWindow *android_window;
+extern AAssetManager *android_asset_manager;
 
 bool android_setup     (void *from_window);
 bool android_init      ();
