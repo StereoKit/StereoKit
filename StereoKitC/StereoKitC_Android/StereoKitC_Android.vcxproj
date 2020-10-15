@@ -91,50 +91,94 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <UseMultiToolTask>true</UseMultiToolTask>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <UseMultiToolTask>true</UseMultiToolTask>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
@@ -153,6 +197,10 @@
       <VerboseOutput>false</VerboseOutput>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -170,18 +218,32 @@
       <VerboseOutput>false</VerboseOutput>
       <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\*.cpp" />

@@ -1,0 +1,61 @@
+﻿using Android.App;
+using Android.OS;
+using Android.Support.V7.App;
+using Android.Runtime;
+using Android.Views;
+using System;
+using Android.Content;
+using Android.Graphics;
+using Java.Lang;
+using Android.Util;
+
+namespace StereoKitTest_Android
+{
+    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+    public class MainActivity : AppCompatActivity
+    {
+		SKAndroidSurface surface;
+		protected override void OnCreate(Bundle savedInstanceState)
+        {
+			JavaSystem.LoadLibrary("StereoKitC");
+
+			base.OnCreate(savedInstanceState);
+            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+            // Set our view from the "main" layout resource
+            SetContentView(Resource.Layout.activity_main);
+			surface = new SKAndroidSurface(this);
+			surface.OnCreated += (v) => {
+				Log.Info("StereoKitTest", "Created: " + v.Width + "x" + v.Height);
+			};
+			surface.OnChanged   += (v) => Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
+			surface.OnDestroyed += (v) => Log.Info("StereoKitTest", "Destroyed");
+			SetContentView(surface);
+		}
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+        {
+            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
+            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+	// Ref here:
+	// https://github.com/spurious/SDL-mirror/blob/6fe5bd1536beb197de493c9b55d16e516219c58f/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java#L1663
+	// https://github.com/MonoGame/MonoGame/blob/31dca640482bc0c27aec8e51d6369612ce8577a2/MonoGame.Framework/Platform/Android/MonoGameAndroidGameView.cs
+	class SKAndroidSurface : SurfaceView, ISurfaceHolderCallback
+	{
+		public event Action<SKAndroidSurface> OnChanged;
+		public event Action<SKAndroidSurface> OnCreated;
+		public event Action<SKAndroidSurface> OnDestroyed;
+
+		/// <summary>A native pointer to the window surface required by JNIs 
+		/// ANativeWindow_fromSurface.</summary>
+		public IntPtr WindowHandle => Holder.Surface.Handle;
+
+		public SKAndroidSurface(Context context) : base(context) => Holder.AddCallback(this);
+		
+		public void SurfaceChanged  (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) => OnChanged(this);
+		public void SurfaceCreated  (ISurfaceHolder holder) => OnCreated  (this);
+		public void SurfaceDestroyed(ISurfaceHolder holder) => OnDestroyed(this);
+	}
+}

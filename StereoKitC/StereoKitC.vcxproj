@@ -72,8 +72,9 @@
     <PostBuildEvent>
       <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -102,8 +103,9 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <PostBuildEvent>
       <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\$(Platform)\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>

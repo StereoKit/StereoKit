@@ -393,6 +393,7 @@ bool uwp_key_down(int vk) {
 }
 
 bool uwp_setup(void *from_window) {
+	return true;
 }
 
 bool uwp_init() {
