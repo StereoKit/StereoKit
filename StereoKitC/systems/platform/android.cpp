@@ -33,6 +33,30 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 		log_fail_reason(95, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
 	}
 
+	// Find the current android activity
+	jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
+	jmethodID curr_activity_thread = android_env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
+	jobject   at                   = android_env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
+	jmethodID get_application = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
+	if (get_application)
+		android_activity = android_env->CallObjectMethod(at, get_application);
+	if (android_activity == nullptr) {
+		log_fail_reason(95,  "Couldn't find the current Android application context!");
+		return JNI_VERSION_1_6;
+	}
+
+	// Get the asset manager for loading files
+	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
+	jclass    activity_class           = android_env->GetObjectClass(android_activity);
+	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
+	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
+	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
+	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
+	if (android_asset_manager == nullptr) {
+		log_fail_reason(95,  "Couldn't get the asset manager!");
+		return JNI_VERSION_1_6;
+	}
+
 	return JNI_VERSION_1_6;
 }
 extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
@@ -42,8 +66,13 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 ///////////////////////////////////////////
 
 bool android_setup(void *from_window) {
-	sk_android_info_t *android_info = (sk_android_info_t*)from_window;
-	if (android_info != nullptr) {
+	if (android_vm == nullptr) {
+		if (from_window == nullptr) {
+			log_fail_reason(95,  "sk_android_info_t wasn't provided!");
+			return false;
+		}
+
+		sk_android_info_t *android_info = (sk_android_info_t*)from_window;
 		android_vm            = (JavaVM*)android_info->java_vm;
 		android_env           = (JNIEnv*)android_info->jni_env;
 		android_activity      = (jobject)android_info->activity;
@@ -64,29 +93,10 @@ bool android_setup(void *from_window) {
 		return false;
 	}
 
-	// Find the current android activity
-	jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
-	jmethodID curr_activity_thread = android_env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
-	jobject   at                   = android_env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
-	jmethodID get_application = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
-	android_activity          = android_env->CallObjectMethod(at, get_application);
-	if (android_activity == nullptr) {
-		log_fail_reason(95,  "Couldn't find the current Android application context!");
-		return false;
-	}
-
-	// Get the asset manager for loading files
-	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_thread, "getAssets", "()Landroid/content/res/AssetManager;");
-	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
-	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
-	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
-	if (android_asset_manager == nullptr) {
-		log_fail_reason(95,  "Couldn't get the asset manager!");
-		return false;
-	}
-
 	// Find the window surface??
-	android_window = (ANativeWindow*)android_info->window;// ANativeWindow_fromSurface(android_env, nullptr);
+	// https://stackoverflow.com/questions/51099200/native-crash-jni-detected-error-in-application-thread-using-jnienv-from-th
+	android_vm->AttachCurrentThread(&android_env, nullptr);
+	android_window = ANativeWindow_fromSurface(android_env, (jobject)from_window);
 
 	return true;
 }

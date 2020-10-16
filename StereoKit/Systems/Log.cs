@@ -38,7 +38,7 @@ namespace StereoKit
 
 		[DllImport("kernel32.dll")]
 		static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
-		internal static void SetupConsole()
+		internal static void SetupConsoleWin32()
 		{
 			if (!Environment.OSVersion.Platform.ToString().ToLower().Contains("win"))
 				return;
@@ -48,6 +48,11 @@ namespace StereoKit
 			GetConsoleMode(handle, out mode);
 			mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			SetConsoleMode(handle, mode);
+		}
+		internal static void SetupConsole()
+		{
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				SetupConsoleWin32();
 		}
 		#endregion
 

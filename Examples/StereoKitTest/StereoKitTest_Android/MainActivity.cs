@@ -8,13 +8,17 @@ using Android.Content;
 using Android.Graphics;
 using Java.Lang;
 using Android.Util;
+using System.Threading.Tasks;
+using StereoKit;
 
 namespace StereoKitTest_Android
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
     public class MainActivity : AppCompatActivity
     {
 		SKAndroidSurface surface;
+		bool running = false;
 		protected override void OnCreate(Bundle savedInstanceState)
         {
 			JavaSystem.LoadLibrary("StereoKitC");
@@ -25,10 +29,14 @@ namespace StereoKitTest_Android
             SetContentView(Resource.Layout.activity_main);
 			surface = new SKAndroidSurface(this);
 			surface.OnCreated += (v) => {
-				Log.Info("StereoKitTest", "Created: " + v.Width + "x" + v.Height);
+				if (!running)
+				{
+					running = true;
+					Start(v.WindowHandle);
+				}
 			};
-			surface.OnChanged   += (v) => Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
-			surface.OnDestroyed += (v) => Log.Info("StereoKitTest", "Destroyed");
+			surface.OnChanged   += (v) => Android.Util.Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
+			surface.OnDestroyed += (v) => Android.Util.Log.Info("StereoKitTest", "Destroyed");
 			SetContentView(surface);
 		}
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -37,6 +45,36 @@ namespace StereoKitTest_Android
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+
+		void Start(IntPtr window)
+		{
+			Task.Run(()=>{
+				if (!StereoKitApp.InitializeAndroid("StereoKitTemplate", window, StereoKit.Runtime.MixedReality))
+					return;
+
+				// Create assets used by the app
+				Pose cubePose = new Pose(0, 0, -0.5f, Quat.Identity);
+				Model cube = Model.FromMesh(
+					Mesh.GenerateRoundedCube(Vec3.One * 0.1f, 0.02f),
+					Default.MaterialUI);
+
+				StereoKit.Matrix floorTransform = StereoKit.Matrix.TS(new Vec3(0, -1.5f, 0), new Vec3(30, 0.1f, 30));
+				//Material floorMaterial = new Material(StereoKit.Shader.FromFile("floor.hlsl"));
+				//floorMaterial.Transparency = Transparency.Blend;
+
+
+				// Core application loop
+				while (StereoKitApp.Step(() =>
+				{
+					//if (StereoKitApp.System.displayType == Display.Opaque)
+					//	Default.MeshCube.Draw(floorMaterial, floorTransform);
+
+					UI.Handle("Cube", ref cubePose, cube.Bounds);
+					cube.Draw(cubePose.ToMatrix());
+				})) ;
+				StereoKitApp.Shutdown();
+			});
+		}
     }
 
 	// Ref here:
