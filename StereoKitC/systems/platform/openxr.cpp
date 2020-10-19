@@ -44,6 +44,9 @@ const char *xr_request_extensions[] = {
 #ifdef __ANDROID__
 	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 #endif
+#ifdef _DEBUG
+	XR_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
 };
 const char *xr_request_layers[] = {
 	"",
@@ -64,8 +67,9 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 
-XrEnvironmentBlendMode xr_blend;
-XrReferenceSpaceType   xr_refspace;
+XrDebugUtilsMessengerEXT xr_debug = {};
+XrEnvironmentBlendMode   xr_blend;
+XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
@@ -177,6 +181,37 @@ bool openxr_init(void *window) {
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
+
+#ifdef _DEBUG
+	// Set up a really verbose debug log! Great for dev, but turn this off or
+	// down for final builds. WMR doesn't produce much output here, but it
+	// may be more useful for other runtimes?
+	// Here's some extra information about the message types and severities:
+	// https://www.khronos.org/registry/OpenXR/specs/1.0/html/xrspec.html#debug-message-categorization
+	XrDebugUtilsMessengerCreateInfoEXT debug_info = { XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+	debug_info.messageTypes =
+		XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
+	debug_info.messageSeverities =
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT types, const XrDebugUtilsMessengerCallbackDataEXT *msg, void* user_data) {
+		// Print the debug message we got! There's a bunch more info we could
+		// add here too, but this is a pretty good start, and you can always
+		// add a breakpoint this line!
+		log_infof("%s: %s\n", msg->functionName, msg->message);
+
+		// Returning XR_TRUE here will force the calling function to fail
+		return (XrBool32)XR_FALSE;
+	};
+	// Start up the debug utils!
+	if (xr_extensions.xrCreateDebugUtilsMessengerEXT)
+		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
+#endif
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
@@ -414,6 +449,7 @@ void openxr_shutdown() {
 
 	// Release all the other OpenXR resources that we've created!
 	// What gets allocated, must get deallocated!
+	if (xr_debug      != XR_NULL_HANDLE) xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug);
 	if (xr_head_space != XR_NULL_HANDLE) xrDestroySpace   (xr_head_space);
 	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);

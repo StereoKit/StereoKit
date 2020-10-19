@@ -1,19 +1,18 @@
 ﻿using Android.App;
-using Android.OS;
-using Android.Support.V7.App;
-using Android.Runtime;
-using Android.Views;
-using System;
 using Android.Content;
 using Android.Graphics;
+using Android.OS;
+using Android.Runtime;
+using Android.Support.V7.App;
+using Android.Views;
 using Java.Lang;
-using Android.Util;
-using System.Threading.Tasks;
 using StereoKit;
+using System;
+using System.Threading.Tasks;
 
 namespace StereoKitTest_Android
 {
-    [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+	[Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
 	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
     public class MainActivity : AppCompatActivity
     {
@@ -28,14 +27,14 @@ namespace StereoKitTest_Android
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.activity_main);
 			surface = new SKAndroidSurface(this);
-			surface.OnCreated += (v) => {
+			surface.OnChanged   += (v) => {
+				Android.Util.Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
 				if (!running)
 				{
 					running = true;
 					Start(v.WindowHandle);
 				}
 			};
-			surface.OnChanged   += (v) => Android.Util.Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
 			surface.OnDestroyed += (v) => Android.Util.Log.Info("StereoKitTest", "Destroyed");
 			SetContentView(surface);
 		}
@@ -49,6 +48,7 @@ namespace StereoKitTest_Android
 		void Start(IntPtr window)
 		{
 			Task.Run(()=>{
+				StereoKit.Log.Filter = LogLevel.Diagnostic;
 				if (!StereoKitApp.InitializeAndroid("StereoKitTemplate", window, StereoKit.Runtime.MixedReality))
 					return;
 
@@ -68,7 +68,6 @@ namespace StereoKitTest_Android
 				{
 					//if (StereoKitApp.System.displayType == Display.Opaque)
 					//	Default.MeshCube.Draw(floorMaterial, floorTransform);
-
 					UI.Handle("Cube", ref cubePose, cube.Bounds);
 					cube.Draw(cubePose.ToMatrix());
 				})) ;
@@ -92,8 +91,8 @@ namespace StereoKitTest_Android
 
 		public SKAndroidSurface(Context context) : base(context) => Holder.AddCallback(this);
 		
-		public void SurfaceChanged  (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) => OnChanged(this);
-		public void SurfaceCreated  (ISurfaceHolder holder) => OnCreated  (this);
-		public void SurfaceDestroyed(ISurfaceHolder holder) => OnDestroyed(this);
+		public void SurfaceChanged  (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) => OnChanged?.Invoke(this);
+		public void SurfaceCreated  (ISurfaceHolder holder) => OnCreated?.Invoke(this);
+		public void SurfaceDestroyed(ISurfaceHolder holder) => OnDestroyed?.Invoke(this);
 	}
 }

@@ -14,6 +14,8 @@
     _(xrDestroyHandTrackerEXT)                   \
     _(xrLocateHandJointsEXT)                     \
     _(xrCreateSpatialGraphNodeSpaceMSFT)         \
+	_(xrCreateDebugUtilsMessengerEXT)            \
+	_(xrDestroyDebugUtilsMessengerEXT)
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
 #define FOR_EACH_GRAPHICS_FUNCTION(_) _(xrGetD3D11GraphicsRequirementsKHR)
