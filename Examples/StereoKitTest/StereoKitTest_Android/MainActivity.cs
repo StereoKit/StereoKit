@@ -14,18 +14,18 @@ namespace StereoKitTest_Android
 {
 	[Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
 	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
-    public class MainActivity : AppCompatActivity
-    {
+	public class MainActivity : AppCompatActivity
+	{
 		SKAndroidSurface surface;
 		bool running = false;
 		protected override void OnCreate(Bundle savedInstanceState)
-        {
+		{
 			JavaSystem.LoadLibrary("StereoKitC");
 
 			base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-            // Set our view from the "main" layout resource
-            SetContentView(Resource.Layout.activity_main);
+			Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+			// Set our view from the "main" layout resource
+			SetContentView(Resource.Layout.activity_main);
 			surface = new SKAndroidSurface(this);
 			surface.OnChanged   += (v) => {
 				Android.Util.Log.Info("StereoKitTest", "Changed: " + v.Width + "x" + v.Height);
@@ -38,12 +38,12 @@ namespace StereoKitTest_Android
 			surface.OnDestroyed += (v) => Android.Util.Log.Info("StereoKitTest", "Destroyed");
 			SetContentView(surface);
 		}
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
-        {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+		public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+		{
+			Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
-            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
+			base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+		}
 
 		void Start(IntPtr window)
 		{
@@ -58,23 +58,16 @@ namespace StereoKitTest_Android
 					Mesh.GenerateRoundedCube(Vec3.One * 0.1f, 0.02f),
 					Default.MaterialUI);
 
-				StereoKit.Matrix floorTransform = StereoKit.Matrix.TS(new Vec3(0, -1.5f, 0), new Vec3(30, 0.1f, 30));
-				//Material floorMaterial = new Material(StereoKit.Shader.FromFile("floor.hlsl"));
-				//floorMaterial.Transparency = Transparency.Blend;
-
-
 				// Core application loop
 				while (StereoKitApp.Step(() =>
 				{
-					//if (StereoKitApp.System.displayType == Display.Opaque)
-					//	Default.MeshCube.Draw(floorMaterial, floorTransform);
 					UI.Handle("Cube", ref cubePose, cube.Bounds);
 					cube.Draw(cubePose.ToMatrix());
 				})) ;
 				StereoKitApp.Shutdown();
 			});
 		}
-    }
+	}
 
 	// Ref here:
 	// https://github.com/spurious/SDL-mirror/blob/6fe5bd1536beb197de493c9b55d16e516219c58f/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java#L1663
