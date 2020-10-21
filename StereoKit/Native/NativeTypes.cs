@@ -617,4 +617,10 @@ namespace StereoKit
 		/// <summary>Flag to include a body on the window.</summary>
 		Body = 1 << 1,
 	}
+
+	struct AndroidInitData
+	{
+		public IntPtr activity;
+		public IntPtr window;
+	}
 }

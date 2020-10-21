@@ -27,6 +27,7 @@ skr_swapchain_t   android_swapchain;
 
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	android_vm = vm;
+
 	return JNI_VERSION_1_6;
 }
 extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
@@ -69,17 +70,25 @@ bool android_setup(void *from_window) {
 	// https://stackoverflow.com/questions/51099200/native-crash-jni-detected-error-in-application-thread-using-jnienv-from-th
 	android_vm->AttachCurrentThread(&android_env, nullptr);
 
+	struct xam_init_data_t {
+		jobject activity;
+		jobject window;
+	};
+	xam_init_data_t *info = (xam_init_data_t*)from_window;
+	android_activity = info->activity;// android_env->NewGlobalRef(info->activity);
+
 	// Find the current android activity
-	jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
+	// https://stackoverflow.com/questions/46869901/how-to-get-the-android-context-instance-when-calling-jni-method
+	/*jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
 	jmethodID curr_activity_thread = android_env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
 	jobject   at                   = android_env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
-	jmethodID get_application = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
-	if (get_application)
-		android_activity = android_env->CallObjectMethod(at, get_application);
+	jmethodID get_application      = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
+	jobject   activity_inst        = android_env->CallObjectMethod(at, get_application);
+	android_activity = android_env->NewGlobalRef(activity_inst);
 	if (android_activity == nullptr) {
 		log_fail_reason(95,  "Couldn't find the current Android application context!");
 		return false;
-	}
+	}*/
 
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
@@ -94,7 +103,12 @@ bool android_setup(void *from_window) {
 	}
 
 	// Find the window surface
-	android_window = ANativeWindow_fromSurface(android_env, (jobject)from_window);
+	android_window = ANativeWindow_fromSurface(android_env, info->window);
+
+	return true;
+}
+
+///////////////////////////////////////////
 
 	return true;
 }

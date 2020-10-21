@@ -41,9 +41,9 @@ namespace StereoKit
 			IsInitialized = InitializeCall(name, runtimePreference, fallback);
 			return IsInitialized;
 		}
-		public static bool InitializeAndroid(string name, IntPtr windowHandle, Runtime runtimePreference = Runtime.MixedReality, bool fallback = true)
+		public static bool InitializeAndroid(string name, IntPtr classHandle, IntPtr windowHandle, Runtime runtimePreference = Runtime.MixedReality, bool fallback = true)
 		{
-			IsInitialized = InitializeCallAndroid(name, windowHandle, runtimePreference, fallback);
+			IsInitialized = InitializeCallAndroid(name, classHandle, windowHandle, runtimePreference, fallback);
 			return IsInitialized;
 		}
 
@@ -69,7 +69,7 @@ namespace StereoKit
 			return result;
 		}
 
-		private static bool InitializeCallAndroid(string name, IntPtr windowHandle, Runtime runtime, bool fallback)
+		private static bool InitializeCallAndroid(string name, IntPtr classHandle, IntPtr windowHandle, Runtime runtime, bool fallback)
 		{
 			// Prep console for colored debug logs
 			Log.SetupConsole();
@@ -77,7 +77,8 @@ namespace StereoKit
 			// DllImport finds the function at the beginning of the function call,
 			// so this needs to be in a separate function from NativeLib.LoadDll
 			NativeAPI.sk_set_settings(settings);
-			bool result = NativeAPI.sk_init_from(windowHandle, name, runtime, fallback ? 1 : 0) > 0;
+			AndroidInitData init = new AndroidInitData{ window = windowHandle, activity = classHandle };
+			bool result = NativeAPI.sk_init_from(init, name, runtime, fallback ? 1 : 0) > 0;
 
 			// Get system information
 			if (result) { 

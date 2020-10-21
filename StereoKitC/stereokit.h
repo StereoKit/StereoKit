@@ -3,8 +3,8 @@
 #define SK_32BIT_INDICES
 
 #define SK_VERSION_MAJOR 0
-#define SK_VERSION_MINOR 2
-#define SK_VERSION_PATCH 2
+#define SK_VERSION_MINOR 3
+#define SK_VERSION_PATCH 0
 #define SK_VERSION_PRERELEASE 1
 
 #if defined(_DLL) || defined(BUILDING_DLL)
