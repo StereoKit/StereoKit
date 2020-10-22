@@ -1,13 +1,13 @@
 // https://travisdowns.github.io/blog/2019/05/22/sorting.html
 
-#include "render_sort.h"
-
 #include <algorithm>
 #include <memory>
 #include <array>
 #include <assert.h>
 #include <string.h>
 #include <assert.h>
+
+#include "render_sort.h"
 
 #if _WIN32
 #include <intrin.h>

@@ -1,3 +1,4 @@
+#include <chrono>
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
@@ -19,7 +20,7 @@
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
 
-#include <chrono>
+
 using namespace std::chrono;
 
 namespace sk {
