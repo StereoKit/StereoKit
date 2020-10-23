@@ -494,7 +494,7 @@ void openxr_poll_events() {
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				if (xr_display_types.count > 1) {
 					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_types.count-1;
+					secondary.viewConfigurationCount        = (int32_t)xr_display_types.count-1;
 					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
 					begin_info.next = &secondary;
 				}

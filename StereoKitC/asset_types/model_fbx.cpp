@@ -136,7 +136,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 ///////////////////////////////////////////
 
 bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
-	ofbx::IScene *scene = ofbx::load((ofbx::u8*)file_data, file_length, (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
+	ofbx::IScene *scene = ofbx::load((ofbx::u8*)file_data, (int)file_length, (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
 
 	stref_t path, name;
 	stref_file_path(stref_make(filename), path, name);

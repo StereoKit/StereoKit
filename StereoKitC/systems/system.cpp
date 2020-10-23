@@ -71,9 +71,9 @@ bool systems_sort() {
 	if (result == 0) {
 		int32_t *update_order = nullptr;
 
-		result = topological_sort(update_ids, systems.count, &update_order);
+		result = topological_sort(update_ids, (int32_t)systems.count, &update_order);
 		if (result != 0) log_errf("Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
-		else array_reorder((void**)&systems, sizeof(system_t), systems.count, update_order);
+		else array_reorder((void**)&systems, sizeof(system_t), (int32_t)systems.count, update_order);
 
 		free(update_order);
 	}
@@ -95,7 +95,7 @@ bool systems_sort() {
 
 	// Sort the init order
 	if (result == 0) {
-		result = topological_sort(init_ids, systems.count, &system_init_order);
+		result = topological_sort(init_ids, (int32_t)systems.count, &system_init_order);
 		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
 
@@ -158,7 +158,7 @@ void systems_update() {
 ///////////////////////////////////////////
 
 void systems_shutdown() {
-	for (int32_t i = systems.count-1; i >= 0; i--) {
+	for (int32_t i = (int32_t)systems.count-1; i >= 0; i--) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_shutdown != nullptr) {
 			// start timing

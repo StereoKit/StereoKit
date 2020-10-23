@@ -147,6 +147,7 @@ struct array_t {
 	void        reverse    ();
 	array_t<T>  copy       () const;
 	void        each       (void (*e)(T &))          { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(void *))       { for (size_t i=0; i<count; i++) e(data[i]); }
 	void        free       ();
 
 	//////////////////////////////////////
