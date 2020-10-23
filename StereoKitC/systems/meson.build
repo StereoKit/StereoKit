@@ -1,3 +1,5 @@
+subdir('hand')
+
 systems_includes = include_directories('.', '../lib/include_no_win', '../lib/include')
 
 lib_systems = static_library(
@@ -13,7 +15,8 @@ lib_systems = static_library(
 		'system.cpp',
 		'text.cpp'
 	),
-	include_directories: [systems_includes]
+	include_directories: [systems_includes],
+	dependencies: [hand]
 )
 
 systems = declare_dependency(

@@ -7,19 +7,19 @@ subdir('asset_types')
 # subdir('libraries')
 # subdir('shaders_builtin')
 subdir('systems')
-
-library(
-	'stereokit_c',
-	files(
-		'color.cpp',
-		'hierarchy.cpp',
-		'intersect.cpp',
-		'log.cpp',
-		'sk_math.cpp',
-		'spherical_harmonics.cpp',
-		'stereokit_ui.cpp',
-		'stereokit.cpp'
-	),
-	include_directories: [stereokit_c_includes],
-	dependencies: [asset_types, systems, openxr]
-)
+#
+# library(
+# 	'stereokit_c',
+# 	files(
+# 		'color.cpp',
+# 		'hierarchy.cpp',
+# 		'intersect.cpp',
+# 		'log.cpp',
+# 		'sk_math.cpp',
+# 		'spherical_harmonics.cpp',
+# 		'stereokit_ui.cpp',
+# 		'stereokit.cpp'
+# 	),
+# 	include_directories: [stereokit_c_includes],
+# 	dependencies: [asset_types, systems, openxr]
+# )

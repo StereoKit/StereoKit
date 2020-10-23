@@ -24,6 +24,8 @@ bool platform_init(void *from_window) {
 		openxr_init (from_window) :
 #if __ANDROID__
 		android_init();
+#if __linux__
+		linux_init();
 #elif WINDOWS_UWP
 		uwp_init    ();
 #elif _WIN32
