@@ -296,9 +296,6 @@
     <ClInclude Include="systems\platform\openxr_view.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\sort_list.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="systems\hand\hand_oxr_articulated.h">
       <Filter>systems\hand</Filter>
     </ClInclude>
@@ -343,6 +340,9 @@
     </ClInclude>
     <ClInclude Include="sk_math.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\memory.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

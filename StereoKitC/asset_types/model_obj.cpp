@@ -16,11 +16,11 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 	int64_t index = indmap->contains(v);
 	if (index < 0) {
 		index = mesh_verts->add(v);
-		indmap->add_or_set(v, index);
+		indmap->add_or_set(v, (vind_t)index);
 	} else {
 		index = indmap->items[index];
 	}
-	return index;
+	return (int)index;
 }
 
 ///////////////////////////////////////////
@@ -90,8 +90,8 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], verts.count);
-	mesh_set_inds (mesh, &faces[0], faces.count);
+	mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
+	mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
 

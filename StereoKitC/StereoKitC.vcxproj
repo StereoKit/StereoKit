@@ -179,11 +179,11 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\dr_wav.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
+    <ClInclude Include="libraries\memory.h" />
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\miniz.h" />
     <ClInclude Include="libraries\ofbx.h" />
     <ClInclude Include="libraries\sk_gpu.h" />
-    <ClInclude Include="libraries\sort_list.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />
     <ClInclude Include="libraries\stb_rect_pack.h" />

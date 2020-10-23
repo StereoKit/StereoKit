@@ -2,10 +2,14 @@
 
 #include "stereokit.h"
 
+#ifndef _MSC_VER
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
+#endif
 #include <DirectXMath.h>
+#ifndef _MSC_VER
 #pragma clang diagnostic pop
+#endif
 
 namespace sk {
 	

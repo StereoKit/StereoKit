@@ -4,10 +4,14 @@
 #include "../libraries/sk_gpu.h"
 #include "../libraries/array.h"
 
+#ifndef _MSC_VER
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
+#endif
 #include <DirectXMath.h>
+#ifndef _MSC_VER
 #pragma clang diagnostic pop
+#endif
 
 namespace sk {
 

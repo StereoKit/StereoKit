@@ -511,7 +511,7 @@ void render_set_material(material_t material) {
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
 		if (material->args.buffer_dirty) {
-			skr_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, material->args.buffer_size);
+			skr_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
 			material->args.buffer_dirty = false;
 		}
 		skr_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0, 0);
@@ -531,7 +531,7 @@ void render_set_material(material_t material) {
 
 skr_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = list.count - offset;
+	int32_t size  = (int32_t)list.count - offset;
 	int32_t index = 0;
 	for (int32_t i = 0; i < _countof(render_instance_buffers); i++) {
 		index = i;

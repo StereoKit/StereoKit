@@ -6,9 +6,6 @@
 #include "libraries/stref.h"
 #include "libraries/array.h"
 
-#define SL_IMPLEMENTATION
-#include "libraries/sort_list.h"
-
 #include <math.h>
 #include <float.h>
 #include <DirectXMath.h>
@@ -19,9 +16,10 @@ using namespace DirectX;
 namespace sk {
 
 struct ui_window_t {
-	pose_t  pose;
-	vec2    size;
-	ui_win_ type;
+	pose_t   pose;
+	vec2     size;
+	ui_win_  type;
+	uint64_t hash;
 };
 
 struct layer_t {
@@ -51,13 +49,13 @@ struct ui_id_t {
 	uint64_t id;
 };
 
-ui_window_t    *skui_sl_windows = nullptr;
-array_t<ui_id_t>skui_id_stack = {};
-array_t<layer_t>skui_layers = {};
-mesh_t          skui_box = nullptr;
-vec3            skui_box_min = {};
-mesh_t          skui_box_dbg = nullptr;
-vec3            skui_box_dbg_min = {};
+array_t<ui_window_t> skui_sl_windows = {};
+array_t<ui_id_t>     skui_id_stack   = {};
+array_t<layer_t>     skui_layers     = {};
+mesh_t          skui_box          = nullptr;
+vec3            skui_box_min      = {};
+mesh_t          skui_box_dbg      = nullptr;
+vec3            skui_box_dbg_min  = {};
 mesh_t          skui_cylinder;
 vec3            skui_cylinder_min = {};
 material_t      skui_mat;
@@ -356,9 +354,9 @@ void ui_update() {
 ///////////////////////////////////////////
 
 void ui_shutdown() {
-	sl_free(skui_sl_windows);
-	skui_layers  .free();
-	skui_id_stack.free();
+	skui_sl_windows.free();
+	skui_layers    .free();
+	skui_id_stack  .free();
 
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
@@ -1202,11 +1200,13 @@ void ui_handle_end() {
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
 
-	int32_t index = sl_indexof(skui_sl_windows, id);
+	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
+		index = ~index;
 		ui_window_t new_window = {};
+		new_window.hash = id;
 		new_window.size = window_size;
-		index = sl_insert(skui_sl_windows, index, id, new_window);
+		skui_sl_windows.insert(index, new_window);
 	}
 	ui_window_t &window = skui_sl_windows[index];
 	window.type = window_type;

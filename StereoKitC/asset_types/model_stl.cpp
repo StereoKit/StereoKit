@@ -25,7 +25,7 @@ vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vin
 	vind_t  result = 0;
 	int64_t id     = indmap->contains(pt);
 	if (id < 0) {
-		result = verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
+		result = (vind_t)verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
 		indmap->add_or_set(pt, result);
 	} else {
 		result = indmap->items[id];
@@ -114,8 +114,8 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], verts.count);
-	mesh_set_inds (mesh, &faces[0], faces.count);
+	mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
+	mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
 
