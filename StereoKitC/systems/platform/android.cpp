@@ -21,7 +21,7 @@ JNIEnv           *android_env      = nullptr;
 jobject           android_activity = nullptr;
 ANativeWindow    *android_window   = nullptr;
 AAssetManager    *android_asset_manager = nullptr;
-skr_swapchain_t   android_swapchain;
+skg_swapchain_t   android_swapchain;
 
 ///////////////////////////////////////////
 
@@ -110,26 +110,27 @@ bool android_setup(void *from_window) {
 
 ///////////////////////////////////////////
 
+void android_create_window() {
 	return true;
 }
 
 ///////////////////////////////////////////
 
 bool android_init() {
-	skr_callback_log([](skr_log_ level, const char *text) {
+	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
+		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
+		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
+		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skr_init(sk_app_name, android_window, nullptr))
+	if (!skg_init(sk_app_name, android_window, nullptr))
 		return false;
 	log_diag("sk_gpu initialized!");
 
-	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
-	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
-	android_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	android_swapchain = skg_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -142,8 +143,8 @@ bool android_init() {
 
 void android_shutdown() {
 	flatscreen_input_shutdown();
-	skr_swapchain_destroy(&android_swapchain);
-	skr_shutdown();
+	skg_swapchain_destroy(&android_swapchain);
+	skg_shutdown();
 
 	if (android_vm)
 		android_vm->DetachCurrentThread();
@@ -158,11 +159,11 @@ void android_step_begin() {
 ///////////////////////////////////////////
 
 void android_step_end() {
-	skr_draw_begin();
+	skg_draw_begin();
 
 	color128   col    = render_get_clear_color();
-	skr_tex_t *target = skr_swapchain_get_next(&android_swapchain);
-	skr_tex_target_bind(target, true, &col.r);
+	skg_tex_t *target = skg_swapchain_get_next(&android_swapchain);
+	skg_tex_target_bind(target, true, &col.r);
 
 	input_update_predicted();
 
@@ -176,7 +177,7 @@ void android_step_end() {
 ///////////////////////////////////////////
 
 void android_vsync() {
-	skr_swapchain_present(&android_swapchain);
+	skg_swapchain_present(&android_swapchain);
 }
 
 } // namespace sk

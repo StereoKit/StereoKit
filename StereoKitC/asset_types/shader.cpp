@@ -50,16 +50,16 @@ shader_t shader_create_hlsl(const char *hlsl) {
 
 shader_t shader_create_mem(void *data, size_t data_size) {
 	char name[256];
-	if (!skr_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
+	if (!skg_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
 		return nullptr;
 
 	shader_t result = shader_find(name);
 	if (result != nullptr)
 		return result;
 
-	skr_shader_t shader = skr_shader_create_memory(data, data_size);
-	if (!skr_shader_is_valid(&shader)) {
-		skr_shader_destroy(&shader);
+	skg_shader_t shader = skg_shader_create_memory(data, data_size);
+	if (!skg_shader_is_valid(&shader)) {
+		skg_shader_destroy(&shader);
 		return nullptr;
 	}
 
@@ -97,7 +97,7 @@ void shader_release(shader_t shader) {
 ///////////////////////////////////////////
 
 void shader_destroy(shader_t shader) {
-	skr_shader_destroy(&shader->shader);
+	skg_shader_destroy(&shader->shader);
 	*shader = {};
 }
 

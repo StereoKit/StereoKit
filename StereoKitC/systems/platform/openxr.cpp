@@ -249,29 +249,22 @@ bool openxr_init(void *window) {
 		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
 		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
 #endif
-	skr_callback_log([](skr_log_ level, const char *text) {
+	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
+		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
+		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
+		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-#if __ANDROID__
-	if (!skr_init(sk_app_name, android_window, luid)) {
+	if (!skg_init(sk_app_name, luid)) {
 		openxr_shutdown();
 		return false;
 	}
-#else 
-	if (!skr_init(sk_app_name, window, luid)) {
-		openxr_shutdown();
-		return false;
-	}
-#endif
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
 	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
-	skr_platform_data_t platform = skr_get_platform_data();
+	skg_platform_data_t platform = skg_get_platform_data();
 #if defined(XR_USE_GRAPHICS_API_OPENGL)
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
 	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
@@ -455,7 +448,7 @@ void openxr_shutdown() {
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
 	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
 
-	skr_shutdown();
+	skg_shutdown();
 }
 
 ///////////////////////////////////////////

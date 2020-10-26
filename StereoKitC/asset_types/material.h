@@ -8,13 +8,13 @@
 namespace sk {
 
 struct shaderargs_data_t {
-	skr_bind_t   buffer_bind;
+	skg_bind_t   buffer_bind;
 	size_t       buffer_size;
-	skr_buffer_t buffer_gpu;
+	skg_buffer_t buffer_gpu;
 	bool         buffer_dirty;
 	void        *buffer;
 	tex_t       *textures;
-	skr_bind_t  *texture_binds;
+	skg_bind_t  *texture_binds;
 	int32_t      texture_count;
 };
 
@@ -26,7 +26,7 @@ struct _material_t {
 	cull_             cull;
 	bool32_t          wireframe;
 	int32_t           queue_offset;
-	skr_pipeline_t    pipeline;
+	skg_pipeline_t    pipeline;
 };
 
 void   material_destroy   (material_t material);

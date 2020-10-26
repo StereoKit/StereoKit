@@ -173,8 +173,8 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	// Debug print the view and format info
 	log_diagf("Creating view: %s color:%s depth:%s", 
 		openxr_view_name(view_type), 
-		render_fmt_name((tex_format_)skr_tex_fmt_from_native( out_view.color_format )),  
-		render_fmt_name((tex_format_)skr_tex_fmt_from_native( out_view.depth_format )));
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),  
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.depth_format )));
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
@@ -229,7 +229,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// If shaders can't select layers from a texture array, we'll have to
 	// seprate the layers into individual render targets.
-	if (skr_capability(skr_cap_tex_layer_select)) {
+	if (skg_capability(skg_cap_tex_layer_select)) {
 		display.swapchain_color.surface_layers = 1;
 		display.swapchain_depth.surface_layers = 1;
 		log_diagf("Platform supports single-pass rendering");
@@ -354,14 +354,14 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 
 void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	int64_t pixel_formats[] = {
-		skr_tex_fmt_to_native(skr_tex_fmt_rgba32_linear),
-		skr_tex_fmt_to_native(skr_tex_fmt_bgra32_linear),
-		skr_tex_fmt_to_native(skr_tex_fmt_rgba32),
-		skr_tex_fmt_to_native(skr_tex_fmt_bgra32)};
+		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear),
+		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32)};
 	int64_t depth_formats[] = {
-		skr_tex_fmt_to_native(skr_tex_fmt_depth16),
-		skr_tex_fmt_to_native(skr_tex_fmt_depth32),
-		skr_tex_fmt_to_native(skr_tex_fmt_depthstencil)};
+		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
+		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
+		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
 
 	// Get the list of formats OpenXR would like
 	uint32_t count = 0;
@@ -469,7 +469,7 @@ bool openxr_render_frame() {
 	// If the session is active, lets render our layer in the compositor!
 	xr_display_2nd_layers.clear();
 	
-	skr_draw_begin();
+	skg_draw_begin();
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
@@ -595,7 +595,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		color128 col    = sk_info.display_type == display_opaque
 			? render_get_clear_color()
 			: color128{ 0,0,0,0 };
-		skr_tex_target_bind(&target->tex, true, &col.r);
+		skg_tex_target_bind(&target->tex, true, &col.r);
 
 		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers);
 	}
