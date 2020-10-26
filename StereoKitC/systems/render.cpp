@@ -241,7 +241,7 @@ color128 render_get_clear_color() {
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color) {
 	render_item_t item;
 	item.mesh     = &mesh->gpu_mesh;
-	item.mesh_inds= mesh->ind_count;
+	item.mesh_inds= mesh->ind_draw;
 	item.material = material;
 	item.color    = color;
 	item.sort_id  = render_queue_id(material, mesh);
