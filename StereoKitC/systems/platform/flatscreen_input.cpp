@@ -12,8 +12,6 @@ namespace sk {
 int   fltscr_gaze_pointer;
 float fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
 vec2  fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
-vec3  fltscr_head_rot   = {};
-vec3  fltscr_head_pos   = {};
 
 ///////////////////////////////////////////
 
@@ -24,9 +22,7 @@ void flatscreen_mouse_update();
 void flatscreen_input_init() {
 	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
-	fltscr_head_pos = vec3{ 0,0.2f,0.4f };
-	fltscr_head_rot = vec3{ -21, 0.0001f, 0 };
-	input_head_pose = { fltscr_head_pos, quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z) };
+	input_head_pose = { vec3{ 0,0.2f,0.4f }, quat_from_angles(-21, 0.0001f, 0) };
 	render_set_cam_root(pose_matrix(input_head_pose));
 }
 
@@ -60,22 +56,24 @@ void flatscreen_input_update() {
 			movement = vec3_normalize(movement);
 
 		// head rotation
+		vec3 head_rot = matrix_to_angles(render_get_cam_root());
+		vec3 head_pos = matrix_mul_point(render_get_cam_root(), vec3_zero);
 		quat orientation;
 		if (input_key(key_mouse_right) & button_state_active) {
 			const mouse_t *mouse = input_mouse();
-			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
-			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
-			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+			head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
+			head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
 
 			vec2 prev_pt = mouse->pos - mouse->pos_change;
 			input_mouse_data.pos = prev_pt;
 			platform_set_cursor(prev_pt);
 		} else {
-			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
 		}
 		// Apply movement to the camera
-		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
-		input_head_pose = { fltscr_head_pos, orientation };
+		head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
+		input_head_pose = { head_pos, orientation };
 
 		render_set_cam_root(pose_matrix(input_head_pose));
 	}

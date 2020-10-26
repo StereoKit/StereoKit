@@ -183,7 +183,9 @@ SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_ma
 SK_API void   matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
 SK_API vec3   matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
 SK_API vec3   matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-SK_API quat   matrix_mul_rotation (const sk_ref(matrix)  transform, const sk_ref(quat) orientation);
+SK_API quat   matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
+SK_API void   matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
+SK_API vec3   matrix_to_angles    (const sk_ref(matrix) transform);
 SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
 SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
 

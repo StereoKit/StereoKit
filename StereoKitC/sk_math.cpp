@@ -195,6 +195,35 @@ quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
 
 ///////////////////////////////////////////
 
+void matrix_decompose(const matrix &transform, vec3 &out_position, vec3 &out_scale, quat &out_orientation) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+	out_position    = math_fast_to_vec3(pos);
+	out_scale       = math_fast_to_vec3(scale);
+	out_orientation = math_fast_to_quat(rot);
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_to_angles(const matrix &transform) {
+	// see: https://stackoverflow.com/questions/1996957/conversion-euler-to-matrix-and-matrix-to-euler
+	vec3 result;
+	result.x = asinf(-transform.m[9]); // _32
+	if (cosf(result.x) > 0.0001f) {
+		result.y = atan2f(transform.m[8], transform.m[10]); // _31, _33
+		result.z = atan2f(transform.m[1], transform.m[5] ); // _12, _22
+	} else {
+		result.y = 0.0f;
+		result.z = atan2f(-transform.m[4], transform.m[0]); // _21, _11
+	}
+	return result * rad2deg;
+}
+
+///////////////////////////////////////////
+
 matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &scale) {
 	XMMATRIX mat = XMMatrixAffineTransformation(
 		XMLoadFloat3((XMFLOAT3 *)& scale), DirectX::g_XMZero,
