@@ -100,7 +100,7 @@ material_t material_copy(material_t material) {
 	void          *tmp_buffer        = result->args.buffer;
 	tex_t         *tmp_textures      = result->args.textures;
 	skg_bind_t    *tmp_texture_binds = result->args.texture_binds;
-	asset_header_t tmp_header   = result->header;
+	asset_header_t tmp_header        = result->header;
 
 	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
 	memcpy(result, material, sizeof(_material_t));
@@ -108,7 +108,7 @@ material_t material_copy(material_t material) {
 	result->args.buffer        = tmp_buffer;
 	result->args.textures      = tmp_textures;
 	result->args.texture_binds = tmp_texture_binds;
-	result->args.buffer_gpu = skg_buffer_create(nullptr, 1, (uint32_t)material->args.buffer_size, skg_buffer_type_constant, skg_use_dynamic);
+	result->args.buffer_dirty  = true;
 	memcpy(result->args.buffer,        material->args.buffer,        material->args.buffer_size);
 	memcpy(result->args.textures,      material->args.textures,      sizeof(tex_t)      * material->args.texture_count);
 	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skg_bind_t) * material->args.texture_count);
@@ -125,6 +125,8 @@ material_t material_copy(material_t material) {
 	skg_pipeline_set_cull        (&result->pipeline, skg_pipeline_get_cull        (&material->pipeline));
 	skg_pipeline_set_transparency(&result->pipeline, skg_pipeline_get_transparency(&material->pipeline));
 	skg_pipeline_set_wireframe   (&result->pipeline, skg_pipeline_get_wireframe   (&material->pipeline));
+	skg_pipeline_set_depth_test  (&result->pipeline, skg_pipeline_get_depth_test  (&material->pipeline));
+	skg_pipeline_set_depth_write (&result->pipeline, skg_pipeline_get_depth_write (&material->pipeline));
 
 	return result;
 }
