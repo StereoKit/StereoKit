@@ -54,7 +54,7 @@ bool win32_init() {
 	sk_info.display_type   = display_opaque;
 
 	WNDCLASS wc = {0}; 
-	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		switch(message) {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
@@ -128,9 +128,14 @@ bool win32_init() {
 	if (!skg_init(sk_app_name, nullptr))
 		return false;
 
+	RECT bounds;
+	GetClientRect(win32_window, &bounds);
+	int32_t width  = bounds.right  - bounds.left;
+	int32_t height = bounds.bottom - bounds.top;
+
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
-	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, depth_fmt, width, height);
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));

@@ -412,7 +412,7 @@ bool uwp_init() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
-	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));

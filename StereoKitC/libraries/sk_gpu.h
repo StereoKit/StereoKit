@@ -348,9 +348,9 @@ typedef struct skg_swapchain_t {
 #ifdef _WIN32
 	void *_hdc;
 	void *_hwnd;
-#endif
-
-#if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#elif defined(__ANDROID__) || defined(__linux__)
+	void *_egl_surface;
+#elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
 	skg_shader_t   _convert_shader;
@@ -427,7 +427,7 @@ void                skg_pipeline_set_depth_test  (      skg_pipeline_t *pipeline
 skg_depth_test_     skg_pipeline_get_depth_test  (const skg_pipeline_t *pipeline);
 void                skg_pipeline_destroy         (      skg_pipeline_t *pipeline);
 
-skg_swapchain_t     skg_swapchain_create         (void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t width, int32_t height);
+skg_swapchain_t     skg_swapchain_create         (void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height);
 void                skg_swapchain_resize         (      skg_swapchain_t *swapchain, int32_t width, int32_t height);
 void                skg_swapchain_present        (      skg_swapchain_t *swapchain);
 void                skg_swapchain_bind           (      skg_swapchain_t *swapchain, bool clear, const float *clear_color_4);
@@ -505,6 +505,9 @@ void               skg_shader_meta_release     (skg_shader_meta_t *meta);
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <math.h>
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #include <stdio.h>
 
@@ -1123,15 +1126,15 @@ void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
 // skg_swapchain                         //
 ///////////////////////////////////////////
 
-skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t width, int32_t height) {
+skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height) {
 	skg_swapchain_t result = {};
-	result.width  = width;
-	result.height = height;
+	result.width  = requested_width;
+	result.height = requested_height;
 
 	DXGI_SWAP_CHAIN_DESC1 swapchain_desc = { };
 	swapchain_desc.BufferCount = 2;
-	swapchain_desc.Width       = width;
-	swapchain_desc.Height      = height;
+	swapchain_desc.Width       = result.width;
+	swapchain_desc.Height      = result.height;
 	swapchain_desc.Format      = (DXGI_FORMAT)skg_tex_fmt_to_native(format);
 	swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapchain_desc.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -1156,9 +1159,9 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 
 	ID3D11Texture2D *back_buffer;
 	result._swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
-	result._target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, width, height, 1);
+	result._target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, result.width, result.height, 1);
 	result._depth  = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
-	skg_tex_set_contents(&result._depth, nullptr, 1, width, height);
+	skg_tex_set_contents(&result._depth, nullptr, 1, result.width, result.height);
 	skg_tex_attach_depth(&result._target, &result._depth);
 	back_buffer->Release();
 
@@ -1695,15 +1698,12 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #include <EGL/eglext.h>
 
 EGLDisplay egl_display;
-EGLSurface egl_surface;
 EGLContext egl_context;
 EGLConfig  egl_config;
 #elif _WIN32
 #pragma comment(lib, "opengl32.lib")
 
-#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif
 #include <windows.h>
 
 HWND  gl_hwnd;
@@ -2166,7 +2166,7 @@ int32_t gl_init_emscripten() {
 
 ///////////////////////////////////////////
 
-int32_t gl_init_egl(void *native_window) {
+int32_t gl_init_egl() {
 #if defined(__ANDROID__) || defined(__linux__)
 	const EGLint attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -2195,18 +2195,13 @@ int32_t gl_init_egl(void *native_window) {
 	eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglGetConfigAttrib");
 	
-	egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)native_window, nullptr);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
 	egl_context = eglCreateContext      (egl_display, egl_config, nullptr, context_attribs);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateContext");
 
-	if (eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context) == EGL_FALSE) {
+	if (eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context) == EGL_FALSE) {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
-
-	eglQuerySurface(egl_display, egl_surface, EGL_WIDTH,  &gl_width);
-	eglQuerySurface(egl_display, egl_surface, EGL_HEIGHT, &gl_height);
 #endif // defined(__ANDROID__) || defined(__linux__)
 	return 1;
 }
@@ -2271,12 +2266,10 @@ void skg_shutdown() {
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
-		if (egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, egl_surface);
 		eglTerminate(egl_display);
 	}
 	egl_display = EGL_NO_DISPLAY;
 	egl_context = EGL_NO_CONTEXT;
-	egl_surface = EGL_NO_SURFACE;
 #endif
 }
 
@@ -2418,7 +2411,8 @@ void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offse
 /////////////////////////////////////////// 
 
 void skg_buffer_destroy(skg_buffer_t *buffer) {
-	glDeleteBuffers(1, &buffer->_buffer);
+	uint32_t buffer_list[] = { buffer->_buffer };
+	glDeleteBuffers(1, buffer_list);
 	*buffer = {};
 }
 
@@ -2477,7 +2471,8 @@ void skg_mesh_bind(const skg_mesh_t *mesh) {
 /////////////////////////////////////////// 
 
 void skg_mesh_destroy(skg_mesh_t *mesh) {
-	glDeleteVertexArrays(1, &mesh->_layout);
+	uint32_t vao_list[] = {mesh->_layout};
+	glDeleteVertexArrays(1, vao_list);
 	*mesh = {};
 }
 
@@ -2768,17 +2763,14 @@ void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
 
 ///////////////////////////////////////////
 
-skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t width, int32_t height) {
+skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height) {
 	skg_swapchain_t result = {};
 
 #if _WIN32
-	result._hwnd = hwnd;
-	result._hdc  = GetDC((HWND)hwnd);
-
-	RECT bounds;
-	GetWindowRect((HWND)hwnd, &bounds);
-	result.width  = bounds.right  - bounds.left;
-	result.height = bounds.bottom - bounds.top;
+	result._hwnd  = hwnd;
+	result._hdc   = GetDC((HWND)hwnd);
+	result.width  = requested_width;
+	result.height = requested_height;
 
 	// Find a pixel format
 	const int format_attribs[] = {
@@ -2807,6 +2799,12 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		skg_log(skg_log_critical, "Couldn't set pixel format!");
 		return {};
 	}
+#elif defined(__ANDROID__) || defined(__linux__)
+	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, nullptr);
+	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
+
+	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
+	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
 #else
 	int32_t viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
@@ -2887,7 +2885,7 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #ifdef _WIN32
 	SwapBuffers((HDC)swapchain->_hdc);
 #elif defined(__ANDROID__) || defined(__linux__)
-	eglSwapBuffers(egl_display, egl_surface);
+	eglSwapBuffers(egl_display, swapchain->_egl_surface);
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
@@ -2905,8 +2903,11 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 	gl_active_height = swapchain->height;
 #if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	skg_tex_target_bind(&swapchain->_surface, clear, clear_color_4);
-#else
+#elif _WIN32
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
+	skg_tex_target_bind(nullptr, clear, clear_color_4);
+#elif defined(__ANDROID__) || defined(__linux__)
+	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
 }
@@ -2921,6 +2922,10 @@ void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 		swapchain->_hwnd = nullptr;
 		swapchain->_hdc  = nullptr;
 	}
+#elif defined(__ANDOIRD__) || defined(__linux__)
+	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
+	swapchain->_egl_surface = EGL_NO_SURFACE;
 #endif
 }
 
@@ -3136,8 +3141,10 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 /////////////////////////////////////////// 
 
 void skg_tex_destroy(skg_tex_t *tex) {
-	glDeleteTextures    (1, &tex->_texture);
-	glDeleteFramebuffers(1, &tex->_framebuffer);  
+	uint32_t tex_list[] = { tex->_texture     };
+	uint32_t fb_list [] = { tex->_framebuffer };
+	glDeleteTextures    (1, tex_list);
+	glDeleteFramebuffers(1, fb_list );  
 	*tex = {};
 }
 
