@@ -558,10 +558,15 @@ skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, 
 ///////////////////////////////////////////
 
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
-	matrix mat;
-	matrix_mul(render_camera_root_inv, render_default_camera_proj, mat);
-	matrix_inverse(mat, mat);
-	return matrix_mul_point(mat, normalized_screen_pt);
+	XMMATRIX fast_proj, fast_view;
+	math_matrix_to_fast(render_get_projection(), &fast_proj);
+	math_matrix_to_fast(render_camera_root_inv,  &fast_view);
+	XMVECTOR result = XMVector3Unproject(math_vec3_to_fast(normalized_screen_pt),
+		0, 0, sk_system_info().display_width, sk_system_info().display_height,
+		0, 1,
+		fast_proj, fast_view, XMMatrixIdentity());
+		
+	return math_fast_to_vec3(result);
 }
 
 ///////////////////////////////////////////
