@@ -246,7 +246,10 @@ bool openxr_init() {
 		// Print the debug message we got! There's a bunch more info we could
 		// add here too, but this is a pretty good start, and you can always
 		// add a breakpoint this line!
-		log_infof("%s: %s\n", msg->functionName, msg->message);
+		log_ level = log_diagnostic;
+		if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
+		else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
+		log_writef(level, "%s: %s", msg->functionName, msg->message);
 
 		// Returning XR_TRUE here will force the calling function to fail
 		return (XrBool32)XR_FALSE;
@@ -467,18 +470,20 @@ XrReferenceSpaceType openxr_preferred_space() {
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
-	// Shut down the input!
-	oxri_shutdown();
+	if (xr_instance) {
+		// Shut down the input!
+		oxri_shutdown();
 
-	openxr_views_destroy();
+		openxr_views_destroy();
 
-	// Release all the other OpenXR resources that we've created!
-	// What gets allocated, must get deallocated!
-	if (xr_debug      != XR_NULL_HANDLE) xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug);
-	if (xr_head_space != XR_NULL_HANDLE) xrDestroySpace   (xr_head_space);
-	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
-	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
-	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
+		// Release all the other OpenXR resources that we've created!
+		// What gets allocated, must get deallocated!
+		if (xr_debug      != XR_NULL_HANDLE) { xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug); xr_debug = {}; }
+		if (xr_head_space != XR_NULL_HANDLE) { xrDestroySpace   (xr_head_space); xr_head_space = {}; }
+		if (xr_app_space  != XR_NULL_HANDLE) { xrDestroySpace   (xr_app_space ); xr_app_space  = {}; }
+		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
+		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
+	}
 }
 
 ///////////////////////////////////////////

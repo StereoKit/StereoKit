@@ -309,9 +309,9 @@ bool oxri_init() {
 
 void oxri_shutdown() {
 	xrc_profile_offsets.free();
-	xrDestroySpace(xr_hand_space[0]);
-	xrDestroySpace(xr_hand_space[1]);
-	xrDestroyActionSet(xrc_action_set);
+	if (xr_hand_space[0]) { xrDestroySpace    (xr_hand_space[0]); xr_hand_space[0] = {}; }
+	if (xr_hand_space[1]) { xrDestroySpace    (xr_hand_space[1]); xr_hand_space[1] = {}; }
+	if (xrc_action_set  ) { xrDestroyActionSet(xrc_action_set  ); xrc_action_set   = {}; }
 }
 
 ///////////////////////////////////////////
