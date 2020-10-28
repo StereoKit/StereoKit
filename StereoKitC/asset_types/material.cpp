@@ -98,6 +98,7 @@ material_t material_copy(material_t material) {
 	material_t result = material_create(material->shader);
 	// Store allocated memory temporarily
 	void          *tmp_buffer        = result->args.buffer;
+	skg_buffer_t   tmp_buffer_gpu    = result->args.buffer_gpu;
 	tex_t         *tmp_textures      = result->args.textures;
 	skg_bind_t    *tmp_texture_binds = result->args.texture_binds;
 	asset_header_t tmp_header        = result->header;
@@ -106,6 +107,7 @@ material_t material_copy(material_t material) {
 	memcpy(result, material, sizeof(_material_t));
 	result->header             = tmp_header;
 	result->args.buffer        = tmp_buffer;
+	result->args.buffer_gpu    = tmp_buffer_gpu;
 	result->args.textures      = tmp_textures;
 	result->args.texture_binds = tmp_texture_binds;
 	result->args.buffer_dirty  = true;
