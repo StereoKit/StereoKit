@@ -86,7 +86,7 @@ void input_fire_event(input_source_ source, button_state_ event, const pointer_t
 
 ///////////////////////////////////////////
 
-bool input_init(void *) {
+bool input_init() {
 	input_hand_init();
 	return true;
 }

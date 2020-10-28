@@ -11,7 +11,8 @@ namespace StereoKit
 		Flatscreen   = 0,
 		/// <summary>Creates an OpenXR instance, and drives display/input 
 		/// through that.</summary>
-		MixedReality = 1
+		MixedReality = 1,
+		None = 2,
 	}
 
 	/// <summary>StereoKit miscellaneous initialization settings! Setup 
@@ -40,6 +41,9 @@ namespace StereoKit
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public bool disableFlatscreenMRSim;
+
+		public IntPtr androidJavaVm;
+		public IntPtr androidActivity;
 	}
 
 	/// <summary>This describes the type of display tech used on a Mixed
@@ -616,11 +620,5 @@ namespace StereoKit
 		Head = 1 << 0,
 		/// <summary>Flag to include a body on the window.</summary>
 		Body = 1 << 1,
-	}
-
-	struct AndroidInitData
-	{
-		public IntPtr activity;
-		public IntPtr window;
 	}
 }

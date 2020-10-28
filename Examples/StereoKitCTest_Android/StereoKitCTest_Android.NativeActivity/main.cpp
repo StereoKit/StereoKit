@@ -23,28 +23,14 @@ static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 	case APP_CMD_INIT_WINDOW:
 		// The window is being shown, get it ready.
 		if (evt_app->window != NULL) {
-			__android_log_print(ANDROID_LOG_INFO, "StereoKit", "Initializing StereoKit...");
-			//engine_init_display();
-			//engine_draw_frame();
-			log_set_filter(log_diagnostic);
-
-			sk_android_info_t info = {};
-			info.java_vm       = evt_app->activity->vm;
-			info.jni_env       = evt_app->activity->env;
-			info.asset_manager = evt_app->activity->assetManager;
-			info.activity      = evt_app->activity->clazz;
-			info.window        = evt_app->window;
-			app_run = sk_init_from(&info, "StereoKitCTest_Android", runtime_mixedreality, true);
+			app_run = sk_set_window(evt_app->window, sk_active_runtime());
 			app_visible = app_run;
-
-			if (app_run) {
-				mesh = mesh_gen_rounded_cube(vec3_one*.4f, 0.05f, 4);
-				mat  = material_find(default_id_material);
-			}
 		}
 		break;
+	case APP_CMD_WINDOW_RESIZED:
+	case APP_CMD_CONFIG_CHANGED: app_run = sk_set_window(evt_app->window, sk_active_runtime()); break;
 	case APP_CMD_SAVE_STATE:   break;
-	case APP_CMD_TERM_WINDOW:  app_run = false; break;
+	case APP_CMD_TERM_WINDOW:  app_run = sk_set_window(nullptr, sk_active_runtime()); break;
 	case APP_CMD_GAINED_FOCUS: app_visible = true; break;
 	case APP_CMD_LOST_FOCUS:   app_visible = false; break;
 	}
@@ -56,28 +42,32 @@ void android_main(struct android_app* state) {
 	app->onAppCmd     = engine_handle_cmd;
 	app->onInputEvent = engine_handle_input;
 
-	app_run = true;// sk_init_from(app->window, "StereoKitCTest_Android", runtime_mixedreality, true);
+	log_set_filter(log_diagnostic);
+
+	settings_t settings = sk_get_settings();
+	settings.android_activity = state->activity->clazz;
+	settings.android_java_vm  = state->activity->vm;
+	sk_set_settings(settings);
+	if (!sk_init("StereoKitCTest_Android", runtime_flatscreen, true))
+		return;
+
+	mesh = mesh_gen_rounded_cube(vec3_one*.4f, 0.05f, 4);
+	mat  = material_find(default_id_material);
+	render_enable_skytex(false);
 
 	while (app_run) {
-		// If not animating, we will block forever waiting for events.                    
-		// If animating, we loop until all events are read, then continue
-		// to draw the next frame of animation.
 		int events;
 		struct android_poll_source* source;
 		while (ALooper_pollAll(app_visible ? 0 : -1, nullptr, &events, (void**)&source) >= 0) {
-
-			// Process this event.
-			if (source != nullptr) source->process(state, source);
-
-			// Check if we are exiting.
-			if (state->destroyRequested != 0) {
-				app_run = false;
-				break;
-			}
+			if (source                  != nullptr) source->process(state, source);
+			if (state->destroyRequested != 0      ) app_run = false;
 		}
 
 		if (app_visible) sk_step([]() {
 			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
+
+			float f = (cosf(time_getf()) + 1) / 2;
+			render_set_clear_color({f,f,f,1});
 
 			if (sk_active_runtime() == runtime_flatscreen) {
 				vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };

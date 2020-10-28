@@ -37,17 +37,23 @@ bool32_t      sk_run      = true;
 
 bool sk_initialized = false;
 
-double  sk_timev_scale = 1;
-float   sk_timevf = 0;
-double  sk_timev  = 0;
-float   sk_timevf_us = 0;
-double  sk_timev_us  = 0;
-double  sk_time_start     = 0;
-double  sk_timev_elapsed  = 0;
-float   sk_timev_elapsedf = 0;
+double  sk_timev_scale       = 1;
+float   sk_timevf            = 0;
+double  sk_timev             = 0;
+float   sk_timevf_us         = 0;
+double  sk_timev_us          = 0;
+double  sk_time_start        = 0;
+double  sk_timev_elapsed     = 0;
+float   sk_timev_elapsedf    = 0;
 double  sk_timev_elapsed_us  = 0;
 float   sk_timev_elapsedf_us = 0;
-int64_t sk_timev_raw      = 0;
+int64_t sk_timev_raw         = 0;
+
+///////////////////////////////////////////
+
+settings_t sk_get_settings() {
+	return sk_settings;
+}
 
 ///////////////////////////////////////////
 
@@ -93,12 +99,6 @@ void sk_app_update() {
 ///////////////////////////////////////////
 
 bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
-	return sk_init_from(nullptr, app_name, runtime_preference, fallback);
-}
-
-///////////////////////////////////////////
-
-bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
 	sk_runtime          = runtime_preference;
 	sk_runtime_fallback = fallback;
 	sk_app_name         = app_name;
@@ -116,31 +116,11 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	system_t sys_platform_render  = { "FrameRender"  };
 	system_t sys_platform_present = { "FramePresent" };
 
-	sys_platform.func_initialize = platform_init;
-	sys_platform.initialize_arg  = window;
-
-	if (sk_runtime == runtime_mixedreality) {
-		sys_platform        .func_shutdown   = openxr_shutdown;
-		sys_platform_begin  .func_update     = openxr_step_begin;
-		sys_platform_render .func_update     = openxr_step_end;
-	} else {
-#if defined(WINDOWS_UWP)
-		sys_platform        .func_shutdown   = uwp_shutdown;
-		sys_platform_begin  .func_update     = uwp_step_begin;
-		sys_platform_render .func_update     = uwp_step_end;
-		sys_platform_present.func_update     = uwp_vsync;
-#elif defined(_WIN32)
-		sys_platform        .func_shutdown   = win32_shutdown;
-		sys_platform_begin  .func_update     = win32_step_begin;
-		sys_platform_render .func_update     = win32_step_end;
-		sys_platform_present.func_update     = win32_vsync;
-#elif defined(__ANDROID__)
-		sys_platform        .func_shutdown   = android_shutdown;
-		sys_platform_begin  .func_update     = android_step_begin;
-		sys_platform_render .func_update     = android_step_end;
-		sys_platform_present.func_update     = android_vsync;
-#endif
-	}
+	sys_platform        .func_initialize = platform_init;
+	sys_platform        .func_shutdown   = platform_shutdown;
+	sys_platform_begin  .func_update     = platform_step_begin;
+	sys_platform_render .func_update     = platform_step_end;
+	sys_platform_present.func_update     = platform_present;
 
 	const char *frame_present_update_deps[] = {"FrameRender"};
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
@@ -269,6 +249,12 @@ bool32_t sk_init_from(void *window, const char *app_name, runtime_ runtime_prefe
 	if (!sk_initialized) log_show_any_fail_reason();
 	else                 log_clear_any_fail_reason();
 	return sk_initialized;
+}
+
+///////////////////////////////////////////
+
+bool32_t sk_set_window(void *window, runtime_ preferred_runtime) {
+	return platform_set_window(window, preferred_runtime);
 }
 
 ///////////////////////////////////////////

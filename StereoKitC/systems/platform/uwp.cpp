@@ -392,11 +392,14 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_setup(void *from_window) {
+bool uwp_init() {
 	return true;
 }
 
-bool uwp_init() {
+void uwp_shutdown() {
+}
+
+bool uwp_start() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -406,9 +409,6 @@ bool uwp_init() {
 	while (ViewProvider::inst == nullptr || !ViewProvider::inst->initialized) {
 		Sleep(1);
 	}
-
-	if (!skg_init(sk_app_name, nullptr))
-		return false;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
@@ -443,12 +443,11 @@ void uwp_vsync() {
 	skg_swapchain_present(&uwp_swapchain);
 }
 
-void uwp_shutdown() {
+void uwp_stop() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	skg_swapchain_destroy(&uwp_swapchain);
-	skg_shutdown();
 }
 
 }

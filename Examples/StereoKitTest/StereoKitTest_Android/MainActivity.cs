@@ -22,11 +22,7 @@ namespace StereoKitTest_Android
 	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 	public class MainActivity : Activity, ISurfaceHolderCallback2
 	{
-		ISurfaceHolder surfaceHolder;
-		View           surface;
-
-		bool running = false;
-		bool started = false;
+		View surface;
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
@@ -36,13 +32,14 @@ namespace StereoKitTest_Android
 			Window.TakeSurface(this);
 			Window.SetFormat  (Format.Unknown);
 
-			surfaceHolder = null;
 			surface       = new View(this);
 			SetContentView(surface);
 			surface.RequestFocus();
 
 			base.OnCreate(savedInstanceState);
 			Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+
+			Run(Handle);
 		}
 		public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
 		{
@@ -50,28 +47,17 @@ namespace StereoKitTest_Android
 			base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 		}
 
-		protected override void OnStart()
+		static bool running = false;
+		static void Run(IntPtr activityHandle)
 		{
-			Android.Util.Log.Info("StereoKitTest", "OnStart");
-			base.OnStart();
-			started = true;
-			CheckStart();
-		}
+			if (running)
+				return;
+			running = true;
 
-		void CheckStart()
-		{
-			if (surfaceHolder != null && started && !running)
-			{
-				running = true;
-				Start(surfaceHolder.Surface.Handle);
-			}
-		}
-
-		void Start(IntPtr window)
-		{
-			Task.Run(()=>{
+			Task.Run(() => {
 				StereoKit.Log.Filter = LogLevel.Diagnostic;
-				if (!StereoKitApp.InitializeAndroid("StereoKitTemplate", Handle, window, StereoKit.Runtime.MixedReality))
+				StereoKitApp.settings.androidActivity = activityHandle;
+				if (!StereoKitApp.Initialize("StereoKitTemplate", StereoKit.Runtime.Flatscreen))
 					return;
 
 				// Create assets used by the app
@@ -83,6 +69,7 @@ namespace StereoKitTest_Android
 				// Core application loop
 				while (StereoKitApp.Step(() =>
 				{
+					Text.Add(Time.Elapsed + "s", StereoKit.Matrix.Identity);
 					UI.Handle("Cube", ref cubePose, cube.Bounds);
 					cube.Draw(cubePose.ToMatrix());
 				})) ;
@@ -90,13 +77,9 @@ namespace StereoKitTest_Android
 			});
 		}
 
-		public void SurfaceChanged  (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) {
-			Android.Util.Log.Info("StereoKitTest", "OnChanged: " + width + "x" + height);
-			surfaceHolder = holder;
-			CheckStart();
-		}
-		public void SurfaceCreated     (ISurfaceHolder holder) { }
-		public void SurfaceDestroyed   (ISurfaceHolder holder) { surfaceHolder = null; Android.Util.Log.Info("StereoKitTest", "Destroyed"); }
+		public void SurfaceChanged     (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) { StereoKitApp.SetWindow(holder.Surface.Handle, StereoKitApp.ActiveRuntime); Android.Util.Log.Info("StereoKitTest", "OnChanged: " + width + "x" + height); }
+		public void SurfaceCreated     (ISurfaceHolder holder) { StereoKitApp.SetWindow(holder.Surface.Handle, StereoKitApp.ActiveRuntime); }
+		public void SurfaceDestroyed   (ISurfaceHolder holder) { StereoKitApp.SetWindow(IntPtr.Zero, StereoKitApp.ActiveRuntime); Android.Util.Log.Info("StereoKitTest", "Destroyed"); }
 		public void SurfaceRedrawNeeded(ISurfaceHolder holder) { }
 	}
 }

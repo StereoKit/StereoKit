@@ -42,13 +42,18 @@ void win32_resize(int width, int height) {
 
 ///////////////////////////////////////////
 
-bool win32_setup(void *from_window) {
+bool win32_init() {
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool win32_init() {
+void win32_shutdown() {
+}
+
+///////////////////////////////////////////
+
+bool win32_start() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -118,16 +123,6 @@ bool win32_init() {
 		nullptr);
 	if( !win32_window ) return false;
 
-	skg_callback_log([](skg_log_ level, const char *text) {
-		switch (level) {
-		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-	if (!skg_init(sk_app_name, nullptr))
-		return false;
-
 	RECT bounds;
 	GetClientRect(win32_window, &bounds);
 	int32_t width  = bounds.right  - bounds.left;
@@ -147,10 +142,9 @@ bool win32_init() {
 
 ///////////////////////////////////////////
 
-void win32_shutdown() {
+void win32_stop() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy(&win32_swapchain);
-	skg_shutdown();
 }
 
 ///////////////////////////////////////////

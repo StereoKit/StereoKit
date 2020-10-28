@@ -99,6 +99,49 @@ const char *openxr_string(XrResult result) {
 
 ///////////////////////////////////////////
 
+XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+void *openxr_get_luid() {
+#if defined(_WIN32) && defined(XR_USE_GRAPHICS_API_D3D11)
+	const char *extensions[] = { XR_GFX_EXTENSION };
+
+	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
+	create_info.enabledExtensionCount = 1;
+	create_info.enabledExtensionNames = extensions;
+	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
+	XrResult result = xrCreateInstance(&create_info, &xr_instance);
+
+	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
+		return nullptr;
+	}
+
+	// Request a form factor from the device (HMD, Handheld, etc.)
+	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
+	systemInfo.formFactor = xr_config_form;
+	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	if (XR_FAILED(result)) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	// Get an extension function, and check it for our requirements
+	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
+	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
+		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	xrDestroyInstance(xr_instance);
+	return (void *)&luid_requirement.adapterLuid;
+#else
+	return nullptr;
+#endif
+}
+
+///////////////////////////////////////////
+
 int64_t openxr_get_time() {
 #ifdef XR_USE_TIMESPEC
 	struct timespec time;
@@ -113,7 +156,7 @@ int64_t openxr_get_time() {
 
 ///////////////////////////////////////////
 
-bool openxr_init(void *window) {
+bool openxr_init() {
 
 #ifdef __ANDROID__
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
@@ -249,17 +292,6 @@ bool openxr_init(void *window) {
 		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
 		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
 #endif
-	skg_callback_log([](skg_log_ level, const char *text) {
-		switch (level) {
-		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-	if (!skg_init(sk_app_name, luid)) {
-		openxr_shutdown();
-		return false;
-	}
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
@@ -447,8 +479,6 @@ void openxr_shutdown() {
 	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
 	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
 	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
-
-	skg_shutdown();
 }
 
 ///////////////////////////////////////////

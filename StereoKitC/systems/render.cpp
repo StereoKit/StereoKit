@@ -388,7 +388,7 @@ void render_clear() {
 
 ///////////////////////////////////////////
 
-bool render_init(void *) {
+bool render_init() {
 	render_shader_globals = skg_buffer_create(nullptr, 1, sizeof(render_global_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
 	render_shader_blit    = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t),     skg_buffer_type_constant, skg_use_dynamic);;
 

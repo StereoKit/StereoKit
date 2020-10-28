@@ -4,7 +4,7 @@
 
 namespace sk {
 
-bool defaults_init(void *arg);
+bool defaults_init    ();
 void defaults_shutdown();
 
 extern tex_t        sk_default_tex;

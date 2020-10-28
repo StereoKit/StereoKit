@@ -242,7 +242,7 @@ void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t num
 
 ///////////////////////////////////////////
 
-bool sound_init(void *) {
+bool sound_init() {
 #ifdef _MSC_VER
     isac_adapter = new IsacAdapter(_countof(au_active_sounds));
     HRESULT hr = isac_adapter->Activate(isac_data_callback);

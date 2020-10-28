@@ -65,16 +65,20 @@ typedef int32_t bool32_t;
 
 typedef enum runtime_ {
 	runtime_flatscreen   = 0,
-	runtime_mixedreality = 1
+	runtime_mixedreality = 1,
+	runtime_none         = 2,
 } runtime_;
 
 typedef struct settings_t {
-	int32_t flatscreen_pos_x;
-	int32_t flatscreen_pos_y;
-	int32_t flatscreen_width;
-	int32_t flatscreen_height;
-	char assets_folder[128];
+	int32_t  flatscreen_pos_x;
+	int32_t  flatscreen_pos_y;
+	int32_t  flatscreen_width;
+	int32_t  flatscreen_height;
+	char     assets_folder[128];
 	bool32_t disable_flatscreen_mr_sim;
+
+	void    *android_java_vm;  // JavaVM*
+	void    *android_activity; // jobject
 } settings_t;
 
 typedef enum display_ {
@@ -82,14 +86,6 @@ typedef enum display_ {
 	display_additive,
 	display_passthrough,
 } display_;
-
-typedef struct sk_android_info_t {
-	void *java_vm;       // JavaVM*
-	void *jni_env;       // JNIEnv*
-	void *window;        // ANativeWindow*
-	void *activity;      // jobject
-	void *asset_manager; // AAssetManager*
-} sk_android_info_t;
 
 typedef struct system_info_t {
 	display_ display_type;
@@ -99,11 +95,12 @@ typedef struct system_info_t {
 } system_info_t;
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
-SK_API bool32_t      sk_init_from     (void *window, const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
+SK_API bool32_t      sk_set_window    (void *window, runtime_ preferred_runtime);
 SK_API void          sk_shutdown      ();
 SK_API void          sk_quit          ();
 SK_API bool32_t      sk_step          (void (*app_update)(void));
 SK_API runtime_      sk_active_runtime();
+SK_API settings_t    sk_get_settings  ();
 SK_API void          sk_set_settings  (const sk_ref(settings_t) settings);
 SK_API system_info_t sk_system_info   ();
 SK_API const char   *sk_version_name  ();

@@ -58,8 +58,8 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();
 const char *render_fmt_name(tex_format_ format);
 
-bool render_init(void *arg);
-void render_update();
+bool render_init    ();
+void render_update  ();
 void render_shutdown();
 
 render_list_t render_list_create ();
