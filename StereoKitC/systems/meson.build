@@ -1,4 +1,5 @@
 subdir('hand')
+subdir('platform')
 
 systems_includes = include_directories('.', '../lib/include_no_win', '../lib/include')
 

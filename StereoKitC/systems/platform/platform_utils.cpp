@@ -102,6 +102,14 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 		log_errf("Can't find file %s!", filename);
 		return false;
 	}
+#elif __linux__
+
+	FILE *fp;
+	if (fopen(&fp, filename, "rb") != 0 || fp == nullptr) {
+		log_errf("Can't find file %s!", filename);
+		return false;
+	}
+
 #else
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
