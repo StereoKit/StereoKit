@@ -40,7 +40,7 @@ array_t<physics_shape_asset_t> physics_shapes = {};
 
 ///////////////////////////////////////////
 
-bool physics_init(void *) {
+bool physics_init() {
 
 	physics_world = physics_common.createPhysicsWorld();
 	return true;

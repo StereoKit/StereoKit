@@ -26,7 +26,7 @@ struct render_stats_t {
 struct render_item_t {
 	DirectX::XMMATRIX transform;
 	color128    color;
-	skr_mesh_t *mesh;
+	skg_mesh_t *mesh;
 	int32_t     mesh_inds;
 	material_t  material;
 	uint64_t    sort_id;
@@ -58,8 +58,8 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();
 const char *render_fmt_name(tex_format_ format);
 
-bool render_init(void *arg);
-void render_update();
+bool render_init    ();
+void render_update  ();
 void render_shutdown();
 
 render_list_t render_list_create ();

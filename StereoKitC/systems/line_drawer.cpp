@@ -20,7 +20,7 @@ uint32_t line_ind_cap  = 0;
 
 ///////////////////////////////////////////
 
-bool line_drawer_init(void *) {
+bool line_drawer_init() {
 	line_mesh = mesh_create();
 	mesh_set_id(line_mesh, "render/line_mesh");
 

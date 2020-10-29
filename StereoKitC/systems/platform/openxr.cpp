@@ -99,6 +99,49 @@ const char *openxr_string(XrResult result) {
 
 ///////////////////////////////////////////
 
+XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+void *openxr_get_luid() {
+#if defined(_WIN32) && defined(XR_USE_GRAPHICS_API_D3D11)
+	const char *extensions[] = { XR_GFX_EXTENSION };
+
+	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
+	create_info.enabledExtensionCount = 1;
+	create_info.enabledExtensionNames = extensions;
+	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
+	XrResult result = xrCreateInstance(&create_info, &xr_instance);
+
+	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
+		return nullptr;
+	}
+
+	// Request a form factor from the device (HMD, Handheld, etc.)
+	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
+	systemInfo.formFactor = xr_config_form;
+	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	if (XR_FAILED(result)) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	// Get an extension function, and check it for our requirements
+	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
+	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
+		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	xrDestroyInstance(xr_instance);
+	return (void *)&luid_requirement.adapterLuid;
+#else
+	return nullptr;
+#endif
+}
+
+///////////////////////////////////////////
+
 int64_t openxr_get_time() {
 #ifdef XR_USE_TIMESPEC
 	struct timespec time;
@@ -113,7 +156,7 @@ int64_t openxr_get_time() {
 
 ///////////////////////////////////////////
 
-bool openxr_init(void *window) {
+bool openxr_init() {
 
 #ifdef __ANDROID__
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
@@ -203,7 +246,10 @@ bool openxr_init(void *window) {
 		// Print the debug message we got! There's a bunch more info we could
 		// add here too, but this is a pretty good start, and you can always
 		// add a breakpoint this line!
-		log_infof("%s: %s\n", msg->functionName, msg->message);
+		log_ level = log_diagnostic;
+		if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
+		else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
+		log_writef(level, "%s: %s", msg->functionName, msg->message);
 
 		// Returning XR_TRUE here will force the calling function to fail
 		return (XrBool32)XR_FALSE;
@@ -249,29 +295,11 @@ bool openxr_init(void *window) {
 		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
 		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
 #endif
-	skr_callback_log([](skr_log_ level, const char *text) {
-		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-#if __ANDROID__
-	if (!skr_init(sk_app_name, android_window, luid)) {
-		openxr_shutdown();
-		return false;
-	}
-#else 
-	if (!skr_init(sk_app_name, window, luid)) {
-		openxr_shutdown();
-		return false;
-	}
-#endif
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
 	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
-	skr_platform_data_t platform = skr_get_platform_data();
+	skg_platform_data_t platform = skg_get_platform_data();
 #if defined(XR_USE_GRAPHICS_API_OPENGL)
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
 	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
@@ -442,20 +470,20 @@ XrReferenceSpaceType openxr_preferred_space() {
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
-	// Shut down the input!
-	oxri_shutdown();
+	if (xr_instance) {
+		// Shut down the input!
+		oxri_shutdown();
 
-	openxr_views_destroy();
+		openxr_views_destroy();
 
-	// Release all the other OpenXR resources that we've created!
-	// What gets allocated, must get deallocated!
-	if (xr_debug      != XR_NULL_HANDLE) xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug);
-	if (xr_head_space != XR_NULL_HANDLE) xrDestroySpace   (xr_head_space);
-	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
-	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
-	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
-
-	skr_shutdown();
+		// Release all the other OpenXR resources that we've created!
+		// What gets allocated, must get deallocated!
+		if (xr_debug      != XR_NULL_HANDLE) { xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug); xr_debug = {}; }
+		if (xr_head_space != XR_NULL_HANDLE) { xrDestroySpace   (xr_head_space); xr_head_space = {}; }
+		if (xr_app_space  != XR_NULL_HANDLE) { xrDestroySpace   (xr_app_space ); xr_app_space  = {}; }
+		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
+		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
+	}
 }
 
 ///////////////////////////////////////////

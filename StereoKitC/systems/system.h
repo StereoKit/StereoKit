@@ -19,17 +19,14 @@ struct system_t {
 	int64_t profile_start_duration;
 	int64_t profile_shutdown_duration;
 
-	bool (*func_initialize)(void *);
+	bool (*func_initialize)(void);
 	void (*func_update    )(void);
 	void (*func_shutdown  )(void);
-
-	void *initialize_arg;
 };
 
-void    systems_add (const system_t *system);
-
-bool    systems_initialize();
-void    systems_update();
-void    systems_shutdown();
+void systems_add       (const system_t *system);
+bool systems_initialize();
+void systems_update    ();
+void systems_shutdown  ();
 
 } // namespace sk

@@ -14,7 +14,7 @@ struct _tex_t {
 	tex_sample_    sample_mode;
 	tex_address_   address_mode;
 	int32_t        anisotropy;
-	skr_tex_t      tex;
+	skg_tex_t      tex;
 	tex_t          depth_buffer;
 };
 

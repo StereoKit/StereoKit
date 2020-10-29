@@ -65,16 +65,20 @@ typedef int32_t bool32_t;
 
 typedef enum runtime_ {
 	runtime_flatscreen   = 0,
-	runtime_mixedreality = 1
+	runtime_mixedreality = 1,
+	runtime_none         = 2,
 } runtime_;
 
 typedef struct settings_t {
-	int32_t flatscreen_pos_x;
-	int32_t flatscreen_pos_y;
-	int32_t flatscreen_width;
-	int32_t flatscreen_height;
-	char assets_folder[128];
+	int32_t  flatscreen_pos_x;
+	int32_t  flatscreen_pos_y;
+	int32_t  flatscreen_width;
+	int32_t  flatscreen_height;
+	char     assets_folder[128];
 	bool32_t disable_flatscreen_mr_sim;
+
+	void    *android_java_vm;  // JavaVM*
+	void    *android_activity; // jobject
 } settings_t;
 
 typedef enum display_ {
@@ -82,14 +86,6 @@ typedef enum display_ {
 	display_additive,
 	display_passthrough,
 } display_;
-
-typedef struct sk_android_info_t {
-	void *java_vm;       // JavaVM*
-	void *jni_env;       // JNIEnv*
-	void *window;        // ANativeWindow*
-	void *activity;      // jobject
-	void *asset_manager; // AAssetManager*
-} sk_android_info_t;
 
 typedef struct system_info_t {
 	display_ display_type;
@@ -99,11 +95,12 @@ typedef struct system_info_t {
 } system_info_t;
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
-SK_API bool32_t      sk_init_from     (void *window, const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
+SK_API bool32_t      sk_set_window    (void *window, runtime_ preferred_runtime);
 SK_API void          sk_shutdown      ();
 SK_API void          sk_quit          ();
 SK_API bool32_t      sk_step          (void (*app_update)(void));
 SK_API runtime_      sk_active_runtime();
+SK_API settings_t    sk_get_settings  ();
 SK_API void          sk_set_settings  (const sk_ref(settings_t) settings);
 SK_API system_info_t sk_system_info   ();
 SK_API const char   *sk_version_name  ();
@@ -183,7 +180,9 @@ SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_ma
 SK_API void   matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
 SK_API vec3   matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
 SK_API vec3   matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-SK_API quat   matrix_mul_rotation (const sk_ref(matrix)  transform, const sk_ref(quat) orientation);
+SK_API quat   matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
+SK_API void   matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
+SK_API vec3   matrix_to_angles    (const sk_ref(matrix) transform);
 SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
 SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
 

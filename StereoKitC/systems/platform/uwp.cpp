@@ -13,7 +13,7 @@
 namespace sk {
 
 HWND            uwp_window    = nullptr;
-skr_swapchain_t uwp_swapchain = {};
+skg_swapchain_t uwp_swapchain = {};
 
 }
 
@@ -344,7 +344,7 @@ private:
 		sk_info.display_height = outputHeight;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
-		skr_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
+		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
 		render_update_projection();
 	}
 };
@@ -392,11 +392,14 @@ bool uwp_key_down(int vk) {
 	return ViewProvider::inst->key_state[vk];
 }
 
-bool uwp_setup(void *from_window) {
+bool uwp_init() {
 	return true;
 }
 
-bool uwp_init() {
+void uwp_shutdown() {
+}
+
+bool uwp_start() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -407,12 +410,9 @@ bool uwp_init() {
 		Sleep(1);
 	}
 
-	if (!skr_init(sk_app_name, uwp_window, nullptr))
-		return false;
-
-	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
-	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
-	uwp_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -425,12 +425,11 @@ void uwp_step_begin() {
 	flatscreen_input_update();
 }
 void uwp_step_end() { 
-	skr_draw_begin();
+	skg_draw_begin();
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	color128 color = render_get_clear_color();
-	skr_tex_t *target = skr_swapchain_get_next(&uwp_swapchain);
-	skr_tex_target_bind(target, true, &color.r);
+	skg_swapchain_bind(&uwp_swapchain, true, &color.r);
 
 	input_update_predicted();
 
@@ -441,15 +440,14 @@ void uwp_step_end() {
 	render_clear();
 }
 void uwp_vsync() {
-	skr_swapchain_present(&uwp_swapchain);
+	skg_swapchain_present(&uwp_swapchain);
 }
 
-void uwp_shutdown() {
+void uwp_stop() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
-	skr_swapchain_destroy(&uwp_swapchain);
-	skr_shutdown();
+	skg_swapchain_destroy(&uwp_swapchain);
 }
 
 }

@@ -16,18 +16,19 @@
 
 namespace sk {
 
-JavaVM           *android_vm       = nullptr;
-JNIEnv           *android_env      = nullptr;
-jobject           android_activity = nullptr;
-ANativeWindow    *android_window   = nullptr;
+JavaVM           *android_vm            = nullptr;
+jobject           android_activity      = nullptr;
+JNIEnv           *android_env           = nullptr;
 AAssetManager    *android_asset_manager = nullptr;
-skr_swapchain_t   android_swapchain;
+ANativeWindow    *android_window        = nullptr;
+ANativeWindow    *android_next_window   = nullptr;
+bool              android_next_win_ready= false;
+skg_swapchain_t   android_swapchain     = {};
 
 ///////////////////////////////////////////
 
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	android_vm = vm;
-
 	return JNI_VERSION_1_6;
 }
 extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
@@ -36,46 +37,31 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 
 ///////////////////////////////////////////
 
-bool android_setup(void *from_window) {
-	if (android_vm == nullptr) {
-		if (from_window == nullptr) {
-			log_fail_reason(95,  "sk_android_info_t wasn't provided!");
-			return false;
-		}
+bool android_init() {
+	android_activity = (jobject)sk_settings.android_activity;
+	if (android_vm == nullptr)
+		android_vm = (JavaVM*)sk_settings.android_java_vm;
 
-		sk_android_info_t *android_info = (sk_android_info_t*)from_window;
-		android_vm            = (JavaVM*)android_info->java_vm;
-		android_env           = (JNIEnv*)android_info->jni_env;
-		android_activity      = (jobject)android_info->activity;
-		android_asset_manager = (AAssetManager *)android_info->asset_manager;
-		android_window        = (ANativeWindow *)android_info->window;
-		if (android_vm == nullptr || android_env == nullptr || android_activity == nullptr ||
-			android_asset_manager == nullptr || android_window == nullptr) {
-			log_fail_reason(95,  "sk_android_info_t wasn't filled out entirely!");
-			return false;
-		} else return true;
-	}
-
-	if (android_vm == nullptr) {
-		log_fail_reason(95,  "Couldn't find the Java VM, you should manually load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary");
+	if (android_vm == nullptr || android_activity == nullptr) {
+		log_fail_reason(95,  "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
 		return false;
 	}
 
-	// Get the java environment from the VM
-	if (android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6) != JNI_OK) {
+	// Get the java environment from the VM, and ensure it's attached to this
+	// thread
+	int result = android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6);
+	if (result == JNI_EDETACHED) {
+		if (android_vm->AttachCurrentThread(&android_env, nullptr) != JNI_OK) {
+			log_fail_reason(95, "Couldn't attach the Java Environment to the current thread!");
+			return false;
+		}
+	} else if (result != JNI_OK) {
 		log_fail_reason(95, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
 		return false;
 	}
 
 	// https://stackoverflow.com/questions/51099200/native-crash-jni-detected-error-in-application-thread-using-jnienv-from-th
-	android_vm->AttachCurrentThread(&android_env, nullptr);
-
-	struct xam_init_data_t {
-		jobject activity;
-		jobject window;
-	};
-	xam_init_data_t *info = (xam_init_data_t*)from_window;
-	android_activity = info->activity;// android_env->NewGlobalRef(info->activity);
+	//android_vm->AttachCurrentThread(&android_env, nullptr);
 
 	// Find the current android activity
 	// https://stackoverflow.com/questions/46869901/how-to-get-the-android-context-instance-when-calling-jni-method
@@ -98,53 +84,68 @@ bool android_setup(void *from_window) {
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
 	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
 	if (android_asset_manager == nullptr) {
-		log_fail_reason(95,  "Couldn't get the asset manager!");
+		log_fail_reason(95,  "Couldn't get the Android asset manager!");
 		return false;
 	}
 
-	// Find the window surface
-	android_window = ANativeWindow_fromSurface(android_env, info->window);
-
 	return true;
 }
 
 ///////////////////////////////////////////
 
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool android_init() {
-	skr_callback_log([](skr_log_ level, const char *text) {
-		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-	if (!skr_init(sk_app_name, android_window, nullptr))
-		return false;
-	log_diag("sk_gpu initialized!");
-
-	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
-	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
-	android_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+void android_create_swapchain() {
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
+	render_update_projection();
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+}
 
+///////////////////////////////////////////
+
+void android_resize_swapchain() {
+	int32_t height = ANativeWindow_getWidth (android_window);
+	int32_t width  = ANativeWindow_getHeight(android_window);
+
+	log_diagf("Resized swapchain: %dx%d", width, height);
+	skg_swapchain_resize(&android_swapchain, width, height);
+	sk_info.display_width  = width;
+	sk_info.display_height = height;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void android_set_window(void *window) {
+	android_next_window    = (ANativeWindow*)window;
+	android_next_win_ready = true;
+}
+
+///////////////////////////////////////////
+
+bool android_start() {
+	if (android_window) {
+		android_create_swapchain();
+	}
 	flatscreen_input_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void android_shutdown() {
+void android_stop() {
 	flatscreen_input_shutdown();
-	skr_swapchain_destroy(&android_swapchain);
-	skr_shutdown();
+	if (android_window) {
+		skg_swapchain_destroy(&android_swapchain);
+		android_window = nullptr;
+	}
+}
 
+///////////////////////////////////////////
+
+void android_shutdown() {
 	if (android_vm)
 		android_vm->DetachCurrentThread();
 }
@@ -153,18 +154,40 @@ void android_shutdown() {
 
 void android_step_begin() {
 	flatscreen_input_update();
+
+	if (android_next_win_ready) {
+		if (android_window != nullptr && android_window == android_next_window) {
+			android_resize_swapchain();
+		} else {
+			if (android_window != nullptr && android_next_window != nullptr) {
+				skg_swapchain_destroy(&android_swapchain);
+			}
+
+			if (android_next_window) {
+				//android_window = (ANativeWindow*)window;// ANativeWindow_fromSurface(android_env, (jobject)window);
+				android_window = ANativeWindow_fromSurface(android_env, (jobject)android_next_window);
+
+				if (sk_runtime == runtime_flatscreen) {
+					android_create_swapchain();
+				}
+			}
+		}
+		android_next_win_ready = false;
+		android_next_window    = nullptr;
+	}
 }
 
 ///////////////////////////////////////////
 
 void android_step_end() {
-	skr_draw_begin();
-
-	color128   col    = render_get_clear_color();
-	skr_tex_t *target = skr_swapchain_get_next(&android_swapchain);
-	skr_tex_target_bind(target, true, &col.r);
-
 	input_update_predicted();
+
+	if (!android_window)
+		return;
+
+	skg_draw_begin();
+	color128 color = render_get_clear_color();
+	skg_swapchain_bind(&android_swapchain, true, &color.r);
 
 	matrix view = render_get_cam_root  ();
 	matrix proj = render_get_projection();
@@ -176,7 +199,10 @@ void android_step_end() {
 ///////////////////////////////////////////
 
 void android_vsync() {
-	skr_swapchain_present(&android_swapchain);
+	if (!android_window)
+		return;
+
+	skg_swapchain_present(&android_swapchain);
 }
 
 } // namespace sk

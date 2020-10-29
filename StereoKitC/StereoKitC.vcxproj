@@ -63,6 +63,7 @@
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -240,6 +241,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_equirect.hlsl">
       <FileType>Document</FileType>
@@ -247,6 +249,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_font.hlsl">
       <FileType>Document</FileType>
@@ -254,6 +257,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_lines.hlsl">
       <FileType>Document</FileType>
@@ -261,6 +265,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_pbr.hlsl">
       <FileType>Document</FileType>
@@ -268,6 +273,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_skybox.hlsl">
       <FileType>Document</FileType>
@@ -275,6 +281,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_ui.hlsl">
       <FileType>Document</FileType>
@@ -282,6 +289,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <FileType>Document</FileType>
@@ -289,6 +297,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <CustomBuild Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <FileType>Document</FileType>
@@ -296,6 +305,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Outputs>%(FullPath).sks</Outputs>
       <TreatOutputAsContent>true</TreatOutputAsContent>
       <Message>Compiling shader: %(FullPath)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -d -h %(FullPath)</Command>
     </CustomBuild>
     <None Include="shaders_builtin\stereokit.hlslinc" />
   </ItemGroup>

@@ -38,7 +38,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
 	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count);
-	skr_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
+	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	
 	return texture->depth_buffer;
 }
@@ -59,39 +59,39 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
 
-	skr_tex_attach_depth(&texture->tex, &depth_texture->tex);
+	skg_tex_attach_depth(&texture->tex, &depth_texture->tex);
 }
 
 ///////////////////////////////////////////
 
 void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
-	if (skr_tex_is_valid(&texture->tex))
-		skr_tex_destroy (&texture->tex);
+	if (skg_tex_is_valid(&texture->tex))
+		skg_tex_destroy (&texture->tex);
 
-	skr_tex_type_ skr_type = skr_tex_type_image;
-	if      (type & tex_type_cubemap     ) skr_type = skr_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skr_type = skr_tex_type_depth;
-	else if (type & tex_type_rendertarget) skr_type = skr_tex_type_rendertarget;
+	skg_tex_type_ skg_type = skg_tex_type_image;
+	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
+	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-	texture->tex    = skr_tex_create_from_existing(native_surface, skr_type, skr_tex_fmt_from_native(native_fmt), width, height, surface_count);
+	texture->tex    = skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count);
 }
 
 ///////////////////////////////////////////
 
 void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_index) {
-	if (skr_tex_is_valid(&texture->tex))
-		skr_tex_destroy (&texture->tex);
+	if (skg_tex_is_valid(&texture->tex))
+		skg_tex_destroy (&texture->tex);
 
-	skr_tex_type_ skr_type = skr_tex_type_image;
-	if      (type & tex_type_cubemap     ) skr_type = skr_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skr_type = skr_tex_type_depth;
-	else if (type & tex_type_rendertarget) skr_type = skr_tex_type_rendertarget;
+	skg_tex_type_ skg_type = skg_tex_type_image;
+	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
+	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-	texture->tex    = skr_tex_create_from_layer(native_surface, skr_type, skr_tex_fmt_from_native(native_fmt), width, height, surface_index);
+	texture->tex    = skg_tex_create_from_layer(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_index);
 }
 
 ///////////////////////////////////////////
@@ -270,7 +270,7 @@ void tex_release(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_destroy(tex_t tex) {
-	skr_tex_destroy(&tex->tex);
+	skg_tex_destroy(&tex->tex);
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
 	*tex = {};
@@ -283,26 +283,26 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 	bool different_size = texture->tex.width != width || texture->tex.height != height || texture->tex.array_count != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
-	if (!skr_tex_is_valid(&texture->tex) || different_size || (!different_size && !dynamic)) {
-		skr_tex_destroy(&texture->tex);
+	if (!skg_tex_is_valid(&texture->tex) || different_size || (!different_size && !dynamic)) {
+		skg_tex_destroy(&texture->tex);
 
 		if (!different_size && !dynamic)
 			texture->type &= tex_type_dynamic;
 
-		skr_tex_fmt_  format   = (skr_tex_fmt_)texture->format;
-		skr_use_      use      = texture->type & tex_type_dynamic ? skr_use_dynamic  : skr_use_static;
-		skr_mip_      use_mips = texture->type & tex_type_mips    ? skr_mip_generate : skr_mip_none;
-		skr_tex_type_ type     = skr_tex_type_image;
-		if      (texture->type & tex_type_cubemap)      type = skr_tex_type_cubemap;
-		else if (texture->type & tex_type_depth)        type = skr_tex_type_depth;
-		else if (texture->type & tex_type_rendertarget) type = skr_tex_type_rendertarget;
-		texture->tex = skr_tex_create(type, use, format, use_mips);
+		skg_tex_fmt_  format   = (skg_tex_fmt_)texture->format;
+		skg_use_      use      = texture->type & tex_type_dynamic ? skg_use_dynamic  : skg_use_static;
+		skg_mip_      use_mips = texture->type & tex_type_mips    ? skg_mip_generate : skg_mip_none;
+		skg_tex_type_ type     = skg_tex_type_image;
+		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
+		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
+		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
+		texture->tex = skg_tex_create(type, use, format, use_mips);
 
-		skr_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
 		if (texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
-		skr_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
@@ -322,23 +322,23 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 	texture->anisotropy   = anisotropy_level;
 	texture->sample_mode  = sample;
 
-	skr_tex_address_ skr_addr;
+	skg_tex_address_ skg_addr;
 	switch (address_mode) {
-	case tex_address_clamp:  skr_addr = skr_tex_address_clamp;  break;
-	case tex_address_wrap:   skr_addr = skr_tex_address_repeat; break;
-	case tex_address_mirror: skr_addr = skr_tex_address_mirror; break;
-	default: skr_addr = skr_tex_address_repeat;
+	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
+	case tex_address_wrap:   skg_addr = skg_tex_address_repeat; break;
+	case tex_address_mirror: skg_addr = skg_tex_address_mirror; break;
+	default: skg_addr = skg_tex_address_repeat;
 	}
 
-	skr_tex_sample_ skr_sample;
+	skg_tex_sample_ skg_sample;
 	switch (sample) {
-	case tex_sample_linear:     skr_sample = skr_tex_sample_linear;      break; // Technically trilinear
-	case tex_sample_point:      skr_sample = skr_tex_sample_point;       break;
-	case tex_sample_anisotropic:skr_sample = skr_tex_sample_anisotropic; break;
-	default: skr_sample = skr_tex_sample_linear;
+	case tex_sample_linear:     skg_sample = skg_tex_sample_linear;      break; // Technically trilinear
+	case tex_sample_point:      skg_sample = skg_tex_sample_point;       break;
+	case tex_sample_anisotropic:skg_sample = skg_tex_sample_anisotropic; break;
+	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skr_tex_settings(&texture->tex, skr_addr, skr_sample, anisotropy_level);
+	skg_tex_settings(&texture->tex, skg_addr, skg_sample, anisotropy_level);
 }
 
 ///////////////////////////////////////////
@@ -419,11 +419,11 @@ size_t tex_format_size(tex_format_ format) {
 ///////////////////////////////////////////
 
 tex_format_ tex_get_tex_format(int64_t native_fmt) {
-	skr_tex_fmt_ skr_fmt = skr_tex_fmt_from_native(native_fmt);
+	skg_tex_fmt_ skg_fmt = skg_tex_fmt_from_native(native_fmt);
 
-	// tex_format_ should be kept to match skr_tex_fmt_, so this should 
+	// tex_format_ should be kept to match skg_tex_fmt_, so this should 
 	// always be valid.
-	return (tex_format_)skr_fmt;
+	return (tex_format_)skg_fmt;
 }
 
 ///////////////////////////////////////////

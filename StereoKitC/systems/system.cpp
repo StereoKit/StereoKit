@@ -19,12 +19,14 @@ struct sort_dependency_t {
 	int32_t  count;
 };
 
-array_t<system_t> systems           = {};
-int32_t          *system_init_order = nullptr;
+array_t<system_t> systems             = {};
+int32_t          *system_init_order   = nullptr;
+bool              systems_initialized = false;
 
 ///////////////////////////////////////////
 
 int32_t systems_find(const char *name);
+bool    systems_sort();
 
 void    array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order);
 int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t **out_order);
@@ -95,6 +97,7 @@ bool systems_sort() {
 
 	// Sort the init order
 	if (result == 0) {
+		free(system_init_order);
 		result = topological_sort(init_ids, (int32_t)systems.count, &system_init_order);
 		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
@@ -122,7 +125,7 @@ bool systems_initialize() {
 			// start timing
 			time_point<high_resolution_clock> start = high_resolution_clock::now();
 
-			if (!systems[index].func_initialize(systems[index].initialize_arg)) {
+			if (!systems[index].func_initialize()) {
 				log_errf("System %s failed to initialize!", systems[index].name);
 				return false;
 			}
@@ -132,6 +135,7 @@ bool systems_initialize() {
 			systems[index].profile_start_duration = duration_cast<nanoseconds>(end - start).count();
 		}
 	}
+	systems_initialized = true;
 	log_info("Initialization successful");
 	return true;
 }

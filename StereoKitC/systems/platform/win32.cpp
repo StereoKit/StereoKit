@@ -18,7 +18,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 HWND            win32_window    = nullptr;
-skr_swapchain_t win32_swapchain = {};
+skg_swapchain_t win32_swapchain = {};
 float           win32_scroll    = 0;
 
 // For managing window resizing
@@ -36,25 +36,30 @@ void win32_resize(int width, int height) {
 	sk_info.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skr_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
+	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
 	render_update_projection();
 }
 
 ///////////////////////////////////////////
 
-bool win32_setup(void *from_window) {
+bool win32_init() {
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool win32_init() {
+void win32_shutdown() {
+}
+
+///////////////////////////////////////////
+
+bool win32_start() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 
 	WNDCLASS wc = {0}; 
-	wc.lpfnWndProc = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		switch(message) {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
@@ -118,19 +123,14 @@ bool win32_init() {
 		nullptr);
 	if( !win32_window ) return false;
 
-	skr_callback_log([](skr_log_ level, const char *text) {
-		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-	if (!skr_init(sk_app_name, win32_window, nullptr))
-		return false;
+	RECT bounds;
+	GetClientRect(win32_window, &bounds);
+	int32_t width  = bounds.right  - bounds.left;
+	int32_t height = bounds.bottom - bounds.top;
 
-	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
-	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
-	win32_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, depth_fmt, width, height);
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -142,10 +142,9 @@ bool win32_init() {
 
 ///////////////////////////////////////////
 
-void win32_shutdown() {
+void win32_stop() {
 	flatscreen_input_shutdown();
-	skr_swapchain_destroy(&win32_swapchain);
-	skr_shutdown();
+	skg_swapchain_destroy(&win32_swapchain);
 }
 
 ///////////////////////////////////////////
@@ -162,11 +161,10 @@ void win32_step_begin() {
 ///////////////////////////////////////////
 
 void win32_step_end() {
-	skr_draw_begin();
+	skg_draw_begin();
 
-	color128   col    = render_get_clear_color();
-	skr_tex_t *target = skr_swapchain_get_next(&win32_swapchain);
-	skr_tex_target_bind(target, true, &col.r);
+	color128 col = render_get_clear_color();
+	skg_swapchain_bind(&win32_swapchain, true, &col.r);
 
 	input_update_predicted();
 
@@ -180,7 +178,7 @@ void win32_step_end() {
 ///////////////////////////////////////////
 
 void win32_vsync() {
-	skr_swapchain_present(&win32_swapchain);
+	skg_swapchain_present(&win32_swapchain);
 }
 
 ///////////////////////////////////////////

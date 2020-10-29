@@ -106,14 +106,15 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 ///////////////////////////////////////////
 
 bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
-	float x = (((screen_pixel_pos.x / (float)sk_system_info().display_width ) - 0.5f) *  2.f);
-	float y = (((screen_pixel_pos.y / (float)sk_system_info().display_height) - 0.5f) * -2.f);
-	if (x >= -1 && y >= -1 && x <= 1 && y <= 1) {
-		out_ray.pos = input_head()->position;
-		out_ray.dir = vec3{ x, y, 1.0f };
-		out_ray.dir = render_unproject_pt(out_ray.dir);
-		out_ray.dir = vec3_normalize(out_ray.dir);
+	if (screen_pixel_pos.x <= sk_system_info().display_width  && 
+		screen_pixel_pos.y <= sk_system_info().display_height && 
+		screen_pixel_pos.x >= 0 && 
+		screen_pixel_pos.y >= 0) {
 
+		out_ray.pos = input_head()->position;
+		out_ray.dir = vec3{ screen_pixel_pos.x, screen_pixel_pos.y, 1.0f };
+		out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
+		out_ray.dir = vec3_normalize(out_ray.dir);
 		return true;
 	}
 
@@ -191,6 +192,35 @@ quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
 	XMMATRIX fast_transform;
 	math_matrix_to_fast(transform, &fast_transform);
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixMultiply(mat, fast_transform)));
+}
+
+///////////////////////////////////////////
+
+void matrix_decompose(const matrix &transform, vec3 &out_position, vec3 &out_scale, quat &out_orientation) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+	out_position    = math_fast_to_vec3(pos);
+	out_scale       = math_fast_to_vec3(scale);
+	out_orientation = math_fast_to_quat(rot);
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_to_angles(const matrix &transform) {
+	// see: https://stackoverflow.com/questions/1996957/conversion-euler-to-matrix-and-matrix-to-euler
+	vec3 result;
+	result.x = asinf(-transform.m[9]); // _32
+	if (cosf(result.x) > 0.0001f) {
+		result.y = atan2f(transform.m[8], transform.m[10]); // _31, _33
+		result.z = atan2f(transform.m[1], transform.m[5] ); // _12, _22
+	} else {
+		result.y = 0.0f;
+		result.z = atan2f(-transform.m[4], transform.m[0]); // _21, _11
+	}
+	return result * rad2deg;
 }
 
 ///////////////////////////////////////////

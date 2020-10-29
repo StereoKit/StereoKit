@@ -18,13 +18,13 @@ struct _mesh_t {
 	int            vert_count;
 	int            vert_capacity;
 	bool32_t       vert_dynamic;
-	skr_buffer_t   vert_buffer;
+	skg_buffer_t   vert_buffer;
 	int            ind_count;
 	int            ind_capacity;
 	bool32_t       ind_dynamic;
-	skr_buffer_t   ind_buffer;
+	skg_buffer_t   ind_buffer;
 	int            ind_draw;
-	skr_mesh_t     gpu_mesh;
+	skg_mesh_t     gpu_mesh;
 	bounds_t       bounds;
 	bool32_t       discard_data;
 	vert_t*        verts;
