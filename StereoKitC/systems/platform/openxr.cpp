@@ -300,15 +300,15 @@ bool openxr_init() {
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
 	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
 	skg_platform_data_t platform = skg_get_platform_data();
-#if defined(XR_USE_GRAPHICS_API_OPENGL)
-	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
-	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
-#elif defined(XR_USE_PLATFORM_XLIB)
-	gfx_binding.xDisplay    = (XDisplay   )platform._x_display;
-	gfx_binding.visualid    = (uint32_t   )platform._visual_id;
+#if defined(XR_USE_PLATFORM_XLIB)
+	gfx_binding.xDisplay    = (Display*  )platform._x_display;
+	gfx_binding.visualid    = *(uint32_t *)platform._visual_id;
 	gfx_binding.glxFBConfig = (GLXFBConfig)platform._glx_fb_config;
 	gfx_binding.glxDrawable = (GLXDrawable)platform._glx_drawable;
 	gfx_binding.glxContext  = (GLXContext )platform._glx_context;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL)
+	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
+	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
 	gfx_binding.display = (EGLDisplay)platform._egl_display;
 	gfx_binding.config  = (EGLConfig )platform._egl_config;

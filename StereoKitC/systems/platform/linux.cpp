@@ -11,7 +11,7 @@
 
 namespace sk {
 
-skr_swapchain_t   linux_swapchain;
+skg_swapchain_t linux_swapchain;
 
 ///////////////////////////////////////////
 
@@ -21,26 +21,21 @@ bool linux_setup(void *from_window) {
 
 ///////////////////////////////////////////
 
-	return true;
-}
-
-///////////////////////////////////////////
-
 bool linux_init() {
-	skr_callback_log([](skr_log_ level, const char *text) {
+	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
-		case skr_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skr_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skr_log_critical: log_errf ("sk_gpu: %s", text); break;
+		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
+		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
+		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skr_init(sk_app_name, linux_window, nullptr))
+	if (!skg_init(sk_app_name, linux_window, nullptr))
 		return false;
 	log_diag("sk_gpu initialized!");
 
-	skr_tex_fmt_ color_fmt = skr_tex_fmt_rgba32_linear;
-	skr_tex_fmt_ depth_fmt = skr_tex_fmt_depth16;
-	linux_swapchain = skr_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	linux_swapchain = skg_swapchain_create(color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", linux_swapchain.width, linux_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -53,11 +48,8 @@ bool linux_init() {
 
 void linux_shutdown() {
 	flatscreen_input_shutdown();
-	skr_swapchain_destroy(&linux_swapchain);
-	skr_shutdown();
-
-	if (linux_vm)
-		linux_vm->DetachCurrentThread();
+	skg_swapchain_destroy(&linux_swapchain);
+	skg_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -69,11 +61,11 @@ void linux_step_begin() {
 ///////////////////////////////////////////
 
 void linux_step_end() {
-	skr_draw_begin();
+	skg_draw_begin();
 
 	color128   col    = render_get_clear_color();
-	skr_tex_t *target = skr_swapchain_get_next(&linux_swapchain);
-	skr_tex_target_bind(target, true, &col.r);
+	skg_tex_t *target = skg_swapchain_get_next(&linux_swapchain);
+	skg_tex_target_bind(target, true, &col.r);
 
 	input_update_predicted();
 
@@ -87,7 +79,7 @@ void linux_step_end() {
 ///////////////////////////////////////////
 
 void linux_vsync() {
-	skr_swapchain_present(&linux_swapchain);
+	skg_swapchain_present(&linux_swapchain);
 }
 
 } // namespace sk

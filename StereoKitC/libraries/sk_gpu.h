@@ -362,7 +362,7 @@ typedef struct skg_swapchain_t {
 } skg_swapchain_t;
 
 typedef struct skg_platform_data_t {
-#if defined(__ANDROID__) || defined(__linux__)
+#if defined(__ANDROID__)
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
@@ -1699,13 +1699,28 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <GLES3/gl32.h>
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
 EGLDisplay egl_display;
 EGLContext egl_context;
 EGLConfig  egl_config;
+
+#elif defined(__linux__)
+
+#include<X11/X.h>
+#include<X11/Xlib.h>
+#include<GL/gl.h>
+#include<GL/glx.h>
+#include<GL/glu.h>
+
+Display xDisplay;
+uint32_t visualid;
+GLXFBConfig glxFBConfig;
+GLXDrawable glxDrawable;
+GLXContext glxContext;
+
 #elif _WIN32
 #pragma comment(lib, "opengl32.lib")
 
@@ -2319,10 +2334,16 @@ skg_platform_data_t skg_get_platform_data() {
 #ifdef _WIN32
 	result._gl_hdc = gl_hdc;
 	result._gl_hrc = gl_hrc;
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	result._egl_display = egl_display;
 	result._egl_config  = egl_config;
 	result._egl_context = egl_context;
+#elif defined(__linux__)
+	result._x_display     = xDisplay;
+	result._visual_id     = visualid;
+	result._glx_fb_config = glxFBConfig;
+	result._glx_drawable  = glxDrawable;
+	result._glx_context   = glxContext;
 #endif
 	return result;
 }
