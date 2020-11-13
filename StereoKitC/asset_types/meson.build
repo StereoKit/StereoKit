@@ -12,6 +12,7 @@ lib_asset_types = static_library(
 		'model_obj.cpp',
 		'model_stl.cpp',
 		'model.cpp',
+		'shader.cpp',
 		'sound.cpp',
 		'sprite.cpp',
 		'texture.cpp'

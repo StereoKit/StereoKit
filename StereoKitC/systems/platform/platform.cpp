@@ -4,6 +4,7 @@
 #include "../../log.h"
 #include "win32.h"
 #include "uwp.h"
+#include "linux.h"
 #include "android.h"
 #include "openxr.h"
 
@@ -17,6 +18,8 @@ bool platform_init() {
 	// Set up any platform dependant variables
 #if __ANDROID__
 	bool result = android_init();
+#elif __linux__
+	bool result = linux_init  ();
 #elif WINDOWS_UWP
 	bool result = uwp_init    ();
 #elif _WIN32
@@ -60,13 +63,9 @@ void platform_shutdown() {
 	skg_shutdown();
 
 #if __ANDROID__
-<<<<<<< HEAD
-		android_init();
-#if __linux__
-		linux_init();
-=======
 	android_shutdown();
->>>>>>> sk_gpu
+#elif __linux__
+	linux_shutdown  ();
 #elif WINDOWS_UWP
 	uwp_shutdown    ();
 #elif _WIN32
@@ -94,7 +93,7 @@ bool platform_set_mode(runtime_ mode) {
 	case runtime_mixedreality: log_diag("Starting mixed reality mode"); break;
 	case runtime_flatscreen:   log_diag("Starting flatscreen mode"); break;
 	}
-	
+
 
 	platform_stop_mode();
 

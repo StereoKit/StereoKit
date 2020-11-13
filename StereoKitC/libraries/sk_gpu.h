@@ -1712,11 +1712,11 @@ EGLConfig  egl_config;
 
 #elif defined(__linux__)
 
-#include<X11/X.h>
-#include<X11/Xlib.h>
-#include<GL/gl.h>
-#include<GL/glx.h>
-#include<GL/glu.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <GL/glew.h>
+#include <GL/glx.h>
+#include <GL/glu.h>
 
 Display *xDisplay;
 XVisualInfo *visualInfo;
@@ -2246,10 +2246,10 @@ int32_t gl_init_glx() {
 	};
 
 	int fbConfigNumber = 0;
-	GLXFBConfig *FBConfig = glXChooseFBConfig(dpy, 0, fb_attribute_list, &fbConfigNumber);
+	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
 	glxFBConfig = *FBConfig;
 
-	glxContext = glXCreateContext(dpy, visualInfo, nullptr, GL_TRUE);
+	glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
 
 #endif
 
@@ -2259,8 +2259,8 @@ int32_t gl_init_glx() {
 ///////////////////////////////////////////
 
 void skg_setup_xlib(void *dpy, void *vi, void *win) {
-	xDisplay = *(XDisplay *) dpy;
-	visualInfo = *(XVisualInfo *) vi;
+	xDisplay = (Display *) dpy;
+	visualInfo = (XVisualInfo *) vi;
 	glxDrawable = *(Window *) win;
 }
 
@@ -2271,6 +2271,8 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	int32_t result = gl_init_win32();
 #elif defined(__ANDROID__)
 	int32_t result = gl_init_egl();
+#elif defined(__linux__)
+	int32_t result = gl_init_glx();
 #elif defined(__EMSCRIPTEN__)
 	int32_t result = gl_init_emscripten();
 #endif
@@ -2279,7 +2281,9 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 	// Load OpenGL function pointers
 #ifndef __EMSCRIPTEN__
+#ifndef __linux__
 	gl_load_extensions();
+#endif
 #endif
 
 	skg_log(skg_log_info, "Using OpenGL");
@@ -2378,9 +2382,9 @@ skg_platform_data_t skg_get_platform_data() {
 	result._egl_context = egl_context;
 #elif defined(__linux__)
 	result._x_display     = xDisplay;
-	result._visual_id     = visualInfo->visualid;
+	result._visual_id     = &visualInfo->visualid;
 	result._glx_fb_config = glxFBConfig;
-	result._glx_drawable  = glxDrawable;
+	result._glx_drawable  = &glxDrawable;
 	result._glx_context   = glxContext;
 #endif
 	return result;
@@ -2562,6 +2566,8 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	const char   *prefix_gl      = "#version 450";
 #elif defined(__ANDROID__)
 	const char   *prefix_gl      = "#version 320 es";
+#elif defined(__linux__)
+	const char   *prefix_gl      = "#version 450";
 #elif __EMSCRIPTEN__
 	const char   *prefix_gl      = "#version 300 es";
 #endif
@@ -2638,7 +2644,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		char text[128];
+		char text[272];
 		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
 		skg_log(skg_log_warning, text);
 		skg_log(skg_log_warning, log);
@@ -2756,6 +2762,8 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	}
 #endif
 
+}
+
 ///////////////////////////////////////////
 
 void skg_pipeline_set_transparency(skg_pipeline_t *pipeline, skg_transparency_ transparency) {
@@ -2763,21 +2771,10 @@ void skg_pipeline_set_transparency(skg_pipeline_t *pipeline, skg_transparency_ t
 }
 
 ///////////////////////////////////////////
-void skr_pipeline_set_cull(skr_pipeline_t *pipeline, skr_cull_ cull) {
-	pipeline->cull = cull;
-}
-///////////////////////////////////////////
-void skr_pipeline_set_wireframe(skr_pipeline_t *pipeline, bool wireframe) {
-	pipeline->wireframe = wireframe;
-}
-///////////////////////////////////////////
-
 void skg_pipeline_set_cull(skg_pipeline_t *pipeline, skg_cull_ cull) {
 	pipeline->cull = cull;
 }
-
 ///////////////////////////////////////////
-
 void skg_pipeline_set_wireframe(skg_pipeline_t *pipeline, bool wireframe) {
 	pipeline->wireframe = wireframe;
 }
@@ -2875,7 +2872,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
 #elif defined(__linux__)
-	result._x_window = *(Window *) hwnd;
+	result._x_window = hwnd;
 	result.width  = requested_width;
 	result.height = requested_height;
 #else
@@ -2960,7 +2957,7 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #elif defined(__ANDROID__)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
 #elif defined(__linux__)
-	glXSwapBuffers(xDisplay, swapchain->_x_window);
+	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
@@ -2985,7 +2982,7 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #elif defined(__linux__)
-	glXMakeCurrent(xDisplay, swapchain->_x_window, glxContext);
+	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
 }

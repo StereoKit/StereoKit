@@ -9,6 +9,7 @@ lib_platform = static_library(
 		'openxr_input.cpp',
 		'openxr_view.cpp',
 		'openxr.cpp',
+		'platform.cpp',
 		'platform_utils.cpp',
 		'uwp.cpp',
 		'win32.cpp'

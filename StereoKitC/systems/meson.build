@@ -17,7 +17,7 @@ lib_systems = static_library(
 		'text.cpp'
 	),
 	include_directories: [systems_includes],
-	dependencies: [hand]
+	dependencies: [hand, platform]
 )
 
 systems = declare_dependency(
