@@ -1,0 +1,1 @@
+subdir('StereoKitCTest_Linux')

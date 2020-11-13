@@ -2249,7 +2249,7 @@ int32_t gl_init_glx() {
 	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
 	glxFBConfig = *FBConfig;
 
-	glxContext = glXCreateContext(xDisplay, visualInfo, nullptr, GL_TRUE);
+	glxContext = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
 
 #endif
 
@@ -2262,6 +2262,8 @@ void skg_setup_xlib(void *dpy, void *vi, void *win) {
 	xDisplay = (Display *) dpy;
 	visualInfo = (XVisualInfo *) vi;
 	glxDrawable = *(Window *) win;
+
+	printf("Address of xDisplay is %p and visualInfo is %p and glxDrawable is %p\n", dpy, vi, win);
 }
 
 //////////////////////////////////////////

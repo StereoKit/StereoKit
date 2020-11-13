@@ -18,13 +18,13 @@ skg_swapchain_t linux_swapchain;
 Display                 *dpy;
 Window                  root;
 
-GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
+GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
 XVisualInfo             *vi;
 Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
 
-bool linux_setup(void *from_window) {
+bool linux_setup() {
 	dpy = XOpenDisplay(0);
 	if(dpy == nullptr) {
 		printf("\n\tcannot connect to X server\n\n");
@@ -57,6 +57,8 @@ bool linux_setup(void *from_window) {
 ///////////////////////////////////////////
 
 bool linux_init() {
+	linux_setup();
+
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
 		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
