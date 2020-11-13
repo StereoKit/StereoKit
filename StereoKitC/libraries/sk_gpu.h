@@ -348,8 +348,10 @@ typedef struct skg_swapchain_t {
 #ifdef _WIN32
 	void *_hdc;
 	void *_hwnd;
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	void *_egl_surface;
+#elif defined(__linux__)
+	void *_x_window;
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
@@ -383,6 +385,7 @@ typedef struct skg_platform_data_t {
 
 int32_t             skg_init                     (const char *app_name, void *adapter_id);
 void                skg_shutdown                 ();
+void                skg_setup_xlib               (void *dpy, void *vi, void *win);
 void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
 void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
 skg_platform_data_t skg_get_platform_data        ();
@@ -1715,8 +1718,8 @@ EGLConfig  egl_config;
 #include<GL/glx.h>
 #include<GL/glu.h>
 
-Display xDisplay;
-uint32_t visualid;
+Display *xDisplay;
+XVisualInfo *visualInfo;
 GLXFBConfig glxFBConfig;
 GLXDrawable glxDrawable;
 GLXContext glxContext;
@@ -1917,7 +1920,7 @@ HGLRC gl_hrc;
 #define GL_DEBUG_SEVERITY_MEDIUM       0x9147
 #define GL_DEBUG_SEVERITY_LOW          0x9148
 
-#if defined(_WIN32) || defined(__ANDROID__) || defined(__linux__)
+#if defined(_WIN32) || defined(__ANDROID__)
 
 #ifdef _WIN32
 	// Function pointers we need to actually initialize OpenGL
@@ -2188,7 +2191,7 @@ int32_t gl_init_emscripten() {
 ///////////////////////////////////////////
 
 int32_t gl_init_egl() {
-#if defined(__ANDROID__) || defined(__linux__)
+#if defined(__ANDROID__)
 	const EGLint attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_CONFORMANT,   EGL_OPENGL_ES3_BIT_KHR,
@@ -2222,16 +2225,51 @@ int32_t gl_init_egl() {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
-#endif // defined(__ANDROID__) || defined(__linux__)
+#endif // defined(__ANDROID__)
 	return 1;
+}
+
+int32_t gl_init_glx() {
+	#if defined(__linux__)
+
+	int fb_attribute_list[] = {
+		GLX_DOUBLEBUFFER, true,
+		GLX_RED_SIZE, 8,
+		GLX_GREEN_SIZE, 8,
+		GLX_BLUE_SIZE, 8,
+		GLX_ALPHA_SIZE, 8,
+		GLX_DEPTH_SIZE, 16,
+		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
+		GLX_X_RENDERABLE, true,
+		GLX_NONE
+	};
+
+	int fbConfigNumber = 0;
+	GLXFBConfig *FBConfig = glXChooseFBConfig(dpy, 0, fb_attribute_list, &fbConfigNumber);
+	glxFBConfig = *FBConfig;
+
+	glxContext = glXCreateContext(dpy, visualInfo, nullptr, GL_TRUE);
+
+#endif
+
+	return 1;
+}
 
 ///////////////////////////////////////////
 
+void skg_setup_xlib(void *dpy, void *vi, void *win) {
+	xDisplay = *(XDisplay *) dpy;
+	visualInfo = *(XVisualInfo *) vi;
+	glxDrawable = *(Window *) win;
+}
+
+//////////////////////////////////////////
 
 int32_t skg_init(const char *app_name, void *adapter_id) {
 #if defined(_WIN32)
 	int32_t result = gl_init_win32();
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	int32_t result = gl_init_egl();
 #elif defined(__EMSCRIPTEN__)
 	int32_t result = gl_init_emscripten();
@@ -2280,7 +2318,7 @@ void skg_shutdown() {
 	wglMakeCurrent(NULL, NULL);
 	ReleaseDC(gl_hwnd, gl_hdc);
 	wglDeleteContext(gl_hrc);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
@@ -2340,7 +2378,7 @@ skg_platform_data_t skg_get_platform_data() {
 	result._egl_context = egl_context;
 #elif defined(__linux__)
 	result._x_display     = xDisplay;
-	result._visual_id     = visualid;
+	result._visual_id     = visualInfo->visualid;
 	result._glx_fb_config = glxFBConfig;
 	result._glx_drawable  = glxDrawable;
 	result._glx_context   = glxContext;
@@ -2522,7 +2560,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	// Convert the prefix if it doesn't match the GL version we're using
 #if _WIN32
 	const char   *prefix_gl      = "#version 450";
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	const char   *prefix_gl      = "#version 320 es";
 #elif __EMSCRIPTEN__
 	const char   *prefix_gl      = "#version 300 es";
@@ -2830,12 +2868,16 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		skg_log(skg_log_critical, "Couldn't set pixel format!");
 		return {};
 	}
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, nullptr);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
+#elif defined(__linux__)
+	result._x_window = *(Window *) hwnd;
+	result.width  = requested_width;
+	result.height = requested_height;
 #else
 	int32_t viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
@@ -2915,8 +2957,10 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #ifdef _WIN32
 	SwapBuffers((HDC)swapchain->_hdc);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
+#elif defined(__linux__)
+	glXSwapBuffers(xDisplay, swapchain->_x_window);
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
@@ -2937,8 +2981,11 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 #elif _WIN32
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
+	skg_tex_target_bind(nullptr, clear, clear_color_4);
+#elif defined(__linux__)
+	glXMakeCurrent(xDisplay, swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
 }
@@ -2953,7 +3000,7 @@ void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 		swapchain->_hwnd = nullptr;
 		swapchain->_hdc  = nullptr;
 	}
-#elif defined(__ANDOIRD__) || defined(__linux__)
+#elif defined(__ANDOIRD__)
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
 	swapchain->_egl_surface = EGL_NO_SURFACE;
