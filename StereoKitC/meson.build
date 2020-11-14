@@ -27,7 +27,7 @@ lib_stereokit_c = library(
 		'stereokit.cpp'
 	),
 	include_directories: [stereokit_c_includes],
-	dependencies: [asset_types, libraries, systems, openxr, dl, reactphysics3d, gl, glew, glx, x11],
+	dependencies: [asset_types, libraries, systems, openxr, dl, reactphysics3d, gl, glx, glew, x11],
 	version: '0.2.1',
 	soversion: '0',
 	install: true

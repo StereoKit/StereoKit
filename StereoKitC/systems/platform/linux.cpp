@@ -18,7 +18,7 @@ skg_swapchain_t linux_swapchain;
 Display                 *dpy;
 Window                  root;
 
-GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
 XVisualInfo             *vi;
 Colormap                cmap;
 XSetWindowAttributes    swa;
@@ -49,7 +49,7 @@ bool linux_setup() {
 	XMapWindow(dpy, win);
 	XStoreName(dpy, win, sk_app_name);
 
-	skg_setup_xlib(dpy, &vi, &win);
+	skg_setup_xlib(dpy, vi, &win);
 
 	return true;
 }
@@ -75,7 +75,7 @@ bool linux_init() {
 	linux_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
-	log_diagf("Created swapchain: %dx%d color:%s depth:%s", linux_swapchain.width, linux_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	// log_diagf("Created swapchain: %dx%d color:%s depth:%s", linux_swapchain.width, linux_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
 

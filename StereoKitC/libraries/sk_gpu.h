@@ -1712,11 +1712,7 @@ EGLConfig  egl_config;
 
 #elif defined(__linux__)
 
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <GL/glew.h>
-#include <GL/glx.h>
-#include <GL/glu.h>
+#include <GL/glxew.h>
 
 Display *xDisplay;
 XVisualInfo *visualInfo;
@@ -2232,6 +2228,12 @@ int32_t gl_init_egl() {
 int32_t gl_init_glx() {
 	#if defined(__linux__)
 
+	glewExperimental=true; // Needed in core profile
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
+
 	int fb_attribute_list[] = {
 		GLX_DOUBLEBUFFER, true,
 		GLX_RED_SIZE, 8,
@@ -2262,8 +2264,6 @@ void skg_setup_xlib(void *dpy, void *vi, void *win) {
 	xDisplay = (Display *) dpy;
 	visualInfo = (XVisualInfo *) vi;
 	glxDrawable = *(Window *) win;
-
-	printf("Address of xDisplay is %p and visualInfo is %p and glxDrawable is %p\n", dpy, vi, win);
 }
 
 //////////////////////////////////////////
@@ -2296,7 +2296,8 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, int32_t severity, int32_t length, const char *message, const void *userParam) {
+	printf("%p", glDebugMessageCallback);
+	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: break;
 		case GL_DEBUG_SEVERITY_LOW:    skg_log(skg_log_info,     message); break;
@@ -2434,6 +2435,7 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	result.use     = use;
 	result.type    = type;
 	result.stride  = size_stride;
+	result._buffer = GLuint();
 	result._target = skg_buffer_type_to_gl(type);
 
 	glGenBuffers(1, &result._buffer);
@@ -3182,8 +3184,8 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	} else {
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 	}
-	if (tex->mips == skg_mip_generate)
-		glGenerateMipmap(tex->_target);
+	// if (tex->mips == skg_mip_generate)
+		// glGenerateMipmap(tex->_target);
 
 	if (tex->type == skg_tex_type_rendertarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
@@ -3220,8 +3222,10 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 void skg_tex_destroy(skg_tex_t *tex) {
 	uint32_t tex_list[] = { tex->_texture     };
 	uint32_t fb_list [] = { tex->_framebuffer };
-	glDeleteTextures    (1, tex_list);
-	glDeleteFramebuffers(1, fb_list );
+	if(tex->_texture     != 0)
+		glDeleteTextures    (1, tex_list);
+	if(tex->_framebuffer != 0)
+		glDeleteFramebuffers(1, fb_list );
 	*tex = {};
 }
 
