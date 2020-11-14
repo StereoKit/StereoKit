@@ -100,7 +100,7 @@ bool platform_set_mode(runtime_ mode) {
 	case runtime_mixedreality: log_diag("Starting mixed reality mode"); break;
 	case runtime_flatscreen:   log_diag("Starting flatscreen mode"); break;
 	}
-	
+
 	platform_stop_mode();
 
 	bool result = true;
@@ -168,6 +168,8 @@ void platform_present() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_vsync();
+#elif __linux__
+		linux_vsync  ();
 #elif WINDOWS_UWP
 		uwp_vsync    ();
 #elif _WIN32

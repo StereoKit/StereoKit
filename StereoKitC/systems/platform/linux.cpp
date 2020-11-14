@@ -69,7 +69,7 @@ bool linux_init() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
-	linux_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	linux_swapchain = skg_swapchain_create(&win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
 	// log_diagf("Created swapchain: %dx%d color:%s depth:%s", linux_swapchain.width, linux_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));

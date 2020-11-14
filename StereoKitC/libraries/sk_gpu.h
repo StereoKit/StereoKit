@@ -2229,15 +2229,6 @@ int32_t gl_init_egl() {
 int32_t gl_init_glx() {
 	#if defined(__linux__)
 
-	glxContext = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
-	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
-
-	glewExperimental=true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		return -1;
-	}
-
 	int fb_attribute_list[] = {
 		GLX_DOUBLEBUFFER, true,
 		GLX_RED_SIZE, 8,
@@ -2254,6 +2245,24 @@ int32_t gl_init_glx() {
 	int fbConfigNumber = 0;
 	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
 	glxFBConfig = *FBConfig;
+
+	int ctx_attribute_list[] = {
+		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
+		GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+		GLX_NONE
+	};
+	// PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribs = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress((GLubyte*)"glXCreateContextAttribsARB");
+
+	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, true, &ctx_attribute_list[0]);
+	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
+
+	glewExperimental=true; // Needed in core profile
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
 
 #endif
 
