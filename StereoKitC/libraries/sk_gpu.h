@@ -1713,6 +1713,7 @@ EGLConfig  egl_config;
 #elif defined(__linux__)
 
 #include <GL/glxew.h>
+#include <GL/glut.h>
 
 Display *xDisplay;
 XVisualInfo *visualInfo;
@@ -2228,6 +2229,9 @@ int32_t gl_init_egl() {
 int32_t gl_init_glx() {
 	#if defined(__linux__)
 
+	glxContext = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
+	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
+
 	glewExperimental=true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
@@ -2250,8 +2254,6 @@ int32_t gl_init_glx() {
 	int fbConfigNumber = 0;
 	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
 	glxFBConfig = *FBConfig;
-
-	glxContext = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
 
 #endif
 
