@@ -46,7 +46,7 @@ tex_t defaults_texture(const char *id, color32 color) {
 		return nullptr;
 	}
 	color32 tex_colors[2*2];
-	for (size_t i = 0; i < 2 * 2; i++) 
+	for (size_t i = 0; i < 2 * 2; i++)
 		tex_colors[i] = color;
 	tex_set_colors(result, 2, 2, tex_colors);
 	tex_set_id    (result, id);
@@ -102,7 +102,7 @@ bool defaults_init() {
 	mesh_set_id   (sk_default_quad, default_id_mesh_quad);
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
-	
+
 	mesh_set_id(sk_default_cube,   default_id_mesh_cube);
 	mesh_set_id(sk_default_sphere, default_id_mesh_sphere);
 
@@ -137,7 +137,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
-	
+
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
@@ -163,6 +163,8 @@ bool defaults_init() {
 	// Text!
 #if __ANDROID__
 	sk_default_font = font_create("/system/fonts/DroidSans.ttf");
+#elif defined(__linux__)
+	sk_default_font = font_create("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 #else
 	sk_default_font = font_create("C:/Windows/Fonts/segoeui.ttf");
 #endif

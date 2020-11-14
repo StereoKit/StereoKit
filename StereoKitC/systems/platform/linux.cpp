@@ -66,9 +66,6 @@ bool linux_init() {
 		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skg_init(sk_app_name, nullptr))
-		return false;
-	log_diag("sk_gpu initialized!");
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;

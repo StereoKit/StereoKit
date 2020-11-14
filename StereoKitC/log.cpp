@@ -83,7 +83,7 @@ const int    log_code_size [] = { _countof(LOG_C_CLEAR),     _countof(LOG_NONE_C
 ///////////////////////////////////////////
 
 char *log_replace_colors(const char *text, const char **color_keys, const char **color_codes, int count, int code_size) {
-	// Looking for words that look like this: 
+	// Looking for words that look like this:
 	// <~red>red text here<~clr>
 
 	const char *ch = text;
@@ -178,7 +178,7 @@ void log_write(log_ level, const char *text) {
 
 	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
 	printf("%s", colored_text);
-	
+
 	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
 	if (log_colors != log_colors_none) {
 		free(colored_text);
@@ -190,7 +190,7 @@ void log_write(log_ level, const char *text) {
 	}
 	platform_debug_output(level, colored_text);
 	free(colored_text);
-	
+
 	free(full_text);
 }
 
