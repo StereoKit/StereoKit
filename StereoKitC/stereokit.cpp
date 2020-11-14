@@ -254,8 +254,14 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 
 ///////////////////////////////////////////
 
-bool32_t sk_set_window(void *window, runtime_ preferred_runtime) {
-	return platform_set_window(window, preferred_runtime);
+void sk_set_window(void *window) {
+	platform_set_window(window);
+}
+
+///////////////////////////////////////////
+
+void sk_set_window_xam(void *window) {
+	platform_set_window_xam(window);
 }
 
 ///////////////////////////////////////////

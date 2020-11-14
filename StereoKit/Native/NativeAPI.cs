@@ -11,7 +11,8 @@ namespace StereoKit
 		const CallingConvention call = CallingConvention.Cdecl;
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        sk_init(string app_name, Runtime preferred_runtime, int fallback = 1);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        sk_set_window(IntPtr window, Runtime preferred_runtime);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_set_window(IntPtr window);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_set_window_xam(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_shutdown();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_quit();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool       sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);

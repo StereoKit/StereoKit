@@ -1,8 +1,6 @@
 #include <stereokit.h>
 #include <stereokit_ui.h>
 using namespace sk;
-//#define SKR_IMPL
-//#include "../../../StereoKitC/libraries/sk_gpu.h"
 
 android_app* app;
 bool app_visible = false;
@@ -11,36 +9,21 @@ bool app_run = true;
 mesh_t mesh;
 material_t mat;
 
-static int32_t engine_handle_input(android_app*, AInputEvent* event) {
-	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-		return 1;
-	}
-	return 0;
-}
-
 static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 	switch (cmd) {
-	case APP_CMD_INIT_WINDOW:
-		// The window is being shown, get it ready.
-		if (evt_app->window != NULL) {
-			app_run = sk_set_window(evt_app->window, sk_active_runtime());
-			app_visible = app_run;
-		}
-		break;
+	case APP_CMD_INIT_WINDOW:    app_visible = app_run = sk_set_window(evt_app->window, sk_active_runtime()); break;
 	case APP_CMD_WINDOW_RESIZED:
 	case APP_CMD_CONFIG_CHANGED: app_run = sk_set_window(evt_app->window, sk_active_runtime()); break;
-	case APP_CMD_SAVE_STATE:   break;
-	case APP_CMD_TERM_WINDOW:  app_run = sk_set_window(nullptr, sk_active_runtime()); break;
-	case APP_CMD_GAINED_FOCUS: app_visible = true; break;
-	case APP_CMD_LOST_FOCUS:   app_visible = false; break;
+	case APP_CMD_TERM_WINDOW:    app_run = sk_set_window(nullptr,         sk_active_runtime()); break;
+	case APP_CMD_GAINED_FOCUS:   app_visible = true; break;
+	case APP_CMD_LOST_FOCUS:     app_visible = false; break;
 	}
 }
 
 pose_t pose = { vec3{0,0.5f,0}, quat_identity };
 void android_main(struct android_app* state) {
 	app = state;
-	app->onAppCmd     = engine_handle_cmd;
-	app->onInputEvent = engine_handle_input;
+	app->onAppCmd = engine_handle_cmd;
 
 	log_set_filter(log_diagnostic);
 
@@ -81,5 +64,4 @@ void android_main(struct android_app* state) {
 	}
 
 	sk_shutdown();
-	//skr_shutdown();
 }

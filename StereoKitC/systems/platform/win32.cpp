@@ -23,7 +23,6 @@ float           win32_scroll    = 0;
 
 // For managing window resizing
 bool win32_check_resize = true;
-bool win32_resize_drag  = false;
 UINT win32_resize_x     = 0;
 UINT win32_resize_y     = 0;
 
@@ -68,11 +67,11 @@ bool win32_start() {
 		case WM_SYSCOMMAND: {
 			// Has the user pressed the restore/'un-maximize' button?
 			// WM_SIZE happens -after- this event, and contains the new size.
-			if (wParam == SC_RESTORE) {
+			if (GET_SC_WPARAM(wParam) == SC_RESTORE)
 				win32_check_resize = true;
-			}
+			
 			// Disable alt menu
-			if ((wParam & 0xfff0) == SC_KEYMENU) 
+			if (GET_SC_WPARAM(wParam) == SC_KEYMENU) 
 				return (LRESULT)0; 
 		} return DefWindowProc(hWnd, message, wParam, lParam); 
 		case WM_SIZE: {
@@ -89,12 +88,8 @@ bool win32_start() {
 		case WM_EXITSIZEMOVE: {
 			// If the user was dragging the window around, WM_SIZE is called -before- this 
 			// event, so we can go ahead and resize now!
-			if (win32_resize_drag) {
-				win32_resize_drag = false;
-				win32_resize(win32_resize_x, win32_resize_y);
-			}
+			win32_resize(win32_resize_x, win32_resize_y);
 		} return DefWindowProc(hWnd, message, wParam, lParam);
-		case WM_ENTERSIZEMOVE: win32_resize_drag = true; return DefWindowProc(hWnd, message, wParam, lParam);
 		default: return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		return (LRESULT)0;
