@@ -209,8 +209,6 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
-#else
-	printf("%s", text);
 #endif
 }
 

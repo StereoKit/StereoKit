@@ -2568,12 +2568,10 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	}
 
 	// Convert the prefix if it doesn't match the GL version we're using
-#if _WIN32
+#if _WIN32 || defined(__linux__)
 	const char   *prefix_gl      = "#version 450";
 #elif defined(__ANDROID__)
 	const char   *prefix_gl      = "#version 320 es";
-#elif defined(__linux__)
-	const char   *prefix_gl      = "#version 450";
 #elif __EMSCRIPTEN__
 	const char   *prefix_gl      = "#version 300 es";
 #endif
