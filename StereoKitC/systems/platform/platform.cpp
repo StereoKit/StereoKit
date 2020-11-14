@@ -109,6 +109,8 @@ bool platform_set_mode(runtime_ mode) {
 	} else if (mode == runtime_flatscreen) {
 #if __ANDROID__
 		result = android_start();
+#elif __linux__
+		result = linux_start  ();
 #elif WINDOWS_UWP
 		result = uwp_start    ();
 #elif _WIN32
@@ -132,6 +134,8 @@ void platform_step_begin() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_step_begin();
+#elif __linux__
+		linux_step_begin  ();
 #elif WINDOWS_UWP
 		uwp_step_begin    ();
 #elif _WIN32
@@ -150,6 +154,8 @@ void platform_step_end() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_step_end();
+#elif __linux__
+		linux_step_end    ();
 #elif WINDOWS_UWP
 		uwp_step_end    ();
 #elif _WIN32
@@ -188,6 +194,8 @@ void platform_stop_mode() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_stop();
+#elif __linux__
+		linux_stop  ();
 #elif WINDOWS_UWP
 		uwp_stop    ();
 #elif _WIN32

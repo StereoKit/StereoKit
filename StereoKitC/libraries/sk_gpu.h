@@ -2229,6 +2229,15 @@ int32_t gl_init_egl() {
 int32_t gl_init_glx() {
 	#if defined(__linux__)
 
+	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
+	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
+
+	glewExperimental=true; // Needed in core profile
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
+
 	int fb_attribute_list[] = {
 		GLX_DOUBLEBUFFER, true,
 		GLX_RED_SIZE, 8,
@@ -2247,22 +2256,16 @@ int32_t gl_init_glx() {
 	glxFBConfig = *FBConfig;
 
 	int ctx_attribute_list[] = {
+		GLX_RENDER_TYPE, GLX_RGBA_TYPE,
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
 		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
 		GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
 		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-		GLX_NONE
+		0
 	};
-	// PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribs = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress((GLubyte*)"glXCreateContextAttribsARB");
-
-	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, true, &ctx_attribute_list[0]);
+	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, GL_TRUE, ctx_attribute_list);
+	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
-
-	glewExperimental=true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		return -1;
-	}
 
 #endif
 
@@ -3014,6 +3017,8 @@ void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
 	swapchain->_egl_surface = EGL_NO_SURFACE;
+// #elif defined(__linux__)
+	// glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 #endif
 }
 

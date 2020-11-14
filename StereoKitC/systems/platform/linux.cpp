@@ -24,7 +24,7 @@ Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
 
-bool linux_setup() {
+bool linux_init() {
 	dpy = XOpenDisplay(0);
 	if(dpy == nullptr) {
 		printf("\n\tcannot connect to X server\n\n");
@@ -56,41 +56,34 @@ bool linux_setup() {
 
 ///////////////////////////////////////////
 
-bool linux_init() {
-	linux_setup();
-
-	skg_callback_log([](skg_log_ level, const char *text) {
-		switch (level) {
-		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
-		case skg_log_warning:  log_warnf("sk_gpu: %s", text); break;
-		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
-		}
-	});
-
+bool linux_start() {
+	sk_info.display_width  = sk_settings.flatscreen_width;
+	sk_info.display_height = sk_settings.flatscreen_height;
+	sk_info.display_type   = display_opaque;
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
 	linux_swapchain = skg_swapchain_create(&win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
-	// log_diagf("Created swapchain: %dx%d color:%s depth:%s", linux_swapchain.width, linux_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
-
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void linux_shutdown() {
+void linux_stop() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy(&linux_swapchain);
+}
 
+///////////////////////////////////////////
+
+void linux_shutdown() {
 	glXMakeCurrent(dpy, None, nullptr);
 	XDestroyWindow(dpy, win);
 	XCloseDisplay(dpy);
-
-	skg_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -105,8 +98,7 @@ void linux_step_end() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();
-	skg_tex_t *target;
-	skg_tex_target_bind(target, true, &col.r);
+	skg_swapchain_bind(&linux_swapchain, true, &col.r);
 
 	input_update_predicted();
 
