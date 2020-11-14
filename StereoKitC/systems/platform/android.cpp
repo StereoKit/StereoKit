@@ -16,14 +16,15 @@
 
 namespace sk {
 
-JavaVM           *android_vm            = nullptr;
-jobject           android_activity      = nullptr;
-JNIEnv           *android_env           = nullptr;
-AAssetManager    *android_asset_manager = nullptr;
-ANativeWindow    *android_window        = nullptr;
-ANativeWindow    *android_next_window   = nullptr;
-bool              android_next_win_ready= false;
-skg_swapchain_t   android_swapchain     = {};
+JavaVM           *android_vm              = nullptr;
+jobject           android_activity        = nullptr;
+JNIEnv           *android_env             = nullptr;
+AAssetManager    *android_asset_manager   = nullptr;
+ANativeWindow    *android_window          = nullptr;
+ANativeWindow    *android_next_window     = nullptr;
+jobject           android_next_window_xam = nullptr;
+bool              android_next_win_ready  = false;
+skg_swapchain_t   android_swapchain       = {};
 
 ///////////////////////////////////////////
 
@@ -125,6 +126,13 @@ void android_set_window(void *window) {
 
 ///////////////////////////////////////////
 
+void android_set_window_xam(void *window) {
+	android_next_window_xam = (jobject)window;
+	android_next_win_ready  = true;
+}
+
+///////////////////////////////////////////
+
 bool android_start() {
 	if (android_window) {
 		android_create_swapchain();
@@ -156,20 +164,26 @@ void android_step_begin() {
 	flatscreen_input_update();
 
 	if (android_next_win_ready) {
+		// If we got our window from xamarin, it's a jobject, and needs
+		// converted into an ANativeWindow first!
+		if (android_next_window_xam != nullptr) {
+			android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
+			android_next_window_xam = nullptr;
+		}
+
 		if (android_window != nullptr && android_window == android_next_window) {
+			// It's the same window, lets just resize it
 			android_resize_swapchain();
 		} else {
-			if (android_window != nullptr && android_next_window != nullptr) {
+			// Completely new window! Destroy the old swapchain, and make a 
+			// new one.
+			if (android_window != nullptr && android_next_window != nullptr)
 				skg_swapchain_destroy(&android_swapchain);
-			}
 
 			if (android_next_window) {
-				//android_window = (ANativeWindow*)window;// ANativeWindow_fromSurface(android_env, (jobject)window);
-				android_window = ANativeWindow_fromSurface(android_env, (jobject)android_next_window);
-
-				if (sk_runtime == runtime_flatscreen) {
+				android_window = (ANativeWindow*)android_next_window;
+				if (sk_runtime == runtime_flatscreen)
 					android_create_swapchain();
-				}
 			}
 		}
 		android_next_win_ready = false;

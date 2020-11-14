@@ -42,8 +42,8 @@ namespace StereoKit
 			return IsInitialized;
 		}
 
-		public static bool SetWindow(IntPtr window, Runtime runtimePreference)
-			=> NativeAPI.sk_set_window(window, runtimePreference)>0?true:false;
+		public static void SetWindow(IntPtr window)
+			=> NativeAPI.sk_set_window_xam(window);
 
 		private static bool InitializeCall(string name, Runtime runtime, bool fallback)
 		{

@@ -95,7 +95,8 @@ typedef struct system_info_t {
 } system_info_t;
 
 SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
-SK_API bool32_t      sk_set_window    (void *window, runtime_ preferred_runtime);
+SK_API void          sk_set_window    (void *window);
+SK_API void          sk_set_window_xam(void *window);
 SK_API void          sk_shutdown      ();
 SK_API void          sk_quit          ();
 SK_API bool32_t      sk_step          (void (*app_update)(void));

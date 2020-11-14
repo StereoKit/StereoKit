@@ -70,11 +70,18 @@ void platform_shutdown() {
 
 ///////////////////////////////////////////
 
-bool platform_set_window(void *window, runtime_ preferred_runtime) {
+void platform_set_window(void *window) {
 #if __ANDROID__
 	android_set_window(window);
 #endif
-	return platform_set_mode(preferred_runtime);
+}
+
+///////////////////////////////////////////
+
+void platform_set_window_xam(void *window) {
+#if __ANDROID__
+	android_set_window_xam(window);
+#endif
 }
 
 ///////////////////////////////////////////
@@ -89,7 +96,6 @@ bool platform_set_mode(runtime_ mode) {
 	case runtime_flatscreen:   log_diag("Starting flatscreen mode"); break;
 	}
 	
-
 	platform_stop_mode();
 
 	bool result = true;

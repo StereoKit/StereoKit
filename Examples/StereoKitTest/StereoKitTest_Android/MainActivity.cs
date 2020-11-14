@@ -77,9 +77,9 @@ namespace StereoKitTest_Android
 			});
 		}
 
-		public void SurfaceChanged     (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) { StereoKitApp.SetWindow(holder.Surface.Handle, StereoKitApp.ActiveRuntime); Android.Util.Log.Info("StereoKitTest", "OnChanged: " + width + "x" + height); }
-		public void SurfaceCreated     (ISurfaceHolder holder) { StereoKitApp.SetWindow(holder.Surface.Handle, StereoKitApp.ActiveRuntime); }
-		public void SurfaceDestroyed   (ISurfaceHolder holder) { StereoKitApp.SetWindow(IntPtr.Zero, StereoKitApp.ActiveRuntime); Android.Util.Log.Info("StereoKitTest", "Destroyed"); }
+		public void SurfaceChanged     (ISurfaceHolder holder, [GeneratedEnum] Format format, int width, int height) { StereoKitApp.SetWindow(holder.Surface.Handle); Android.Util.Log.Info("StereoKitTest", "OnChanged: " + width + "x" + height); }
+		public void SurfaceCreated     (ISurfaceHolder holder) { StereoKitApp.SetWindow(holder.Surface.Handle); }
+		public void SurfaceDestroyed   (ISurfaceHolder holder) { StereoKitApp.SetWindow(IntPtr.Zero); Android.Util.Log.Info("StereoKitTest", "Destroyed"); }
 		public void SurfaceRedrawNeeded(ISurfaceHolder holder) { }
 	}
 }
