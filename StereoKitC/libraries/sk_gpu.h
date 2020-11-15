@@ -3198,8 +3198,8 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	} else {
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 	}
-	// if (tex->mips == skg_mip_generate)
-		// glGenerateMipmap(tex->_target);
+	if (tex->mips == skg_mip_generate)
+		glGenerateMipmap(tex->_target);
 
 	if (tex->type == skg_tex_type_rendertarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
