@@ -248,6 +248,7 @@ void material_set_float(material_t material, const char *name, float value) {
 	
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -258,6 +259,7 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -268,6 +270,7 @@ void material_set_color(material_t material, const char *name, color128 value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -278,6 +281,7 @@ void material_set_vector(material_t material, const char *name, vec4 value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -288,6 +292,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -348,6 +353,7 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 		if (i != -1) {
 			const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 			memcpy(((uint8_t *)material->args.buffer + info->offset), value, info->size);
+			material->args.buffer_dirty = true;
 		}
 	}
 }
