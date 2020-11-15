@@ -3,10 +3,11 @@ using namespace sk;
 
 int main() {
   log_set_filter(log_diagnostic);
-  sk_init("StereoKit Linux Test", runtime_flatscreen);
+  sk_init("StereoKit Linux Test", runtime_mixedreality);
   while (sk_step([]() {})) {}
   sk_shutdown();
 }
+
 //
 // mesh_t     cube;
 // material_t mat;

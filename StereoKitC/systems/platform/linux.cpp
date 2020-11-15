@@ -25,6 +25,8 @@ Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
 
+bool                    fix_glx_oxr = true;
+
 uint32_t                key_mask;
 
 bool linux_init() {
@@ -60,6 +62,8 @@ bool linux_init() {
 ///////////////////////////////////////////
 
 bool linux_start() {
+	fix_glx_oxr = false;
+
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -118,6 +122,11 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin() {
+	if(fix_glx_oxr) {
+		fix_glx_oxr = false;
+		// XDestroyWindow(dpy, win);
+	}
+
 	flatscreen_input_update();
 }
 

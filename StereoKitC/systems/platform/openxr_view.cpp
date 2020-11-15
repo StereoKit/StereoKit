@@ -44,7 +44,7 @@ struct device_display_t {
 	bool32_t                     active;
 	int64_t color_format;
 	int64_t depth_format;
-	
+
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
 
@@ -171,9 +171,9 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
 
 	// Debug print the view and format info
-	log_diagf("Creating view: %s color:%s depth:%s", 
-		openxr_view_name(view_type), 
-		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),  
+	log_diagf("Creating view: %s color:%s depth:%s",
+		openxr_view_name(view_type),
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),
 		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.depth_format )));
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
@@ -204,7 +204,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		log_fail_reason(80, "Couldn't create OpenXR view swapchains!");
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -312,8 +312,8 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	swapchain_info.width       = width;
 	swapchain_info.height      = height;
 	swapchain_info.sampleCount = sample_count;
-	swapchain_info.usageFlags  = color 
-		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT 
+	swapchain_info.usageFlags  = color
+		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	// If it's a secondary view, let OpenXR know
@@ -323,12 +323,12 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 		swapchain_info.next = &secondary;
 	}
 
-	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle), 
+	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle),
 		"xrCreateSwapchain failed [%s]");
 
 	// Find out how many textures were generated for the swapchain
 	uint32_t surface_count = 0;
-	xr_check(xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr), 
+	xr_check(xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr),
 		"xrEnumerateSwapchainImages failed [%s]");
 
 	// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
@@ -343,7 +343,7 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	for (uint32_t i=0; i<surface_count; i++) {
 		out_swapchain.images[i] = { XR_TYPE_SWAPCHAIN_IMAGE };
 	}
-	
+
 	xr_check(xrEnumerateSwapchainImages(out_swapchain.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader *)out_swapchain.images),
 		"xrEnumerateSwapchainImages failed [%s]");
 
@@ -404,8 +404,8 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 		"xrEnumerateEnvironmentBlendModes failed [%s]");
 
 	for (size_t i = 0; i < blend_count; i++) {
-		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
-			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
+		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE ||
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
 			out_blend = blend_modes[i];
 			return true;
@@ -435,8 +435,8 @@ bool openxr_render_frame() {
 		"xrWaitFrame [%s]");
 
 	// Check active for the primary display
-	bool session_active = 
-		xr_session_state == XR_SESSION_STATE_VISIBLE || 
+	bool session_active =
+		xr_session_state == XR_SESSION_STATE_VISIBLE ||
 		xr_session_state == XR_SESSION_STATE_FOCUSED;
 	xr_displays[0].active = session_active;
 
@@ -451,7 +451,7 @@ bool openxr_render_frame() {
 		}
 	}
 
-	// Must be called before any rendering is done! This can return some interesting flags, like 
+	// Must be called before any rendering is done! This can return some interesting flags, like
 	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
 	// xrEndFrame right away.
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
@@ -468,7 +468,7 @@ bool openxr_render_frame() {
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
 	xr_display_2nd_layers.clear();
-	
+
 	skg_draw_begin();
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
@@ -489,7 +489,7 @@ bool openxr_render_frame() {
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
 	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
-	
+
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
 	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
