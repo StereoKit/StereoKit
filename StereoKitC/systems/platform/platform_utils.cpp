@@ -195,6 +195,8 @@ bool platform_key_down(key_ key) {
 	return uwp_key_down(key);
 #elif _WIN32
 	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
+#elif defined(__linux__)
+	return linux_key_down(key);
 #else
 	return false;
 #endif

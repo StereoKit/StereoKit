@@ -25,6 +25,8 @@ Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
 
+uint32_t                key_mask;
+
 bool linux_init() {
 	dpy = XOpenDisplay(0);
 	if(dpy == nullptr) {
@@ -77,14 +79,13 @@ bool linux_start() {
 bool linux_get_cursor(vec2 &out_pos) {
 	Window root_window, child_window;
 	int root_cursor_pos[2], win_cursor_pos[2];
-	uint32_t mask_return;
 
 	bool result = XQueryPointer(
 		dpy, win,
 		&root_window, &child_window, //Root window, child window
 		&root_cursor_pos[0], &root_cursor_pos[1], //Root relative X and Y coordinates
 		&win_cursor_pos[0], &win_cursor_pos[1], //Window relative X and Y coordinates
-		&mask_return //Key mask
+		&key_mask //Key mask
 	);
 
 	if(result) {
@@ -93,6 +94,10 @@ bool linux_get_cursor(vec2 &out_pos) {
 	}
 
 	return result;
+}
+
+bool linux_key_down(key_ key) {
+	return false;
 }
 
 ///////////////////////////////////////////
