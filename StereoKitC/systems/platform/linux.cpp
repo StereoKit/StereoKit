@@ -1,6 +1,7 @@
 #ifdef __linux__
 
 #include "../../log.h"
+#include "../../stereokit.h"
 #include "linux.h"
 #include "openxr.h"
 #include "flatscreen_input.h"
@@ -69,6 +70,29 @@ bool linux_start() {
 	flatscreen_input_init();
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+bool linux_get_cursor(vec2 &out_pos) {
+	Window root_window, child_window;
+	int root_cursor_pos[2], win_cursor_pos[2];
+	uint32_t mask_return;
+
+	bool result = XQueryPointer(
+		dpy, win,
+		&root_window, &child_window, //Root window, child window
+		&root_cursor_pos[0], &root_cursor_pos[1], //Root relative X and Y coordinates
+		&win_cursor_pos[0], &win_cursor_pos[1], //Window relative X and Y coordinates
+		&mask_return //Key mask
+	);
+
+	if(result) {
+		out_pos.x = (float) win_cursor_pos[0];
+		out_pos.y = (float) win_cursor_pos[1];
+	}
+
+	return result;
 }
 
 ///////////////////////////////////////////

@@ -12,6 +12,8 @@ void linux_step_begin();
 void linux_step_end  ();
 void linux_vsync     ();
 
+bool linux_get_cursor(vec2 &out_pos);
+
 } // namespace sk
 
 #endif

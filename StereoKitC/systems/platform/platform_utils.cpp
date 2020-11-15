@@ -33,6 +33,7 @@
 
 #if __linux__
 #include <unistd.h>
+#include "linux.h"
 #endif
 
 namespace sk {
@@ -156,6 +157,8 @@ bool platform_get_cursor(vec2 &out_pos) {
 		   && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
 	out_pos.x = (float)cursor_pos.x;
 	out_pos.y = (float)cursor_pos.y;
+#elif defined(__linux__)
+	result = linux_get_cursor(out_pos);
 #else
 #endif
 	return result;
