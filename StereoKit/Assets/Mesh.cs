@@ -56,7 +56,7 @@ namespace StereoKit
 		~Mesh()
 		{
 			if (_inst == IntPtr.Zero)
-				NativeAPI.mesh_release(_inst);
+				StereoKitApp.ExecuteOnMain(()=>NativeAPI.mesh_release(_inst));
 		}
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a vertex buffer object

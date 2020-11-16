@@ -222,6 +222,7 @@ void mesh_release(mesh_t mesh) {
 ///////////////////////////////////////////
 
 void mesh_destroy(mesh_t mesh) {
+	skg_mesh_destroy  (&mesh->gpu_mesh);
 	skg_buffer_destroy(&mesh->vert_buffer);
 	skg_buffer_destroy(&mesh->ind_buffer);
 	free(mesh->verts);
