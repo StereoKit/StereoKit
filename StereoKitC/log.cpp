@@ -197,12 +197,15 @@ void log_write(log_ level, const char *text) {
 ///////////////////////////////////////////
 
 void _log_writef(log_ level, const char* text, va_list args) {
-	size_t length = vsnprintf(nullptr, 0, text, args);
-	char* buffer = (char*)malloc(length + 2);
-	vsnprintf(buffer, length + 2, text, args);
+    va_list copy;
+    va_copy(copy, args);
+    size_t length = vsnprintf(nullptr, 0, text, args);
+    char* buffer = (char*)malloc(length + 2);
+    vsnprintf(buffer, length + 2, text, copy);
 
-	log_write(level, buffer);
-	free(buffer);
+    log_write(level, buffer);
+    free(buffer);
+    va_end(copy);
 }
 
 ///////////////////////////////////////////
