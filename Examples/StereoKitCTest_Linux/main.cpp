@@ -6,8 +6,8 @@ material_t orange_mat;
 
 int main() {
 	// log_set_filter(log_diagnostic);
-	// sk_init("StereoKit Linux Test (OpenXR)", runtime_mixedreality);
-	sk_init("StereoKit Linux Test (Flatscreen)", runtime_flatscreen);
+	sk_init("StereoKit Linux Test (OpenXR)", runtime_mixedreality);
+	// sk_init("StereoKit Linux Test (Flatscreen)", runtime_flatscreen);
 
     cube = mesh_gen_rounded_cube(vec3_one, 0.1f, 4);
 
