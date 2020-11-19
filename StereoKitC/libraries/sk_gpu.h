@@ -2365,7 +2365,11 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
 #ifndef __EMSCRIPTEN__
-		glDisable(GL_FRAMEBUFFER_SRGB);
+		if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
+			glEnable(GL_FRAMEBUFFER_SRGB);
+		} else {
+			glDisable(GL_FRAMEBUFFER_SRGB);
+		}
 #endif
 	} else {
 		glViewport(0, 0, gl_active_width, gl_active_height);
