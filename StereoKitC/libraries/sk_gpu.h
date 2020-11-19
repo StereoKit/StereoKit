@@ -1713,7 +1713,6 @@ EGLConfig  egl_config;
 #elif defined(__linux__)
 
 #include <GL/glxew.h>
-#include <GL/glut.h>
 
 Display *xDisplay;
 XVisualInfo *visualInfo;
