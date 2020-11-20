@@ -1942,7 +1942,7 @@ HGLRC gl_hrc;
 	#define gl_get_function(x) eglGetProcAddress(x)
 #endif // _WIN32
 
-typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, int32_t severity, int32_t length, const char* message, const void* userParam);
+typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char* message, const void* userParam);
 
 #define GL_API \
 GLE(void,     glLinkProgram,             uint32_t program) \
@@ -2274,9 +2274,11 @@ int32_t gl_init_glx() {
 ///////////////////////////////////////////
 
 void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
-	xDisplay = (Display *) dpy;
-	visualInfo = (XVisualInfo *) vi;
-	glxDrawable = *(Drawable *) drawable;
+#if defined(__linux__)
+	xDisplay    =  (Display    *) dpy;
+	visualInfo  =  (XVisualInfo*) vi;
+	glxDrawable = *(Drawable   *) drawable;
+#endif
 }
 
 //////////////////////////////////////////
@@ -2309,7 +2311,6 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	printf("%p", glDebugMessageCallback);
 	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: break;
@@ -2452,7 +2453,6 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	result.use     = use;
 	result.type    = type;
 	result.stride  = size_stride;
-	result._buffer = GLuint();
 	result._target = skg_buffer_type_to_gl(type);
 
 	glGenBuffers(1, &result._buffer);
