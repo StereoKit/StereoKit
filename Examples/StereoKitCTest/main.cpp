@@ -88,7 +88,7 @@ void common_init() {
 	mesh_t mesh_cube = mesh_gen_cube(vec3_one, 0);
 	floor_model  = model_create_mesh(mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
-	
+
 	// Build a physical floor!
 	vec3 pos   = vec3{ 0,-1.5f,0 };
 	vec3 scale = vec3{ 5,1,5 };

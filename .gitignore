@@ -343,3 +343,4 @@ StereoKitC/shaders_builtin/*.sks
 _site/
 .jekyll-cache/
 *.lock
+build/

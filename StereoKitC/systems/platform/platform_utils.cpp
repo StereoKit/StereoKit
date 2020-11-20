@@ -12,7 +12,7 @@
 #include "uwp.h"
 
 #include <winrt/Windows.UI.Popups.h>
-#include <winrt/Windows.UI.Core.h> 
+#include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #endif
@@ -29,6 +29,11 @@
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <errno.h>
+#endif
+
+#if __linux__
+#include <unistd.h>
+#include "linux.h"
 #endif
 
 namespace sk {
@@ -89,10 +94,10 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
 	FILE   *fp;
 	if (asset) {
-		fp = funopen(asset, 
-			[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); }, 
-			[](void *cookie, const char *buf, int size) {return EACCES; }, 
-			[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); }, 
+		fp = funopen(asset,
+			[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); },
+			[](void *cookie, const char *buf, int size) {return EACCES; },
+			[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); },
 			[](void *cookie) { AAsset_close((AAsset *)cookie); return 0; } );
 	} else {
 		fp = fopen(filename, "rb");
@@ -102,6 +107,14 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 		log_errf("Can't find file %s!", filename);
 		return false;
 	}
+#elif __linux__
+
+	FILE *fp = fopen(filename, "rb");
+	if (fp == nullptr) {
+		log_errf("Can't find file %s!", filename);
+		return false;
+	}
+
 #else
 	FILE *fp;
 	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
@@ -144,6 +157,8 @@ bool platform_get_cursor(vec2 &out_pos) {
 		   && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
 	out_pos.x = (float)cursor_pos.x;
 	out_pos.y = (float)cursor_pos.y;
+#elif defined(__linux__)
+	result = linux_get_cursor(out_pos);
 #else
 #endif
 	return result;
@@ -180,6 +195,8 @@ bool platform_key_down(key_ key) {
 	return uwp_key_down(key);
 #elif _WIN32
 	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
+#elif defined(__linux__)
+	return linux_key_down(key);
 #else
 	return false;
 #endif
@@ -190,21 +207,23 @@ bool platform_key_down(key_ key) {
 void platform_debug_output(log_ level, const char *text) {
 #if _WIN32
 	OutputDebugStringA(text);
-#else
+#elif defined(__ANDROID__)
 	int32_t priority = ANDROID_LOG_INFO;
 	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
 	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
-	__android_log_write(priority, "StereoKit", text); 
+	__android_log_write(priority, "StereoKit", text);
 #endif
 }
 
 ///////////////////////////////////////////
 
-void platform_sleep(int ms) { 
+void platform_sleep(int ms) {
 #ifdef _WIN32
 	Sleep(ms);
+#elif defined(__linux__)
+    sleep(ms / 1000);
 #else
 	usleep(ms * 1000);
 #endif

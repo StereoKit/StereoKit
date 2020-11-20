@@ -1,3 +1,4 @@
+#include <chrono>
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
@@ -19,7 +20,7 @@
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
 
-#include <chrono>
+
 using namespace std::chrono;
 
 namespace sk {
@@ -128,7 +129,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
 	sys_platform_present.update_dependencies     = frame_present_update_deps;
 	sys_platform_present.update_dependency_count = _countof(frame_present_update_deps);
-	
+
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);
 	systems_add(&sys_platform_render);
@@ -339,7 +340,7 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 
 	time_point<high_resolution_clock> now = high_resolution_clock::now();
 	sk_timev_raw  = duration_cast<nanoseconds>(now.time_since_epoch()).count();
-	sk_time_start = (sk_timev_raw / 1000000000.0) - total_seconds; 
+	sk_time_start = (sk_timev_raw / 1000000000.0) - total_seconds;
 
 	sk_timev_elapsed_us  = frame_elapsed_seconds;
 	sk_timev_elapsed     = frame_elapsed_seconds * sk_timev_scale;

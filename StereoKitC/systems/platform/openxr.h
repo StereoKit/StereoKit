@@ -10,6 +10,12 @@
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
+#elif __linux__
+	#include <time.h>
+	#define XR_USE_PLATFORM_XLIB
+	#define XR_USE_TIMESPEC
+	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
+	#define XR_USE_GRAPHICS_API_OPENGL
 #elif _WIN32
 	#define XR_USE_PLATFORM_WIN32
 	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
@@ -33,7 +39,7 @@
 #define XrGraphicsBinding XrGraphicsBindingD3D11KHR
 #define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_D3D11_KHR
 
-#elif defined(XR_USE_GRAPHICS_API_OPENGL)
+#elif defined(XR_USE_PLATFORM_WIN32) && defined(XR_USE_GRAPHICS_API_OPENGL)
 #include <windows.h>
 #define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
 #define XrSwapchainImage XrSwapchainImageOpenGLKHR
@@ -45,6 +51,23 @@
 #define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
 #define XrGraphicsBinding XrGraphicsBindingOpenGLWin32KHR
 #define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR
+
+#elif defined(XR_USE_PLATFORM_XLIB) && defined(XR_USE_GRAPHICS_API_OPENGL)
+#include<X11/X.h>
+#include<X11/Xlib.h>
+#include<GL/gl.h>
+#include<GL/glx.h>
+#include<GL/glu.h>
+#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
+#define XrSwapchainImage XrSwapchainImageOpenGLKHR
+#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
+#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLKHR
+#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR
+#define xrGetGraphicsRequirementsKHR xrGetOpenGLGraphicsRequirementsKHR
+#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLGraphicsRequirementsKHR
+#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
+#define XrGraphicsBinding XrGraphicsBindingOpenGLXlibKHR
+#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR
 
 #elif defined(XR_USE_GRAPHICS_API_VULKAN)
 #define XR_GFX_EXTENSION XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
@@ -67,8 +90,13 @@
 #define xrGetGraphicsRequirementsKHR xrGetOpenGLESGraphicsRequirementsKHR
 #define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLESGraphicsRequirementsKHR
 #define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLESGraphicsRequirementsKHR"
+
+#if defined(__ANDROID__)
+
 #define XrGraphicsBinding XrGraphicsBindingOpenGLESAndroidKHR
 #define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR
+
+#endif
 
 #endif
 

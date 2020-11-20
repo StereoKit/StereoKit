@@ -5,10 +5,10 @@
 sk_gpu.h
 
 	Docs are not yet here as the project is still somewhat in flight, but check
-	out some of the example projects in the repository for reference! They're 
+	out some of the example projects in the repository for reference! They're
 	pretty clean as is :)
 
-	Note: this is currently an amalgamated file, so it's best to modify the 
+	Note: this is currently an amalgamated file, so it's best to modify the
 	individual files in the repository if making modifications.
 */
 
@@ -348,8 +348,10 @@ typedef struct skg_swapchain_t {
 #ifdef _WIN32
 	void *_hdc;
 	void *_hwnd;
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	void *_egl_surface;
+#elif defined(__linux__)
+	void *_x_window;
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
@@ -362,10 +364,16 @@ typedef struct skg_swapchain_t {
 } skg_swapchain_t;
 
 typedef struct skg_platform_data_t {
-#if defined(__ANDROID__) || defined(__linux__)
+#if defined(__ANDROID__)
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
+#elif __linux__
+	void *_x_display;
+	void *_visual_id;
+	void *_glx_fb_config;
+	void *_glx_drawable;
+	void *_glx_context;
 #elif _WIN32
 	void *_gl_hdc;
 	void *_gl_hrc;
@@ -377,6 +385,7 @@ typedef struct skg_platform_data_t {
 
 int32_t             skg_init                     (const char *app_name, void *adapter_id);
 void                skg_shutdown                 ();
+void                skg_setup_xlib               (void *dpy, void *vi, void *drawable);
 void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
 void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
 skg_platform_data_t skg_get_platform_data        ();
@@ -575,7 +584,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		d3d_info = nullptr;
 		if (SUCCEEDED(d3d_debug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3d_info))) {
 			D3D11_MESSAGE_ID hide[] = {
-				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS, 
+				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
 				(D3D11_MESSAGE_ID)351,
 				(D3D11_MESSAGE_ID)49, // TODO: Figure out the Flip model for backbuffers!
 									  // Add more message IDs here as needed
@@ -595,7 +604,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	desc_rasterizer.CullMode = D3D11_CULL_BACK;
 	desc_rasterizer.FrontCounterClockwise = true;
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
-	
+
 	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
 	desc_depthstate.DepthEnable    = true;
 	desc_depthstate.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -720,8 +729,8 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	case skg_buffer_type_index:    buffer_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;    break;
 	case skg_buffer_type_constant: buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break;
 	case skg_buffer_type_compute:  {
-		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; 
-		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED; 
+		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		buffer_desc.Usage     = D3D11_USAGE_DEFAULT;
 	} break;
 	default: throw "Not implemented yet!";
@@ -730,13 +739,13 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_buffer_is_valid(const skg_buffer_t *buffer) {
 	return buffer->_buffer != nullptr;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t size_bytes) {
 	if (buffer->use != skg_use_dynamic) {
@@ -753,7 +762,7 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_get_contents(const skg_buffer_t *buffer, void *ref_buffer, uint32_t buffer_size) {
 	D3D11_MAPPED_SUBRESOURCE resource;
@@ -766,7 +775,7 @@ void skg_buffer_get_contents(const skg_buffer_t *buffer, void *ref_buffer, uint3
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offset) {
 	switch (buffer->type) {
@@ -781,14 +790,14 @@ void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offse
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_destroy(skg_buffer_t *buffer) {
 	if (buffer->_buffer) buffer->_buffer->Release();
 	*buffer = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_mesh_t skg_mesh_create(const skg_buffer_t *vert_buffer, const skg_buffer_t *ind_buffer) {
 	skg_mesh_t result = {};
@@ -800,7 +809,7 @@ skg_mesh_t skg_mesh_create(const skg_buffer_t *vert_buffer, const skg_buffer_t *
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
 	if (mesh->_vert_buffer) mesh->_vert_buffer->Release();
@@ -808,7 +817,7 @@ void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
 	if (mesh->_vert_buffer) mesh->_vert_buffer->AddRef();
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_set_inds(skg_mesh_t *mesh, const skg_buffer_t *ind_buffer) {
 	if (mesh->_ind_buffer) mesh->_ind_buffer->Release();
@@ -816,7 +825,7 @@ void skg_mesh_set_inds(skg_mesh_t *mesh, const skg_buffer_t *ind_buffer) {
 	if (mesh->_ind_buffer) mesh->_ind_buffer->AddRef();
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_bind(const skg_mesh_t *mesh) {
 	UINT strides[] = { sizeof(skg_vert_t) };
@@ -825,7 +834,7 @@ void skg_mesh_bind(const skg_mesh_t *mesh) {
 	d3d_context->IASetIndexBuffer  (mesh->_ind_buffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_destroy(skg_mesh_t *mesh) {
 	if (mesh->_ind_buffer ) mesh->_ind_buffer ->Release();
@@ -833,7 +842,7 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 	*mesh = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 #include <stdio.h>
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
@@ -890,7 +899,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 	switch(shader->type) {
@@ -936,7 +945,7 @@ void skg_shader_destroy(skg_shader_t *shader) {
 
 ///////////////////////////////////////////
 // skg_pipeline                          //
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_update_blend(skg_pipeline_t *pipeline) {
 	if (pipeline->_blend) pipeline->_blend->Release();
@@ -955,7 +964,7 @@ void skg_pipeline_update_blend(skg_pipeline_t *pipeline) {
 	d3d_device->CreateBlendState(&desc_blend, &pipeline->_blend);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_update_rasterizer(skg_pipeline_t *pipeline) {
 	if (pipeline->_rasterize) pipeline->_rasterize->Release();
@@ -971,7 +980,7 @@ void skg_pipeline_update_rasterizer(skg_pipeline_t *pipeline) {
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &pipeline->_rasterize);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_update_depth(skg_pipeline_t *pipeline) {
 	if (pipeline->_depth) pipeline->_depth->Release();
@@ -1006,7 +1015,7 @@ void skg_pipeline_update_depth(skg_pipeline_t *pipeline) {
 	d3d_device->CreateDepthStencilState(&desc_depthstate, &pipeline->_depth);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 	skg_pipeline_t result = {};
@@ -1026,7 +1035,7 @@ skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	d3d_context->OMSetBlendState       (pipeline->_blend,  nullptr, 0xFFFFFFFF);
@@ -1036,7 +1045,7 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	d3d_context->PSSetShader           (pipeline->_pixel,  nullptr, 0);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_transparency(skg_pipeline_t *pipeline, skg_transparency_ transparency) {
 	if (pipeline->transparency != transparency) {
@@ -1054,7 +1063,7 @@ void skg_pipeline_set_cull(skg_pipeline_t *pipeline, skg_cull_ cull) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_depth_write(skg_pipeline_t *pipeline, bool write) {
 	if (pipeline->depth_write != write) {
@@ -1063,7 +1072,7 @@ void skg_pipeline_set_depth_write(skg_pipeline_t *pipeline, bool write) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_depth_test (skg_pipeline_t *pipeline, skg_depth_test_ test) {
 	if (pipeline->depth_test != test) {
@@ -1072,7 +1081,7 @@ void skg_pipeline_set_depth_test (skg_pipeline_t *pipeline, skg_depth_test_ test
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_wireframe(skg_pipeline_t *pipeline, bool wireframe) {
 	if (pipeline->wireframe != wireframe) {
@@ -1081,31 +1090,31 @@ void skg_pipeline_set_wireframe(skg_pipeline_t *pipeline, bool wireframe) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_transparency_ skg_pipeline_get_transparency(const skg_pipeline_t *pipeline) {
 	return pipeline->transparency;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_cull_ skg_pipeline_get_cull(const skg_pipeline_t *pipeline) {
 	return pipeline->cull;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_pipeline_get_wireframe(const skg_pipeline_t *pipeline) {
 	return pipeline->wireframe;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_pipeline_get_depth_write(const skg_pipeline_t *pipeline) {
 	return pipeline->depth_write;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_depth_test_ skg_pipeline_get_depth_test(const skg_pipeline_t *pipeline) {
 	return pipeline->depth_test;
@@ -1149,7 +1158,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		return {};
 	}
 
-	// Set the target view to an sRGB format for proper presentation of 
+	// Set the target view to an sRGB format for proper presentation of
 	// linear color data.
 	skg_tex_fmt_ target_fmt = format;
 	switch (format) {
@@ -1172,7 +1181,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t height) {
 	if (swapchain->_swapchain == nullptr || (width == swapchain->width && height == swapchain->height))
@@ -1196,19 +1205,19 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 	back_buffer->Release();
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
 	swapchain->_swapchain->Present(1, 0);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
 	skg_tex_target_bind(swapchain->_target.format != 0 ? &swapchain->_target : nullptr, clear, clear_color_4);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 	skg_tex_destroy(&swapchain->_target);
@@ -1217,7 +1226,7 @@ void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 	*swapchain = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg_tex_fmt_ override_format, int32_t width, int32_t height, int32_t array_count) {
 	skg_tex_t result = {};
@@ -1238,7 +1247,7 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_tex_fmt_ override_format, int32_t width, int32_t height, int32_t array_layer) {
 	skg_tex_t result = {};
@@ -1259,7 +1268,7 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, skg_mip_ mip_maps) {
 	skg_tex_t result = {};
@@ -1274,13 +1283,13 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_tex_is_valid(const skg_tex_t *tex) {
 	return tex->_texture != nullptr;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	if (depth->type == skg_tex_type_depth) {
@@ -1292,7 +1301,7 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy) {
 	if (tex->_sampler)
@@ -1323,7 +1332,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	desc_sampler.MaxLOD         = D3D11_FLOAT32_MAX;
 	desc_sampler.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
-	// D3D will already return the same sampler when provided the same 
+	// D3D will already return the same sampler when provided the same
 	// settings, so we can just lean on that to prevent sampler duplicates :)
 	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &tex->_sampler)))
 		skg_log(skg_log_critical, "Failed to create sampler state!");
@@ -1339,8 +1348,8 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, void *curr_data, skg_tex_fmt
 		tex_mem[m] = {};
 		switch (format) {
 		case skg_tex_fmt_rgba32:
-		case skg_tex_fmt_rgba32_linear: 
-			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+		case skg_tex_fmt_rgba32_linear:
+			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba64:
 			skg_downsample_4((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
@@ -1350,14 +1359,14 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, void *curr_data, skg_tex_fmt
 			break;
 		case skg_tex_fmt_depth32:
 		case skg_tex_fmt_r32:
-			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_depth16:
 		case skg_tex_fmt_r16:
-			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_r8:
-			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		}
 		mip_data = (void*)tex_mem[m].pSysMem;
@@ -1484,7 +1493,7 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 			for (int32_t i = 0; i < data_frame_count; i++) {
 				for (uint32_t m = 1; m < mip_levels; m++) {
 					free((void*)tex_mem[i*mip_levels + m].pSysMem);
-				} 
+				}
 			}
 			free(tex_mem);
 		}
@@ -1514,7 +1523,7 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 	if (texture != nullptr) {
@@ -1536,7 +1545,7 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_destroy(skg_tex_t *tex) {
 	if (tex->_target_view) tex->_target_view->Release();
@@ -1546,7 +1555,7 @@ void skg_tex_destroy(skg_tex_t *tex) {
 	if (tex->_texture    ) tex->_texture    ->Release();
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 template <typename T>
 void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
@@ -1577,7 +1586,7 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
@@ -1602,7 +1611,7 @@ void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int3
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	switch (format) {
@@ -1622,7 +1631,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	switch (format) {
@@ -1642,7 +1651,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	switch (format) {
@@ -1662,7 +1671,7 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	switch (semantic) {
@@ -1693,13 +1702,24 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <GLES3/gl32.h>
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
 EGLDisplay egl_display;
 EGLContext egl_context;
 EGLConfig  egl_config;
+
+#elif defined(__linux__)
+
+#include <GL/glxew.h>
+
+Display *xDisplay;
+XVisualInfo *visualInfo;
+GLXFBConfig glxFBConfig;
+GLXDrawable glxDrawable;
+GLXContext glxContext;
+
 #elif _WIN32
 #pragma comment(lib, "opengl32.lib")
 
@@ -1751,7 +1771,7 @@ HGLRC gl_hrc;
 #define GL_CONSTANT_ALPHA           0x8003
 #define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 
-#define GL_NEVER                    0x0200 
+#define GL_NEVER                    0x0200
 #define GL_LESS                     0x0201
 #define GL_EQUAL                    0x0202
 #define GL_LEQUAL                   0x0203
@@ -1896,7 +1916,7 @@ HGLRC gl_hrc;
 #define GL_DEBUG_SEVERITY_MEDIUM       0x9147
 #define GL_DEBUG_SEVERITY_LOW          0x9148
 
-#if defined(_WIN32) || defined(__ANDROID__) || defined(__linux__)
+#if defined(_WIN32) || defined(__ANDROID__)
 
 #ifdef _WIN32
 	// Function pointers we need to actually initialize OpenGL
@@ -2128,8 +2148,8 @@ int32_t gl_init_win32() {
 
 	// Create an OpenGL context
 	int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3, 
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3, 
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
 		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0 };
 	gl_hrc = wglCreateContextAttribsARB( gl_hdc, 0, attributes );
@@ -2167,7 +2187,7 @@ int32_t gl_init_emscripten() {
 ///////////////////////////////////////////
 
 int32_t gl_init_egl() {
-#if defined(__ANDROID__) || defined(__linux__)
+#if defined(__ANDROID__)
 	const EGLint attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_CONFORMANT,   EGL_OPENGL_ES3_BIT_KHR,
@@ -2178,8 +2198,8 @@ int32_t gl_init_egl() {
 		EGL_DEPTH_SIZE, 16,
 		EGL_NONE
 	};
-	EGLint context_attribs[] = { 
-		EGL_CONTEXT_CLIENT_VERSION, 3, 
+	EGLint context_attribs[] = {
+		EGL_CONTEXT_CLIENT_VERSION, 3,
 		EGL_NONE, EGL_NONE };
 	EGLint format;
 	EGLint numConfigs;
@@ -2194,7 +2214,6 @@ int32_t gl_init_egl() {
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglChooseConfig");
 	eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglGetConfigAttrib");
-	
 	egl_context = eglCreateContext      (egl_display, egl_config, nullptr, context_attribs);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateContext");
 
@@ -2202,18 +2221,73 @@ int32_t gl_init_egl() {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
-#endif // defined(__ANDROID__) || defined(__linux__)
+#endif // defined(__ANDROID__)
+	return 1;
+}
+
+int32_t gl_init_glx() {
+	#if defined(__linux__)
+
+	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
+	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
+
+	glewExperimental=true; // Needed in core profile
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
+
+	int fb_attribute_list[] = {
+		GLX_DOUBLEBUFFER, true,
+		GLX_RED_SIZE, 8,
+		GLX_GREEN_SIZE, 8,
+		GLX_BLUE_SIZE, 8,
+		GLX_ALPHA_SIZE, 8,
+		GLX_DEPTH_SIZE, 16,
+		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
+		GLX_X_RENDERABLE, true,
+		GLX_NONE
+	};
+
+	int fbConfigNumber = 0;
+	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
+	glxFBConfig = *FBConfig;
+
+	int ctx_attribute_list[] = {
+		GLX_RENDER_TYPE, GLX_RGBA_TYPE,
+		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
+		GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+		0
+	};
+	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, GL_TRUE, ctx_attribute_list);
+	glXDestroyContext(xDisplay, old_ctx);
+	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
+
+#endif
+
 	return 1;
 }
 
 ///////////////////////////////////////////
 
+void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
+	xDisplay = (Display *) dpy;
+	visualInfo = (XVisualInfo *) vi;
+	glxDrawable = *(Drawable *) drawable;
+}
+
+//////////////////////////////////////////
 
 int32_t skg_init(const char *app_name, void *adapter_id) {
 #if defined(_WIN32)
 	int32_t result = gl_init_win32();
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	int32_t result = gl_init_egl();
+#elif defined(__linux__)
+	int32_t result = gl_init_glx();
 #elif defined(__EMSCRIPTEN__)
 	int32_t result = gl_init_emscripten();
 #endif
@@ -2222,7 +2296,9 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 	// Load OpenGL function pointers
 #ifndef __EMSCRIPTEN__
+#ifndef __linux__
 	gl_load_extensions();
+#endif
 #endif
 
 	skg_log(skg_log_info, "Using OpenGL");
@@ -2233,7 +2309,8 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, int32_t severity, int32_t length, const char *message, const void *userParam) {
+	printf("%p", glDebugMessageCallback);
+	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: break;
 		case GL_DEBUG_SEVERITY_LOW:    skg_log(skg_log_info,     message); break;
@@ -2242,16 +2319,15 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		}
 	}, nullptr);
 #endif // _DEBUG
-	
 	// Some default behavior
-	glEnable   (GL_DEPTH_TEST);  
+	glEnable   (GL_DEPTH_TEST);
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-#if _WIN32
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#if _WIN32 || __linux__
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
-	
+
 	return 1;
 }
 
@@ -2262,7 +2338,7 @@ void skg_shutdown() {
 	wglMakeCurrent(NULL, NULL);
 	ReleaseDC(gl_hwnd, gl_hdc);
 	wglDeleteContext(gl_hrc);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
@@ -2288,12 +2364,16 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
 #ifndef __EMSCRIPTEN__
-		glDisable(GL_FRAMEBUFFER_SRGB); 
+		if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
+			glEnable(GL_FRAMEBUFFER_SRGB);
+		} else {
+			glDisable(GL_FRAMEBUFFER_SRGB);
+		}
 #endif
 	} else {
 		glViewport(0, 0, gl_active_width, gl_active_height);
 #ifndef __EMSCRIPTEN__
-		glEnable(GL_FRAMEBUFFER_SRGB); 
+		glEnable(GL_FRAMEBUFFER_SRGB);
 #endif
 	}
 
@@ -2316,10 +2396,16 @@ skg_platform_data_t skg_get_platform_data() {
 #ifdef _WIN32
 	result._gl_hdc = gl_hdc;
 	result._gl_hrc = gl_hrc;
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	result._egl_display = egl_display;
 	result._egl_config  = egl_config;
 	result._egl_context = egl_context;
+#elif defined(__linux__)
+	result._x_display     = xDisplay;
+	result._visual_id     = &visualInfo->visualid;
+	result._glx_fb_config = glxFBConfig;
+	result._glx_drawable  = &glxDrawable;
+	result._glx_context   = glxContext;
 #endif
 	return result;
 }
@@ -2366,6 +2452,7 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	result.use     = use;
 	result.type    = type;
 	result.stride  = size_stride;
+	result._buffer = GLuint();
 	result._target = skg_buffer_type_to_gl(type);
 
 	glGenBuffers(1, &result._buffer);
@@ -2375,13 +2462,13 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_buffer_is_valid(const skg_buffer_t *buffer) {
 	return buffer->_buffer != 0;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t size_bytes) {
 	if (buffer->use != skg_use_dynamic) {
@@ -2393,7 +2480,7 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 	glBufferSubData(buffer->_target, 0, size_bytes, data);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offset) {
 	if (buffer->type == skg_buffer_type_constant)
@@ -2408,7 +2495,7 @@ void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offse
 		glBindBuffer(buffer->_target, buffer->_buffer);
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_buffer_destroy(skg_buffer_t *buffer) {
 	uint32_t buffer_list[] = { buffer->_buffer };
@@ -2416,7 +2503,7 @@ void skg_buffer_destroy(skg_buffer_t *buffer) {
 	*buffer = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_mesh_t skg_mesh_create(const skg_buffer_t *vert_buffer, const skg_buffer_t *ind_buffer) {
 	skg_mesh_t result = {};
@@ -2426,7 +2513,7 @@ skg_mesh_t skg_mesh_create(const skg_buffer_t *vert_buffer, const skg_buffer_t *
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
 	mesh->_vert_buffer = vert_buffer ? vert_buffer->_buffer : 0;
@@ -2454,13 +2541,13 @@ void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_set_inds(skg_mesh_t *mesh, const skg_buffer_t *ind_buffer) {
 	mesh->_ind_buffer = ind_buffer ? ind_buffer->_buffer : 0;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_bind(const skg_mesh_t *mesh) {
 	glBindVertexArray(mesh->_layout);
@@ -2468,7 +2555,7 @@ void skg_mesh_bind(const skg_mesh_t *mesh) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->_ind_buffer );
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_mesh_destroy(skg_mesh_t *mesh) {
 	uint32_t vao_list[] = {mesh->_layout};
@@ -2476,12 +2563,12 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 	*mesh = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
 	const char *file_chars = (const char *)file_data;
 
-	skg_shader_stage_t result = {}; 
+	skg_shader_stage_t result = {};
 	result.type = type;
 
 	// Include terminating character
@@ -2496,9 +2583,9 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	}
 
 	// Convert the prefix if it doesn't match the GL version we're using
-#if _WIN32
+#if _WIN32 || defined(__linux__)
 	const char   *prefix_gl      = "#version 450";
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	const char   *prefix_gl      = "#version 320 es";
 #elif __EMSCRIPTEN__
 	const char   *prefix_gl      = "#version 300 es";
@@ -2543,7 +2630,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 	//glDeleteShader(shader->shader);
@@ -2576,7 +2663,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		char text[128];
+		char text[272];
 		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
 		skg_log(skg_log_warning, text);
 		skg_log(skg_log_warning, log);
@@ -2642,11 +2729,11 @@ skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	glUseProgram(pipeline->_shader._program);
-	
+
 	switch (pipeline->transparency) {
 	case skg_transparency_blend: {
 		glEnable(GL_BLEND);
@@ -2685,7 +2772,7 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	case skg_depth_test_less_or_eq:    glDepthFunc(GL_LEQUAL);   break;
 	case skg_depth_test_never:         glDepthFunc(GL_NEVER);    break;
 	case skg_depth_test_not_equal:     glDepthFunc(GL_NOTEQUAL); break; }
-	
+
 #ifdef _WIN32
 	if (pipeline->wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -2693,63 +2780,61 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 #endif
+
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_transparency(skg_pipeline_t *pipeline, skg_transparency_ transparency) {
 	pipeline->transparency = transparency;
 }
 
-/////////////////////////////////////////// 
-
+///////////////////////////////////////////
 void skg_pipeline_set_cull(skg_pipeline_t *pipeline, skg_cull_ cull) {
 	pipeline->cull = cull;
 }
-
-/////////////////////////////////////////// 
-
+///////////////////////////////////////////
 void skg_pipeline_set_wireframe(skg_pipeline_t *pipeline, bool wireframe) {
 	pipeline->wireframe = wireframe;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_depth_write(skg_pipeline_t *pipeline, bool write) {
 	pipeline->depth_write = write;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_pipeline_set_depth_test (skg_pipeline_t *pipeline, skg_depth_test_ test) {
 	pipeline->depth_test = test;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_transparency_ skg_pipeline_get_transparency(const skg_pipeline_t *pipeline) {
 	return pipeline->transparency;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_cull_ skg_pipeline_get_cull(const skg_pipeline_t *pipeline) {
 	return pipeline->cull;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_pipeline_get_wireframe(const skg_pipeline_t *pipeline) {
 	return pipeline->wireframe;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_pipeline_get_depth_write(const skg_pipeline_t *pipeline) {
 	return pipeline->depth_write;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_depth_test_ skg_pipeline_get_depth_test(const skg_pipeline_t *pipeline) {
 	return pipeline->depth_test;
@@ -2799,12 +2884,16 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		skg_log(skg_log_critical, "Couldn't set pixel format!");
 		return {};
 	}
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, nullptr);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
+#elif defined(__linux__)
+	result._x_window = hwnd;
+	result.width  = requested_width;
+	result.height = requested_height;
 #else
 	int32_t viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
@@ -2859,7 +2948,7 @@ void main() {
 	skg_tex_set_contents(&result._surface_depth, nullptr, 1, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
 
-	skg_vert_t quad_verts[] = { 
+	skg_vert_t quad_verts[] = {
 		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
 		{ { 1, 1,0}, {0,0,1}, {1,1}, {255,255,255,255} },
 		{ { 1,-1,0}, {0,0,1}, {1,0}, {255,255,255,255} },
@@ -2872,20 +2961,22 @@ void main() {
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t height) {
 	swapchain->width  = width;
 	swapchain->height = height;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #ifdef _WIN32
 	SwapBuffers((HDC)swapchain->_hdc);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
+#elif defined(__linux__)
+	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
 #elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
@@ -2896,7 +2987,7 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #endif
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
 	gl_active_width  = swapchain->width;
@@ -2906,13 +2997,16 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 #elif _WIN32
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__ANDROID__) || defined(__linux__)
+#elif defined(__ANDROID__)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
+	skg_tex_target_bind(nullptr, clear, clear_color_4);
+#elif defined(__linux__)
+	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 #ifdef _WIN32
@@ -2922,14 +3016,16 @@ void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
 		swapchain->_hwnd = nullptr;
 		swapchain->_hdc  = nullptr;
 	}
-#elif defined(__ANDOIRD__) || defined(__linux__)
+#elif defined(__ANDOIRD__)
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
 	swapchain->_egl_surface = EGL_NO_SURFACE;
+// #elif defined(__linux__)
+	// glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 #endif
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_count) {
 	skg_tex_t result = {};
@@ -2941,9 +3037,9 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 	result.height      = height;
 	result.array_count = array_count;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
-		: array_count > 1 
+	result._target     = type == skg_tex_type_cubemap
+		? GL_TEXTURE_CUBE_MAP
+		: array_count > 1
 			? GL_TEXTURE_2D_ARRAY
 			: GL_TEXTURE_2D;
 
@@ -2962,11 +3058,11 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
-	
+
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_layer) {
 	skg_tex_t result = {};
@@ -2979,7 +3075,7 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	result.array_count = 1;
 	result.array_start = array_layer;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap 
+	result._target     = type == skg_tex_type_cubemap
 		? GL_TEXTURE_CUBE_MAP
 		: GL_TEXTURE_2D_ARRAY;
 
@@ -2993,7 +3089,7 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, skg_mip_ mip_maps) {
 	skg_tex_t result = {};
@@ -3001,8 +3097,8 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	result.use     = use;
 	result.format  = format;
 	result.mips    = mip_maps;
-	result._target = type == skg_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
+	result._target = type == skg_tex_type_cubemap
+		? GL_TEXTURE_CUBE_MAP
 		: GL_TEXTURE_2D;
 
 	glGenTextures(1, &result._texture);
@@ -3011,22 +3107,22 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	if (type == skg_tex_type_rendertarget) {
 		glGenFramebuffers(1, &result._framebuffer);
 	}
-	
+
 	return result;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 bool skg_tex_is_valid(const skg_tex_t *tex) {
 	return tex->_texture != 0;
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	if (tex->type == skg_tex_type_rendertarget) {
-		uint32_t attach = depth->format == skg_tex_fmt_depthstencil 
-			? GL_DEPTH_STENCIL_ATTACHMENT 
+		uint32_t attach = depth->format == skg_tex_fmt_depthstencil
+			? GL_DEPTH_STENCIL_ATTACHMENT
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->_target == GL_TEXTURE_2D_ARRAY) {
@@ -3048,7 +3144,7 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy) {
 	glBindTexture(tex->_target, tex->_texture);
@@ -3069,7 +3165,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	default: filter = GL_LINEAR; min_filter = GL_LINEAR;
 	}
 
-	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);	
+	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);
 	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_T, mode);
 	if (tex->type == skg_tex_type_cubemap) {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, mode);
@@ -3081,7 +3177,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 #endif
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
 	tex->width       = width;
@@ -3123,7 +3219,7 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 	// Added this in to fix textures initially? Removed it after I switched to
@@ -3138,17 +3234,19 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 void skg_tex_destroy(skg_tex_t *tex) {
 	uint32_t tex_list[] = { tex->_texture     };
 	uint32_t fb_list [] = { tex->_framebuffer };
-	glDeleteTextures    (1, tex_list);
-	glDeleteFramebuffers(1, fb_list );  
+	if(tex->_texture     != 0)
+		glDeleteTextures    (1, tex_list);
+	if(tex->_framebuffer != 0)
+		glDeleteFramebuffers(1, fb_list );
 	*tex = {};
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 uint32_t skg_buffer_type_to_gl(skg_buffer_type_ type) {
 	switch (type) {
@@ -3159,7 +3257,7 @@ uint32_t skg_buffer_type_to_gl(skg_buffer_type_ type) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	switch (format) {
@@ -3177,7 +3275,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	switch (format) {
@@ -3195,7 +3293,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	switch (format) {
@@ -3213,7 +3311,7 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	}
 }
 
-/////////////////////////////////////////// 
+///////////////////////////////////////////
 
 uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	switch (format) {
@@ -3337,7 +3435,7 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 	if (!skg_shader_file_verify(data, size, &file_version, nullptr, 0) || file_version != 1) {
 		return false;
 	}
-	
+
 	const uint8_t *bytes = (uint8_t*)data;
 	size_t at = 10;
 	memcpy(&out_file->stage_count, &bytes[at], sizeof(out_file->stage_count)); at += sizeof(out_file->stage_count);

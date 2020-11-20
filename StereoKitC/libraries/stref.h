@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define STREF_HASH_START 14695981039346656037UL
 

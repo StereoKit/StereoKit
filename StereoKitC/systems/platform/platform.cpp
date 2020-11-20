@@ -4,6 +4,7 @@
 #include "../../log.h"
 #include "win32.h"
 #include "uwp.h"
+#include "linux.h"
 #include "android.h"
 #include "openxr.h"
 
@@ -17,6 +18,8 @@ bool platform_init() {
 	// Set up any platform dependant variables
 #if __ANDROID__
 	bool result = android_init();
+#elif __linux__
+	bool result = linux_init  ();
 #elif WINDOWS_UWP
 	bool result = uwp_init    ();
 #elif _WIN32
@@ -61,6 +64,8 @@ void platform_shutdown() {
 
 #if __ANDROID__
 	android_shutdown();
+#elif __linux__
+	linux_shutdown  ();
 #elif WINDOWS_UWP
 	uwp_shutdown    ();
 #elif _WIN32
@@ -95,7 +100,7 @@ bool platform_set_mode(runtime_ mode) {
 	case runtime_mixedreality: log_diag("Starting mixed reality mode"); break;
 	case runtime_flatscreen:   log_diag("Starting flatscreen mode"); break;
 	}
-	
+
 	platform_stop_mode();
 
 	bool result = true;
@@ -104,6 +109,8 @@ bool platform_set_mode(runtime_ mode) {
 	} else if (mode == runtime_flatscreen) {
 #if __ANDROID__
 		result = android_start();
+#elif __linux__
+		result = linux_start  ();
 #elif WINDOWS_UWP
 		result = uwp_start    ();
 #elif _WIN32
@@ -127,6 +134,8 @@ void platform_step_begin() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_step_begin();
+#elif __linux__
+		linux_step_begin  ();
 #elif WINDOWS_UWP
 		uwp_step_begin    ();
 #elif _WIN32
@@ -145,6 +154,8 @@ void platform_step_end() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_step_end();
+#elif __linux__
+		linux_step_end    ();
 #elif WINDOWS_UWP
 		uwp_step_end    ();
 #elif _WIN32
@@ -163,6 +174,8 @@ void platform_present() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_vsync();
+#elif __linux__
+		linux_vsync  ();
 #elif WINDOWS_UWP
 		uwp_vsync    ();
 #elif _WIN32
@@ -181,6 +194,8 @@ void platform_stop_mode() {
 	case runtime_flatscreen: {
 #if __ANDROID__
 		android_stop();
+#elif __linux__
+		linux_stop  ();
 #elif WINDOWS_UWP
 		uwp_stop    ();
 #elif _WIN32
