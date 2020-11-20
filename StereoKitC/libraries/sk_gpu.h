@@ -2324,7 +2324,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-#if _WIN32
+#if _WIN32 || __linux__
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
 
