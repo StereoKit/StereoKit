@@ -38,6 +38,7 @@ struct render_global_buffer_t {
 	vec4     camera_pos[2];
 	vec4     camera_dir[2];
 	vec4     fingertip[2];
+	vec4     cubemap_i;
 	float    time;
 };
 struct render_blit_data_t {
@@ -72,7 +73,6 @@ vec2                   render_clip_planes = {0.01f, 50};
 float                  render_fov         = 90;
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
-tex_t                  render_default_tex;
 vec4                   render_lighting[9] = {};
 color128               render_clear_color = {0,0,0,1};
 render_list_t          render_list_primary = -1;
@@ -305,6 +305,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
+	render_global_buffer.cubemap_i = render_sky_cubemap != nullptr 
+		? vec4{ (float)render_sky_cubemap->tex.width, (float)render_sky_cubemap->tex.height, floorf(log2f(render_sky_cubemap->tex.width)), 0 }
+		: vec4{};
 
 	// Upload shader globals and set them active!
 	skg_buffer_set_contents(&render_shader_globals, &render_global_buffer, sizeof(render_global_buffer_t));
@@ -418,8 +421,7 @@ bool render_init() {
 	render_sky_mat  = material_create(shader_find(default_id_shader_sky));
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
-
-	render_default_tex = tex_find(default_id_tex);
+	
 	render_list_primary = render_list_create();
 	render_list_push(render_list_primary);
 
@@ -451,7 +453,6 @@ void render_shutdown() {
 	material_release(render_sky_mat);
 	mesh_release    (render_sky_mesh);
 	tex_release     (render_sky_cubemap);
-	tex_release     (render_default_tex);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		skg_buffer_destroy(&render_instance_buffers[i].buffer);

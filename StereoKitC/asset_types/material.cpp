@@ -304,8 +304,16 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 				if (material->args.textures[i] != nullptr)
 					tex_release(material->args.textures[i]);
 				material->args.textures[i] = value;
-				if (value != nullptr)
+				if (value != nullptr) {
 					assets_addref(value->header);
+
+					// Tell the shader about the texture dimensions, if it has
+					// a parameter for it. Texture info will get put into any
+					// float4 param with the name [texname]_i
+					uint64_t tex_info_hash = string_hash("_i", id);
+					vec4     info = {value->tex.width, value->tex.height, (uint32_t)log2(value->tex.width), 0};
+					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
+				}
 			}
 			return true;
 		}

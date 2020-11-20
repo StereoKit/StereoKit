@@ -11,6 +11,8 @@
 #pragma clang diagnostic pop
 #endif
 
+#define MATH_PI 3.1415926535898f
+
 namespace sk {
 	
 void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
@@ -70,11 +72,12 @@ inline uint32_t mini(uint32_t a, uint32_t b) { return a < b ? a : b; }
 inline int64_t  mini(int64_t  a, int64_t  b) { return a < b ? a : b; }
 inline uint64_t mini(uint64_t a, uint64_t b) { return a < b ? a : b; }
 
-inline float math_lerp   (float a, float b, float t) { return a + (b - a) * t; }
-inline float math_lerp_cl(float a, float b, float t) { return a + (b - a) * fminf(1,t); }
+inline float math_lerp    (float a, float b, float t) { return a + (b - a) * t; }
+inline float math_lerp_cl (float a, float b, float t) { return a + (b - a) * fminf(1,t); }
+inline float math_saturate(float x)                   { return fmaxf(0, fminf(1, x)); }
 
 inline float math_ease_overshoot(float a, float b, float overshoot, float t) { t = 1 - t; return math_lerp(a,b, 1-(t*t * ((overshoot + 1) * t - overshoot))); }
-inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*3.14159f); }
+inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*MATH_PI); }
 
 vec3 bounds_corner (const bounds_t &bounds, int32_t index8);
 vec3 math_cubemap_corner(int i);
