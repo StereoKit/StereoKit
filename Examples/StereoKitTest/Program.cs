@@ -80,13 +80,13 @@ class Program
 
     static void CommonInit()
     {
-        Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
+        /*Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
 
         floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
-        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
+        floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));*/
 
         demoSelectPose.position    = new Vec3(0, 0, -0.4f);
         demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
@@ -97,8 +97,8 @@ class Program
             StereoKitApp.Quit();
 
         // If we can't see the world, we'll draw a floor!
-        if (StereoKitApp.System.displayType == Display.Opaque)
-            Renderer.Add(floorMesh, floorTr, Color.White);
+        //if (StereoKitApp.System.displayType == Display.Opaque)
+        //    Renderer.Add(floorMesh, floorTr, Color.White);
 
         // Skip selection window if we're in test mode
         if (Tests.IsTesting)

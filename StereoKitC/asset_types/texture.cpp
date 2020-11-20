@@ -298,11 +298,11 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
 		texture->tex = skg_tex_create(type, use, format, use_mips);
 
-		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
 		if (texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
-		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
