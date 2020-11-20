@@ -385,7 +385,7 @@ typedef struct skg_platform_data_t {
 
 int32_t             skg_init                     (const char *app_name, void *adapter_id);
 void                skg_shutdown                 ();
-void                skg_setup_xlib               (void *dpy, void *vi, void *win);
+void                skg_setup_xlib               (void *dpy, void *vi, void *drawable);
 void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
 void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
 skg_platform_data_t skg_get_platform_data        ();
@@ -1713,7 +1713,6 @@ EGLConfig  egl_config;
 #elif defined(__linux__)
 
 #include <GL/glxew.h>
-#include <GL/glut.h>
 
 Display *xDisplay;
 XVisualInfo *visualInfo;
@@ -2274,10 +2273,10 @@ int32_t gl_init_glx() {
 
 ///////////////////////////////////////////
 
-void skg_setup_xlib(void *dpy, void *vi, void *win) {
+void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
 	xDisplay = (Display *) dpy;
 	visualInfo = (XVisualInfo *) vi;
-	glxDrawable = *(Window *) win;
+	glxDrawable = *(Drawable *) drawable;
 }
 
 //////////////////////////////////////////
@@ -2325,7 +2324,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-#if _WIN32
+#if _WIN32 || __linux__
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
 
@@ -2365,7 +2364,11 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
 #ifndef __EMSCRIPTEN__
-		glDisable(GL_FRAMEBUFFER_SRGB);
+		if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
+			glEnable(GL_FRAMEBUFFER_SRGB);
+		} else {
+			glDisable(GL_FRAMEBUFFER_SRGB);
+		}
 #endif
 	} else {
 		glViewport(0, 0, gl_active_width, gl_active_height);

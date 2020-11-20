@@ -223,7 +223,7 @@ void platform_sleep(int ms) {
 #ifdef _WIN32
 	Sleep(ms);
 #elif defined(__linux__)
-	sleep(ms * 1000);
+    sleep(ms / 1000);
 #else
 	usleep(ms * 1000);
 #endif
