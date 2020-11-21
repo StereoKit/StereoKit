@@ -309,7 +309,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Message>Compiling shader: %(FullPath)</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
     </CustomBuild>
-    <None Include="shaders_builtin\stereokit.hlslinc" />
+    <None Include="shaders_builtin\stereokit.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

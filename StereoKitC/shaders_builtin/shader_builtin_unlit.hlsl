@@ -1,4 +1,4 @@
-#include "stereokit.hlslinc"
+#include "stereokit.hlsli"
 
 //--name = sk/unlit
 //--color:color = 1, 1, 1, 1
