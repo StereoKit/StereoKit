@@ -148,6 +148,9 @@
     <ClCompile Include="sk_math.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\linux.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -343,6 +346,9 @@
     </ClInclude>
     <ClInclude Include="libraries\memory.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\platform\linux.h">
+      <Filter>systems\platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

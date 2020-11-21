@@ -1,7 +1,7 @@
-#ifdef __ANDROID__
+#include "android.h"
+#if defined(SK_OS_ANDROID)
 
 #include "../../log.h"
-#include "android.h"
 #include "openxr.h"
 #include "flatscreen_input.h"
 #include "../render.h"

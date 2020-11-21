@@ -1,4 +1,5 @@
 #include "defaults.h"
+#include "platform/platform_utils.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 
@@ -161,13 +162,7 @@ bool defaults_init() {
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 
 	// Text!
-#if __ANDROID__
-	sk_default_font = font_create("/system/fonts/DroidSans.ttf");
-#elif defined(__linux__)
-	sk_default_font = font_create("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
-#else
-	sk_default_font = font_create("C:/Windows/Fonts/segoeui.ttf");
-#endif
+	sk_default_font = font_create(platform_default_font());
 	if (sk_default_font == nullptr)
 		return false;
 	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color32{ 255,255,255,255 });

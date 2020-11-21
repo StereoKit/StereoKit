@@ -1,6 +1,7 @@
 #pragma once
 
-#ifdef __linux__
+#include "platform_utils.h"
+#if defined(SK_OS_LINUX)
 
 namespace sk {
 

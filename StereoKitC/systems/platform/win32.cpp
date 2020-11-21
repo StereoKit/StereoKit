@@ -1,6 +1,7 @@
-#if defined(_WIN32) && !defined(WINDOWS_UWP)
-
 #include "win32.h"
+
+#if defined(SK_OS_WINDOWS)
+
 #include "flatscreen_input.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -184,4 +185,4 @@ void *win32_hwnd() {
 
 } // namespace sk
 
-#endif // defined(_WIN32) && !defined(WINDOWS_UWP)
+#endif // defined(SK_OS_WINDOWS)

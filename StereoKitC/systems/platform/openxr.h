@@ -2,21 +2,22 @@
 
 #include "../../stereokit.h"
 #include "../../libraries/sk_gpu.h"
+#include "../platform/platform_utils.h"
 
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 	#include <android/native_activity.h>
 	#include <time.h>
 	#define XR_USE_PLATFORM_ANDROID
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 	#include <time.h>
 	#define XR_USE_PLATFORM_XLIB
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	#define XR_USE_PLATFORM_WIN32
 	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
 	#if defined(SKG_OPENGL)
@@ -91,7 +92,7 @@
 #define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLESGraphicsRequirementsKHR
 #define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLESGraphicsRequirementsKHR"
 
-#if defined(__ANDROID__)
+#if defined(SK_OS_ANDROID)
 
 #define XrGraphicsBinding XrGraphicsBindingOpenGLESAndroidKHR
 #define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR

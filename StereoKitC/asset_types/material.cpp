@@ -79,6 +79,11 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_create(shader_t shader) {
+	if (shader == nullptr) {
+		// TODO: Add a default shader if null is provided here
+		log_warn("TODO: Add a default shader if null is provided to material_create");
+		return nullptr;
+	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
 	result->alpha_mode = transparency_none;
@@ -311,7 +316,7 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 					// a parameter for it. Texture info will get put into any
 					// float4 param with the name [texname]_i
 					uint64_t tex_info_hash = string_hash("_i", id);
-					vec4     info = {value->tex.width, value->tex.height, (uint32_t)log2(value->tex.width), 0};
+					vec4     info = {(float)value->tex.width, (float)value->tex.height, (float)(uint32_t)log2(value->tex.width), 0};
 					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
 				}
 			}

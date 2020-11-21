@@ -8,30 +8,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if WINDOWS_UWP
+#ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
 
+#include <windows.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #endif
 
-#if _WIN32
+#ifdef SK_OS_WINDOWS
 #include "win32.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
-#if __ANDROID__
+#ifdef SK_OS_ANDROID
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <errno.h>
 #endif
 
-#if __linux__
+#ifdef SK_OS_LINUX
 #include <unistd.h>
 #include "linux.h"
 #endif
@@ -42,7 +43,7 @@ namespace sk {
 
 bool in_messagebox = false;
 void platform_msgbox_err(const char *text, const char *header) {
-#if WINDOWS_UWP
+#if defined(SK_OS_WINDOWS_UWP)
 	char *src_text  = string_copy(text);
 	char *src_title = string_copy(header);
 	in_messagebox = true;
@@ -73,9 +74,9 @@ void platform_msgbox_err(const char *text, const char *header) {
 		dialog.ShowAsync();
 	});
 	while (in_messagebox) {
-		Sleep(100);
+		platform_sleep(100);
 	}
-#elif _MSC_VER
+#elif defined(SK_OS_WINDOWS)
 	MessageBox(nullptr, text, header, MB_OK | MB_ICONERROR);
 #else
 	log_err("No messagebox capability for this platform!");
@@ -89,7 +90,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	*out_size = 0;
 
 	// Open file
-#if __ANDROID__
+#if defined(SK_OS_ANDROID)
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
 	FILE   *fp;
@@ -107,7 +108,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 		log_errf("Can't find file %s!", filename);
 		return false;
 	}
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
@@ -134,7 +135,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
 
-#if __ANDROID__
+#if defined(SK_OS_ANDROID)
 	if (asset) AAsset_close(asset);
 #endif
 
@@ -149,15 +150,15 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 bool platform_get_cursor(vec2 &out_pos) {
 	bool result = false;
-#if WINDOWS_UWP
+#if defined(SK_OS_WINDOWS_UWP)
 	result = uwp_get_mouse(out_pos);
-#elif _MSC_VER
+#elif defined(SK_OS_WINDOWS)
 	POINT cursor_pos;
 	result =  GetCursorPos  (&cursor_pos)
 		   && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
 	out_pos.x = (float)cursor_pos.x;
 	out_pos.y = (float)cursor_pos.y;
-#elif defined(__linux__)
+#elif defined(SK_OS_LINUX)
 	result = linux_get_cursor(out_pos);
 #else
 #endif
@@ -167,9 +168,9 @@ bool platform_get_cursor(vec2 &out_pos) {
 ///////////////////////////////////////////
 
 void platform_set_cursor(vec2 window_pos) {
-#if WINDOWS_UWP
+#if defined(SK_OS_WINDOWS_UWP)
 	uwp_set_mouse(window_pos);
-#elif _MSC_VER
+#elif defined(SK_OS_WINDOWS)
 	POINT pt = { (LONG)window_pos.x, (LONG)window_pos.y };
 	ClientToScreen((HWND)win32_hwnd(), &pt);
 	SetCursorPos  (pt.x, pt.y);
@@ -179,9 +180,9 @@ void platform_set_cursor(vec2 window_pos) {
 ///////////////////////////////////////////
 
 float platform_get_scroll() {
-#if WINDOWS_UWP
+#if defined(SK_OS_WINDOWS_UWP)
 	return uwp_get_scroll();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 	return win32_scroll;
 #else
 	return 0;
@@ -191,11 +192,11 @@ float platform_get_scroll() {
 ///////////////////////////////////////////
 
 bool platform_key_down(key_ key) {
-#if WINDOWS_UWP
+#if defined(SK_OS_WINDOWS_UWP)
 	return uwp_key_down(key);
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
-#elif defined(__linux__)
+#elif defined(SK_OS_LINUX)
 	return linux_key_down(key);
 #else
 	return false;
@@ -205,9 +206,9 @@ bool platform_key_down(key_ key) {
 ///////////////////////////////////////////
 
 void platform_debug_output(log_ level, const char *text) {
-#if _WIN32
+#if defined(SK_OS_WINDOWS)
 	OutputDebugStringA(text);
-#elif defined(__ANDROID__)
+#elif defined(SK_OS_ANDROID)
 	int32_t priority = ANDROID_LOG_INFO;
 	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
 	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
@@ -220,12 +221,24 @@ void platform_debug_output(log_ level, const char *text) {
 ///////////////////////////////////////////
 
 void platform_sleep(int ms) {
-#ifdef _WIN32
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	Sleep(ms);
-#elif defined(__linux__)
+#elif defined(SK_OS_LINUX)
     sleep(ms / 1000);
 #else
 	usleep(ms * 1000);
+#endif
+}
+
+///////////////////////////////////////////
+
+const char *platform_default_font() {
+#if   defined(SK_OS_ANDROID)
+	return "/system/fonts/DroidSans.ttf";
+#elif defined(SK_OS_LINUX)
+	return "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+#else
+	return "C:/Windows/Fonts/segoeui.ttf";
 #endif
 }
 

@@ -240,7 +240,7 @@ bool oxri_init() {
 	}
 
 	// khr / simple_controller
-#ifndef __ANDROID__
+#if !defined(SK_OS_ANDROID)
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);

@@ -30,6 +30,26 @@ sk_gpu.h
 #define SKG_OPENGL
 #endif
 
+// If we're using OpenGL, set up some additional defines so we know what
+// flavor of GL is being used, and how to load it.
+#ifdef SKG_OPENGL
+	#if   defined(__EMSCRIPTEN__)
+		#define _SKG_GL_WEB
+		#define _SKG_GL_LOAD_EMSCRIPTEN
+	#elif defined(__ANDROID__)
+		#define _SKG_GL_ES
+		#define _SKG_GL_LOAD_EGL
+		#define _SKG_GL_MAKE_FUNCTIONS
+	#elif defined(__linux__)
+		#define _SKG_GL_DESKTOP
+		#define _SKG_GL_LOAD_GLX
+	#elif defined(_WIN32)
+		#define _SKG_GL_DESKTOP
+		#define _SKG_GL_LOAD_WGL
+		#define _SKG_GL_MAKE_FUNCTIONS
+	#endif
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -218,7 +238,7 @@ typedef struct skg_shader_meta_t {
 
 ///////////////////////////////////////////
 
-#if defined(SKG_DIRECT3D11)
+#if   defined(SKG_DIRECT3D11)
 
 
 #include <d3d11.h>
@@ -357,18 +377,18 @@ typedef struct skg_swapchain_t {
 	int32_t  width;
 	int32_t  height;
 
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	void *_hdc;
 	void *_hwnd;
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	void *_egl_surface;
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	void *_x_display;
 	void *_visual_id;
 	void *_glx_fb_config;
 	void *_glx_drawable;
 	void *_glx_context;
-#elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
 	skg_shader_t   _convert_shader;
@@ -380,11 +400,11 @@ typedef struct skg_swapchain_t {
 } skg_swapchain_t;
 
 typedef struct skg_platform_data_t {
-#if defined(__ANDROID__) || defined(__linux__)
+#if   defined(_SKG_GL_LOAD_EGL)
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
-#elif _WIN32
+#elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
 #endif
@@ -1820,46 +1840,40 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 
 ///////////////////////////////////////////
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#include <emscripten/html5.h>
-#include <GLES3/gl32.h>
+#if   defined(_SKG_GL_LOAD_EMSCRIPTEN)
+	#include <emscripten.h>
+	#include <emscripten/html5.h>
+	#include <GLES3/gl32.h>
+#elif defined(_SKG_GL_LOAD_EGL)
+	#include <EGL/egl.h>
+	#include <EGL/eglext.h>
 
-#elif defined(__ANDROID__)
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
+	EGLDisplay egl_display;
+	EGLContext egl_context;
+	EGLConfig  egl_config;
+#elif defined(_SKG_GL_LOAD_GLX)
+	#include <GL/glxew.h>
 
-EGLDisplay egl_display;
-EGLContext egl_context;
-EGLConfig  egl_config;
+	Display     *xDisplay;
+	XVisualInfo *visualInfo;
+	GLXFBConfig  glxFBConfig;
+	GLXDrawable  glxDrawable;
+	GLXContext   glxContext;
+#elif defined(_SKG_GL_LOAD_WGL)
+	#pragma comment(lib, "opengl32.lib")
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
 
-#elif defined(__linux__)
-#include <GL/glxew.h>
-
-Display *xDisplay;
-XVisualInfo *visualInfo;
-GLXFBConfig glxFBConfig;
-GLXDrawable glxDrawable;
-GLXContext glxContext;
-
-#elif defined(_WIN32)
-#pragma comment(lib, "opengl32.lib")
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-HWND  gl_hwnd;
-HDC   gl_hdc;
-HGLRC gl_hrc;
+	HWND  gl_hwnd;
+	HDC   gl_hdc;
+	HGLRC gl_hrc;
 #endif
 
 ///////////////////////////////////////////
 // GL loader                             //
 ///////////////////////////////////////////
 
-// Reference from here:
-// https://github.com/ApoorvaJ/Papaya/blob/3808e39b0f45d4ca4972621c847586e4060c042a/src/libs/gl_lite.h
-
+#ifdef _SKG_GL_LOAD_WGL
 #define WGL_DRAW_TO_WINDOW_ARB            0x2001
 #define WGL_SUPPORT_OPENGL_ARB            0x2010
 #define WGL_DOUBLE_BUFFER_ARB             0x2011
@@ -1876,6 +1890,14 @@ HGLRC gl_hrc;
 #define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
 #define WGL_CONTEXT_FLAGS_ARB             0x2094
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+
+typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
+wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
+wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+#endif
+
+#ifdef _SKG_GL_MAKE_FUNCTIONS
 
 #define GL_BLEND 0x0BE2
 #define GL_ZERO 0
@@ -2042,31 +2064,14 @@ HGLRC gl_hrc;
 #define GL_DEBUG_SEVERITY_MEDIUM       0x9147
 #define GL_DEBUG_SEVERITY_LOW          0x9148
 
-#if defined(_WIN32) || defined(__ANDROID__)
+// Reference from here:
+// https://github.com/ApoorvaJ/Papaya/blob/3808e39b0f45d4ca4972621c847586e4060c042a/src/libs/gl_lite.h
 
 #ifdef _WIN32
-	// Function pointers we need to actually initialize OpenGL
-	typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-	typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
-	wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
-	wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
-
-	#define GLDECL __stdcall
-	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
-	// Some GL functions can only be loaded with wglGetProcAddress, and others
-	// can only be loaded by GetProcAddress.
-	void *gl_get_function(const char *name) {
-		static HMODULE dll = LoadLibraryA("opengl32.dll");
-		void *f = (void *)wglGetProcAddress(name);
-		if (f == 0 || (f == (void*)0x1) || (f == (void*)0x2) || (f == (void*)0x3) || (f == (void*)-1) ) {
-			f = (void *)GetProcAddress(dll, name);
-		}
-		return f;
-	}
+#define GLDECL WINAPI
 #else
-	#define GLDECL
-	#define gl_get_function(x) eglGetProcAddress(x)
-#endif // _WIN32
+#define GLDECL
+#endif
 
 typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char* message, const void* userParam);
 
@@ -2140,6 +2145,22 @@ GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint3
 GLE(const char *, glGetString,           uint32_t name) \
 GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 
+#if defined(_SKG_GL_LOAD_WGL)
+	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
+	// Some GL functions can only be loaded with wglGetProcAddress, and others
+	// can only be loaded by GetProcAddress.
+	void *gl_get_function(const char *name) {
+		static HMODULE dll = LoadLibraryA("opengl32.dll");
+		void *f = (void *)wglGetProcAddress(name);
+		if (f == 0 || (f == (void*)0x1) || (f == (void*)0x2) || (f == (void*)0x3) || (f == (void*)-1) ) {
+			f = (void *)GetProcAddress(dll, name);
+		}
+		return f;
+	}
+#elif defined(_SKG_GL_LOAD_EGL)
+	#define gl_get_function(x) eglGetProcAddress(x)
+#endif
+
 #define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
 GL_API
 #undef GLE
@@ -2150,7 +2171,7 @@ static void gl_load_extensions( ) {
 #undef GLE
 }
 
-#endif // _WIN32 or __ANDROID__ or __linux__
+#endif // _SKG_GL_MAKE_FUNCTIONS
 
 ///////////////////////////////////////////
 
@@ -2168,8 +2189,8 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format);
 ///////////////////////////////////////////
 
 // Some nice reference: https://gist.github.com/nickrolfe/1127313ed1dbf80254b614a721b3ee9c
-int32_t gl_init_win32() {
-#ifdef _WIN32
+int32_t gl_init_wgl() {
+#ifdef _SKG_GL_LOAD_WGL
 	///////////////////////////////////////////
 	// Dummy initialization for pixel format //
 	///////////////////////////////////////////
@@ -2217,6 +2238,7 @@ int32_t gl_init_win32() {
 	}
 
 	// Load the function pointers we need to actually initialize OpenGL
+	// Function pointers we need to actually initialize OpenGL
 	wglChoosePixelFormatARB    = (wglChoosePixelFormatARB_proc   )wglGetProcAddress("wglChoosePixelFormatARB");
 	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_proc)wglGetProcAddress("wglCreateContextAttribsARB");
 
@@ -2288,7 +2310,7 @@ int32_t gl_init_win32() {
 		skg_log(skg_log_critical, "Couldn't activate GL context!");
 		return false;
 	}
-#endif // _WIN32
+#endif // _SKG_GL_LOAD_WGL
 	return 1;
 }
 
@@ -2298,7 +2320,7 @@ int32_t gl_init_emscripten() {
 	// Some reference code:
 	// https://github.com/emscripten-core/emscripten/blob/master/tests/glbook/Common/esUtil.c
 	// https://github.com/emscripten-core/emscripten/tree/master/tests/minimal_webgl
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_LOAD_EMSCRIPTEN
 	EmscriptenWebGLContextAttributes attrs;
 	emscripten_webgl_init_context_attributes(&attrs);
 	attrs.alpha                     = false;
@@ -2307,14 +2329,14 @@ int32_t gl_init_emscripten() {
 	attrs.majorVersion              = 2;
 	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("canvas", &attrs);
 	emscripten_webgl_make_context_current(ctx);
-#endif // __EMSCRIPTEN__
+#endif // _SKG_GL_LOAD_EMSCRIPTEN
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 int32_t gl_init_egl() {
-#if defined(__ANDROID__)
+#ifdef _SKG_GL_LOAD_EGL
 	const EGLint attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_CONFORMANT,   EGL_OPENGL_ES3_BIT_KHR,
@@ -2353,15 +2375,14 @@ int32_t gl_init_egl() {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
-#endif // defined(__ANDROID__)
+#endif // _SKG_GL_LOAD_EGL
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 int32_t gl_init_glx() {
-#if defined(__linux__)
-
+#ifdef _SKG_GL_LOAD_GLX
 	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
 	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
 
@@ -2400,14 +2421,14 @@ int32_t gl_init_glx() {
 	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
 
-#endif
+#endif // _SKG_GL_LOAD_GLX
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
-#if defined(__linux__)
+#ifdef _SKG_GL_LOAD_GLX
 	xDisplay    =  (Display    *) dpy;
 	visualInfo  =  (XVisualInfo*) vi;
 	glxDrawable = *(Drawable   *) drawable;
@@ -2417,27 +2438,27 @@ void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
 ///////////////////////////////////////////
 
 int32_t skg_init(const char *app_name, void *adapter_id) {
-#if defined(_WIN32)
-	int32_t result = gl_init_win32();
-#elif defined(__ANDROID__)
+#if   defined(_SKG_GL_LOAD_WGL)
+	int32_t result = gl_init_wgl();
+#elif defined(_SKG_GL_LOAD_EGL)
 	int32_t result = gl_init_egl();
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	int32_t result = gl_init_glx();
-#elif defined(__EMSCRIPTEN__)
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN)
 	int32_t result = gl_init_emscripten();
 #endif
 	if (!result)
 		return result;
 
 	// Load OpenGL function pointers
-#if !defined(__EMSCRIPTEN__) && !defined(__linux__)
+#ifdef _SKG_GL_MAKE_FUNCTIONS
 	gl_load_extensions();
 #endif
 
 	skg_log(skg_log_info, "Using OpenGL");
 	skg_log(skg_log_info, (char*)glGetString(GL_VERSION));
 
-#if _DEBUG && !defined(__EMSCRIPTEN__)
+#if _DEBUG && !defined(_SKG_GL_WEB)
 	skg_log(skg_log_info, "Debug info enabled.");
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
@@ -2450,14 +2471,14 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		case GL_DEBUG_SEVERITY_HIGH:   skg_log(skg_log_critical, message); break;
 		}
 	}, nullptr);
-#endif // _DEBUG
+#endif // _DEBUG && !defined(_SKG_GL_WEB)
 	
 	// Some default behavior
 	glEnable   (GL_DEPTH_TEST);  
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-#if _WIN32 || __linux__
+#ifdef _SKG_GL_DESKTOP
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
 	
@@ -2467,11 +2488,11 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 ///////////////////////////////////////////
 
 void skg_shutdown() {
-#ifdef _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent(NULL, NULL);
 	ReleaseDC(gl_hwnd, gl_hdc);
 	wglDeleteContext(gl_hrc);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
@@ -2500,7 +2521,7 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 		glViewport(0, 0, gl_active_width, gl_active_height);
 	}
 
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 	if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
 		glEnable(GL_FRAMEBUFFER_SRGB);
 	} else {
@@ -2524,14 +2545,14 @@ skg_tex_t *skg_tex_target_get() {
 
 skg_platform_data_t skg_get_platform_data() {
 	skg_platform_data_t result = {};
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	result._gl_hdc = gl_hdc;
 	result._gl_hrc = gl_hrc;
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	result._egl_display = egl_display;
 	result._egl_config  = egl_config;
 	result._egl_context = egl_context;
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	result._x_display     = xDisplay;
 	result._visual_id     = &visualInfo->visualid;
 	result._glx_fb_config = glxFBConfig;
@@ -2557,7 +2578,7 @@ bool skg_capability(skg_cap_ capability) {
 	switch (capability) {
 	case skg_cap_tex_layer_select: return check_ext("GL_AMD_vertex_shader_layer");
 	case skg_cap_wireframe:
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		return false;
 #else
 		return glPolygonMode != nullptr;
@@ -2569,7 +2590,7 @@ bool skg_capability(skg_cap_ capability) {
 ///////////////////////////////////////////
 
 void skg_draw(int32_t index_start, int32_t index_base, int32_t index_count, int32_t instance_count) {
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 	glDrawElementsInstanced(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, (void*)(index_start*sizeof(uint32_t)), instance_count);
 #else
 	glDrawElementsInstancedBaseVertex(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, (void*)(index_start*sizeof(uint32_t)), instance_count, index_base);
@@ -2628,7 +2649,7 @@ void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offse
 	if (buffer->type == skg_buffer_type_constant)
 		glBindBufferBase(buffer->_target, bind.slot, buffer->_buffer);
 	else if (buffer->type == skg_buffer_type_vertex) {
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		glBindBuffer(buffer->_target, buffer->_buffer);
 #else
 		glBindVertexBuffer(bind.slot, buffer->_buffer, offset, buffer->stride);
@@ -2725,11 +2746,11 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	}
 
 	// Convert the prefix if it doesn't match the GL version we're using
-#if defined(__ANDROID__) 
+#if   defined(_SKG_GL_ES)
 	const char   *prefix_gl      = "#version 320 es";
-#elif defined(_WIN32) || defined(__linux__)
+#elif defined(_SKG_GL_DESKTOP)
 	const char   *prefix_gl      = "#version 450";
-#elif __EMSCRIPTEN__
+#elif defined(_SKG_GL_WEB)
 	const char   *prefix_gl      = "#version 300 es";
 #endif
 	const size_t  prefix_gl_size = strlen(prefix_gl);
@@ -2814,7 +2835,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		glDeleteProgram(result._program);
 		result._program = 0;
 	} else {
-#if __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		for (size_t i = 0; i < meta->buffer_count; i++) {
 			char t_name[64];
 			snprintf(t_name, 64, "type_%s", meta->buffers[i].name);
@@ -2917,7 +2938,7 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	case skg_depth_test_never:         glDepthFunc(GL_NEVER);    break;
 	case skg_depth_test_not_equal:     glDepthFunc(GL_NOTEQUAL); break; }
 	
-#ifdef _WIN32
+#ifdef _SKG_GL_DESKTOP
 	if (pipeline->wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	} else {
@@ -2998,7 +3019,7 @@ void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
 skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height) {
 	skg_swapchain_t result = {};
 
-#if _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	result._hwnd  = hwnd;
 	result._hdc   = GetDC((HWND)hwnd);
 	result.width  = requested_width;
@@ -3033,7 +3054,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		result = {};
 		return result;
 	}
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	EGLint attribs[] = { 
 		EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
 		EGL_NONE };
@@ -3042,7 +3063,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	result._x_window = hwnd;
 	result.width  = requested_width;
 	result.height = requested_height;
@@ -3053,7 +3074,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	result.height = viewport[3];
 #endif
 
-#if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#if defined(_SKG_GL_WEB) && defined(SKG_MANUAL_SRGB)
 	const char *vs = R"_(#version 300 es
 layout(location = 0) in vec4 in_var_SV_POSITION;
 layout(location = 1) in vec3 in_var_NORMAL;
@@ -3122,7 +3143,7 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 	swapchain->width  = width;
 	swapchain->height = height;
 
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 	skg_tex_fmt_ color_fmt = swapchain->_surface.format;
 	skg_tex_fmt_ depth_fmt = swapchain->_surface_depth.format;
 
@@ -3141,13 +3162,13 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 ///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	SwapBuffers((HDC)swapchain->_hdc);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
-#elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
 	skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
@@ -3162,15 +3183,15 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
 	gl_active_width  = swapchain->width;
 	gl_active_height = swapchain->height;
-#if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#if   defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_target_bind(&swapchain->_surface, clear, clear_color_4);
-#elif _WIN32
+#elif defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
@@ -3179,14 +3200,14 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 ///////////////////////////////////////////
 
 void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
-#ifdef _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	if (swapchain->_hdc != nullptr) {
 		wglMakeCurrent(nullptr, nullptr);
 		ReleaseDC((HWND)swapchain->_hwnd, (HDC)swapchain->_hdc);
 		swapchain->_hwnd = nullptr;
 		swapchain->_hdc  = nullptr;
 	}
-#elif defined(__ANDOIRD__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
 	swapchain->_egl_surface = EGL_NO_SURFACE;
@@ -3216,7 +3237,7 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 
 		glBindFramebuffer(GL_FRAMEBUFFER, result._framebuffer);
 		if (array_count != 1) {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0);
 #else
 			skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3297,7 +3318,7 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 			if (tex->array_count == 1) {
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, tex->array_start);
 			} else {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 				glFramebufferTexture(GL_FRAMEBUFFER, attach, depth->_texture, 0);
 #else
 				skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3340,7 +3361,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	}
 	glTexParameteri(tex->_target, GL_TEXTURE_MIN_FILTER, min_filter);
 	glTexParameteri(tex->_target, GL_TEXTURE_MAG_FILTER, filter    );
-#ifdef _WIN32
+#ifdef _SKG_GL_DESKTOP
 	glTexParameterf(tex->_target, GL_TEXTURE_MAX_ANISOTROPY, sample == skg_tex_sample_anisotropic ? anisotropy : 1.0f);
 #endif
 }
@@ -3382,7 +3403,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	if (tex->type == skg_tex_type_rendertarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->array_count != 1) {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0);
 #else
 			skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3397,7 +3418,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 ///////////////////////////////////////////
 
 bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
-#if defined(__EMSCRIPTEN__ ) || defined(__ANDROID__)
+#if defined(_SKG_GL_WEB) || defined(_SKG_GL_ES)
 	return false;
 #else
 	int64_t format = skg_tex_fmt_to_gl_layout(tex->format);
@@ -3504,7 +3525,12 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rgba64:
 	case skg_tex_fmt_rgba128:       return GL_RGBA;
 	case skg_tex_fmt_bgra32:
-	case skg_tex_fmt_bgra32_linear: return GL_BGRA;
+	case skg_tex_fmt_bgra32_linear:
+		#ifdef _SKG_GL_WEB // WebGL has no GL_BGRA?
+		return GL_RGBA;
+		#else
+		return GL_BGRA;
+		#endif
 	case skg_tex_fmt_depth16:
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH_STENCIL;
@@ -4071,11 +4097,11 @@ skg_shader_stage_t skg_shader_file_create_stage(const skg_shader_file_t *file, s
 #if defined(SKG_DIRECT3D11) || defined(SKG_DIRECT3D12)
 	language = skg_shader_lang_hlsl;
 #elif defined(SKG_OPENGL)
-	#ifdef __EMSCRIPTEN__
+	#if   defined(_SKG_GL_WEB)
 		language = skg_shader_lang_glsl_web;
-	#elif defined(__ANDROID__)
+	#elif defined(_SKG_GL_ES)
 		language = skg_shader_lang_glsl_es;
-	#else
+	#elif defined(_SKG_GL_DESKTOP)
 		language = skg_shader_lang_glsl;
 	#endif
 #elif defined(SKG_VULKAN)

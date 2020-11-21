@@ -1,4 +1,5 @@
-#ifdef WINDOWS_UWP
+#include "platform_utils.h"
+#if defined(SK_OS_WINDOWS_UWP)
 
 #include <dxgi1_2.h>
 #include <process.h>
@@ -452,4 +453,4 @@ void uwp_stop() {
 
 }
 
-#endif // WINDOWS_UWP
+#endif // defined(SK_OS_WINDOWS_UWP)
