@@ -151,6 +151,9 @@
     <ClCompile Include="systems\platform\linux.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\ferr_hash.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -349,6 +352,9 @@
     </ClInclude>
     <ClInclude Include="systems\platform\linux.h">
       <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\ferr_hash.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
