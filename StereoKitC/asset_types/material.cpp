@@ -79,6 +79,11 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_create(shader_t shader) {
+	if (shader == nullptr) {
+		// TODO: Add a default shader if null is provided here
+		log_warn("TODO: Add a default shader if null is provided to material_create");
+		return nullptr;
+	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
 	result->alpha_mode = transparency_none;
@@ -248,6 +253,7 @@ void material_set_float(material_t material, const char *name, float value) {
 	
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -258,6 +264,7 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -268,6 +275,7 @@ void material_set_color(material_t material, const char *name, color128 value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -278,6 +286,7 @@ void material_set_vector(material_t material, const char *name, vec4 value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -288,6 +297,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -299,8 +309,16 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 				if (material->args.textures[i] != nullptr)
 					tex_release(material->args.textures[i]);
 				material->args.textures[i] = value;
-				if (value != nullptr)
+				if (value != nullptr) {
 					assets_addref(value->header);
+
+					// Tell the shader about the texture dimensions, if it has
+					// a parameter for it. Texture info will get put into any
+					// float4 param with the name [texname]_i
+					uint64_t tex_info_hash = string_hash("_i", id);
+					vec4     info = {(float)value->tex.width, (float)value->tex.height, (float)(uint32_t)log2(value->tex.width), 0};
+					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
+				}
 			}
 			return true;
 		}
@@ -348,6 +366,7 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 		if (i != -1) {
 			const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 			memcpy(((uint8_t *)material->args.buffer + info->offset), value, info->size);
+			material->args.buffer_dirty = true;
 		}
 	}
 }

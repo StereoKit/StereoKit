@@ -1,5 +1,6 @@
 ﻿using StereoKit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -7,8 +8,9 @@ namespace StereoKit
 	/// <summary>This class contains functions for running the StereoKit library!</summary>
 	public static class StereoKitApp
 	{
-		private static SystemInfo _system;
-		private static Steppers   _steppers;
+		private static SystemInfo   _system;
+		private static Steppers     _steppers;
+		private static List<Action> _mainThreadInvoke = new List<Action>();
 
 		/// <summary>Settings for more detailed initialization of StereoKit! Set these before calling Initialize,
 		/// otherwise they'll be ignored.</summary>
@@ -93,6 +95,11 @@ namespace StereoKit
 			return NativeAPI.sk_step(() => {
 				_steppers.Step();
 				onStep?.Invoke();
+
+				for (int i = 0; i < _mainThreadInvoke.Count; i++) {
+					_mainThreadInvoke[i].Invoke();
+				}
+				_mainThreadInvoke.Clear();
 			});
 		}
 
@@ -100,5 +107,7 @@ namespace StereoKit
 		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
 		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
 		public static void RemoveStepper<T>() where T:IStepper => _steppers.Remove<T>();
+
+		public static void ExecuteOnMain(Action action) => _mainThreadInvoke.Add(action);
 	}
 }

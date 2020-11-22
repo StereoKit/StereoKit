@@ -16,13 +16,13 @@ runtime_ platform_mode = runtime_none;
 
 bool platform_init() {
 	// Set up any platform dependant variables
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 	bool result = android_init();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 	bool result = linux_init  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 	bool result = uwp_init    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 	bool result = win32_init  ();
 #endif
 	if (!result) {
@@ -62,13 +62,13 @@ void platform_shutdown() {
 	platform_stop_mode();
 	skg_shutdown();
 
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 	android_shutdown();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 	linux_shutdown  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 	uwp_shutdown    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 	win32_shutdown  ();
 #endif
 }
@@ -76,7 +76,7 @@ void platform_shutdown() {
 ///////////////////////////////////////////
 
 void platform_set_window(void *window) {
-#if __ANDROID__
+#if defined(SK_OS_ANDROID)
 	android_set_window(window);
 #endif
 }
@@ -84,7 +84,7 @@ void platform_set_window(void *window) {
 ///////////////////////////////////////////
 
 void platform_set_window_xam(void *window) {
-#if __ANDROID__
+#if defined(SK_OS_ANDROID)
 	android_set_window_xam(window);
 #endif
 }
@@ -107,13 +107,13 @@ bool platform_set_mode(runtime_ mode) {
 	if        (mode == runtime_mixedreality) {
 		result = openxr_init ();
 	} else if (mode == runtime_flatscreen) {
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 		result = android_start();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 		result = linux_start  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 		result = uwp_start    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 		result = win32_start  ();
 #endif
 	}
@@ -132,13 +132,13 @@ void platform_step_begin() {
 	case runtime_none: break;
 	case runtime_mixedreality: openxr_step_begin(); break;
 	case runtime_flatscreen: {
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 		android_step_begin();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 		linux_step_begin  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 		uwp_step_begin    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 		win32_step_begin  ();
 #endif
 	} break;
@@ -152,13 +152,13 @@ void platform_step_end() {
 	case runtime_none: break;
 	case runtime_mixedreality: openxr_step_end(); break;
 	case runtime_flatscreen: {
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 		android_step_end();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 		linux_step_end    ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 		uwp_step_end    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 		win32_step_end  ();
 #endif
 	} break;
@@ -172,13 +172,13 @@ void platform_present() {
 	case runtime_none: break;
 	case runtime_mixedreality: break;
 	case runtime_flatscreen: {
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 		android_vsync();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 		linux_vsync  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 		uwp_vsync    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 		win32_vsync  ();
 #endif
 	} break;
@@ -192,13 +192,13 @@ void platform_stop_mode() {
 	case runtime_none: break;
 	case runtime_mixedreality: openxr_shutdown(); break;
 	case runtime_flatscreen: {
-#if __ANDROID__
+#if   defined(SK_OS_ANDROID)
 		android_stop();
-#elif __linux__
+#elif defined(SK_OS_LINUX)
 		linux_stop  ();
-#elif WINDOWS_UWP
+#elif defined(SK_OS_WINDOWS_UWP)
 		uwp_stop    ();
-#elif _WIN32
+#elif defined(SK_OS_WINDOWS)
 		win32_stop  ();
 #endif
 	} break;

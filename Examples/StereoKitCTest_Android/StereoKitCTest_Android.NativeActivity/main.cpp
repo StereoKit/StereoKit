@@ -11,10 +11,10 @@ material_t mat;
 
 static void engine_handle_cmd(android_app*evt_app, int32_t cmd) {
 	switch (cmd) {
-	case APP_CMD_INIT_WINDOW:    app_visible = app_run = sk_set_window(evt_app->window, sk_active_runtime()); break;
+	case APP_CMD_INIT_WINDOW:    sk_set_window(evt_app->window); break;
 	case APP_CMD_WINDOW_RESIZED:
-	case APP_CMD_CONFIG_CHANGED: app_run = sk_set_window(evt_app->window, sk_active_runtime()); break;
-	case APP_CMD_TERM_WINDOW:    app_run = sk_set_window(nullptr,         sk_active_runtime()); break;
+	case APP_CMD_CONFIG_CHANGED: sk_set_window(evt_app->window); break;
+	case APP_CMD_TERM_WINDOW:    sk_set_window(nullptr        ); break;
 	case APP_CMD_GAINED_FOCUS:   app_visible = true; break;
 	case APP_CMD_LOST_FOCUS:     app_visible = false; break;
 	}

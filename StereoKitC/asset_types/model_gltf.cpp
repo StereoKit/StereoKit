@@ -3,6 +3,7 @@
 #include "model.h"
 #include "texture.h"
 #include "../sk_math.h"
+#include "../libraries/ferr_hash.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -180,9 +181,13 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader) {
 	// Check if we've already loaded this material
-	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	snprintf(id, sizeof(id), "%s/mat/%s", filename, mat_name);
+	if (material == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/null", filename);
+	else if (material->name == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/%u", filename, hash_fnv32_data(material, sizeof(cgltf_material)));
+	else
+		snprintf(id, sizeof(id), "%s/mat/%s", filename, material->name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;

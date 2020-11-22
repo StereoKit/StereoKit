@@ -298,11 +298,11 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
 		texture->tex = skg_tex_create(type, use, format, use_mips);
 
-		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
 		if (texture->depth_buffer != nullptr)
 			tex_set_colors(texture->depth_buffer, width, height, nullptr);
 	} else if (dynamic) {
-		skg_tex_set_contents(&texture->tex, data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
@@ -430,59 +430,8 @@ tex_format_ tex_get_tex_format(int64_t native_fmt) {
 
 void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 	memset(out_data, 0, out_data_size);
-	log_warn("tex_get_data not implemented for sk_gpu yet!");
-	// Make sure we've been provided enough memory to hold this texture
-	/*size_t format_size = tex_format_size(texture->format);
-	assert(out_data_size == (size_t)texture->tex.width * (size_t)texture->tex.height * format_size);
-
-	D3D11_TEXTURE2D_DESC desc             = {};
-	ID3D11Texture2D     *copy_tex         = nullptr;
-	bool                 copy_tex_release = true;
-	texture->texture->GetDesc(&desc);
-
-	// Make sure copy_tex is a texture that we can read from!
-	if (desc.SampleDesc.Count > 1) {
-		// Not gonna bother with MSAA stuff
-		log_warn("tex_get_data AA surfaces not implemented");
-		return;
-	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
-		// Handle case where the source is already a staging texture we can use directly
-		copy_tex         = texture->texture;
-		copy_tex_release = false;
-	} else {
-		// Otherwise, create a staging texture from the non-MSAA source
-		desc.BindFlags      = 0;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-		desc.Usage          = D3D11_USAGE_STAGING;
-
-		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
-			log_err("CreateTexture2D failed!");
-			return;
-		}
-		d3d_context->CopyResource(copy_tex, texture->texture);
-	}
-
-	// Load the data into CPU RAM
-	D3D11_MAPPED_SUBRESOURCE data;
-	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
-		log_err("Texture Map failed!");
-		return;
-	}
-
-	// Copy it into our waiting buffer
-	uint8_t *srcPtr  = (uint8_t*)data.pData;
-	uint8_t *destPtr = (uint8_t*)out_data;
-	size_t   msize   = texture->width*format_size;
-	for (size_t h = 0; h < desc.Height; ++h) {
-		memcpy(destPtr, srcPtr, msize);
-		srcPtr  += data.RowPitch;
-		destPtr += msize;
-	}
-
-	// And cleanup
-	d3d_context->Unmap(copy_tex, 0);
-	if (copy_tex_release)
-		copy_tex->Release();*/
+	if (!skg_tex_get_contents(&texture->tex, out_data, out_data_size))
+		log_warn("Couldn't get texture contents!");
 }
 
 ///////////////////////////////////////////

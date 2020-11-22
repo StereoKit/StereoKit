@@ -148,6 +148,12 @@
     <ClCompile Include="sk_math.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\linux.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\ferr_hash.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -344,6 +350,12 @@
     <ClInclude Include="libraries\memory.h">
       <Filter>libraries</Filter>
     </ClInclude>
+    <ClInclude Include="systems\platform\linux.h">
+      <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\ferr_hash.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -370,7 +382,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="shaders_builtin\stereokit.hlslinc">
+    <None Include="shaders_builtin\stereokit.hlsli">
       <Filter>shaders_builtin</Filter>
     </None>
   </ItemGroup>

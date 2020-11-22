@@ -1,8 +1,9 @@
-#ifdef __linux__
+#include "linux.h"
+#if defined(SK_OS_LINUX)
 
 #include "../../log.h"
 #include "../../stereokit.h"
-#include "linux.h"
+
 #include "openxr.h"
 #include "flatscreen_input.h"
 #include "../render.h"
@@ -31,18 +32,18 @@ uint32_t                key_mask;
 
 bool linux_init() {
 	dpy = XOpenDisplay(0);
-	if(dpy == nullptr) {
-		printf("\n\tcannot connect to X server\n\n");
-		exit(0);
+	if (dpy == nullptr) {
+		log_fail_reason(90, "Cannot connect to X server");
+		return false;
 	}
 
 	root = DefaultRootWindow(dpy);
-	vi = glXChooseVisual(dpy, 0, att);
+	vi   = glXChooseVisual(dpy, 0, att);
 
-	if(vi == nullptr) {
-		printf("\n\tno appropriate visual found\n\n");
-    	exit(0);
-    }
+	if (vi == nullptr) {
+		log_fail_reason(90, "No appropriate GLX visual found");
+		return false;
+	}
 
 	cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
 
@@ -100,6 +101,8 @@ bool linux_get_cursor(vec2 &out_pos) {
 	return result;
 }
 
+///////////////////////////////////////////
+
 bool linux_key_down(key_ key) {
 	return false;
 }
@@ -155,4 +158,4 @@ void linux_vsync() {
 
 } // namespace sk
 
-#endif
+#endif // SK_OS_LINUX

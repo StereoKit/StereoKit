@@ -1,6 +1,7 @@
 #pragma once
+#include "platform_utils.h"
 
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 
 #include <android/native_activity.h>
 

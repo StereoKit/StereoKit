@@ -14,7 +14,7 @@
 #include "android.h"
 #include "platform_utils.h"
 
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 #include <openxr/openxr_oculus.h>
 #endif
 #include <openxr/openxr.h>
@@ -41,7 +41,7 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 #endif
 #ifdef _DEBUG
@@ -101,7 +101,7 @@ const char *openxr_string(XrResult result) {
 
 XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
 void *openxr_get_luid() {
-#if defined(_WIN32) && defined(XR_USE_GRAPHICS_API_D3D11)
+#if defined(XR_USE_GRAPHICS_API_D3D11)
 	const char *extensions[] = { XR_GFX_EXTENSION };
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
@@ -158,7 +158,7 @@ int64_t openxr_get_time() {
 
 bool openxr_init() {
 
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
 	xrGetInstanceProcAddr(
 		XR_NULL_HANDLE,
@@ -203,7 +203,7 @@ bool openxr_init() {
 	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
-#ifdef __ANDROID__
+#if defined(SK_OS_ANDROID)
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
 	create_android.applicationVM       = android_vm;
 	create_android.applicationActivity = android_activity;

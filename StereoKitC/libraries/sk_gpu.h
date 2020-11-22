@@ -5,10 +5,10 @@
 sk_gpu.h
 
 	Docs are not yet here as the project is still somewhat in flight, but check
-	out some of the example projects in the repository for reference! They're
+	out some of the example projects in the repository for reference! They're 
 	pretty clean as is :)
 
-	Note: this is currently an amalgamated file, so it's best to modify the
+	Note: this is currently an amalgamated file, so it's best to modify the 
 	individual files in the repository if making modifications.
 */
 
@@ -28,6 +28,26 @@ sk_gpu.h
 #define SKG_DIRECT3D11
 #else
 #define SKG_OPENGL
+#endif
+
+// If we're using OpenGL, set up some additional defines so we know what
+// flavor of GL is being used, and how to load it.
+#ifdef SKG_OPENGL
+	#if   defined(__EMSCRIPTEN__)
+		#define _SKG_GL_WEB
+		#define _SKG_GL_LOAD_EMSCRIPTEN
+	#elif defined(__ANDROID__)
+		#define _SKG_GL_ES
+		#define _SKG_GL_LOAD_EGL
+		#define _SKG_GL_MAKE_FUNCTIONS
+	#elif defined(__linux__)
+		#define _SKG_GL_DESKTOP
+		#define _SKG_GL_LOAD_GLX
+	#elif defined(_WIN32)
+		#define _SKG_GL_DESKTOP
+		#define _SKG_GL_LOAD_WGL
+		#define _SKG_GL_MAKE_FUNCTIONS
+	#endif
 #endif
 
 #include <stdint.h>
@@ -159,11 +179,19 @@ typedef enum skg_cap_ {
 	skg_cap_wireframe,
 } skg_cap_;
 
+typedef struct {
+	uint8_t r, g, b, a;
+} skg_color32_t;
+
+typedef struct {
+	float r, g, b, a;
+} skg_color128_t;
+
 typedef struct skg_vert_t {
-	float   pos [3];
-	float   norm[3];
-	float   uv  [2];
-	uint8_t col [4];
+	float         pos [3];
+	float         norm[3];
+	float         uv  [2];
+	skg_color32_t col;
 } skg_vert_t;
 
 typedef struct skg_bind_t {
@@ -210,7 +238,7 @@ typedef struct skg_shader_meta_t {
 
 ///////////////////////////////////////////
 
-#if defined(SKG_DIRECT3D11)
+#if   defined(SKG_DIRECT3D11)
 
 
 #include <d3d11.h>
@@ -231,8 +259,9 @@ typedef struct skg_mesh_t {
 } skg_mesh_t;
 
 typedef struct skg_shader_stage_t {
-	skg_stage_  type;
-	void       *_shader;
+	skg_stage_         type;
+	void              *_shader;
+	ID3D11InputLayout *_layout;
 } skg_shader_stage_t;
 
 typedef struct skg_shader_t {
@@ -240,6 +269,7 @@ typedef struct skg_shader_t {
 	ID3D11VertexShader  *_vertex;
 	ID3D11PixelShader   *_pixel;
 	ID3D11ComputeShader *_compute;
+	ID3D11InputLayout   *_layout;
 } skg_shader_t;
 
 typedef struct skg_pipeline_t {
@@ -248,8 +278,10 @@ typedef struct skg_pipeline_t {
 	bool                     wireframe;
 	bool                     depth_write;
 	skg_depth_test_          depth_test;
+	skg_shader_meta_t       *meta;
 	ID3D11VertexShader      *_vertex;
 	ID3D11PixelShader       *_pixel;
+	ID3D11InputLayout       *_layout;
 	ID3D11BlendState        *_blend;
 	ID3D11RasterizerState   *_rasterize;
 	ID3D11DepthStencilState *_depth;
@@ -345,14 +377,18 @@ typedef struct skg_swapchain_t {
 	int32_t  width;
 	int32_t  height;
 
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	void *_hdc;
 	void *_hwnd;
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	void *_egl_surface;
-#elif defined(__linux__)
-	void *_x_window;
-#elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#elif defined(_SKG_GL_LOAD_GLX)
+	void *_x_display;
+	void *_visual_id;
+	void *_glx_fb_config;
+	void *_glx_drawable;
+	void *_glx_context;
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
 	skg_shader_t   _convert_shader;
@@ -364,17 +400,11 @@ typedef struct skg_swapchain_t {
 } skg_swapchain_t;
 
 typedef struct skg_platform_data_t {
-#if defined(__ANDROID__)
+#if   defined(_SKG_GL_LOAD_EGL)
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
-#elif __linux__
-	void *_x_display;
-	void *_visual_id;
-	void *_glx_fb_config;
-	void *_glx_drawable;
-	void *_glx_context;
-#elif _WIN32
+#elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
 #endif
@@ -383,9 +413,9 @@ typedef struct skg_platform_data_t {
 
 ///////////////////////////////////////////
 
+void                skg_setup_xlib               (void *dpy, void *vi, void *drawable);
 int32_t             skg_init                     (const char *app_name, void *adapter_id);
 void                skg_shutdown                 ();
-void                skg_setup_xlib               (void *dpy, void *vi, void *drawable);
 void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
 void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
 skg_platform_data_t skg_get_platform_data        ();
@@ -393,6 +423,8 @@ bool                skg_capability               (skg_cap_ capability);
 
 void                skg_draw_begin               ();
 void                skg_draw                     (int32_t index_start, int32_t index_base, int32_t index_count, int32_t instance_count);
+void                skg_viewport                 (const int32_t *xywh);
+void                skg_viewport_get             (int32_t *out_xywh);
 
 skg_buffer_t        skg_buffer_create            (const void *data, uint32_t size_count, uint32_t size_stride, skg_buffer_type_ type, skg_use_ use);
 bool                skg_buffer_is_valid          (const skg_buffer_t *buffer);
@@ -448,35 +480,38 @@ skg_tex_t           skg_tex_create               (skg_tex_type_ type, skg_use_ u
 bool                skg_tex_is_valid             (const skg_tex_t *tex);
 void                skg_tex_attach_depth         (      skg_tex_t *tex, skg_tex_t *depth);
 void                skg_tex_settings             (      skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy);
-void                skg_tex_set_contents         (      skg_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
-void                skg_tex_get_contents         (      skg_tex_t *tex);
+void                skg_tex_set_contents         (      skg_tex_t *tex, const void *data, int32_t width, int32_t height);
+void                skg_tex_set_contents_arr     (      skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
+bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
 void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
 void                skg_tex_target_bind          (      skg_tex_t *render_target, bool clear, const float *clear_color_4);
 skg_tex_t          *skg_tex_target_get           ();
 void                skg_tex_destroy              (      skg_tex_t *tex);
 int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
 skg_tex_fmt_        skg_tex_fmt_from_native      (int64_t      format);
+uint32_t            skg_tex_fmt_size             (skg_tex_fmt_ format);
 
 
 ///////////////////////////////////////////
 // API independant functions             //
 ///////////////////////////////////////////
 
-typedef enum skg_shader_lang_ {
+typedef enum {
 	skg_shader_lang_hlsl,
 	skg_shader_lang_spirv,
 	skg_shader_lang_glsl,
+	skg_shader_lang_glsl_es,
 	skg_shader_lang_glsl_web,
 } skg_shader_lang_;
 
-typedef struct skg_shader_file_stage_t {
+typedef struct {
 	skg_shader_lang_ language;
 	skg_stage_       stage;
 	uint32_t         code_size;
 	void            *code;
 } skg_shader_file_stage_t;
 
-typedef struct skg_shader_file_t {
+typedef struct {
 	skg_shader_meta_t       *meta;
 	uint32_t                 stage_count;
 	skg_shader_file_stage_t *stages;
@@ -487,6 +522,24 @@ typedef struct skg_shader_file_t {
 void               skg_log                     (skg_log_ level, const char *text);
 bool               skg_read_file               (const char *filename, void **out_data, size_t *out_size);
 uint64_t           skg_hash                    (const char *string);
+
+skg_color32_t      skg_col_hsv32               (float hue, float saturation, float value, float alpha);
+skg_color128_t     skg_col_hsv128              (float hue, float saturation, float value, float alpha);
+skg_color32_t      skg_col_hsl32               (float hue, float saturation, float lightness, float alpha);
+skg_color128_t     skg_col_hsl128              (float hue, float saturation, float lightness, float alpha);
+skg_color32_t      skg_col_hcy32               (float hue, float chroma, float lightness, float alpha);
+skg_color128_t     skg_col_hcy128              (float hue, float chroma, float lightness, float alpha);
+skg_color32_t      skg_col_lch32               (float hue, float chroma, float lightness, float alpha);
+skg_color128_t     skg_col_lch128              (float hue, float chroma, float lightness, float alpha);
+skg_color32_t      skg_col_helix32             (float hue, float saturation, float lightness, float alpha);
+skg_color128_t     skg_col_helix128            (float hue, float saturation, float lightness, float alpha);
+skg_color32_t      skg_col_jab32               (float j, float a, float b, float alpha);
+skg_color128_t     skg_col_jab128              (float j, float a, float b, float alpha);
+skg_color32_t      skg_col_jsl32               (float hue, float saturation, float lightness, float alpha);
+skg_color128_t     skg_col_jsl128              (float hue, float saturation, float lightness, float alpha);
+skg_color32_t      skg_col_lab32               (float l, float a, float b, float alpha);
+skg_color128_t     skg_col_lab128              (float l, float a, float b, float alpha);
+skg_color128_t     skg_col_rgb_to_lab128       (skg_color128_t rgb);
 
 bool               skg_shader_file_verify      (const void *file_memory, size_t file_size, uint16_t *out_version, char *out_name, size_t out_name_size);
 bool               skg_shader_file_load_memory (const void *file_memory, size_t file_size, skg_shader_file_t *out_file);
@@ -525,15 +578,13 @@ void               skg_shader_meta_release     (skg_shader_meta_t *meta);
 ID3D11Device            *d3d_device      = nullptr;
 ID3D11DeviceContext     *d3d_context     = nullptr;
 ID3D11InfoQueue         *d3d_info        = nullptr;
-ID3D11InputLayout       *d3d_vert_layout = nullptr;
 ID3D11RasterizerState   *d3d_rasterstate = nullptr;
 ID3D11DepthStencilState *d3d_depthstate  = nullptr;
 skg_tex_t               *d3d_active_rendertarget = nullptr;
 
 ///////////////////////////////////////////
 
-uint32_t skg_tex_fmt_size (skg_tex_fmt_ format);
-bool     skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, bool is_array, uint32_t array_start, uint32_t array_size, bool use_in_shader);
+bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, bool is_array, uint32_t array_start, uint32_t array_size, bool use_in_shader);
 
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
@@ -584,7 +635,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		d3d_info = nullptr;
 		if (SUCCEEDED(d3d_debug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3d_info))) {
 			D3D11_MESSAGE_ID hide[] = {
-				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS, 
 				(D3D11_MESSAGE_ID)351,
 				(D3D11_MESSAGE_ID)49, // TODO: Figure out the Flip model for backbuffers!
 									  // Add more message IDs here as needed
@@ -604,7 +655,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	desc_rasterizer.CullMode = D3D11_CULL_BACK;
 	desc_rasterizer.FrontCounterClockwise = true;
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
-
+	
 	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
 	desc_depthstate.DepthEnable    = true;
 	desc_depthstate.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -641,7 +692,6 @@ void skg_draw_begin() {
 	d3d_context->RSSetState            (d3d_rasterstate);
 	d3d_context->OMSetDepthStencilState(d3d_depthstate, 1);
 	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	d3d_context->IASetInputLayout      (d3d_vert_layout);
 }
 
 ///////////////////////////////////////////
@@ -706,6 +756,25 @@ void skg_draw(int32_t index_start, int32_t index_base, int32_t index_count, int3
 
 ///////////////////////////////////////////
 
+void skg_viewport(const int32_t *xywh) {
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT((float)xywh[0], (float)xywh[1], (float)xywh[2], (float)xywh[3]);
+	d3d_context->RSSetViewports(1, &viewport);
+}
+
+///////////////////////////////////////////
+
+void skg_viewport_get(int32_t *out_xywh) {
+	uint32_t       count = 1;
+	D3D11_VIEWPORT viewport;
+	d3d_context->RSGetViewports(&count, &viewport);
+	out_xywh[0] = (int32_t)viewport.TopLeftX;
+	out_xywh[1] = (int32_t)viewport.TopLeftY;
+	out_xywh[2] = (int32_t)viewport.Width;
+	out_xywh[3] = (int32_t)viewport.Height;
+}
+
+///////////////////////////////////////////
+
 skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t size_stride, skg_buffer_type_ type, skg_use_ use) {
 	skg_buffer_t result = {};
 	result.use    = use;
@@ -722,18 +791,16 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 		buffer_desc.Usage          = D3D11_USAGE_DYNAMIC;
 		buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	}break;
-	default: throw "Not implemented yet!";
 	}
 	switch (type) {
 	case skg_buffer_type_vertex:   buffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;   break;
 	case skg_buffer_type_index:    buffer_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;    break;
 	case skg_buffer_type_constant: buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break;
 	case skg_buffer_type_compute:  {
-		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; 
+		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED; 
 		buffer_desc.Usage     = D3D11_USAGE_DEFAULT;
 	} break;
-	default: throw "Not implemented yet!";
 	}
 	d3d_device->CreateBuffer(&buffer_desc, data==nullptr ? nullptr : &buffer_data, &result._buffer);
 	return result;
@@ -765,14 +832,29 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 ///////////////////////////////////////////
 
 void skg_buffer_get_contents(const skg_buffer_t *buffer, void *ref_buffer, uint32_t buffer_size) {
+	ID3D11Buffer* cpu_buff = nullptr;
+
+	D3D11_BUFFER_DESC desc = {};
+	buffer->_buffer->GetDesc( &desc );
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	desc.Usage          = D3D11_USAGE_STAGING;
+	desc.BindFlags      = 0;
+	desc.MiscFlags      = 0;
+	if (FAILED(d3d_device->CreateBuffer(&desc, nullptr, &cpu_buff)) ) {
+		skg_log(skg_log_critical, "Couldn't create a tep buffer for copy!");
+		return;
+	}
+	d3d_context->CopyResource( cpu_buff, buffer->_buffer );
+
 	D3D11_MAPPED_SUBRESOURCE resource;
-	if (SUCCEEDED(d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_READ, 0, &resource))) {
+	if (SUCCEEDED(d3d_context->Map(cpu_buff, 0, D3D11_MAP_READ, 0, &resource))) {
 		memcpy(ref_buffer, resource.pData, min(resource.DepthPitch * resource.DepthPitch, buffer_size));
 		d3d_context->Unmap(buffer->_buffer, 0);
 	} else {
 		memset(ref_buffer, 0, buffer_size);
-		skg_log(skg_log_critical, "Failed to get contents of buffer, may not be using a readable buffer type?");
+		skg_log(skg_log_critical, "Failed to get contents of buffer!");
 	}
+	cpu_buff->Release();
 }
 
 ///////////////////////////////////////////
@@ -885,14 +967,14 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	case skg_stage_compute : d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
 	}
 
-	if (d3d_vert_layout == nullptr && type == skg_stage_vertex) {
+	if (type == skg_stage_vertex) {
 		// Describe how our mesh is laid out in memory
 		D3D11_INPUT_ELEMENT_DESC vert_desc[] = {
 			{"SV_POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"NORMAL",      0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"TEXCOORD",    0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 			{"COLOR" ,      0, DXGI_FORMAT_R8G8B8A8_UNORM,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0} };
-		d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), buffer, buffer_size, &d3d_vert_layout);
+		d3d_device->CreateInputLayout(vert_desc, (UINT)_countof(vert_desc), buffer, buffer_size, &result._layout);
 	}
 	if (compiled) compiled->Release();
 
@@ -903,7 +985,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 
 void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 	switch(shader->type) {
-	case skg_stage_vertex  : ((ID3D11VertexShader *)shader->_shader)->Release(); break;
+	case skg_stage_vertex  : ((ID3D11VertexShader *)shader->_shader)->Release(); shader->_layout->Release(); break;
 	case skg_stage_pixel   : ((ID3D11PixelShader  *)shader->_shader)->Release(); break;
 	case skg_stage_compute : ((ID3D11ComputeShader*)shader->_shader)->Release(); break;
 	}
@@ -917,10 +999,12 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 	skg_shader_t result = {};
 	result.meta    = meta;
 	if (v_shader._shader) result._vertex  = (ID3D11VertexShader *)v_shader._shader;
+	if (v_shader._layout) result._layout  = v_shader._layout;
 	if (p_shader._shader) result._pixel   = (ID3D11PixelShader  *)p_shader._shader;
 	if (c_shader._shader) result._compute = (ID3D11ComputeShader*)c_shader._shader;
 	skg_shader_meta_reference(result.meta);
 	if (result._vertex ) result._vertex ->AddRef();
+	if (result._layout ) result._layout ->AddRef();
 	if (result._pixel  ) result._pixel  ->AddRef();
 	if (result._compute) result._compute->AddRef();
 
@@ -937,7 +1021,9 @@ bool skg_shader_is_valid(const skg_shader_t *shader) {
 ///////////////////////////////////////////
 
 void skg_shader_destroy(skg_shader_t *shader) {
+	skg_shader_meta_release(shader->meta);
 	if (shader->_vertex ) shader->_vertex ->Release();
+	if (shader->_layout ) shader->_layout ->Release();
 	if (shader->_pixel  ) shader->_pixel  ->Release();
 	if (shader->_compute) shader->_compute->Release();
 	*shader = {};
@@ -1026,8 +1112,11 @@ skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 	result.depth_test   = skg_depth_test_less;
 	result._vertex      = shader->_vertex;
 	result._pixel       = shader->_pixel;
+	result._layout      = shader->_layout;
 	if (result._vertex) result._vertex->AddRef();
+	if (result._layout) result._layout->AddRef();
 	if (result._pixel ) result._pixel ->AddRef();
+	skg_shader_meta_reference(shader->meta);
 
 	skg_pipeline_update_blend     (&result);
 	skg_pipeline_update_rasterizer(&result);
@@ -1043,6 +1132,7 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	d3d_context->RSSetState            (pipeline->_rasterize);
 	d3d_context->VSSetShader           (pipeline->_vertex, nullptr, 0);
 	d3d_context->PSSetShader           (pipeline->_pixel,  nullptr, 0);
+	d3d_context->IASetInputLayout      (pipeline->_layout);
 }
 
 ///////////////////////////////////////////
@@ -1123,10 +1213,12 @@ skg_depth_test_ skg_pipeline_get_depth_test(const skg_pipeline_t *pipeline) {
 ///////////////////////////////////////////
 
 void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
+	skg_shader_meta_release(pipeline->meta);
 	if (pipeline->_blend    ) pipeline->_blend    ->Release();
 	if (pipeline->_rasterize) pipeline->_rasterize->Release();
 	if (pipeline->_depth    ) pipeline->_depth    ->Release();
 	if (pipeline->_vertex   ) pipeline->_vertex   ->Release();
+	if (pipeline->_layout   ) pipeline->_layout   ->Release();
 	if (pipeline->_pixel    ) pipeline->_pixel    ->Release();
 	*pipeline = {};
 }
@@ -1155,10 +1247,11 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 
 	if (FAILED(dxgi_factory->CreateSwapChainForHwnd(d3d_device, (HWND)hwnd, &swapchain_desc, nullptr, nullptr, &result._swapchain))) {
 		skg_log(skg_log_critical, "sk_gpu couldn't create swapchain!");
-		return {};
+		result = {};
+		return result;
 	}
 
-	// Set the target view to an sRGB format for proper presentation of
+	// Set the target view to an sRGB format for proper presentation of 
 	// linear color data.
 	skg_tex_fmt_ target_fmt = format;
 	switch (format) {
@@ -1170,7 +1263,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	result._swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 	result._target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, result.width, result.height, 1);
 	result._depth  = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
-	skg_tex_set_contents(&result._depth, nullptr, 1, result.width, result.height);
+	skg_tex_set_contents(&result._depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._target, &result._depth);
 	back_buffer->Release();
 
@@ -1200,7 +1293,7 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 	swapchain->_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 	swapchain->_target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, width, height, 1);
 	swapchain->_depth  = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_fmt, skg_mip_none);
-	skg_tex_set_contents(&swapchain->_depth, nullptr, 1, width, height);
+	skg_tex_set_contents(&swapchain->_depth, nullptr, width, height);
 	skg_tex_attach_depth(&swapchain->_target, &swapchain->_depth);
 	back_buffer->Release();
 }
@@ -1332,7 +1425,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	desc_sampler.MaxLOD         = D3D11_FLOAT32_MAX;
 	desc_sampler.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
-	// D3D will already return the same sampler when provided the same
+	// D3D will already return the same sampler when provided the same 
 	// settings, so we can just lean on that to prevent sampler duplicates :)
 	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &tex->_sampler)))
 		skg_log(skg_log_critical, "Failed to create sampler state!");
@@ -1340,16 +1433,16 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 
 ///////////////////////////////////////////
 
-void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, void *curr_data, skg_tex_fmt_ format, int32_t width, int32_t height, uint32_t mip_levels) {
-	void    *mip_data = curr_data;
-	int32_t  mip_w    = width;
-	int32_t  mip_h    = height;
+void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_tex_fmt_ format, int32_t width, int32_t height, uint32_t mip_levels) {
+	const void *mip_data = curr_data;
+	int32_t     mip_w    = width;
+	int32_t     mip_h    = height;
 	for (uint32_t m = 1; m < mip_levels; m++) {
 		tex_mem[m] = {};
 		switch (format) {
 		case skg_tex_fmt_rgba32:
-		case skg_tex_fmt_rgba32_linear:
-			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+		case skg_tex_fmt_rgba32_linear: 
+			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_rgba64:
 			skg_downsample_4((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
@@ -1359,14 +1452,14 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, void *curr_data, skg_tex_fmt
 			break;
 		case skg_tex_fmt_depth32:
 		case skg_tex_fmt_r32:
-			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_depth16:
 		case skg_tex_fmt_r16:
-			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_r8:
-			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		}
 		mip_data = (void*)tex_mem[m].pSysMem;
@@ -1436,7 +1529,14 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, bool is_array, uint32
 
 ///////////////////////////////////////////
 
-void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
+void skg_tex_set_contents(skg_tex_t *tex, const void *data, int32_t width, int32_t height) {
+	const void *data_arr[1] = { data };
+	return skg_tex_set_contents_arr(tex, data_arr, 1, width, height );
+}
+
+///////////////////////////////////////////
+
+void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
 	// Some warning messages
 	if (tex->use != skg_use_dynamic && tex->_texture) {
 		skg_log(skg_log_warning, "Only dynamic textures can be updated!");
@@ -1493,7 +1593,7 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 			for (int32_t i = 0; i < data_frame_count; i++) {
 				for (uint32_t m = 1; m < mip_levels; m++) {
 					free((void*)tex_mem[i*mip_levels + m].pSysMem);
-				}
+				} 
 			}
 			free(tex_mem);
 		}
@@ -1521,6 +1621,68 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	if (tex->_sampler == nullptr) {
 		skg_tex_settings(tex, skg_tex_address_repeat, skg_tex_sample_linear, 0);
 	}
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
+	// Make sure we've been provided enough memory to hold this texture
+	size_t format_size = skg_tex_fmt_size(tex->format);
+	if (data_size != (size_t)tex->width * (size_t)tex->height * format_size) {
+		skg_log(skg_log_critical, "Insufficient buffer size for skg_tex_get_contents");
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC desc             = {};
+	ID3D11Texture2D     *copy_tex         = nullptr;
+	bool                 copy_tex_release = true;
+	tex->_texture->GetDesc(&desc);
+
+	// Make sure copy_tex is a texture that we can read from!
+	if (desc.SampleDesc.Count > 1) {
+		// Not gonna bother with MSAA stuff
+		skg_log(skg_log_warning, "skg_tex_get_contents MSAA surfaces not implemented");
+		return false;
+	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
+		// Handle case where the source is already a staging texture we can use directly
+		copy_tex         = tex->_texture;
+		copy_tex_release = false;
+	} else {
+		// Otherwise, create a staging texture from the non-MSAA source
+		desc.BindFlags      = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.Usage          = D3D11_USAGE_STAGING;
+
+		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
+			skg_log(skg_log_critical, "CreateTexture2D failed!");
+			return false;
+		}
+		d3d_context->CopyResource(copy_tex, tex->_texture);
+	}
+
+	// Load the data into CPU RAM
+	D3D11_MAPPED_SUBRESOURCE data;
+	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
+		skg_log(skg_log_critical, "Texture Map failed!");
+		return false;
+	}
+
+	// Copy it into our waiting buffer
+	uint8_t *srcPtr  = (uint8_t*)data.pData;
+	uint8_t *destPtr = (uint8_t*)ref_data;
+	size_t   msize   = tex->width*format_size;
+	for (size_t h = 0; h < desc.Height; ++h) {
+		memcpy(destPtr, srcPtr, msize);
+		srcPtr  += data.RowPitch;
+		destPtr += msize;
+	}
+
+	// And cleanup
+	d3d_context->Unmap(copy_tex, 0);
+	if (copy_tex_release)
+		copy_tex->Release();
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -1653,26 +1815,6 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 
 ///////////////////////////////////////////
 
-uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
-	switch (format) {
-	case skg_tex_fmt_rgba32:        return sizeof(uint8_t )*4;
-	case skg_tex_fmt_rgba32_linear: return sizeof(uint8_t )*4;
-	case skg_tex_fmt_bgra32:        return sizeof(uint8_t )*4;
-	case skg_tex_fmt_bgra32_linear: return sizeof(uint8_t )*4;
-	case skg_tex_fmt_rgba64:        return sizeof(uint16_t)*4;
-	case skg_tex_fmt_rgba128:       return sizeof(uint32_t)*4;
-	case skg_tex_fmt_depth16:       return sizeof(uint16_t);
-	case skg_tex_fmt_depth32:       return sizeof(uint32_t);
-	case skg_tex_fmt_depthstencil:  return sizeof(uint32_t);
-	case skg_tex_fmt_r8:            return sizeof(uint8_t );
-	case skg_tex_fmt_r16:           return sizeof(uint16_t);
-	case skg_tex_fmt_r32:           return sizeof(uint32_t);
-	default: return 0;
-	}
-}
-
-///////////////////////////////////////////
-
 const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	switch (semantic) {
 	case skg_el_semantic_none:         return "";
@@ -1698,46 +1840,40 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 
 ///////////////////////////////////////////
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#include <emscripten/html5.h>
-#include <GLES3/gl32.h>
-#elif defined(__ANDROID__)
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
+#if   defined(_SKG_GL_LOAD_EMSCRIPTEN)
+	#include <emscripten.h>
+	#include <emscripten/html5.h>
+	#include <GLES3/gl32.h>
+#elif defined(_SKG_GL_LOAD_EGL)
+	#include <EGL/egl.h>
+	#include <EGL/eglext.h>
 
-EGLDisplay egl_display;
-EGLContext egl_context;
-EGLConfig  egl_config;
+	EGLDisplay egl_display;
+	EGLContext egl_context;
+	EGLConfig  egl_config;
+#elif defined(_SKG_GL_LOAD_GLX)
+	#include <GL/glxew.h>
 
-#elif defined(__linux__)
+	Display     *xDisplay;
+	XVisualInfo *visualInfo;
+	GLXFBConfig  glxFBConfig;
+	GLXDrawable  glxDrawable;
+	GLXContext   glxContext;
+#elif defined(_SKG_GL_LOAD_WGL)
+	#pragma comment(lib, "opengl32.lib")
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
 
-#include <GL/glxew.h>
-
-Display *xDisplay;
-XVisualInfo *visualInfo;
-GLXFBConfig glxFBConfig;
-GLXDrawable glxDrawable;
-GLXContext glxContext;
-
-#elif _WIN32
-#pragma comment(lib, "opengl32.lib")
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-HWND  gl_hwnd;
-HDC   gl_hdc;
-HGLRC gl_hrc;
+	HWND  gl_hwnd;
+	HDC   gl_hdc;
+	HGLRC gl_hrc;
 #endif
 
 ///////////////////////////////////////////
 // GL loader                             //
 ///////////////////////////////////////////
 
-// Reference from here:
-// https://github.com/ApoorvaJ/Papaya/blob/3808e39b0f45d4ca4972621c847586e4060c042a/src/libs/gl_lite.h
-
+#ifdef _SKG_GL_LOAD_WGL
 #define WGL_DRAW_TO_WINDOW_ARB            0x2001
 #define WGL_SUPPORT_OPENGL_ARB            0x2010
 #define WGL_DOUBLE_BUFFER_ARB             0x2011
@@ -1755,6 +1891,14 @@ HGLRC gl_hrc;
 #define WGL_CONTEXT_FLAGS_ARB             0x2094
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
 
+typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
+wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
+wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+#endif
+
+#ifdef _SKG_GL_MAKE_FUNCTIONS
+
 #define GL_BLEND 0x0BE2
 #define GL_ZERO 0
 #define GL_ONE  1
@@ -1771,7 +1915,7 @@ HGLRC gl_hrc;
 #define GL_CONSTANT_ALPHA           0x8003
 #define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 
-#define GL_NEVER                    0x0200
+#define GL_NEVER                    0x0200 
 #define GL_LESS                     0x0201
 #define GL_EQUAL                    0x0202
 #define GL_LEQUAL                   0x0203
@@ -1835,12 +1979,14 @@ HGLRC gl_hrc;
 #define GL_TEXTURE_MAX_ANISOTROPY 0x84FE
 #define GL_TEXTURE0 0x84C0
 #define GL_FRAMEBUFFER 0x8D40
+#define GL_DRAW_FRAMEBUFFER_BINDING 0x8CA6
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_DEPTH_ATTACHMENT 0x8D00
 #define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
 
 #define GL_RED 0x1903
 #define GL_RGBA 0x1908
+#define GL_SRGB_ALPHA 0x8C42
 #define GL_DEPTH_COMPONENT 0x1902
 #define GL_DEPTH_STENCIL 0x84F9
 #define GL_R8_SNORM 0x8F94
@@ -1900,6 +2046,8 @@ HGLRC gl_hrc;
 #define GL_UNSIGNED_INT 0x1405
 #define GL_FLOAT 0x1406
 #define GL_DOUBLE 0x140A
+#define GL_UNSIGNED_INT_8_8_8_8 0x8035
+#define GL_UNSIGNED_INT_8_8_8_8_REV 0x8367
 
 #define GL_FRAGMENT_SHADER 0x8B30
 #define GL_VERTEX_SHADER 0x8B31
@@ -1916,33 +2064,16 @@ HGLRC gl_hrc;
 #define GL_DEBUG_SEVERITY_MEDIUM       0x9147
 #define GL_DEBUG_SEVERITY_LOW          0x9148
 
-#if defined(_WIN32) || defined(__ANDROID__)
+// Reference from here:
+// https://github.com/ApoorvaJ/Papaya/blob/3808e39b0f45d4ca4972621c847586e4060c042a/src/libs/gl_lite.h
 
 #ifdef _WIN32
-	// Function pointers we need to actually initialize OpenGL
-	typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-	typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
-	wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
-	wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
-
-	#define GLDECL __stdcall
-	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
-	// Some GL functions can only be loaded with wglGetProcAddress, and others
-	// can only be loaded by GetProcAddress.
-	void *gl_get_function(const char *name) {
-		static HMODULE dll = LoadLibraryA("opengl32.dll");
-		void *f = (void *)wglGetProcAddress(name);
-		if (f == 0 || (f == (void*)0x1) || (f == (void*)0x2) || (f == (void*)0x3) || (f == (void*)-1) ) {
-			f = (void *)GetProcAddress(dll, name);
-		}
-		return f;
-	}
+#define GLDECL WINAPI
 #else
-	#define GLDECL
-	#define gl_get_function(x) eglGetProcAddress(x)
-#endif // _WIN32
+#define GLDECL
+#endif
 
-typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, int32_t severity, int32_t length, const char* message, const void* userParam);
+typedef void (GLDECL *GLDEBUGPROC)(uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char* message, const void* userParam);
 
 #define GL_API \
 GLE(void,     glLinkProgram,             uint32_t program) \
@@ -1990,6 +2121,7 @@ GLE(void,     glGetInternalformativ,     uint32_t target, uint32_t internalforma
 GLE(void,     glGetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_t pname, int32_t *params) \
 GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float param) \
 GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
+GLE(void,     glGetnTexImage,            uint32_t target, int32_t level, uint32_t format, uint32_t type, uint32_t bufSize, void *img) \
 GLE(void,     glActiveTexture,           uint32_t texture) \
 GLE(void,     glGenerateMipmap,          uint32_t target) \
 GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
@@ -2013,6 +2145,22 @@ GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint3
 GLE(const char *, glGetString,           uint32_t name) \
 GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 
+#if defined(_SKG_GL_LOAD_WGL)
+	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
+	// Some GL functions can only be loaded with wglGetProcAddress, and others
+	// can only be loaded by GetProcAddress.
+	void *gl_get_function(const char *name) {
+		static HMODULE dll = LoadLibraryA("opengl32.dll");
+		void *f = (void *)wglGetProcAddress(name);
+		if (f == 0 || (f == (void*)0x1) || (f == (void*)0x2) || (f == (void*)0x3) || (f == (void*)-1) ) {
+			f = (void *)GetProcAddress(dll, name);
+		}
+		return f;
+	}
+#elif defined(_SKG_GL_LOAD_EGL)
+	#define gl_get_function(x) eglGetProcAddress(x)
+#endif
+
 #define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
 GL_API
 #undef GLE
@@ -2023,7 +2171,7 @@ static void gl_load_extensions( ) {
 #undef GLE
 }
 
-#endif // _WIN32 or __ANDROID__ or __linux__
+#endif // _SKG_GL_MAKE_FUNCTIONS
 
 ///////////////////////////////////////////
 
@@ -2041,8 +2189,8 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format);
 ///////////////////////////////////////////
 
 // Some nice reference: https://gist.github.com/nickrolfe/1127313ed1dbf80254b614a721b3ee9c
-int32_t gl_init_win32() {
-#ifdef _WIN32
+int32_t gl_init_wgl() {
+#ifdef _SKG_GL_LOAD_WGL
 	///////////////////////////////////////////
 	// Dummy initialization for pixel format //
 	///////////////////////////////////////////
@@ -2090,6 +2238,7 @@ int32_t gl_init_win32() {
 	}
 
 	// Load the function pointers we need to actually initialize OpenGL
+	// Function pointers we need to actually initialize OpenGL
 	wglChoosePixelFormatARB    = (wglChoosePixelFormatARB_proc   )wglGetProcAddress("wglChoosePixelFormatARB");
 	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_proc)wglGetProcAddress("wglCreateContextAttribsARB");
 
@@ -2148,8 +2297,8 @@ int32_t gl_init_win32() {
 
 	// Create an OpenGL context
 	int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3, 
+		WGL_CONTEXT_MINOR_VERSION_ARB, 3, 
 		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0 };
 	gl_hrc = wglCreateContextAttribsARB( gl_hdc, 0, attributes );
@@ -2161,7 +2310,7 @@ int32_t gl_init_win32() {
 		skg_log(skg_log_critical, "Couldn't activate GL context!");
 		return false;
 	}
-#endif // _WIN32
+#endif // _SKG_GL_LOAD_WGL
 	return 1;
 }
 
@@ -2171,7 +2320,7 @@ int32_t gl_init_emscripten() {
 	// Some reference code:
 	// https://github.com/emscripten-core/emscripten/blob/master/tests/glbook/Common/esUtil.c
 	// https://github.com/emscripten-core/emscripten/tree/master/tests/minimal_webgl
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_LOAD_EMSCRIPTEN
 	EmscriptenWebGLContextAttributes attrs;
 	emscripten_webgl_init_context_attributes(&attrs);
 	attrs.alpha                     = false;
@@ -2180,14 +2329,14 @@ int32_t gl_init_emscripten() {
 	attrs.majorVersion              = 2;
 	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("canvas", &attrs);
 	emscripten_webgl_make_context_current(ctx);
-#endif // __EMSCRIPTEN__
+#endif // _SKG_GL_LOAD_EMSCRIPTEN
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 int32_t gl_init_egl() {
-#if defined(__ANDROID__)
+#ifdef _SKG_GL_LOAD_EGL
 	const EGLint attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_CONFORMANT,   EGL_OPENGL_ES3_BIT_KHR,
@@ -2198,55 +2347,61 @@ int32_t gl_init_egl() {
 		EGL_DEPTH_SIZE, 16,
 		EGL_NONE
 	};
-	EGLint context_attribs[] = {
+	EGLint context_attribs[] = { 
 		EGL_CONTEXT_CLIENT_VERSION, 3,
-		EGL_NONE, EGL_NONE };
+		EGL_NONE };
 	EGLint format;
 	EGLint numConfigs;
 
 	egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglGetDisplay");
+	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetDisplay"); return 0; }
 
-	int32_t major, minor;
-	eglInitialize     (egl_display, &major, &minor);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglInitialize");
+	int32_t major=0, minor=0;
+	eglInitialize(egl_display, &major, &minor);
+	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglInitialize"); return 0; }
+	char version[128];
+	snprintf(version, sizeof(version), "EGL version %d.%d", major, minor);
+	skg_log(skg_log_info, version);
+
 	eglChooseConfig   (egl_display, attribs, &egl_config, 1, &numConfigs);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglChooseConfig");
+	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglChooseConfig"   ); return 0; }
 	eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglGetConfigAttrib");
+	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetConfigAttrib"); return 0; }
+
 	egl_context = eglCreateContext      (egl_display, egl_config, nullptr, context_attribs);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateContext");
+	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglCreateContext"  ); return 0; }
 
 	if (eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context) == EGL_FALSE) {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
-#endif // defined(__ANDROID__)
+#endif // _SKG_GL_LOAD_EGL
 	return 1;
 }
 
-int32_t gl_init_glx() {
-	#if defined(__linux__)
+///////////////////////////////////////////
 
+int32_t gl_init_glx() {
+#ifdef _SKG_GL_LOAD_GLX
 	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
 	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
 
 	glewExperimental=true; // Needed in core profile
 	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
+		skg_log(skg_log_critical, "Failed to initialize GLEW");
 		return -1;
 	}
 
 	int fb_attribute_list[] = {
-		GLX_DOUBLEBUFFER, true,
-		GLX_RED_SIZE, 8,
-		GLX_GREEN_SIZE, 8,
-		GLX_BLUE_SIZE, 8,
-		GLX_ALPHA_SIZE, 8,
-		GLX_DEPTH_SIZE, 16,
-		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+		GLX_DOUBLEBUFFER,  true,
+		GLX_RED_SIZE,      8,
+		GLX_GREEN_SIZE,    8,
+		GLX_BLUE_SIZE,     8,
+		GLX_ALPHA_SIZE,    8,
+		GLX_DEPTH_SIZE,    16,
+		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
 		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-		GLX_X_RENDERABLE, true,
+		GLX_X_RENDERABLE,  true,
 		GLX_NONE
 	};
 
@@ -2255,61 +2410,59 @@ int32_t gl_init_glx() {
 	glxFBConfig = *FBConfig;
 
 	int ctx_attribute_list[] = {
-		GLX_RENDER_TYPE, GLX_RGBA_TYPE,
+		GLX_RENDER_TYPE,               GLX_RGBA_TYPE,
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
 		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
-		GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
-		GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+		GLX_CONTEXT_FLAGS_ARB,         GLX_CONTEXT_DEBUG_BIT_ARB,
+		GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0
 	};
 	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, GL_TRUE, ctx_attribute_list);
 	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
 
-#endif
-
+#endif // _SKG_GL_LOAD_GLX
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
-	xDisplay = (Display *) dpy;
-	visualInfo = (XVisualInfo *) vi;
-	glxDrawable = *(Drawable *) drawable;
+#ifdef _SKG_GL_LOAD_GLX
+	xDisplay    =  (Display    *) dpy;
+	visualInfo  =  (XVisualInfo*) vi;
+	glxDrawable = *(Drawable   *) drawable;
+#endif
 }
 
-//////////////////////////////////////////
+///////////////////////////////////////////
 
 int32_t skg_init(const char *app_name, void *adapter_id) {
-#if defined(_WIN32)
-	int32_t result = gl_init_win32();
-#elif defined(__ANDROID__)
+#if   defined(_SKG_GL_LOAD_WGL)
+	int32_t result = gl_init_wgl();
+#elif defined(_SKG_GL_LOAD_EGL)
 	int32_t result = gl_init_egl();
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	int32_t result = gl_init_glx();
-#elif defined(__EMSCRIPTEN__)
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN)
 	int32_t result = gl_init_emscripten();
 #endif
 	if (!result)
 		return result;
 
 	// Load OpenGL function pointers
-#ifndef __EMSCRIPTEN__
-#ifndef __linux__
+#ifdef _SKG_GL_MAKE_FUNCTIONS
 	gl_load_extensions();
-#endif
 #endif
 
 	skg_log(skg_log_info, "Using OpenGL");
 	skg_log(skg_log_info, (char*)glGetString(GL_VERSION));
 
-#if _DEBUG && !defined(__EMSCRIPTEN__)
+#if _DEBUG && !defined(_SKG_GL_WEB)
 	skg_log(skg_log_info, "Debug info enabled.");
 	// Set up debug info for development
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	printf("%p", glDebugMessageCallback);
 	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: break;
@@ -2318,27 +2471,28 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		case GL_DEBUG_SEVERITY_HIGH:   skg_log(skg_log_critical, message); break;
 		}
 	}, nullptr);
-#endif // _DEBUG
+#endif // _DEBUG && !defined(_SKG_GL_WEB)
+	
 	// Some default behavior
-	glEnable   (GL_DEPTH_TEST);
+	glEnable   (GL_DEPTH_TEST);  
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-#if _WIN32 || __linux__
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+#ifdef _SKG_GL_DESKTOP
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
-
+	
 	return 1;
 }
 
 ///////////////////////////////////////////
 
 void skg_shutdown() {
-#ifdef _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent(NULL, NULL);
 	ReleaseDC(gl_hwnd, gl_hdc);
 	wglDeleteContext(gl_hrc);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
@@ -2363,19 +2517,17 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	if (render_target) {
 		glViewport(0, 0, render_target->width, render_target->height);
-#ifndef __EMSCRIPTEN__
-		if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
-			glEnable(GL_FRAMEBUFFER_SRGB);
-		} else {
-			glDisable(GL_FRAMEBUFFER_SRGB);
-		}
-#endif
 	} else {
 		glViewport(0, 0, gl_active_width, gl_active_height);
-#ifndef __EMSCRIPTEN__
-		glEnable(GL_FRAMEBUFFER_SRGB);
-#endif
 	}
+
+#ifndef _SKG_GL_WEB
+	if (render_target == nullptr || render_target->format == skg_tex_fmt_rgba32 || render_target->format == skg_tex_fmt_bgra32) {
+		glEnable(GL_FRAMEBUFFER_SRGB);
+	} else {
+		glDisable(GL_FRAMEBUFFER_SRGB);
+	}
+#endif
 
 	if (clear) {
 		glClearColor(clear_color_4[0], clear_color_4[1], clear_color_4[2], clear_color_4[3]);
@@ -2393,14 +2545,14 @@ skg_tex_t *skg_tex_target_get() {
 
 skg_platform_data_t skg_get_platform_data() {
 	skg_platform_data_t result = {};
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	result._gl_hdc = gl_hdc;
 	result._gl_hrc = gl_hrc;
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	result._egl_display = egl_display;
 	result._egl_config  = egl_config;
 	result._egl_context = egl_context;
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	result._x_display     = xDisplay;
 	result._visual_id     = &visualInfo->visualid;
 	result._glx_fb_config = glxFBConfig;
@@ -2426,7 +2578,7 @@ bool skg_capability(skg_cap_ capability) {
 	switch (capability) {
 	case skg_cap_tex_layer_select: return check_ext("GL_AMD_vertex_shader_layer");
 	case skg_cap_wireframe:
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		return false;
 #else
 		return glPolygonMode != nullptr;
@@ -2438,11 +2590,23 @@ bool skg_capability(skg_cap_ capability) {
 ///////////////////////////////////////////
 
 void skg_draw(int32_t index_start, int32_t index_base, int32_t index_count, int32_t instance_count) {
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 	glDrawElementsInstanced(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, (void*)(index_start*sizeof(uint32_t)), instance_count);
 #else
 	glDrawElementsInstancedBaseVertex(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, (void*)(index_start*sizeof(uint32_t)), instance_count, index_base);
 #endif
+}
+
+///////////////////////////////////////////
+
+void skg_viewport(const int32_t *xywh) {
+	glViewport(xywh[0], xywh[1], xywh[2], xywh[3]);
+}
+
+///////////////////////////////////////////
+
+void skg_viewport_get(int32_t *out_xywh) {
+	glGetIntegerv(GL_VIEWPORT, out_xywh);
 }
 
 ///////////////////////////////////////////
@@ -2452,7 +2616,6 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	result.use     = use;
 	result.type    = type;
 	result.stride  = size_stride;
-	result._buffer = GLuint();
 	result._target = skg_buffer_type_to_gl(type);
 
 	glGenBuffers(1, &result._buffer);
@@ -2486,7 +2649,7 @@ void skg_buffer_bind(const skg_buffer_t *buffer, skg_bind_t bind, uint32_t offse
 	if (buffer->type == skg_buffer_type_constant)
 		glBindBufferBase(buffer->_target, bind.slot, buffer->_buffer);
 	else if (buffer->type == skg_buffer_type_vertex) {
-#ifdef __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		glBindBuffer(buffer->_target, buffer->_buffer);
 #else
 		glBindVertexBuffer(bind.slot, buffer->_buffer, offset, buffer->stride);
@@ -2534,9 +2697,9 @@ void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
 		glEnableVertexAttribArray(2);
 		glEnableVertexAttribArray(3);
 		// tell the shader how our vertex data binds to the shader inputs
-		glVertexAttribPointer(0, 3, GL_FLOAT, 0, sizeof(skg_vert_t), nullptr);
-		glVertexAttribPointer(1, 3, GL_FLOAT, 0, sizeof(skg_vert_t), (void*)(sizeof(float) * 3));
-		glVertexAttribPointer(2, 2, GL_FLOAT, 0, sizeof(skg_vert_t), (void*)(sizeof(float) * 6));
+		glVertexAttribPointer(0, 3, GL_FLOAT,         0, sizeof(skg_vert_t), nullptr);
+		glVertexAttribPointer(1, 3, GL_FLOAT,         0, sizeof(skg_vert_t), (void*)(sizeof(float) * 3));
+		glVertexAttribPointer(2, 2, GL_FLOAT,         0, sizeof(skg_vert_t), (void*)(sizeof(float) * 6));
 		glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, 1, sizeof(skg_vert_t), (void*)(sizeof(float) * 8));
 	}
 }
@@ -2568,7 +2731,7 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
 	const char *file_chars = (const char *)file_data;
 
-	skg_shader_stage_t result = {};
+	skg_shader_stage_t result = {}; 
 	result.type = type;
 
 	// Include terminating character
@@ -2583,11 +2746,11 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	}
 
 	// Convert the prefix if it doesn't match the GL version we're using
-#if _WIN32 || defined(__linux__)
-	const char   *prefix_gl      = "#version 450";
-#elif defined(__ANDROID__)
+#if   defined(_SKG_GL_ES)
 	const char   *prefix_gl      = "#version 320 es";
-#elif __EMSCRIPTEN__
+#elif defined(_SKG_GL_DESKTOP)
+	const char   *prefix_gl      = "#version 450";
+#elif defined(_SKG_GL_WEB)
 	const char   *prefix_gl      = "#version 300 es";
 #endif
 	const size_t  prefix_gl_size = strlen(prefix_gl);
@@ -2663,7 +2826,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		char text[272];
+		char text[128];
 		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
 		skg_log(skg_log_warning, text);
 		skg_log(skg_log_warning, log);
@@ -2672,7 +2835,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		glDeleteProgram(result._program);
 		result._program = 0;
 	} else {
-#if __EMSCRIPTEN__
+#ifdef _SKG_GL_WEB
 		for (size_t i = 0; i < meta->buffer_count; i++) {
 			char t_name[64];
 			snprintf(t_name, 64, "type_%s", meta->buffers[i].name);
@@ -2707,6 +2870,7 @@ bool skg_shader_is_valid(const skg_shader_t *shader) {
 ///////////////////////////////////////////
 
 void skg_shader_destroy(skg_shader_t *shader) {
+	skg_shader_meta_release(shader->meta);
 	glDeleteProgram(shader->_program);
 	glDeleteShader (shader->_vertex);
 	glDeleteShader (shader->_pixel);
@@ -2720,11 +2884,12 @@ void skg_shader_destroy(skg_shader_t *shader) {
 skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 	skg_pipeline_t result = {};
 	result.transparency = skg_transparency_none;
-	result.cull         = skg_cull_none;
+	result.cull         = skg_cull_back;
 	result.wireframe    = false;
 	result.depth_test   = skg_depth_test_less;
 	result.depth_write  = true;
 	result._shader      = *shader;
+	skg_shader_meta_reference(result._shader.meta);
 
 	return result;
 }
@@ -2733,7 +2898,7 @@ skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 
 void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	glUseProgram(pipeline->_shader._program);
-
+	
 	switch (pipeline->transparency) {
 	case skg_transparency_blend: {
 		glEnable(GL_BLEND);
@@ -2772,15 +2937,14 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	case skg_depth_test_less_or_eq:    glDepthFunc(GL_LEQUAL);   break;
 	case skg_depth_test_never:         glDepthFunc(GL_NEVER);    break;
 	case skg_depth_test_not_equal:     glDepthFunc(GL_NOTEQUAL); break; }
-
-#ifdef _WIN32
+	
+#ifdef _SKG_GL_DESKTOP
 	if (pipeline->wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	} else {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 #endif
-
 }
 
 ///////////////////////////////////////////
@@ -2790,10 +2954,13 @@ void skg_pipeline_set_transparency(skg_pipeline_t *pipeline, skg_transparency_ t
 }
 
 ///////////////////////////////////////////
+
 void skg_pipeline_set_cull(skg_pipeline_t *pipeline, skg_cull_ cull) {
 	pipeline->cull = cull;
 }
+
 ///////////////////////////////////////////
+
 void skg_pipeline_set_wireframe(skg_pipeline_t *pipeline, bool wireframe) {
 	pipeline->wireframe = wireframe;
 }
@@ -2843,6 +3010,7 @@ skg_depth_test_ skg_pipeline_get_depth_test(const skg_pipeline_t *pipeline) {
 ///////////////////////////////////////////
 
 void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
+	skg_shader_meta_release(pipeline->_shader.meta);
 	*pipeline = {};
 }
 
@@ -2851,7 +3019,7 @@ void skg_pipeline_destroy(skg_pipeline_t *pipeline) {
 skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height) {
 	skg_swapchain_t result = {};
 
-#if _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	result._hwnd  = hwnd;
 	result._hdc   = GetDC((HWND)hwnd);
 	result.width  = requested_width;
@@ -2875,22 +3043,27 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	UINT num_formats  = 0;
 	if (!wglChoosePixelFormatARB((HDC)result._hdc, format_attribs, nullptr, 1, &pixel_format, &num_formats)) {
 		skg_log(skg_log_critical, "Couldn't find pixel format!");
-		return {};
+		result = {};
+		return result;
 	}
 
 	PIXELFORMATDESCRIPTOR format_desc = { sizeof(PIXELFORMATDESCRIPTOR) };
 	DescribePixelFormat((HDC)result._hdc, pixel_format, sizeof(format_desc), &format_desc);
 	if (!SetPixelFormat((HDC)result._hdc, pixel_format, &format_desc)) {
 		skg_log(skg_log_critical, "Couldn't set pixel format!");
-		return {};
+		result = {};
+		return result;
 	}
-#elif defined(__ANDROID__)
-	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, nullptr);
+#elif defined(_SKG_GL_LOAD_EGL)
+	EGLint attribs[] = { 
+		EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
+		EGL_NONE };
+	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, attribs);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	result._x_window = hwnd;
 	result.width  = requested_width;
 	result.height = requested_height;
@@ -2901,7 +3074,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	result.height = viewport[3];
 #endif
 
-#if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#if defined(_SKG_GL_WEB) && defined(SKG_MANUAL_SRGB)
 	const char *vs = R"_(#version 300 es
 layout(location = 0) in vec4 in_var_SV_POSITION;
 layout(location = 1) in vec3 in_var_NORMAL;
@@ -2942,13 +3115,13 @@ void main() {
 	result._convert_pipe   = skg_pipeline_create(&result._convert_shader);
 
 	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, skg_tex_fmt_rgba32, skg_mip_none);
-	skg_tex_set_contents(&result._surface, nullptr, 1, result.width, result.height);
+	skg_tex_set_contents(&result._surface, nullptr, result.width, result.height);
 
 	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_format, skg_mip_none);
-	skg_tex_set_contents(&result._surface_depth, nullptr, 1, result.width, result.height);
+	skg_tex_set_contents(&result._surface_depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
 
-	skg_vert_t quad_verts[] = {
+	skg_vert_t quad_verts[] = { 
 		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
 		{ { 1, 1,0}, {0,0,1}, {1,1}, {255,255,255,255} },
 		{ { 1,-1,0}, {0,0,1}, {1,0}, {255,255,255,255} },
@@ -2964,20 +3137,38 @@ void main() {
 ///////////////////////////////////////////
 
 void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t height) {
+	if (width == swapchain->width && height == swapchain->height)
+		return;
+
 	swapchain->width  = width;
 	swapchain->height = height;
+
+#ifdef _SKG_GL_WEB
+	skg_tex_fmt_ color_fmt = swapchain->_surface.format;
+	skg_tex_fmt_ depth_fmt = swapchain->_surface_depth.format;
+
+	skg_tex_destroy(&swapchain->_surface);
+	skg_tex_destroy(&swapchain->_surface_depth);
+
+	swapchain->_surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, color_fmt, skg_mip_none);
+	skg_tex_set_contents(&swapchain->_surface, nullptr, swapchain->width, swapchain->height);
+
+	swapchain->_surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_fmt, skg_mip_none);
+	skg_tex_set_contents(&swapchain->_surface_depth, nullptr, swapchain->width, swapchain->height);
+	skg_tex_attach_depth(&swapchain->_surface, &swapchain->_surface_depth);
+#endif
 }
 
 ///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
-#ifdef _WIN32
+#if   defined(_SKG_GL_LOAD_WGL)
 	SwapBuffers((HDC)swapchain->_hdc);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
-#elif defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr, true, clear);
 	skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
@@ -2992,15 +3183,15 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
 	gl_active_width  = swapchain->width;
 	gl_active_height = swapchain->height;
-#if defined(__EMSCRIPTEN__) && defined(SKG_MANUAL_SRGB)
+#if   defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_target_bind(&swapchain->_surface, clear, clear_color_4);
-#elif _WIN32
+#elif defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__ANDROID__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
-#elif defined(__linux__)
+#elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr, clear, clear_color_4);
 #endif
@@ -3009,19 +3200,17 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *cle
 ///////////////////////////////////////////
 
 void skg_swapchain_destroy(skg_swapchain_t *swapchain) {
-#ifdef _WIN32
+#if defined(_SKG_GL_LOAD_WGL)
 	if (swapchain->_hdc != nullptr) {
 		wglMakeCurrent(nullptr, nullptr);
 		ReleaseDC((HWND)swapchain->_hwnd, (HDC)swapchain->_hdc);
 		swapchain->_hwnd = nullptr;
 		swapchain->_hdc  = nullptr;
 	}
-#elif defined(__ANDOIRD__)
+#elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	if (swapchain->_egl_surface != EGL_NO_SURFACE) eglDestroySurface(egl_display, swapchain->_egl_surface);
 	swapchain->_egl_surface = EGL_NO_SURFACE;
-// #elif defined(__linux__)
-	// glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 #endif
 }
 
@@ -3037,9 +3226,9 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 	result.height      = height;
 	result.array_count = array_count;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap
-		? GL_TEXTURE_CUBE_MAP
-		: array_count > 1
+	result._target     = type == skg_tex_type_cubemap 
+		? GL_TEXTURE_CUBE_MAP 
+		: array_count > 1 
 			? GL_TEXTURE_2D_ARRAY
 			: GL_TEXTURE_2D;
 
@@ -3048,7 +3237,7 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 
 		glBindFramebuffer(GL_FRAMEBUFFER, result._framebuffer);
 		if (array_count != 1) {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0);
 #else
 			skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3058,7 +3247,7 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
-
+	
 	return result;
 }
 
@@ -3075,7 +3264,7 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	result.array_count = 1;
 	result.array_start = array_layer;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap
+	result._target     = type == skg_tex_type_cubemap 
 		? GL_TEXTURE_CUBE_MAP
 		: GL_TEXTURE_2D_ARRAY;
 
@@ -3097,8 +3286,8 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	result.use     = use;
 	result.format  = format;
 	result.mips    = mip_maps;
-	result._target = type == skg_tex_type_cubemap
-		? GL_TEXTURE_CUBE_MAP
+	result._target = type == skg_tex_type_cubemap 
+		? GL_TEXTURE_CUBE_MAP 
 		: GL_TEXTURE_2D;
 
 	glGenTextures(1, &result._texture);
@@ -3107,7 +3296,7 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	if (type == skg_tex_type_rendertarget) {
 		glGenFramebuffers(1, &result._framebuffer);
 	}
-
+	
 	return result;
 }
 
@@ -3121,15 +3310,15 @@ bool skg_tex_is_valid(const skg_tex_t *tex) {
 
 void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	if (tex->type == skg_tex_type_rendertarget) {
-		uint32_t attach = depth->format == skg_tex_fmt_depthstencil
-			? GL_DEPTH_STENCIL_ATTACHMENT
+		uint32_t attach = depth->format == skg_tex_fmt_depthstencil 
+			? GL_DEPTH_STENCIL_ATTACHMENT 
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->_target == GL_TEXTURE_2D_ARRAY) {
 			if (tex->array_count == 1) {
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, tex->array_start);
 			} else {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 				glFramebufferTexture(GL_FRAMEBUFFER, attach, depth->_texture, 0);
 #else
 				skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3165,21 +3354,28 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	default: filter = GL_LINEAR; min_filter = GL_LINEAR;
 	}
 
-	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);
+	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);	
 	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_T, mode);
 	if (tex->type == skg_tex_type_cubemap) {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, mode);
 	}
 	glTexParameteri(tex->_target, GL_TEXTURE_MIN_FILTER, min_filter);
 	glTexParameteri(tex->_target, GL_TEXTURE_MAG_FILTER, filter    );
-#ifdef _WIN32
+#ifdef _SKG_GL_DESKTOP
 	glTexParameterf(tex->_target, GL_TEXTURE_MAX_ANISOTROPY, sample == skg_tex_sample_anisotropic ? anisotropy : 1.0f);
 #endif
 }
 
 ///////////////////////////////////////////
 
-void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
+void skg_tex_set_contents(skg_tex_t *tex, const void *data, int32_t width, int32_t height) {
+	const void *data_arr[1] = { data };
+	return skg_tex_set_contents_arr(tex, data_arr, 1, width, height );
+}
+
+///////////////////////////////////////////
+
+void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height) {
 	tex->width       = width;
 	tex->height      = height;
 	tex->array_count = data_frame_count;
@@ -3188,9 +3384,9 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 
 	glBindTexture(tex->_target, tex->_texture);
 
-	uint32_t format = (uint32_t)skg_tex_fmt_to_native(tex->format);
-	uint32_t type   = skg_tex_fmt_to_gl_type         (tex->format);
-	uint32_t layout = skg_tex_fmt_to_gl_layout       (tex->format);
+	uint32_t format = (uint32_t)skg_tex_fmt_to_native   (tex->format);
+	uint32_t layout =           skg_tex_fmt_to_gl_layout(tex->format);
+	uint32_t type   =           skg_tex_fmt_to_gl_type  (tex->format);
 	if (tex->type == skg_tex_type_cubemap) {
 		if (data_frame_count != 6) {
 			skg_log(skg_log_warning, "Cubemaps need 6 data frames");
@@ -3207,7 +3403,7 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 	if (tex->type == skg_tex_type_rendertarget) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->array_count != 1) {
-#ifndef __EMSCRIPTEN__
+#ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0);
 #else
 			skg_log(skg_log_critical, "sk_gpu doesn't support array textures with WebGL?");
@@ -3217,6 +3413,35 @@ void skg_tex_set_contents(skg_tex_t *tex, void **data_frames, int32_t data_frame
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
+#if defined(_SKG_GL_WEB) || defined(_SKG_GL_ES)
+	return false;
+#else
+	int64_t format = skg_tex_fmt_to_gl_layout(tex->format);
+	glBindTexture (tex->_target, tex->_texture);
+	glGetnTexImage(tex->_target, 0, (uint32_t)format, skg_tex_fmt_to_gl_type(tex->format), (uint32_t)data_size, ref_data);
+	bool result = glGetError() == 0;
+
+	// This is OpenGL, and textures are upside-down
+	if (result) {
+		int32_t line_size = skg_tex_fmt_size(tex->format) * tex->width;
+		void   *tmp       = malloc(line_size);
+		for (int32_t y = 0; y < tex->height/2; y++) {
+			void *top_line = ((uint8_t*)ref_data) + line_size * y;
+			void *bot_line = ((uint8_t*)ref_data) + line_size * ((tex->height-1) - y);
+			memcpy(tmp,      top_line, line_size);
+			memcpy(top_line, bot_line, line_size);
+			memcpy(bot_line, tmp,      line_size);
+		}
+		free(tmp);
+	}
+
+	return result;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -3239,10 +3464,8 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 void skg_tex_destroy(skg_tex_t *tex) {
 	uint32_t tex_list[] = { tex->_texture     };
 	uint32_t fb_list [] = { tex->_framebuffer };
-	if(tex->_texture     != 0)
-		glDeleteTextures    (1, tex_list);
-	if(tex->_framebuffer != 0)
-		glDeleteFramebuffers(1, fb_list );
+	if (tex->_texture    ) glDeleteTextures    (1, tex_list);
+	if (tex->_framebuffer) glDeleteFramebuffers(1, fb_list );  
 	*tex = {};
 }
 
@@ -3301,6 +3524,13 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rgba32_linear:
 	case skg_tex_fmt_rgba64:
 	case skg_tex_fmt_rgba128:       return GL_RGBA;
+	case skg_tex_fmt_bgra32:
+	case skg_tex_fmt_bgra32_linear:
+		#ifdef _SKG_GL_WEB // WebGL has no GL_BGRA?
+		return GL_RGBA;
+		#else
+		return GL_BGRA;
+		#endif
 	case skg_tex_fmt_depth16:
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH_STENCIL;
@@ -3317,6 +3547,8 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	switch (format) {
 	case skg_tex_fmt_rgba32:        return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_rgba32_linear: return GL_UNSIGNED_BYTE;
+	case skg_tex_fmt_bgra32:        return GL_UNSIGNED_BYTE;
+	case skg_tex_fmt_bgra32_linear: return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_rgba64:        return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_rgba128:       return GL_FLOAT;
 	case skg_tex_fmt_depth16:       return GL_UNSIGNED_SHORT;
@@ -3338,6 +3570,7 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #if __ANDROID__
 #include <android/asset_manager.h>
@@ -3392,6 +3625,348 @@ uint64_t skg_hash(const char *string) {
 
 ///////////////////////////////////////////
 
+skg_color32_t skg_col_hsv32(float h, float s, float v, float a) {
+	skg_color128_t col = skg_col_hsv128(h,s,v,a);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+// Reference from here: http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+skg_color128_t skg_col_hsv128(float h, float s, float v, float a) {
+	const float K[4] = { 1.0f, 2.0f/3.0f, 1.0f/3.0f, 3.0f };
+	float p[3] = {
+		fabsf(((h + K[0]) - floorf(h + K[0])) * 6.0f - K[3]),
+		fabsf(((h + K[1]) - floorf(h + K[1])) * 6.0f - K[3]),
+		fabsf(((h + K[2]) - floorf(h + K[2])) * 6.0f - K[3]) };
+
+	// lerp: a + (b - a) * t
+	return skg_color128_t {
+		(K[0] + (fmaxf(0,fminf(p[0] - K[0], 1.0f)) - K[0]) * s) * v,
+		(K[0] + (fmaxf(0,fminf(p[1] - K[0], 1.0f)) - K[0]) * s) * v,
+		(K[0] + (fmaxf(0,fminf(p[2] - K[0], 1.0f)) - K[0]) * s) * v,
+		a };
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_hsl32(float h, float c, float l, float a) {
+	skg_color128_t col = skg_col_hsl128(h,c,l,a);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+skg_color128_t skg_col_hsl128(float h, float s, float l, float a) {
+	if (h < 0) h -= floorf(h);
+	float r = fabsf(h * 6 - 3) - 1;
+	float g = 2 - fabsf(h * 6 - 2);
+	float b = 2 - fabsf(h * 6 - 4);
+	r = fmaxf(0, fminf(1, r));
+	g = fmaxf(0, fminf(1, g));
+	b = fmaxf(0, fminf(1, b));
+
+	float C = (1 - fabsf(2 * l - 1)) * s;
+	return {
+		(r - 0.5f) * C + l,
+		(g - 0.5f) * C + l,
+		(b - 0.5f) * C + l, a };
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_hcy32(float h, float c, float l, float a) {
+	skg_color128_t col = skg_col_hcy128(h,c,l,a);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+// Reference from here https://www.chilliant.com/rgb2hsv.html
+skg_color128_t skg_col_hcy128(float h, float c, float y, float a) {
+	if (h < 0) h -= floorf(h);
+	float r = fabsf(h * 6 - 3) - 1;
+	float g = 2 - fabsf(h * 6 - 2);
+	float b = 2 - fabsf(h * 6 - 4);
+	r = fmaxf(0, fminf(1, r));
+	g = fmaxf(0, fminf(1, g));
+	b = fmaxf(0, fminf(1, b));
+
+	float Z = r*0.299f + g*0.587f + b*0.114f;
+	if (y < Z) {
+		c *= y / Z;
+	} else if (Z < 1) {
+		c *= (1 - y) / (1 - Z);
+	}
+	return skg_color128_t { 
+		(r - Z) * c + y,
+		(g - Z) * c + y,
+		(b - Z) * c + y,
+		a };
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_lch32(float h, float c, float l, float a) {
+	skg_color128_t col = skg_col_lch128(h,c,l,a);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+// Reference from here: https://www.easyrgb.com/en/math.php
+skg_color128_t skg_col_lch128(float h, float c, float l, float alpha) {
+	const float tau = 6.283185307179586476925286766559f;
+	c = c * 200;
+	l = l * 100;
+	float a = cosf( h*tau ) * c;
+	float b = sinf( h*tau ) * c;
+	
+	float
+		y = (l + 16.f) / 116.f,
+		x = (a / 500.f) + y,
+		z = y - (b / 200.f);
+
+	x = 0.95047f * ((x*x*x > 0.008856f) ? x*x*x : (x - 16/116.f) / 7.787f);
+	y = 1.00000f * ((y*y*y > 0.008856f) ? y*y*y : (y - 16/116.f) / 7.787f);
+	z = 1.08883f * ((z*z*z > 0.008856f) ? z*z*z : (z - 16/116.f) / 7.787f);
+
+	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
+	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
+	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+
+	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
+	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
+	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
+
+	return skg_color128_t { 
+		fmaxf(0, fminf(1, r)),
+		fmaxf(0, fminf(1, g)),
+		fmaxf(0, fminf(1, b)), alpha };
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_helix32(float h, float c, float l, float a) {
+	skg_color128_t col = skg_col_helix128(h,c,l,a);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+// Reference here: http://www.mrao.cam.ac.uk/~dag/CUBEHELIX/
+skg_color128_t skg_col_helix128(float h, float s, float l, float alpha) {
+	const float tau = 6.28318f;
+	l = fminf(1,l);
+	float angle = tau * (h+(1/3.f));
+	float amp   = s * l * (1.f - l); // Helix in some implementations will 
+	// divide this by 2.0f and go at half s, but if we clamp rgb at the end, 
+	// we can get full s at the cost of a bit of artifacting at high 
+	// s+lightness values.
+
+	float a_cos = cosf(angle);
+	float a_sin = sinf(angle);
+	float r = l + amp * (-0.14861f * a_cos + 1.78277f * a_sin);
+	float g = l + amp * (-0.29227f * a_cos - 0.90649f * a_sin);
+	float b = l + amp * ( 1.97294f * a_cos);
+	r = fmaxf(0,fminf(1, r));
+	g = fmaxf(0,fminf(1, g));
+	b = fmaxf(0,fminf(1, b));
+	return { r, g, b, alpha };
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_jab32(float j, float a, float b, float alpha) {
+	skg_color128_t col = skg_col_jab128(j, a, b, alpha);
+	return skg_color32_t{ (uint8_t)(col.r*255), (uint8_t)(col.g*255), (uint8_t)(col.b*255), (uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+float lms(float t) {
+	if (t > 0.) {
+		float r = powf(t, 0.007460772656268214f);
+		float s = (0.8359375f - r) / (18.6875f*r + -18.8515625f);
+		return powf(s, 6.277394636015326f);
+	} else {
+		return 0.f;
+	}
+}
+
+float srgb(float c) {
+	if (c <= 0.0031308049535603713f) {
+		return c * 12.92f;
+	} else {
+		float c_ = powf(c, 0.41666666666666666f);
+		return c_ * 1.055f + -0.055f;
+	}
+}
+
+// ref : https://thebookofshaders.com/edit.php?log=180722032925
+skg_color128_t jchz2srgb(float h, float s, float l, float alpha) {
+	float jz = l*0.16717463120366200f + 1.6295499532821566e-11f;
+	float cz = s*0.16717463120366200f;
+	float hz = h*6.28318530717958647f;
+
+	float iz = jz / (0.56f*jz + 0.44f);
+	float az = cz * cosf(hz);
+	float bz = cz * sinf(hz);
+
+	float l_ = iz + az* +0.13860504327153930f + bz* +0.058047316156118830f;
+	float m_ = iz + az* -0.13860504327153927f + bz* -0.058047316156118904f;
+	float s_ = iz + az* -0.09601924202631895f + bz* -0.811891896056039000f;
+
+	      l = lms(l_);
+	float m = lms(m_);
+	      s = lms(s_);
+
+	float lr = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
+	float lg = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
+	float lb = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
+
+	lr = fmaxf(0,fminf(1, srgb(lr)));
+	lg = fmaxf(0,fminf(1, srgb(lg)));
+	lb = fmaxf(0,fminf(1, srgb(lb)));
+	return skg_color128_t{lr, lg, lb, alpha };
+}
+
+// Reference here: https://observablehq.com/@jrus/jzazbz
+float pqi(float x) {
+	x = powf(x, .007460772656268214f);
+	return x <= 0 ? 0 : powf(
+		(0.8359375f - x) / (18.6875f*x - 18.8515625f),
+		6.277394636015326f); 
+};
+skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
+	// JAB to XYZ
+	j = j + 1.6295499532821566e-11f;
+	float iz = j / (0.44f + 0.56f * j);
+	float l  = pqi(iz + .1386050432715393f*a + .0580473161561187f*b);
+	float m  = pqi(iz - .1386050432715393f*a - .0580473161561189f*b);
+	float s  = pqi(iz - .0960192420263189f*a - .8118918960560390f*b);
+
+	float r = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
+	float g = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
+	      b = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
+
+	/*float x = +1.661373055774069e+00f * L - 9.145230923250668e-01f * M + 2.313620767186147e-01f * S;
+	float y = -3.250758740427037e-01f * L + 1.571847038366936e+00f * M - 2.182538318672940e-01f * S;
+	float z = -9.098281098284756e-02f * L - 3.127282905230740e-01f * M + 1.522766561305260e+00f * S;
+
+	// XYZ to sRGB
+	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
+	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
+	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;*/
+
+	// to sRGB
+	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
+	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
+	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
+
+	return skg_color128_t { 
+		fmaxf(0, fminf(1, r)),
+		fmaxf(0, fminf(1, g)),
+		fmaxf(0, fminf(1, b)), alpha };
+}
+
+skg_color32_t skg_col_jsl32(float h, float s, float l, float alpha) {
+	skg_color128_t col = skg_col_jsl128(h, s, l, alpha);
+	return skg_color32_t{ (uint8_t)(col.r*255), (uint8_t)(col.g*255), (uint8_t)(col.b*255), (uint8_t)(col.a*255)};
+}
+skg_color128_t skg_col_jsl128(float h, float s, float l, float alpha) {
+	return jchz2srgb(h, s, l, alpha);/*
+	const float tau = 6.28318f;
+	h = h * tau - tau/2;
+	s = s * 0.16717463120366200f;
+	l = l * 0.16717463120366200f;
+	return skg_col_jab128(fmaxf(0,l), s * cosf(h), s * sinf(h), alpha);*/
+}
+
+///////////////////////////////////////////
+
+skg_color32_t skg_col_lab32(float l, float a, float b, float alpha) {
+	skg_color128_t col = skg_col_lab128(l,a,b,alpha);
+	return skg_color32_t{
+		(uint8_t)(col.r*255),
+		(uint8_t)(col.g*255),
+		(uint8_t)(col.b*255),
+		(uint8_t)(col.a*255)};
+}
+
+///////////////////////////////////////////
+
+skg_color128_t skg_col_lab128(float l, float a, float b, float alpha) {
+	l = l * 100;
+	a = a * 400 - 200;
+	b = b * 400 - 200;
+	float
+		y = (l + 16.f) / 116.f,
+		x = (a / 500.f) + y,
+		z = y - (b / 200.f);
+
+	x = 0.95047f * ((x * x * x > 0.008856f) ? x * x * x : (x - 16/116.f) / 7.787f);
+	y = 1.00000f * ((y * y * y > 0.008856f) ? y * y * y : (y - 16/116.f) / 7.787f);
+	z = 1.08883f * ((z * z * z > 0.008856f) ? z * z * z : (z - 16/116.f) / 7.787f);
+
+	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
+	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
+	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+
+	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
+	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
+	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
+
+	return skg_color128_t { 
+		fmaxf(0, fminf(1, r)),
+		fmaxf(0, fminf(1, g)),
+		fmaxf(0, fminf(1, b)), alpha };
+}
+
+///////////////////////////////////////////
+
+skg_color128_t skg_col_rgb_to_lab128(skg_color128_t rgb) {
+	rgb.r = (rgb.r > 0.04045f) ? powf((rgb.r + 0.055f) / 1.055f, 2.4f) : rgb.r / 12.92f;
+	rgb.g = (rgb.g > 0.04045f) ? powf((rgb.g + 0.055f) / 1.055f, 2.4f) : rgb.g / 12.92f;
+	rgb.b = (rgb.b > 0.04045f) ? powf((rgb.b + 0.055f) / 1.055f, 2.4f) : rgb.b / 12.92f;
+
+	// D65, Daylight, sRGB, aRGB
+	float x = (rgb.r * 0.4124f + rgb.g * 0.3576f + rgb.b * 0.1805f) / 0.95047f;
+	float y = (rgb.r * 0.2126f + rgb.g * 0.7152f + rgb.b * 0.0722f) / 1.00000f;
+	float z = (rgb.r * 0.0193f + rgb.g * 0.1192f + rgb.b * 0.9505f) / 1.08883f;
+
+	x = (x > 0.008856f) ? powf(x, 1/3.f) : (7.787f * x) + 16/116.f;
+	y = (y > 0.008856f) ? powf(y, 1/3.f) : (7.787f * y) + 16/116.f;
+	z = (z > 0.008856f) ? powf(z, 1/3.f) : (7.787f * z) + 16/116.f;
+
+	return {
+		(1.16f * y) - .16f,
+		1.25f * (x - y) + 0.5f,
+		0.5f * (y - z) + 0.5f, rgb.a };
+}
+
+///////////////////////////////////////////
+
 bool skg_shader_file_load(const char *file, skg_shader_file_t *out_file) {
 	void  *data = nullptr;
 	size_t size = 0;
@@ -3435,7 +4010,7 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 	if (!skg_shader_file_verify(data, size, &file_version, nullptr, 0) || file_version != 1) {
 		return false;
 	}
-
+	
 	const uint8_t *bytes = (uint8_t*)data;
 	size_t at = 10;
 	memcpy(&out_file->stage_count, &bytes[at], sizeof(out_file->stage_count)); at += sizeof(out_file->stage_count);
@@ -3522,9 +4097,11 @@ skg_shader_stage_t skg_shader_file_create_stage(const skg_shader_file_t *file, s
 #if defined(SKG_DIRECT3D11) || defined(SKG_DIRECT3D12)
 	language = skg_shader_lang_hlsl;
 #elif defined(SKG_OPENGL)
-	#ifdef __EMSCRIPTEN__
+	#if   defined(_SKG_GL_WEB)
 		language = skg_shader_lang_glsl_web;
-	#else
+	#elif defined(_SKG_GL_ES)
+		language = skg_shader_lang_glsl_es;
+	#elif defined(_SKG_GL_DESKTOP)
 		language = skg_shader_lang_glsl;
 	#endif
 #elif defined(SKG_VULKAN)
@@ -3535,7 +4112,8 @@ skg_shader_stage_t skg_shader_file_create_stage(const skg_shader_file_t *file, s
 		if (file->stages[i].language == language && file->stages[i].stage == stage)
 			return skg_shader_stage_create(file->stages[i].code, file->stages[i].code_size, stage);
 	}
-	return {};
+	skg_shader_stage_t empty = {};
+	return empty;
 }
 
 ///////////////////////////////////////////
@@ -3558,6 +4136,7 @@ void skg_shader_meta_reference(skg_shader_meta_t *meta) {
 ///////////////////////////////////////////
 
 void skg_shader_meta_release(skg_shader_meta_t *meta) {
+	if (!meta) return;
 	meta->references -= 1;
 	if (meta->references == 0) {
 		for (uint32_t i = 0; i < meta->buffer_count; i++) {
@@ -3576,8 +4155,10 @@ void skg_shader_meta_release(skg_shader_meta_t *meta) {
 
 skg_shader_t skg_shader_create_file(const char *sks_filename) {
 	skg_shader_file_t file;
-	if (!skg_shader_file_load(sks_filename, &file))
-		return {};
+	if (!skg_shader_file_load(sks_filename, &file)) {
+		skg_shader_t empty = {};
+		return empty;
+	}
 
 	skg_shader_stage_t vs     = skg_shader_file_create_stage(&file, skg_stage_vertex);
 	skg_shader_stage_t ps     = skg_shader_file_create_stage(&file, skg_stage_pixel);
@@ -3596,8 +4177,10 @@ skg_shader_t skg_shader_create_file(const char *sks_filename) {
 
 skg_shader_t skg_shader_create_memory(const void *sks_data, size_t sks_data_size) {
 	skg_shader_file_t file;
-	if (!skg_shader_file_load_memory(sks_data, sks_data_size, &file))
-		return {};
+	if (!skg_shader_file_load_memory(sks_data, sks_data_size, &file)) {
+		skg_shader_t empty = {};
+		return empty;
+	}
 
 	skg_shader_stage_t vs     = skg_shader_file_create_stage(&file, skg_stage_vertex);
 	skg_shader_stage_t ps     = skg_shader_file_create_stage(&file, skg_stage_pixel);
@@ -3619,7 +4202,8 @@ skg_bind_t skg_shader_get_tex_bind(const skg_shader_t *shader, const char *name)
 		if (strcmp(name, shader->meta->textures[i].name) == 0)
 			return shader->meta->textures[i].bind;
 	}
-	return {};
+	skg_bind_t empty = {};
+	return empty;
 }
 
 ///////////////////////////////////////////
@@ -3629,7 +4213,8 @@ skg_bind_t skg_shader_get_buffer_bind(const skg_shader_t *shader, const char *na
 		if (strcmp(name, shader->meta->buffers[i].name) == 0)
 			return shader->meta->buffers[i].bind;
 	}
-	return {};
+	skg_bind_t empty = {};
+	return empty;
 }
 
 ///////////////////////////////////////////
@@ -3667,6 +4252,26 @@ const skg_shader_var_t *skg_shader_get_var_info(const skg_shader_t *shader, int3
 
 	skg_shader_buffer_t *buffer = &shader->meta->buffers[shader->meta->global_buffer_id];
 	return &buffer->vars[var_id];
+}
+
+///////////////////////////////////////////
+
+uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
+	switch (format) {
+	case skg_tex_fmt_rgba32:        return sizeof(uint8_t )*4;
+	case skg_tex_fmt_rgba32_linear: return sizeof(uint8_t )*4;
+	case skg_tex_fmt_bgra32:        return sizeof(uint8_t )*4;
+	case skg_tex_fmt_bgra32_linear: return sizeof(uint8_t )*4;
+	case skg_tex_fmt_rgba64:        return sizeof(uint16_t)*4;
+	case skg_tex_fmt_rgba128:       return sizeof(uint32_t)*4;
+	case skg_tex_fmt_depth16:       return sizeof(uint16_t);
+	case skg_tex_fmt_depth32:       return sizeof(uint32_t);
+	case skg_tex_fmt_depthstencil:  return sizeof(uint32_t);
+	case skg_tex_fmt_r8:            return sizeof(uint8_t );
+	case skg_tex_fmt_r16:           return sizeof(uint16_t);
+	case skg_tex_fmt_r32:           return sizeof(uint32_t);
+	default: return 0;
+	}
 }
 #endif // SKG_IMPL
 /*

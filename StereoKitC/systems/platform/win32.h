@@ -1,6 +1,7 @@
 #pragma once
+#include "platform_utils.h"
 
-#ifndef WINDOWS_UWP
+#if defined(SK_OS_WINDOWS)
 
 namespace sk {
 
