@@ -1,7 +1,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/platform/platform_utils.h"
-#include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 #include "../sk_math.h"
 #include "../spherical_harmonics.h"
 #include "texture.h"
@@ -174,7 +174,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_t equirect = tex_create_file(equirectangular_file, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	if (equirect == nullptr)
 		return nullptr;
-	equirect->header.id = string_hash("temp/equirectid");
+	equirect->header.id = hash_fnv64_string("temp/equirectid");
 	material_t convert_material = material_find(default_id_material_equirect);
 
 	material_set_texture( convert_material, "source", equirect );

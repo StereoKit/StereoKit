@@ -10,6 +10,7 @@
 #include "sprite.h"
 #include "sound.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 
 #include <stdio.h>
@@ -24,7 +25,7 @@ array_t<asset_header_t *> assets = {};
 ///////////////////////////////////////////
 
 void *assets_find(const char *id, asset_type_ type) {
-	return assets_find(string_hash(id), type);
+	return assets_find(hash_fnv64_string(id), type);
 }
 
 ///////////////////////////////////////////
@@ -42,11 +43,11 @@ void *assets_find(uint64_t id, asset_type_ type) {
 
 void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
 	snprintf(dest, dest_size, "%s", root_name);
-	uint64_t id    = string_hash(dest);
+	uint64_t id    = hash_fnv64_string(dest);
 	int      count = 1;
 	while (assets_find(dest, type) != nullptr) {
 		snprintf(dest, dest_size, "%s%d", root_name, count);
-		id = string_hash(dest);
+		id = hash_fnv64_string(dest);
 		count += 1;
 	}
 }
@@ -74,7 +75,7 @@ void *assets_allocate(asset_type_ type) {
 	memset(header, 0, size);
 	header->type  = type;
 	header->refs += 1;
-	header->id    = string_hash(name);
+	header->id    = hash_fnv64_string(name);
 	header->index = assets.count;
 	assets.add(header);
 	return header;
@@ -83,7 +84,7 @@ void *assets_allocate(asset_type_ type) {
 ///////////////////////////////////////////
 
 void assets_set_id(asset_header_t &header, const char *id) {
-	assets_set_id(header, string_hash(id));
+	assets_set_id(header, hash_fnv64_string(id));
 #ifdef _DEBUG
 	header.id_text = string_copy(id);
 #endif

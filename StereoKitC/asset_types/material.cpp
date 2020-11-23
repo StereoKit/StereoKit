@@ -1,6 +1,7 @@
 #include "material.h"
 #include "texture.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 
 #include <stdio.h>
 #include <malloc.h>
@@ -315,7 +316,7 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 					// Tell the shader about the texture dimensions, if it has
 					// a parameter for it. Texture info will get put into any
 					// float4 param with the name [texname]_i
-					uint64_t tex_info_hash = string_hash("_i", id);
+					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
 					vec4     info = {(float)value->tex.width, (float)value->tex.height, (float)(uint32_t)log2(value->tex.width), 0};
 					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
 				}
@@ -329,14 +330,14 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 ///////////////////////////////////////////
 
 bool32_t material_set_texture(material_t material, const char *name, tex_t value) {
-	uint64_t id = string_hash(name);
+	uint64_t id = hash_fnv64_string(name);
 	return material_set_texture_id(material, id, value);
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_has_param(material_t material, const char *name, material_param_ type) {
-	uint64_t id = string_hash(name);
+	uint64_t id = hash_fnv64_string(name);
 
 	if (type == material_param_texture) {
 		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
@@ -353,7 +354,7 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 ///////////////////////////////////////////
 
 void material_set_param(material_t material, const char *name, material_param_ type, const void *value) {
-	material_set_param_id(material, string_hash(name), type, value);
+	material_set_param_id(material, hash_fnv64_string(name), type, value);
 }
 
 ///////////////////////////////////////////
@@ -374,7 +375,7 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 ///////////////////////////////////////////
 
 bool32_t material_get_param(material_t material, const char *name, material_param_ type, void *out_value) {
-	return material_get_param_id(material, string_hash(name), type, out_value);
+	return material_get_param_id(material, hash_fnv64_string(name), type, out_value);
 }
 
 ///////////////////////////////////////////
