@@ -38,6 +38,7 @@ Example usage:
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 #define FERR_HASH_DEFAULT(x) = x
