@@ -3,6 +3,7 @@ libraries_includes = include_directories('.', '../lib/include_no_win')#, '../lib
 lib_libraries = static_library(
 	'libraries',
 	files(
+		'ferr_hash.cpp',
 		'isac_spatial_sound.cpp',
 		'miniz.cpp',
 		'ofbx.cpp',
