@@ -344,3 +344,5 @@ _site/
 .jekyll-cache/
 *.lock
 build/
+
+.vscode/
