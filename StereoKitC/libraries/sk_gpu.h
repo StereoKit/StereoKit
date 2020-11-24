@@ -522,6 +522,7 @@ typedef struct {
 void               skg_log                     (skg_log_ level, const char *text);
 bool               skg_read_file               (const char *filename, void **out_data, size_t *out_size);
 uint64_t           skg_hash                    (const char *string);
+uint32_t           skg_mip_count               (int32_t width, int32_t height);
 
 skg_color32_t      skg_col_hsv32               (float hue, float saturation, float value, float alpha);
 skg_color128_t     skg_col_hsv128              (float hue, float saturation, float value, float alpha);
@@ -1552,7 +1553,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	tex->array_count = data_frame_count;
 	bool mips = tex->mips == skg_mip_generate && (width & (width - 1)) == 0 && (height & (height - 1)) == 0;
 
-	uint32_t mip_levels = (mips ? (uint32_t)log2(width) + 1 : 1);
+	uint32_t mip_levels = (mips ? skg_mip_count(width, height) : 1);
 	uint32_t px_size    = skg_tex_fmt_size(tex->format);
 
 	if (tex->_texture == nullptr) {
@@ -1721,8 +1722,8 @@ void skg_tex_destroy(skg_tex_t *tex) {
 
 template <typename T>
 void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
-	int w = (int32_t)log2(width);
-	int h = (int32_t)log2(height);
+	int w = (int32_t)log2f((float)width);
+	int h = (int32_t)log2f((float)height);
 	*out_width  = w = max(1, (1 << w) >> 1);
 	*out_height = h = max(1, (1 << h) >> 1);
 
@@ -1731,19 +1732,19 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 	memset(*out_data, 0, (int64_t)w * h * sizeof(T) * 4);
 	T *result = *out_data;
 
-	for (int32_t y = 0; y < height; y++) {
-		int32_t src_row_start  = y * width;
-		int32_t dest_row_start = (y / 2) * w;
-		for (int32_t x = 0; x < width;  x++) {
-			int src  = (x + src_row_start)*4;
-			int dest = ((x / 2) + dest_row_start)*4;
+	for (int32_t y = 0; y < (*out_height); y++) {
+		int32_t src_row_start  = y * 2 * width;
+		int32_t dest_row_start = y * (*out_width);
+		for (int32_t x = 0; x < (*out_width);  x++) {
+			int src   = (x*2 + src_row_start )*4;
+			int dest  = (x   + dest_row_start)*4;
+			int src_n = src + width*4;
 			T *cD = &result[dest];
-			T *cS = &data  [src];
 
-			cD[0] += cS[0] / 4;
-			cD[1] += cS[1] / 4;
-			cD[2] += cS[2] / 4;
-			cD[3] += cS[3] / 4;
+			cD[0] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++;
+			cD[1] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++;
+			cD[2] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++;
+			cD[3] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++;
 		}
 	}
 }
@@ -1752,8 +1753,8 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
-	int w = (int32_t)log2(width);
-	int h = (int32_t)log2(height);
+	int w = (int32_t)log2f((float)width);
+	int h = (int32_t)log2f((float)height);
 	*out_width  = w = (1 << w) >> 1;
 	*out_height = h = (1 << h) >> 1;
 
@@ -1762,13 +1763,14 @@ void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int3
 	memset(*out_data, 0, (int64_t)w * h * sizeof(T));
 	T *result = *out_data;
 
-	for (int32_t y = 0; y < height; y++) {
-		int32_t src_row_start  = y * width;
-		int32_t dest_row_start = (y / 2) * w;
-		for (int32_t x = 0; x < width;  x++) {
-			int src  = (x + src_row_start);
-			int dest = ((x / 2) + dest_row_start);
-			result[dest] = result[dest] + (data[src] / 4);
+	for (int32_t y = 0; y < (*out_height); y++) {
+		int32_t src_row_start  = y * 2 * width;
+		int32_t dest_row_start = y * (*out_width);
+		for (int32_t x = 0; x < (*out_width);  x++) {
+			int src   = x*2 + src_row_start;
+			int dest  = x   + dest_row_start;
+			int src_n = src + width;
+			result[dest] = (data[src] + data[src+1] + data[src_n] + data[src_n+1]) / 4;
 		}
 	}
 }
@@ -3621,6 +3623,12 @@ uint64_t skg_hash(const char *string) {
 	while ((c = *string++))
 		hash = (hash ^ c) * 1099511628211;
 	return hash;
+}
+
+///////////////////////////////////////////
+
+uint32_t skg_mip_count(int32_t width, int32_t height) {
+	return (uint32_t)log2f(fminf((float)width, (float)height)) + 1;
 }
 
 ///////////////////////////////////////////
