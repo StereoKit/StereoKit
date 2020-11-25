@@ -383,11 +383,7 @@ typedef struct skg_swapchain_t {
 #elif defined(_SKG_GL_LOAD_EGL)
 	void *_egl_surface;
 #elif defined(_SKG_GL_LOAD_GLX)
-	void *_x_display;
-	void *_visual_id;
-	void *_glx_fb_config;
-	void *_glx_drawable;
-	void *_glx_context;
+	void *_x_window;
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
@@ -407,6 +403,12 @@ typedef struct skg_platform_data_t {
 #elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
+#elif defined(_SKG_GL_LOAD_GLX)
+	void *_x_display;
+	void *_visual_id;
+	void *_glx_fb_config;
+	void *_glx_drawable;
+	void *_glx_context;
 #endif
 } skg_platform_data_t;
 #endif
