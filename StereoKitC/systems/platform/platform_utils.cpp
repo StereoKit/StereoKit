@@ -174,6 +174,8 @@ void platform_set_cursor(vec2 window_pos) {
 	POINT pt = { (LONG)window_pos.x, (LONG)window_pos.y };
 	ClientToScreen((HWND)win32_hwnd(), &pt);
 	SetCursorPos  (pt.x, pt.y);
+#elif defined(SK_OS_LINUX)
+	linux_set_cursor(window_pos);
 #endif
 }
 
@@ -184,6 +186,8 @@ float platform_get_scroll() {
 	return uwp_get_scroll();
 #elif defined(SK_OS_WINDOWS)
 	return win32_scroll;
+#elif defined(SK_OS_LINUX)
+	return linux_get_scroll();
 #else
 	return 0;
 #endif

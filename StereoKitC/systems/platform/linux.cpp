@@ -144,12 +144,27 @@ enum _linux_key_types {
 	}; 
 
 	bool _linux_pressed_sk_keys[256] = {0};
-	int scrollwheel;
+	float scrollwheel;
 	int mouseX;
 	int mouseY;
 
-bool _in_thread_get_keypress(){
-											char keys_return[32];
+
+
+void* linux_input_pthread(void* no)
+{
+    XEvent event;
+
+    XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask); 
+ 
+
+    /* event loop */
+    while (1)
+    {
+        XNextEvent(dpy, &event);
+        /* keyboard events */
+        if (event.type == KeyPress || event.type == KeyRelease)
+        {
+            char keys_return[32];
     								XQueryKeymap(dpy, keys_return);
 
 												for(int i=0; i<key_MAX; i++) {
@@ -165,44 +180,7 @@ bool _in_thread_get_keypress(){
 
 													}
 													if (isPressed == false) {_linux_pressed_sk_keys[i] = false;}
-													if (_linux_pressed_sk_keys[i]) { printf("yes 0x%x\n", i);}
-												}
-
-
-
-	return false;
-													
-}
-
-
-void* linux_input_pthread(void* no)
-{
-
-
-    XEvent event;
- 
-    
-
-
-				usleep(100000);
-    XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask); // | ButtonPressMask | ButtonReleaseMask 
- 
-    /* map (show) the window */
-    //XMapWindow(dpy, win);
-				//int what = 1;
-				//KeySym* aye = XGetKeyboardMapping(dpy,8,0xf8,&what);
-
-
-    /* event loop */
-    while (1)
-    {
-        XNextEvent(dpy, &event);
-        /* keyboard events */
-        if (event.type == KeyPress || event.type == KeyRelease)
-        {
-												//printf("got keypress\n");
-
-            	_in_thread_get_keypress();
+										}
         }
 								else if (event.type == ButtonPress)
 								{
@@ -213,16 +191,14 @@ void* linux_input_pthread(void* no)
 													_linux_pressed_sk_keys[key_mouse_center] = true; break;
 												case (3):
 													_linux_pressed_sk_keys[key_mouse_right] = true; break;
-												case (4): /*scroll up*/ scrollwheel++; break;
-												case (5): /*scroll down*/ scrollwheel--; break;
+												case (4): /*scroll up*/ scrollwheel+=120; break;
+												case (5): /*scroll down*/ scrollwheel-=120; break;
 												case (9):
 													_linux_pressed_sk_keys[key_mouse_forward] = true; break;
 												case (8):
 													_linux_pressed_sk_keys[key_mouse_back] = true; break;
 											}
-												//printf("%d asd;flk? %d\n",event.xbutton.state,event.xbutton.button);
         }else if (event.type == ButtonRelease){
-												//printf("%d assdf3d;flk? %d\n",event.xbutton.state,event.xbutton.button);
 											switch(event.xbutton.button){
 												case (1):
 													_linux_pressed_sk_keys[key_mouse_left] = false;	break;
@@ -235,16 +211,13 @@ void* linux_input_pthread(void* no)
 												case (8):
 													_linux_pressed_sk_keys[key_mouse_back] = false; break;
 													/* We get a ButtonRelease event directly after ButtonPress for scroll wheel stuff.
-													Since all it does is bump a variable up or down, we don't need to do anything for release.*/
+													Since all it does is bump a variable up or down, we don't need to do anything for release.
+													(If we get ButtonPress for scroll up, but never get a ButtonRelease .... that would be very weird)*/
 											}
 
 								}else if (event.type == MotionNotify){
-									printf("motionnotify!\n");
 									mouseX = event.xmotion.x;
 									mouseY = event.xmotion.y;
-								} else {
-								log_diagf("uncaught X event StereoKitC/systems/platform/linux.cpp\n");
-									
 								}
     }
 
@@ -259,6 +232,8 @@ void* linux_input_pthread(void* no)
 
 
 bool linux_init() {
+	int status = XInitThreads();
+	log_diagf("XInitThreads status is %d (if zero, very bad)", status);
 	dpy = XOpenDisplay(0);
 	if (dpy == nullptr) {
 		log_fail_reason(90, "Cannot connect to X server");
@@ -314,23 +289,6 @@ bool linux_start() {
 ///////////////////////////////////////////
 
 bool linux_get_cursor(vec2 &out_pos) {
-	// Window root_window, child_window;
-	// int root_cursor_pos[2], win_cursor_pos[2];
-
-	// bool result = XQueryPointer(
-	// 	dpy, win,
-	// 	&root_window, &child_window, //Root window, child window
-	// 	&root_cursor_pos[0], &root_cursor_pos[1], //Root relative X and Y coordinates
-	// 	&win_cursor_pos[0], &win_cursor_pos[1], //Window relative X and Y coordinates
-	// 	&key_mask //Key mask
-	// );
-
-	// if(result) {
-	// 	out_pos.x = (float) win_cursor_pos[0];
-	// 	out_pos.y = (float) win_cursor_pos[1];
-	// }
-
-	// return result;
 	out_pos.x = (float)mouseX;
 	out_pos.y = (float)mouseY;
 	return true;
@@ -343,6 +301,24 @@ bool linux_key_down(key_ key) {
 }
 
 ///////////////////////////////////////////
+
+float linux_get_scroll() {
+	return (float)scrollwheel;
+}
+
+///////////////////////////////////////////
+
+void linux_set_cursor(vec2 window_pos) {
+	// XWarpPointer(display, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, 
+ //                dest_y)
+ //        Display *display;
+ //        Window src_w, dest_w;
+ //        int src_x, src_y;
+ //        unsigned int src_width, src_height;
+ //        int dest_x, dest_y;
+	XWarpPointer(dpy, win, win, 0, 0, 0, 0, window_pos.x,window_pos.y);
+}
+
 
 void linux_stop() {
 	flatscreen_input_shutdown();
