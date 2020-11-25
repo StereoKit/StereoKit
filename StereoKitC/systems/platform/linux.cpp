@@ -41,6 +41,7 @@ enum _linux_key_types {
 		notakey = 0, // {0} initialized will always be this
 		keysym = 1,
 		mouse = 2,
+		capslock = 3,
 	} how_to_deal_with;
 
 	struct _linux_key_map {
@@ -63,7 +64,7 @@ enum _linux_key_types {
 	{/*0x10 - key_shift */ keysym,{XK_Shift_L,XK_Shift_R} },
 	{/*0x11 - key_ctrl */ keysym,{XK_Control_L,XK_Control_R} },
 	{/*0x12 - key_alt */ keysym,{XK_Alt_L,XK_Alt_R} },{0},
-	{/*0x14 - key_caps_lock */ keysym,{XK_Caps_Lock,} },{0},{0},{0},{0},{0},{0},
+	{/*0x14 - key_caps_lock */ capslock,{XK_Caps_Lock,} },{0},{0},{0},{0},{0},{0},
 	{/*0x1B - key_esc */ keysym,{XK_Escape,} },{0},{0},{0},{0},
 	{/*0x20 - key_space */ keysym,{XK_space,XK_KP_Space} },{0},{0},
 	{/*0x23 - key_end */ keysym,{XK_End,XK_KP_End} },
@@ -181,6 +182,10 @@ void* linux_input_pthread(void* no)
 													}
 													if (isPressed == false) {_linux_pressed_sk_keys[i] = false;}
 										}
+										XKeyboardState x;
+										XGetKeyboardControl(dpy,&x);
+										_linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
+
         }
 								else if (event.type == ButtonPress)
 								{
