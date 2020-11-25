@@ -63,6 +63,7 @@ void flatscreen_input_update() {
 			const mouse_t *mouse = input_mouse();
 			head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
 			head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			head_rot.x = fmaxf(-89.9f, fminf(head_rot.x, 89.9f));
 			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
 
 			vec2 prev_pt = mouse->pos - mouse->pos_change;
