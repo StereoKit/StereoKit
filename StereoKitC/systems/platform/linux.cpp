@@ -155,7 +155,7 @@ void* linux_input_pthread(void* no)
 {
     XEvent event;
 
-    XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask); 
+    XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask); 
  
 
     /* event loop */
@@ -223,6 +223,9 @@ void* linux_input_pthread(void* no)
 								}else if (event.type == MotionNotify){
 									mouseX = event.xmotion.x;
 									mouseY = event.xmotion.y;
+								}else if (event.type == ConfigureNotify) {
+									//Todo: only call this when the user is done resizing
+									linux_resize(event.xconfigure.width,event.xconfigure.height);
 								}
     }
 
@@ -289,6 +292,19 @@ bool linux_start() {
 	pthread_create(&imnotimportant,nullptr,linux_input_pthread,(void*)1);
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void linux_resize(int width, int height) {
+	if (width == sk_info.display_width && height == sk_info.display_height)
+		return;
+	sk_info.display_width  = width;
+	sk_info.display_height = height;
+	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
+	
+	skg_swapchain_resize(&linux_swapchain, sk_info.display_width, sk_info.display_height);
+	render_update_projection();
 }
 
 ///////////////////////////////////////////

@@ -16,6 +16,8 @@ void  linux_step_begin();
 void  linux_step_end  ();
 void  linux_vsync     ();
 
+void linux_resize(int width, int height);
+
 bool  linux_get_cursor(vec2 &out_pos);
 bool  linux_key_down  (key_ key);
 float linux_get_scroll();
