@@ -82,6 +82,9 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Message>
       </Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h -c $(ProjectDir)shaders_builtin\*.hlsl</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -113,6 +116,9 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <Message>
       </Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h -c $(ProjectDir)shaders_builtin\*.hlsl</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="asset_types\assets.cpp" />
@@ -239,78 +245,15 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <CustomBuild Include="shaders_builtin\shader_builtin_default.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_equirect.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_font.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_lines.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_pbr.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_skybox.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_ui.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_unlit.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
-      <FileType>Document</FileType>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-      <Outputs>%(FullPath).h</Outputs>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-      <Message>Compiling shader: %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)tools\skshaderc.exe -O3 -h %(FullPath)</Command>
-    </CustomBuild>
+    <None Include="shaders_builtin\shader_builtin_default.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_equirect.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_font.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_lines.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_pbr.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_skybox.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_ui.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
     <None Include="shaders_builtin\stereokit.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
