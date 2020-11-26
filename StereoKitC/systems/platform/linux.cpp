@@ -263,7 +263,27 @@ bool linux_init() {
 
 	win = XCreateWindow(dpy, root, 0, 0, 1280, 720, 0, vi->depth, InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
 
+
+	XSizeHints *hints = XAllocSizeHints();
+	if(hints == nullptr) {
+		log_errf("Couldn't do size hints stuff for some reason\n");
+		}else{
+
+		hints->flags = PMinSize;
+		hints->min_width = 100;
+		hints->min_height = 100;
+		XSetWMNormalHints(dpy, win, hints);
+		XSetWMSizeHints(dpy, win, hints, PMinSize);
+			log_diagf("set window hints\n");
+		}
+	
+
 	XMapWindow(dpy, win);
+
+
+		
+
+
 	XStoreName(dpy, win, sk_app_name);
 
 	skg_setup_xlib(dpy, vi, &win);
