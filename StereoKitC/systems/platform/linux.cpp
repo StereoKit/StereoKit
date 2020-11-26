@@ -12,6 +12,7 @@
 #include "../../_stereokit.h"
 #include "../../libraries/sk_gpu.h"
 #include <unistd.h>
+#include <signal.h>
 
 
 
@@ -156,106 +157,149 @@ enum _linux_key_types {
 	int mouseX;
 	int mouseY;
 
+	bool _pthread_continue = true;
 
+	void *linux_input_pthread(void *no)
+	{
+		XEvent event;
 
-void* linux_input_pthread(void* no)
-{
-    XEvent event;
+		XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
+		Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
+		XSetWMProtocols(dpy, win, &wm_delete, 1);
 
-    XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask); 
-				Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
-				XSetWMProtocols( dpy, win, &wm_delete, 1 );
+		/* event loop */
+		while (_pthread_continue)
+		{
+			XNextEvent(dpy, &event);
+			/* keyboard events */
+			if (event.type == KeyPress || event.type == KeyRelease)
+			{
+				char keys_return[32];
+				XQueryKeymap(dpy, keys_return);
 
-    /* event loop */
-    while (1)
-    {
-        XNextEvent(dpy, &event);
-        /* keyboard events */
-        if (event.type == KeyPress || event.type == KeyRelease)
-        {
-            char keys_return[32];
-    								XQueryKeymap(dpy, keys_return);
+				for (int i = 0; i < key_MAX; i++)
+				{
+					if (map[i].what != keysym)
+					{
+						continue;
+					}
 
-												for(int i=0; i<key_MAX; i++) {
-													if (map[i].what != keysym) {continue;}
+					bool isPressed = false;
+					for (int j = 0; j < 7; j++)
+					{
+						if (map[i].xkey_or_key_mask[j] == 0)
+						{
+							break;
+						}
+						KeyCode kc2 = XKeysymToKeycode(dpy, map[i].xkey_or_key_mask[j]);
+						isPressed = !!(keys_return[kc2 >> 3] & (1 << (kc2 & 7)));
+						if (isPressed == true)
+						{
+							_linux_pressed_sk_keys[i] = true;
+							break;
+						}
+					}
+					if (isPressed == false)
+					{
+						_linux_pressed_sk_keys[i] = false;
+					}
+				}
+				XKeyboardState x;
+				XGetKeyboardControl(dpy, &x);
+				_linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
+			}
+			else if (event.type == ButtonPress)
+			{
+				switch (event.xbutton.button)
+				{
+				case (1):
+					_linux_pressed_sk_keys[key_mouse_left] = true;
+					break;
+				case (2):
+					_linux_pressed_sk_keys[key_mouse_center] = true;
+					break;
+				case (3):
+					_linux_pressed_sk_keys[key_mouse_right] = true;
+					break;
+				case (4): /*scroll up*/
+					scrollwheel += 120;
+					break;
+				case (5): /*scroll down*/
+					scrollwheel -= 120;
+					break;
+				case (9):
+					_linux_pressed_sk_keys[key_mouse_forward] = true;
+					break;
+				case (8):
+					_linux_pressed_sk_keys[key_mouse_back] = true;
+					break;
+				}
+			}
+			else if (event.type == ButtonRelease)
+			{
+				switch (event.xbutton.button)
+				{
+				case (1):
+					_linux_pressed_sk_keys[key_mouse_left] = false;
+					break;
+				case (2):
+					_linux_pressed_sk_keys[key_mouse_center] = false;
+					break;
+				case (3):
+					_linux_pressed_sk_keys[key_mouse_right] = false;
+					break;
+				case (9):
+					_linux_pressed_sk_keys[key_mouse_forward] = false;
+					break;
+				case (8):
+					_linux_pressed_sk_keys[key_mouse_back] = false;
+					break;
+					/* 	We get a ButtonRelease event directly after ButtonPress for scroll wheel stuff.
+							Since all it does is bump a variable up or down, we don't need to do anything for release.
+							(If we get ButtonPress for scroll up, but never get a ButtonRelease .... that would be very weird)*/
+				}
+			}
+			else if (event.type == MotionNotify)
+			{
+				mouseX = event.xmotion.x;
+				mouseY = event.xmotion.y;
+			}
+			else if (event.type == ConfigureNotify)
+			{
+				//Todo: only call this when the user is done resizing
+				linux_resize(event.xconfigure.width, event.xconfigure.height);
+			}
+			else if (event.type == ClientMessage)
+			{
 
+				if (!strcmp(XGetAtomName(dpy, event.xclient.message_type), "WM_PROTOCOLS"))
+				{
+					sk_quit();
+					return 0;
+				}
+			}
+		}
 
-												bool isPressed = false;
-													for (int j=0; j<7; j++){
-														if (map[i].xkey_or_key_mask[j] == 0) { break;}
-														KeyCode kc2 = XKeysymToKeycode(dpy, map[i].xkey_or_key_mask[j]);
-														isPressed = !!(keys_return[kc2 >> 3] & (1 << (kc2 & 7)));
-														if (isPressed == true) {_linux_pressed_sk_keys[i] = true; break;}
-
-													}
-													if (isPressed == false) {_linux_pressed_sk_keys[i] = false;}
-										}
-										XKeyboardState x;
-										XGetKeyboardControl(dpy,&x);
-										_linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
-
-        }
-								else if (event.type == ButtonPress)
-								{
-											switch(event.xbutton.button){
-												case (1):
-													_linux_pressed_sk_keys[key_mouse_left] = true;	break;
-												case (2):
-													_linux_pressed_sk_keys[key_mouse_center] = true; break;
-												case (3):
-													_linux_pressed_sk_keys[key_mouse_right] = true; break;
-												case (4): /*scroll up*/ scrollwheel+=120; break;
-												case (5): /*scroll down*/ scrollwheel-=120; break;
-												case (9):
-													_linux_pressed_sk_keys[key_mouse_forward] = true; break;
-												case (8):
-													_linux_pressed_sk_keys[key_mouse_back] = true; break;
-											}
-        }else if (event.type == ButtonRelease){
-											switch(event.xbutton.button){
-												case (1):
-													_linux_pressed_sk_keys[key_mouse_left] = false;	break;
-												case (2):
-													_linux_pressed_sk_keys[key_mouse_center] = false; break;
-												case (3):
-													_linux_pressed_sk_keys[key_mouse_right] = false; break;
-												case (9):
-													_linux_pressed_sk_keys[key_mouse_forward] = false; break;
-												case (8):
-													_linux_pressed_sk_keys[key_mouse_back] = false; break;
-													/* We get a ButtonRelease event directly after ButtonPress for scroll wheel stuff.
-													Since all it does is bump a variable up or down, we don't need to do anything for release.
-													(If we get ButtonPress for scroll up, but never get a ButtonRelease .... that would be very weird)*/
-											}
-
-								}else if (event.type == MotionNotify){
-									mouseX = event.xmotion.x;
-									mouseY = event.xmotion.y;
-								}else if (event.type == ConfigureNotify) {
-									//Todo: only call this when the user is done resizing
-									linux_resize(event.xconfigure.width,event.xconfigure.height);
-								}else if (event.type == ClientMessage) {	
-										if ( !strcmp( XGetAtomName( dpy, event.xclient.message_type ), "WM_PROTOCOLS" ) ) {
-											sk_quit();
-											return 0;
-											} 
-								}
-    }
-
- 
-    return 0;
-}
-
+		return 0;
+	}
 
 ///////////////////////////////////////////
 // End Moses's input thread bs
 ///////////////////////////////////////////
 
+bool window_closed_because_openxr = false;
+
+
+void _linux_sigint_handler(int sig) {
+	_pthread_continue = false;
+	sk_quit();
+}
 
 bool linux_init() {
+	signal(SIGINT, _linux_sigint_handler);
 	int status = XInitThreads();
-	log_diagf("XInitThreads status is %d (if zero, very bad)", status);
-	dpy = XOpenDisplay(0);
+
+    dpy = XOpenDisplay(0);
 	if (dpy == nullptr) {
 		log_fail_reason(90, "Cannot connect to X server");
 		return false;
@@ -276,7 +320,6 @@ bool linux_init() {
 
 	win = XCreateWindow(dpy, root, 0, 0, 1280, 720, 0, vi->depth, InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
 
-
 	XSizeHints *hints = XAllocSizeHints();
 	if(hints == nullptr) {
 		log_errf("Couldn't do size hints stuff for some reason\n");
@@ -290,18 +333,21 @@ bool linux_init() {
 			log_diagf("set window hints\n");
 		}
 	
-
 	XMapWindow(dpy, win);
-
-
-		
-
 
 	XStoreName(dpy, win, sk_app_name);
 
 	skg_setup_xlib(dpy, vi, &win);
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void linux_finish_openxr_init(){
+    window_closed_because_openxr = true;
+    XDestroyWindow(dpy,win);
+    XFlush(dpy);
 }
 
 ///////////////////////////////////////////
@@ -382,9 +428,8 @@ void linux_set_cursor(vec2 window_pos) {
  //        unsigned int src_width, src_height;
  //        int dest_x, dest_y;
 
-
-	//log_diagf("setting pointer\n");
 	XWarpPointer(dpy, win, win, 0, 0, 0, 0, window_pos.x,window_pos.y);
+    XFlush(dpy);
 }
 
 
@@ -396,18 +441,16 @@ void linux_stop() {
 ///////////////////////////////////////////
 
 void linux_shutdown() {
-	glXMakeCurrent(dpy, None, nullptr);
-	XDestroyWindow(dpy, win);
-	XCloseDisplay(dpy);
+  if (!window_closed_because_openxr) {
+		glXMakeCurrent(dpy, None, nullptr);
+		XDestroyWindow(dpy, win);
+    XCloseDisplay(dpy);
+	}
 }
 
 ///////////////////////////////////////////
 
 void linux_step_begin() {
-	if(fix_glx_oxr) {
-		fix_glx_oxr = false;
-		// XDestroyWindow(dpy, win);
-	}
 
 	flatscreen_input_update();
 }
@@ -415,6 +458,7 @@ void linux_step_begin() {
 ///////////////////////////////////////////
 
 void linux_step_end() {
+	printf("step\n"	);
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();

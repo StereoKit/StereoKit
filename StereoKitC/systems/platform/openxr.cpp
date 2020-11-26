@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <linux.h>
 
 namespace sk {
 
@@ -157,6 +158,9 @@ int64_t openxr_get_time() {
 ///////////////////////////////////////////
 
 bool openxr_init() {
+
+
+
 
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
@@ -355,6 +359,9 @@ bool openxr_init() {
 		openxr_shutdown();
 		return false;
 	}
+#if defined(SK_OS_LINUX)
+            linux_finish_openxr_init();
+#endif
 	return true;
 }
 
