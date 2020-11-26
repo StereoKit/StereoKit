@@ -1,3 +1,4 @@
+
 #include "linux.h"
 #if defined(SK_OS_LINUX)
 
@@ -11,6 +12,9 @@
 #include "../../_stereokit.h"
 #include "../../libraries/sk_gpu.h"
 #include <unistd.h>
+
+
+
 
 namespace sk {
 
@@ -30,6 +34,9 @@ Window                  win;
 bool                    fix_glx_oxr = true;
 
 uint32_t                key_mask;
+
+
+
 
 
 ///////////////////////////////////////////
@@ -156,7 +163,8 @@ void* linux_input_pthread(void* no)
     XEvent event;
 
     XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask); 
- 
+				Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
+				XSetWMProtocols( dpy, win, &wm_delete, 1 );
 
     /* event loop */
     while (1)
@@ -226,6 +234,11 @@ void* linux_input_pthread(void* no)
 								}else if (event.type == ConfigureNotify) {
 									//Todo: only call this when the user is done resizing
 									linux_resize(event.xconfigure.width,event.xconfigure.height);
+								}else if (event.type == ClientMessage) {	
+										if ( !strcmp( XGetAtomName( dpy, event.xclient.message_type ), "WM_PROTOCOLS" ) ) {
+											sk_quit();
+											return 0;
+											} 
 								}
     }
 
@@ -306,10 +319,21 @@ bool linux_start() {
 	sk_info.display_height = linux_swapchain.height;
 
 	pthread_t imnotimportant;
- 
 
+	
+
+ 
 	flatscreen_input_init();
 	pthread_create(&imnotimportant,nullptr,linux_input_pthread,(void*)1);
+
+	XWindowAttributes wa;
+	XGetWindowAttributes(dpy,win,&wa);
+
+	//initial resize, in case there's a long time between window creation and here
+	linux_resize(wa.width,wa.height);
+
+
+
 
 	return true;
 }
@@ -357,6 +381,9 @@ void linux_set_cursor(vec2 window_pos) {
  //        int src_x, src_y;
  //        unsigned int src_width, src_height;
  //        int dest_x, dest_y;
+
+
+	//log_diagf("setting pointer\n");
 	XWarpPointer(dpy, win, win, 0, 0, 0, 0, window_pos.x,window_pos.y);
 }
 
