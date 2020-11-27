@@ -153,16 +153,18 @@ enum _linux_key_types {
 	}; 
 
 	bool _linux_pressed_sk_keys[256] = {0};
-	float scrollwheel;
-	int mouseX;
-	int mouseY;
+	float scrollwheel = 0;
+	int mouseX = 0;
+	int mouseY = 0;
 
 	bool _pthread_continue = true;
+    bool _pthread_start = false;
 
 	void *linux_input_pthread(void *no)
 	{
-		XEvent event;
 
+        while(!_pthread_start) {/*do nothing; busy wait*/}
+		XEvent event;
 		XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
 		Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
 		XSetWMProtocols(dpy, win, &wm_delete, 1);
@@ -204,9 +206,7 @@ enum _linux_key_types {
 						_linux_pressed_sk_keys[i] = false;
 					}
 				}
-				XKeyboardState x;
-				XGetKeyboardControl(dpy, &x);
-				_linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
+
 			}
 			else if (event.type == ButtonPress)
 			{
@@ -278,6 +278,9 @@ enum _linux_key_types {
 					return 0;
 				}
 			}
+            XKeyboardState x;
+            XGetKeyboardControl(dpy, &x);
+            _linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
 		}
 
 		return 0;
@@ -297,7 +300,7 @@ void _linux_sigint_handler(int sig) {
 
 bool linux_init() {
 	signal(SIGINT, _linux_sigint_handler);
-	int status = XInitThreads();
+    XInitThreads();
 
     dpy = XOpenDisplay(0);
 	if (dpy == nullptr) {
@@ -353,8 +356,6 @@ void linux_finish_openxr_init(){
 ///////////////////////////////////////////
 
 bool linux_start() {
-	fix_glx_oxr = false;
-
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -442,10 +443,10 @@ void linux_stop() {
 
 void linux_shutdown() {
   if (!window_closed_because_openxr) {
-		glXMakeCurrent(dpy, None, nullptr);
-		XDestroyWindow(dpy, win);
+    glXMakeCurrent(dpy, None, nullptr);
+    XDestroyWindow(dpy, win);
+  }
     XCloseDisplay(dpy);
-	}
 }
 
 ///////////////////////////////////////////
@@ -458,7 +459,6 @@ void linux_step_begin() {
 ///////////////////////////////////////////
 
 void linux_step_end() {
-	printf("step\n"	);
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();
@@ -477,6 +477,10 @@ void linux_step_end() {
 
 void linux_vsync() {
 	skg_swapchain_present(&linux_swapchain);
+    _pthread_start = true;
+    // _pthread_start is necessary. On the first frame, if glXSwapBuffers is called while XNextEvent in the input thread is blocking, then glXSwapBuffers will
+    // wait until XNextEvent (in the input thread) returns, meaning that it doesn't start until you move your mouse or press a key.
+    // with this, _pthread_start = false until this function returns for the first time, meaning that XNextEvent gets called *after* the first glXSwapBuffers, meaning that everything should be fine
 }
 
 } // namespace sk
