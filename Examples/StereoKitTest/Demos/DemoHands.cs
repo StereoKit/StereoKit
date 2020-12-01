@@ -73,11 +73,11 @@ namespace StereoKitTest
             /// clean to provide lists of items! This means you can assemble the whole
             /// menu on a single 'line'. You can still pass arrays instead if you prefer
             /// that!
-            handMenu = StereoKitApp.AddStepper(new HandMenuRadial(
+            handMenu = SK.AddStepper(new HandMenuRadial(
                 new HandRadialLayer("Root",
                     new HandMenuItem("File",   null, null, "File"),
                     new HandMenuItem("Edit",   null, null, "Edit"),
-                    new HandMenuItem("About",  null, () => Log.Info(StereoKitApp.VersionName)),
+                    new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
                     new HandMenuItem("Cancel", null, null)),
                 new HandRadialLayer("File", 
                     new HandMenuItem("New",   null, () => Log.Info("New")),
@@ -97,7 +97,7 @@ namespace StereoKitTest
         public void Shutdown()
         {
             /// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
-            StereoKitApp.RemoveStepper(handMenu); 
+            SK.RemoveStepper(handMenu); 
             /// :End:
         }
 

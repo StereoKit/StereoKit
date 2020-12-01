@@ -94,7 +94,7 @@ class DemoUI : ITest
         /// will return true on the frame when their value or state has changed.
         /// 
         if (UI.ButtonRound("Exit", powerSprite))
-            StereoKitApp.Quit();
+            SK.Quit();
         /// 
         /// And for every begin, there must also be an end! StereoKit will log errors when this
         /// occurs, so keep your eyes peeled for that!

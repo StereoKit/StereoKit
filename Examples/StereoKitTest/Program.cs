@@ -56,8 +56,8 @@ class Program
 		/// :End:
 		Log.Filter = LogLevel.Diagnostic;
 		Log.Write(LogLevel.Diagnostic, "Temp path: " + System.IO.Path.GetTempPath());
-		StereoKitApp.settings.assetsFolder = Program.Root;
-		if (!StereoKitApp.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.Flatscreen,  true))
+		SK.settings.assetsFolder = Program.Root;
+		if (!SK.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.Flatscreen,  true))
 			Environment.Exit(1);
 
 		CommonInit();
@@ -66,7 +66,7 @@ class Program
 		Tests.SetTestActive(args.Length > 0 ? args[0] : "pbr");
 		Tests.Initialize();
 
-		while (StereoKitApp.Step(() =>
+		while (SK.Step(() =>
 		{
 			Tests.Update();
 			CommonUpdate();
@@ -75,7 +75,7 @@ class Program
 		Tests.Shutdown();
 		CommonShutdown();
 
-		StereoKitApp.Shutdown();
+		SK.Shutdown();
 	}
 
 	static void CommonInit()
@@ -94,7 +94,7 @@ class Program
 	static void CommonUpdate()
 	{
 		if (Input.Key(Key.Esc).IsJustActive())
-			StereoKitApp.Quit();
+			SK.Quit();
 
 		// If we can't see the world, we'll draw a floor!
 		//if (StereoKitApp.System.displayType == Display.Opaque)

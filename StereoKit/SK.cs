@@ -1,12 +1,12 @@
 ﻿using StereoKit.Framework;
-using System;
 using System.Collections.Generic;
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
 	/// <summary>This class contains functions for running the StereoKit library!</summary>
-	public static class StereoKitApp
+	public static class SK
 	{
 		private static SystemInfo   _system;
 		private static Steppers     _steppers;

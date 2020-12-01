@@ -70,7 +70,7 @@ namespace StereoKit
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
-				StereoKitApp.ExecuteOnMain(()=>NativeAPI.tex_release(_inst));
+				SK.ExecuteOnMain(()=>NativeAPI.tex_release(_inst));
 		}
 
 		#endregion

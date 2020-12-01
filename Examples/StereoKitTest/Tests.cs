@@ -60,7 +60,7 @@ public static class Tests
 		{
 			testIndex += 1;
 			if (testIndex >= allTests.Count)
-				StereoKitApp.Quit();
+				SK.Quit();
 			else
 				SetTestActive(allTests[testIndex].Name);
 		}
