@@ -1,7 +1,7 @@
 #include "sprite.h"
 #include "assets.h"
 #include "texture.h"
-#include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 #include "../systems/sprite_drawer.h"
 #include "../sk_math.h"
 
@@ -75,7 +75,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		material_set_texture(result->material, "diffuse", image);
 	} else {
 		// Find the atlas for this id
-		uint64_t     map_id = string_hash(atlas_id);
+		uint64_t     map_id = hash_fnv64_string(atlas_id);
 		spritemap_t *map    = nullptr;
 		int32_t      index  = -1;
 		for (int32_t i = 0; i < sprite_map_count; i++) {

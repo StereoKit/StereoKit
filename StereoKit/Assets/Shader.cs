@@ -28,7 +28,7 @@ namespace StereoKit
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)
-				StereoKitApp.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
+				SK.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
 		}
 
 		/// <summary>This will compile an HLSL shader into a StereoKit binary

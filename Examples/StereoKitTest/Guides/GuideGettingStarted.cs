@@ -41,22 +41,22 @@ using StereoKit;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        if (!StereoKitApp.Initialize("Project", Runtime.MixedReality))
-            Environment.Exit(1);
+	static void Main(string[] args)
+	{
+		if (!SK.Initialize("Project", Runtime.MixedReality))
+			Environment.Exit(1);
 
-        Model cube = Model.FromMesh(
-            Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
-            Default.Material);
+		Model cube = Model.FromMesh(
+			Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
+			Default.Material);
 
-        while (StereoKitApp.Step(() =>
-        {
-            cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
-        }));
+		while (SK.Step(() =>
+		{
+			cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+		}));
 
-        StereoKitApp.Shutdown();
-    }
+		SK.Shutdown();
+	}
 }
 /// 
 /// Awesome! That's pretty easy, but what next? [Why don't we build some UI]({{site.url}}/Pages/Guides/User-Interface.html)?

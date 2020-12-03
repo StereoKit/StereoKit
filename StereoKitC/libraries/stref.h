@@ -19,7 +19,6 @@ char *string_append(char *base, uint32_t count, ...);
 bool  string_eq    (const char *a, const char *b);
 bool  string_eq_nocase(const char *a, const char *b);
 bool  string_endswith (const char *a, const char *end, bool case_sensitive = true);
-uint64_t string_hash(const char *string, uint64_t start_hash = STREF_HASH_START);
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);
@@ -38,7 +37,6 @@ uint32_t stref_count   (stref_t &ref, char character);
 bool     stref_nextline(stref_t &from, stref_t &curr_line);
 bool     stref_nextword(stref_t &line, stref_t &word, char separator=' ', char capture_char_start = '\0', char capture_char_end = '\0', bool *out_capture_error = nullptr);
 stref_t  stref_stripcapture(stref_t &word, char capture_char_start, char capture_char_end);
-uint64_t stref_hash    (const stref_t &ref);
 float    stref_to_f    (const stref_t &ref);
 int32_t  stref_to_i    (const stref_t &ref);
 

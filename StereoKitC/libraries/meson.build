@@ -8,7 +8,8 @@ lib_libraries = static_library(
 		'miniz.cpp',
 		'ofbx.cpp',
 		'sk_gpu.cpp',
-		'stref.cpp'
+		'stref.cpp',
+		'ferr_hash.cpp'
 	),
 	include_directories: [libraries_includes]
 )

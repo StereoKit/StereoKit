@@ -3,7 +3,7 @@
 #include "sk_math.h"
 #include "systems/input.h"
 #include "systems/hand/input_hand.h"
-#include "libraries/stref.h"
+#include "libraries/ferr_hash.h"
 #include "libraries/array.h"
 
 #include <math.h>
@@ -300,7 +300,7 @@ bool ui_init() {
 	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
 	
 	skui_layers  .add({});
-	skui_id_stack.add({ STREF_HASH_START });
+	skui_id_stack.add({ HASH_FNV64_START });
 
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
@@ -375,8 +375,8 @@ void ui_shutdown() {
 
 uint64_t ui_stack_hash(const char *string) {
 	return skui_id_stack.count > 0 
-		? string_hash(string, skui_id_stack.last().id) 
-		: string_hash(string);
+		? hash_fnv64_string(string, skui_id_stack.last().id) 
+		: hash_fnv64_string(string);
 }
 
 ///////////////////////////////////////////

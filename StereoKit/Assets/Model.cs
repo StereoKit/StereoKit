@@ -76,7 +76,7 @@ namespace StereoKit
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
-				StereoKitApp.ExecuteOnMain(()=>NativeAPI.model_release(_inst));
+				SK.ExecuteOnMain(()=>NativeAPI.model_release(_inst));
 		}
 		#endregion
 
