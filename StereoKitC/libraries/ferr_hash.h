@@ -53,7 +53,7 @@ Example usage:
 // for details about FNV-1a
 
 #define HASH_FNV32_START 2166136261
-#define HASH_FNV64_START 14695981039346656037
+#define HASH_FNV64_START 14695981039346656037UL // needs to be unsigned long or else Linux compiler gives warning because this big number wouldn't fit in a normal signed int 
 
 uint64_t hash_fnv64_string(const char *string,                 uint64_t start_hash FERR_HASH_DEFAULT( HASH_FNV64_START ));
 uint64_t hash_fnv64_data  (const void *data, size_t data_size, uint64_t start_hash FERR_HASH_DEFAULT( HASH_FNV64_START ));
