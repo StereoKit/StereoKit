@@ -400,6 +400,12 @@ typedef struct skg_platform_data_t {
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
+#elif defined(_SKG_GL_LOAD_GLX)
+	void *_x_display;
+	void *_visual_id;
+	void *_glx_fb_config;
+	void *_glx_drawable;
+	void *_glx_context;
 #elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
@@ -2830,7 +2836,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		char text[128];
+		char text[272]; // used to be 128 long; on Linux sprintf gives a warning if the out buffer could be shorter than the text we write to it. because meta->name is 255 long, and Unable to link : is 17 long, text needs to be 272 or more
 		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
 		skg_log(skg_log_warning, text);
 		skg_log(skg_log_warning, log);
