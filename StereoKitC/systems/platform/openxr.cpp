@@ -12,6 +12,7 @@
 #include "../input.h"
 #include "../hand/input_hand.h"
 #include "android.h"
+#include "linux.h"
 #include "platform_utils.h"
 
 #if defined(SK_OS_ANDROID)
@@ -24,7 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux.h>
 
 namespace sk {
 
