@@ -385,34 +385,32 @@
     <None Include="shaders_builtin\stereokit.hlsli">
       <Filter>shaders_builtin</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="shaders_builtin\shader_builtin_font.hlsl">
+    <None Include="shaders_builtin\shader_builtin_default.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_default.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_equirect.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_equirect.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_font.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_lines.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_lines.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_pbr.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_pbr.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_skybox.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_skybox.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_ui.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_ui.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
-    <CustomBuild Include="shaders_builtin\shader_builtin_unlit.hlsl">
+    </None>
+    <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <Filter>shaders_builtin</Filter>
-    </CustomBuild>
+    </None>
   </ItemGroup>
 </Project>
