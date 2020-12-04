@@ -4,6 +4,7 @@ param(
 )
 
 $vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
+$vsExe = [io.path]::ChangeExtension($vsExe, '.com')
 
 function Get-Version {
     $fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
@@ -34,7 +35,7 @@ function Clean {
 }
 function Build {
     param([parameter(Mandatory)][string] $mode)
-    & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' 'StereoKit' | Out-Null
+    & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' 'StereoKit' | Write-Host
     return $LASTEXITCODE
 }
 function Test {
