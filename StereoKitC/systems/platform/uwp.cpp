@@ -130,6 +130,7 @@ public:
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
 		
 		window.Closed([this](auto &&, auto &&) { m_exit = true; sk_run = false; log_info("OnClosed!"); });
+
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
 		// which can result in the app being suspended if unhandled
 		navigation.BackRequested([](const winrt::Windows::Foundation::IInspectable&, const BackRequestedEventArgs& args)
@@ -214,14 +215,6 @@ protected:
 	}
 
 	void OnSuspending(IInspectable const & /*sender*/, SuspendingEventArgs const &) {
-		/*auto deferral = args.SuspendingOperation().GetDeferral();
-
-		auto f = std::async(std::launch::async, [this, deferral]()
-			{
-				m_game->OnSuspending();
-
-				deferral.Complete();
-			});*/
 	}
 
 	void OnResuming(IInspectable const & /*sender*/, IInspectable const & /*args*/)

@@ -210,7 +210,7 @@ bool platform_key_down(key_ key) {
 ///////////////////////////////////////////
 
 void platform_debug_output(log_ level, const char *text) {
-#if defined(SK_OS_WINDOWS)
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	OutputDebugStringA(text);
 #elif defined(SK_OS_ANDROID)
 	int32_t priority = ANDROID_LOG_INFO;
