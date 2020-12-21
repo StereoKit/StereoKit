@@ -50,7 +50,7 @@ bool platform_init() {
 			log_infof("Runtime falling back to Flatscreen");
 			sk_runtime = runtime_flatscreen;
 			return platform_set_mode(sk_runtime);
-        }
+		}
 		return false;
 	}
 	return true;

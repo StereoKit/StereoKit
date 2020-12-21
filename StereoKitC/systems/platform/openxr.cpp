@@ -15,9 +15,6 @@
 #include "linux.h"
 #include "platform_utils.h"
 
-#if defined(SK_OS_ANDROID)
-#include <openxr/openxr_oculus.h>
-#endif
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
@@ -158,9 +155,6 @@ int64_t openxr_get_time() {
 ///////////////////////////////////////////
 
 bool openxr_init() {
-
-
-
 
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
