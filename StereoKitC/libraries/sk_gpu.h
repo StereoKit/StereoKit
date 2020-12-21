@@ -2412,7 +2412,7 @@ int32_t gl_init_glx() {
 		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
 		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
 		GLX_X_RENDERABLE,  true,
-		GLX_NONE
+		None
 	};
 
 	int fbConfigNumber = 0;
