@@ -421,7 +421,7 @@ typedef struct skg_platform_data_t {
 
 ///////////////////////////////////////////
 
-void                skg_setup_xlib               (void *dpy, void *vi, void *drawable);
+void                skg_setup_xlib               (void *dpy, void *vi, void *fbconfig, void *drawable);
 int32_t             skg_init                     (const char *app_name, void *adapter_id);
 void                skg_shutdown                 ();
 void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
@@ -2402,23 +2402,6 @@ int32_t gl_init_glx() {
 		return -1;
 	}
 
-	int fb_attribute_list[] = {
-		GLX_DOUBLEBUFFER,  true,
-		GLX_RED_SIZE,      8,
-		GLX_GREEN_SIZE,    8,
-		GLX_BLUE_SIZE,     8,
-		GLX_ALPHA_SIZE,    8,
-		GLX_DEPTH_SIZE,    16,
-		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-		GLX_X_RENDERABLE,  true,
-		GLX_NONE
-	};
-
-	int fbConfigNumber = 0;
-	GLXFBConfig *FBConfig = glXChooseFBConfig(xDisplay, 0, fb_attribute_list, &fbConfigNumber);
-	glxFBConfig = *FBConfig;
-
 	int ctx_attribute_list[] = {
 		GLX_RENDER_TYPE,               GLX_RGBA_TYPE,
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -2427,7 +2410,7 @@ int32_t gl_init_glx() {
 		GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0
 	};
-	glxContext = glXCreateContextAttribsARB(xDisplay, *FBConfig, NULL, GL_TRUE, ctx_attribute_list);
+	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, GL_TRUE, ctx_attribute_list);
 	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
 
@@ -2437,10 +2420,11 @@ int32_t gl_init_glx() {
 
 ///////////////////////////////////////////
 
-void skg_setup_xlib(void *dpy, void *vi, void *drawable) {
+void skg_setup_xlib(void *dpy, void *vi, void *fbconfig, void *drawable) {
 #ifdef _SKG_GL_LOAD_GLX
 	xDisplay    =  (Display    *) dpy;
 	visualInfo  =  (XVisualInfo*) vi;
+	glxFBConfig = *(GLXFBConfig*) fbconfig;
 	glxDrawable = *(Drawable   *) drawable;
 #endif
 }

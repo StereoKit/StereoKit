@@ -27,7 +27,21 @@ Display                 *dpy;
 Window                  root;
 
 GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
+GLint                   fb_att[] = {
+	GLX_DOUBLEBUFFER,  true,
+	GLX_RED_SIZE,      8,
+	GLX_GREEN_SIZE,    8,
+	GLX_BLUE_SIZE,     8,
+	GLX_ALPHA_SIZE,    8,
+	GLX_DEPTH_SIZE,    16,
+	GLX_RENDER_TYPE,   GLX_RGBA_BIT,
+	GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
+	GLX_X_RENDERABLE,  true,
+	None
+};
+
 XVisualInfo             *vi;
+GLXFBConfig             fbconfig;
 Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
@@ -309,7 +323,9 @@ bool linux_init() {
 	}
 
 	root = DefaultRootWindow(dpy);
-	vi   = glXChooseVisual(dpy, 0, att);
+	int fbConfigNumber = 0;
+	fbconfig = *glXChooseFBConfig((Display *) dpy, 0, fb_att, &fbConfigNumber);
+	vi = glXGetVisualFromFBConfig(dpy, fbconfig);
 
 	if (vi == nullptr) {
 		log_fail_reason(90, "No appropriate GLX visual found");
@@ -340,7 +356,7 @@ bool linux_init() {
 
 	XStoreName(dpy, win, sk_app_name);
 
-	skg_setup_xlib(dpy, vi, &win);
+	skg_setup_xlib(dpy, vi, &fbconfig, &win);
 
 	return true;
 }

@@ -33,10 +33,13 @@ void common_init();
 void common_update();
 void common_shutdown();
 
-#ifndef WINDOWS_UWP
+#if defined(WINDOWS_UWP)
+const char* assets_folder = "Assets";
+#elif defined(_WIN32)
 const char* assets_folder = "../../Examples/Assets";
 #else
-const char* assets_folder = "Assets";
+// Assume running on Linux from repository root
+const char* assets_folder = "Examples/Assets";
 #endif
 
 #ifndef WINDOWS_UWP
@@ -49,7 +52,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	sk_set_settings(settings);
 	log_set_filter(log_diagnostic);
 
-	if (!sk_init("StereoKit C", runtime_mixedreality))
+	if (!sk_init("StereoKit C", runtime_flatscreen))
 		return 1;
 
 	common_init();
