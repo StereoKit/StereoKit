@@ -1,6 +1,5 @@
 
 #include "linux.h"
-//#include <GL/glx.h>
 #if defined(SK_OS_LINUX)
 
 #include "../../log.h"
@@ -310,22 +309,7 @@ bool linux_init() {
 	}
 
 	root = DefaultRootWindow(dpy);
-	//vi   = glXChooseVisual(dpy, 0, att);
-	int fb_attribute_list[] = {
-		GLX_DOUBLEBUFFER,  true,
-		GLX_RED_SIZE,      8,
-		GLX_GREEN_SIZE,    8,
-		GLX_BLUE_SIZE,     8,
-		GLX_ALPHA_SIZE,    8,
-		GLX_DEPTH_SIZE,    16,
-		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-		GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-		GLX_X_RENDERABLE,  true,
-		None
-	};
-	int fbConfigNumber = 0;
-	GLXFBConfig *FBConfig = glXChooseFBConfig(dpy, 0, fb_attribute_list, &fbConfigNumber);
-	vi = glXGetVisualFromFBConfig(dpy, *FBConfig);
+	vi   = glXChooseVisual(dpy, 0, att);
 
 	if (vi == nullptr) {
 		log_fail_reason(90, "No appropriate GLX visual found");
