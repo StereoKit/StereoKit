@@ -400,12 +400,6 @@ typedef struct skg_platform_data_t {
 	void *_egl_display;
 	void *_egl_config;
 	void *_egl_context;
-#elif defined(_SKG_GL_LOAD_GLX)
-	void *_x_display;
-	void *_visual_id;
-	void *_glx_fb_config;
-	void *_glx_drawable;
-	void *_glx_context;
 #elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
@@ -2458,11 +2452,35 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
+		const char *src = "OTHER";
+		switch (source) {
+		case 0x8246: src = "API"; break;
+		case 0x8247: src = "WINDOW SYSTEM"; break;
+		case 0x8248: src = "SHADER COMPILER"; break;
+		case 0x8249: src = "THIRD PARTY"; break;
+		case 0x824A: src = "APPLICATION"; break;
+		case 0x824B: src = "OTHER"; break;
+		}
+
+		const char *type_str = "OTHER";
+		switch (type) {
+		case 0x824C: type_str = "ERROR"; break;
+		case 0x824D: type_str = "DEPRECATED_BEHAVIOR"; break;
+		case 0x824E: type_str = "UNDEFINED_BEHAVIOR"; break;
+		case 0x824F: type_str = "PORTABILITY"; break;
+		case 0x8250: type_str = "PERFORMANCE"; break;
+		case 0x8268: type_str = "MARKER"; break;
+		case 0x8251: type_str = "OTHER"; break;
+		}
+
+		char msg[1024];
+		snprintf(msg, sizeof(msg), "%s/%s - 0x%x - %s", src, type_str, id, message);
+
 		switch (severity) {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: break;
-		case GL_DEBUG_SEVERITY_LOW:    skg_log(skg_log_info,     message); break;
-		case GL_DEBUG_SEVERITY_MEDIUM: skg_log(skg_log_warning,  message); break;
-		case GL_DEBUG_SEVERITY_HIGH:   skg_log(skg_log_critical, message); break;
+		case GL_DEBUG_SEVERITY_LOW:    skg_log(skg_log_info,     msg); break;
+		case GL_DEBUG_SEVERITY_MEDIUM: skg_log(skg_log_warning,  msg); break;
+		case GL_DEBUG_SEVERITY_HIGH:   skg_log(skg_log_critical, msg); break;
 		}
 	}, nullptr);
 #endif // _DEBUG && !defined(_SKG_GL_WEB)
@@ -2820,7 +2838,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 		log = (char*)malloc(length);
 		glGetProgramInfoLog(result._program, length, &err, log);
 
-		char text[272]; // used to be 128 long; on Linux sprintf gives a warning if the out buffer could be shorter than the text we write to it. because meta->name is 255 long, and Unable to link : is 17 long, text needs to be 272 or more
+		char text[272];
 		snprintf(text, sizeof(text), "Unable to link %s:", meta->name);
 		skg_log(skg_log_warning, text);
 		skg_log(skg_log_warning, log);
