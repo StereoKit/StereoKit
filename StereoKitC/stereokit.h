@@ -31,7 +31,7 @@
 
 #ifdef __cplusplus
 #define SK_EXTERN extern "C"
-#define sk_default(x) = x
+#define sk_default(...) = __VA_ARGS__
 #define sk_ref(x) x&
 #define sk_ref_arr(x) x*&
 #define SK_MakeFlag(enumType) \
@@ -42,7 +42,7 @@ inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return 
 inline enumType  operator~ (const enumType& a)              { return static_cast<enumType>(~static_cast<int>(a)); }
 #else
 #define SK_EXTERN
-#define sk_default(x)
+#define sk_default(__VA_ARGS__)
 #define sk_ref(x) x*
 #define sk_ref_arr(x) x**
 #define SK_MakeFlag(enumType)
@@ -174,8 +174,8 @@ SK_API quat quat_inverse    (const sk_ref(quat) a);
 SK_API quat quat_mul        (const sk_ref(quat) a, const sk_ref(quat) b);
 SK_API vec3 quat_mul_vec    (const sk_ref(quat) a, const sk_ref(vec3) b);
 
-SK_API matrix pose_matrix(const sk_ref(pose_t) pose, vec3 scale sk_default((vec3{1,1,1})));
-SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default((vec3{1,1,1})));
+SK_API matrix pose_matrix(const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
+SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
 SK_API void   matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
@@ -184,8 +184,8 @@ SK_API vec3   matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(
 SK_API quat   matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
 SK_API void   matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
 SK_API vec3   matrix_to_angles    (const sk_ref(matrix) transform);
-SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
-SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
+SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, sk_ref(float) out_t);
 SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, sk_ref(ray_t) out_ray);
@@ -285,12 +285,12 @@ SK_API color128 color_lab   (float l, float a, float b, float transparency);
 SK_API vec3     color_to_lab(const sk_ref(color128) color);
 
 #ifdef __cplusplus
-static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
-inline color128 color_lerp  (const color128 &a, const sk_ref(color128) b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline color32  color_to_32 (const color128 &a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
+static inline color128  operator*  (const color128 &a, const float b)              { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
+inline        color128  color_lerp (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
+inline        color32   color_to_32(const color128 &a)                             { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
 #else
-inline color128 color_lerp  (const color128 *a, const sk_ref(color128) b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
-inline color32  color_to_32 (const color128 *a) { color32 result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
+inline        color128  color_lerp (const color128 *a, const color128 *b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
+inline        color32   color_to_32(const color128 *a)                             { color32  result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
 #endif
 
 ///////////////////////////////////////////
@@ -591,7 +591,7 @@ SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API int32_t  sprite_get_width  (sprite_t sprite);
 SK_API int32_t  sprite_get_height (sprite_t sprite);
 SK_API vec2     sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void     sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default((color32{255,255,255,255})));
+SK_API void     sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 
@@ -618,8 +618,8 @@ SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_
 SK_API void     render_set_clear_color(color128 color);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
-SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));
-SK_API void     render_add_model     (model_t model, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));
+SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
+SK_API void     render_add_model     (model_t model, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
 SK_API void     render_blit          (tex_t to_rendertarget, material_t material);
 SK_API void     render_screenshot    (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
 SK_API void     render_get_device    (void **device, void **context);
