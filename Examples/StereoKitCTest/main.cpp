@@ -6,7 +6,9 @@ using namespace sk;
 #include "demo_ui.h"
 #include "demo_sprites.h"
 
+#ifdef _WIN32
 #include <winapifamily.h>
+#endif
 #include <stdio.h>
 
 solid_t     floor_solid;
@@ -34,18 +36,27 @@ void common_init();
 void common_update();
 void common_shutdown();
 
+#ifdef _WIN32
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 const char* assets_folder = "../../Examples/Assets";
 #else
 const char* assets_folder = "Assets";
 #endif
+#else
+// Assume running on Linux from repository root
+const char* assets_folder = "Examples/Assets";
+#endif
 
+#ifdef _WIN32
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 int main() {
 #else
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
+#endif
+#else
+int main() {
 #endif
 	settings_t settings = {};
 	snprintf(settings.assets_folder, sizeof(settings.assets_folder), assets_folder);
