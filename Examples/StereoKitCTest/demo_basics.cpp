@@ -62,7 +62,7 @@ void demo_basics_update() {
 	// Render solid helmets
 	for (size_t i = 0; i < phys_objs.size(); i++) {
 		solid_get_pose  (phys_objs[i].solid, tr);
-		render_add_model(gltf, pose_matrix(tr, vec3_one * scale));
+		render_add_model(gltf, pose_matrix(tr, vec3_one * phys_objs[i].scale));
 	}
 }
 
