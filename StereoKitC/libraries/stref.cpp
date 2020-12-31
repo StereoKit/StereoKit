@@ -53,6 +53,7 @@ char *string_append(char *aBase, uint32_t aCount, ...) {
 ///////////////////////////////////////////
 
 bool  string_eq(const char *a, const char *b) {
+	if (a == nullptr || b == nullptr) return false;
 	while (*a != '\0' && *b != '\0') {
 		if (*a != *b)
 			return false;
