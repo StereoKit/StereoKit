@@ -9,7 +9,8 @@ lib_libraries = static_library(
 		'ofbx.cpp',
 		'sk_gpu.cpp',
 		'stref.cpp',
-		'ferr_hash.cpp'
+		'ferr_hash.cpp',
+		'sokol_time.cpp'
 	),
 	include_directories: [libraries_includes]
 )

@@ -5,10 +5,8 @@
 #include <stdio.h>
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
+#include "../libraries/sokol_time.h"
 #include "../stereokit.h"
-
-#include <chrono>
-using namespace std::chrono;
 
 namespace sk {
 
@@ -123,7 +121,7 @@ bool systems_initialize() {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
 			// start timing
-			time_point<high_resolution_clock> start = high_resolution_clock::now();
+			uint64_t start = stm_now();
 
 			if (!systems[index].func_initialize()) {
 				log_errf("System %s failed to initialize!", systems[index].name);
@@ -131,8 +129,7 @@ bool systems_initialize() {
 			}
 
 			// end timing
-			time_point<high_resolution_clock> end = high_resolution_clock::now();
-			systems[index].profile_start_duration = duration_cast<nanoseconds>(end - start).count();
+			systems[index].profile_start_duration = stm_since(start);
 		}
 	}
 	systems_initialized = true;
@@ -146,13 +143,12 @@ void systems_update() {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
-			time_point<high_resolution_clock> start = high_resolution_clock::now();
+			uint64_t start = stm_now();
 
 			systems[i].func_update();
 
 			// end timing
-			time_point<high_resolution_clock> end = high_resolution_clock::now();
-			systems[i].profile_frame_duration   = duration_cast<nanoseconds>(end - start).count();
+			systems[i].profile_frame_duration   = stm_since(start);
 			systems[i].profile_update_duration += systems[i].profile_frame_duration;
 			systems[i].profile_update_count    += 1;
 		}
@@ -166,13 +162,12 @@ void systems_shutdown() {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_shutdown != nullptr) {
 			// start timing
-			time_point<high_resolution_clock> start = high_resolution_clock::now();
+			uint64_t start = stm_now();
 
 			systems[index].func_shutdown();
 
 			// end timing
-			time_point<high_resolution_clock> end = high_resolution_clock::now();
-			systems[i].profile_shutdown_duration = duration_cast<nanoseconds>(end - start).count();
+			systems[i].profile_shutdown_duration = stm_since(start);
 		}
 	}
 
@@ -188,18 +183,18 @@ void systems_shutdown() {
 		char shutdown_time[24];
 
 		if (systems[index].func_initialize != nullptr) {
-			float ms = (float)((double)systems[index].profile_start_duration / 1000000.0);
+			double ms = stm_ms(systems[index].profile_start_duration);
 			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(start_time, sizeof(start_time), "          ");
 
 		if (systems[index].func_update != nullptr) {
-			float ms = (float)(((double)systems[index].profile_update_duration / (double)systems[index].profile_update_count) / 1000000.0);
+			double ms = stm_ms(systems[index].profile_update_duration / systems[index].profile_update_count);
 			// Exception for FramePresent, since it includes vsync time
 			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[index].name, "FramePresent") ? "<~RED>":"", ms);
 		} else snprintf(update_time, sizeof(update_time), "        ");
 
 		if (systems[index].func_shutdown != nullptr) {
-			float ms = (float)((double)systems[index].profile_shutdown_duration / 1000000.0);
+			double ms = stm_ms(systems[index].profile_shutdown_duration);
 			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
 		

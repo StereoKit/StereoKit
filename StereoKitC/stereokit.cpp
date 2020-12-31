@@ -1,8 +1,9 @@
-#include <chrono>
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
 #include "log.h"
+
+#include "libraries/sokol_time.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -19,9 +20,6 @@
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
 #include "asset_types/sound.h"
-
-
-using namespace std::chrono;
 
 namespace sk {
 
@@ -48,7 +46,7 @@ double  sk_timev_elapsed     = 0;
 float   sk_timev_elapsedf    = 0;
 double  sk_timev_elapsed_us  = 0;
 float   sk_timev_elapsedf_us = 0;
-int64_t sk_timev_raw         = 0;
+uint64_t sk_timev_raw        = 0;
 
 ///////////////////////////////////////////
 
@@ -109,6 +107,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	// Make sure settings get their default values
 	sk_set_settings(sk_settings);
 
+	stm_setup();
 	sk_update_timer();
 
 	// Platform related systems
@@ -295,9 +294,8 @@ bool32_t sk_step(void (*app_update)(void)) {
 ///////////////////////////////////////////
 
 void sk_update_timer() {
-	time_point<high_resolution_clock> now = high_resolution_clock::now();
-	sk_timev_raw = duration_cast<nanoseconds>(now.time_since_epoch()).count();
-	double time_curr = sk_timev_raw / 1000000000.0;
+	sk_timev_raw = stm_now();
+	double time_curr = stm_sec(sk_timev_raw);
 
 	if (sk_time_start == 0)
 		sk_time_start = time_curr;
@@ -338,9 +336,8 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	}
 	total_seconds = fmax(total_seconds, 0);
 
-	time_point<high_resolution_clock> now = high_resolution_clock::now();
-	sk_timev_raw  = duration_cast<nanoseconds>(now.time_since_epoch()).count();
-	sk_time_start = (sk_timev_raw / 1000000000.0) - total_seconds;
+	sk_timev_raw  = stm_now();
+	sk_time_start = stm_sec(sk_timev_raw) - total_seconds;
 
 	sk_timev_elapsed_us  = frame_elapsed_seconds;
 	sk_timev_elapsed     = frame_elapsed_seconds * sk_timev_scale;
