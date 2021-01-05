@@ -1,7 +1,7 @@
 add_rules("mode.release", "mode.debug")
 
 --------------------------------------------------
---[[
+
 package("reactphysics3d")
     set_homepage("http://www.reactphysics3d.com/")
     set_description("Open source C++ physics engine library in 3D")
@@ -12,10 +12,10 @@ package("reactphysics3d")
         import("package.tools.cmake").install(package, {"-DCMAKE_POSITION_INDEPENDENT_CODE=ON"})
     end)
 package_end()
-]]--
+
 --------------------------------------------------
 
-package("openxr")
+package("openxr_loader")
     set_homepage("https://github.com/KhronosGroup/OpenXR-SDK")
     set_description("Generated headers and sources for OpenXR loader.")
 
@@ -28,12 +28,11 @@ package_end()
 
 --------------------------------------------------
 
---add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD"}})
-
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("android") then
-    add_requires("openxr 1.0.13", {verify = false, configs = {vs_runtime="MD"}})
+    add_requires("openxr_loader 1.0.13", {verify = false, configs = {vs_runtime="MD"}})
 end
+add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD"}})
 
 option("uwp")
     set_default(false)
@@ -46,8 +45,13 @@ target("StereoKitC")
     add_options("uwp")
     set_version("0.3.0")
     set_kind("shared")
-    if (is_plat("windows")) then
+    if is_plat("windows") then
         set_languages("cxx17")
+        add_cxflags(is_mode("debug") and "/MDd" or "/MD")
+        add_links("windowsapp", "user32")
+        if has_config("uwp") then
+            add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
+        end
     else
         set_languages("cxx11")
     end
@@ -58,43 +62,60 @@ target("StereoKitC")
     add_files("StereoKitC/systems/hand/*.cpp") 
     add_files("StereoKitC/systems/platform/*.cpp") 
     add_files("StereoKitC/asset_types/*.cpp")
-
     add_includedirs("StereoKitC/lib/include")
     add_includedirs("StereoKitC/lib/include_no_win")
 
-    if has_config("uwp") then
-        add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
-    end
-
-    --add_packages("reactphysics3d")
+    add_packages("reactphysics3d")
+    -- On Android, we have a precompiled binary provided by Oculus
     if is_plat("android") then
         add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
         add_links("openxr_loader")
     else
-        add_packages("openxr")
+        add_packages("openxr_loader")
     end
 
-    on_load(function (target)
-        if is_plat("linux") then
-            target:add(find_packages("GL", "GLEW", "glx", "X11"))
-        elseif is_plat("android") then
-            target:add(find_packages("EGL", "OpenSLES"))
-        end
-    end)
+    -- Pick our flavor of OpenGL
+    if is_plat("linux") then
+        add_links("GL", "GLEW", "GLX", "X11")
+    elseif is_plat("android") then
+        add_links("EGL", "OpenSLES")
+    end
 
-    -- This doesn't actually work yet
+    -- Emscripten stuff, this doesn't actually work yet
     if is_plat("wasm") then
         add_cxflags("-msimd128", "-msse4", "-s", "SIMD=1")
     end
 
-    if is_plat("windows") then
-        add_cxflags(is_mode("debug") and "/MDd" or "/MD")
-        add_links("windowsapp", "user32")
-    end
+    -- Copy finished files over to the bin directory
+    after_build(function(target)
+        if is_plat("windows") then
+            dist_os = has_config("uwp") and "UWP" or "Win32"
+        else
+            dist_os = "$(os)"
+        end
+
+        build_folder = "$(buildir)/$(os)/$(arch)/$(mode)/"
+        dist_folder  = "$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)/"
+
+        os.cp(build_folder.."*.dll", dist_folder)
+        os.cp(build_folder.."*.so",  dist_folder)
+        os.cp(build_folder.."*.lib", dist_folder)
+        os.cp(build_folder.."*.a",   dist_folder)
+        os.cp(build_folder.."*.pdb", dist_folder)
+
+        os.cp("$(projectdir)/StereoKitC/stereokit.h",    "$(projectdir)/bin/distribute/include/")
+        os.cp("$(projectdir)/StereoKitC/stereokit_ui.h", "$(projectdir)/bin/distribute/include/")
+    end)
 
 --------------------------------------------------
 
-if is_plat("linux", "windows") then
+option("tests")
+    set_default(false)
+    set_showmenu("true")
+    set_description("Build native test project")
+    set_values(true, false)
+
+if has_config("tests") and is_plat("linux", "windows") then
     target("StereoKitCTest")
         add_options("uwp")
         set_kind("binary")
@@ -104,13 +125,3 @@ if is_plat("linux", "windows") then
 end
 
 --------------------------------------------------
---[[
-if is_plat("android") then
-    target("StereoKitCTest_Android")
-        set_kind("binary")
-        add_files("Examples/StereoKitCTest_Android/StereoKitCTest_Android.NativeActivity/*.cpp")
-        add_files("Examples/StereoKitCTest_Android/StereoKitCTest_Android.NativeActivity/*.c")
-        add_includedirs("StereoKitC/")
-        add_deps("StereoKitC")
-end
-]]--
