@@ -1,5 +1,5 @@
 param(
-    [switch]$noupload = $false,
+    [switch]$upload = $false,
     [string]$key = ''
 )
 
@@ -65,7 +65,7 @@ function Get-Key {
 }
 
 # Notify about our upload flag status 
-if ($noupload -eq $true) {
+if ($upload -eq $false) {
     Write-Host 'Local package build only.'
 } else {
     Write-Host 'Will attempt to upload package when finished!'
@@ -86,12 +86,22 @@ Write-Host 'Tests passed!' -ForegroundColor green
 # Notify of build, and output the version
 Write-Host 'Beginning a full build!'
 
-# Ensure the version string for the package matches the StereoKit version
-Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
-
 # Clean out the old files, do a full build
+Remove-Item 'bin\distribute' -Recurse
 Clean
 Write-Host 'Cleaned'
+
+# Do cross platform build code first
+Write-Host 'Beginning Android build!'
+xmake f -p android -a arm64-v8a
+xmake -r
+
+# Linux, via WSL
+Write-Host 'Beginning Linux build via WSL!'
+cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake -r"
+
+# Ensure the version string for the package matches the StereoKit version
+Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 
 # Build ARM first
 $result = Build -mode "Release|ARM64"
@@ -113,7 +123,7 @@ if ($result -ne 0) {
 }
 Write-Host "Finished building: X64" -ForegroundColor green
 
-if (-not $noupload) {
+if ($upload) {
     $key = Get-Key
     if ($key -ne '') {
         & dotnet nuget push "bin\StereoKit.$version.nupkg" -k $key -s https://api.nuget.org/v3/index.json

@@ -45,6 +45,7 @@ target("StereoKitC")
     add_options("uwp")
     set_version("0.3.0")
     set_kind("shared")
+    set_symbols("debug")
     if is_plat("windows") then
         set_languages("cxx17")
         add_cxflags(is_mode("debug") and "/MDd" or "/MD")
@@ -55,7 +56,7 @@ target("StereoKitC")
     else
         set_languages("cxx11")
     end
-
+    
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
@@ -93,7 +94,6 @@ target("StereoKitC")
         else
             dist_os = "$(os)"
         end
-
         build_folder = "$(buildir)/$(os)/$(arch)/$(mode)/"
         dist_folder  = "$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)/"
 
@@ -102,6 +102,11 @@ target("StereoKitC")
         os.cp(build_folder.."*.lib", dist_folder)
         os.cp(build_folder.."*.a",   dist_folder)
         os.cp(build_folder.."*.pdb", dist_folder)
+        os.cp(build_folder.."*.sym", dist_folder)
+        -- Oculus' pre-built OpenXR loader
+        if is_plat("android") then
+            os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder)
+        end
 
         os.cp("$(projectdir)/StereoKitC/stereokit.h",    "$(projectdir)/bin/distribute/include/")
         os.cp("$(projectdir)/StereoKitC/stereokit_ui.h", "$(projectdir)/bin/distribute/include/")
