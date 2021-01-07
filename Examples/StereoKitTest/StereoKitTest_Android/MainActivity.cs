@@ -59,7 +59,7 @@ namespace StereoKitTest_Android
 			Task.Run(() => {
 				StereoKit.Log.Filter = LogLevel.Diagnostic;
 				SK.settings.androidActivity = activityHandle;
-				if (!SK.Initialize("StereoKitTemplate", StereoKit.Runtime.MixedReality))
+				if (!SK.Initialize("StereoKitTemplate"))
 					return;
 
 				// Create assets used by the app

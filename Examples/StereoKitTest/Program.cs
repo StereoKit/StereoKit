@@ -55,9 +55,10 @@ class Program
 		Log.Subscribe(OnLog);
 		/// :End:
 		Log.Filter = LogLevel.Diagnostic;
-		Log.Write(LogLevel.Diagnostic, "Temp path: " + System.IO.Path.GetTempPath());
-		SK.settings.assetsFolder = Program.Root;
-		if (!SK.Initialize("StereoKit C#", Tests.IsTesting ? Runtime.Flatscreen : Runtime.Flatscreen,  true))
+		SK.settings.assetsFolder      = Program.Root;
+		SK.settings.displayFallback   = true;
+		SK.settings.displayPreference = Tests.IsTesting ? DisplayMode.Flatscreen : DisplayMode.MixedReality;
+		if (!SK.Initialize("StereoKit C#"))
 			Environment.Exit(1);
 
 		CommonInit();

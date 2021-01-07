@@ -182,7 +182,7 @@ void android_step_begin() {
 
 			if (android_next_window) {
 				android_window = (ANativeWindow*)android_next_window;
-				if (sk_runtime == runtime_flatscreen)
+				if (sk_display_mode == display_mode_flatscreen)
 					android_create_swapchain();
 			}
 		}

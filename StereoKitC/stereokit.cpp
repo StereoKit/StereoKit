@@ -27,8 +27,8 @@ namespace sk {
 
 const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
-runtime_      sk_runtime = runtime_flatscreen;
-bool          sk_runtime_fallback = false;
+display_mode_ sk_display_mode     = display_mode_mixedreality;
+bool          sk_display_fallback = false;
 settings_t    sk_settings = {};
 system_info_t sk_info     = {};
 bool32_t      sk_focused  = true;
@@ -97,9 +97,9 @@ void sk_app_update() {
 
 ///////////////////////////////////////////
 
-bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fallback) {
-	sk_runtime          = runtime_preference;
-	sk_runtime_fallback = fallback;
+bool32_t sk_init(const char *app_name) {
+	sk_display_mode     = sk_settings.display_preference;
+	sk_display_fallback = sk_settings.display_fallback;
 	sk_app_name         = app_name;
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
@@ -312,7 +312,7 @@ void sk_update_timer() {
 
 ///////////////////////////////////////////
 
-runtime_ sk_active_runtime() { return sk_runtime; }
+display_mode_ sk_active_display_mode() { return sk_display_mode; }
 
 ///////////////////////////////////////////
 

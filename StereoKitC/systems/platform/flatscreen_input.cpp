@@ -109,7 +109,7 @@ void flatscreen_mouse_update() {
 ///////////////////////////////////////////
 
 bool flatscreen_is_simulating_movement() {
-	return sk_runtime == runtime_flatscreen
+	return sk_display_mode == display_mode_flatscreen
 		&& sk_settings.disable_flatscreen_mr_sim == false
 		&& (   input_key(key_caps_lock) & button_state_active
 			|| input_key(key_shift)     & button_state_active);

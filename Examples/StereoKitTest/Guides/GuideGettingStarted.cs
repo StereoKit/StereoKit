@@ -43,7 +43,7 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		if (!SK.Initialize("Project", Runtime.MixedReality))
+		if (!SK.Initialize("Project"))
 			Environment.Exit(1);
 
 		Model cube = Model.FromMesh(

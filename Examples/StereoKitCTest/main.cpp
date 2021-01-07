@@ -48,11 +48,13 @@ int main() {
 int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 #endif
 	settings_t settings = {};
+	settings.display_preference = display_mode_mixedreality;
+	settings.display_fallback   = true;
 	snprintf(settings.assets_folder, sizeof(settings.assets_folder), assets_folder);
 	sk_set_settings(settings);
 	log_set_filter(log_diagnostic);
 
-	if (!sk_init("StereoKit C", runtime_flatscreen))
+	if (!sk_init("StereoKit C"))
 		return 1;
 
 	common_init();
@@ -75,11 +77,11 @@ void common_init() {
 	tex_t tex_color = tex_create_file("test.png");
 	tex_t tex_norm  = tex_create_file("test_normal.png");
 	floor_mat = material_copy_id("default/material");
-	material_set_texture(floor_mat, "diffuse", tex_color);
-	material_set_texture(floor_mat, "normal",  tex_norm);
+	material_set_texture(floor_mat, "diffuse",   tex_color);
+	material_set_texture(floor_mat, "normal",    tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);
 	material_set_float  (floor_mat, "roughness", 1.0f);
-	material_set_float  (floor_mat, "metallic", 0.5f);
+	material_set_float  (floor_mat, "metallic",  0.5f);
 	material_set_queue_offset(floor_mat, 1);
 	if (tex_color != nullptr) tex_release(tex_color);
 	if (tex_norm  != nullptr) tex_release(tex_norm);
@@ -92,7 +94,7 @@ void common_init() {
 	// Build a physical floor!
 	vec3 pos   = vec3{ 0,-1.5f,0 };
 	vec3 scale = vec3{ 5,1,5 };
-	floor_tr = matrix_trs(pos, quat_identity, scale);
+	floor_tr    = matrix_trs(pos, quat_identity, scale);
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
 }

@@ -5,7 +5,7 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 0
-#define SK_VERSION_PRERELEASE 1
+#define SK_VERSION_PRERELEASE 2
 
 #if defined(_DLL) || defined(BUILDING_DLL)
 	#ifdef __GNUC__
@@ -63,13 +63,15 @@ typedef int32_t bool32_t;
 
 ///////////////////////////////////////////
 
-typedef enum runtime_ {
-	runtime_flatscreen   = 0,
-	runtime_mixedreality = 1,
-	runtime_none         = 2,
-} runtime_;
+typedef enum display_mode_ {
+	display_mode_mixedreality = 0,
+	display_mode_flatscreen   = 1,
+	display_mode_none         = 2,
+} display_mode_;
 
 typedef struct settings_t {
+	display_mode_ display_preference;
+	bool32_t      display_fallback;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
@@ -94,18 +96,18 @@ typedef struct system_info_t {
 	bool32_t spatial_bridge;
 } system_info_t;
 
-SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
-SK_API void          sk_set_window    (void *window);
-SK_API void          sk_set_window_xam(void *window);
-SK_API void          sk_shutdown      ();
-SK_API void          sk_quit          ();
-SK_API bool32_t      sk_step          (void (*app_update)(void));
-SK_API runtime_      sk_active_runtime();
-SK_API settings_t    sk_get_settings  ();
-SK_API void          sk_set_settings  (const sk_ref(settings_t) settings);
-SK_API system_info_t sk_system_info   ();
-SK_API const char   *sk_version_name  ();
-SK_API uint64_t      sk_version_id    ();
+SK_API bool32_t      sk_init               (const char *app_name);
+SK_API void          sk_set_window         (void *window);
+SK_API void          sk_set_window_xam     (void *window);
+SK_API void          sk_shutdown           ();
+SK_API void          sk_quit               ();
+SK_API bool32_t      sk_step               (void (*app_update)(void));
+SK_API display_mode_ sk_active_display_mode();
+SK_API settings_t    sk_get_settings       ();
+SK_API void          sk_set_settings       (const sk_ref(settings_t) settings);
+SK_API system_info_t sk_system_info        ();
+SK_API const char   *sk_version_name       ();
+SK_API uint64_t      sk_version_id         ();
 
 ///////////////////////////////////////////
 
@@ -829,7 +831,7 @@ static const char *default_id_sound_ungrab  = "default/sound_ungrab";
 
   // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
 #if SK_VERSION_PRERELEASE != 0
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-rc" SK_STR(SK_VERSION_PRERELEASE))
+#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview" SK_STR(SK_VERSION_PRERELEASE))
 #else
 #define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
 #endif

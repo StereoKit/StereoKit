@@ -13,7 +13,7 @@ float mouse_hand_scroll = 0;
 ///////////////////////////////////////////
 
 bool hand_mouse_available() {
-	return sk_active_runtime() == runtime_flatscreen;
+	return sk_active_display_mode() == display_mode_flatscreen;
 }
 
 ///////////////////////////////////////////

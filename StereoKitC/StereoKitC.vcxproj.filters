@@ -154,6 +154,9 @@
     <ClCompile Include="libraries\ferr_hash.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\sokol_time.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -354,6 +357,9 @@
       <Filter>systems\platform</Filter>
     </ClInclude>
     <ClInclude Include="libraries\ferr_hash.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\sokol_time.h">
       <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>

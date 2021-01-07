@@ -5,57 +5,67 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	/// <summary>This class contains functions for running the StereoKit library!</summary>
+	/// <summary>This class contains functions for running the StereoKit 
+	/// library!</summary>
 	public static class SK
 	{
 		private static SystemInfo   _system;
 		private static Steppers     _steppers;
 		private static List<Action> _mainThreadInvoke = new List<Action>();
 
-		/// <summary>Settings for more detailed initialization of StereoKit! Set these before calling Initialize,
-		/// otherwise they'll be ignored.</summary>
-		public static Settings   settings;
-		/// <summary>Has StereoKit been successfully initialized already? If initialization was attempted and 
-		/// failed, this value will be false.</summary>
-		public static bool       IsInitialized { get; private set; }
-		/// <summary>Since we can fallback to a different Runtime, this lets you check to see which Runtime
-		/// was successfully initialized.</summary>
-		public static Runtime    ActiveRuntime => NativeAPI.sk_active_runtime();
-		/// <summary>This structure contains information about the current system and its capabilites. There's a 
-		/// lot of different MR devices, so it's nice to have code for systems with particular characteristics!</summary>
+		/// <summary>Settings for more detailed initialization of StereoKit! 
+		/// Set these before calling Initialize, otherwise they'll be 
+		/// ignored.</summary>
+		public static Settings settings;
+		/// <summary>Has StereoKit been successfully initialized already? If
+		/// initialization was attempted and failed, this value will be 
+		/// false.</summary>
+		public static bool IsInitialized { get; private set; }
+		/// <summary>Since we can fallback to a different DisplayMode, this 
+		/// lets you check to see which Runtime was successfully initialized.
+		/// </summary>
+		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
+		/// <summary>This structure contains information about the current 
+		/// system and its capabilites. There's a lot of different MR devices,
+		/// so it's nice to have code for systems with particular 
+		/// characteristics!</summary>
 		public static SystemInfo System => _system;
 
-		/// <summary>Human-readable version name embedded in the StereoKitC DLL.</summary>
+		/// <summary>Human-readable version name embedded in the StereoKitC 
+		/// DLL.</summary>
 		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
-		/// <summary>An integer version Id! This is defined using a hex value with this format: </summary>
-		/// `0xMMMMiiiiPPPPrrrr` in order of Major.mInor.Patch.pre-Release
+		/// <summary>An integer version Id! This is defined using a hex value
+		/// with this format: `0xMMMMiiiiPPPPrrrr` in order of 
+		/// Major.mInor.Patch.pre-Release</summary>
 		public static ulong VersionId => NativeAPI.sk_version_id();
 
-		/// <summary>Initializes StereoKit window, default resources, systems, etc. Set settings before calling 
-		/// this function, if defaults need changed!</summary>
-		/// <param name="name">Name of the application, this shows up an the top of the Win32 window, and is 
-		/// submitted to OpenXR. OpenXR caps this at 128 characters.</param>
-		/// <param name="runtimePreference">Which runtime should we try to load?</param>
-		/// <param name="fallback">If the preferred runtime fails, should we fall back to flatscreen?</param>
-		/// <returns>Returns true if all systems are successfully initialized!</returns>
-		public static bool Initialize(string name, Runtime runtimePreference = Runtime.MixedReality, bool fallback = true)
+		/// <summary>Initializes StereoKit window, default resources, systems,
+		/// etc. Set settings before calling this function, if defaults need 
+		/// changed!</summary>
+		/// <param name="name">Name of the application, this shows up an the 
+		/// top of the Win32 window, and is submitted to OpenXR. OpenXR caps 
+		/// this at 128 characters.</param>
+		/// <returns>Returns true if all systems are successfully 
+		/// initialized!</returns>
+		public static bool Initialize(string name)
 		{
-			IsInitialized = InitializeCall(name, runtimePreference, fallback);
+			IsInitialized = InitializeCall(name);
 			return IsInitialized;
 		}
 
 		public static void SetWindow(IntPtr window)
 			=> NativeAPI.sk_set_window_xam(window);
 
-		private static bool InitializeCall(string name, Runtime runtime, bool fallback)
+		private static bool InitializeCall(string name)
 		{
 			// Prep console for colored debug logs
 			Log.SetupConsole();
 
-			// DllImport finds the function at the beginning of the function call,
-			// so this needs to be in a separate function from NativeLib.LoadDll
+			// DllImport finds the function at the beginning of the function 
+			// call, so this needs to be in a separate function from 
+			// NativeLib.LoadDll
 			NativeAPI.sk_set_settings(settings);
-			bool result = NativeAPI.sk_init(name, runtime, fallback ? 1 : 0) > 0;
+			bool result = NativeAPI.sk_init(name) > 0;
 
 			// Get system information
 			if (result) { 
@@ -69,7 +79,8 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.</summary>
+		/// <summary>Shuts down all StereoKit initialized systems. Release
+		/// your own StereoKit created assets before calling this.</summary>
 		public static void Shutdown()
 		{
 			if (IsInitialized)
@@ -80,16 +91,21 @@ namespace StereoKit
 			}
 		}
 
-		/// <summary>Lets StereoKit know it should quit! It'll finish the current frame, and after that Step
-		/// will return that it wants to exit.</summary>
+		/// <summary>Lets StereoKit know it should quit! It'll finish the 
+		/// current frame, and after that Step will return that it wants to 
+		/// exit.</summary>
 		public static void Quit()
 		{
 			NativeAPI.sk_quit();
 		}
 
-		/// <summary> Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. </summary>
-		/// <param name="onStep">A callback where you put your application code! This gets called between StereoKit systems, after frame setup, but before render.</param>
-		/// <returns>If an exit message is received from the platform, this function will return false.</returns>
+		/// <summary> Steps all StereoKit systems, and inserts user code via
+		/// callback between the appropriate system updates. </summary>
+		/// <param name="onStep">A callback where you put your application 
+		/// code! This gets called between StereoKit systems, after frame 
+		/// setup, but before render.</param>
+		/// <returns>If an exit message is received from the platform, this 
+		/// function will return false.</returns>
 		public static bool Step(Action onStep = null)
 		{
 			return NativeAPI.sk_step(() => {

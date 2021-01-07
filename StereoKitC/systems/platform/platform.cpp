@@ -10,7 +10,7 @@
 
 namespace sk {
 
-runtime_ platform_mode = runtime_none;
+display_mode_ platform_mode = display_mode_none;
 
 ///////////////////////////////////////////
 
@@ -45,11 +45,11 @@ bool platform_init() {
 	}
 
 	// Start up the current mode!
-	if (!platform_set_mode(sk_runtime)) {
-		if (sk_runtime_fallback && sk_runtime != runtime_flatscreen) {
+	if (!platform_set_mode(sk_display_mode)) {
+		if (sk_display_fallback && sk_display_mode != display_mode_flatscreen) {
 			log_infof("Runtime falling back to Flatscreen");
-			sk_runtime = runtime_flatscreen;
-			return platform_set_mode(sk_runtime);
+			sk_display_mode = display_mode_flatscreen;
+			return platform_set_mode(sk_display_mode);
 		}
 		return false;
 	}
@@ -91,22 +91,22 @@ void platform_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
-bool platform_set_mode(runtime_ mode) {
+bool platform_set_mode(display_mode_ mode) {
 	if (platform_mode == mode)
 		return true;
 
 	switch (mode) {
-	case runtime_none:         log_diag("Starting headless mode"); break;
-	case runtime_mixedreality: log_diag("Starting mixed reality mode"); break;
-	case runtime_flatscreen:   log_diag("Starting flatscreen mode"); break;
+	case display_mode_none:         log_diag("Starting headless mode"); break;
+	case display_mode_mixedreality: log_diag("Starting mixed reality mode"); break;
+	case display_mode_flatscreen:   log_diag("Starting flatscreen mode"); break;
 	}
 
 	platform_stop_mode();
 
 	bool result = true;
-	if        (mode == runtime_mixedreality) {
+	if        (mode == display_mode_mixedreality) {
 		result = openxr_init ();
-	} else if (mode == runtime_flatscreen) {
+	} else if (mode == display_mode_flatscreen) {
 #if   defined(SK_OS_ANDROID)
 		result = android_start();
 #elif defined(SK_OS_LINUX)
@@ -119,7 +119,7 @@ bool platform_set_mode(runtime_ mode) {
 	}
 
 	if (!result)
-		log_warnf("Couldn't create StereoKit in %s mode!", mode == runtime_mixedreality ? "MixedReality" : "Flatscreen");
+		log_warnf("Couldn't create StereoKit in %s mode!", mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
 
 	platform_mode = mode;
 	return result;
@@ -129,9 +129,9 @@ bool platform_set_mode(runtime_ mode) {
 
 void platform_step_begin() {
 	switch (platform_mode) {
-	case runtime_none: break;
-	case runtime_mixedreality: openxr_step_begin(); break;
-	case runtime_flatscreen: {
+	case display_mode_none: break;
+	case display_mode_mixedreality: openxr_step_begin(); break;
+	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_step_begin();
 #elif defined(SK_OS_LINUX)
@@ -149,9 +149,9 @@ void platform_step_begin() {
 
 void platform_step_end() {
 	switch (platform_mode) {
-	case runtime_none: break;
-	case runtime_mixedreality: openxr_step_end(); break;
-	case runtime_flatscreen: {
+	case display_mode_none: break;
+	case display_mode_mixedreality: openxr_step_end(); break;
+	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_step_end();
 #elif defined(SK_OS_LINUX)
@@ -169,9 +169,9 @@ void platform_step_end() {
 
 void platform_present() {
 	switch (platform_mode) {
-	case runtime_none: break;
-	case runtime_mixedreality: break;
-	case runtime_flatscreen: {
+	case display_mode_none: break;
+	case display_mode_mixedreality: break;
+	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_vsync();
 #elif defined(SK_OS_LINUX)
@@ -189,9 +189,9 @@ void platform_present() {
 
 void platform_stop_mode() {
 	switch (platform_mode) {
-	case runtime_none: break;
-	case runtime_mixedreality: openxr_shutdown(); break;
-	case runtime_flatscreen: {
+	case display_mode_none: break;
+	case display_mode_mixedreality: openxr_shutdown(); break;
+	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_stop();
 #elif defined(SK_OS_LINUX)
