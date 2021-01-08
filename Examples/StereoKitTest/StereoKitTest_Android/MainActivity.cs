@@ -57,9 +57,11 @@ namespace StereoKitTest_Android
 			Android.Util.Log.Info("StereoKitTest", "Starting StereoKit thread...");
 
 			Task.Run(() => {
-				StereoKit.Log.Filter = LogLevel.Diagnostic;
-				SK.settings.androidActivity = activityHandle;
-				if (!SK.Initialize("StereoKitTemplate"))
+				Log.Filter = LogLevel.Diagnostic;
+				if (!SK.Initialize(new SKSettings {
+						androidActivity = activityHandle,
+						appName         = "StereoKitTest_Android",
+						displayFallback = true}))
 					return;
 
 				// Create assets used by the app

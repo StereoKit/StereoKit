@@ -27,13 +27,13 @@ void android_main(struct android_app* state) {
 
 	log_set_filter(log_diagnostic);
 
-	settings_t settings = sk_get_settings();
+	sk_settings_t settings = {};
+	settings.app_name           = "StereoKitCTest_Android";
 	settings.android_activity   = state->activity->clazz;
 	settings.android_java_vm    = state->activity->vm;
 	settings.display_preference = display_mode_mixedreality;
 	settings.display_fallback   = true;
-	sk_set_settings(settings);
-	if (!sk_init("StereoKitCTest_Android"))
+	if (!sk_init(settings))
 		return;
 
 	mesh = mesh_gen_rounded_cube(vec3_one*.4f, 0.05f, 4);

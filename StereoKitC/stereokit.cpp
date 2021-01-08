@@ -29,7 +29,7 @@ const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
 display_mode_ sk_display_mode     = display_mode_mixedreality;
 bool          sk_display_fallback = false;
-settings_t    sk_settings = {};
+sk_settings_t sk_settings = {};
 system_info_t sk_info     = {};
 bool32_t      sk_focused  = true;
 bool32_t      sk_run      = true;
@@ -50,24 +50,8 @@ uint64_t sk_timev_raw        = 0;
 
 ///////////////////////////////////////////
 
-settings_t sk_get_settings() {
+sk_settings_t sk_get_settings() {
 	return sk_settings;
-}
-
-///////////////////////////////////////////
-
-void sk_set_settings(const settings_t &settings) {
-	if (sk_initialized) {
-		log_err("Settings need set before initialization! Please call this -before- sk_init.");
-		return;
-	}
-	sk_settings = settings;
-
-	// Set some default values
-	if (sk_settings.flatscreen_width  == 0)
-		sk_settings.flatscreen_width  = 1280;
-	if (sk_settings.flatscreen_height == 0)
-		sk_settings.flatscreen_height = 720;
 }
 
 ///////////////////////////////////////////
@@ -97,15 +81,19 @@ void sk_app_update() {
 
 ///////////////////////////////////////////
 
-bool32_t sk_init(const char *app_name) {
+bool32_t sk_init(sk_settings_t settings) {
+	sk_settings         = settings;
 	sk_display_mode     = sk_settings.display_preference;
 	sk_display_fallback = sk_settings.display_fallback;
-	sk_app_name         = app_name;
+	sk_app_name         = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+
+	// Set some default values
+	if (sk_settings.flatscreen_width  == 0)
+		sk_settings.flatscreen_width  = 1280;
+	if (sk_settings.flatscreen_height == 0)
+		sk_settings.flatscreen_height = 720;
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
-
-	// Make sure settings get their default values
-	sk_set_settings(sk_settings);
 
 	stm_setup();
 	sk_update_timer();

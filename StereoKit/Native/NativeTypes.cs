@@ -21,11 +21,14 @@ namespace StereoKit
 		None = 2,
 	}
 
-	/// <summary>StereoKit miscellaneous initialization settings! Setup 
-	/// SK.settings with your data before calling SK.Initialize.</summary>
+	/// <summary>StereoKit initialization settings! Setup SK.settings with 
+	/// your data before calling SK.Initialize.</summary>
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-	public struct Settings
+	public struct SKSettings
 	{
+		private IntPtr _appName;
+		private IntPtr _assetsFolder;
+
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
 		public DisplayMode displayPreference;
@@ -44,11 +47,6 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>Where to look for assets when loading files! Final path 
-		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
-		/// unnecessary.</summary>
-		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-		public string assetsFolder;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
@@ -56,6 +54,33 @@ namespace StereoKit
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
+
+		/// <summary>Name of the application, this shows up an the top of the
+		/// Win32 window, and is submitted to OpenXR. OpenXR caps this at 128
+		/// characters.</summary>
+		public string appName {
+			set {
+				if (_appName != IntPtr.Zero) Marshal.FreeHGlobal(_appName);
+
+				_appName = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			}
+			get => Marshal.PtrToStringAnsi(_appName);
+		}
+		/// <summary>Where to look for assets when loading files! Final path 
+		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+		/// unnecessary.</summary>
+		public string assetsFolder { 
+			set { 
+				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder); 
+
+				_assetsFolder = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			} 
+			get => Marshal.PtrToStringAnsi(_assetsFolder);
+		}
 	}
 
 	/// <summary>This describes the type of display tech used on a Mixed

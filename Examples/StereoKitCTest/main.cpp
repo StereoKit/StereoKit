@@ -47,14 +47,14 @@ int main() {
 #else
 int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 #endif
-	settings_t settings = {};
-	settings.display_preference = display_mode_mixedreality;
-	settings.display_fallback   = true;
-	snprintf(settings.assets_folder, sizeof(settings.assets_folder), assets_folder);
-	sk_set_settings(settings);
 	log_set_filter(log_diagnostic);
 
-	if (!sk_init("StereoKit C"))
+	sk_settings_t settings = {};
+	settings.app_name           = "StereoKit C";
+	settings.assets_folder      = assets_folder;
+	settings.display_preference = display_mode_mixedreality;
+	settings.display_fallback   = true;
+	if (!sk_init(settings))
 		return 1;
 
 	common_init();

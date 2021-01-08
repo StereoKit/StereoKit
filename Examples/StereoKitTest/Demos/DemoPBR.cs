@@ -24,6 +24,7 @@ class DemoPBR : ITest
 		for (int x = 0; x < materialGrid; x++) {
 			int i = x + y * materialGrid;
 			pbrMaterials[i] = new Material(Default.ShaderPbr);
+			pbrMaterials[i][MatParamName.ColorTint      ] = Color.HSV(0.3f, 0.8f, 0.8f);
 			pbrMaterials[i][MatParamName.MetallicAmount ] = x/(float)(materialGrid-1);
 			pbrMaterials[i][MatParamName.RoughnessAmount] = y/(float)(materialGrid-1);
 		} }

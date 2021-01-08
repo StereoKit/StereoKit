@@ -5,7 +5,7 @@
 namespace sk {
 
 extern const char   *sk_app_name;
-extern settings_t    sk_settings;
+extern sk_settings_t sk_settings;
 extern system_info_t sk_info;
 extern display_mode_ sk_display_mode;
 extern bool          sk_display_fallback;

@@ -10,14 +10,13 @@ namespace StereoKit
 		const CharSet           cSet = CharSet.Ansi;
 		const CallingConvention call = CallingConvention.Cdecl;
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int         sk_init(string app_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int         sk_init(SKSettings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window_xam(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_quit();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool        sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayMode sk_active_display_mode();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_settings(Settings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SystemInfo  sk_system_info();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();

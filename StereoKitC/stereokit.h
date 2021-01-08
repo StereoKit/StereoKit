@@ -69,19 +69,20 @@ typedef enum display_mode_ {
 	display_mode_none         = 2,
 } display_mode_;
 
-typedef struct settings_t {
+typedef struct sk_settings_t {
+	const char   *app_name;
+	const char   *assets_folder;
 	display_mode_ display_preference;
 	bool32_t      display_fallback;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
 	int32_t  flatscreen_height;
-	char     assets_folder[128];
 	bool32_t disable_flatscreen_mr_sim;
 
 	void    *android_java_vm;  // JavaVM*
 	void    *android_activity; // jobject
-} settings_t;
+} sk_settings_t;
 
 typedef enum display_ {
 	display_opaque = 0,
@@ -96,15 +97,14 @@ typedef struct system_info_t {
 	bool32_t spatial_bridge;
 } system_info_t;
 
-SK_API bool32_t      sk_init               (const char *app_name);
+SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           ();
 SK_API void          sk_quit               ();
 SK_API bool32_t      sk_step               (void (*app_update)(void));
 SK_API display_mode_ sk_active_display_mode();
-SK_API settings_t    sk_get_settings       ();
-SK_API void          sk_set_settings       (const sk_ref(settings_t) settings);
+SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
 SK_API const char   *sk_version_name       ();
 SK_API uint64_t      sk_version_id         ();

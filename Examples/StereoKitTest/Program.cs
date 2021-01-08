@@ -55,10 +55,12 @@ class Program
 		Log.Subscribe(OnLog);
 		/// :End:
 		Log.Filter = LogLevel.Diagnostic;
-		SK.settings.assetsFolder      = Program.Root;
-		SK.settings.displayFallback   = true;
-		SK.settings.displayPreference = Tests.IsTesting ? DisplayMode.Flatscreen : DisplayMode.MixedReality;
-		if (!SK.Initialize("StereoKit C#"))
+
+		if (!SK.Initialize(new SKSettings { 
+				appName           = "StereoKit C#",
+				assetsFolder      = Program.Root,
+				displayFallback   = true,
+				displayPreference = Tests.IsTesting ? DisplayMode.Flatscreen : DisplayMode.MixedReality}))
 			Environment.Exit(1);
 
 		CommonInit();
