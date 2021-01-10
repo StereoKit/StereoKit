@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="DebugToolWindow.cs" />
     <Compile Include="Demos\DemoBasics.cs" />
+    <Compile Include="Demos\DemoPBR.cs" />
     <Compile Include="Demos\DemoRayMesh.cs" />
     <Compile Include="Docs\DocBounds.cs" />
     <Compile Include="Docs\DocBtnState.cs" />
@@ -117,11 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\..\bin\$(Platform)_$(Configuration)\StereoKitC\StereoKitC.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">

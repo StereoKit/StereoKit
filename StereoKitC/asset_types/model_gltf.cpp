@@ -2,13 +2,23 @@
 
 #include "model.h"
 #include "texture.h"
+#include "../sk_math.h"
+#include "../libraries/ferr_hash.h"
 
-#include <math.h>
-
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning( disable : 26451 )
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#endif
 #define CGLTF_IMPLEMENTATION
 #include "../libraries/cgltf.h"
-#pragma warning( default: 26451 )
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma clang diagnostic pop
+#endif
 
 namespace sk {
 
@@ -22,7 +32,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh/%d_%s", filename, node_id, m->name);
+	snprintf(id, sizeof(id), "%s/mesh/%d_%s", filename, node_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -108,23 +118,23 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
 		char *last1 = strrchr((char *)filename, '/');
 		char *last2 = strrchr((char *)filename, '\\');
-		char *last = max(last1, last2);
+		char *last  = (char*)maxi((uint64_t)last1, (uint64_t)last2);
 		if (last == nullptr) {
-			sprintf_s(dest, dest_length, "%s", image->uri);
+			snprintf(dest, dest_length, "%s", image->uri);
 		} else {
-			sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+			snprintf(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
 		}
 		return;
 	}
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			sprintf_s(dest, dest_length, "%s/tex/%d", filename, (int)i);
+			snprintf(dest, dest_length, "%s/tex/%d", filename, (int)i);
 			return;
 		}
 	}
 
-	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
+	snprintf(dest, dest_length, "%s/unknown_image", filename);
 }
 
 ///////////////////////////////////////////
@@ -171,9 +181,13 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader) {
 	// Check if we've already loaded this material
-	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	sprintf_s(id, 512, "%s/mat/%s", filename, mat_name);
+	if (material == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/null", filename);
+	else if (material->name == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/%u", filename, hash_fnv32_data(material, sizeof(cgltf_material)));
+	else
+		snprintf(id, sizeof(id), "%s/mat/%s", filename, material->name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;
@@ -249,7 +263,7 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
-	cgltf_data*   data    = NULL;
+	cgltf_data*   data    = nullptr;
 	const char *model_file = assets_file(filename);
 	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
 		return false;

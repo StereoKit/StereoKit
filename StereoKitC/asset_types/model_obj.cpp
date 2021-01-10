@@ -1,55 +1,40 @@
 #include "model.h"
 #include "../libraries/stref.h"
-#include "../libraries/stb_ds.h"
+#include "../libraries/array.h"
 
 #include <stdio.h>
 
 namespace sk {
 
-struct index_hash_t {
-	int    key;
-	vind_t value;
-};
-
 ///////////////////////////////////////////
 
-inline int meshfmt_obj_idx(int i1, int i2, int i3, int vSize, int nSize) {
-	return i1 + (vSize+1) * (i2 + (nSize+1) * i3);
-}
+int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, array_t<vec2> *uvs, hashmap_t<vert_t, vind_t> *indmap, array_t<vert_t> *mesh_verts) {
+	if (uvs  ->count == 0) uvs  ->add(vec2{ 0,0 }  );
+	if (norms->count == 0) norms->add(vec3{ 0,1,0 });
+	vert_t v = vert_t{ verts->get(iV - 1LL), norms->get(iN - 1LL), uvs->get(iT - 1LL), {255,255,255,255} };
 
-///////////////////////////////////////////
-
-int indexof(int iV, int iT, int iN, vec3 *verts, vec3 **norms, vec2 **uvs, index_hash_t **indmap, vert_t **mesh_verts) {
-	if (arrlen(*uvs) == 0)
-		arrput(*uvs, (vec2{ 0,0 }));
-	if (arrlen(*norms) == 0)
-		arrput(*norms, (vec3{ 0,1,0 }));
-
-	int  id = meshfmt_obj_idx(iV, iN, iT, (int)arrlen(verts), (int)arrlen(norms));
-	vind_t ind = hmget(*indmap, id);
-	if (ind == -1) {
-		arrput(*mesh_verts, (vert_t{ verts[iV - 1LL], (*norms)[iN - 1LL], (*uvs)[iT - 1LL], {255,255,255,255} }) );
-		ind = (int)arrlen(*mesh_verts) - 1;
-		hmput(*indmap, id, ind);
-		
+	int64_t index = indmap->contains(v);
+	if (index < 0) {
+		index = mesh_verts->add(v);
+		indmap->add_or_set(v, (vind_t)index);
+	} else {
+		index = indmap->items[index];
 	}
-	return ind;
+	return (int)index;
 }
 
 ///////////////////////////////////////////
 
 bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
-	vec3 *poss  = nullptr;
-	vec3 *norms = nullptr;
-	vec2 *uvs   = nullptr;
-	vert_t *verts = nullptr;
-	vind_t *faces = nullptr;
-
-	index_hash_t  *indmap = nullptr;
-	hmdefault(indmap, (vind_t)-1);
+	array_t<vec3>   poss  = {};
+	array_t<vec3>   norms = {};
+	array_t<vec2>   uvs   = {};
+	array_t<vert_t> verts = {};
+	array_t<vind_t> faces = {};
+	hashmap_t<vert_t, vind_t> indmap = {};
 	
 	vec3 in;
-	int inds[12];
+	int inds[12] = {};
 
 	stref_t data = stref_make((const char *)file_data);
 	stref_t line = {};
@@ -63,18 +48,18 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
 			if (stref_nextword(line, word)) in.z = stref_to_f(word);
-			arrput(poss, in);
+			poss.add(in);
 		} else if (stref_equals(word, "vn")) {
 			in = {};
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
 			if (stref_nextword(line, word)) in.z = stref_to_f(word);
-			arrput(norms, in);
+			norms.add(in);
 		} else if (stref_equals(word, "vt")) {
 			in = {};
 			if (stref_nextword(line, word)) in.x = stref_to_f(word);
 			if (stref_nextword(line, word)) in.y = stref_to_f(word);
-			arrput(uvs, (vec2{ in.x, in.y }));
+			uvs.add(vec2{ in.x, in.y });
 		} else if (stref_equals(word, "f" )) {
 			int sides = 0;
 			for (; sides < 4; sides++) {
@@ -86,34 +71,38 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 				inds[sides * 3+2] = stref_nextword(word, ind, '/') && ind.length > 0 ? stref_to_i(ind) : 1;
 			}
 
-			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2],  poss, &norms, &uvs, &indmap, &verts);
-			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5],  poss, &norms, &uvs, &indmap, &verts);
-			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8],  poss, &norms, &uvs, &indmap, &verts);
-			arrput(faces, id1); arrput(faces, id2); arrput(faces, id3);
+			vind_t id1 = (vind_t)indexof(inds[0], inds[1],  inds[2], &poss, &norms, &uvs, &indmap, &verts);
+			vind_t id2 = (vind_t)indexof(inds[3], inds[4],  inds[5], &poss, &norms, &uvs, &indmap, &verts);
+			vind_t id3 = (vind_t)indexof(inds[6], inds[7],  inds[8], &poss, &norms, &uvs, &indmap, &verts);
+			faces.add(id1);
+			faces.add(id2);
+			faces.add(id3);
 			if (sides == 4) {
-				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], poss, &norms, &uvs, &indmap, &verts);
-				arrput(faces, id1); arrput(faces, id3); arrput(faces, id4);
+				vind_t id4 = (vind_t)indexof(inds[9], inds[10], inds[11], &poss, &norms, &uvs, &indmap, &verts);
+				faces.add(id1);
+				faces.add(id3);
+				faces.add(id4);
 			}
 		}
 	}
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh", filename);
+	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_create();
 	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
-	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
+	mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
+	mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
 
 	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
 
 	mesh_release(mesh);
 
-	arrfree(poss);
-	arrfree(norms);
-	arrfree(uvs);
-	arrfree(verts);
-	arrfree(faces);
-	hmfree(indmap);
+	poss  .free();
+	norms .free();
+	uvs   .free();
+	verts .free();
+	faces .free();
+	indmap.free();
 	return true;
 }
 

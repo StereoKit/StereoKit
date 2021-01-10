@@ -22,6 +22,20 @@ namespace StereoKit
 		private Vec4 row3;
 		private Vec4 row4;
 
+		/// <summary>Explicitly initialize a Matrix. This is just a copy
+		/// constructor!</summary>
+		/// <param name="row1">First row, elements 0,1,2,3.</param>
+		/// <param name="row2">Second row, elements 4,5,6,7.</param>
+		/// <param name="row3">Third row, elements 8,9,10,11.</param>
+		/// <param name="row4">Fourth row, elements 12,13,14,15.</param>
+		public Matrix(Vec4 row1, Vec4 row2, Vec4 row3, Vec4 row4)
+		{
+			this.row1 = row1;
+			this.row2 = row2;
+			this.row3 = row3;
+			this.row4 = row4;
+		}
+
 		/// <summary>Creates an inverse matrix! If the matrix takes a point 
 		/// from a -> b, then its inverse takes the point from b -> a.</summary>
 		/// <returns>An inverse matrix of the current one.</returns>
@@ -60,7 +74,7 @@ namespace StereoKit
 			return result;
 		}
 		public static Vec3 operator *(Matrix a, Vec3 b) => NativeAPI.matrix_mul_point(a, b);
-		public static Ray operator *(Matrix a, Ray b) => a.TransformRay(b);
+		public static Ray  operator *(Matrix a, Ray b) => a.TransformRay(b);
 
 		/// <summary>Translate, Rotate, Scale. Creates a transform Matrix using all these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>

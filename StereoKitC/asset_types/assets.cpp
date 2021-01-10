@@ -10,6 +10,7 @@
 #include "sprite.h"
 #include "sound.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 
 #include <stdio.h>
@@ -24,7 +25,7 @@ array_t<asset_header_t *> assets = {};
 ///////////////////////////////////////////
 
 void *assets_find(const char *id, asset_type_ type) {
-	return assets_find(string_hash(id), type);
+	return assets_find(hash_fnv64_string(id), type);
 }
 
 ///////////////////////////////////////////
@@ -41,12 +42,12 @@ void *assets_find(uint64_t id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
-	sprintf_s(dest, dest_size, "%s", root_name);
-	uint64_t id    = string_hash(dest);
+	snprintf(dest, dest_size, "%s", root_name);
+	uint64_t id    = hash_fnv64_string(dest);
 	int      count = 1;
 	while (assets_find(dest, type) != nullptr) {
-		sprintf_s(dest, dest_size, "%s%d", root_name, count);
-		id = string_hash(dest);
+		snprintf(dest, dest_size, "%s%d", root_name, count);
+		id = hash_fnv64_string(dest);
 		count += 1;
 	}
 }
@@ -64,17 +65,17 @@ void *assets_allocate(asset_type_ type) {
 	case asset_type_font:     size = sizeof(_font_t);     break;
 	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
 	case asset_type_sound:    size = sizeof(_sound_t);    break;
-	default: throw "Unimplemented asset type!";
+	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	char name[64];
-	sprintf_s(name, "auto/asset_%d", assets.count);
+	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
 
 	asset_header_t *header = (asset_header_t *)malloc(size);
 	memset(header, 0, size);
 	header->type  = type;
 	header->refs += 1;
-	header->id    = string_hash(name);
+	header->id    = hash_fnv64_string(name);
 	header->index = assets.count;
 	assets.add(header);
 	return header;
@@ -83,7 +84,7 @@ void *assets_allocate(asset_type_ type) {
 ///////////////////////////////////////////
 
 void assets_set_id(asset_header_t &header, const char *id) {
-	assets_set_id(header, string_hash(id));
+	assets_set_id(header, hash_fnv64_string(id));
 #ifdef _DEBUG
 	header.id_text = string_copy(id);
 #endif
@@ -110,8 +111,10 @@ void  assets_addref(asset_header_t &asset) {
 void  assets_releaseref(asset_header_t &asset) {
 	// Manage the reference count
 	asset.refs -= 1;
-	if (asset.refs < 0)
-		throw "Released too many references to asset!";
+	if (asset.refs < 0) {
+		log_err("Released too many references to asset!");
+		abort();
+	}
 	if (asset.refs != 0)
 		return;
 
@@ -125,7 +128,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	case asset_type_font:     font_destroy    ((font_t    )&asset); break;
 	case asset_type_sprite:   sprite_destroy  ((sprite_t  )&asset); break;
 	case asset_type_sound:    sound_destroy   ((sound_t   )&asset); break;
-	default: throw "Unimplemented asset type!";
+	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	// Remove it from our list of assets
@@ -166,7 +169,7 @@ const char *assets_file(const char *file_name) {
 		ch++;
 	}
 
-	sprintf_s(assets_file_buffer, "%s/%s", sk_settings.assets_folder, file_name);
+	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
 }
 

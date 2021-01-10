@@ -1,26 +1,24 @@
-// [name] sk/font
+#include "stereokit.hlsli"
 
-#include <stereokit>
+//--name = sk/font
+//--color:color = 1,1,1,1
+//--diffuse     = white
+float4       color;
+Texture2D    diffuse   : register(t0);
+SamplerState diffuse_s : register(s0);
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1,1,1,1}
-	float4 color;
-};
 struct vsIn {
-	float4 pos   : SV_POSITION;
+	float4 pos   : SV_Position;
+	float3 norm  : NORMAL0;
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
 };
 struct psIn {
-	float4 pos     : SV_POSITION;
-	float4 color   : COLOR0;
+	float4 pos     : SV_Position;
 	float2 uv      : TEXCOORD0;
+	float4 color   : COLOR0;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
-
-// [texture] diffuse white
-Texture2D    tex         : register(t0);
-SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
@@ -33,24 +31,24 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return output;
 }
 
-float4 ps(psIn input, bool frontface : SV_IsFrontFace) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET{
 	// From an excellent article about text rendering by Ben Golus:
 	// https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec
 	float2 dx = ddx(input.uv);
 	float2 dy = ddy(input.uv); // manually calculate the per axis mip level, clamp to 0 to 1
 
 	float2 uvOffsets = float2(0.125, 0.375);
-	float4 offsetUV = float4(0.0, 0.0, 0.0, -1); // supersampled using 2x2 rotated grid
+	float4 offsetUV  = float4(0.0, 0.0, 0.0, -1); // supersampled using 2x2 rotated grid
 	half4  col = 0;
 
 	offsetUV.xy = input.uv.xy + uvOffsets.x * dx + uvOffsets.y * dy;
-	col += tex.SampleBias(tex_sampler, offsetUV.xy, offsetUV.w);
+	col += diffuse.SampleBias(diffuse_s, offsetUV.xy, offsetUV.w);
 	offsetUV.xy = input.uv.xy - uvOffsets.x * dx - uvOffsets.y * dy;
-	col += tex.SampleBias(tex_sampler, offsetUV.xy, offsetUV.w);
+	col += diffuse.SampleBias(diffuse_s, offsetUV.xy, offsetUV.w);
 	offsetUV.xy = input.uv.xy + uvOffsets.y * dx - uvOffsets.x * dy;
-	col += tex.SampleBias(tex_sampler, offsetUV.xy, offsetUV.w);
+	col += diffuse.SampleBias(diffuse_s, offsetUV.xy, offsetUV.w);
 	offsetUV.xy = input.uv.xy - uvOffsets.y * dx + uvOffsets.x * dy;
-	col += tex.SampleBias(tex_sampler, offsetUV.xy, offsetUV.w);
+	col += diffuse.SampleBias(diffuse_s, offsetUV.xy, offsetUV.w);
 	col *= 0.25;
 	float text_value = col.r;
 	clip(text_value-0.004); // .004 is 1/255, or one 8bit pixel value!

@@ -1,5 +1,6 @@
 #include "ofbx.h"
 #include "miniz.h"
+#include <stdlib.h>
 #include <cassert>
 #include <math.h>
 #include <ctype.h>

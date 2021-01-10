@@ -1,19 +1,17 @@
 #include "../stereokit.h"
-#include "../systems/d3d.h"
+#include "../sk_math.h"
 #include "mesh.h"
 #include "assets.h"
 
 #include <stdio.h>
+#include <string.h>
+#include <malloc.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-ID3D11InputLayout *vert_t_layout = nullptr;
 
 ///////////////////////////////////////////
 
@@ -41,38 +39,28 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
 	}
 
-	if (mesh->vert_buffer == nullptr) {
+	if (!skg_buffer_is_valid( &mesh->vert_buffer )) {
 		// Create a static vertex buffer the first time we call this function!
 		mesh->vert_dynamic  = false;
 		mesh->vert_capacity = vertex_count;
-
-		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
-		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, D3D11_BIND_VERTEX_BUFFER);
-		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
+		mesh->vert_buffer   = skg_buffer_create(vertices, vertex_count, sizeof(vert_t), skg_buffer_type_vertex, skg_use_static);
+		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
-		DX11ResType(mesh->vert_buffer, "verts");
+		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
 	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
-		mesh->vert_buffer->Release();
+		skg_buffer_destroy(&mesh->vert_buffer);
 		mesh->vert_dynamic  = true;
 		mesh->vert_capacity = vertex_count;
-
-		D3D11_SUBRESOURCE_DATA vert_buff_data = { vertices };
-		CD3D11_BUFFER_DESC     vert_buff_desc(sizeof(vert_t) * vertex_count, 
-			D3D11_BIND_VERTEX_BUFFER, 
-			D3D11_USAGE_DYNAMIC, 
-			D3D11_CPU_ACCESS_WRITE);
-		if (FAILED(d3d_device->CreateBuffer(&vert_buff_desc, &vert_buff_data, &mesh->vert_buffer)))
+		mesh->vert_buffer   = skg_buffer_create(vertices, vertex_count, sizeof(vert_t), skg_buffer_type_vertex, skg_use_dynamic);
+		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
-		DX11ResType(mesh->vert_buffer, "verts_dyn");
+		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
-		D3D11_MAPPED_SUBRESOURCE resource;
-		d3d_context->Map(mesh->vert_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-		memcpy(resource.pData, vertices, sizeof(vert_t) * vertex_count);
-		d3d_context->Unmap(mesh->vert_buffer, 0);
+		skg_buffer_set_contents(&mesh->vert_buffer, vertices, sizeof(vert_t)*vertex_count);
 	}
 
 	mesh->vert_count = vertex_count;
@@ -116,38 +104,28 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 		memcpy(mesh->inds, indices, sizeof(vind_t) * index_count);
 	}
 
-	if (mesh->ind_buffer == nullptr) {
+	if (!skg_buffer_is_valid( &mesh->ind_buffer )) {
 		// Create a static vertex buffer the first time we call this function!
 		mesh->ind_dynamic  = false;
 		mesh->ind_capacity = index_count;
-
-		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
-		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, D3D11_BIND_INDEX_BUFFER);
-		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
+		mesh->ind_buffer   = skg_buffer_create(indices, index_count, sizeof(vind_t), skg_buffer_type_index, skg_use_static);
+		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create index buffer");
-		DX11ResType(mesh->ind_buffer,  "inds");
+		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
 	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
-		mesh->ind_buffer->Release();
+		skg_buffer_destroy(&mesh->ind_buffer);
 		mesh->ind_dynamic  = true;
 		mesh->ind_capacity = index_count;
-
-		D3D11_SUBRESOURCE_DATA ind_buff_data = { indices };
-		CD3D11_BUFFER_DESC     ind_buff_desc(sizeof(vind_t) * index_count, 
-			D3D11_BIND_INDEX_BUFFER,
-			D3D11_USAGE_DYNAMIC,
-			D3D11_CPU_ACCESS_WRITE);
-		if (FAILED(d3d_device->CreateBuffer(&ind_buff_desc, &ind_buff_data, &mesh->ind_buffer)))
+		mesh->ind_buffer   = skg_buffer_create(indices, index_count, sizeof(vind_t), skg_buffer_type_index, skg_use_dynamic);
+		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create dynamic index buffer");
-		DX11ResType(mesh->ind_buffer, "inds_dyn");
+		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
-		D3D11_MAPPED_SUBRESOURCE resource;
-		d3d_context->Map(mesh->ind_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-		memcpy(resource.pData, indices, sizeof(vind_t) * index_count);
-		d3d_context->Unmap(mesh->ind_buffer, 0);
+		skg_buffer_set_contents(&mesh->ind_buffer, indices, sizeof(vind_t) * index_count);
 	}
 
 	mesh->ind_count = index_count;
@@ -198,17 +176,13 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(mesh->header, id);
-
-	if (mesh->ind_buffer)
-		DX11ResName(mesh->ind_buffer, "mesh_inds", id);
-	if (mesh->vert_buffer)
-		DX11ResName(mesh->vert_buffer, "mesh_verts", id);
 }
 
 ///////////////////////////////////////////
 
 mesh_t mesh_create() {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
+	result->gpu_mesh = skg_mesh_create(nullptr, nullptr);
 	return result;
 }
 
@@ -248,8 +222,9 @@ void mesh_release(mesh_t mesh) {
 ///////////////////////////////////////////
 
 void mesh_destroy(mesh_t mesh) {
-	if (mesh->ind_buffer  != nullptr) mesh->ind_buffer ->Release();
-	if (mesh->vert_buffer != nullptr) mesh->vert_buffer->Release();
+	skg_mesh_destroy  (&mesh->gpu_mesh);
+	skg_buffer_destroy(&mesh->vert_buffer);
+	skg_buffer_destroy(&mesh->ind_buffer);
 	free(mesh->verts);
 	free(mesh->inds);
 	free(mesh->collision_data.pts   );
@@ -332,7 +307,7 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
@@ -341,7 +316,6 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	vec3 right = vec3_cross(plane_normal, plane_top_direction);
 	vec3 up    = vec3_cross(plane_normal, right);
-	vec2 size  = dimensions / 2;
 
 	// Make vertices
 	for (vind_t y = 0; y < subd; y++) {
@@ -373,9 +347,6 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	free(verts);
 	free(inds);
-
-	DX11ResType(result->ind_buffer,  "inds_gen_plane" );
-	DX11ResType(result->vert_buffer, "verts_gen_plane");
 	return result;
 }
 
@@ -385,7 +356,7 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi((int32_t)0,(int32_t)subd) + 2;
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
@@ -447,9 +418,6 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 
 	free(verts);
 	free(inds);
-
-	DX11ResType(result->ind_buffer,  "inds_gen_cube" );
-	DX11ResType(result->vert_buffer, "verts_gen_cube");
 	return result;
 }
 
@@ -459,7 +427,7 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
@@ -520,9 +488,6 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	free(verts);
 	free(inds);
-
-	DX11ResType(result->ind_buffer,  "inds_gen_sphere" );
-	DX11ResType(result->vert_buffer, "verts_gen_sphere");
 	return result;
 }
 
@@ -586,9 +551,6 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 	free(verts);
 	free(inds);
-
-	DX11ResType(result->ind_buffer,  "inds_gen_cylinder" );
-	DX11ResType(result->vert_buffer, "verts_gen_cylinder");
 	return result;
 }
 
@@ -598,7 +560,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
-	subd = max(0,subd) + 2;
+	subd = maxi(0,(int32_t)subd) + 2;
 	if (subd % 2 == 1) // need an even number of subdivisions
 		subd += 1;
 
@@ -680,9 +642,6 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 
 	free(verts);
 	free(inds);
-
-	DX11ResType(result->ind_buffer,  "inds_gen_rndcube" );
-	DX11ResType(result->vert_buffer, "verts_gen_rndcube");
 	return result;
 }
 

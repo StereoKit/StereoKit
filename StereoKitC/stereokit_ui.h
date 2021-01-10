@@ -25,19 +25,19 @@ struct ui_settings_t {
 	float backplate_border;
 };
 
-SK_API void     ui_show_volumes(bool32_t show);
-SK_API void     ui_settings (ui_settings_t settings);
-SK_API void     ui_set_color(color128 color);
+SK_API void     ui_show_volumes(bool32_t      show);
+SK_API void     ui_settings    (ui_settings_t settings);
+SK_API void     ui_set_color   (color128      color);
 
-SK_API void     ui_layout_area (vec3 start, vec2 dimensions);
+SK_API void     ui_layout_area   (vec3 start, vec2 dimensions);
 SK_API vec2     ui_area_remaining();
-SK_API void     ui_nextline    ();
-SK_API void     ui_sameline    ();
-SK_API float    ui_line_height ();
-SK_API void     ui_reserve_box (vec2 size);
-SK_API void     ui_space       (float space);
-SK_API uint64_t ui_push_id     (const char *id);
-SK_API void     ui_pop_id      ();
+SK_API void     ui_nextline      ();
+SK_API void     ui_sameline      ();
+SK_API float    ui_line_height   ();
+SK_API void     ui_reserve_box   (vec2 size);
+SK_API void     ui_space         (float space);
+SK_API uint64_t ui_push_id       (const char *id);
+SK_API void     ui_pop_id        ();
 
 SK_API bool32_t ui_is_interacting(handed_ hand);
 
@@ -63,7 +63,7 @@ SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_siz
 SK_API bool32_t ui_hslider     (const char *id, float &value, float min, float max, float step, float width = 0);
 SK_API bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type = ui_move_exact);
 SK_API void     ui_handle_end  ();
-SK_API void     ui_window_begin(const char *text, pose_t &pose, vec2 size = vec2{ 0,0 }, ui_win_ window_type = ui_win_normal, ui_move_ move_type = ui_move_face_user);
+SK_API void     ui_window_begin(const char *text, pose_t &pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type = ui_win_normal, ui_move_ move_type = ui_move_face_user);
 SK_API void     ui_window_end  ();
 
 } // namespace sk

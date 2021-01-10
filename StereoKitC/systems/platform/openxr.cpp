@@ -7,11 +7,13 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../log.h"
-#include "../../systems/d3d.h"
-#include "../../systems/render.h"
-#include "../../systems/input.h"
-#include "../../systems/hand/input_hand.h"
 #include "../../asset_types/texture.h"
+#include "../render.h"
+#include "../input.h"
+#include "../hand/input_hand.h"
+#include "android.h"
+#include "linux.h"
+#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
@@ -19,6 +21,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 namespace sk {
 
@@ -27,24 +30,30 @@ namespace sk {
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 
 const char *xr_request_extensions[] = {
-	XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
+	XR_GFX_EXTENSION,
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
-	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
+	XR_TIME_EXTENSION,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
+#if defined(SK_OS_ANDROID)
+	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
+#endif
+#ifdef _DEBUG
+	XR_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
 };
 const char *xr_request_layers[] = {
 	"",
 };
-bool xr_depth_lsr     = false;
-bool xr_depth_lsr_ext = false;
+bool xr_depth_lsr             = false;
+bool xr_depth_lsr_ext         = false;
 bool xr_articulated_hands     = false;
 bool xr_articulated_hands_ext = false;
-bool xr_spatial_bridge_ext = false;
+bool xr_spatial_bridge_ext    = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -56,19 +65,20 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 
-XrEnvironmentBlendMode xr_blend;
-XrReferenceSpaceType   xr_refspace;
+XrDebugUtilsMessengerEXT xr_debug = {};
+XrEnvironmentBlendMode   xr_blend;
+XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
 XrReferenceSpaceType openxr_preferred_space();
-void                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
+bool                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
 void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
 
 ///////////////////////////////////////////
 
 inline bool openxr_loc_valid(XrSpaceLocation &loc) {
-	return 
+	return
 		(loc.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) != 0 &&
 		(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
 }
@@ -87,17 +97,86 @@ const char *openxr_string(XrResult result) {
 
 ///////////////////////////////////////////
 
-int64_t openxr_get_time() {
-	LARGE_INTEGER time;
-	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, xr_time, &time);
-	return time.QuadPart;
+XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+void *openxr_get_luid() {
+#if defined(XR_USE_GRAPHICS_API_D3D11)
+	const char *extensions[] = { XR_GFX_EXTENSION };
+
+	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
+	create_info.enabledExtensionCount = 1;
+	create_info.enabledExtensionNames = extensions;
+	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
+	XrResult result = xrCreateInstance(&create_info, &xr_instance);
+
+	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
+		return nullptr;
+	}
+
+	// Request a form factor from the device (HMD, Handheld, etc.)
+	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
+	systemInfo.formFactor = xr_config_form;
+	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	if (XR_FAILED(result)) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	// Get an extension function, and check it for our requirements
+	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
+	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
+		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	xrDestroyInstance(xr_instance);
+	return (void *)&luid_requirement.adapterLuid;
+#else
+	return nullptr;
+#endif
 }
 
 ///////////////////////////////////////////
 
-bool openxr_init(const char *app_name) {
+int64_t openxr_get_time() {
+#ifdef XR_USE_TIMESPEC
+	struct timespec time;
+	xr_extensions.xrConvertTimeToTimespecTimeKHR(xr_instance, xr_time, &time);
+	return time.tv_sec*1000000000 + time.tv_nsec;
+#else
+	LARGE_INTEGER time;
+	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, xr_time, &time);
+	return time.QuadPart;
+#endif
+}
+
+///////////////////////////////////////////
+
+bool openxr_init() {
+
+#if defined(SK_OS_ANDROID)
+	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
+	xrGetInstanceProcAddr(
+		XR_NULL_HANDLE,
+		"xrInitializeLoaderKHR",
+		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
+
+	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
+	init_android.applicationVM      = android_vm;
+	init_android.applicationContext = android_activity;
+	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
+		log_fail_reasonf(90, "Failed to initialize OpenXR loader");
+		return false;
+	}
+#endif
+
 	uint32_t extension_count = 0;
-	openxr_preferred_extensions(extension_count, nullptr);
+	if (!openxr_preferred_extensions(extension_count, nullptr)) {
+		log_fail_reasonf(90, "Couldn't load an OpenXR runtime");
+		return false;
+	}
 	const char **extensions = (const char**)malloc(sizeof(char *) * extension_count);
 	openxr_preferred_extensions(extension_count, extensions);
 
@@ -106,23 +185,29 @@ bool openxr_init(const char *app_name) {
 	const char **layers = (const char**)malloc(sizeof(char *) * layer_count);
 	openxr_preferred_layers(layer_count, layers);
 
-	XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
-	createInfo.enabledExtensionCount = extension_count;
-	createInfo.enabledExtensionNames = extensions;
-	createInfo.enabledApiLayerCount = layer_count;
-	createInfo.enabledApiLayerNames = layers;
-	createInfo.applicationInfo.applicationVersion = 1;
+	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
+	create_info.enabledExtensionCount = extension_count;
+	create_info.enabledExtensionNames = extensions;
+	create_info.enabledApiLayerCount  = layer_count;
+	create_info.enabledApiLayerNames  = layers;
+	create_info.applicationInfo.applicationVersion = 1;
 
 	// Use a version Id formatted as 0xMMMiiPPP
-	createInfo.applicationInfo.engineVersion = 
+	create_info.applicationInfo.engineVersion =
 		(SK_VERSION_MAJOR << 20)              |
 		(SK_VERSION_MINOR << 12 & 0x000FF000) |
 		(SK_VERSION_PATCH       & 0x00000FFF);
 
-	createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	strcpy_s(createInfo.applicationInfo.applicationName, app_name);
-	strcpy_s(createInfo.applicationInfo.engineName, "StereoKit");
-	XrResult result = xrCreateInstance(&createInfo, &xr_instance);
+	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
+#if defined(SK_OS_ANDROID)
+	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
+	create_android.applicationVM       = android_vm;
+	create_android.applicationActivity = android_activity;
+	create_info.next = (void*)&create_android;
+#endif
+	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
 	free(extensions);
 	free(layers);
@@ -131,11 +216,46 @@ bool openxr_init(const char *app_name) {
 	// OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
+
+#ifdef _DEBUG
+	// Set up a really verbose debug log! Great for dev, but turn this off or
+	// down for final builds. WMR doesn't produce much output here, but it
+	// may be more useful for other runtimes?
+	// Here's some extra information about the message types and severities:
+	// https://www.khronos.org/registry/OpenXR/specs/1.0/html/xrspec.html#debug-message-categorization
+	XrDebugUtilsMessengerCreateInfoEXT debug_info = { XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+	debug_info.messageTypes =
+		XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
+	debug_info.messageSeverities =
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT types, const XrDebugUtilsMessengerCallbackDataEXT *msg, void* user_data) {
+		// Print the debug message we got! There's a bunch more info we could
+		// add here too, but this is a pretty good start, and you can always
+		// add a breakpoint this line!
+		log_ level = log_diagnostic;
+		if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
+		else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
+		log_writef(level, "%s: %s", msg->functionName, msg->message);
+
+		// Returning XR_TRUE here will force the calling function to fail
+		return (XrBool32)XR_FALSE;
+	};
+	// Start up the debug utils!
+	if (xr_extensions.xrCreateDebugUtilsMessengerEXT)
+		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
+#endif
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
@@ -143,6 +263,7 @@ bool openxr_init(const char *app_name) {
 	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -156,34 +277,52 @@ bool openxr_init(const char *app_name) {
 	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
 	xr_depth_lsr         = xr_depth_lsr_ext;
 
-	// SteamVR misreports hand-tracking
-	if (strstr(properties.systemName, "SteamVR") != nullptr) {
-		xr_articulated_hands = false;
-	}
-
 	if (xr_articulated_hands)   log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_depth_lsr)           log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.spatial_bridge) log_diag("OpenXR spatial bridge ext enabled!");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
-	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
-	xr_check(xr_extensions.xrGetD3D11GraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
-		"xrGetD3D11GraphicsRequirementsKHR failed [%s]");
-	if (!d3d_init(&requirement.adapterLuid))
-		return false;
+	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
+		"xrGetGraphicsRequirementsKHR failed [%s]");
+	void *luid = nullptr;
+#ifdef XR_USE_GRAPHICS_API_D3D11
+	luid = (void *)&requirement.adapterLuid;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	log_diagf("OpenXR requires GLES v%d.%d.%d - v%d.%d.%d",
+		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
+		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
+#endif
 
 	// A session represents this application's desire to display things! This is where we hook up our graphics API.
 	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
-	XrGraphicsBindingD3D11KHR d3d_binding = { XR_TYPE_GRAPHICS_BINDING_D3D11_KHR };
-	d3d_binding.device = d3d_device;
+	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
+	skg_platform_data_t platform = skg_get_platform_data();
+#if defined(XR_USE_PLATFORM_XLIB)
+	gfx_binding.xDisplay    = (Display*  )platform._x_display;
+	gfx_binding.visualid    = *(uint32_t *)platform._visual_id;
+	gfx_binding.glxFBConfig = (GLXFBConfig)platform._glx_fb_config;
+	gfx_binding.glxDrawable = (GLXDrawable)platform._glx_drawable;
+	gfx_binding.glxContext  = (GLXContext )platform._glx_context;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL)
+	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
+	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	gfx_binding.display = (EGLDisplay)platform._egl_display;
+	gfx_binding.config  = (EGLConfig )platform._egl_config;
+	gfx_binding.context = (EGLContext)platform._egl_context;
+#elif defined(XR_USE_GRAPHICS_API_D3D11)
+	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
+#endif
 	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-	sessionInfo.next     = &d3d_binding;
+	sessionInfo.next     = &gfx_binding;
 	sessionInfo.systemId = xr_system_id;
 	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -196,6 +335,7 @@ bool openxr_init(const char *app_name) {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
@@ -205,20 +345,27 @@ bool openxr_init(const char *app_name) {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
+		openxr_shutdown();
 		return false;
 	}
 
-	if (!openxr_views_create()) return false;
-	if (!oxri_init()) return false;
+	if (!openxr_views_create() || !oxri_init()) {
+		openxr_shutdown();
+		return false;
+	}
+#if defined(SK_OS_LINUX)
+            linux_finish_openxr_init();
+#endif
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
+bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
 	// Find what extensions are available on this system!
 	uint32_t ext_count = 0;
-	xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr);
+	if (XR_FAILED(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr)))
+		return false;
 	XrExtensionProperties *exts = (XrExtensionProperties *)malloc(sizeof(XrExtensionProperties) * ext_count);
 	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
@@ -238,6 +385,10 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 
 	// Flag any extensions the app will need to know about
 	if (out_extensions != nullptr) {
+		for (uint32_t i = 0; i < ext_count; i++) {
+			log_diagf("OpenXR ext: %s", exts[i].extensionName);
+		}
+
 		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
 			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_articulated_hands_ext = true;
@@ -246,6 +397,8 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	}
 
 	free(exts);
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -260,7 +413,7 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 
 	if (out_layers == nullptr) {
 		for (uint32_t i = 0; i < layer_count; i++) {
-			log_diagf("oxr layer found: %s", layers[i].layerName);
+			log_diagf("OpenXR layer found: %s", layers[i].layerName);
 		}
 	}
 
@@ -324,25 +477,25 @@ XrReferenceSpaceType openxr_preferred_space() {
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
-	// Shut down the input!
-	oxri_shutdown();
+	if (xr_instance) {
+		// Shut down the input!
+		oxri_shutdown();
 
-	openxr_views_destroy();
+		openxr_views_destroy();
 
-	// Release all the other OpenXR resources that we've created!
-	// What gets allocated, must get deallocated!
-	if (xr_head_space != XR_NULL_HANDLE) xrDestroySpace   (xr_head_space);
-	if (xr_app_space  != XR_NULL_HANDLE) xrDestroySpace   (xr_app_space);
-	if (xr_session    != XR_NULL_HANDLE) xrDestroySession (xr_session);
-	if (xr_instance   != XR_NULL_HANDLE) xrDestroyInstance(xr_instance);
-
-	d3d_shutdown();
+		// Release all the other OpenXR resources that we've created!
+		// What gets allocated, must get deallocated!
+		if (xr_debug      != XR_NULL_HANDLE) { xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug); xr_debug = {}; }
+		if (xr_head_space != XR_NULL_HANDLE) { xrDestroySpace   (xr_head_space); xr_head_space = {}; }
+		if (xr_app_space  != XR_NULL_HANDLE) { xrDestroySpace   (xr_app_space ); xr_app_space  = {}; }
+		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
+		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
+	}
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_begin() {
-	d3d_update();
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
@@ -376,7 +529,7 @@ void openxr_poll_events() {
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				if (xr_display_types.count > 1) {
 					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_types.count-1;
+					secondary.viewConfigurationCount        = (int32_t)xr_display_types.count-1;
 					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
 					begin_info.next = &secondary;
 				}

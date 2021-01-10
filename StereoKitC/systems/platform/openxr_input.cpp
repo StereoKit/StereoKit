@@ -2,11 +2,13 @@
 #include "openxr_input.h"
 #include "../hand/hand_oxr_controller.h"
 
+#include "platform_utils.h"
 #include "../../libraries/array.h"
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 
 #include <openxr/openxr.h>
+#include <stdio.h>
 
 namespace sk {
 
@@ -42,8 +44,8 @@ bool oxri_init() {
 	xrc_offset_rot[1] = quat_identity;
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
-	strcpy_s(actionset_info.actionSetName,          "input");
-	strcpy_s(actionset_info.localizedActionSetName, "Input");
+	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
+	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
 	XrResult result = xrCreateActionSet(xr_instance, &actionset_info, &xrc_action_set);
 	xrStringToPath(xr_instance, "/user/hand/left",  &xrc_hand_subaction_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right", &xrc_hand_subaction_path[1]);
@@ -58,8 +60,8 @@ bool oxri_init() {
 	action_info.countSubactionPaths = _countof(xrc_hand_subaction_path);
 	action_info.subactionPaths      = xrc_hand_subaction_path;
 	action_info.actionType          = XR_ACTION_TYPE_POSE_INPUT;
-	strcpy_s(action_info.actionName,          "hand_pose");
-	strcpy_s(action_info.localizedActionName, "Hand Pose");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_pose");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Pose");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_pose_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -68,8 +70,8 @@ bool oxri_init() {
 
 	// Create an action to track the pointing position and orientation!
 	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-	strcpy_s(action_info.actionName,          "hand_point");
-	strcpy_s(action_info.localizedActionName, "Hand Point");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_point");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Point");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_point_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -78,18 +80,18 @@ bool oxri_init() {
 
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
-	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	strcpy_s(action_info.actionName,          "select");
-	strcpy_s(action_info.localizedActionName, "Select");
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "select");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Select");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_select_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
 		return false;
 	}
 
-	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	strcpy_s(action_info.actionName,          "grip");
-	strcpy_s(action_info.localizedActionName, "Grip");
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_grip_action);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
@@ -114,8 +116,8 @@ bool oxri_init() {
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
 			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
@@ -151,8 +153,8 @@ bool oxri_init() {
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &grip_path[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
 			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
@@ -229,15 +231,16 @@ bool oxri_init() {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
 			info.name    = "oculus/touch_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-20, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-20, 0, 0);
-			info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.025f };
-			info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.025f };
+			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
+			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
+			info.offset_pos[handed_left ] = {-0.03f, 0.01f, 0.00f };
+			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
 			xrc_profile_offsets.add(info);
 		}
 	}
 
 	// khr / simple_controller
+#if !defined(SK_OS_ANDROID)
 	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
@@ -262,6 +265,7 @@ bool oxri_init() {
 			xrc_profile_offsets.add(info);
 		}
 	}
+#endif
 
 	// Create frames of reference for the pose actions
 	for (int32_t i = 0; i < 2; i++) {
@@ -305,9 +309,9 @@ bool oxri_init() {
 
 void oxri_shutdown() {
 	xrc_profile_offsets.free();
-	xrDestroySpace(xr_hand_space[0]);
-	xrDestroySpace(xr_hand_space[1]);
-	xrDestroyActionSet(xrc_action_set);
+	if (xr_hand_space[0]) { xrDestroySpace    (xr_hand_space[0]); xr_hand_space[0] = {}; }
+	if (xr_hand_space[1]) { xrDestroySpace    (xr_hand_space[1]); xr_hand_space[1] = {}; }
+	if (xrc_action_set  ) { xrDestroyActionSet(xrc_action_set  ); xrc_action_set   = {}; }
 }
 
 ///////////////////////////////////////////

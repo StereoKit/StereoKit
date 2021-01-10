@@ -3,22 +3,38 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	/// <summary>Specifies details about how StereoKit should start up!</summary>
-	public enum Runtime
+	/// <summary>Specifies a type of display mode StereoKit uses, like 
+	/// Mixed Reality headset display vs. a PC display, or even just 
+	/// rendering to an offscreen surface, or not rendering at all!</summary>
+	public enum DisplayMode
 	{
-		/// <summary>Creates a flat, Win32 window, and simulates some MR 
-		/// functionality. Great for debugging.</summary>
-		Flatscreen   = 0,
 		/// <summary>Creates an OpenXR instance, and drives display/input 
 		/// through that.</summary>
-		MixedReality = 1
+		MixedReality = 0,
+		/// <summary>Creates a flat, Win32 window, and simulates some MR 
+		/// functionality. Great for debugging.</summary>
+		Flatscreen = 1,
+		/// <summary>Not tested yet, but this is meant to run StereoKit 
+		/// without rendering to any display at all. This would allow for
+		/// rendering to textures, running a server that can do MR related
+		/// tasks, etc.</summary>
+		None = 2,
 	}
 
-	/// <summary>StereoKit miscellaneous initialization settings! Setup 
-	/// StereoKit.settings with your data before calling StereoKitApp.Initialize.</summary>
+	/// <summary>StereoKit initialization settings! Setup SK.settings with 
+	/// your data before calling SK.Initialize.</summary>
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-	public struct Settings
+	public struct SKSettings
 	{
+		private IntPtr _appName;
+		private IntPtr _assetsFolder;
+
+		/// <summary>Which display type should we try to load? Default is 
+		/// `DisplayMode.MixedReality`.</summary>
+		public DisplayMode displayPreference;
+		/// <summary>If the preferred display fails, should we fall back to 
+		/// flatscreen? Default is no.</summary>
+		public bool        displayFallback;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -31,15 +47,40 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>Where to look for assets when loading files! Final path 
-		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
-		/// unnecessary.</summary>
-		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-		public string assetsFolder;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public bool disableFlatscreenMRSim;
+
+		public IntPtr androidJavaVm;
+		public IntPtr androidActivity;
+
+		/// <summary>Name of the application, this shows up an the top of the
+		/// Win32 window, and is submitted to OpenXR. OpenXR caps this at 128
+		/// characters.</summary>
+		public string appName {
+			set {
+				if (_appName != IntPtr.Zero) Marshal.FreeHGlobal(_appName);
+
+				_appName = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			}
+			get => Marshal.PtrToStringAnsi(_appName);
+		}
+		/// <summary>Where to look for assets when loading files! Final path 
+		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+		/// unnecessary.</summary>
+		public string assetsFolder { 
+			set { 
+				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder); 
+
+				_assetsFolder = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			} 
+			get => Marshal.PtrToStringAnsi(_assetsFolder);
+		}
 	}
 
 	/// <summary>This describes the type of display tech used on a Mixed
@@ -177,6 +218,8 @@ namespace StereoKit
 		/// of the time you're dealing with color data! Matches well with the 
 		/// Color32 struct.</summary>
 		Rgba32Linear,
+		Bgra32,
+		Bgra32Linear,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
 		/// per-channel! This is not common, but you might encounter it with
 		/// raw photos, or HDR images.</summary>

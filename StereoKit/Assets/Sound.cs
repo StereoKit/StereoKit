@@ -28,7 +28,7 @@ namespace StereoKit
 		~Sound()
 		{
 			if (_inst != IntPtr.Zero)
-				NativeAPI.sound_release(_inst);
+				SK.ExecuteOnMain(()=>NativeAPI.sound_release(_inst));
 		}
 
 		/// <summary>Plays the sound at the 3D location specified, using the volume

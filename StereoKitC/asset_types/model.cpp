@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include "../math.h"
+#include "../sk_math.h"
 #include "model.h"
 #include "mesh.h"
 #include "material.h"
@@ -8,7 +8,9 @@
 #include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 
+#include <malloc.h>
 #include <stdio.h>
+#include <string.h>
 
 namespace sk {
 
@@ -80,7 +82,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 	void  *data;
 	size_t length;
-	if (!platform_read_file(assets_file(filename), data, length))
+	if (!platform_read_file(assets_file(filename), &data, &length))
 		return nullptr;
 
 	result = model_create_mem(filename, data, length, shader);

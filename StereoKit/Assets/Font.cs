@@ -20,7 +20,7 @@ namespace StereoKit {
 		~Font()
 		{
 			if (_fontInst != IntPtr.Zero)
-				NativeAPI.font_release(_fontInst);
+				SK.ExecuteOnMain(()=>NativeAPI.font_release(_fontInst));
 		}
         
 		/// <summary>Searches the asset list for a font with the given Id, returning null if

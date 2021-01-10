@@ -1,25 +1,37 @@
 #pragma once
 
 #define SK_32BIT_INDICES
-// #define SK_NO_FLATSCREEN
-// #define SK_NO_LEAP_MOTION
-// #define SK_NO_RUNTIME_SHADER_COMPILE
 
 #define SK_VERSION_MAJOR 0
-#define SK_VERSION_MINOR 2
-#define SK_VERSION_PATCH 1
-#define SK_VERSION_PRERELEASE 0
+#define SK_VERSION_MINOR 3
+#define SK_VERSION_PATCH 0
+#define SK_VERSION_PRERELEASE 2
 
-#if defined(_DLL)
-#define SK_EXIMPORT dllexport
+#if defined(_DLL) || defined(BUILDING_DLL)
+	#ifdef __GNUC__
+	//#define SK_EXIMPORT __attribute__((dllexport))
+	#define SK_EXIMPORT
+	#else
+	#define SK_EXIMPORT __declspec(dllexport)
+	#endif
 #else
-#define SK_EXIMPORT dllimport
+	#ifdef __GNUC__
+	//#define SK_EXIMPORT __attribute__((dllimport))
+	#define SK_EXIMPORT
+	#else
+	#define SK_EXIMPORT __declspec(dllimport)
+	#endif
+#endif
+
+#ifdef __GNUC__
+#define SK_DECL 
+#else
+#define SK_DECL __declspec
 #endif
 
 #ifdef __cplusplus
-#define SK_API extern "C" __declspec(SK_EXIMPORT)
-#define SK_API_S __declspec(SK_EXIMPORT)
-#define sk_default(x) = x
+#define SK_EXTERN extern "C"
+#define sk_default(...) = __VA_ARGS__
 #define sk_ref(x) x&
 #define sk_ref_arr(x) x*&
 #define SK_MakeFlag(enumType) \
@@ -29,14 +41,15 @@ inline enumType  operator& (enumType  a, enumType b)        { return static_cast
 inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return a; } \
 inline enumType  operator~ (const enumType& a)              { return static_cast<enumType>(~static_cast<int>(a)); }
 #else
-#define SK_API __declspec(SK_EXIMPORT)
-#define SK_API_S __declspec(SK_EXIMPORT)
-#define sk_default(x)
+#define SK_EXTERN
+#define sk_default(__VA_ARGS__)
 #define sk_ref(x) x*
 #define sk_ref_arr(x) x**
 #define SK_MakeFlag(enumType)
 #endif
 
+#define SK_API SK_EXTERN SK_EXIMPORT
+#define SK_API_S SK_EXTERN SK_EXIMPORT
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 
 #include <stdint.h>
@@ -50,19 +63,26 @@ typedef int32_t bool32_t;
 
 ///////////////////////////////////////////
 
-typedef enum runtime_ {
-	runtime_flatscreen   = 0,
-	runtime_mixedreality = 1
-} runtime_;
+typedef enum display_mode_ {
+	display_mode_mixedreality = 0,
+	display_mode_flatscreen   = 1,
+	display_mode_none         = 2,
+} display_mode_;
 
-typedef struct settings_t {
-	int32_t flatscreen_pos_x;
-	int32_t flatscreen_pos_y;
-	int32_t flatscreen_width;
-	int32_t flatscreen_height;
-	char assets_folder[128];
+typedef struct sk_settings_t {
+	const char   *app_name;
+	const char   *assets_folder;
+	display_mode_ display_preference;
+	bool32_t      display_fallback;
+	int32_t  flatscreen_pos_x;
+	int32_t  flatscreen_pos_y;
+	int32_t  flatscreen_width;
+	int32_t  flatscreen_height;
 	bool32_t disable_flatscreen_mr_sim;
-} settings_t;
+
+	void    *android_java_vm;  // JavaVM*
+	void    *android_activity; // jobject
+} sk_settings_t;
 
 typedef enum display_ {
 	display_opaque = 0,
@@ -77,15 +97,17 @@ typedef struct system_info_t {
 	bool32_t spatial_bridge;
 } system_info_t;
 
-SK_API bool32_t      sk_init          (const char *app_name, runtime_ preferred_runtime, bool32_t fallback sk_default(true) );
-SK_API void          sk_shutdown      ();
-SK_API void          sk_quit          ();
-SK_API bool32_t      sk_step          (void (*app_update)(void));
-SK_API runtime_      sk_active_runtime();
-SK_API void          sk_set_settings  (const sk_ref(settings_t) settings);
-SK_API system_info_t sk_system_info   ();
-SK_API const char   *sk_version_name  ();
-SK_API uint64_t      sk_version_id    ();
+SK_API bool32_t      sk_init               (sk_settings_t settings);
+SK_API void          sk_set_window         (void *window);
+SK_API void          sk_set_window_xam     (void *window);
+SK_API void          sk_shutdown           ();
+SK_API void          sk_quit               ();
+SK_API bool32_t      sk_step               (void (*app_update)(void));
+SK_API display_mode_ sk_active_display_mode();
+SK_API sk_settings_t sk_get_settings       ();
+SK_API system_info_t sk_system_info        ();
+SK_API const char   *sk_version_name       ();
+SK_API uint64_t      sk_version_id         ();
 
 ///////////////////////////////////////////
 
@@ -154,16 +176,18 @@ SK_API quat quat_inverse    (const sk_ref(quat) a);
 SK_API quat quat_mul        (const sk_ref(quat) a, const sk_ref(quat) b);
 SK_API vec3 quat_mul_vec    (const sk_ref(quat) a, const sk_ref(vec3) b);
 
-SK_API matrix pose_matrix(const sk_ref(pose_t) pose, vec3 scale sk_default((vec3{1,1,1})));
-SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default((vec3{1,1,1})));
+SK_API matrix pose_matrix(const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
+SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
 SK_API void   matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
 SK_API vec3   matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
 SK_API vec3   matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-SK_API quat   matrix_mul_rotation (const sk_ref(matrix)  transform, const sk_ref(quat) orientation);
-SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
-SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default((quat{0,0,0,1})), const sk_ref(vec3) scale sk_default((vec3{1,1,1})));
+SK_API quat   matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
+SK_API void   matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
+SK_API vec3   matrix_to_angles    (const sk_ref(matrix) transform);
+SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, sk_ref(float) out_t);
 SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, sk_ref(ray_t) out_ray);
@@ -230,7 +254,7 @@ static const vec3 vec3_up       = { 0,1, 0 };
 static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
-static const matrix matrix_identity = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -263,12 +287,12 @@ SK_API color128 color_lab   (float l, float a, float b, float transparency);
 SK_API vec3     color_to_lab(const sk_ref(color128) color);
 
 #ifdef __cplusplus
-static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
-inline color128 color_lerp  (const color128 &a, const sk_ref(color128) b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline color32  color_to_32 (const color128 &a) { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
+static inline color128  operator*  (const color128 &a, const float b)              { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
+inline        color128  color_lerp (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
+inline        color32   color_to_32(const color128 &a)                             { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
 #else
-inline color128 color_lerp  (const color128 *a, const sk_ref(color128) b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
-inline color32  color_to_32 (const color128 *a) { color32 result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
+inline        color128  color_lerp (const color128 *a, const color128 *b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
+inline        color32   color_to_32(const color128 *a)                             { color32  result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
 #endif
 
 ///////////////////////////////////////////
@@ -357,6 +381,8 @@ typedef enum tex_format_ {
 	tex_format_none = 0,
 	tex_format_rgba32,
 	tex_format_rgba32_linear,
+	tex_format_bgra32,
+	tex_format_bgra32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
 	tex_format_r8,
@@ -392,11 +418,7 @@ SK_API void  tex_release             (tex_t texture);
 SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
 SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
-SK_API void  tex_rtarget_clear       (tex_t render_target, color32 color);
-SK_API void  tex_rtarget_set_active  (tex_t render_target);
 SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
-SK_API void *tex_get_resource        (tex_t texture);
-SK_API void  tex_set_resource        (tex_t texture, void *surface);
 SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
 SK_API tex_t tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)  lookup, int32_t face_size);
 SK_API tex_format_  tex_get_format    (tex_t texture);
@@ -430,8 +452,6 @@ SK_API shader_t    shader_create_hlsl (const char *hlsl);
 SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
-SK_API bool32_t    shader_set_code    (shader_t shader, void *data, size_t data_size);
-SK_API bool32_t    shader_set_codefile(shader_t shader, const char *filename);
 SK_API void        shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
@@ -573,7 +593,7 @@ SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API int32_t  sprite_get_width  (sprite_t sprite);
 SK_API int32_t  sprite_get_height (sprite_t sprite);
 SK_API vec2     sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void     sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default((color32{255,255,255,255})));
+SK_API void     sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 
@@ -597,11 +617,11 @@ SK_API void     render_set_cam_root  (const sk_ref(matrix) cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_info);
-SK_API void     render_set_clear_color(color32 color);
+SK_API void     render_set_clear_color(color128 color);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();
-SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));
-SK_API void     render_add_model     (model_t model, const sk_ref(matrix) transform, color128 color sk_default((color128{1,1,1,1})));
+SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
+SK_API void     render_add_model     (model_t model, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
 SK_API void     render_blit          (tex_t to_rendertarget, material_t material);
 SK_API void     render_screenshot    (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
 SK_API void     render_get_device    (void **device, void **context);
@@ -612,8 +632,8 @@ SK_API void     hierarchy_push       (const sk_ref(matrix) transform);
 SK_API void     hierarchy_pop        ();
 SK_API void     hierarchy_set_enabled(bool32_t enabled);
 SK_API bool32_t hierarchy_is_enabled ();
-SK_API const sk_ref(matrix) hierarchy_to_world();
-SK_API const sk_ref(matrix) hierarchy_to_local();
+SK_API const matrix *hierarchy_to_world();
+SK_API const matrix *hierarchy_to_local();
 SK_API vec3     hierarchy_to_local_point    (const sk_ref(vec3) world_pt);
 SK_API vec3     hierarchy_to_local_direction(const sk_ref(vec3) world_dir);
 SK_API quat     hierarchy_to_local_rotation (const sk_ref(quat) world_orientation);
@@ -698,7 +718,7 @@ typedef struct mouse_t {
 
 // Based on VK codes
 typedef enum key_ {
-	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04,
+	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04, key_mouse_forward = 0x05, key_mouse_back = 0x06,
 	key_backspace = 0x08, key_tab       = 0x09,
 	key_return    = 0x0D, key_shift     = 0x10,
 	key_ctrl      = 0x11, key_alt       = 0x12,
@@ -719,10 +739,10 @@ typedef enum key_ {
 
 SK_API int                   input_pointer_count(input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer      (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const sk_ref(hand_t)  input_hand         (handed_ hand);
+SK_API const hand_t         *input_hand         (handed_ hand);
 SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
-SK_API const sk_ref(pose_t)  input_head         ();
-SK_API const sk_ref(mouse_t) input_mouse        ();
+SK_API const pose_t         *input_head         ();
+SK_API const mouse_t        *input_mouse        ();
 SK_API button_state_         input_key          (key_ key);
 SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid   (handed_ hand, bool32_t solid);
@@ -792,6 +812,8 @@ static const char *default_id_shader_font        = "default/shader_font";
 static const char *default_id_shader_equirect    = "default/shader_equirect";
 static const char *default_id_shader_ui          = "default/shader_ui";
 static const char *default_id_shader_ui_quadrant = "default/shader_ui_quadrant";
+static const char *default_id_shader_sky         = "default/shader_sky";
+static const char *default_id_shader_lines       = "default/shader_lines";
 static const char *default_id_sound_click   = "default/sound_click";
 static const char *default_id_sound_unclick = "default/sound_unclick";
 static const char *default_id_sound_grab    = "default/sound_grab";
@@ -809,7 +831,7 @@ static const char *default_id_sound_ungrab  = "default/sound_ungrab";
 
   // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
 #if SK_VERSION_PRERELEASE != 0
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-rc" SK_STR(SK_VERSION_PRERELEASE))
+#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview" SK_STR(SK_VERSION_PRERELEASE))
 #else
 #define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
 #endif

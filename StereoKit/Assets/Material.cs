@@ -114,7 +114,7 @@ namespace StereoKit
 		~Material()
 		{
 			if (_inst != IntPtr.Zero)
-				NativeAPI.material_release(_inst);
+				SK.ExecuteOnMain(()=>NativeAPI.material_release(_inst));
 		}
 
 		public object this[string parameterName] { set { 

@@ -14,6 +14,8 @@ class TestShaderCompile : ITest
 
 	public void Initialize()
 	{
+		Log.Warn("TestShaderCompile needs redesigned for v0.3!");
+		return;
 		// Delete all cached shader files
 		string cachePath = Path.Combine(Path.GetTempPath(), "cache");
 		if (Directory.Exists(cachePath))
@@ -21,11 +23,11 @@ class TestShaderCompile : ITest
 
 		// Build a shader from an HLSL code string
 		Func<bool> buildFromHLSL = () =>
-        {
-            Shader shader = Shader.FromHLSL(shaderCode.Replace("[shader_name]", "solid_color_1"));
+		{
+			Shader shader = Shader.FromHLSL(shaderCode.Replace("[shader_name]", "solid_color_1"));
 			materialHLSL = new Material(shader);
 			return shader != null;
-        };
+		};
 		// Compile a shader from HLSL code, then turn that into a shader.
 		Func<bool> compileAndBuild = () =>
 		{
@@ -66,15 +68,15 @@ class TestShaderCompile : ITest
 			Task.Run(compileAndBuild);
 			Task.Run(loadFromFile);
 		}
-    }
-    public void Shutdown  (){}
+	}
+	public void Shutdown  (){}
 
-    public void Update()
+	public void Update()
 	{
-        Draw(materialHLSL,        Vec3.Zero);
+		/*Draw(materialHLSL,        Vec3.Zero);
 		Draw(materialCompile,     Vec3.Up    * 0.2f);
 		Draw(materialFileHLSL,    Vec3.Right * 0.2f);
-		Draw(materialFileCompile, Vec3.Up    *-0.2f);
+		Draw(materialFileCompile, Vec3.Up    *-0.2f);*/
 	}
 	void Draw(Material material, Vec3 at)
 	{

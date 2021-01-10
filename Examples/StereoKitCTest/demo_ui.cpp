@@ -38,7 +38,7 @@ void demo_ui_update() {
 
 	ui_window_end();
 
-	line_add(vec3_zero, input_hand(handed_right).palm.position, {255,0,0,255}, { 255,0,0,255 }, 1*cm2m);
+	line_add(vec3_zero, input_hand(handed_right)->palm.position, {255,0,0,255}, { 255,0,0,255 }, 1*cm2m);
 }
 
 ///////////////////////////////////////////

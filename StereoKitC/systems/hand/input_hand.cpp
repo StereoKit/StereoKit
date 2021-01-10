@@ -1,4 +1,5 @@
 #include "../../stereokit.h"
+#include "../../sk_math.h"
 #include "../input.h"
 #include "input_hand.h"
 #include "hand_poses.h"
@@ -10,6 +11,11 @@
 
 #include "../../asset_types/assets.h"
 #include "../../asset_types/material.h"
+#include "../platform/platform_utils.h"
+
+#include <math.h>
+#include <malloc.h>
+#include <string.h>
 
 namespace sk {
 
@@ -39,15 +45,15 @@ struct hand_state_t {
 	bool        solid;
 };
 
-struct hand_system_t {
+typedef struct hand_system_t {
 	hand_system_ system;
 	bool         initialized;
-	bool (*available)()        = nullptr;
-	void (*init)()             = nullptr;
-	void (*shutdown)()         = nullptr;
-	void (*update_frame)()     = nullptr;
-	void (*update_predicted)() = nullptr;
-};
+	bool (*available)();
+	void (*init)();
+	void (*shutdown)();
+	void (*update_frame)();
+	void (*update_predicted)();
+} hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override, false,
@@ -89,8 +95,8 @@ void input_hand_update_mesh(handed_ hand);
 
 ///////////////////////////////////////////
 
-const hand_t &input_hand(handed_ hand) {
-	return hand_state[hand].info;
+const hand_t *input_hand(handed_ hand) {
+	return &hand_state[hand].info;
 }
 
 ///////////////////////////////////////////
@@ -153,7 +159,7 @@ void input_hand_init() {
 	modify(&input_pose_neutral[0][0], {});
 	modify(&input_pose_point  [0][0], {});
 	modify(&input_pose_pinch  [0][0], 
-		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_runtime() == runtime_flatscreen ? 1 : 0.5f));
+		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_display_mode() == display_mode_flatscreen ? 1 : 0.5f));
 
 	material_t hand_mat = material_copy_id(default_id_material);
 	material_set_id          (hand_mat, default_id_material_hand);
@@ -322,7 +328,7 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
 	hand_t &hand = hand_state[handedness].info;
 	hand.palm.position    = hand_pos;
 	hand.palm.orientation = quat_from_angles(
@@ -353,11 +359,14 @@ void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orient
 			p->position    = vec3_lerp (p->position,    dest_pose[f * 5 + j].position,    delta);
 			p->orientation = quat_slerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
 		} }
+		vec3 finger_off = center_on_finger 
+			? hand_state[handedness].pose_blend[1][4].position
+			: vec3_zero;
 	
 		for (size_t f = 0; f < 5; f++) {
 			const pose_t *finger = &hand_state[handedness].pose_blend[f][0];
 		for (size_t j = 0; j < 5; j++) {
-			vec3 pos = finger[j].position;
+			vec3 pos = finger[j].position - finger_off;
 			quat rot = finger[j].orientation;
 			if (handedness == handed_right) {
 				// mirror along x axis, our pose data is for left hand
@@ -499,7 +508,7 @@ void input_hand_update_mesh(handed_ hand) {
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
 	for (int j = 0; j < SK_FINGERJOINTS; j++) {
-		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][max(0,j-1)];
+		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
 		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
 		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 

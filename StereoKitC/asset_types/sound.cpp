@@ -1,10 +1,12 @@
 #include "../stereokit.h"
 #include "../asset_types/assets.h"
+#include "../systems/platform/platform_utils.h"
 #include "sound.h"
 
 #define DR_WAV_IMPLEMENTATION
 #include "../libraries/dr_wav.h"   /* Enables WAV decoding. */
 
+#define MA_NO_OPENSL
 #define MINIAUDIO_IMPLEMENTATION
 #include "../libraries/miniaudio.h"
 
@@ -129,7 +131,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float* pOutputF32, ma_
     // contents of the output buffer by simply adding the samples together. You could also clip the samples to -1..+1, but I'm not
     // doing that in this example.
 
-    vec3 head_pos = input_head().position;
+    vec3 head_pos = input_head()->position;
 
     ma_uint32 tempCapInFrames = _countof(au_mix_temp) / CHANNEL_COUNT;
     ma_uint32 total_frames_read = 0;
@@ -223,7 +225,7 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* pOutputF32, ma_uint32 frame
 
 void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t numFrames, vec3* positions, float* volumes) {
     // Assert on debug builds, eliminate warning on release builds
-    UNREFERENCED_PARAMETER(numSources);
+    //UNREFERENCED_PARAMETER(numSources);
     assert(numSources == _countof(au_active_sounds));
 
     for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
@@ -272,7 +274,7 @@ bool sound_init() {
 ///////////////////////////////////////////
 
 void sound_update() {
-    matrix head = pose_matrix(input_head());
+    matrix head = pose_matrix(*input_head());
     matrix_inverse(head, au_head_transform);
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <d3d11.h>
 
+#include "../libraries/sk_gpu.h"
 #include "../stereokit.h"
 #include "assets.h"
 
@@ -18,12 +18,13 @@ struct _mesh_t {
 	int            vert_count;
 	int            vert_capacity;
 	bool32_t       vert_dynamic;
-	ID3D11Buffer*  vert_buffer;
+	skg_buffer_t   vert_buffer;
 	int            ind_count;
 	int            ind_capacity;
 	bool32_t       ind_dynamic;
-	ID3D11Buffer*  ind_buffer;
+	skg_buffer_t   ind_buffer;
 	int            ind_draw;
+	skg_mesh_t     gpu_mesh;
 	bounds_t       bounds;
 	bool32_t       discard_data;
 	vert_t*        verts;

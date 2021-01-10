@@ -8,7 +8,7 @@
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
-#include "../../systems/d3d.h"
+#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -22,11 +22,12 @@ struct swapchain_t {
 	int32_t     width;
 	int32_t     height;
 	int32_t     surface_count;
-	XrSwapchainImageD3D11KHR *images;
-	tex_t                    *textures;
+	int32_t     surface_layers;
+	XrSwapchainImage *images;
+	tex_t            *textures;
 };
 void swapchain_delete(swapchain_t &swapchain) {
-	for (size_t s = 0; s < swapchain.surface_count; s++) {
+	for (size_t s = 0; s < swapchain.surface_count * swapchain.surface_layers; s++) {
 		tex_release(swapchain.textures[s]);
 	}
 	xrDestroySwapchain(swapchain.handle);
@@ -41,9 +42,9 @@ struct device_display_t {
 	XrEnvironmentBlendMode       blend;
 	XrCompositionLayerProjection*projection_data;
 	bool32_t                     active;
-	DXGI_FORMAT color_format;
-	DXGI_FORMAT depth_format;
-	
+	int64_t color_format;
+	int64_t depth_format;
+
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
 
@@ -86,7 +87,7 @@ array_t<XrSecondaryViewConfigurationLayerInfoMSFT> xr_display_2nd_layers = {};
 
 bool openxr_create_view      (XrViewConfigurationType view_type, device_display_t &out_view);
 bool openxr_create_swapchain (swapchain_t &out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count);
-void openxr_preferred_format (DXGI_FORMAT &out_color, DXGI_FORMAT &out_depth);
+void openxr_preferred_format (int64_t &out_color, int64_t &out_depth);
 bool openxr_preferred_blend  (XrViewConfigurationType view_type, XrEnvironmentBlendMode &out_blend);
 bool openxr_update_swapchains(device_display_t &display);
 bool openxr_render_layer     (XrTime predictedTime, device_display_t &layer);
@@ -99,21 +100,6 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO:                            return "PrimaryStereo";
 	case XR_VIEW_CONFIGURATION_TYPE_PRIMARY_QUAD_VARJO:                        return "PrimaryQuad_Varjo";
 	case XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT: return "SecondaryMonoFPO_Msft";
-	default: return "N/A";
-	}
-}
-
-///////////////////////////////////////////
-
-const char *openxr_fmt_name(DXGI_FORMAT format) {
-	switch (format) {
-	case DXGI_FORMAT_R8G8B8A8_UNORM:      return "rgba8_linear";
-	case DXGI_FORMAT_B8G8R8A8_UNORM:      return "bgra8_linear";
-	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return "rgba8_srgb";
-	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return "bgra8_srgb";
-	case DXGI_FORMAT_D16_UNORM:           return "d16";
-	case DXGI_FORMAT_D32_FLOAT:           return "d32"; 
-	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return "d24_s8";
 	default: return "N/A";
 	}
 }
@@ -185,10 +171,10 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
 
 	// Debug print the view and format info
-	log_diagf("Creating view: %s color:%s depth:%s", 
-		openxr_view_name(view_type), 
-		openxr_fmt_name (out_view.color_format),  
-		openxr_fmt_name (out_view.depth_format));
+	log_diagf("Creating view: %s color:%s depth:%s",
+		openxr_view_name(view_type),
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.depth_format )));
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
@@ -208,7 +194,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	out_view.view_depths      = (XrCompositionLayerDepthInfoKHR  *)malloc(sizeof(XrCompositionLayerDepthInfoKHR)   * out_view.view_cap);
 	out_view.view_transforms  = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
 	out_view.view_projections = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
-	for (int32_t i = 0; i < out_view.view_cap; i++) {
+	for (uint32_t i = 0; i < out_view.view_cap; i++) {
 		out_view.views      [i] = { XR_TYPE_VIEW };
 		out_view.view_layers[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		out_view.view_depths[i] = { XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR };
@@ -218,7 +204,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		log_fail_reason(80, "Couldn't create OpenXR view swapchains!");
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -241,25 +227,67 @@ bool openxr_update_swapchains(device_display_t &display) {
 	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, samples)) return false;
 	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, samples)) return false;
 
-	for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
-		// If we don't have textures for the swapchain, create them
-		if (display.swapchain_color.textures[s] == nullptr) {
-			display.swapchain_color.textures[s] = tex_create(tex_type_rendertarget, tex_format_rgba32);
-			display.swapchain_depth.textures[s] = tex_create(tex_type_depth,        tex_get_tex_format(display.depth_format));
+	// If shaders can't select layers from a texture array, we'll have to
+	// seprate the layers into individual render targets.
+	if (skg_capability(skg_cap_tex_layer_select)) {
+		display.swapchain_color.surface_layers = 1;
+		display.swapchain_depth.surface_layers = 1;
+		log_diagf("Platform supports single-pass rendering");
+	} else {
+		display.swapchain_color.surface_layers = display.view_cap;
+		display.swapchain_depth.surface_layers = display.view_cap;
+		log_diagf("Platform does not support single-pass rendering");
+	}
 
-			char           name[64];
-			static int32_t target_index = 0;
-			target_index++;
-			sprintf_s(name, "renderer/colortarget_%d", target_index);
-			tex_set_id(display.swapchain_color.textures[s], name);
-			sprintf_s(name, "renderer/depthtarget_%d", target_index);
-			tex_set_id(display.swapchain_depth.textures[s], name);
+	// Create texture objects if we don't have 'em
+	if (display.swapchain_color.textures == nullptr) {
+		display.swapchain_color.textures = (tex_t *)malloc(sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
+		display.swapchain_depth.textures = (tex_t *)malloc(sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
+		memset(display.swapchain_color.textures, 0, sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
+		memset(display.swapchain_depth.textures, 0, sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
+
+		for (int32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+			for (int32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
+				int32_t index = layer*display.swapchain_color.surface_count + s;
+
+				display.swapchain_color.textures[index] = tex_create(tex_type_rendertarget, tex_format_rgba32);
+				display.swapchain_depth.textures[index] = tex_create(tex_type_depth,        tex_get_tex_format(display.depth_format));
+
+				char           name[64];
+				static int32_t target_index = 0;
+				target_index++;
+				snprintf(name, sizeof(name), "renderer/colortarget_%d", target_index);
+				tex_set_id(display.swapchain_color.textures[index], name);
+				snprintf(name, sizeof(name), "renderer/depthtarget_%d", target_index);
+				tex_set_id(display.swapchain_depth.textures[index], name);
+			}
 		}
+	}
 
-		// Update our textures with the new swapchain display surfaces
-		tex_setsurface (display.swapchain_color.textures[s], display.swapchain_color.images[s].texture, display.color_format);
-		tex_setsurface (display.swapchain_depth.textures[s], display.swapchain_depth.images[s].texture, display.depth_format);
-		tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
+	// Update or set the native textures
+	for (int32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+		for (int32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
+			int32_t index = layer*display.swapchain_color.surface_count + s;
+
+			// Update our textures with the new swapchain display surfaces
+			void *native_surface_col   = nullptr;
+			void *native_surface_depth = nullptr;
+	#if defined(XR_USE_GRAPHICS_API_D3D11)
+			native_surface_col   = display.swapchain_color.images[s].texture;
+			native_surface_depth = display.swapchain_depth.images[s].texture;
+	#elif defined(XR_USE_GRAPHICS_API_OPENGL) || defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+			native_surface_col   = (void*)(uint64_t)display.swapchain_color.images[s].image;
+			native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[s].image;
+	#endif
+			if (display.swapchain_color.surface_layers != 1) {
+				tex_set_surface_layer(display.swapchain_color.textures[index], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, layer);
+				tex_set_surface_layer(display.swapchain_depth.textures[index], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, layer);
+			} else {
+				tex_set_surface(display.swapchain_color.textures[index], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
+				tex_set_surface(display.swapchain_depth.textures[index], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
+			}
+			tex_set_zbuffer(display.swapchain_color.textures[index], display.swapchain_depth.textures[index]);
+		}
 	}
 
 	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
@@ -284,8 +312,8 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	swapchain_info.width       = width;
 	swapchain_info.height      = height;
 	swapchain_info.sampleCount = sample_count;
-	swapchain_info.usageFlags  = color 
-		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT 
+	swapchain_info.usageFlags  = color
+		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	// If it's a secondary view, let OpenXR know
@@ -295,12 +323,12 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 		swapchain_info.next = &secondary;
 	}
 
-	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle), 
+	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle),
 		"xrCreateSwapchain failed [%s]");
 
 	// Find out how many textures were generated for the swapchain
 	uint32_t surface_count = 0;
-	xr_check(xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr), 
+	xr_check(xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr),
 		"xrEnumerateSwapchainImages failed [%s]");
 
 	// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
@@ -310,14 +338,12 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	out_swapchain.handle        = handle;
 	if (out_swapchain.surface_count != surface_count) {
 		out_swapchain.surface_count = surface_count;
-		out_swapchain.images        = (XrSwapchainImageD3D11KHR*)malloc(sizeof(XrSwapchainImageD3D11KHR) * surface_count);
-		out_swapchain.textures      = (tex_t                   *)malloc(sizeof(tex_t                   ) * surface_count);
+		out_swapchain.images        = (XrSwapchainImage*)malloc(sizeof(XrSwapchainImage) * surface_count);
 	}
 	for (uint32_t i=0; i<surface_count; i++) {
-		out_swapchain.images  [i] = { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR };
-		out_swapchain.textures[i] = nullptr;
+		out_swapchain.images[i] = { XR_TYPE_SWAPCHAIN_IMAGE };
 	}
-	
+
 	xr_check(xrEnumerateSwapchainImages(out_swapchain.handle, surface_count, &surface_count, (XrSwapchainImageBaseHeader *)out_swapchain.images),
 		"xrEnumerateSwapchainImages failed [%s]");
 
@@ -326,16 +352,16 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 
 ///////////////////////////////////////////
 
-void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_dx) {
-	DXGI_FORMAT pixel_formats[] = {
-		DXGI_FORMAT_R8G8B8A8_UNORM,
-		DXGI_FORMAT_B8G8R8A8_UNORM,
-		DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-		DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,};
-	DXGI_FORMAT depth_formats[] = {
-		DXGI_FORMAT_D16_UNORM,
-		DXGI_FORMAT_D32_FLOAT,
-		DXGI_FORMAT_D24_UNORM_S8_UINT,};
+void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
+	int64_t pixel_formats[] = {
+		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear),
+		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32)};
+	int64_t depth_formats[] = {
+		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
+		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
+		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
 
 	// Get the list of formats OpenXR would like
 	uint32_t count = 0;
@@ -344,16 +370,16 @@ void openxr_preferred_format(DXGI_FORMAT &out_color_dx, DXGI_FORMAT &out_depth_d
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
 	// Check those against our formats
-	out_color_dx = DXGI_FORMAT_UNKNOWN;
-	out_depth_dx = DXGI_FORMAT_UNKNOWN;
+	out_color_dx = 0;
+	out_depth_dx = 0;
 	for (uint32_t i=0; i<count; i++) {
-		for (int32_t f=0; out_color_dx == DXGI_FORMAT_UNKNOWN && f<_countof(pixel_formats); f++) {
+		for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
 			if (formats[i] == pixel_formats[f]) {
 				out_color_dx = pixel_formats[f];
 				break;
 			}
 		}
-		for (int32_t f=0; out_depth_dx == DXGI_FORMAT_UNKNOWN && f<_countof(depth_formats); f++) {
+		for (int32_t f=0; out_depth_dx == 0 && f<_countof(depth_formats); f++) {
 			if (formats[i] == depth_formats[f]) {
 				out_depth_dx = depth_formats[f];
 				break;
@@ -378,8 +404,8 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 		"xrEnumerateEnvironmentBlendModes failed [%s]");
 
 	for (size_t i = 0; i < blend_count; i++) {
-		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE || 
-			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE || 
+		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE ||
+			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
 			out_blend = blend_modes[i];
 			return true;
@@ -401,7 +427,7 @@ bool openxr_render_frame() {
 	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
 	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
 	if (xr_displays.count > 1) {
-		secondary_states.viewConfigurationCount  = xr_displays.count - 1;
+		secondary_states.viewConfigurationCount  = (uint32_t)xr_displays.count - 1;
 		secondary_states.viewConfigurationStates = &xr_display_2nd_states[0];
 		frame_state.next = &secondary_states;
 	}
@@ -409,8 +435,8 @@ bool openxr_render_frame() {
 		"xrWaitFrame [%s]");
 
 	// Check active for the primary display
-	bool session_active = 
-		xr_session_state == XR_SESSION_STATE_VISIBLE || 
+	bool session_active =
+		xr_session_state == XR_SESSION_STATE_VISIBLE ||
 		xr_session_state == XR_SESSION_STATE_FOCUSED;
 	xr_displays[0].active = session_active;
 
@@ -425,7 +451,7 @@ bool openxr_render_frame() {
 		}
 	}
 
-	// Must be called before any rendering is done! This can return some interesting flags, like 
+	// Must be called before any rendering is done! This can return some interesting flags, like
 	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
 	// xrEndFrame right away.
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
@@ -442,7 +468,8 @@ bool openxr_render_frame() {
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
 	xr_display_2nd_layers.clear();
-	
+
+	skg_draw_begin();
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
@@ -461,8 +488,8 @@ bool openxr_render_frame() {
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
-	end_second.viewConfigurationCount      = xr_display_2nd_layers.count;
-	
+	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
+
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
 	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
@@ -560,16 +587,18 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		matrix_inverse(view_tr, layer.view_transforms[i]);
 	}
 
-	// Call the rendering callback with our view and swapchain info
-	tex_t target = layer.swapchain_color.textures[color_id];
-	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? render_get_clear_color() 
-		: color32{ 0,0,0,0   });
-	tex_rtarget_set_active(target);
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)layer.swapchain_color.width, (float)layer.swapchain_color.height);
-	d3d_context->RSSetViewports(1, &viewport);
+	for (int32_t s_layer = 0; s_layer < layer.swapchain_color.surface_layers; s_layer++) {
+		int32_t index = s_layer*layer.swapchain_color.surface_count + color_id;
 
-	render_draw_matrix(layer.view_transforms, layer.view_projections, layer.view_count);
+		// Call the rendering callback with our view and swapchain info
+		tex_t    target = layer.swapchain_color.textures[index];
+		color128 col    = sk_info.display_type == display_opaque
+			? render_get_clear_color()
+			: color128{ 0,0,0,0 };
+		skg_tex_target_bind(&target->tex, true, &col.r);
+
+		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers);
+	}
 
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };

@@ -3,11 +3,6 @@
 #include "hand/input_hand.h"
 #include "../libraries/array.h"
 
-#ifndef SK_NO_FLATSCREEN
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 namespace sk {
 
 ///////////////////////////////////////////
@@ -27,7 +22,7 @@ pose_t                input_head_pose  = { vec3_zero, quat_identity };
 ///////////////////////////////////////////
 
 int input_add_pointer(input_source_ source) {
-	return input_pointers.add({ source, button_state_inactive });
+	return (int)input_pointers.add({ source, button_state_inactive });
 }
 
 ///////////////////////////////////////////
@@ -70,7 +65,7 @@ void input_subscribe(input_source_ source, button_state_ event, void (*event_cal
 ///////////////////////////////////////////
 
 void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
-	for (int i = input_listeners.count-1; i >= 0; i--) {
+	for (int64_t i = (int32_t)(input_listeners.count-1); i >= 0; i--) {
 		if (input_listeners[i].source         == source && 
 			input_listeners[i].event          == event  && 
 			input_listeners[i].event_callback == event_callback) {
@@ -118,8 +113,8 @@ void input_update_predicted() {
 
 ///////////////////////////////////////////
 
-const mouse_t &input_mouse() {
-	return input_mouse_data;
+const mouse_t *input_mouse() {
+	return &input_mouse_data;
 }
 
 ///////////////////////////////////////////
@@ -130,8 +125,8 @@ button_state_ input_key(key_ key) {
 
 ///////////////////////////////////////////
 
-const pose_t &input_head() {
-	return input_head_pose;
+const pose_t *input_head() {
+	return &input_head_pose;
 }
 
 } // namespace sk {

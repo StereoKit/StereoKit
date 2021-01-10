@@ -1,27 +1,24 @@
-// [name] sk/lines
+#include "stereokit.hlsli"
 
-#include <stereokit>
+//--name        = sk/lines
+//--color:color = 1,1,1,1
+//--diffuse = white
+float4       color;
+Texture2D    diffuse   : register(t0);
+SamplerState diffuse_s : register(s0);
 
-cbuffer ParamBuffer : register(b2) {
-	// [ param ] vector color {1, 1, 1, 1}
-	float4 _color;
-};
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float4 col  : COLOR;
-	float3 norm : NORMAL;
+	float4 pos  : SV_Position;
+	float3 norm : NORMAL0;
 	float2 uv   : TEXCOORD0;
+	float4 col  : COLOR0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
-	float4 color : COLOR0;
 	float2 uv    : TEXCOORD0;
+	float4 color : COLOR0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
-
-// [texture] diffuse white
-Texture2D tex : register(t0);
-SamplerState tex_sampler : register(s0);
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
@@ -33,11 +30,11 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	output.view_id = sk_inst[id].view_id;
 	output.uv      = input.uv;
-	output.color   = input.col;
+	output.color   = input.col * color;
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float4 col = tex.Sample(tex_sampler, input.uv);
+	float4 col = diffuse.Sample(diffuse_s, input.uv);
 
 	col = col * input.color;
 

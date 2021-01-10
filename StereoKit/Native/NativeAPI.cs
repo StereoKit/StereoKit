@@ -6,19 +6,20 @@ namespace StereoKit
 {
 	internal static class NativeAPI
 	{
-		const string            dll  = "StereoKitC.dll";
+		const string            dll  = "StereoKitC";
 		const CharSet           cSet = CharSet.Ansi;
 		const CallingConvention call = CallingConvention.Cdecl;
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        sk_init(string app_name, Runtime preferred_runtime, int fallback = 1);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_shutdown();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_quit();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool       sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Runtime    sk_active_runtime();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       sk_set_settings(Settings settings);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SystemInfo sk_system_info();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     sk_version_name();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong      sk_version_id();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int         sk_init(SKSettings settings);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window(IntPtr window);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window_xam(IntPtr window);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_quit();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool        sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayMode sk_active_display_mode();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SystemInfo  sk_system_info();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
 
 		///////////////////////////////////////////
 
@@ -132,8 +133,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_rtarget_clear       (IntPtr render_target, Color32 color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_rtarget_set_active  (IntPtr render_target);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, void* out_data, ulong out_data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
@@ -267,7 +266,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skytex    (IntPtr sky_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr render_get_skytex    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skylight  (in SphericalHarmonics lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clear_color(Color32 color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clear_color(Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_enable_skytex (bool show_sky);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   render_enabled_skytex();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_add_mesh      (IntPtr mesh, IntPtr material, in Matrix transform, Color color);

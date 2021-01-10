@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{bfd9f866-7547-4e71-a7a9-f2dd0733c5bd}</ProjectGuid>
+    <Keyword>Android</Keyword>
+    <RootNamespace>StereoKitC_Android</RootNamespace>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <ApplicationType>Android</ApplicationType>
+    <ApplicationTypeRevision>3.0</ApplicationTypeRevision>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>Clang_5_0</PlatformToolset>
+    <AndroidAPILevel>android-24</AndroidAPILevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>Clang_5_0</PlatformToolset>
+    <AndroidAPILevel>android-26</AndroidAPILevel>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <UseMultiToolTask>true</UseMultiToolTask>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <IncludePath>$(ProjectDir)..\lib\include_no_win\;$(ProjectDir)..\lib\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\libraries\$(TargetArchAbi)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <UseMultiToolTask>true</UseMultiToolTask>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>libStereoKitC</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <ExceptionHandling>Enabled</ExceptionHandling>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <LibraryDependencies>m;openxr_loader;reactphysics3d;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <VerboseOutput>false</VerboseOutput>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <ExceptionHandling>Enabled</ExceptionHandling>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <LibraryDependencies>m;openxr_loader;reactphysics3d;EGL;OpenSLES;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <VerboseOutput>false</VerboseOutput>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\lib\bin\$(TargetArchAbi)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(TargetDir)*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)..\lib\bin\arm64-v8a\$(Configuration)\*.so" "$(SolutionDir)bin\distribute\bin\Android\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\*.cpp" />
+    <ClCompile Include="..\libraries\*.cpp" />
+    <ClCompile Include="..\libraries\*.c" />
+    <ClCompile Include="..\asset_types\*.cpp" />
+    <ClCompile Include="..\systems\*.cpp" />
+    <ClCompile Include="..\systems\platform\*.cpp" />
+    <ClCompile Include="..\systems\hand\*.cpp" />
+    <ClCompile Include="..\shaders_builtin\*.cpp" />
+    <ClInclude Include="..\*.h" />
+    <ClInclude Include="..\libraries\*.h" />
+    <ClInclude Include="..\asset_types\*.h" />
+    <ClInclude Include="..\systems\*.h" />
+    <ClInclude Include="..\systems\platform\*.h" />
+    <ClInclude Include="..\systems\hand\*.h" />
+    <ClInclude Include="..\shaders_builtin\*.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib\bin\arm64-v8a\Release\libopenxr_loader.so" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
