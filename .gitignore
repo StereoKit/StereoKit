@@ -348,3 +348,6 @@ _site/
 build/
 
 .vscode/
+
+# Xmake cache files
+.xmake/
