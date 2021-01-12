@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Numerics;
+using System.Text;
 
 namespace StereoKit
 {
@@ -31,7 +32,7 @@ namespace StereoKit
 		/// layout position, so X will give you the amount remaining on the current line, and Y will
 		/// give you distance to the bottom of the layout, including the current line. These values
 		/// will be 0 if you're using 0 for the layout size on that axis.</summary>
-		public static Vec2       AreaRemaining => NativeAPI.ui_area_remaining();
+		public static Vector2       AreaRemaining => NativeAPI.ui_area_remaining();
 
 		/// <summary>Tells if the user is currently interacting with a UI element! This will be true
 		/// if the hand has an active or focused UI element.</summary>
@@ -44,13 +45,13 @@ namespace StereoKit
 		/// the current Hierarchy's coordinate space on the X/Y plane.</summary>
 		/// <param name="start">The top left of the layout area, relative to the current Hierarchy in local meters.</param>
 		/// <param name="dimensions">The size of the layout area from the top left, in local meters.</param>
-		public static void LayoutArea(Vec3 start, Vec2 dimensions)
+		public static void LayoutArea(Vector3 start, Vector2 dimensions)
 			=> NativeAPI.ui_layout_area(start, dimensions);
 
 		/// <summary>Reserves a box of space for an item in the current UI layout! This doesn't
 		/// advance to the next line after it, use UI.NextLine for that.</summary>
 		/// <param name="size">Size of the box in Hierarchy local meters.</param>
-		public static void ReserveBox(Vec2 size) 
+		public static void ReserveBox(Vector2 size) 
 			=> NativeAPI.ui_reserve_box(size);
 
 		/// <summary>Moves the current layout position back to the end of the line that just finished,
@@ -80,16 +81,16 @@ namespace StereoKit
 		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
 			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
 
-		public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
+		public static bool ButtonAt(string text, Vector3 windowRelativeCorner, Vector2 size)
 			=> NativeAPI.ui_button_at(text, windowRelativeCorner, size);
 
-		public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
+		public static bool ButtonRoundAt(string text, Sprite sprite, Vector3 windowRelativeCorner, float diameter)
 			=> NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
 
-		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
+		public static bool ToggleAt(string text, ref bool pressed, Vector3 windowRelativeCorner, Vector2 size)
 			=> NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
 
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vector3 windowRelativeCorner, Vector2 size)
 			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
 		/// <summary>Adds some text to the layout! Text uses the UI's current font settings 
@@ -102,7 +103,7 @@ namespace StereoKit
 		public static void Label (string text, bool usePadding = true) 
 			=> NativeAPI.ui_label(text, usePadding);
 
-		public static void Label(string text, Vec2 size)
+		public static void Label(string text, Vector2 size)
 			=> NativeAPI.ui_label_sz(text, size);
 
 		/// <summary>Adds an image to the UI!</summary>
@@ -110,7 +111,7 @@ namespace StereoKit
 		/// <param name="size">Size in Hierarchy local meters. If one of the components is 0, 
 		/// it'll be automatically determined from the other component and the image's aspect
 		/// ratio.</param>
-		public static void Image (Sprite image, Vec2 size) 
+		public static void Image (Sprite image, Vector2 size) 
 			=> NativeAPI.ui_image(image._inst, size);
         
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
@@ -122,7 +123,7 @@ namespace StereoKit
 		public static bool Button (string text) 
 			=> NativeAPI.ui_button(text);
 
-		public static bool Button(string text, Vec2 size)
+		public static bool Button(string text, Vector2 size)
 			=> NativeAPI.ui_button_sz(text, size);
 
 		/// <summary>A Radio is similar to a button, except you can specify if it looks pressed
@@ -136,7 +137,7 @@ namespace StereoKit
 		public static bool Radio (string text, bool active) 
 			=> NativeAPI.ui_toggle(text, ref active) && active;
 
-		public static bool Radio(string text, bool active, Vec2 size)
+		public static bool Radio(string text, bool active, Vector2 size)
 			=> NativeAPI.ui_toggle_sz(text, ref active, size) && active;
 
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
@@ -162,10 +163,10 @@ namespace StereoKit
 		public static bool Toggle (string text, ref bool value)
 			=> NativeAPI.ui_toggle(text, ref value);
 
-		public static bool Toggle(string text, ref bool value, Vec2 size)
+		public static bool Toggle(string text, ref bool value, Vector2 size)
 			=> NativeAPI.ui_toggle_sz(text, ref value, size);
 
-		public static bool Input(string id, ref string value, Vec2 size) {
+		public static bool Input(string id, ref string value, Vector2 size) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 4) :
 				new StringBuilder(4);
@@ -257,7 +258,7 @@ namespace StereoKit
 		/// use a header, a body, neither, or both?</param>
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
-		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+		public static void WindowBegin(string text, ref Pose pose, Vector2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
 			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
         
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()

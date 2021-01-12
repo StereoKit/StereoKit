@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System.Numerics;
 
 class DemoRayMesh : ITest
 {
@@ -25,21 +26,22 @@ class DemoRayMesh : ITest
 		Lines.Add(castPose.position, boxPose.position, Color.White, 0.01f);
 
 		// Create a ray that's in the Mesh's model space
-		Matrix transform = boxPose.ToMatrix();
-		Ray ray = transform.Inverse() 
-			* Ray.FromTo(castPose.position, boxPose.position);
+		Matrix4x4 transform = boxPose.ToMatrix();
+		Ray ray = transform
+			.Inverse()
+			.Transform(Ray.FromTo(castPose.position, boxPose.position));
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Vec3 at))
+		if (ray.Intersect(boxMesh, out Vector3 at))
 		{
-			sphereMesh.Draw(Default.Material, Matrix.TS(transform * at, 0.02f));
+			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at), 0.02f));
 		}
 	}
 	/// :End:
 
 	public void Initialize() {
-		Tests.Screenshot(600, 600, "RayMeshIntersect.jpg", new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
+		Tests.Screenshot(600, 600, "RayMeshIntersect.jpg", new Vector3(0.2f, 0.16f, -0.192f), new Vector3(-0.036f, -0.021f, -1.163f));
 	}
 
 	public void Shutdown  () { }

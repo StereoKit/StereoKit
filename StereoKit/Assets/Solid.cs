@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -23,7 +24,7 @@ namespace StereoKit
 		/// <param name="position">Initial location of the Solid.</param>
 		/// <param name="rotation">Initial rotation of the Solid.</param>
 		/// <param name="type">What sort of physics properties does this object exhibit?</param>
-		public Solid(Vec3 position, Quat rotation, SolidType type = SolidType.Normal)
+		public Solid(Vector3 position, Quaternion rotation, SolidType type = SolidType.Normal)
 		{
 			_inst = NativeAPI.solid_create(ref position, ref rotation, type);
 			if (_inst == IntPtr.Zero)
@@ -51,9 +52,9 @@ namespace StereoKit
 		/// <param name="diameter">Twice the radius of the sphere! The total size, in meters!</param>
 		/// <param name="kilograms">How many kilograms does this shape weigh?</param>
 		/// <param name="offset">Offset ot this shape from the center of the solid.</param>
-		public void AddSphere(float diameter, float kilograms = 1, Vec3 ?offset = null)
+		public void AddSphere(float diameter, float kilograms = 1, Vector3 ?offset = null)
 		{
-			Vec3 off = offset ?? Vec3.Zero;
+			Vector3 off = offset ?? Vector3.Zero;
 			NativeAPI.solid_add_sphere(_inst, diameter, kilograms, off);
 		}
 		/// <summary>This adds a box to this solid's physical shape! This is in addition
@@ -61,9 +62,9 @@ namespace StereoKit
 		/// <param name="dimensions">The total width, height, and depth of the box in meters!</param>
 		/// <param name="kilograms">How many kilograms does this shape weigh?</param>
 		/// <param name="offset">Offset of this shape from the center of the solid.</param>
-		public void AddBox(Vec3 dimensions, float kilograms = 1, Vec3? offset = null)
+		public void AddBox(Vector3 dimensions, float kilograms = 1, Vector3? offset = null)
 		{
-			Vec3 off = offset ?? Vec3.Zero;
+			Vector3 off = offset ?? Vector3.Zero;
 			NativeAPI.solid_add_box(_inst, dimensions, kilograms, off);
 		}
 		/// <summary>This adds a capsule, a cylinder with rounded ends, to this solid's physical
@@ -72,9 +73,9 @@ namespace StereoKit
 		/// <param name="height">The total width, height, and depth of the box in meters!</param>
 		/// <param name="kilograms">How many kilograms does this shape weigh?</param>
 		/// <param name="offset">Offset of this shape from the center of the solid.</param>
-		public void AddCapsule(float diameter, float height, float kilograms = 1, Vec3? offset = null)
+		public void AddCapsule(float diameter, float height, float kilograms = 1, Vector3? offset = null)
 		{
-			Vec3 off = offset ?? Vec3.Zero;
+			Vector3 off = offset ?? Vector3.Zero;
 			NativeAPI.solid_add_capsule(_inst, diameter, height, kilograms, off);
 		}
 		/// <summary>Changes the behavior type of the solid after it's created.</summary>
@@ -97,27 +98,27 @@ namespace StereoKit
 		/// movement without collision.</summary>
 		/// <param name="position">The destination position!</param>
 		/// <param name="rotation">The destination rotation!</param>
-		public void Move(Vec3 position, Quat rotation)
+		public void Move(Vector3 position, Quaternion rotation)
 		{
 			NativeAPI.solid_move(_inst, position, rotation);
 		}
 		/// <summary>Moves the Solid to the new pose, without colliding with objects on the way there.</summary>
 		/// <param name="position">The destination position!</param>
 		/// <param name="rotation">The destination rotation!</param>
-		public void Teleport(Vec3 position, Quat rotation)
+		public void Teleport(Vector3 position, Quaternion rotation)
 		{
 			NativeAPI.solid_teleport(_inst, position, rotation);
 		}
 		/// <summary>Sets the velocity of this Solid.</summary>
 		/// <param name="metersPerSecond">How fast should it be going, along what vector?</param>
-		public void SetVelocity(Vec3 metersPerSecond)
+		public void SetVelocity(Vector3 metersPerSecond)
 		{
 			NativeAPI.solid_set_velocity(_inst, metersPerSecond);
 		}
 		/// <summary>I wish I knew what angular velocity actually meant, perhaps you know? It's rotation 
 		/// velocity of some kind or another!</summary>
 		/// <param name="radiansPerSecond">I think it's in radians. Maybe?</param>
-		public void SetAngularVelocity(Vec3 radiansPerSecond)
+		public void SetAngularVelocity(Vector3 radiansPerSecond)
 		{
 			NativeAPI.solid_set_velocity_ang(_inst, radiansPerSecond);
 		}

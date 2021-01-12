@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -40,7 +41,7 @@ namespace StereoKit
 		/// <param name="at">World space location for the audio to play at.</param>
 		/// <param name="volume">Volume modifier for the effect! 1 means full volume,
 		/// and 0 means completely silent.</param>
-		public void Play(Vec3 at, float volume = 1)
+		public void Play(Vector3 at, float volume = 1)
 			=> NativeAPI.sound_play(_inst, at, volume);
 
 		/// <summary>Looks for a Sound asset that's already loaded, matching the given id!</summary>

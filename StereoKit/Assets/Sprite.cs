@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -31,7 +32,7 @@ namespace StereoKit
 		/// <summary>Height of the sprite, in pixels.</summary>
 		public int   Height => NativeAPI.sprite_get_height(_inst);
 		/// <summary>Width and height of the sprite, normalized so the maximum value is 1.</summary>
-		public Vec2  NormalizedDimensions => NativeAPI.sprite_get_dimensions_normalized(_inst);
+		public Vector2 NormalizedDimensions => NativeAPI.sprite_get_dimensions_normalized(_inst);
 
 		internal Sprite(IntPtr inst)
 		{
@@ -48,10 +49,8 @@ namespace StereoKit
 		/// <summary>Draw the sprite on a quad with the provided transform!</summary>
 		/// <param name="transform">A Matrix describing a transform from model space to world space.</param>
 		/// <param name="color">Per-instance color data for this render item.</param>
-		public void Draw(in Matrix transform, Color32 color)
-		{
-			NativeAPI.sprite_draw(_inst, transform, color);
-		}
+		public void Draw(in Matrix4x4 transform, Color32 color) 
+			=> NativeAPI.sprite_draw(_inst, transform, color);
 
 		/// <summary>Create a sprite from an image file! This loads a Texture from file, and then
 		/// uses that Texture as the source for the Sprite.</summary>

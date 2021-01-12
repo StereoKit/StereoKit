@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 
 public static class Tests
@@ -121,9 +122,9 @@ public static class Tests
 	public static void RunForSeconds(float seconds)
 		=> runSeconds = seconds;
 
-	public static void Screenshot(int width, int height, string name, Vec3 from, Vec3 at) 
+	public static void Screenshot(int width, int height, string name, Vector3 from, Vector3 at) 
 		=> Screenshot(0, width, height, name, from, at);
-	public static void Screenshot(float time, int width, int height, string name, Vec3 from, Vec3 at)
+	public static void Screenshot(float time, int width, int height, string name, Vector3 from, Vector3 at)
 	{
 		if (!IsTesting || time > (Time.Totalf-sceneTime) || screens.Contains(name))
 			return;

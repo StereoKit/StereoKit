@@ -1,77 +1,63 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	/// <summary>Planes are really useful for collisions, intersections, and
-	/// visibility testing!
-	/// 
-	/// This plane is stored using the ax + by + cz + d = 0 formula, where the 
-	/// normal is a,b,c, and the d is, well, d.</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public struct Plane
+	public static class SKPlane
 	{
-		/// <summary>The direction the plane is facing.</summary>
-		public Vec3  normal;
-		/// <summary>The distance/travel along the plane's normal from the 
-		/// origin to the surface of the plane.</summary>
-		public float d;
+		/// <summary>Checks the intersection of a ray with this plane!
+		/// </summary>
+		/// <param name="ray">Ray we're checking with.</param>
+		/// <param name="at">An out parameter that will hold the intersection
+		/// point. If there's no intersection, this will be (0,0,0).</param>
+		/// <returns>True if there's an intersetion, false if not. Refer to
+		/// the 'at' parameter for intersection information!</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool Intersect(this Plane p, Ray ray, out Vector3 at)
+			=> NativeAPI.plane_ray_intersect(p, ray, out at);
 
-		/// <summary>Creates a Plane directly from the ax + by + cz + d = 0
-		/// formula!</summary>
-		/// <param name="normal">Direction the plane is facing.</param>
-		/// <param name="d">Distance along the normal from the origin to the surface of the plane.</param>
-		public Plane(Vec3 normal, float d)
-		{
-			this.normal = normal;
-			this.d      = d;
-		}
-		/// <summary>Creates a plane from a normal, and any point on the plane!</summary>
-		/// <param name="pointOnPlane">Any point directly on the surface of the plane.</param>
+		/// <summary>Checks the intersection of a line with this plane!
+		/// </summary>
+		/// <param name="lineStart">Start of the line.</param>
+		/// <param name="lineEnd">End of the line.</param>
+		/// <param name="at">An out parameter that will hold the intersection
+		/// point. If there's no intersection, this will be (0,0,0).</param>
+		/// <returns>True if there's an intersetion, false if not. Refer to
+		/// the 'at' parameter for intersection information!</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool Intersect(this Plane p, Vector3 lineStart, Vector3 lineEnd, out Vector3 at)
+			=> NativeAPI.plane_line_intersect(p, lineStart, lineEnd, out at);
+
+		/// <summary>Finds the closest point on this plane to the given 
+		/// point!</summary>
+		/// <param name="to">The point you have that's not necessarily on the
+		/// plane.</param>
+		/// <returns>The point on the plane that's closest to the 'to'
+		/// parameter.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vector3 Closest(this Plane p, Vector3 to)
+			=> NativeAPI.plane_point_closest(p, to);
+
+		/// <summary>Creates a plane from a normal, and any point on the 
+		/// plane!</summary>
+		/// <param name="pointOnPlane">Any point directly on the surface of 
+		/// the plane.</param>
 		/// <param name="planeNormal">Direction the plane is facing.</param>
-		public Plane(Vec3 pointOnPlane, Vec3 planeNormal)
-		{
-			normal = planeNormal;
-			d = -Vec3.Dot(pointOnPlane, planeNormal);
-		}
-		/// <summary>Creates a plane from 3 points that are directly on that plane.</summary>
+		public static Plane FromPoint(Vector3 pointOnPlane, Vector3 planeNormal)
+			=> new Plane(planeNormal, -Vector3.Dot(pointOnPlane, planeNormal));
+
+		/// <summary>Creates a plane from 3 points that are directly on that
+		/// plane.</summary>
 		/// <param name="pointOnPlane1">First point on the plane.</param>
 		/// <param name="pointOnPlane2">Second point on the plane.</param>
 		/// <param name="pointOnPlane3">Third point on the plane.</param>
-		public Plane(Vec3 pointOnPlane1, Vec3 pointOnPlane2, Vec3 pointOnPlane3)
+		public static Plane FromPoints(Vector3 pointOnPlane1, Vector3 pointOnPlane2, Vector3 pointOnPlane3)
 		{
-			Vec3 dir1 = pointOnPlane2 - pointOnPlane1;
-			Vec3 dir2 = pointOnPlane2 - pointOnPlane3;
-			normal = Vec3.Cross(dir1, dir2);
-			d      = -Vec3.Dot(pointOnPlane2, normal);
+			Vector3 dir1 = pointOnPlane2 - pointOnPlane1;
+			Vector3 dir2 = pointOnPlane2 - pointOnPlane3;
+			Vector3 norm = Vector3.Cross(dir1, dir2);
+			return new Plane(norm, -Vector3.Dot(pointOnPlane2, norm));
 		}
-
-		/// <summary>Checks the intersection of a ray with this plane!</summary>
-		/// <param name="ray">Ray we're checking with.</param>
-		/// <param name="at">An out parameter that will hold the intersection point. 
-		/// If there's no intersection, this will be (0,0,0).</param>
-		/// <returns>True if there's an intersetion, false if not. Refer to the 'at'
-		/// parameter for intersection information!</returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Ray ray, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(this, ray, out at);
-
-		/// <summary>Checks the intersection of a line with this plane!</summary>
-		/// <param name="lineStart">Start of the line.</param>
-		/// <param name="lineEnd">End of the line.</param>
-		/// <param name="at">An out parameter that will hold the intersection point. 
-		/// If there's no intersection, this will be (0,0,0).</param>
-		/// <returns>True if there's an intersetion, false if not. Refer to the 'at'
-		/// parameter for intersection information!</returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Vec3 lineStart, Vec3 lineEnd, out Vec3 at)
-			=> NativeAPI.plane_line_intersect(this, lineStart, lineEnd, out at);
-
-		/// <summary>Finds the closest point on this plane to the given point!</summary>
-		/// <param name="to">The point you have that's not necessarily on the plane.</param>
-		/// <returns>The point on the plane that's closest to the 'to' parameter.</returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Vec3 Closest(Vec3 to)
-			=> NativeAPI.plane_point_closest(this, to);
-	};
+	}
 }

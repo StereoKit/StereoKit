@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace StereoKit.Framework
 {
@@ -80,7 +81,7 @@ namespace StereoKit.Framework
 			if (_inst != null) _inst._onCancel?.Invoke();
 			if (_inst == null) { 
 				_inst = SK.AddStepper(new FilePicker());
-				Vec3 pos = Input.Head.position + Input.Head.Forward * .5f + Input.Head.Up * 0.2f;
+				Vector3 pos = Input.Head.position + Input.Head.Forward * .5f + Input.Head.Up * 0.2f;
 				_inst._windowPose = new Pose(pos, Quat.LookAt(pos, Input.Head.position));
 			}
 			_inst.Setup(mode, initialFolder, onSelectFile, onCancel, filters);
@@ -104,7 +105,7 @@ namespace StereoKit.Framework
 		string     _path;
 		string     _title;
 		string[]   _separatedPath;
-		Pose       _windowPose = new Pose(new Vec3(-10,0,0)*U.cm, Quat.LookDir(-Vec3.Forward));
+		Pose       _windowPose = new Pose(new Vector3(-10,0,0)*U.cm, Quat.LookDir(-Vec3.Forward));
 		string     _resultName;
 		string     _resultFolder;
 
@@ -174,7 +175,7 @@ namespace StereoKit.Framework
 
 		public void Step()
 		{
-			UI.WindowBegin(_title, ref _windowPose, new Vec2(40, 0) * U.cm);
+			UI.WindowBegin(_title, ref _windowPose, new Vector2(40, 0) * U.cm);
 
 			ShowPath();
 
@@ -192,10 +193,10 @@ namespace StereoKit.Framework
 		{
 			UI.Label("...\\");
 			UI.SameLine();
-			float width = UI.AreaRemaining.x;
+			float width = UI.AreaRemaining.X;
 			for (int i = Math.Max(0, _separatedPath.Length - 3); i < _separatedPath.Length; i++)
 			{
-				if (UI.Button(_separatedPath[i], new Vec2(width/3, UI.LineHeight)))
+				if (UI.Button(_separatedPath[i], new Vector2(width/3, UI.LineHeight)))
 				{
 					string newPath = "";
 					for (int t = 0; t <= i; t++)
@@ -211,13 +212,13 @@ namespace StereoKit.Framework
 		{
 			if (_resultName != null)
 			{
-				if (UI.Button("Open", new Vec2(.04f, UI.LineHeight)))
+				if (UI.Button("Open", new Vector2(.04f, UI.LineHeight)))
 				{
 					_onFileSelect?.Invoke(Path.Combine(_resultFolder, _resultName));
 					Hide();
 				}
 				UI.SameLine();
-				UI.Label(_resultName, new Vec2(UI.AreaRemaining.x, UI.LineHeight) );
+				UI.Label(_resultName, new Vector2(UI.AreaRemaining.X, UI.LineHeight) );
 				UI.Space(U.cm * 1.5f);
 			}
 			else
@@ -239,7 +240,7 @@ namespace StereoKit.Framework
 				Hide();
 			}
 			UI.SameLine();
-			UI.Input("saveFile", ref _resultName, new Vec2(25.5f*U.cm, UI.LineHeight));
+			UI.Input("saveFile", ref _resultName, new Vector2(25.5f*U.cm, UI.LineHeight));
 			UI.SameLine();
 			if (UI.Button("Mic"))
 			{
@@ -249,7 +250,7 @@ namespace StereoKit.Framework
 
 		void ShowFolderItems()
 		{
-			Vec2 size = new Vec2(.085f, UI.LineHeight*1.5f);
+			Vector2 size = new Vector2(.085f, UI.LineHeight*1.5f);
 
 			for (int i = 0; i < _activeFiles.Count; i++)
 			{

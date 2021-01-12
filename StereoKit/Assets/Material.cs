@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -120,13 +121,13 @@ namespace StereoKit
 		public object this[string parameterName] { set { 
 			switch(value)
 			{
-				case float   f:    SetFloat  (parameterName, f); break;
-				case int     i:    SetFloat  (parameterName, i); break;
-				case Color32 c32:  SetColor  (parameterName, c32); break;
-				case Color   c128: SetColor  (parameterName, c128); break;
-				case Vec4    v:    SetVector (parameterName, v); break;
-				case Matrix  m:    SetMatrix (parameterName, m); break;
-				case Tex     t:    SetTexture(parameterName, t); break;
+				case float     f:    SetFloat  (parameterName, f); break;
+				case int       i:    SetFloat  (parameterName, i); break;
+				case Color32   c32:  SetColor  (parameterName, c32); break;
+				case Color     c128: SetColor  (parameterName, c128); break;
+				case Vector4   v:    SetVector (parameterName, v); break;
+				case Matrix4x4 m:    SetMatrix (parameterName, m); break;
+				case Tex       t:    SetTexture(parameterName, t); break;
 				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
 			}
 		} }
@@ -184,7 +185,7 @@ namespace StereoKit
 		/// is found, nothing happens, and the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
-		public void SetVector(string name, Vec4 value)
+		public void SetVector(string name, Vector4 value)
 		{
 			NativeAPI.material_set_vector(_inst, name, value);
 		}
@@ -192,7 +193,7 @@ namespace StereoKit
 		/// is found, nothing happens, and the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
-		public void SetMatrix(string name, Matrix value)
+		public void SetMatrix(string name, Matrix4x4 value)
 		{
 			NativeAPI.material_set_matrix(_inst, name, value);
 		}

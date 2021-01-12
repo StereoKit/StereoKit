@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System.Numerics;
 
 class TestSingleChannelTextures : ITest
 {
@@ -44,7 +45,7 @@ class TestSingleChannelTextures : ITest
 	public void Shutdown() { }
 	public void Update() 
 	{
-		Default.MeshCube.Draw(singleChannelTex, Matrix.TS(new Vec3(0,0,0.75f), 0.5f));
+		Default.MeshCube.Draw(singleChannelTex, Matrix.TS(new Vector3(0,0,0.75f), 0.5f));
 		Tests.Screenshot(600,600, "Tests/SingleChannelTextureR8.jpg", Vec3.Zero, -Vec3.Forward);
 	}
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -14,16 +15,16 @@ namespace StereoKit
 	public struct Bounds
 	{
 		/// <summary>The exact center of the Bounds!</summary>
-		public Vec3 center;
+		public Vector3 center;
 		/// <summary>The total size of the box, from one end to the other. This is the 
 		/// width, height, and depth of the Bounds.</summary>
-		public Vec3 dimensions;
+		public Vector3 dimensions;
 
 		/// <summary>Creates a bounding box object!</summary>
 		/// <param name="center">The exact center of the box.</param>
 		/// <param name="totalDimensions">The total size of the box, from one end to the 
 		/// other. This is the width, height, and depth of the Bounds.</param>
-		public Bounds(Vec3 center, Vec3 totalDimensions)
+		public Bounds(Vector3 center, Vector3 totalDimensions)
 		{
 			this.center = center;
 			dimensions = totalDimensions;
@@ -32,9 +33,9 @@ namespace StereoKit
 		/// <summary>Creates a bounding box object centered around zero!</summary>
 		/// <param name="totalDimensions">The total size of the box, from one end to the 
 		/// other. This is the width, height, and depth of the Bounds.</param>
-		public Bounds(Vec3 totalDimensions)
+		public Bounds(Vector3 totalDimensions)
 		{
-			this.center = Vec3.Zero;
+			this.center = Vector3.Zero;
 			dimensions = totalDimensions;
 		}
 
@@ -42,14 +43,14 @@ namespace StereoKit
 		/// <param name="bottomLeftBack">The -X,-Y,-Z corner of the box.</param>
 		/// <param name="dimensions">The total dimensions of the box.</param>
 		/// <returns>A Bounds object that extends from bottomLeftBack to bottomLeftBack+dimensions.</returns>
-		public static Bounds FromCorner(Vec3 bottomLeftBack, Vec3 dimensions)
+		public static Bounds FromCorner(Vector3 bottomLeftBack, Vector3 dimensions)
 			=> new Bounds(bottomLeftBack + dimensions/2, dimensions);
 
 		/// <summary>Create a bounding box between two corner points.</summary>
 		/// <param name="bottomLeftBack">The -X,-Y,-Z corner of the box.</param>
 		/// <param name="topRightFront">The +X,+Y,+Z corner of the box.</param>
 		/// <returns>A Bounds object that extends from bottomLeftBack to topRightFront.</returns>
-		public static Bounds FromCorners(Vec3 bottomLeftBack, Vec3 topRightFront)
+		public static Bounds FromCorners(Vector3 bottomLeftBack, Vector3 topRightFront)
 			=> new Bounds(bottomLeftBack/2 + topRightFront/2, topRightFront-bottomLeftBack);
         
 
@@ -61,7 +62,7 @@ namespace StereoKit
 		/// point to the origin of the Ray.</param>
 		/// <returns>True if an intersection occurred, false if not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Ray ray, out Vec3 at)
+		public bool Intersect(Ray ray, out Vector3 at)
 			=> NativeAPI.bounds_ray_intersect(this, ray, out at);
 
 		/// <summary>Does the Bounds contain the given point? This includes points that are on
@@ -69,7 +70,7 @@ namespace StereoKit
 		/// <param name="pt">A point in the same coordinate space as the Bounds.</param>
 		/// <returns>True if the point is on, or in the Bounds.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Contains(Vec3 pt)
+		public bool Contains(Vector3 pt)
 			=> NativeAPI.bounds_point_contains(this, pt);
 
 		/// <summary>Does the Bounds contain or intersects with the given line?</summary>
@@ -77,7 +78,7 @@ namespace StereoKit
 		/// <param name="linePt2">End of the line</param>
 		/// <returns>True if the line is in, or intersects with the bounds.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Contains(Vec3 linePt1, Vec3 linePt2)
+		public bool Contains(Vector3 linePt1, Vector3 linePt2)
 			=> NativeAPI.bounds_line_contains(this, linePt1, linePt2);
 
 		public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }

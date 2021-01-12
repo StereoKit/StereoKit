@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace StereoKit.Framework
 {
@@ -66,7 +67,7 @@ namespace StereoKit.Framework
 			Color color = Color.White * 0.5f;
 			for (int i = 0; i < circle.Length; i++)
 			{
-				Vec3 dir = Vec3.AngleXY(i * step);
+				Vector3 dir = Vec3.AngleXY(i * step);
 				circle     [i] = new LinePoint(dir * maxDist, color, 2 * Units.mm2m);
 				innerCircle[i] = new LinePoint(dir * minDist, color, 2 * Units.mm2m);
 			}
@@ -76,7 +77,7 @@ namespace StereoKit.Framework
 		/// This will close the hand menu if it was already open, and resets
 		/// it to the root menu layer. Also plays an opening sound.</summary>
 		/// <param name="at">A world space position for the hand menu.</param>
-		public void Show(Vec3 at)
+		public void Show(Vector3 at)
 		{
 			if (active)
 				Close();
@@ -151,9 +152,9 @@ namespace StereoKit.Framework
 		{
 			// Animate the menu a bit
 			float time = (Time.Elapsedf * 24);
-			menuPose.position    = Vec3  .Lerp (menuPose.position,    destPose.position,    time);
-			menuPose.orientation = Quat  .Slerp(menuPose.orientation, destPose.orientation, time);
-			activation           = SKMath.Lerp (activation, 1, time);
+			menuPose.position    = Vector3   .Lerp (menuPose.position,    destPose.position,    time);
+			menuPose.orientation = Quaternion.Slerp(menuPose.orientation, destPose.orientation, time);
+			activation           = SKMath    .Lerp (activation, 1, time);
 
 			// Pre-calculate some circle traversal values
 			HandRadialLayer layer = layers[activeLayer];
@@ -166,19 +167,19 @@ namespace StereoKit.Framework
 			Hierarchy.Push(menuPose.ToMatrix(activation));
             
 			// Calculate the status of the menu!
-			Vec3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
-			Vec3  tipLocal = Hierarchy.ToLocal(tipWorld);
-			float magSq    = tipLocal.MagnitudeSq;
-			bool  onMenu   = tipLocal.z > -0.02f && tipLocal.z < 0.02f;
+			Vector3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
+			Vector3  tipLocal = Hierarchy.ToLocal(tipWorld);
+			float magSq    = tipLocal.LengthSquared();
+			bool  onMenu   = tipLocal.Z > -0.02f && tipLocal.Z < 0.02f;
 			bool  focused  = onMenu && magSq > minDist * minDist;
 			bool  selected = onMenu && magSq > midDist * midDist;
 			bool  cancel   = magSq > maxDist*maxDist;
 
 			// Find where our finger is pointing to, and draw that
-			float fingerAngle = (float)Math.Atan2(tipLocal.y, tipLocal.x) * Units.rad2deg - (layer.startAngle + angleOffset);
+			float fingerAngle = (float)Math.Atan2(tipLocal.Y, tipLocal.X) * Units.rad2deg - (layer.startAngle + angleOffset);
 			while (fingerAngle < 0) fingerAngle += 360;
 			int angleId = (int)(fingerAngle / step);
-			Lines.Add(Vec3.Zero, new Vec3(tipLocal.x, tipLocal.y, 0), Color.White * 0.5f, 0.001f);
+			Lines.Add(Vector3.Zero, new Vector3(tipLocal.X, tipLocal.Y, 0), Color.White * 0.5f, 0.001f);
             
 			// Draw the menu inner and outer circles
 			Lines.Add(circle);
@@ -187,10 +188,10 @@ namespace StereoKit.Framework
 			// Now draw each of the menu items!
 			for (int i = 0; i < count; i++)
 			{
-				float currAngle     = i*step + layer.startAngle + angleOffset;
-				bool  highlightText = focused && angleId == i;
-				bool  highlightLine = highlightText || (focused && (angleId+1)%count == i);
-				Vec3  dir           = Vec3.AngleXY(currAngle);
+				float   currAngle     = i*step + layer.startAngle + angleOffset;
+				bool    highlightText = focused && angleId == i;
+				bool    highlightLine = highlightText || (focused && (angleId+1)%count == i);
+				Vector3 dir           = Vec3.AngleXY(currAngle);
 				Lines.Add(dir * minDist, dir * maxDist, highlightLine ? Color.White : Color.White*0.5f, highlightLine?0.002f:0.001f);
 				Text .Add(layer.items[i].name, Matrix.TRS(Vec3.AngleXY(currAngle + halfStep)*midDist, Quat.FromAngles(0, 0, currAngle + halfStep - 90), highlightText?1.2f:1), TextAlign.XCenter | TextAlign.YBottom);
 			}
@@ -223,7 +224,7 @@ namespace StereoKit.Framework
 				activeLayer = navStack.Pop();
 		}
 
-		void SelectItem(HandMenuItem item, Vec3 at, float fromAngle)
+		void SelectItem(HandMenuItem item, Vector3 at, float fromAngle)
 		{
 			if      (item.action == HandMenuAction.Close) Close      ();
 			else if (item.action == HandMenuAction.Layer) SelectLayer(item.layerName);
@@ -235,9 +236,9 @@ namespace StereoKit.Framework
 			item.callback?.Invoke();
 		}
 
-		void Reposition(Vec3 at, float fromAngle)
+		void Reposition(Vector3 at, float fromAngle)
 		{
-			Plane plane = new Plane(menuPose.position, menuPose.Forward);
+			Plane plane = SKPlane.FromPoint(menuPose.position, menuPose.Forward);
 			destPose.position = plane.Closest(at);
 
 			if (layers[activeLayer].backAngle != 0)
@@ -253,10 +254,10 @@ namespace StereoKit.Framework
 			if (!hand.IsTracked)
 				return false;
 
-			Vec3 palmDirection   = (hand.palm.Forward).Normalized();
-			Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized();
+			Vector3 palmDirection   = hand.palm.Forward.Normalized();
+			Vector3 directionToHead = (Input.Head.position - hand.palm.position).Normalized();
 
-			return Vec3.Dot(palmDirection, directionToHead) > 0.5f;
+			return Vector3.Dot(palmDirection, directionToHead) > 0.5f;
 		}
         
 		#endregion

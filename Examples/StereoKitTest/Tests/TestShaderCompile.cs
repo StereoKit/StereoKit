@@ -1,6 +1,7 @@
 ﻿using StereoKit;
 using System;
 using System.IO;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -78,7 +79,7 @@ class TestShaderCompile : ITest
 		Draw(materialFileHLSL,    Vec3.Right * 0.2f);
 		Draw(materialFileCompile, Vec3.Up    *-0.2f);*/
 	}
-	void Draw(Material material, Vec3 at)
+	void Draw(Material material, Vector3 at)
 	{
 		if (material != null)
 		{

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -70,7 +71,7 @@ class DebugToolWindow
 	static List<(float time, HandJoint[] pose)> recordingHand = new List<(float time, HandJoint[] pose)>();
 	static bool recordHead   = false;
 	static bool recordHand   = false;
-	static Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
+	static Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vector3(0, 0.3f, .5f), new Vector3(0, 0.3f, 0)));
 	static bool screenshots  = false;
 	static int  screenshotId = 1;
 
@@ -79,7 +80,7 @@ class DebugToolWindow
 
 	public static void Step()
 	{
-		UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*U.cm);
+		UI.WindowBegin("Helper", ref pose, new Vector2(20, 0)*U.cm);
 		if (UI.Button("Print Screenshot Pose")) HeadshotPose();
 		if (UI.Button("Print Hand Pose")) HandshotPose();
 		if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
@@ -126,10 +127,10 @@ class DebugToolWindow
 
 	static void RecordHead()
 	{
-		Pose prev = recordingHead[recordingHead.Count - 1].pose;
-		Quat diff = Quat.Difference(Input.Head.orientation, prev.orientation);
+		Pose       prev = recordingHead[recordingHead.Count - 1].pose;
+		Quaternion diff = Quat.Difference(Input.Head.orientation, prev.orientation);
 		if (Vec3.DistanceSq(Input.Head.position, prev.position) > (2 * U.cm * 2 * U.cm) ||
-			(diff.w) * (diff.w) < (0.8f * 0.8f))
+			(diff.W) * (diff.W) < (0.8f * 0.8f))
 			recordingHead.Add((Time.Totalf, Input.Head));
 
 	}
@@ -144,7 +145,7 @@ class DebugToolWindow
 			{
 				recordingHead[i] = (recordingHead[i].time - rootTime, recordingHead[i].pose);
 				var f = recordingHead[i];
-				result += $"({f.time}f, new Pose(new Vec3({f.pose.position.x:0.000}f,{f.pose.position.y:0.000}f,{f.pose.position.z:0.000}f), new Quat({f.pose.orientation.x:0.000}f,{f.pose.orientation.y:0.000}f,{f.pose.orientation.z:0.000}f,{f.pose.orientation.w:0.000}f)))";
+				result += $"({f.time}f, new Pose(new Vector3({f.pose.position.X:0.000}f,{f.pose.position.Y:0.000}f,{f.pose.position.Z:0.000}f), new Quaternion({f.pose.orientation.X:0.000}f,{f.pose.orientation.Y:0.000}f,{f.pose.orientation.Z:0.000}f,{f.pose.orientation.W:0.000}f)))";
 				if (i < recordingHead.Count-1)
 					result += ",";
 			}
@@ -187,7 +188,7 @@ class DebugToolWindow
 				result.Append( $"({f.time}f,new HandJoint[]{{" );
 				for (int j = 0; j < f.pose.Length; j++)
 				{
-					result.Append($"new HandJoint(new Vec3({f.pose[j].position.x:0.000}f,{f.pose[j].position.y:0.000}f,{f.pose[j].position.z:0.000}f), new Quat({f.pose[j].orientation.x:0.000}f,{f.pose[j].orientation.y:0.000}f,{f.pose[j].orientation.z:0.000}f,{f.pose[j].orientation.w:0.000}f), {f.pose[j].radius:0.000}f)");
+					result.Append($"new HandJoint(new Vector3({f.pose[j].position.X:0.000}f,{f.pose[j].position.Y:0.000}f,{f.pose[j].position.Z:0.000}f), new Quaternion({f.pose[j].orientation.X:0.000}f,{f.pose[j].orientation.Y:0.000}f,{f.pose[j].orientation.Z:0.000}f,{f.pose[j].orientation.W:0.000}f), {f.pose[j].radius:0.000}f)");
 					if (j < f.pose.Length - 1)
 						result.Append(",");
 				}
@@ -205,9 +206,9 @@ class DebugToolWindow
 
 	static void HeadshotPose()
 	{
-		Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
-		Vec3 fwd = pos + Input.Head.Forward;
-		Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+		Vector3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
+		Vector3 fwd = pos + Input.Head.Forward;
+		Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vector3({pos.X:0.000}f, {pos.Y:0.000}f, {pos.Z:0.000}f), new Vector3({fwd.X:0.000}f, {fwd.Y:0.000}f, {fwd.Z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
 	static void HandshotPose()
@@ -222,7 +223,7 @@ class DebugToolWindow
 		string result = ($"Tests.Hand(new HandJoint[]{{");
 		for (int j = 0; j < joints.Length; j++)
 		{
-			result += $"new HandJoint(new Vec3({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quat({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
+			result += $"new HandJoint(new Vector3({joints[j].position.X:0.000}f,{joints[j].position.Y:0.000}f,{joints[j].position.Z:0.000}f), new Quaternion({joints[j].orientation.X:0.000}f,{joints[j].orientation.Y:0.000}f,{joints[j].orientation.Z:0.000}f,{joints[j].orientation.W:0.000}f), {joints[j].radius:0.000}f)";
 			if (j < joints.Length - 1)
 				result += ",";
 		}
@@ -234,9 +235,9 @@ class DebugToolWindow
 	{
 		HandJoint[] result = new HandJoint[a.Length];
 		for (int i = 0; i < a.Length; i++) { 
-			result[i].position    = Vec3  .Lerp (a[i].position, b[i].position, t);
-			result[i].orientation = Quat  .Slerp(a[i].orientation, b[i].orientation, t);
-			result[i].radius      = SKMath.Lerp (a[i].radius, b[i].radius, t);
+			result[i].position    = Vector3   .Lerp (a[i].position,    b[i].position,    t);
+			result[i].orientation = Quaternion.Slerp(a[i].orientation, b[i].orientation, t);
+			result[i].radius      = SKMath    .Lerp (a[i].radius,      b[i].radius,      t);
 		}
 		return result;
 	}
@@ -244,7 +245,7 @@ class DebugToolWindow
 	static Sprite screenshot;
 	static Pose   screenshotPose;
 	static bool   screenshotVisible;
-	static void PreviewScreenshot(Vec3 from, Vec3 at)
+	static void PreviewScreenshot(Vector3 from, Vector3 at)
 	{
 		string path = Path.GetTempFileName();
 		path = Path.ChangeExtension(path, "jpg");
@@ -265,9 +266,9 @@ class DebugToolWindow
 		if (!screenshotVisible)
 			return;
 
-		UI.WindowBegin("Screenshot", ref screenshotPose, new Vec2(20,0)*U.cm);
+		UI.WindowBegin("Screenshot", ref screenshotPose, new Vector2(20,0)*U.cm);
 		if (screenshot != null)
-			UI.Image(screenshot, new Vec2(18,0) * U.cm);
+			UI.Image(screenshot, new Vector2(18,0) * U.cm);
 		if (UI.Button("Close"))
 		{ 
 			screenshotVisible = false;

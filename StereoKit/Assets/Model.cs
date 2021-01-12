@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -100,7 +101,7 @@ namespace StereoKit
 		/// <summary>Gets the transform matrix used by the model subset!</summary>
 		/// <param name="subsetIndex">Index of the model subset to get the transform for, should be less than SubsetCount.</param>
 		/// <returns>A transform matrix used by the model subset at subsetIndex</returns>
-		public Matrix GetTransform(int subsetIndex) 
+		public Matrix4x4 GetTransform(int subsetIndex) 
 			=> NativeAPI.model_get_transform(_inst, subsetIndex);
 
 		/// <summary>Changes the Material for the subset to a new one!</summary>
@@ -119,7 +120,7 @@ namespace StereoKit
 		/// relative to the origin of the model.</summary>
 		/// <param name="subsetIndex">Index of the transform to replace, should be less than SubsetCount.</param>
 		/// <param name="transform">The new transform.</param>
-		public void SetTransform(int subsetIndex, in Matrix transform)
+		public void SetTransform(int subsetIndex, in Matrix4x4 transform)
 			=> NativeAPI.model_set_transform(_inst, subsetIndex, transform);
 
 		/// <summary>Adds a new subset to the Model, and recalculates the bounds.</summary>
@@ -128,7 +129,7 @@ namespace StereoKit
 		/// <param name="transform">A transform Matrix representing the Mesh's location
 		/// relative to the origin of the Model.</param>
 		/// <returns>The index of the subset that was just added.</returns>
-		public int AddSubset(Mesh mesh, Material material, in Matrix transform)
+		public int AddSubset(Mesh mesh, Material material, in Matrix4x4 transform)
 			=> NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
 
 		/// <summary>Removes and dereferences a subset from the model.</summary>
@@ -150,14 +151,14 @@ namespace StereoKit
 		/// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
 		/// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
 		/// spot to pack in extra per-instance data for the shader!</param>
-		public void Draw(Matrix transform, Color color)
+		public void Draw(Matrix4x4 transform, Color color)
 			=> NativeAPI.render_add_model(_inst, transform, color);
 
 		/// <summary>Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it,
 		/// that transform is combined with the Matrix provided here.</summary>
 		/// <param name="transform">A Matrix that will transform the Model from Model Space into the current
 		/// Hierarchy Space.</param>
-		public void Draw(Matrix transform)
+		public void Draw(Matrix4x4 transform)
 			=> NativeAPI.render_add_model(_inst, transform, Color.White);
 		#endregion
 

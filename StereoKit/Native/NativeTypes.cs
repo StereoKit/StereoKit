@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -144,21 +145,21 @@ namespace StereoKit
 	public struct Vertex
 	{
 		/// <summary>Position of the vertex, in model space coordinates.</summary>
-		public Vec3    pos;
+		public Vector3 pos;
 		/// <summary>The normal of this vertex, or the direction the vertex is 
 		/// facing. Preferably normalized.</summary>
-		public Vec3    norm;
+		public Vector3 norm;
 		/// <summary>The texture coordinates at this vertex.</summary>
-		public Vec2    uv;
+		public Vector2 uv;
 		/// <summary>The color of the vertex. If you aren't using it, set it to 
 		/// white.</summary>
 		public Color32 col;
 
-		public Vertex(Vec3 position, Vec3 normal)
-			: this(position, normal, Vec2.Zero, Color32.White) { }
-		public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates)
+		public Vertex(Vector3 position, Vector3 normal)
+			: this(position, normal, Vector2.Zero, Color32.White) { }
+		public Vertex(Vector3 position, Vector3 normal, Vector2 textureCoordinates)
 			: this(position, normal, textureCoordinates, Color32.White) { }
-		public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates, Color32 color)
+		public Vertex(Vector3 position, Vector3 normal, Vector2 textureCoordinates, Color32 color)
 		{
 			pos  = position;
 			norm = normal;
@@ -431,13 +432,13 @@ namespace StereoKit
 	public struct LinePoint
 	{
 		/// <summary>Location of the line point</summary>
-		public Vec3    pt;
+		public Vector3 pt;
 		/// <summary>Total thickness of the line, in meters.</summary>
 		public float   thickness;
 		/// <summary>The vertex color for the line at this position.</summary>
 		public Color32 color;
 
-		public LinePoint(Vec3 point, Color32 color, float thickness)
+		public LinePoint(Vector3 point, Color32 color, float thickness)
 		{
 			this.pt        = point;
 			this.thickness = thickness;
@@ -530,7 +531,7 @@ namespace StereoKit
 		public Ray         ray;
 		/// <summary>Orientation of the pointer! Since a Ray has no concept
 		/// of 'up', this can be used to retrieve more orientation information.</summary>
-		public Quat        orientation;
+		public Quaternion  orientation;
 
 		/// <summary>Convenience property that turns ray.position and orientation
 		/// into a Pose.</summary>
@@ -544,13 +545,13 @@ namespace StereoKit
 	{
 		/// <summary>Is the mouse available to use? Most MR systems likely won't have
 		/// a mouse!</summary>
-		public bool  available;
+		public bool available;
 		/// <summary>Position of the mouse relative to the window it's in! This is the number
 		/// of pixels from the top left corner of the screen.</summary>
-		public Vec2  pos;
+		public Vector2 pos;
 		/// <summary>How much has the mouse's position changed in the current frame? Measured 
 		/// in pixels.</summary>
-		public Vec2  posChange;
+		public Vector2 posChange;
 		/// <summary>What's the current scroll value for the mouse's scroll wheel? TODO: Units</summary>
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>
