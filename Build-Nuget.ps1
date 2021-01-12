@@ -1,5 +1,6 @@
 param(
     [switch]$upload = $false,
+    [switch]$fast = $false,
     [string]$key = ''
 )
 
@@ -65,10 +66,19 @@ function Get-Key {
 }
 
 # Notify about our upload flag status 
+if ($fast -eq $true -and $upload -eq $true) {
+    Write-Host "Let's not upload a fast build, just in case! Try again without the fast flag :)" -ForegroundColor yellow
+    exit
+}
+
+# Notify about our upload flag status 
 if ($upload -eq $false) {
     Write-Host 'Local package build only.'
 } else {
     Write-Host 'Will attempt to upload package when finished!'
+}
+if ($fast -eq $true) {
+    Write-Host 'Making a "fast" build, incremental build issues may be present.'
 }
 
 # Print version, so we know we're building the right version right away
@@ -76,29 +86,43 @@ $version = Get-Version
 Write-Host "v$version"
 
 # Run tests before anything else!
-Write-Host 'Running tests...'
-if ( Test -ne 0 ) {
-    Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-    exit
+if ($fast -eq $false) {
+    Write-Host 'Running tests...'
+    if ( Test -ne 0 ) {
+        Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
+        exit
+    }
+    Write-Host 'Tests passed!' -ForegroundColor green
+} else {
+    Write-Host 'Skipping tests for fast build!' -ForegroundColor yellow
 }
-Write-Host 'Tests passed!' -ForegroundColor green
 
 # Notify of build, and output the version
 Write-Host 'Beginning a full build!'
 
 # Clean out the old files, do a full build
 Remove-Item 'bin\distribute' -Recurse
-Clean
+if ($fast -eq $false) {
+    Clean
+}
 Write-Host 'Cleaned'
 
 # Do cross platform build code first
 Write-Host 'Beginning Android build!'
 xmake f -p android -a arm64-v8a
-xmake -r
+if ($fast -eq $false) {
+    xmake -r
+} else {
+    xmake
+}
 
 # Linux, via WSL
 Write-Host 'Beginning Linux build via WSL!'
-cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake -r"
+if ($fast -eq $false) {
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake -r"
+} else {
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake"
+}
 
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
