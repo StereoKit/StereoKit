@@ -18,9 +18,19 @@ namespace StereoKitDocumenter
         public static List<DocField>  fields  = new List<DocField>();
         public static List<IDocItem>  items   = new List<IDocItem>();
 
-        public static DocClass GetClass(string name) { return classes.Find((a)=>a.name==name); }
+        public static DocClass GetClass(string name) {
+            DocClass result = classes.Find((a) => a.name == name);
+            if (result == null)
+                throw new Exception($"Couldn't find a class with docs by name of '{name}'. Are you missing a <Summary> for this class?");
+            return result;
+        }
+		public static bool TryGetClass(string name, out DocClass result)
+		{
+			result = classes.Find((a) => a.name == name);
+			return result != null;
+		}
 
-        static void Main(string[] args)
+		static void Main(string[] args)
         {
             int result = RunSKTests();
             if (result != 0)

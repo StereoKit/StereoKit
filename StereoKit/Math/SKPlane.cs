@@ -1,9 +1,13 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
+	/// <summary> Planes are really useful for collisions, intersections, and
+	/// visibility testing!
+	///
+	/// This plane is stored using the ax + by + cz + d = 0 formula, where 
+	/// the normal is a,b,c, and the d is, well, d. </summary>
 	public static class SKPlane
 	{
 		/// <summary>Checks the intersection of a ray with this plane!
@@ -44,14 +48,18 @@ namespace StereoKit
 		/// <param name="pointOnPlane">Any point directly on the surface of 
 		/// the plane.</param>
 		/// <param name="planeNormal">Direction the plane is facing.</param>
+		/// <returns>A plane that contains pointOnPlane, and faces
+		/// planeNormal.</returns>
 		public static Plane FromPoint(Vector3 pointOnPlane, Vector3 planeNormal)
 			=> new Plane(planeNormal, -Vector3.Dot(pointOnPlane, planeNormal));
 
+		// TODO: Define facing direction
 		/// <summary>Creates a plane from 3 points that are directly on that
 		/// plane.</summary>
 		/// <param name="pointOnPlane1">First point on the plane.</param>
 		/// <param name="pointOnPlane2">Second point on the plane.</param>
 		/// <param name="pointOnPlane3">Third point on the plane.</param>
+		/// <returns>A plane that contains all three points.</returns>
 		public static Plane FromPoints(Vector3 pointOnPlane1, Vector3 pointOnPlane2, Vector3 pointOnPlane3)
 		{
 			Vector3 dir1 = pointOnPlane2 - pointOnPlane1;

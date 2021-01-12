@@ -100,6 +100,8 @@ namespace StereoKitDocumenter
                     Type t = Type.GetType(cleanName);
                     if (t == null)
                         t = Type.GetType(cleanName + ", StereoKit");
+                    if (t == null)
+                        t = Type.GetType(cleanName + ", " + typeof(System.Numerics.Vector3).Assembly.FullName);
                     if (nullable)
                         t = typeof(Nullable<>).MakeGenericType(t);
                     if (action) 
@@ -109,8 +111,10 @@ namespace StereoKitDocumenter
                     if (a.Contains("@"))
                         t = t.MakeByRefType();
 
+                    if (t == null)
+                        throw new Exception($"Can't find {rootMethod.Name}'s parameter type: {a}!");
                     return t;
-                    })
+                })
                 .ToArray();
 
             Type parent = GetParentType(rootMethod);
