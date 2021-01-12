@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StereoKitDocumenter
+﻿namespace StereoKitDocumenter
 {
-    class DocParam
-    {
-        public string name;
-        public string summary;
-    }
+	class DocParam
+	{
+		public string name;
+		public string summary;
+	}
 }
