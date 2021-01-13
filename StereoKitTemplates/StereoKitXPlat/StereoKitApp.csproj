@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Platforms\**" />
+    <EmbeddedResource Remove="Platforms\**" />
+    <None Remove="Platforms\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\floor.hlsl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\floor.hlsl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StereoKit" Version="0.3.0-preview.12" />
+  </ItemGroup>
+
+</Project>

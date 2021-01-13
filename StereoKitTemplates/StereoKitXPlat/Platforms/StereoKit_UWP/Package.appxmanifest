@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  IgnorableNamespaces="uap mp">
+
+  <Identity
+    Name="ef151567-d327-42a2-b342-86fb965765ac"
+    Publisher="CN=progr"
+    Version="1.0.0.0" />
+
+  <mp:PhoneIdentity PhoneProductId="ef151567-d327-42a2-b342-86fb965765ac" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+  <Properties>
+    <DisplayName>StereoKit_UWP</DisplayName>
+    <PublisherDisplayName>StereoKit</PublisherDisplayName>
+    <Logo>Logo\Logo-50.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.0.0" MaxVersionTested="10.0.0.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="StereoKit_UWP.App">
+      <uap:VisualElements
+        DisplayName="StereoKit_UWP"
+        Square150x150Logo="Logo\Logo-150.png"
+        Square44x44Logo="Logo\Logo-44.png"
+        Description="StereoKit_UWP"
+        BackgroundColor="transparent">
+        <uap:DefaultTile Wide310x150Logo="Logo\Logo-Wide150.png" Square71x71Logo="Logo\Logo-71.png" Square310x310Logo="Logo\Logo-310.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
+            <uap:ShowOn Tile="square310x310Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile >
+        <uap:SplashScreen Image="Logo\Logo-Wide300.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+</Package>
