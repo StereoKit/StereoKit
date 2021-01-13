@@ -1,35 +1,41 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-	<!-- UWP projects will automatically copy DLLs over properly, but .NET 
-	Core, .NET Framework, and Xamarin don't seem to. So here we're doing it
-	manually! -->
-	<!--<Target Name="StereoKitTargetWin32x64" AfterTargets="Build" Condition="('$(Platform)'=='x64' Or '$(Platform)'=='AnyCPU') And $(TargetPlatformIdentifier)=='Windows'">
-		<Message Importance="high" Text="[StereoKit NuGet] Copying win32 x64 DLLs into the project!"/>
+	<!-- Copy the package's native libraries into the project, since it doesn't
+	     seem you can link directly to libraries in the package folder. Except
+	     for UWP, this is the one thing UWP seems to get right automatically. -->
+	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or '$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP'">
+		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
 
-		<Copy SkipUnchangedFiles = "true"
-					SourceFiles        = "$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\StereoKitC.dll"
-					DestinationFolder  = "$(OutDir)" />
-	</Target>-->
-
-	<Target Name="StereoKitTargetXamarin" AfterTargets="Build">
-		<!-- Set up OS and architechture names for importing native code -->
-		<PropertyGroup Condition="$(TargetPlatformIdentifier)=='Windows'">      <SKOS>win</SKOS>     <SKExt>.dll</SKExt> <SKPrefix></SKPrefix>   </PropertyGroup>
-		<PropertyGroup Condition="$(TargetPlatformIdentifier)=='Linux'">        <SKOS>linux</SKOS>   <SKExt>.so</SKExt>  <SKPrefix>lib</SKPrefix></PropertyGroup>
-		<PropertyGroup Condition="$(TargetFrameworkIdentifier)=='MonoAndroid'"> <SKOS>android</SKOS> <SKExt>.so</SKExt>  <SKPrefix>lib</SKPrefix></PropertyGroup>
-		<PropertyGroup Condition="$(Platform)=='x64'">                          <SKArch>x64</SKArch>   </PropertyGroup>
-		<PropertyGroup Condition="$(Platform)=='AnyCPU'">                       <SKArch>x64</SKArch>   </PropertyGroup>
-		<PropertyGroup Condition="$(Platform)=='ARM64'">                        <SKArch>arm64</SKArch> </PropertyGroup>
-		<PropertyGroup Condition="$(Platform)=='AnyCPU' and $(SKOS)=='android'"><SKArch>arm64</SKArch> </PropertyGroup>
-
-		<!-- Put a message into the output -->
-		<Message Importance="high" Text="[StereoKit NuGet] Copying $(SKOS) $(SKArch) library into the project!"/>
-		<Message Importance="high" Text="[StereoKit NuGet] $(MSBuildThisFileDirectory)..\runtimes\$(SKOS)-$(SKArch)\native\$(SKPrefix)StereoKitC$(SKExt)"/>
-
-		<!-- Copy DLLs into the directory with the project's executable! -->
-		<Copy SkipUnchangedFiles = "true"
-					SourceFiles        = "$(MSBuildThisFileDirectory)..\runtimes\$(SKOS)-$(SKArch)\native\$(SKPrefix)StereoKitC$(SKExt)"
-					DestinationFolder  = "$(OutDir)" />
+		<ItemGroup>
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/**/*.*" />
+		</ItemGroup>
+		<Copy
+			SourceFiles        = "@(SKSourceFolder)"
+			DestinationFolder  = "$(BaseIntermediateOutputPath)lib/%(RecursiveDir)"
+			SkipUnchangedFiles = "true"/>
 	</Target>
+
+	<!-- Link libraries to Xamarin projects.  -->
+	<ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'">
+		<AndroidNativeLibrary Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so">
+			<Link>$(BaseIntermediateOutputPath)lib/android/arm64-v8a/libStereoKitC.so</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so">
+			<Link>$(BaseIntermediateOutputPath)lib/android/arm64-v8a/libopenxr_loader.so</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+	</ItemGroup>
+
+	<!-- Win32 projects -->
+	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Windows'">
+		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="$(BaseIntermediateOutputPath)lib/win-x64/native/StereoKitC.dll" />
+	</ItemGroup>
+
+	<!-- Linux projects -->
+	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Linux'">
+		<None CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(BaseIntermediateOutputPath)lib/linux-x64/native/libStereoKitC.so" />
+	</ItemGroup>
 
 </Project>

@@ -26,7 +26,7 @@
   <!-- NuGet package -->
   <PropertyGroup>
     <Id>StereoKit</Id>
-    <Version>0.3.0-preview.1</Version>
+    <Version>0.3.0-preview.12</Version>
     <Title>StereoKit</Title>
     <Authors>Nick Klingensmith</Authors>
     <PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -64,9 +64,9 @@
     <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
 
     <!-- Android Libraries -->
-    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libStereoKitC.so" PackagePath="runtimes\android-arm64-v8a\native\" />
-    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\StereoKitC.sym" PackagePath="runtimes\android-arm64-v8a\native\" />
-    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libopenxr_loader.so" PackagePath="runtimes\android-arm64-v8a\native\" />
+    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libStereoKitC.so" PackagePath="runtimes\android-arm64-v8a\native" />
+    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\StereoKitC.sym" PackagePath="runtimes\android-arm64-v8a\native" />
+    <Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libopenxr_loader.so" PackagePath="runtimes\android-arm64-v8a\native" />
 
     <!-- Linux Libraries -->
     <Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\libStereoKitC.so" PackagePath="runtimes\linux-x64\native\" />
