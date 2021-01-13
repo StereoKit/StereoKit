@@ -359,6 +359,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32)};
 	int64_t depth_formats[] = {
+		skg_tex_fmt_to_native(render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
@@ -369,9 +370,8 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	int64_t *formats = (int64_t *)malloc(sizeof(int64_t) * count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
-	// Check those against our formats
+	// Check those against our formats, prefer OpenXR's pick for color format
 	out_color_dx = 0;
-	out_depth_dx = 0;
 	for (uint32_t i=0; i<count; i++) {
 		for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
 			if (formats[i] == pixel_formats[f]) {
@@ -379,7 +379,12 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 				break;
 			}
 		}
-		for (int32_t f=0; out_depth_dx == 0 && f<_countof(depth_formats); f++) {
+	}
+
+	// For depth, prefer our top pick over OpenXR's top pick
+	out_depth_dx = 0;
+	for (int32_t f=0;  f<_countof(depth_formats); f++) {
+		for (uint32_t i=0; out_depth_dx == 0 && i<count; i++) {
 			if (formats[i] == depth_formats[f]) {
 				out_depth_dx = depth_formats[f];
 				break;

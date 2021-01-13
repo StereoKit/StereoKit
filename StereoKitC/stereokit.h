@@ -69,11 +69,19 @@ typedef enum display_mode_ {
 	display_mode_none         = 2,
 } display_mode_;
 
+typedef enum depth_mode_ {
+	depth_mode_balanced = 0,
+	depth_mode_d16,
+	depth_mode_d32,
+	depth_mode_stencil,
+} depth_mode_;
+
 typedef struct sk_settings_t {
 	const char   *app_name;
 	const char   *assets_folder;
 	display_mode_ display_preference;
 	bool32_t      display_fallback;
+	depth_mode_   depth_mode;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;

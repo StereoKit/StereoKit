@@ -159,6 +159,25 @@ const char *render_fmt_name(tex_format_ format) {
 
 ///////////////////////////////////////////
 
+skg_tex_fmt_ render_preferred_depth_fmt() {
+	depth_mode_ mode = sk_get_settings().depth_mode;
+	switch (mode) {
+	case depth_mode_balanced:
+#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_ANDROID)
+		return skg_tex_fmt_depth16;
+#else
+		return skg_tex_fmt_depth32;
+#endif
+		break;
+	case depth_mode_d16:     return skg_tex_fmt_depth16;
+	case depth_mode_d32:     return skg_tex_fmt_depth32;
+	case depth_mode_stencil: return skg_tex_fmt_depthstencil;
+	default: return skg_tex_fmt_depth16;
+	}
+}
+
+///////////////////////////////////////////
+
 matrix render_get_projection() {
 	return render_default_camera_proj;
 }

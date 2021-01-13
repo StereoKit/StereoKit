@@ -125,7 +125,7 @@ bool win32_start() {
 	int32_t height = bounds.bottom - bounds.top;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
 	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, depth_fmt, width, height);
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;

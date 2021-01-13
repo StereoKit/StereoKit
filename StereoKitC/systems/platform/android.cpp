@@ -96,7 +96,7 @@ bool android_init() {
 
 void android_create_swapchain() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
 	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;

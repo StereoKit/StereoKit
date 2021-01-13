@@ -376,7 +376,7 @@ bool linux_start() {
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = skg_tex_fmt_depth16;
+	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
 	linux_swapchain = skg_swapchain_create(&win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;

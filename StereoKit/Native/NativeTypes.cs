@@ -22,6 +22,33 @@ namespace StereoKit
 		None = 2,
 	}
 
+	/// <summary>This is used to determine what kind of depth buffer 
+	/// StereoKit uses!</summary>
+	public enum DepthMode
+	{
+		/// <summary>Default mode, uses 16 bit on mobile devices like 
+		/// HoloLens and Quest, and 32 bit on higher powered platforms like
+		/// PC. If you need a far view distance even on mobile devices,
+		/// prefer D32 or Stencil instead.</summary>
+		Balanced = 0,
+		/// <summary>16 bit depth buffer, this is fast and recommended for 
+		/// devices like the HoloLens. This is especially important for fast
+		/// depth based reprojection. Far view distances will suffer here 
+		/// though, so keep your clipping far plane as close as possible.
+		/// </summary>
+		D16,
+		/// <summary>32 bit depth buffer, should look great at any distance! 
+		/// If you must have the best, then this is the best. If you're
+		/// interested in this one, Stencil may also be plenty for you, as 24
+		/// bit depth is also pretty peachy.</summary>
+		D32,
+		/// <summary>24 bit depth buffer with 8 bits of stencil data. 24 bits
+		/// is generally plenty for a depth buffer, so using the rest for 
+		/// stencil can open up some nice options! StereoKit has limited
+		/// stencil support right now though (v0.3).</summary>
+		Stencil,
+	}
+
 	/// <summary>StereoKit initialization settings! Setup SK.settings with 
 	/// your data before calling SK.Initialize.</summary>
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -36,6 +63,11 @@ namespace StereoKit
 		/// <summary>If the preferred display fails, should we fall back to 
 		/// flatscreen? Default is no.</summary>
 		public bool        displayFallback;
+		/// <summary>What kind of depth buffer should StereoKit use? A fast
+		/// one, a detailed one, one that uses stencils? By default, 
+		/// StereoKit uses a balanced mix depending on platform, prioritizing
+		/// speed but opening up when there's headroom.</summary>
+		public DepthMode   depthMode;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
