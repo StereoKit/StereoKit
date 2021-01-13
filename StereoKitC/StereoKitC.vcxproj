@@ -173,6 +173,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
+    <ClCompile Include="systems\world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\assets.h" />

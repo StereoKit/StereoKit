@@ -157,6 +157,9 @@
     <ClCompile Include="libraries\sokol_time.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="systems\world.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

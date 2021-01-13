@@ -123,9 +123,10 @@ bool openxr_render_frame  ();
 void openxr_make_actions  ();
 void openxr_poll_actions  ();
 
+bool        openxr_get_stage_bounds(rect_t *out_rect);
 void       *openxr_get_luid ();
 int64_t     openxr_get_time ();
-bool32_t    openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time = 0);
+bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char* openxr_string   (XrResult result);
 
 extern XrSpace    xr_hand_space[2];
@@ -139,5 +140,8 @@ extern bool       xr_depth_lsr;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
 extern XrSpace    xr_hand_space[2];
+extern bool       xr_has_bounds;
+extern vec2       xr_bounds_size;
+extern pose_t     xr_bounds_pose;
 
 } // namespace sk

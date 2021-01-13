@@ -68,7 +68,7 @@ void hand_oxrc_update_frame() {
 		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
 		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
 		pointer->state   = button_make_state(pointer->state   & button_state_active, select_state.currentState > 0.5f);
-		if (openxr_get_space(xrc_point_space[hand], point_pose)) {
+		if (openxr_get_space(xrc_point_space[hand], &point_pose)) {
 			point_pose.position    = matrix_mul_point   (root, point_pose.position);
 			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
 
@@ -79,7 +79,7 @@ void hand_oxrc_update_frame() {
 
 		// Simulate the hand based on the state of the controller
 		pose_t hand_pose = {};
-		if (openxr_get_space(xr_hand_space[hand], hand_pose)) {
+		if (openxr_get_space(xr_hand_space[hand], &hand_pose)) {
 			hand_pose.position    = matrix_mul_point   (root, hand_pose.position);
 			hand_pose.orientation = matrix_mul_rotation(root, hand_pose.orientation);
 
@@ -92,7 +92,7 @@ void hand_oxrc_update_frame() {
 		const hand_t *curr_hand = input_hand((handed_)hand);
 		pose_t pose = {};
 		if (curr_hand->pinch_state & button_state_changed &&
-			openxr_get_space(xrc_point_space[hand], pose, select_state.lastChangeTime)) {
+			openxr_get_space(xrc_point_space[hand], &pose, select_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point   (root, pose.position);
 			pose.orientation = matrix_mul_rotation(root, pose.orientation);
 
@@ -105,7 +105,7 @@ void hand_oxrc_update_frame() {
 
 		}
 		if (curr_hand->grip_state & button_state_changed &&
-			openxr_get_space(xrc_point_space[hand], pose, grip_state.lastChangeTime)) {
+			openxr_get_space(xrc_point_space[hand], &pose, grip_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point   (root, pose.position);
 			pose.orientation = matrix_mul_rotation(root, pose.orientation);
 

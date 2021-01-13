@@ -200,6 +200,12 @@ namespace StereoKit
 		}
 	}
 
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Rect
+	{
+		public float x, y, width, height;
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>

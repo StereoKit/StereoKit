@@ -14,7 +14,8 @@ lib_systems = static_library(
 		'render.cpp',
 		'sprite_drawer.cpp',
 		'system.cpp',
-		'text.cpp'
+		'text.cpp',
+		'world.cpp'
 	),
 	include_directories: [systems_includes],
 	dependencies: [hand, platform]

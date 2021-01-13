@@ -61,9 +61,15 @@ XrExtTable     xr_extensions    = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
+XrSpace        xr_stage_space   = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
+
+bool   xr_check_bounds = false;
+bool   xr_has_bounds   = false;
+vec2   xr_bounds_size  = {};
+pose_t xr_bounds_pose  = { {}, quat_identity };
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrEnvironmentBlendMode   xr_blend;
@@ -93,6 +99,27 @@ const char *openxr_string(XrResult result) {
 #undef ENTRY
 	default: return "<UNKNOWN>";
 	}
+}
+
+///////////////////////////////////////////
+
+bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
+	if (!xr_stage_space) return false;
+
+	XrExtent2Df bounds;
+	if (XR_FAILED(xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds)))
+		return false;
+	if (!openxr_get_space(xr_stage_space, out_pose, time))
+		return false;
+	
+	out_size->x = bounds.width;
+	out_size->y = bounds.height;
+
+	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)", 
+		out_size->x, out_size->y, 
+		out_pose->position.x, out_pose->position.y, out_pose->position.z,
+		out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -329,6 +356,7 @@ bool openxr_init() {
 	// Create reference spaces! So we can find stuff relative to them :)
 	xr_refspace = openxr_preferred_space();
 
+	// The space for our application
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	ref_space.referenceSpaceType   = xr_refspace;
@@ -339,6 +367,7 @@ bool openxr_init() {
 		return false;
 	}
 
+	// The space for our head
 	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
@@ -349,13 +378,23 @@ bool openxr_init() {
 		return false;
 	}
 
+	// And stage space, so we can get bounds and floor info if it's available
+	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
+	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_STAGE;
+	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_stage_space);
+	if (XR_FAILED(result)) {
+		xr_stage_space = nullptr;
+	}
+
 	if (!openxr_views_create() || !oxri_init()) {
 		openxr_shutdown();
 		return false;
 	}
 #if defined(SK_OS_LINUX)
-            linux_finish_openxr_init();
+	linux_finish_openxr_init();
 #endif
+
 	return true;
 }
 
@@ -437,9 +476,10 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 
 XrReferenceSpaceType openxr_preferred_space() {
 
-	// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
-	// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
-	// would be relative to your device's starting location.
+	// OpenXR uses a couple different types of reference frames for 
+	// positioning content, we need to choose one for displaying our content!
+	// STAGE would be relative to the center of your guardian system's 
+	// bounds, and LOCAL would be relative to your device's starting location.
 
 	XrReferenceSpaceType refspace_priority[] = {
 		XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT,
@@ -506,6 +546,13 @@ void openxr_step_begin() {
 void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
+
+	// Check if the bounds have changed. This needs a valid xr_time, which is
+	// why we have this on a flag delay. xr_time is set in openxr_render_frame
+	if (xr_check_bounds) {
+		xr_check_bounds = false;
+		xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, xr_time);
+	}
 }
 
 ///////////////////////////////////////////
@@ -535,8 +582,12 @@ void openxr_poll_events() {
 				}
 
 				xrBeginSession(xr_session, &begin_info);
+
 				xr_running = true;
 				log_diag("OpenXR session begin.");
+			} break;
+			case XR_SESSION_STATE_SYNCHRONIZED: {
+				xr_check_bounds = true;
 			} break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
 			case XR_SESSION_STATE_EXITING:      sk_run = false;              break;
@@ -550,6 +601,10 @@ void openxr_poll_events() {
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
+		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
+			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, pending->changeTime);
+			break;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
@@ -563,7 +618,7 @@ void openxr_poll_actions() {
 
 	// Track the head location
 	pose_t head_pose;
-	openxr_get_space(xr_head_space, head_pose);
+	openxr_get_space(xr_head_space, &head_pose);
 	matrix root = render_get_cam_root();
 	input_head_pose.position    = matrix_mul_point   (root, head_pose.position);
 	input_head_pose.orientation = matrix_mul_rotation(root, head_pose.orientation);
@@ -571,14 +626,14 @@ void openxr_poll_actions() {
 
 ///////////////////////////////////////////
 
-bool32_t openxr_get_space(XrSpace space, pose_t &out_pose, XrTime time) {
+bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 	if (time == 0) time = xr_time;
 
 	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 	XrResult        res            = xrLocateSpace(space, xr_app_space, time, &space_location);
 	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
-		memcpy(&out_pose.position,    &space_location.pose.position,    sizeof(vec3));
-		memcpy(&out_pose.orientation, &space_location.pose.orientation, sizeof(quat));
+		memcpy(&out_pose->position,    &space_location.pose.position,    sizeof(vec3));
+		memcpy(&out_pose->orientation, &space_location.pose.orientation, sizeof(quat));
 		return true;
 	}
 	return false;
@@ -601,7 +656,7 @@ pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
 
 	xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space);
 
-	openxr_get_space(space, result);
+	openxr_get_space(space, &result);
 	return result;
 }
 

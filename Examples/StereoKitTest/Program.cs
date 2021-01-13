@@ -108,6 +108,22 @@ class Program
 		if (Tests.IsTesting)
 			return;
 
+		// Lets add floor bounds if we have 'em
+		if (World.HasBounds)
+		{
+			Vector2   s    = World.BoundsSize/2;
+			Matrix4x4 pose = World.BoundsPose.ToMatrix();
+			Vector3 tl = pose.Transform( new Vector3( s.X, 0,  s.Y) );
+			Vector3 br = pose.Transform( new Vector3(-s.X, 0, -s.Y) );
+			Vector3 tr = pose.Transform( new Vector3(-s.X, 0,  s.Y) );
+			Vector3 bl = pose.Transform( new Vector3( s.X, 0, -s.Y) );
+
+			Lines.Add(tl, tr, Color.White, 1.5f*U.cm);
+			Lines.Add(bl, br, Color.White, 1.5f*U.cm);
+			Lines.Add(tl, bl, Color.White, 1.5f*U.cm);
+			Lines.Add(tr,br, Color.White, 1.5f*U.cm);
+		}
+
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref demoSelectPose, new Vector2(50 * U.cm, 0));
 		for (int i = 0; i < Tests.DemoCount; i++)

@@ -141,9 +141,6 @@ typedef struct vec3 {
 typedef struct vec4 {
 	float x, y, z, w;
 } vec4;
-typedef struct rect {
-	float x, y, w, h;
-} rect;
 typedef struct quat {
 	float x, y, z, w;
 } quat;
@@ -151,6 +148,9 @@ typedef union matrix {
 	vec4 row[4];
 	float m[16];
 } matrix;
+typedef struct rect_t {
+	float x, y, w, h;
+} rect_t;
 typedef struct ray_t {
 	vec3 pos;
 	vec3 dir;
@@ -759,6 +759,12 @@ SK_API void                  input_hand_material(handed_ hand, material_t materi
 SK_API void input_subscribe  (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_fire_event (input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer);
+
+///////////////////////////////////////////
+
+SK_API bool32_t world_has_bounds();
+SK_API vec2     world_get_bounds_size();
+SK_API pose_t   world_get_bounds_pose();
 
 ///////////////////////////////////////////
 
