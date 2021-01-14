@@ -1,4 +1,6 @@
 #include "../../StereoKitC/stereokit.h"
+#include "../../StereoKitC/stereokit_ui.h"
+#include <vector>
 using namespace sk;
 
 #include "scene.h"
@@ -7,6 +9,9 @@ using namespace sk;
 #include "demo_sprites.h"
 
 #include <stdio.h>
+
+#include <string>
+#include <list>
 
 solid_t     floor_solid;
 matrix      floor_tr;
@@ -28,10 +33,14 @@ scene_t demo_sprites = {
 	demo_sprites_update,
 	demo_sprites_shutdown,
 };
+pose_t demo_select_pose;
 
+void on_log(log_, const char*);
+void log_window();
 void common_init();
 void common_update();
 void common_shutdown();
+void ruler_window();
 
 #if defined(WINDOWS_UWP)
 const char* assets_folder = "Assets";
@@ -42,11 +51,35 @@ const char* assets_folder = "../../Examples/Assets";
 const char* assets_folder = "Examples/Assets";
 #endif
 
+pose_t log_pose = pose_t{vec3{0, -0.1, 0.5}, quat_lookat(vec3_zero, vec3_forward)};
+std::list<std::string> log_list;
+
+void on_log(log_ log_level, const char* log_c_str) {
+	if (log_list.size() > 10) {
+		log_list.pop_front();
+	}
+	std::string log_str(log_c_str);
+	if (log_str.size() >= 100) {
+		log_str.resize(100);
+		log_str += "...";
+	}
+	log_list.push_back(log_str);
+}
+
+void log_window() {
+	ui_window_begin("Log", log_pose, vec2{40*cm2m, 0*cm2m});
+	for (auto &log_str : log_list) {
+		ui_label(log_str.c_str(), false);
+	}
+	ui_window_end();
+}
+
 #ifndef WINDOWS_UWP
 int main() {
 #else
 int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 #endif
+	log_subscribe(on_log);
 	log_set_filter(log_diagnostic);
 
 	sk_settings_t settings = {};
@@ -97,13 +130,53 @@ void common_init() {
 	floor_tr    = matrix_trs(pos, quat_identity, scale);
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
+
+	demo_select_pose.position = vec3{0, 0, -0.4};
+	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
 }
+
 void common_update() {
 	// Render floor
 	render_add_model(floor_model, floor_tr);
+
+	// TODO(Turtle1331) implement tests and test selection
+	// ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
+	// ui_window_end();
+
+	ruler_window();
+	log_window();
 }
+
 void common_shutdown() {
 	solid_release   (floor_solid);
 	material_release(floor_mat);
 	model_release   (floor_model);
+}
+
+void ruler_window() {
+	static pose_t window_pose = pose_t{{0, 0, 0.5}, quat_identity};
+	ui_handle_begin("Ruler", window_pose,
+					bounds_t{.dimensions = vec3{30*cm2m, 4*cm2m, 1*cm2m}},
+					true, ui_move_exact);
+	color32 color = color_to_32(color_hsv(0.6, 0.5, 1, 1));
+	text_add_at("Centimeters",
+				matrix_trs(vec3{14.5f*cm2m, -1.5f*cm2m, -0.6f*cm2m},
+						   quat_identity, vec3{0.3, 0.3, 0.3}),
+				-1, text_align_x_left | text_align_y_bottom);
+	for (int d = 0; d <= 60; d++) {
+		float x = d / 2.0;
+		float size = (d % 2 == 0) ? 1.0 : 0.15;
+		line_add(vec3{(15 - x)*cm2m, 2*cm2m, -0.6f*cm2m},
+				 vec3{(15 - x)*cm2m, (2 - size)*cm2m, -0.6f*cm2m},
+				 color, color, 0.5*mm2m);
+
+		if (d % 2 == 0 && d / 2 != 30) {
+            text_add_at(std::to_string(d / 2).c_str(),
+                        matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
+								        (2 - size)*cm2m, -0.6f*cm2m},
+                                   quat_identity, vec3{0.2, 0.2, 0.2}),
+                        -1, text_align_x_left | text_align_y_bottom);
+		}
+	}
+	ui_handle_end();
 }
