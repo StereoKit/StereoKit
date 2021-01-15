@@ -83,7 +83,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h -c $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -c -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -247,6 +247,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Tools\include\stereokit.hlsli" />
     <None Include="cpp.hint" />
     <None Include="shaders_builtin\shader_builtin_default.hlsl" />
     <None Include="shaders_builtin\shader_builtin_equirect.hlsl" />
@@ -257,7 +258,6 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <None Include="shaders_builtin\shader_builtin_ui.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
-    <None Include="shaders_builtin\stereokit.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
