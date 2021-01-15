@@ -4,7 +4,7 @@
 	<!-- Copy the package's native libraries into the project, since it doesn't
 	     seem you can link directly to libraries in the package folder. Except
 	     for UWP, this is the one thing UWP seems to get right automatically. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or '$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP'">
+	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP')">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
 
 		<ItemGroup>
@@ -18,14 +18,8 @@
 
 	<!-- Link libraries to Xamarin projects.  -->
 	<ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'">
-		<AndroidNativeLibrary Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so">
-			<Link>$(BaseIntermediateOutputPath)lib/android/arm64-v8a/libStereoKitC.so</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so">
-			<Link>$(BaseIntermediateOutputPath)lib/android/arm64-v8a/libopenxr_loader.so</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so"/>
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so" />
 	</ItemGroup>
 
 	<!-- Win32 projects -->
@@ -37,5 +31,14 @@
 	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Linux'">
 		<None CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(BaseIntermediateOutputPath)lib/linux-x64/native/libStereoKitC.so" />
 	</ItemGroup>
+
+	<!-- Compile shaders -->
+	<ItemGroup>
+		<SKShaders Include="$(ProjectDir)Assets/**/*.hlsl" />
+	</ItemGroup>
+	<Target Name="StereoKitShaders" BeforeTargets="BeforeBuild" Inputs="@(SKShaders)"  Outputs="@(SKShaders->'%(Filename).sks')">
+		<Message Importance="high" Text="[StereoKit NuGet] Compiling shader %(SKShaders.Filename)%(SKShaders.Extension)"/>
+		<Exec Command="$(MSBuildThisFileDirectory)../tools/skshaderc.exe -o3 -e -c -i $(MSBuildThisFileDirectory)../tools/include/  Assets/%(SKShaders.RecursiveDir)%(SKShaders.Filename)%(SKShaders.Extension)" Outputs="@(SKShaders->'%(Filename).sks')"/>
+	</Target>
 
 </Project>
