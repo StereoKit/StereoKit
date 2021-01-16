@@ -18,21 +18,29 @@ matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
 
-scene_t demo_basics = {
-	demo_basics_init,
-	demo_basics_update,
-	demo_basics_shutdown,
+scene_t demos[] = {
+	{
+		"Basics",
+		demo_basics_init,
+		demo_basics_update,
+		demo_basics_shutdown,
+	}, {
+		"UI",
+		demo_ui_init,
+		demo_ui_update,
+		demo_ui_shutdown,
+	}, {
+		"Sprites",
+		demo_sprites_init,
+		demo_sprites_update,
+		demo_sprites_shutdown,
+	}, {
+		"Exit",
+		abort,
+	}
 };
-scene_t demo_ui = {
-	demo_ui_init,
-	demo_ui_update,
-	demo_ui_shutdown,
-};
-scene_t demo_sprites = {
-	demo_sprites_init,
-	demo_sprites_update,
-	demo_sprites_shutdown,
-};
+
+
 pose_t demo_select_pose;
 
 void on_log(log_, const char*);
@@ -92,7 +100,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demo_basics);
+	scene_set_active(demos[0]);
 
 	while (sk_step( []() {
 		scene_update();
@@ -131,7 +139,7 @@ void common_init() {
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
 
-	demo_select_pose.position = vec3{0, 0, -0.4};
+	demo_select_pose.position = vec3{0, 0.2, -0.4};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
 }
 
@@ -139,9 +147,17 @@ void common_update() {
 	// Render floor
 	render_add_model(floor_model, floor_tr);
 
-	// TODO(Turtle1331) implement tests and test selection
-	// ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
-	// ui_window_end();
+	ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
+	for (int i = 0; i < sizeof(demos) / sizeof(scene_t); i++) {
+		std::string &name = demos[i].name;
+
+		if (ui_button(name.c_str())) {
+			log_infof("Starting demo: %s", name.c_str());
+			scene_set_active(demos[i]);
+		}
+		ui_sameline();
+	}
+	ui_window_end();
 
 	ruler_window();
 	log_window();

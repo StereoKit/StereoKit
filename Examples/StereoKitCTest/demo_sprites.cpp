@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "../../StereoKitC/stereokit.h"
+#include "systems/defaults.h"
 using namespace sk;
 
 ///////////////////////////////////////////
@@ -14,10 +15,11 @@ text_style_t sprite_text_style;
 
 void demo_sprites_init() {
 	material_t font_mat = material_create(shader_find("default/shader_font"));
-	font_t font         = font_create("C:/Windows/Fonts/segoeui.ttf");
+	// font_t font         = font_create("C:/Windows/Fonts/segoeui.ttf");
+	font_t font         = sk_default_font;
 	sprite_text_style = text_make_style(font, 0.1f, font_mat, { 255,255,255,255 });
 	material_release(font_mat);
-	font_release    (font);
+	// font_release    (font);
 
 	sprite = sprite_create_file("test.png");
 }
