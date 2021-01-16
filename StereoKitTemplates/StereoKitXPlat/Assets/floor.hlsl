@@ -1,13 +1,12 @@
-// [name] app/floor
+#include <stereokit.hlsli>
 
-#include <stereokit>
+//--name = app/floor
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1, 1, 1, 1}
-	float4 _color;
-	// [param] vector radius {5, 10, 0, 0}
-	float4 radius;
-};
+//--color:color = 1,1,1,1
+float4 color;
+//--radius      = 5,10,0,0
+float4 radius;
+
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
@@ -28,7 +27,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
 	output.view_id = sk_inst[id].view_id;
-	output.color   = _color * input.col * sk_inst[id].color;
+	output.color   = color * input.col * sk_inst[id].color;
 	output.color.rgb *= Lighting(normal);
 	return output;
 }

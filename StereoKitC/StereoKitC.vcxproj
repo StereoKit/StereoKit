@@ -117,7 +117,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(ProjectDir)tools\skshaderc.exe -O3 -h -c $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -c -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
