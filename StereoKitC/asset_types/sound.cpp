@@ -255,6 +255,8 @@ bool sound_init() {
 	} else {
 		log_warnf("ISAC failed 0x%X, falling back to miniaudio!", hr);
 	}
+	delete isac_adapter;
+	isac_adapter = nullptr;
 #endif
 
 	au_config = ma_device_config_init(ma_device_type_playback);
@@ -291,7 +293,8 @@ void sound_update() {
 void sound_shutdown() {
 	ma_device_uninit (&au_device);
 #ifdef _MSC_VER
-	delete isac_adapter;
+	if (isac_adapter)
+		delete isac_adapter;
 #endif
 }
 
