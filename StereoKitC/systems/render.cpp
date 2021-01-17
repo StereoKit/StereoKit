@@ -64,7 +64,7 @@ struct render_screenshot_t {
 array_t<render_transform_buffer_t> render_instance_list = {};
 render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 682 } };
 
-skg_buffer_t           render_shader_globals;
+material_buffer_t      render_shader_globals;
 skg_buffer_t           render_shader_blit;
 matrix                 render_camera_root     = matrix_identity;
 matrix                 render_camera_root_inv = matrix_identity;
@@ -329,8 +329,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		: vec4{};
 
 	// Upload shader globals and set them active!
-	skg_buffer_set_contents(&render_shader_globals, &render_global_buffer, sizeof(render_global_buffer_t));
-	skg_buffer_bind        (&render_shader_globals, render_list_global_bind, 0);
+	material_buffer_set_data(render_shader_globals, &render_global_buffer);
+
+	// Activate any material buffers we have
+	for (uint16_t i = 0; i < _countof(material_buffers); i++) {
+		if (material_buffers[i].size != 0)
+			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel }, 0);
+	}
 
 	// Sky cubemap is global, and used for reflections with PBR materials
 	if (render_sky_cubemap != nullptr) {
@@ -411,8 +416,8 @@ void render_clear() {
 ///////////////////////////////////////////
 
 bool render_init() {
-	render_shader_globals = skg_buffer_create(nullptr, 1, sizeof(render_global_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-	render_shader_blit    = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t),     skg_buffer_type_constant, skg_use_dynamic);;
+	render_shader_globals = material_buffer_create(1, sizeof(render_global_buffer));
+	render_shader_blit    = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		render_instance_buffers[i].buffer = skg_buffer_create(nullptr, render_instance_buffers[i].max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
@@ -478,7 +483,7 @@ void render_shutdown() {
 	}
 
 	skg_buffer_destroy(&render_shader_blit);
-	skg_buffer_destroy(&render_shader_globals);
+	material_buffer_release(render_shader_globals);
 	mesh_release(render_blit_quad);
 }
 

@@ -178,12 +178,12 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_cull        (IntPtr material, Cull  mode);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_wireframe   (IntPtr material, bool wireframe);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_queue_offset(IntPtr material, int offset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float   value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_color       (IntPtr material, string name, Color   value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector      (IntPtr material, string name, Vector4    value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_matrix      (IntPtr material, string name, Matrix4x4  value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture     (IntPtr material, string name, IntPtr  value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture_id  (IntPtr material, ulong  id,   IntPtr  value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float     value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_color       (IntPtr material, string name, Color     value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector      (IntPtr material, string name, Vector4   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_matrix      (IntPtr material, string name, Matrix4x4 value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture     (IntPtr material, string name, IntPtr    value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture_id  (IntPtr material, ulong  id,   IntPtr    value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_param       (IntPtr material, string name, MaterialParam type, const void *value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_param_id    (IntPtr material, ulong    id,   MaterialParam type, const void *value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_param       (IntPtr material, string name, MaterialParam type, void *out_value);
@@ -192,6 +192,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_param_count (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_shader      (IntPtr material, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_get_shader      (IntPtr material);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_buffer_create  (int slot, int size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_set_data(IntPtr buffer, IntPtr data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_release (IntPtr buffer);
 
 		///////////////////////////////////////////
 
@@ -204,7 +208,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr solid_create          (ref Vector3 position, ref Quaternion rotation, SolidType type = SolidType.Normal);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_release         (IntPtr solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_sphere      (IntPtr solid, float diameter,               float kilograms, in Vector3 offset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_box         (IntPtr solid, in Vector3 dimensions,           float kilograms, in Vector3 offset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_box         (IntPtr solid, in Vector3 dimensions,        float kilograms, in Vector3 offset);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_capsule     (IntPtr solid, float diameter, float height, float kilograms, in Vector3 offset);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_type        (IntPtr solid, SolidType type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_enabled     (IntPtr solid, int enabled);

@@ -454,9 +454,7 @@ SK_API tex_t  font_get_tex(font_t font);
 SK_DeclarePrivateType(shader_t);
 
 SK_API shader_t    shader_find        (const char *id);
-SK_API bool32_t    shader_compile     (const char *hlsl, const char *opt_filename, sk_ref_arr(void) out_data, sk_ref(size_t) out_size);
 SK_API shader_t    shader_create_file (const char *filename);
-SK_API shader_t    shader_create_hlsl (const char *hlsl);
 SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
@@ -509,6 +507,12 @@ SK_API void       material_get_param_info  (material_t material, int index, char
 SK_API int        material_get_param_count (material_t material);
 SK_API void       material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t   material_get_shader      (material_t material);
+
+SK_DeclarePrivateType(material_buffer_t);
+
+SK_API material_buffer_t material_buffer_create  (int32_t register_slot, int32_t size);
+SK_API void              material_buffer_set_data(material_buffer_t buffer, const void *data);
+SK_API void              material_buffer_release (material_buffer_t buffer);
 
 ///////////////////////////////////////////
 

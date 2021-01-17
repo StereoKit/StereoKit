@@ -2,12 +2,15 @@
 #include "texture.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
+#include "../libraries/array.h"
 
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 
 namespace sk {
+
+_material_buffer_t material_buffers[16] = {};
 
 ///////////////////////////////////////////
 
@@ -415,6 +418,35 @@ int material_get_param_count(material_t material) {
 		return 0;
 
 	return material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].var_count;
+}
+
+///////////////////////////////////////////
+
+material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
+	if (register_slot < 1 || register_slot >= _countof(material_buffers)) {
+		log_errf("material_buffer_create: bad slot id '%d', use 2-16.", register_slot);
+		return nullptr;
+	}
+	if (material_buffers[register_slot].size != 0) {
+		log_errf("material_buffer_create: slot id '%d' is already in use.", register_slot);
+		return nullptr;
+	}
+	material_buffers[register_slot].buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	material_buffers[register_slot].size   = size;
+	return &material_buffers[register_slot];
+}
+
+///////////////////////////////////////////
+
+void material_buffer_set_data(material_buffer_t buffer, const void *data) {
+	skg_buffer_set_contents(&buffer->buffer, data, buffer->size);
+}
+
+///////////////////////////////////////////
+
+void material_buffer_release(material_buffer_t buffer) {
+	skg_buffer_destroy(&buffer->buffer);
+	*buffer = {};
 }
 
 } // namespace sk
