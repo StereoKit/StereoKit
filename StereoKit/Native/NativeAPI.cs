@@ -158,10 +158,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_find        (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   shader_compile     (string hlsl, string opt_filename, out IntPtr out_data, out ulong out_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   shader_compile     (string hlsl, IntPtr opt_filename, out IntPtr out_data, out ulong out_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file (string filename);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_hlsl (string hlsl);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, ulong data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string shader_get_name    (IntPtr shader);
