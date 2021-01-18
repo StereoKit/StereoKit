@@ -59,7 +59,7 @@ const char* assets_folder = "../../Examples/Assets";
 const char* assets_folder = "Examples/Assets";
 #endif
 
-pose_t log_pose = pose_t{vec3{0, -0.1, 0.5}, quat_lookat(vec3_zero, vec3_forward)};
+pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forward)};
 std::list<std::string> log_list;
 
 void on_log(log_ log_level, const char* log_c_str) {
@@ -139,7 +139,7 @@ void common_init() {
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
 
-	demo_select_pose.position = vec3{0, 0.2, -0.4};
+	demo_select_pose.position = vec3{0, 0.2f, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
 }
 
@@ -170,28 +170,28 @@ void common_shutdown() {
 }
 
 void ruler_window() {
-	static pose_t window_pose = pose_t{{0, 0, 0.5}, quat_identity};
+	static pose_t window_pose = pose_t{{0, 0, 0.5f}, quat_identity};
 	ui_handle_begin("Ruler", window_pose,
 					bounds_t{vec3_zero, vec3{30*cm2m, 4*cm2m, 1*cm2m}},
 					true, ui_move_exact);
-	color32 color = color_to_32(color_hsv(0.6, 0.5, 1, 1));
+	color32 color = color_to_32(color_hsv(0.6f, 0.5f, 1, 1));
 	text_add_at("Centimeters",
 				matrix_trs(vec3{14.5f*cm2m, -1.5f*cm2m, -0.6f*cm2m},
-						   quat_identity, vec3{0.3, 0.3, 0.3}),
+						   quat_identity, vec3{0.3f, 0.3f, 0.3f}),
 				-1, text_align_x_left | text_align_y_bottom);
 	for (int d = 0; d <= 60; d++) {
-		float x = d / 2.0;
-		float size = (d % 2 == 0) ? 1.0 : 0.15;
+		float x = d / 2.0f;
+		float size = (d % 2 == 0) ? 1.0f : 0.15f;
 		line_add(vec3{(15 - x)*cm2m, 2*cm2m, -0.6f*cm2m},
 				 vec3{(15 - x)*cm2m, (2 - size)*cm2m, -0.6f*cm2m},
-				 color, color, 0.5*mm2m);
+				 color, color, 0.5f*mm2m);
 
 		if (d % 2 == 0 && d / 2 != 30) {
-            text_add_at(std::to_string(d / 2).c_str(),
-                        matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
-								        (2 - size)*cm2m, -0.6f*cm2m},
-                                   quat_identity, vec3{0.2, 0.2, 0.2}),
-                        -1, text_align_x_left | text_align_y_bottom);
+			text_add_at(std::to_string(d / 2).c_str(),
+						matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
+										(2 - size)*cm2m, -0.6f*cm2m},
+									quat_identity, vec3{0.2f, 0.2f, 0.2f}),
+						-1, text_align_x_left | text_align_y_bottom);
 		}
 	}
 	ui_handle_end();
