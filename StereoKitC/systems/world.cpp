@@ -1,5 +1,3 @@
-#include "world.h"
-
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "platform/openxr.h"
