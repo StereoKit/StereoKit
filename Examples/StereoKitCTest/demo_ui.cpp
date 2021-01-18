@@ -8,17 +8,25 @@ using namespace sk;
 
 sprite_t ui_sprite;
 
+// TODO(Turtle1331) How can I do this more cleanly?
+#if defined(_WIN32)
+const char* logo_path = "../../../Documentation/img/StereoKitLogo.png";
+#else
+// Assume running on Linux from repository root
+const char* logo_path = "../../Documentation/img/StereoKitLogo.png";
+#endif
+
 ///////////////////////////////////////////
 
 void demo_ui_init() {
-	ui_sprite = sprite_create_file("../../../Documentation/img/StereoKitLogo.png", sprite_type_single);
+	ui_sprite = sprite_create_file(logo_path, sprite_type_single);
 }
 
 ///////////////////////////////////////////
 
 void demo_ui_update() {
 	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
-		pose_t{ {0.85f,1,0.9f}, quat_lookat(vec3_zero, -vec3_one) };
+		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 	// input_hand(handed_right).root;
 	ui_window_begin("Main", window_pose, vec2{ 24 }*cm2m);
 
@@ -33,7 +41,7 @@ void demo_ui_update() {
 	if (input_key(key_mouse_left) & button_state_active)
 		ui_image(ui_sprite, vec2{ 6,0 }*cm2m);
 	if (ui_button("Press me!")) {
-		ui_button("DYANMIC BUTTON!!");
+		ui_button("DYNAMIC BUTTON!!");
 	}
 
 	ui_window_end();

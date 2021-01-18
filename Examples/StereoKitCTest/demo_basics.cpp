@@ -72,5 +72,6 @@ void demo_basics_shutdown() {
 	// Release everything
 	for (size_t i = 0; i < phys_objs.size(); i++)
 		solid_release(phys_objs[i].solid);
+	phys_objs.clear();
 	model_release(gltf);
 }
