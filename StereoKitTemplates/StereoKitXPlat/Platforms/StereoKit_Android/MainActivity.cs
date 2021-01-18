@@ -9,6 +9,7 @@ using System;
 using Android.Graphics;
 using Java.Lang;
 using System.Threading.Tasks;
+using StereoKitApp;
 
 namespace StereoKit_Android
 {
@@ -16,8 +17,8 @@ namespace StereoKit_Android
 	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 	public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 	{
-		ISKApp app;
-		View   surface;
+		App  app;
+		View surface;
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
@@ -56,10 +57,10 @@ namespace StereoKit_Android
 				// creation
 				Type appType = typeof(StereoKitApp.App);
 				app = appType.GetConstructor(new Type[] { typeof(string[]) }) != null
-					? (ISKApp)Activator.CreateInstance(appType, new object[] { new string[0] { } })
-					: (ISKApp)Activator.CreateInstance(appType);
+					? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
+					: (App)Activator.CreateInstance(appType);
 				if (app == null)
-					throw new System.Exception("StereoKit loader couldn't construct an instance of the ISKApp!");
+					throw new System.Exception("StereoKit loader couldn't construct an instance of the App!");
 
 				// Initialize StereoKit, and the app
 				if (!SK.Initialize(app.Settings))

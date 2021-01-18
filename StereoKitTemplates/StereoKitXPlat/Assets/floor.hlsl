@@ -2,19 +2,16 @@
 
 //--name = app/floor
 
-//--color:color = 1,1,1,1
+//--color:color = 0,0,0,1
 float4 color;
 //--radius      = 5,10,0,0
 float4 radius;
 
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float3 norm : NORMAL;
-	float4 col  : COLOR;
+	float4 pos : SV_POSITION;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
-	float4 color : COLOR0;
 	float4 world : TEXCOORD0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
@@ -24,11 +21,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	output.world = mul(input.pos,    sk_inst[id].world);
 	output.pos   = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
 
-	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
-
 	output.view_id = sk_inst[id].view_id;
-	output.color   = color * input.col * sk_inst[id].color;
-	output.color.rgb *= Lighting(normal);
 	return output;
 }
 float4 ps(psIn input) : SV_TARGET{
@@ -53,6 +46,6 @@ float4 ps(psIn input) : SV_TARGET{
 	// combine, and drop transparent pixels
 	val = max(val*0.6, axisVal);
 	if (val <= 0) discard;
-		
-	return float4(0, 0, 0, val) * input.color;
+
+	return float4(color.rgb, val);
 }

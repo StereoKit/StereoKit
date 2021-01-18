@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace StereoKitApp
 {
-	public class App : ISKApp
+	public class App
 	{
 		public SKSettings Settings => new SKSettings { 
 			appName           = "StereoKit Template",
