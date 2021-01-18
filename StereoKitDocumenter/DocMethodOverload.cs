@@ -5,6 +5,9 @@ using System.Reflection;
 
 namespace StereoKitDocumenter
 {
+	struct GenericStructT { }
+	class GenericClassT { }
+
 	class DocMethodOverload
 	{
 		public DocMethod      rootMethod;
@@ -79,6 +82,7 @@ namespace StereoKitDocumenter
 					bool   nullable  = a.Contains("System.Nullable");
 					bool   action    = a.Contains("System.Action{");
 					bool   array     = a.Contains("[]");
+					bool   generic   = a.Contains("`");
 					if (nullable)
 					{
 						int length = "System.Nullable{".Length;
@@ -95,18 +99,21 @@ namespace StereoKitDocumenter
 					}
 
 					Type t = Type.GetType(cleanName);
+					
 					if (t == null)
 						t = Type.GetType(cleanName + ", StereoKit");
 					if (t == null)
 						t = Type.GetType(cleanName + ", " + typeof(System.Numerics.Vector3).Assembly.FullName);
-					if (nullable)
+					if (t != null && nullable)
 						t = typeof(Nullable<>).MakeGenericType(t);
-					if (action) 
+					if (t != null && action) 
 						t = typeof(Action<>).MakeGenericType(t);
-					if (array)
+					if (t != null && array)
 						t = t.MakeArrayType();
-					if (a.Contains("@"))
+					if (t != null && a.Contains("@"))
 						t = t.MakeByRefType();
+					if (t == null && generic)
+						t = typeof(object);
 
 					if (t == null)
 						throw new Exception($"Can't find {rootMethod.Name}'s parameter type: {a}!");
@@ -118,6 +125,11 @@ namespace StereoKitDocumenter
 			MethodBase result = rootMethod.name == "#ctor" ?
 				(MethodBase)parent.GetConstructor(paramTypes) :
 				(MethodBase)parent.GetMethod     (rootMethod.name, paramTypes);
+
+			// If it's generic, but there's no overloads, we can just return
+			// the only method present
+			if (result == null && rootMethod.name != "#ctor" && paramTypes.Contains(typeof(object)) && parent.GetMethods().Where(m=>m.Name==rootMethod.name).Count() == 1)
+				result = parent.GetMethod(rootMethod.name);
 
 			if (result == null)
 				throw new Exception("Can't find info for method " + rootMethod.name);

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////
 
-cbuffer GlobalBuffer : register(b1) {
+cbuffer StereoKitBuffer : register(b1) {
 	float4x4 sk_view       [2];
 	float4x4 sk_proj       [2];
 	float4x4 sk_proj_inv   [2];

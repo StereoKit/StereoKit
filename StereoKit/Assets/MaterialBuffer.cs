@@ -29,7 +29,7 @@ namespace StereoKit
 	/// 
 	/// HLSL
 	/// ```HLSL
-	///cbuffer BufferData : register(b2) {
+	///cbuffer BufferData : register(b3) {
 	///	float3 windDirection;
 	///	float  windStrength;
 	///}
@@ -46,9 +46,9 @@ namespace StereoKit
 		/// <summary>Create a new global MaterialBuffer bound to the register
 		/// slot id. All shaders will have access to the data provided via 
 		/// this instance's `Set`.</summary>
-		/// <param name="registerSlot">Valid values are 2-16. This is the 
+		/// <param name="registerSlot">Valid values are 3-16. This is the 
 		/// register id that this data will be bound to. In HLSL, you'll see
-		/// the slot id for '2' indicated like this `: register(b2)`</param>
+		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		public MaterialBuffer(int registerSlot) {
 			StructLayoutAttribute layout = (StructLayoutAttribute)Attribute.GetCustomAttribute(typeof(T), typeof(StructLayoutAttribute));
 			if (layout == null || layout.Value != LayoutKind.Sequential)
