@@ -36,7 +36,7 @@ scene_t demos[] = {
 		demo_sprites_shutdown,
 	}, {
 		"Exit",
-		abort,
+		sk_quit,
 	}
 };
 
