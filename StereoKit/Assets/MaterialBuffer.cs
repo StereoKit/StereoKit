@@ -50,9 +50,8 @@ namespace StereoKit
 		/// register id that this data will be bound to. In HLSL, you'll see
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		public MaterialBuffer(int registerSlot) {
-			StructLayoutAttribute layout = (StructLayoutAttribute)Attribute.GetCustomAttribute(typeof(T), typeof(StructLayoutAttribute));
-			if (layout == null || layout.Value != LayoutKind.Sequential)
-				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying!");
+			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
+				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
 
 			int size     = Marshal.SizeOf(typeof(T));
 			_localMemory = Marshal.AllocHGlobal(size);

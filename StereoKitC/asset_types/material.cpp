@@ -10,7 +10,7 @@
 
 namespace sk {
 
-_material_buffer_t material_buffers[16] = {};
+_material_buffer_t material_buffers[14] = {};
 
 ///////////////////////////////////////////
 
@@ -424,7 +424,7 @@ int material_get_param_count(material_t material) {
 
 material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
 	if (register_slot < 1 || register_slot == 2 || register_slot >= (sizeof(material_buffers)/sizeof(material_buffers[0]))) {
-		log_errf("material_buffer_create: bad slot id '%d', use 3-16.", register_slot);
+		log_errf("material_buffer_create: bad slot id '%d', use 3-%d.", register_slot, (sizeof(material_buffers)/sizeof(material_buffers[0])) - 1);
 		return nullptr;
 	}
 	if (material_buffers[register_slot].size != 0) {
