@@ -38,7 +38,7 @@
 	</ItemGroup>
 	<Target Name="StereoKitShaders" BeforeTargets="BeforeBuild" Condition="'$(OS)'=='Windows_NT'" Inputs="@(SKShaders)"  Outputs="@(SKShaders->'%(Filename).sks')">
 		<Message Importance="high" Text="[StereoKit NuGet] Compiling shader %(SKShaders.Filename)%(SKShaders.Extension)"/>
-		<Exec Command="$(MSBuildThisFileDirectory)../tools/skshaderc.exe -o3 -e -c -i $(MSBuildThisFileDirectory)../tools/include/  Assets/%(SKShaders.RecursiveDir)%(SKShaders.Filename)%(SKShaders.Extension)" Outputs="@(SKShaders->'%(Filename).sks')"/>
+		<Exec Command="&quot;$(MSBuildThisFileDirectory)../tools/skshaderc.exe&quot; -o3 -e -t xge -i &quot;$(MSBuildThisFileDirectory)../tools/include/&quot;  &quot;Assets/%(SKShaders.RecursiveDir)%(SKShaders.Filename)%(SKShaders.Extension)&quot;" Outputs="@(SKShaders->'%(Filename).sks')"/>
 	</Target>
 
 </Project>
