@@ -578,8 +578,8 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 		inds[ind++] = i  * 4;
 	}
 	// center points for the circle
-	verts[subdivisions*4]   = {  dir*radius,  dir, {.5f,.5f}, {255,255,255,255} };
-	verts[subdivisions*4+1] = { -dir*radius, -dir, {.5f,.5f}, {255,255,255,255} };
+	verts[subdivisions*4]   = {  z_off,  dir, {.5f,.5f}, {255,255,255,255} };
+	verts[subdivisions*4+1] = { -z_off, -dir, {.5f,.5f}, {255,255,255,255} };
 
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);
