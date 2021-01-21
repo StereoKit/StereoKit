@@ -325,7 +325,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
 	render_global_buffer.cubemap_i = render_sky_cubemap != nullptr 
-		? vec4{ (float)render_sky_cubemap->tex.width, (float)render_sky_cubemap->tex.height, floorf(log2f(render_sky_cubemap->tex.width)), 0 }
+		? vec4{ (float)render_sky_cubemap->tex.width, (float)render_sky_cubemap->tex.height, floorf(log2f((float)render_sky_cubemap->tex.width)), 0 }
 		: vec4{};
 
 	// Upload shader globals and set them active!
@@ -587,7 +587,7 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	math_matrix_to_fast(render_get_projection(), &fast_proj);
 	math_matrix_to_fast(render_camera_root_inv,  &fast_view);
 	XMVECTOR result = XMVector3Unproject(math_vec3_to_fast(normalized_screen_pt),
-		0, 0, sk_system_info().display_width, sk_system_info().display_height,
+		0, 0, (float)sk_system_info().display_width, (float)sk_system_info().display_height,
 		0, 1,
 		fast_proj, fast_view, XMMatrixIdentity());
 		

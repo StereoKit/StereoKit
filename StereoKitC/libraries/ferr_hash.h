@@ -126,9 +126,10 @@ uint64_t hash_fnv64_data(const void *data, size_t data_size, uint64_t start_hash
 // Creates a 32 bit hash from a string. Use start_hash with a previous hash if you want to chain hashes together.
 uint32_t hash_fnv32_string(const char* string, uint32_t start_hash) {
 	uint32_t hash = start_hash;
-	uint8_t  c;
-	while (c = *string++)
-		hash = (hash ^ c) * 16777619;
+	while (*string != '\0') {
+		hash = (hash ^ *string) * 16777619;
+		string++;
+	}
 	return hash;
 }
 

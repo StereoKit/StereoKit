@@ -172,7 +172,6 @@ void systems_shutdown() {
 	}
 
 	log_info("Session Performance Report:");
-	//log_info("<~BLK>______________________________________________________<~clr>");
 	log_info("<~BLK>\xDA\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xBF<~clr>");
 	log_info("<~BLK>\xB3<~clr>         <~YLW>System <~BLK>\xB3<~clr> <~YLW>Initialize <~BLK>\xB3<~clr>   <~YLW>Update <~BLK>\xB3<~clr>  <~YLW>Shutdown <~BLK>\xB3<~clr>");
 	log_info("<~BLK>\xC3\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xB4<~clr>");
@@ -183,18 +182,18 @@ void systems_shutdown() {
 		char update_time[24];
 		char shutdown_time[24];
 
-		if (systems[index].func_initialize != nullptr) {
+		if (systems[index].profile_start_duration != 0) {
 			double ms = stm_ms(systems[index].profile_start_duration);
 			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(start_time, sizeof(start_time), "          ");
 
-		if (systems[index].func_update != nullptr) {
+		if (systems[index].profile_update_duration != 0) {
 			double ms = stm_ms(systems[index].profile_update_duration / systems[index].profile_update_count);
 			// Exception for FramePresent, since it includes vsync time
 			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[index].name, "FramePresent") ? "<~RED>":"", ms);
 		} else snprintf(update_time, sizeof(update_time), "        ");
 
-		if (systems[index].func_shutdown != nullptr) {
+		if (systems[index].profile_shutdown_duration != 0) {
 			double ms = stm_ms(systems[index].profile_shutdown_duration);
 			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
@@ -213,8 +212,8 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 	// Topological sort, Depth-first algorithm:
 	// https://en.wikipedia.org/wiki/Topological_sorting
 
-	*out_order      = (int32_t *)malloc(sizeof(int32_t) * count);
-	uint8_t *marks  = (uint8_t *)malloc(sizeof(uint8_t) * count);
+	*out_order           = (int32_t *)malloc(sizeof(int32_t) * count);
+	uint8_t *marks       = (uint8_t *)malloc(sizeof(uint8_t) * count);
 	int32_t  sorted_curr = count-1;
 	memset(marks, 0, sizeof(uint8_t) * count);
 

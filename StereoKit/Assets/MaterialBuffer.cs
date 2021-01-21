@@ -15,7 +15,7 @@ namespace StereoKit
 	/// The type 'T' for this buffer must be a struct that uses the 
 	/// `[StructLayout(LayoutKind.Sequential)]` attribute for proper copying.
 	/// It should also match the layout of your equivalent cbuffer in the 
-	/// shader file. Note that shaders often have specific byte alignment 
+	/// shader file. Note that shaders often have [specific byte alignment](https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules) 
 	/// requirements! Example:
 	/// 
 	/// C#

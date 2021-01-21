@@ -1123,8 +1123,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		}
 
 		if (skui_hand[i].focused_prev == id || skui_hand[i].active_prev == id) {
-			
-			const hand_t *hand = input_hand((handed_)i);
+
 			if (hand->pinch_state & button_state_just_active) {
 				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
