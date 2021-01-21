@@ -90,11 +90,13 @@
     <Content Include="Logo\Logo-Wide300.png" />
     <Content Include="Properties\Default.rd.xml" />
   </ItemGroup>
+  <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
     <Content Include="$(SolutionDir)Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
+    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.9" />

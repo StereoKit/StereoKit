@@ -13,11 +13,13 @@
 		<ProjectReference Include="..\..\StereoKitApp.csproj" />
 	</ItemGroup>
 
+	<!-- Copy assets, and build the app's shaders into the final app folder -->
 	<ItemGroup>
 		<Content Include="$(SolutionDir)Assets\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
+		<SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets"/>
 	</ItemGroup>
 
 </Project>

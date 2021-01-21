@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Reference from here: http://reedbeta.com/blog/custom-toolchain-with-msbuild/ 
+     And another interesting ref over here: https://github.com/lexxmark/winflexbison/blob/master/custom_build_rules/win_bison_only/win_bison_custom_build.targets-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<!-- Include definitions from SKShader.xml, which defines the SKShader item. -->
+		<PropertyPageSchema Include="$(MSBuildThisFileDirectory)SKShader.xml" />
+		<!-- Hook up SKShader items to be built by the target. -->
+		<AvailableItemName Include="SKShader">
+			<Targets>SKSHaderBuild</Targets>
+		</AvailableItemName>
+	</ItemGroup>
+
+	<!-- Make sure the project rebuilds when .hlsl files change -->
+	<ItemGroup>
+		<UpToDateCheckInput Include="**/*.hlsl" />
+	</ItemGroup>
+
+	<!-- This target builds all SKShader items. This is skipped for Library
+	     type projects. -->
+	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!='' and '$(OutputType)'!='Library'" BeforeTargets="CoreCompile">
+		<!-- For debug builds, include shader debug info -->
+		<PropertyGroup>
+			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
+			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'==''">$(OutDir)%(SKShader.RelativeDir)</SKOutDir>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'!=''">$(OutDir)%(SkShader.BuildTo)/</SKOutDir>
+		</PropertyGroup>
+		
+		<!-- Setup metadata for custom build tool -->
+		<ItemGroup>
+			<SKShader>
+				<AdditionalInputs>$(ShaderHeaders)</AdditionalInputs>
+				<Message>%(Filename)%(Extension)</Message>
+				<Command>
+					"$(MSBuildThisFileDirectory.Replace('\', '/'))../tools/skshaderc.exe" $(SKOpt) -e -t xge -i "$(MSBuildThisFileDirectory.Replace('\', '/'))../tools/include/" -o "$(SKOutDir.Replace('\', '/'))" "%(SKShader.Identity)"
+				</Command>
+				<Outputs>$(SKOutDir)%(SKShader.Filename)%(SKShader.Extension).sks</Outputs>
+			</SKShader>
+		</ItemGroup>
+
+		<!-- Run the compile commands -->
+		<Exec Command="%(SKShader.Command)" Outputs="%(SKShader.Outputs)">
+			<Output ItemName="Generated" TaskParameter="Outputs" />
+		</Exec>
+
+		<!-- FileWrite them so they get cleaned up on rebuilds -->
+		<ItemGroup>
+			<FileWrites Include="%(SKShader.Outputs)"/>
+			
+			<!-- This doesn't do anything? I really want it to, but can't get it to
+			     work at all. Ideally Library projects would use this to mark the
+			     compiled shader as an element to copy over with the DLL. Instead,
+			     the app project needs to compile any shaders from here. -->
+			<!--<Content Include="%(SKShader.Outputs)">
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			</Content>-->
+		</ItemGroup>
+	</Target>
+</Project>

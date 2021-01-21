@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <!-- Hide platform project folders from the solution explorer -->
   <ItemGroup>
     <Compile Remove="Platforms\**" />
     <EmbeddedResource Remove="Platforms\**" />
@@ -11,11 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets\floor.hlsl" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Assets\floor.hlsl" />
+    <SKShader Include="Assets\floor.hlsl" />
   </ItemGroup>
 
   <ItemGroup>

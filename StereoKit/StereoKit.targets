@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Import Project="$(MSBuildThisFileDirectory)SKShaders.targets" />
 
 	<!-- Copy the package's native libraries into the project, since it doesn't
 	     seem you can link directly to libraries in the package folder. Except
@@ -31,14 +32,5 @@
 	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Linux'">
 		<None CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(BaseIntermediateOutputPath)lib/linux-x64/native/libStereoKitC.so" />
 	</ItemGroup>
-
-	<!-- Compile shaders -->
-	<ItemGroup>
-		<SKShaders Include="$(ProjectDir)Assets/**/*.hlsl" />
-	</ItemGroup>
-	<Target Name="StereoKitShaders" BeforeTargets="BeforeBuild" Condition="'$(OS)'=='Windows_NT'" Inputs="@(SKShaders)"  Outputs="@(SKShaders->'%(Filename).sks')">
-		<Message Importance="high" Text="[StereoKit NuGet] Compiling shader %(SKShaders.Filename)%(SKShaders.Extension)"/>
-		<Exec Command="&quot;$(MSBuildThisFileDirectory)../tools/skshaderc.exe&quot; -o3 -e -t xge -i &quot;$(MSBuildThisFileDirectory)../tools/include/&quot;  &quot;Assets/%(SKShaders.RecursiveDir)%(SKShaders.Filename)%(SKShaders.Extension)&quot;" Outputs="@(SKShaders->'%(Filename).sks')"/>
-	</Target>
 
 </Project>

@@ -69,11 +69,13 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
   </ItemGroup>
+  <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
     <AndroidAsset Include="$(SolutionDir)Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
+    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets"/>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml">

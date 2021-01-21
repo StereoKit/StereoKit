@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+	<!-- Associate SKShader item type with .hlsl files -->
+	<ItemType Name="SKShader" DisplayName="StereoKit Shader" />
+	<ContentType Name="SKShader" ItemType="SKShader" DisplayName="StereoKit Shader" />
+	<FileExtension Name=".hlsl" ContentType="SKShader" />
+</ProjectSchemaDefinitions>
