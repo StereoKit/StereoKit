@@ -17,12 +17,14 @@ struct psIn {
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-	output.world = mul(input.pos,    sk_inst[id].world);
-	output.pos   = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
-	output.view_id = sk_inst[id].view_id;
-	return output;
+	o.world = mul(input.pos, sk_inst[id].world);
+	o.pos   = mul(o.world,   sk_viewproj[o.view_id]);
+
+	return o;
 }
 float4 ps(psIn input) : SV_TARGET{
 	// This line algorithm is inspired by :

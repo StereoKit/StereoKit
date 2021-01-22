@@ -5,8 +5,8 @@
 namespace sk {
 
 
-vec3 to_color_128(uint8_t *color) { return *(vec3 *)color; }
-vec3 to_color_32 (uint8_t *color) { return vec3{color[0]/255.f,color[1]/255.f,color[2]/255.f}; }
+color128 to_color_128(uint8_t *color) { return *(color128 *)color; }
+color128 to_color_32 (uint8_t *color) { return color128{color[0]/255.f,color[1]/255.f,color[2]/255.f,0}; }
 
 ///////////////////////////////////////////
 
@@ -43,10 +43,10 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, color128 light_color) {
 
 spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int32_t face_size) {
 	spherical_harmonics_t result = {};
-	size_t   col_size            = tex_format_size(format);
-	vec3   (*convert)(uint8_t *) = format == tex_format_rgba128 ?
-		to_color_128 :
-		to_color_32;
+	size_t     col_size            = tex_format_size(format);
+	color128 (*convert)(uint8_t *) = format == tex_format_rgba128 
+		? to_color_128 
+		: to_color_32;
 
 	float half_px = 0.5f / face_size;
 	for (int32_t i = 0; i < 6; i++) {
@@ -76,19 +76,8 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 				vec3 pt = vec3_lerp(pl, pr, px);
 				pt = vec3_normalize(pt);
 
-				vec3 color = convert(&data[(x + y * face_size) * col_size]);
-
-				// From here:
-				// https://graphics.stanford.edu/papers/envmap/envmap.pdf
-				result.coefficients[0] += color * 0.282095f; // Y00
-				result.coefficients[1] += color * 0.488603f *  pt.y; // Y11
-				result.coefficients[2] += color * 0.488603f *  pt.z; // Y10
-				result.coefficients[3] += color * 0.488603f *  pt.x; // Y1_1
-				result.coefficients[4] += color * 1.092548f * (pt.y*pt.z); // Y21
-				result.coefficients[5] += color * 1.092548f * (pt.x*pt.z); // Y2_1
-				result.coefficients[6] += color * 1.092548f * (pt.x*pt.y); // Y2_2
-				result.coefficients[7] += color * 0.946176f * (pt.z * pt.z - 0.315392f); // Y20
-				result.coefficients[8] += color * 0.546274f * (pt.y*pt.y - pt.x*pt.x); // Y22
+				color128 color = convert(&data[(x + y * face_size) * col_size]);
+				sh_add(result, pt, color);
 			}
 		}
 	}

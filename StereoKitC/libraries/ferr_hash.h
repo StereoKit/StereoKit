@@ -104,9 +104,10 @@ uint32_t hash_constfnv32_string(const char *string);
 // Creates a 64 bit hash from a string. Use start_hash with a previous hash if you want to chain hashes together.
 uint64_t  hash_fnv64_string(const char* string, uint64_t start_hash) {
 	uint64_t hash = start_hash;
-	uint8_t  c;
-	while (c = *string++)
-		hash = (hash ^ c) * 1099511628211;
+	while (*string != '\0') {
+		hash = (hash ^ *string) * 1099511628211;
+		string++;
+	}
 	return hash;
 }
 

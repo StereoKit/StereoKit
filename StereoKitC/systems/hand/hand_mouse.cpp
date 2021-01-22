@@ -38,7 +38,6 @@ void hand_mouse_update_frame() {
 	bool l_pressed    = false;
 	bool r_pressed    = false;
 	bool hand_tracked = false;
-	vec3 pointer_dir  = pointer_cursor->ray.dir;
 
 	bool was_tracked   = hand->tracked_state & button_state_active;
 	bool was_l_pressed = hand->pinch_state   & button_state_active;
