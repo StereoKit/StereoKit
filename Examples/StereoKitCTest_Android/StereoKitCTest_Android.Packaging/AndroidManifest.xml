@@ -7,8 +7,8 @@
 
     <!-- This is the platform API where NativeActivity was introduced. -->
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="25"/>
-	
-		<uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
+
+    <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
 
     <!-- This .apk has no Java code itself, so set hasCode to false. -->
     <application android:label="@string/app_name" android:hasCode="false">
@@ -23,7 +23,7 @@
                     android:value="$(AndroidAppLibName)" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-								<category android:name="com.oculus.intent.category.VR" />
+                <category android:name="com.oculus.intent.category.VR" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

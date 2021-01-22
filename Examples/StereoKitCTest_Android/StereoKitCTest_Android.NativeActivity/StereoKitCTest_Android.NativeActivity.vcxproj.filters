@@ -8,4 +8,8 @@
     <ClCompile Include="android_native_app_glue.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="libopenxr_loader.so" />
+    <Library Include="libStereoKitC.so" />
+  </ItemGroup>
 </Project>

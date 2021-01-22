@@ -79,7 +79,7 @@ target("StereoKitC")
     if is_plat("linux") then
         add_links("GL", "GLEW", "GLX", "X11")
     elseif is_plat("android") then
-        add_links("EGL", "OpenSLES")
+        add_links("EGL", "OpenSLES", "android")
     end
 
     -- Emscripten stuff, this doesn't actually work yet

@@ -109,7 +109,6 @@ bool defaults_init() {
 
 	// Shaders
 	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
-	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
 	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
 	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
 	sk_default_shader_equirect    = shader_create_mem((void*)sks_shader_builtin_equirect_hlsl,    sizeof(sks_shader_builtin_equirect_hlsl));
@@ -117,6 +116,14 @@ bool defaults_init() {
 	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
 	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
 	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
+
+#if defined(SK_OS_ANDROID)
+	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+#else
+	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
+#endif
+	if (!sk_default_shader_pbr)
+		sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_pbr         == nullptr ||
