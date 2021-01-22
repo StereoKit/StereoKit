@@ -43,16 +43,18 @@ struct psIn {
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-	output.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(output.world,  1), sk_viewproj[sk_inst[id].view_id]);
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
-	output.view_id = sk_inst[id].view_id;
-	output.normal  = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
-	output.uv      = input.uv * tex_scale;
-	output.color   = input.color * sk_inst[id].color * color;
-	output.irradiance = Lighting(output.normal);
-	return output;
+	o.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
+	o.pos   = mul(float4(o.world,  1), sk_viewproj[o.view_id]);
+
+	o.normal     = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
+	o.uv         = input.uv * tex_scale;
+	o.color      = input.color * sk_inst[id].color * color;
+	o.irradiance = Lighting(o.normal);
+	return o;
 }
 
 float MipLevel( float ndotv ) {

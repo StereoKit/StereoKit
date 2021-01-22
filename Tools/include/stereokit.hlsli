@@ -11,14 +11,14 @@ cbuffer StereoKitBuffer : register(b1) {
 	float4   sk_fingertip  [2];
 	float4   sk_cubemap_i;
 	float    sk_time;
+	uint     sk_view_count;
 };
 struct Inst {
 	float4x4 world;
 	float4   color;
-	uint     view_id;
 };
 cbuffer TransformBuffer : register(b2) {
-	Inst sk_inst[682];
+	Inst sk_inst[819]; // 819 is UINT16_MAX / sizeof(Inst)
 };
 TextureCube  sk_cubemap   : register(t11);
 SamplerState sk_cubemap_s : register(s11);

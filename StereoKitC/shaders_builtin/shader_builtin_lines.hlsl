@@ -21,17 +21,19 @@ struct psIn {
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-	float magnitude = length(input.norm);
-	float4 view  = mul(float4(input.pos.xyz, 1), sk_view[sk_inst[id].view_id]);
-	float3 norm  = mul(float4(input.norm,    0), sk_view[sk_inst[id].view_id]).xyz;
-	view.xy += normalize(float2(norm.y, -norm.x))*magnitude;
-	output.pos   = mul(view, sk_proj[sk_inst[id].view_id]);
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
-	output.view_id = sk_inst[id].view_id;
-	output.uv      = input.uv;
-	output.color   = input.col * color;
-	return output;
+	float  magnitude = length(input.norm);
+	float4 view      = mul(float4(input.pos.xyz, 1), sk_view[o.view_id]);
+	float3 norm      = mul(float4(input.norm,    0), sk_view[o.view_id]).xyz;
+	view.xy         += normalize(float2(norm.y, -norm.x))*magnitude;
+	o.pos            = mul(view, sk_proj[o.view_id]);
+
+	o.uv    = input.uv;
+	o.color = input.col * color;
+	return o;
 }
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = diffuse.Sample(diffuse_s, input.uv);

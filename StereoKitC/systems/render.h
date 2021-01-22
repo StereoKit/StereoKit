@@ -69,7 +69,7 @@ void          render_list_push   (render_list_t list);
 void          render_list_pop    ();
 void          render_list_add    (const render_item_t *item);
 void          render_list_add_to (render_list_t list, const render_item_t *item);
-void          render_list_execute(render_list_t list, uint32_t surface_count);
+void          render_list_execute(render_list_t list, uint32_t view_count);
 void          render_list_clear  (render_list_t list);
 
 } // namespace sk

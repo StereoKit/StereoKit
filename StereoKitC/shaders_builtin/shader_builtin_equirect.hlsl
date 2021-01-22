@@ -47,12 +47,12 @@ float2 ToEquirect(float3 v) {
 }
 
 psIn vs(vsIn input) {
-	psIn output;
-	output.pos = input.pos;
+	psIn o;
+	o.pos = input.pos;
 
 	float2 uv = input.uv * 2 - 1;
-	output.norm  = forward.xyz + right.xyz*uv.x + up.xyz*uv.y;
-	return output;
+	o.norm    = forward.xyz + right.xyz*uv.x + up.xyz*uv.y;
+	return o;
 }
 
 float4 ps(psIn input) : SV_TARGET{

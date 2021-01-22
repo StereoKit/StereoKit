@@ -21,14 +21,16 @@ struct psIn {
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-	float3 world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	output.pos   = mul(float4(world,         1), sk_viewproj[sk_inst[id].view_id]);
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
-	output.view_id = sk_inst[id].view_id;
-	output.uv      = input.uv;
-	output.color   = input.color * color;
-	return output;
+	float3 world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
+	o.pos        = mul(float4(world,         1), sk_viewproj[o.view_id]);
+
+	o.uv    = input.uv;
+	o.color = input.color * color;
+	return o;
 }
 
 float4 ps(psIn input) : SV_TARGET{

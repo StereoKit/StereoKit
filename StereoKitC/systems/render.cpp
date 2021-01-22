@@ -27,7 +27,6 @@ namespace sk {
 struct render_transform_buffer_t {
 	XMMATRIX world;
 	color128 color;
-	uint32_t view_id;
 };
 struct render_global_buffer_t {
 	XMMATRIX view[2];
@@ -40,6 +39,7 @@ struct render_global_buffer_t {
 	vec4     fingertip[2];
 	vec4     cubemap_i;
 	float    time;
+	uint32_t view_count;
 };
 struct render_blit_data_t {
 	float width;
@@ -62,7 +62,7 @@ struct render_screenshot_t {
 ///////////////////////////////////////////
 
 array_t<render_transform_buffer_t> render_instance_list = {};
-render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 682 } };
+render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 819 } };
 
 material_buffer_t      render_shader_globals;
 skg_buffer_t           render_shader_blit;
@@ -319,12 +319,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 
 	// Copy in the other global shader variables
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
-	render_global_buffer.time = time_getf();
+	render_global_buffer.time       = time_getf();
+	render_global_buffer.view_count = view_count;
 	vec3 tip = input_hand(handed_right)->tracked_state & button_state_active ? input_hand(handed_right)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
-	render_global_buffer.cubemap_i = render_sky_cubemap != nullptr 
+	render_global_buffer.cubemap_i    = render_sky_cubemap != nullptr 
 		? vec4{ (float)render_sky_cubemap->tex.width, (float)render_sky_cubemap->tex.height, floorf(log2f((float)render_sky_cubemap->tex.width)), 0 }
 		: vec4{};
 
@@ -649,7 +650,7 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, uint32_t surface_count) {
+void render_list_execute(render_list_t list_id, uint32_t view_count) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
@@ -670,10 +671,8 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 	for (size_t i = 0; i < count; i++) {
 		XMMATRIX transpose = XMMatrixTranspose(item->transform);
 
-		// Add a render instance for each display surface
-		for (uint32_t s = 0; s < surface_count; s++) {
-			render_instance_list.add(render_transform_buffer_t { transpose, item->color, s });
-		}
+		// Add a render instance
+		render_instance_list.add(render_transform_buffer_t { transpose, item->color });
 
 		// If the next item is not the same as the current run of render 
 		// items, we'll collect the instances, and submit them to draw!
@@ -689,7 +688,7 @@ void render_list_execute(render_list_t list_id, uint32_t surface_count) {
 				skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
 				skg_buffer_bind(instances, render_list_inst_bind, 0);
 
-				skg_draw(0, 0, item->mesh_inds, count);
+				skg_draw(0, 0, item->mesh_inds, count * view_count);
 				list->stats.draw_calls     += 1;
 				list->stats.draw_instances += count;
 
