@@ -63,7 +63,9 @@ namespace StereoKit_Android
 					throw new System.Exception("StereoKit loader couldn't construct an instance of the App!");
 
 				// Initialize StereoKit, and the app
-				if (!SK.Initialize(app.Settings))
+				SKSettings settings = app.Settings;
+				settings.androidActivity = activityHandle;
+				if (!SK.Initialize(settings))
 					return;
 				app.Init();
 
