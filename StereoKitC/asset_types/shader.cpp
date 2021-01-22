@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "../systems/platform/platform_utils.h"
+#include "../libraries/stref.h"
 #include "shader.h"
 #include "assets.h"
 
@@ -59,13 +60,25 @@ shader_t shader_create_file(const char *filename) {
 	if (result != nullptr)
 		return result;
 
+	// If it doesn't end with .sks, auto-add the .sks extension. We can't 
+	// load .hlsl files directly at runtime, but it can be nice to just refer
+	// to them by that name.
+	const char *final_file = filename;
+	char       *with_ext   = nullptr;
+	if (!string_endswith(filename, ".sks", false)) {
+		with_ext = string_append(nullptr, 1, filename, ".sks");
+		final_file = with_ext;
+	}
+
 	// Load from file
 	void  *data;
 	size_t size;
-	if (!platform_read_file(assets_file(filename), &data, &size))
-		return nullptr;
+	bool   loaded = platform_read_file(assets_file(final_file), &data, &size);
+	free(with_ext);
 
-	return shader_create_mem(data, size);
+	return loaded 
+		? shader_create_mem(data, size)
+		: nullptr;
 }
 
 ///////////////////////////////////////////
