@@ -38,11 +38,15 @@ class DemoPBR : ITest
 
 	public void Update()
 	{
+		Tests.Screenshot(1024, 1024, "PBRBalls.jpg", new Vector3(0, 0, -0.1f), new Vector3(0, 0, -1));
+
 		Hierarchy.Push(Matrix.T(0,0,-1));
 
-		UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f);
-		pbrModel.Draw(Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f));
-		UI.HandleEnd();
+		if (!Tests.IsTesting) { 
+			UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f);
+			pbrModel.Draw(Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f));
+			UI.HandleEnd();
+		}
 
 		for (int y = 0; y < materialGrid; y++) {
 		for (int x = 0; x < materialGrid; x++) {
