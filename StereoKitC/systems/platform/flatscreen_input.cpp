@@ -79,12 +79,13 @@ void flatscreen_input_update() {
 		render_set_cam_root(pose_matrix(input_head_pose));
 	}
 
-	pointer_t    *pointer_head = input_get_pointer(fltscr_gaze_pointer);
-	const pose_t *head         = input_head();
+	input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, true);
+	memcpy(&input_gaze_pose, input_head(), sizeof(pose_t));
 
+	pointer_t *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = head->position;
-	pointer_head->ray.dir = head->orientation * vec3_forward;
+	pointer_head->ray.pos = input_gaze_pose.position;
+	pointer_head->ray.dir = input_gaze_pose.orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////

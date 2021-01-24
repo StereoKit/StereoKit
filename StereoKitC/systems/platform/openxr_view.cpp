@@ -571,7 +571,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		view.subImage.imageRect.offset = { 0, 0 };
 		view.subImage.imageRect.extent = { layer.swapchain_color.width, layer.swapchain_color.height };
 
-		if (xr_depth_lsr) {
+		if (xr_has_depth_lsr) {
 			XrCompositionLayerDepthInfoKHR &depth = layer.view_depths[i];
 			depth.minDepth = 0;
 			depth.maxDepth = 1;

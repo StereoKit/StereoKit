@@ -33,9 +33,10 @@ const char *xr_request_extensions[] = {
 	XR_GFX_EXTENSION,
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 	XR_TIME_EXTENSION,
+	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
+	XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
-	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
@@ -49,11 +50,13 @@ const char *xr_request_extensions[] = {
 const char *xr_request_layers[] = {
 	"",
 };
-bool xr_depth_lsr             = false;
-bool xr_depth_lsr_ext         = false;
-bool xr_articulated_hands     = false;
-bool xr_articulated_hands_ext = false;
-bool xr_spatial_bridge_ext    = false;
+bool xr_has_depth_lsr         = false;
+bool xr_ext_depth_lsr         = false;
+bool xr_has_articulated_hands = false;
+bool xr_ext_articulated_hands = false;
+bool xr_ext_spatial_bridge    = false;
+bool xr_ext_gaze              = false;
+bool xr_has_gaze              = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -130,8 +133,8 @@ void *openxr_get_luid() {
 	const char *extensions[] = { XR_GFX_EXTENSION };
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount = 1;
-	create_info.enabledExtensionNames = extensions;
+	create_info.enabledExtensionCount      = 1;
+	create_info.enabledExtensionNames      = extensions;
 	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
@@ -295,23 +298,28 @@ bool openxr_init() {
 	}
 
 	// Figure out what this device is capable of!
-	XrSystemProperties                properties          = { XR_TYPE_SYSTEM_PROPERTIES };
-	XrSystemHandTrackingPropertiesEXT tracking_properties = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
-	properties.next = &tracking_properties;
+	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
+	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
+	properties         .next = &properties_tracking;
+	properties_tracking.next = &properties_gaze;
+
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
-	xr_articulated_hands = xr_articulated_hands_ext && tracking_properties.supportsHandTracking;
-	xr_depth_lsr         = xr_depth_lsr_ext;
+	xr_has_articulated_hands = xr_ext_articulated_hands && properties_tracking.supportsHandTracking;
+	xr_has_gaze              = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
+	xr_has_depth_lsr         = xr_ext_depth_lsr;
 
 #if defined(SK_OS_ANDROID)
 	log_warn("Temporarily disabled articulated hands for Oculus");
-	xr_articulated_hands = false;
+	xr_has_articulated_hands = false;
 #endif
 
-	if (xr_articulated_hands)   log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_depth_lsr)           log_diag("OpenXR depth LSR ext enabled!");
-	if (sk_info.spatial_bridge) log_diag("OpenXR spatial bridge ext enabled!");
+	if (xr_has_articulated_hands) log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_has_depth_lsr)         log_diag("OpenXR depth LSR ext enabled!");
+	if (xr_has_gaze)              log_diag("OpenXR gaze ext enabled!");
+	if (sk_info.spatial_bridge)   log_diag("OpenXR spatial bridge ext enabled!");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
@@ -432,11 +440,12 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 		for (uint32_t i = 0; i < ext_count; i++) {
 			log_diagf("OpenXR ext: %s", exts[i].extensionName);
 		}
-
+		
 		for (uint32_t i = 0; i < out_extension_count; i++) {
-			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
-			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_articulated_hands_ext = true;
+			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_ext_depth_lsr         = true;
+			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_ext_articulated_hands = true;
 			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME  ) == 0) sk_info.spatial_bridge   = true;
+			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME   ) == 0) xr_ext_gaze              = true;
 		}
 	}
 
@@ -627,6 +636,8 @@ void openxr_poll_actions() {
 	matrix root = render_get_cam_root();
 	input_head_pose.position    = matrix_mul_point   (root, head_pose.position);
 	input_head_pose.orientation = matrix_mul_rotation(root, head_pose.orientation);
+
+	oxri_update_frame();
 }
 
 ///////////////////////////////////////////

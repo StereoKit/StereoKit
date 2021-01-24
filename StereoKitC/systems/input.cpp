@@ -2,6 +2,7 @@
 #include "input.h"
 #include "hand/input_hand.h"
 #include "../libraries/array.h"
+#include "platform/openxr.h"
 
 namespace sk {
 
@@ -18,6 +19,8 @@ array_t<pointer_t>    input_pointers   = {};
 mouse_t               input_mouse_data = {};
 keyboard_t            input_key_data   = {};
 pose_t                input_head_pose  = { vec3_zero, quat_identity };
+pose_t                input_gaze_pose  = { vec3_zero, quat_identity };
+button_state_         input_gaze_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
 
@@ -127,6 +130,24 @@ button_state_ input_key(key_ key) {
 
 const pose_t *input_head() {
 	return &input_head_pose;
+}
+
+///////////////////////////////////////////
+
+const pose_t *input_gaze() {
+	return &input_gaze_pose;
+}
+
+///////////////////////////////////////////
+
+button_state_ input_gaze_tracked() {
+	return input_gaze_track_state;
+}
+
+///////////////////////////////////////////
+
+bool32_t input_has_gaze() {
+	return xr_has_gaze;
 }
 
 } // namespace sk {

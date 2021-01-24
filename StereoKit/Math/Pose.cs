@@ -27,6 +27,11 @@ namespace StereoKit
 		/// multiplying the orientation with Vec3.Up.</summary>
 		public Vector3 Up => Vec3.Up.Rotate(orientation);
 
+		/// <summary>This creates a ray starting at the Pose's position, and
+		/// pointing in the 'Forward' direction. The Ray direction is a unit
+		/// vector/normalized. </summary>
+		public Ray Ray => new Ray(position, Forward);
+
 		/// <summary>Basic initialization constructor! Just copies in the provided values directly.</summary>
 		/// <param name="position">Location of the pose.</param>
 		/// <param name="orientation">Orientation of the pose, stored as a rotation from Vec3.Forward.</param>

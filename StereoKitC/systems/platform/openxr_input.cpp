@@ -1,6 +1,7 @@
 #include "openxr.h"
 #include "openxr_input.h"
 #include "../hand/hand_oxr_controller.h"
+#include "../input.h"
 
 #include "platform_utils.h"
 #include "../../libraries/array.h"
@@ -15,6 +16,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 XrActionSet xrc_action_set;
+XrAction    xrc_gaze_action;
 XrAction    xrc_pose_action;
 XrAction    xrc_point_action;
 XrAction    xrc_select_action;
@@ -22,7 +24,10 @@ XrAction    xrc_grip_action;
 XrPath      xrc_hand_subaction_path[2];
 XrSpace     xrc_point_space[2];
 XrSpace     xr_hand_space  [2] = {};
+XrSpace     xr_gaze_space = {};
 XrPath      xrc_pose_path  [2];
+
+int32_t xr_gaze_pointer;
 
 struct xrc_profile_info_t {
 	const char *name;
@@ -38,25 +43,31 @@ void oxri_set_profile(handed_ hand, XrPath profile);
 ///////////////////////////////////////////
 
 bool oxri_init() {
+	XrPath                               profile_path;
+	XrActionCreateInfo                   action_info     = { XR_TYPE_ACTION_CREATE_INFO };
+	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+
 	xrc_offset_pos[0] = vec3_zero;
 	xrc_offset_pos[1] = vec3_zero;
 	xrc_offset_rot[0] = quat_identity;
 	xrc_offset_rot[1] = quat_identity;
 
+	xr_gaze_pointer = input_add_pointer(input_source_gaze | (xr_has_gaze ? input_source_gaze_eyes : input_source_gaze_head));
+
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
 	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
 	XrResult result = xrCreateActionSet(xr_instance, &actionset_info, &xrc_action_set);
-	xrStringToPath(xr_instance, "/user/hand/left",  &xrc_hand_subaction_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right", &xrc_hand_subaction_path[1]);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateActionSet failed: [%s]", openxr_string(result));
 		return false;
 	}
 
+	xrStringToPath(xr_instance, "/user/hand/left",  &xrc_hand_subaction_path[0]);
+	xrStringToPath(xr_instance, "/user/hand/right", &xrc_hand_subaction_path[1]);
+
 	// Create an action to track the position and orientation of the hands! This is
 	// the controller location, or the center of the palms for actual hands.
-	XrActionCreateInfo action_info = { XR_TYPE_ACTION_CREATE_INFO };
 	action_info.countSubactionPaths = _countof(xrc_hand_subaction_path);
 	action_info.subactionPaths      = xrc_hand_subaction_path;
 	action_info.actionType          = XR_ACTION_TYPE_POSE_INPUT;
@@ -98,11 +109,43 @@ bool oxri_init() {
 		return false;
 	}
 
+	if (xr_has_gaze) {
+		action_info = { XR_TYPE_ACTION_CREATE_INFO };
+		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
+		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
+		snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Eye Gaze");
+		result = xrCreateAction(xrc_action_set, &action_info, &xrc_gaze_action);
+		if (XR_FAILED(result)) {
+			log_warnf("xrCreateAction failed: [%s]", openxr_string(result));
+			return false;
+		}
+
+		XrPath gaze_path;
+		xrStringToPath(xr_instance, "/user/eyes_ext/input/gaze_ext/pose", &gaze_path);
+		XrActionSuggestedBinding bindings = {xrc_gaze_action, gaze_path};
+
+		xrStringToPath(xr_instance, "/interaction_profiles/ext/eye_gaze_interaction", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = &bindings;
+		suggested_binds.countSuggestedBindings = 1;
+		result = xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds);
+		if (XR_FAILED(result)) {
+			log_warnf("Gaze xrSuggestInteractionProfileBindings failed: [%s]", openxr_string(result));
+		}
+
+		XrActionSpaceCreateInfo create_space = {XR_TYPE_ACTION_SPACE_CREATE_INFO};
+		create_space.action            = xrc_gaze_action;
+		create_space.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
+		result = xrCreateActionSpace(xr_session, &create_space, &xr_gaze_space);
+		if (XR_FAILED(result)) {
+			log_warnf("Gaze xrCreateActionSpace failed: [%s]", openxr_string(result));
+		}
+	}
+
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
 	// preferences. For example, if the runtime allows you to remap buttons, or provides input
 	// accessibility settings.
-	XrPath profile_path;
 	XrPath point_path [2];
 	XrPath select_path[2];
 	XrPath grip_path  [2];
@@ -110,7 +153,6 @@ bool oxri_init() {
 	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose", &xrc_pose_path[1]);
 	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",   &point_path[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",  &point_path[1]);
-	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
 
 	// microsoft / motion_controller
 	{
@@ -325,6 +367,30 @@ void oxri_update_frame() {
 	sync_info.countActiveActionSets = 1;
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
+
+	pointer_t* pointer = input_get_pointer(xr_gaze_pointer);
+	// Gaze input
+	if (xr_has_gaze) {
+		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
+		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
+		action_info.action = xrc_gaze_action;
+		xrGetActionStatePose(xr_session, &action_info, &action_pose);
+
+		input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, action_pose.isActive);
+		pointer->tracked = input_gaze_track_state;
+
+		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_gaze_pose)) {
+			pointer->ray.pos     = input_gaze_pose.position;
+			pointer->ray.dir     = input_gaze_pose.orientation * vec3_forward;
+			pointer->orientation = input_gaze_pose.orientation;
+		}
+	} else {
+		input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, true);
+		memcpy(&input_gaze_pose, input_head(), sizeof(pose_t));
+		pointer->ray.pos     = input_gaze_pose.position;
+		pointer->ray.dir     = input_gaze_pose.orientation * vec3_forward;
+		pointer->orientation = input_gaze_pose.orientation;
+	}
 }
 
 ///////////////////////////////////////////

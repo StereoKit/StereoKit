@@ -21,7 +21,7 @@ bool hand_oxra_available() {
 	return
 		sk_active_display_mode() == display_mode_mixedreality &&
 		xr_session               != XR_NULL_HANDLE            &&
-		xr_articulated_hands     == true;
+		xr_has_articulated_hands == true;
 }
 
 ///////////////////////////////////////////
@@ -34,7 +34,7 @@ void hand_oxra_init() {
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
-			xr_articulated_hands = false;
+			xr_has_articulated_hands = false;
 			input_hand_refresh_system();
 			return;
 		}
@@ -60,10 +60,10 @@ void hand_oxra_update_joints() {
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
 
-		XrHandJointLocationEXT joint_locations[XR_HAND_JOINT_COUNT_EXT];
+		XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
 		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
-		locations.isActive = XR_FALSE;
-		locations.jointCount = XR_HAND_JOINT_COUNT_EXT;
+		locations.isActive       = XR_FALSE;
+		locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
 		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
@@ -72,8 +72,9 @@ void hand_oxra_update_joints() {
 		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, locations.isActive);
 
 		// Not tracked? Then we don't care about the pose!
-		if (!locations.isActive)
+		if (!locations.isActive) {
 			continue;
+		}
 
 		// Get joint poses from OpenXR
 		matrix root = render_get_cam_root();
