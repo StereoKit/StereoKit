@@ -81,8 +81,7 @@ void hand_oxra_update_joints() {
 		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
-			oxra_hand_joints[h][j].radius = locations.jointLocations[j].radius * 0.85f;
-
+			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
 			oxra_hand_joints[h][j].position    = matrix_mul_point   (root, oxra_hand_joints[h][j].position);
 			oxra_hand_joints[h][j].orientation = matrix_mul_rotation(root, oxra_hand_joints[h][j].orientation);
 		}

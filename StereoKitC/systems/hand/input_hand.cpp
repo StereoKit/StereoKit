@@ -523,7 +523,7 @@ void input_hand_update_mesh(handed_ hand) {
 		// Use the local axis to create a ring of verts
 		for (size_t i = 0; i < ring_count; i++) {
 			data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*(SK_SQRT2*scale);
+			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
 			v++;
 		}
 	}
