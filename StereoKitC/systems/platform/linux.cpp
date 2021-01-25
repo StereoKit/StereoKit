@@ -161,11 +161,9 @@ int   mouseX = 0;
 int   mouseY = 0;
 
 bool _pthread_continue = true;
-bool _pthread_start    = false;
 
 void *linux_input_pthread(void *) {
-
-	while(!_pthread_start) {/*do nothing; busy wait*/}
+	
 	XEvent event;
 	XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
 	Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
@@ -288,7 +286,7 @@ bool linux_init() {
 
 	XSizeHints *hints = XAllocSizeHints();
 	if (hints == nullptr) {
-		log_errf("XAllocSizeHints failed.");
+		log_err("XAllocSizeHints failed.");
 	} else {
 		hints->flags      = PMinSize;
 		hints->min_width  = 100;
@@ -431,10 +429,6 @@ void linux_step_end() {
 
 void linux_vsync() {
 	skg_swapchain_present(&linux_swapchain);
-	_pthread_start = true;
-	// _pthread_start is necessary. On the first frame, if glXSwapBuffers is called while XNextEvent in the input thread is blocking, then glXSwapBuffers will
-	// wait until XNextEvent (in the input thread) returns, meaning that it doesn't start until you move your mouse or press a key.
-	// with this, _pthread_start = false until this function returns for the first time, meaning that XNextEvent gets called *after* the first glXSwapBuffers, meaning that everything should be fine
 }
 
 } // namespace sk

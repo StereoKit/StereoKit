@@ -8,6 +8,7 @@ package("reactphysics3d")
 
     add_urls("https://github.com/DanielChappuis/reactphysics3d/releases/download/v$(version)/reactphysics3d-$(version).tar.gz")
     
+    add_deps("cmake")
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package, {"-DCMAKE_POSITION_INDEPENDENT_CODE=ON"})
     end)
@@ -18,9 +19,10 @@ package_end()
 package("openxr_loader")
     set_homepage("https://github.com/KhronosGroup/OpenXR-SDK")
     set_description("Generated headers and sources for OpenXR loader.")
-
+    
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
+    add_deps("cmake")
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package) -- , {"-DCMAKE_POSITION_INDEPENDENT_CODE=ON"})
     end)
