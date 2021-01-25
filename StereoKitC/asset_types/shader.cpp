@@ -66,7 +66,7 @@ shader_t shader_create_file(const char *filename) {
 	const char *final_file = filename;
 	char       *with_ext   = nullptr;
 	if (!string_endswith(filename, ".sks", false)) {
-		with_ext = string_append(nullptr, 1, filename, ".sks");
+		with_ext   = string_append(nullptr, 2, filename, ".sks");
 		final_file = with_ext;
 	}
 
