@@ -52,7 +52,7 @@ bool oxri_init() {
 	xrc_offset_rot[0] = quat_identity;
 	xrc_offset_rot[1] = quat_identity;
 
-	xr_gaze_pointer = input_add_pointer(input_source_gaze | (xr_has_gaze ? input_source_gaze_eyes : input_source_gaze_head));
+	xr_gaze_pointer = input_add_pointer(input_source_gaze | (sk_info.eye_tracking_present ? input_source_gaze_eyes : input_source_gaze_head));
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
@@ -109,7 +109,7 @@ bool oxri_init() {
 		return false;
 	}
 
-	if (xr_has_gaze) {
+	if (sk_info.eye_tracking_present) {
 		action_info = { XR_TYPE_ACTION_CREATE_INFO };
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
 		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
@@ -370,7 +370,7 @@ void oxri_update_frame() {
 
 	pointer_t* pointer = input_get_pointer(xr_gaze_pointer);
 	// Gaze input
-	if (xr_has_gaze) {
+	if (sk_info.eye_tracking_present) {
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
 		action_info.action = xrc_gaze_action;

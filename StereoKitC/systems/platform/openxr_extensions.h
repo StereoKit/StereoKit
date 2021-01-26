@@ -6,14 +6,15 @@
 #include <openxr/openxr_platform.h>
 
 #define FOR_EACH_EXTENSION_FUNCTION(_)           \
-    _(xrCreateSpatialAnchorMSFT)                 \
-    _(xrCreateSpatialAnchorSpaceMSFT)            \
-    _(xrDestroySpatialAnchorMSFT)                \
-    _(xrGetVisibilityMaskKHR)                    \
-    _(xrCreateHandTrackerEXT)                    \
-    _(xrDestroyHandTrackerEXT)                   \
-    _(xrLocateHandJointsEXT)                     \
-    _(xrCreateSpatialGraphNodeSpaceMSFT)         \
+	_(xrCreateSpatialAnchorMSFT)                 \
+	_(xrCreateSpatialAnchorSpaceMSFT)            \
+	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
+	_(xrGetVisibilityMaskKHR)                    \
+	_(xrCreateHandTrackerEXT)                    \
+	_(xrDestroyHandTrackerEXT)                   \
+	_(xrLocateHandJointsEXT)                     \
+	_(xrCreateSpatialGraphNodeSpaceMSFT)         \
 	_(xrCreateDebugUtilsMessengerEXT)            \
 	_(xrDestroyDebugUtilsMessengerEXT)
 

@@ -65,7 +65,7 @@ class DemoQRCode : ITest
 		public static QRData FromCode(QRCode qr)
 		{
 			QRData result = new QRData();
-			result.pose = Pose.FromSpatialNode(qr.SpatialGraphNodeId);
+			result.pose = World.FromSpatialNode(qr.SpatialGraphNodeId);
 			result.size = qr.PhysicalSideLength;
 			result.text = qr.Data == null ? "" : qr.Data;
 			return result;

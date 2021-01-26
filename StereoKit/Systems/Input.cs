@@ -107,7 +107,6 @@ namespace StereoKit
 		static bool                initialized = false;
 		static InputEventCallback  callback;
 
-		public static bool     HasGaze     => NativeAPI.input_has_gaze();
 		public static Pose     Gaze        => Marshal.PtrToStructure<Pose>(NativeAPI.input_gaze());
 		public static BtnState GazeTracked => NativeAPI.input_gaze_tracked();
 

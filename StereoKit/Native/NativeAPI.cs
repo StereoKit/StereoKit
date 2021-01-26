@@ -312,7 +312,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_head         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_gaze         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_gaze_tracked ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool     input_has_gaze     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, bool visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_solid   (Handed hand, bool solid);
@@ -323,10 +322,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool    world_has_bounds();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vector2 world_get_bounds_size();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose    world_get_bounds_pose();
-
-		///////////////////////////////////////////
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose pose_from_spatial([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose    world_from_spatial_graph([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose    world_from_perception_anchor(IntPtr perception_spatial_anchor);
 
 		///////////////////////////////////////////
 

@@ -38,6 +38,7 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
+	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
 #if defined(SK_OS_ANDROID)
@@ -54,9 +55,7 @@ bool xr_has_depth_lsr         = false;
 bool xr_ext_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
 bool xr_ext_articulated_hands = false;
-bool xr_ext_spatial_bridge    = false;
 bool xr_ext_gaze              = false;
-bool xr_has_gaze              = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -307,9 +306,9 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
-	xr_has_articulated_hands = xr_ext_articulated_hands && properties_tracking.supportsHandTracking;
-	xr_has_gaze              = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
-	xr_has_depth_lsr         = xr_ext_depth_lsr;
+	xr_has_articulated_hands     = xr_ext_articulated_hands && properties_tracking.supportsHandTracking;
+	sk_info.eye_tracking_present = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
+	xr_has_depth_lsr             = xr_ext_depth_lsr;
 
 #if defined(SK_OS_ANDROID)
 	log_warn("Temporarily disabled articulated hands for Oculus");
@@ -318,8 +317,9 @@ bool openxr_init() {
 
 	if (xr_has_articulated_hands) log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_depth_lsr)         log_diag("OpenXR depth LSR ext enabled!");
-	if (xr_has_gaze)              log_diag("OpenXR gaze ext enabled!");
-	if (sk_info.spatial_bridge)   log_diag("OpenXR spatial bridge ext enabled!");
+	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
+	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
+	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
@@ -442,10 +442,11 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 		}
 		
 		for (uint32_t i = 0; i < out_extension_count; i++) {
-			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_ext_depth_lsr         = true;
-			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME          ) == 0) xr_ext_articulated_hands = true;
-			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME  ) == 0) sk_info.spatial_bridge   = true;
-			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME   ) == 0) xr_ext_gaze              = true;
+			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME   ) == 0) xr_ext_depth_lsr                  = true;
+			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME             ) == 0) xr_ext_articulated_hands          = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME     ) == 0) sk_info.spatial_bridge_present    = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
+			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME      ) == 0) xr_ext_gaze                       = true;
 		}
 	}
 
@@ -657,9 +658,13 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
-pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
-	if (!sk_info.spatial_bridge) {
-		log_warn("This system doesn't support the spatial bridge! Check StereoKitApp.System.spatialBridge.");
+pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
+	if (!xr_session) {
+		log_warn("No OpenXR session available for converting spatial graph nodes!");
+		return { {0,0,0}, {0,0,0,1} };
+	}
+	if (!sk_info.spatial_bridge_present) {
+		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
 		return { {0,0,0}, {0,0,0,1} };
 	}
 
@@ -673,6 +678,38 @@ pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]) {
 	xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space);
 
 	openxr_get_space(space, &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
+pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
+	if (!xr_session) {
+		log_warn("No OpenXR session available for converting perception anchors!");
+		return { {0,0,0}, {0,0,0,1} };
+	}
+	if (!sk_info.perception_bridge_present) {
+		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
+		return { {0,0,0}, {0,0,0,1} };
+	}
+
+	// Create an anchor from what the user gave us
+	XrSpatialAnchorMSFT anchor = {};
+	xr_extensions.xrCreateSpatialAnchorFromPerceptionAnchorMSFT(xr_session, (IUnknown*)perception_spatial_anchor, &anchor);
+
+	// Create a Space from the anchor
+	XrSpace                            space;
+	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
+	info.anchor            = anchor;
+	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
+	xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space);
+
+	// Convert the space into a pose
+	pose_t result;
+	openxr_get_space(space, &result);
+
+	// Release the anchor, and return the resulting pose!
+	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 	return result;
 }
 

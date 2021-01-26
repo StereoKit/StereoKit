@@ -102,7 +102,9 @@ typedef struct system_info_t {
 	display_ display_type;
 	int32_t  display_width;
 	int32_t  display_height;
-	bool32_t spatial_bridge;
+	bool32_t spatial_bridge_present;
+	bool32_t perception_bridge_present;
+	bool32_t eye_tracking_present;
 } system_info_t;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
@@ -756,7 +758,6 @@ SK_API void                  input_hand_override(handed_ hand, hand_joint_t *han
 SK_API const pose_t         *input_head         ();
 SK_API const pose_t         *input_gaze         ();
 SK_API button_state_         input_gaze_tracked ();
-SK_API bool32_t              input_has_gaze     ();
 SK_API const mouse_t        *input_mouse        ();
 SK_API button_state_         input_key          (key_ key);
 SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
@@ -772,10 +773,8 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 SK_API bool32_t world_has_bounds();
 SK_API vec2     world_get_bounds_size();
 SK_API pose_t   world_get_bounds_pose();
-
-///////////////////////////////////////////
-
-SK_API pose_t pose_from_spatial(uint8_t spatial_graph_node_id[16]);
+SK_API pose_t   world_from_spatial_graph(uint8_t spatial_graph_node_id[16]);
+SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
 
 ///////////////////////////////////////////
 

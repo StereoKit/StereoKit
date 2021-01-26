@@ -144,10 +144,4 @@ button_state_ input_gaze_tracked() {
 	return input_gaze_track_state;
 }
 
-///////////////////////////////////////////
-
-bool32_t input_has_gaze() {
-	return xr_has_gaze;
-}
-
 } // namespace sk {

@@ -89,6 +89,7 @@
     <Compile Include="Demos\DemoBasics.cs" />
     <Compile Include="Demos\DemoGaze.cs" />
     <Compile Include="Demos\DemoPBR.cs" />
+    <Compile Include="Demos\DemoPerceptionAnchor.cs" />
     <Compile Include="Demos\DemoRayMesh.cs" />
     <Compile Include="Docs\DocBounds.cs" />
     <Compile Include="Docs\DocBtnState.cs" />

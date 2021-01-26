@@ -1,5 +1,4 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -77,18 +76,6 @@ namespace StereoKit
 		/// <returns>A new pose, blended between a and b based on percent!</returns>
 		public static Pose Lerp(Pose a, Pose b, float percent)
 			=> new Pose(Vector3.Lerp(a.position, b.position, percent), Quaternion.Slerp(a.orientation, b.orientation, percent));
-
-		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
-		/// based on its current position and rotation! Check 
-		/// StereoKitApp.System.spatialBridge to see if this is available to
-		/// use. Currently only on HoloLens, good for use with the Windows
-		/// QR code package.</summary>
-		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
-		/// aquired from a windows MR API call.</param>
-		/// <returns>A Pose representing the current orientation of the
-		/// spatial node.</returns>
-		public static Pose FromSpatialNode(Guid spatialNodeGuid)
-			=> NativeAPI.pose_from_spatial(spatialNodeGuid.ToByteArray());
 
 		public override string ToString()
 			=> string.Format("{0}, {1}", position, Forward);
