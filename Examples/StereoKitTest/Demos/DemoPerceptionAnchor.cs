@@ -20,7 +20,7 @@ namespace StereoKitTest
 
 		public void Initialize()
 		{
-			OcclusionMesh occlusion = new OcclusionMesh(Color.HSV(0,1,1));
+			occlusion = new OcclusionMesh(Color.HSV(0,1,1));
 			occlusion.Material.Wireframe = true;
 		}
 		public void Shutdown()
@@ -43,16 +43,15 @@ namespace StereoKitTest
 	}
 
 	/// <summary>This Requires the Spatial Perception permission in order to
-	/// work properly! This contains a hack that makes it a placeholder solution
-	/// only. The mesh will ONLY line up if the user remains entirely motionless
-	/// during startup.</summary>
+	/// work properly!</summary>
 	public class OcclusionMesh
 	{
 		class SurfaceMesh
 		{
 			public Mesh           mesh;
 			public DateTimeOffset lastUpdate;
-			public Matrix4x4      at;
+			public Matrix4x4      localTransform;
+			public Matrix4x4      transform;
 			public Guid           id;
 		}
 
@@ -69,11 +68,11 @@ namespace StereoKitTest
 
 		public Material Material => surfaceMaterial;
 
-		public OcclusionMesh(Color color, double trianglesPerMeterCubed = 2000)
+		public OcclusionMesh(Color color, double trianglesPerMeterCubed = 3000)
 		{
 			// Ask or check for Spatial permissions
 			SpatialSurfaceObserver.RequestAccessAsync().Completed = (i,s) => {
-				if (s == AsyncStatus.Completed && i.GetResults() == SpatialPerceptionAccessStatus.Allowed) { 
+				if (s == AsyncStatus.Completed && i.GetResults() == SpatialPerceptionAccessStatus.Allowed) {
 					observer = new SpatialSurfaceObserver();
 					observer.ObservedSurfacesChanged += OnSurfaceUpdate;
 					UpdateBounds(center, radius);
@@ -159,7 +158,9 @@ namespace StereoKitTest
 				float y = BitConverter.ToSingle(data, b); b += sizeof(float);
 				float z = BitConverter.ToSingle(data, b); b += sizeof(float);
 				b += sizeof(float);
-				verts[i] = new Vertex{ pos = new Vector3(x,y,z) };
+				verts[i] = new Vertex{ 
+					pos = new Vector3(x,y,z)*src.VertexPositionScale,
+					col = Color.White };
 			}
 
 			// Extract indices from the mesh buffer
@@ -186,13 +187,14 @@ namespace StereoKitTest
 				SurfaceMesh        mesh = meshes.Find(m => m.id == s.SurfaceInfo.Id);
 				UpdateMesh(ref mesh.mesh, s);
 
-				mesh.at = root * (s.CoordinateSystem.TryGetTransformTo(frame.CoordinateSystem) ?? Matrix4x4.Identity);
+				mesh.localTransform = s.CoordinateSystem.TryGetTransformTo(frame.CoordinateSystem) ?? Matrix4x4.Identity;
+				mesh.transform      = mesh.localTransform * root;
 			}
 			queuedUpdates.Clear();
 
 			// Draw all surfaces
 			for (int i = 0; i < meshes.Count; i++)
-				meshes[i].mesh.Draw(surfaceMaterial, meshes[i].at);
+				meshes[i].mesh.Draw(surfaceMaterial, meshes[i].transform);
 		}
 	}
 }

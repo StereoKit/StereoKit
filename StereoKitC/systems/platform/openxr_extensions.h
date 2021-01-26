@@ -31,12 +31,12 @@
 #if defined(_WIN32)
 #define FOR_EACH_PLATFORM_FUNCTION(_)            \
 	_(xrConvertWin32PerformanceCounterToTimeKHR) \
-    _(xrConvertTimeToWin32PerformanceCounterKHR) \
+	_(xrConvertTimeToWin32PerformanceCounterKHR) \
 
 #else
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
 	_(xrConvertTimespecTimeToTimeKHR ) \
-    _(xrConvertTimeToTimespecTimeKHR ) \
+	_(xrConvertTimeToTimespecTimeKHR ) \
 
 #endif
 
@@ -44,17 +44,17 @@
 #define DEFINE_PROC_MEMBER(name) PFN_##name name;
 
 struct XrExtTable {
-    FOR_EACH_EXTENSION_FUNCTION(DEFINE_PROC_MEMBER);
+	FOR_EACH_EXTENSION_FUNCTION(DEFINE_PROC_MEMBER);
 	FOR_EACH_PLATFORM_FUNCTION(DEFINE_PROC_MEMBER);
 	FOR_EACH_GRAPHICS_FUNCTION(DEFINE_PROC_MEMBER);
 };
 
 inline XrExtTable xrCreateExtensionTable(XrInstance instance) {
-    XrExtTable result = {};
-    FOR_EACH_EXTENSION_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
+	XrExtTable result = {};
+	FOR_EACH_EXTENSION_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
 	FOR_EACH_PLATFORM_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
 	FOR_EACH_GRAPHICS_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
-    return result;
+	return result;
 }
 
 #undef DEFINE_PROC_MEMBER

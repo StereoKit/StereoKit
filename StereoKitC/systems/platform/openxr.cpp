@@ -37,6 +37,7 @@ const char *xr_request_extensions[] = {
 	XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
+	XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
 	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
@@ -699,7 +700,7 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 
 	// Create a Space from the anchor
 	XrSpace                            space;
-	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
+	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
 	info.anchor            = anchor;
 	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
 	xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space);
