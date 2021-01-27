@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -9,9 +8,9 @@ namespace StereoKit
 	/// and other various things.</summary>
 	public static class World
 	{
-		public static bool    HasBounds => NativeAPI.world_has_bounds();
-		public static Vector2 BoundsSize => NativeAPI.world_get_bounds_size();
-		public static Pose    BoundsPose => NativeAPI.world_get_bounds_pose();
+		public static bool HasBounds  => NativeAPI.world_has_bounds();
+		public static Vec2 BoundsSize => NativeAPI.world_get_bounds_size();
+		public static Pose BoundsPose => NativeAPI.world_get_bounds_pose();
 
 		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
 		/// based on its current position and rotation! Check 
@@ -27,7 +26,6 @@ namespace StereoKit
 
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
-			//if (perceptionSpatialAnchor.GetType().Name != )
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
 			Pose   result  = NativeAPI.world_from_perception_anchor(unknown);
 			Marshal.Release(unknown);

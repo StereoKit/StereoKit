@@ -1,7 +1,6 @@
 ﻿#if WINDOWS_UWP
 using StereoKit;
 using System;
-using System.Numerics;
 using System.Collections.Generic;
 
 /// :CodeDoc: Guides Using QR Codes
@@ -128,7 +127,7 @@ class DemoQRCode : ITest
 				Matrix.TR(
 					d.pose.position + d.pose.Forward*d.size*0.1f, 
 					Quat.FromAngles(0, 0, 180)*d.pose.orientation),
-				Vector2.One * d.size,
+				Vec2.One * d.size,
 				TextFit.Squeeze,
 				TextAlign.XLeft | TextAlign.YTop);
 		}

@@ -1,7 +1,6 @@
 ﻿using StereoKit;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
 class DemoBasics : ITest
 {
@@ -14,8 +13,8 @@ class DemoBasics : ITest
 	{
 		gltf = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
 
-		floorSolid = new Solid(new Vector3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
-		floorSolid.AddBox(new Vector3(20, .01f, 20));
+		floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
+		floorSolid.AddBox(new Vec3(20, .01f, 20));
 
 		Input.HandSolid(Handed.Max, false);
 	}
@@ -37,10 +36,10 @@ class DemoBasics : ITest
 				Input.HandSolid((Handed)i, false);
 		}
 
-		UI.WindowBegin("Options", ref optionsPose, Vector2.Zero);
+		UI.WindowBegin("Options", ref optionsPose, Vec2.Zero);
 		if (UI.Button("Add"))
 		{
-			objects.Add(new Solid(new Vector3(0, 3, 0), Quat.Identity));
+			objects.Add(new Solid(new Vec3(0, 3, 0), Quat.Identity));
 			objects.Last().AddSphere(.45f, 40);
 			objects.Last().AddBox(Vec3.One * .35f, 40);
 		}

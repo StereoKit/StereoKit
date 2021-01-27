@@ -1,7 +1,6 @@
 using StereoKit;
 using StereoKit.Framework;
 using System.IO;
-using System.Numerics;
 using System.Threading.Tasks;
 
 namespace StereoKitTest
@@ -18,7 +17,7 @@ namespace StereoKitTest
 		public void Shutdown() => FilePicker.Hide();
 
 		public void Update() {
-			UI.WindowBegin("Settings", ref menuPose, new Vector2(20,0) * U.cm);
+			UI.WindowBegin("Settings", ref menuPose, new Vec2(20,0) * U.cm);
 			if (model != null && UI.Button("Close")) { 
 				model = null;
 				ShowPicker();
@@ -52,7 +51,7 @@ namespace StereoKitTest
 			Task.Run(() =>
 			{
 				model      = Model.FromFile(filename);
-				modelScale = 1 / model.Bounds.dimensions.Length();
+				modelScale = 1 / model.Bounds.dimensions.Magnitude;
 			});
 		}
 	}

@@ -1,7 +1,6 @@
 ﻿using StereoKit;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace StereoKitTest
 {
@@ -28,9 +27,9 @@ namespace StereoKitTest
 			{
 				for (int x = 0; x < 5; x++)
 				{
-					Vector3 grid = new Vector3(x-2f, 0, y-4) * 0.5f;
-					float   dist = Math.Min(1, grid.Length()/10.0f);
-					Pose    pose = poseCache[(int)(dist * (cacheCount-1))];
+					Vec3  grid = new Vec3(x-2f, 0, y-4) * 0.5f;
+					float dist = Math.Min(1, grid.Length/10.0f);
+					Pose  pose = poseCache[(int)(dist * (cacheCount-1))];
 					pose.position += grid;
 					model.Draw(pose.ToMatrix(0.1f));
 				}

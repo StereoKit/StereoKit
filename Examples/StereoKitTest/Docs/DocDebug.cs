@@ -12,7 +12,7 @@ class DocDebug : ITest
 		Log.Filter = LogLevel.Warning;
 		/// :End:
 		Log.Filter = LogLevel.Diagnostic;
-        
+
 		/// :CodeSample: Log.Write
 		Log.Write(LogLevel.Info, "<~grn>{0:0.0}s<~clr> have elapsed since StereoKit start.", Time.Total);
 		/// :End:
@@ -20,7 +20,7 @@ class DocDebug : ITest
 		/// :CodeSample: Log.Info
 		Log.Info("<~grn>{0:0.0}s<~clr> have elapsed since StereoKit start.", Time.Total);
 		/// :End:
-        
+
 		/// :CodeSample: Log.Warn
 		Log.Warn("Warning! <~ylw>{0:0.0}s<~clr> have elapsed since StereoKit start!", Time.Total);
 		/// :End:
@@ -41,8 +41,5 @@ class DocDebug : ITest
 	}
 
 	public void Shutdown(){}
-
-	public void Update()
-	{
-	}
+	public void Update  (){}
 }

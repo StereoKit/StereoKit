@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -8,7 +7,7 @@ namespace StereoKit
 	public struct SHLight
 	{
 		/// <summary>Direction to the light source.</summary>
-		public Vector3 directionTo;
+		public Vec3 directionTo;
 		/// <summary>Color of the light! Values here can exceed 1.</summary>
 		public Color color;
 	}
@@ -27,20 +26,20 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SphericalHarmonics
 	{
-		private Vector3 coefficient1;
-		private Vector3 coefficient2;
-		private Vector3 coefficient3;
-		private Vector3 coefficient4;
-		private Vector3 coefficient5;
-		private Vector3 coefficient6;
-		private Vector3 coefficient7;
-		private Vector3 coefficient8;
-		private Vector3 coefficient9;
+		private Vec3 coefficient1;
+		private Vec3 coefficient2;
+		private Vec3 coefficient3;
+		private Vec3 coefficient4;
+		private Vec3 coefficient5;
+		private Vec3 coefficient6;
+		private Vec3 coefficient7;
+		private Vec3 coefficient8;
+		private Vec3 coefficient9;
 
 		/// <summary>Look up the color information in a particular direction!</summary>
 		/// <param name="normal">The direction to look in. Should be normalized.</param>
 		/// <returns>The Color represented by the SH in the given direction.</returns>
-		public Color Sample(Vector3 normal) => NativeAPI.sh_lookup(this, normal);
+		public Color Sample(Vec3 normal) => NativeAPI.sh_lookup(this, normal);
 
 		/// <summary>Creates a SphericalHarmonics approximation of the irradiance given
 		/// from a set of directional lights!</summary>

@@ -1,18 +1,19 @@
 ﻿using System;
-using System.Numerics;
 
 namespace StereoKit
 {
-	/// <summary>This class represents a sound effect! Excellent for blips and bloops
-	/// and little clips that you might play around your scene. Not great for long
-	/// streams of audio like you might see in a podcast. Right now, this only supports
-	/// .wav files, and procedurally generated noises!
+	/// <summary>This class represents a sound effect! Excellent for blips
+	/// and bloops and little clips that you might play around your scene.
+	/// Not great for long streams of audio like you might see in a podcast.
+	/// Right now, this only supports .wav files, and procedurally generated
+	/// noises!
 	/// 
-	/// On HoloLens 2, sounds are automatically processed on the HPU, freeing up the CPU
-	/// for more of your app's code. To simulate this same effect on your development PC,
-	/// you need to enable spatial sound on your audio endpoint. To do this, right click
-	/// the speaker icon in your system tray, navigate to "Spatial sound", and choose
-	/// "Windows Sonic for Headphones." For more information, visit 
+	/// On HoloLens 2, sounds are automatically processed on the HPU, freeing
+	/// up the CPU for more of your app's code. To simulate this same effect
+	/// on your development PC, you need to enable spatial sound on your
+	/// audio endpoint. To do this, right click the speaker icon in your
+	/// system tray, navigate to "Spatial sound", and choose "Windows Sonic
+	/// for Headphones." For more information, visit 
 	/// https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound </summary>
 	public class Sound
 	{
@@ -32,16 +33,18 @@ namespace StereoKit
 				SK.ExecuteOnMain(()=>NativeAPI.sound_release(_inst));
 		}
 
-		/// <summary>Plays the sound at the 3D location specified, using the volume
-		/// parameter as an additional volume control option! Sound volume falls off
-		/// from 3D location, and can also indicate direction and location through
-		/// spatial audio cues. So make sure the position is where you want people to
-		/// think it's from! Currently, if this sound is playing somewhere else, it'll
-		/// be cancelled, and moved to this location.</summary>
-		/// <param name="at">World space location for the audio to play at.</param>
-		/// <param name="volume">Volume modifier for the effect! 1 means full volume,
-		/// and 0 means completely silent.</param>
-		public void Play(Vector3 at, float volume = 1)
+		/// <summary>Plays the sound at the 3D location specified, using the
+		/// volume parameter as an additional volume control option! Sound
+		/// volume falls off from 3D location, and can also indicate
+		/// direction and location through spatial audio cues. So make sure
+		/// the position is where you want people to think it's from!
+		/// Currently, if this sound is playing somewhere else, it'll be
+		/// cancelled, and moved to this location.</summary>
+		/// <param name="at">World space location for the audio to play at.
+		/// </param>
+		/// <param name="volume">Volume modifier for the effect! 1 means full
+		/// volume, and 0 means completely silent.</param>
+		public void Play(Vec3 at, float volume = 1)
 			=> NativeAPI.sound_play(_inst, at, volume);
 
 		/// <summary>Looks for a Sound asset that's already loaded, matching the given id!</summary>

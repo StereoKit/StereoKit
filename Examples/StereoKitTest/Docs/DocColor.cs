@@ -1,5 +1,4 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DocColor : ITest
 {
@@ -25,16 +24,16 @@ class DocColor : ITest
 		/// :CodeSample: Color.HSV Color.ToHSV Color.LAB Color.ToLAB
 		// Desaturating a color can be done quite nicely with the HSV
 		// functions
-		Color red = new Color(1,0,0,1);
-		Vector3 colorHSV = red.ToHSV();
-		colorHSV.Y *= 0.5f; // Drop saturation by half
+		Color red      = new Color(1,0,0,1);
+		Vec3  colorHSV = red.ToHSV();
+		colorHSV.y *= 0.5f; // Drop saturation by half
 		Color desaturatedRed = Color.HSV(colorHSV, red.a);
 
 		// LAB color space is excellent for modifying perceived 
 		// brightness, or 'Lightness' of a color.
-		Color green = new Color(0,1,0,1);
-		Vector3 colorLAB = green.ToLAB();
-		colorLAB.X *= 0.5f; // Drop lightness by half
+		Color green    = new Color(0,1,0,1);
+		Vec3  colorLAB = green.ToLAB();
+		colorLAB.x *= 0.5f; // Drop lightness by half
 		Color darkGreen = Color.LAB(colorLAB, green.a);
 		/// :End:
 	}

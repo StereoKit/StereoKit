@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Numerics;
+﻿using System;
 
 namespace StereoKit
 {
@@ -49,7 +47,7 @@ namespace StereoKit
 		/// will then be relative to this point. This is great to use if 
 		/// you're trying to do teleportation, redirected walking, or just 
 		/// shifting the floor around.</summary>
-		public static Matrix4x4 CameraRoot 
+		public static Matrix CameraRoot 
 		{
 			get => NativeAPI.render_get_cam_root();
 			set => NativeAPI.render_set_cam_root(value);
@@ -61,7 +59,7 @@ namespace StereoKit
 		/// <param name="material">A Material to apply to the Mesh.</param>
 		/// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
 		/// Hierarchy Space.</param>
-		public static void Add(Mesh mesh, Material material, Matrix4x4 transform)
+		public static void Add(Mesh mesh, Material material, Matrix transform)
 			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, Color.White);
 		/// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
 		/// that transform is combined with the Matrix provided here.</summary>
@@ -72,7 +70,7 @@ namespace StereoKit
 		/// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
 		/// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
 		/// spot to pack in extra per-instance data for the shader!</param>
-		public static void Add(Mesh mesh, Material material, Matrix4x4 transform, Color color)
+		public static void Add(Mesh mesh, Material material, Matrix transform, Color color)
 			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, color);
 
 		/// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
@@ -80,7 +78,7 @@ namespace StereoKit
 		/// <param name="model">A valid Model you wish to draw.</param>
 		/// <param name="transform">A Matrix that will transform the Model from Model Space into the current
 		/// Hierarchy Space.</param>
-		public static void Add(Model model, Matrix4x4 transform)
+		public static void Add(Model model, Matrix transform)
 			=> NativeAPI.render_add_model(model._inst, transform, Color.White);
 		/// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
 		/// that transform is combined with the Matrix provided here.</summary>
@@ -90,7 +88,7 @@ namespace StereoKit
 		/// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
 		/// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
 		/// spot to pack in extra per-instance data for the shader!</param>
-		public static void Add(Model model, Matrix4x4 transform, Color color)
+		public static void Add(Model model, Matrix transform, Color color)
 			=> NativeAPI.render_add_model(model._inst, transform, color);
 
 		/// <summary>Set the near and far clipping planes of the camera! These are important
@@ -132,7 +130,7 @@ namespace StereoKit
 		/// <param name="height">Size of the screenshot vertically, in pixels.</param>
 		/// <param name="filename">Filename to write the screenshot to! Note this'll be a 
 		/// .jpg regardless of what file extension you use right now.</param>
-		public static void Screenshot(Vector3 from, Vector3 at, int width, int height, string filename)
+		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
 			=> NativeAPI.render_screenshot(from, at, width, height, filename);
 
 	}

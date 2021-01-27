@@ -1,5 +1,4 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DemoPBR : ITest
 {
@@ -38,7 +37,7 @@ class DemoPBR : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(1024, 1024, "PBRBalls.jpg", new Vector3(0, 0, -0.1f), new Vector3(0, 0, -1));
+		Tests.Screenshot(1024, 1024, "PBRBalls.jpg", new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
 
 		Hierarchy.Push(Matrix.T(0,0,-1));
 
@@ -50,10 +49,10 @@ class DemoPBR : ITest
 
 		for (int y = 0; y < materialGrid; y++) {
 		for (int x = 0; x < materialGrid; x++) {
-			Renderer.Add(sphereMesh, pbrMaterials[x+y*materialGrid], Matrix.TS(new Vector3(x-materialGrid/2.0f + 0.5f,y-materialGrid/2.0f + 0.5f,-1)/4.0f, 0.2f));
+			Renderer.Add(sphereMesh, pbrMaterials[x+y*materialGrid], Matrix.TS(new Vec3(x-materialGrid/2.0f + 0.5f,y-materialGrid/2.0f + 0.5f,-1)/4.0f, 0.2f));
 		} }
-		Text.Add("Metallic -->",  Matrix.TRS(new Vector3(0, materialGrid/8.0f+0.2f,  -0.25f), Quat.FromAngles(0,180, 0 ), 4));
-		Text.Add("Roughness -->", Matrix.TRS(new Vector3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
+		Text.Add("Metallic -->",  Matrix.TRS(new Vec3(0, materialGrid/8.0f+0.2f,  -0.25f), Quat.FromAngles(0,180, 0 ), 4));
+		Text.Add("Roughness -->", Matrix.TRS(new Vec3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
 		Hierarchy.Pop();
 	}
 }

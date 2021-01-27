@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using StereoKit;
 
 class Program 
@@ -11,9 +10,9 @@ class Program
 	public const string Root = "../../../Examples/Assets";
 #endif
 
-	static Model     floorMesh;
-	static Matrix4x4 floorTr;
-	static Pose      demoSelectPose = new Pose();
+	static Model  floorMesh;
+	static Matrix floorTr;
+	static Pose   demoSelectPose = new Pose();
 
 	//////////////////////
 	// Debug log window //
@@ -36,7 +35,7 @@ class Program
 	}
 	static void LogWindow()
 	{
-		UI.WindowBegin("Log", ref logPose, new Vector2(40, 0) * U.cm);
+		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
 		for (int i = 0; i < logList.Count; i++)
 			UI.Label(logList[i], false);
 		UI.WindowEnd();
@@ -92,7 +91,7 @@ class Program
 		floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
 		floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));*/
 
-		demoSelectPose.position    = new Vector3(0, 0, -0.4f);
+		demoSelectPose.position    = new Vec3(0, 0, -0.4f);
 		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
 	}
 	static void CommonUpdate()
@@ -111,21 +110,21 @@ class Program
 		// Lets add floor bounds if we have 'em
 		if (World.HasBounds)
 		{
-			Vector2   s    = World.BoundsSize/2;
-			Matrix4x4 pose = World.BoundsPose.ToMatrix();
-			Vector3 tl = pose.Transform( new Vector3( s.X, 0,  s.Y) );
-			Vector3 br = pose.Transform( new Vector3(-s.X, 0, -s.Y) );
-			Vector3 tr = pose.Transform( new Vector3(-s.X, 0,  s.Y) );
-			Vector3 bl = pose.Transform( new Vector3( s.X, 0, -s.Y) );
+			Vec2   s    = World.BoundsSize/2;
+			Matrix pose = World.BoundsPose.ToMatrix();
+			Vec3   tl   = pose.Transform( new Vec3( s.x, 0,  s.y) );
+			Vec3   br   = pose.Transform( new Vec3(-s.x, 0, -s.y) );
+			Vec3   tr   = pose.Transform( new Vec3(-s.x, 0,  s.y) );
+			Vec3   bl   = pose.Transform( new Vec3( s.x, 0, -s.y) );
 
 			Lines.Add(tl, tr, Color.White, 1.5f*U.cm);
 			Lines.Add(bl, br, Color.White, 1.5f*U.cm);
 			Lines.Add(tl, bl, Color.White, 1.5f*U.cm);
-			Lines.Add(tr,br, Color.White, 1.5f*U.cm);
+			Lines.Add(tr, br, Color.White, 1.5f*U.cm);
 		}
 
 		// Make a window for demo selection
-		UI.WindowBegin("Demos", ref demoSelectPose, new Vector2(50 * U.cm, 0));
+		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
 		for (int i = 0; i < Tests.DemoCount; i++)
 		{
 			string name = Tests.GetDemoName(i).Substring("Demo".Length);
@@ -155,16 +154,16 @@ class Program
 	static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
 	static void RulerWindow()
 	{
-		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vector3(30,4,1)*U.cm), true);
+		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
-		Text.Add("Centimeters", Matrix.TRS(new Vector3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+		Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
 		for (int d = 0; d <= 60; d+=1)
 		{
 			float x = d/2.0f;
 			float size = d%2==0?1f:0.15f;
-			Lines.Add(new Vector3(15-x,2,-.6f)*U.cm, new Vector3(15-x,2-size, -.6f)*U.cm, color, U.mm*0.5f);
+			Lines.Add(new Vec3(15-x,2,-.6f)*U.cm, new Vec3(15-x,2-size, -.6f)*U.cm, color, U.mm*0.5f);
 			if (d%2==0 && d/2 != 30)
-				Text.Add((d/2).ToString(), Matrix.TRS(new Vector3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+				Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
 		}
 		UI.HandleEnd();
 	}

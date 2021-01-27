@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
 	/// <summary>This is the texture asset class! This encapsulates 2D images,
 	/// texture arrays, cubemaps, and rendertargets! It can load any image
 	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
-	/// plus more later on, and you can also create textures procedurally.</summary>
+	/// plus more later on, and you can also create textures procedurally.
+	/// </summary>
 	public class Tex
 	{
 		#region Fields and Properties
@@ -348,7 +347,7 @@ namespace StereoKit
 		/// face! This generally doesn't need to be large, unless you have a 
 		/// really complicated gradient.</param>
 		/// <returns>A procedurally generated cubemap texture!</returns>
-		public static Tex GenCubemap(Gradient gradient, Vector3 gradientDirection, int resolution = 16)
+		public static Tex GenCubemap(Gradient gradient, Vec3 gradientDirection, int resolution = 16)
 		{
 			IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution, IntPtr.Zero);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
@@ -370,7 +369,7 @@ namespace StereoKit
 		/// face! This generally doesn't need to be large, unless you have a
 		/// really complicated gradient.</param>
 		/// <returns>A procedurally generated cubemap texture!</returns>
-		public static Tex GenCubemap(Gradient gradient, out SphericalHarmonics lightingInfo, Vector3 gradientDirection, int resolution = 16)
+		public static Tex GenCubemap(Gradient gradient, out SphericalHarmonics lightingInfo, Vec3 gradientDirection, int resolution = 16)
 		{
 			IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution, out lightingInfo);
 			return tex == IntPtr.Zero ? null : new Tex(tex);

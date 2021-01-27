@@ -1,10 +1,9 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DemoTextures : ITest
 {
 	Material exampleMaterial = Default.Material.Copy();
-	Mesh     quad            = Mesh.GeneratePlane(new Vector2(.4f,.4f), -Vec3.Forward, Vec3.Up);
+	Mesh     quad            = Mesh.GeneratePlane(new Vec2(.4f,.4f), -Vec3.Forward, Vec3.Up);
 
 	public void Initialize()
 	{
@@ -77,7 +76,7 @@ class DemoTextures : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(600, 600, "ProceduralTexture.jpg", new Vector3(0, 0, -.25f), new Vector3(0, 0, -1));
+		Tests.Screenshot(600, 600, "ProceduralTexture.jpg", new Vec3(0, 0, -.25f), new Vec3(0, 0, -1));
 
 		quad.Draw(exampleMaterial, Matrix.T(0,0,-0.5f));
 	}

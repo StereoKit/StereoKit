@@ -7,7 +7,6 @@ using Android.Views;
 using Java.Lang;
 using StereoKit;
 using System;
-using System.Numerics;
 using System.Threading.Tasks;
 
 namespace StereoKitTest_Android
@@ -74,7 +73,7 @@ namespace StereoKitTest_Android
 				// Core application loop
 				while (SK.Step(() =>
 				{
-					Text.Add(Time.Elapsed + "s", Matrix4x4.Identity);
+					Text.Add(Time.Elapsed + "s", StereoKit.Matrix.Identity);
 					UI.Handle("Cube", ref cubePose, cube.Bounds);
 					cube.Draw(cubePose.ToMatrix());
 				})) ;

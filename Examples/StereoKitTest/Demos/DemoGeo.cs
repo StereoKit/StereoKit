@@ -1,5 +1,4 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DemoGeo : ITest
 {
@@ -92,14 +91,14 @@ class DemoGeo : ITest
 			// The normal of the vertex is then calculated from the derivative of the Y 
 			// value!
 			verts[x+y*gridSize] = new Vertex(
-				new Vector3(
+				new Vec3(
 					x/(float)gridSize-0.5f, 
 					SKMath.Sin((x+y) * 0.7f)*0.1f, 
 					y/(float)gridSize-0.5f),
-				new Vector3(
+				new Vec3(
 					-SKMath.Cos((x+y) * 0.7f), 
 					1, 
-					-SKMath.Cos((x+y) * 0.7f)).Normalized());
+					-SKMath.Cos((x+y) * 0.7f)).Normalized);
 
 			// Create triangle face indices from the current vertex, and the vertices
 			// on the next row and column! Since there is no 'next' row and column on
@@ -132,14 +131,14 @@ class DemoGeo : ITest
 		Mesh  cubeMesh  = demoCubeMesh;
 		Model cubeModel = demoCubeModel;
 
-		Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vector3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
-		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vector3(0.358f, -0.013f, 0.222f), new Vector3(1.012f, -0.682f, -0.131f));
+		Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vec3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
+		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.222f), new Vec3(1.012f, -0.682f, -0.131f));
 
 		/// :CodeSample: Mesh.GenerateCube
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix4x4 cubeTransform = Matrix.T(-1.0f, 0, 1);
+		Matrix cubeTransform = Matrix.T(-1.0f, 0, 1);
 		Renderer.Add(cubeMesh, Default.Material, cubeTransform);
 
 		cubeTransform = Matrix.T(-1.0f, 0, -1);
@@ -155,7 +154,7 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix4x4 roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
+		Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
 		Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 
 		roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
@@ -171,7 +170,7 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix4x4 sphereTransform = Matrix.T(0.0f, 0, 1);
+		Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
 		Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 
 		sphereTransform = Matrix.T(0.0f, 0, -1);
@@ -187,7 +186,7 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix4x4 cylinderTransform = Matrix.T(0.5f, 0, 1);
+		Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
 		Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 
 		cylinderTransform = Matrix.T(0.5f, 0, -1);
@@ -203,7 +202,7 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix4x4 planeTransform = Matrix.T(1.0f, 0, 1);
+		Matrix planeTransform = Matrix.T(1.0f, 0, 1);
 		Renderer.Add(planeMesh, Default.Material, planeTransform);
 
 		planeTransform = Matrix.T(1.0f, 0, -1);

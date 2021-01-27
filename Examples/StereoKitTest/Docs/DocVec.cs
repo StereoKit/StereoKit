@@ -1,13 +1,12 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DocVec : ITest
 {
 	static bool TestDistance()
 	{
 		/// :CodeSample: Vec3.Distance
-		Vector3 pointA = new Vector3(3,2,5);
-		Vector3 pointB = new Vector3(3,2,8);
+		Vec3  pointA   = new Vec3(3,2,5);
+		Vec3  pointB   = new Vec3(3,2,8);
 		float distance = Vec3.Distance(pointA, pointB);
 		/// :End:
 
@@ -18,8 +17,8 @@ class DocVec : ITest
 	static bool TestDistanceSq()
 	{
 		/// :CodeSample: Vec3.DistanceSq
-		Vector3 pointA = new Vector3(3, 2, 5);
-		Vector3 pointB = new Vector3(3, 2, 8);
+		Vec3 pointA = new Vec3(3, 2, 5);
+		Vec3 pointB = new Vec3(3, 2, 8);
 
 		float distanceSquared = Vec3.DistanceSq(pointA, pointB);
 		if (distanceSquared < 4*4) { 
@@ -34,21 +33,21 @@ class DocVec : ITest
 	static bool TestAngles()
 	{
 		/// :CodeSample: Vec2.Angle
-		Vector2 point = new Vector2(1, 0);
-		float angle0 = Vec2.Angle(point);
+		Vec2 point = new Vec2(1, 0);
+		float angle0 = point.Angle();
 
-		point = new Vector2(0, 1);
-		float angle90 = Vec2.Angle(point);
+		point = new Vec2(0, 1);
+		float angle90 = point.Angle();
 
-		point = new Vector2(-1, 0);
-		float angle180 = Vec2.Angle(point);
+		point = new Vec2(-1, 0);
+		float angle180 = point.Angle();
 
-		point = new Vector2(0, -1);
-		float angle270 = Vec2.Angle(point);
+		point = new Vec2(0, -1);
+		float angle270 = point.Angle();
 		/// :End:
 
-		point = new Vector2(2.75f, 2.75f);
-		float angle45 = Vec2.Angle(point);
+		point = new Vec2(2.75f, 2.75f);
+		float angle45 = point.Angle();
 
 		Log.Info($"Angles 0 == {angle0}, Angles 45 == {angle45}, 90 == {angle90}, 180 == {angle180}, 270 == {angle270}");
 		return angle0 == 0 && angle90 == 90 && angle180 == 180 && angle270 == 270;
@@ -57,17 +56,17 @@ class DocVec : ITest
 	static bool TestAngleBetween()
 	{
 		/// :CodeSample: Vec2.AngleBetween
-		Vector2 directionA = new Vector2( 1, 1);
-		Vector2 directionB = new Vector2(-1, 1);
+		Vec2 directionA = new Vec2( 1, 1);
+		Vec2 directionB = new Vec2(-1, 1);
 		float angle90 = Vec2.AngleBetween(directionA, directionB);
 
-		directionA = new Vector2(1, 1);
-		directionB = new Vector2(0,-2);
+		directionA = new Vec2(1, 1);
+		directionB = new Vec2(0,-2);
 		float angleNegative135 = Vec2.AngleBetween(directionA, directionB);
 		/// :End:
 
-		directionA = new Vector2(1, 1);
-		directionB = new Vector2(0, 1);
+		directionA = new Vec2(1, 1);
+		directionB = new Vec2(0, 1);
 		float angle45 = Vec2.AngleBetween(directionA, directionB);
 
 		Log.Info($"AngleBetween 45 == {angle45}, 90 == {angle90}, -135 == {angleNegative135}");

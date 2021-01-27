@@ -1,13 +1,12 @@
 ﻿using StereoKit;
 using System;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Sequential)]
 struct MaterialBufferStruct
 {
-	public Vector3 point;
-	public float   scale;
+	public Vec3  point;
+	public float scale;
 }
 
 class TestMaterialBuffer : ITest

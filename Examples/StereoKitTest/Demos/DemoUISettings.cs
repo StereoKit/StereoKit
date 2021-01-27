@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,10 +15,10 @@ class DemoUISettings : ITest
 		padding         = 10 * Units.mm2m
 	};
 
-	Pose              settingsPose = new Pose( .25f, 0, 0, Quat.LookDir(-Vec3.Right));
-	Pose              colorPose    = new Pose(-.25f, 0, 0, Quat.LookDir( Vec3.Right));
+	Pose              settingsPose   = new Pose( .25f, 0, 0, Quat.LookDir(-Vec3.Right));
+	Pose              colorPose      = new Pose(-.25f, 0, 0, Quat.LookDir( Vec3.Right));
 	static UISettings globalSettings = defaultSettings;
-	static Vector3    colorScheme = new Vector3(0.07f, 0.8f, 0.5f);
+	static Vec3       colorScheme    = new Vec3(0.07f, 0.8f, 0.5f);
 
 	public void Update()
 	{
@@ -29,7 +28,7 @@ class DemoUISettings : ITest
 	void WindowSettings()
 	{
 		UI.Settings = defaultSettings;
-		UI.WindowBegin("Settings", ref settingsPose, new Vector2(24, 0) * U.cm);
+		UI.WindowBegin("Settings", ref settingsPose, new Vec2(24, 0) * U.cm);
 
 		UI.Label("Spacing");
 		UI.Label("Padding"); UI.SameLine();
@@ -49,13 +48,13 @@ class DemoUISettings : ITest
 		UI.WindowEnd();
 
 
-		UI.WindowBegin("Color", ref colorPose, new Vector2(20, 0) * U.cm);
+		UI.WindowBegin("Color", ref colorPose, new Vec2(20, 0) * U.cm);
 
-		UI.HSlider("x", ref colorScheme.X, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("y", ref colorScheme.Y, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("z", ref colorScheme.Z, 0, 1, 0, 18 * U.cm);
-		Color color = Color.HSV(colorScheme.X, colorScheme.Y, colorScheme.Z);
-		Lines.Add(new Vector3(9, -16, 0) * U.cm, new Vector3(-9, -16, 0) * U.cm, color, .01f);
+		UI.HSlider("x", ref colorScheme.v.X, 0, 1, 0, 18 * U.cm);
+		UI.HSlider("y", ref colorScheme.v.Y, 0, 1, 0, 18 * U.cm);
+		UI.HSlider("z", ref colorScheme.v.Z, 0, 1, 0, 18 * U.cm);
+		Color color = Color.HSV(colorScheme.x, colorScheme.y, colorScheme.z);
+		Lines.Add(new Vec3(9, -16, 0) * U.cm, new Vec3(-9, -16, 0) * U.cm, color, .01f);
 		UI.ColorScheme = color;
 
 		UI.WindowEnd();

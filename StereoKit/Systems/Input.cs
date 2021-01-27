@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -10,10 +9,10 @@ namespace StereoKit
 	public struct HandJoint
 	{
 		/// <summary>The joint's world space location.</summary>
-		public Vector3 position;
+		public Vec3 position;
 		/// <summary>The joint's world space orientation, where Forward points 
 		/// to the next joint down the finger.</summary>
-		public Quaternion orientation;
+		public Quat orientation;
 		/// <summary>The distance, in meters, to the surface of the hand from
 		/// this joint.</summary>
 		public float radius;
@@ -22,7 +21,7 @@ namespace StereoKit
 		/// into a Pose.</summary>
 		public Pose Pose => new Pose(position, orientation);
 
-		public HandJoint(Vector3 position, Quaternion orientation, float radius)
+		public HandJoint(Vec3 position, Quat orientation, float radius)
 		{
 			this.position    = position;
 			this.orientation = orientation;
@@ -131,7 +130,7 @@ namespace StereoKit
 			=> NativeAPI.input_hand_material(hand, material._inst);
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
-        
+
 		static void Initialize()
 		{
 			initialized = true;

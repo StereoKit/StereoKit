@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -77,13 +76,13 @@ namespace StereoKit
 		/// transparency when calculating the result.</summary>
 		/// <returns>Hue, Saturation, and Value, stored in x, y, and z respectively. All
 		/// values are between 0-1.</returns>
-		public Vector3 ToHSV()
+		public Vec3 ToHSV()
 			=> NativeAPI.color_to_hsv(this);
 
 		/// <summary>Converts the RGB color to a CIE LAB color space value! Conversion back and forth
 		/// from LAB space could be somewhat lossy.</summary>
 		/// <returns>An LAB vector where x=L, y=A, z=B.</returns>
-		public Vector3 ToLAB()
+		public Vec3 ToLAB()
 			=> NativeAPI.color_to_lab(this);
 
 		/// <summary>Creates a Red/Green/Blue color from Hue/Saturation/Value information.</summary>
@@ -110,8 +109,8 @@ namespace StereoKit
 		/// <param name="opacity">Also known as alpha! This is does not affect the rgb components of the
 		/// resulting color, it'll just get slotted into the colors opacity value.</param>
 		/// <returns>An RGB color!</returns>
-		public static Color HSV(Vector3 hsvColor, float opacity = 1)
-			=> NativeAPI.color_hsv(hsvColor.X, hsvColor.Y, hsvColor.Z, opacity);
+		public static Color HSV(Vec3 hsvColor, float opacity = 1)
+			=> NativeAPI.color_hsv(hsvColor.x, hsvColor.y, hsvColor.z, opacity);
 
 		/// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
 		/// human perception, and has significantly more accurate to perception lightness values, so this is 
@@ -137,8 +136,8 @@ namespace StereoKit
 		/// 'b' is from blue to yellow. Range is 0-1.</param>
 		/// <param name="opacity">The opacity copied into the final color!</param>
 		/// <returns>An RGBA color constructed from the LAB values.</returns>
-		public static Color LAB(Vector3 lab, float opacity = 1)
-			=> NativeAPI.color_lab(lab.X, lab.Y, lab.Z, opacity);
+		public static Color LAB(Vec3 lab, float opacity = 1)
+			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
 		public static implicit operator Color32(Color c) 
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));

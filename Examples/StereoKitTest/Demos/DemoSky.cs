@@ -3,14 +3,13 @@ using StereoKit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Numerics;
 
 namespace StereoKitTest
 {
 	class Light
 	{
 		public Pose pose;
-		public Vector3 color;
+		public Vec3 color;
 	}
 	enum LightMode
 	{
@@ -20,11 +19,11 @@ namespace StereoKitTest
 
 	class DemoSky : ITest
 	{
-		static List<Light> lights     = new List<Light>();
-		static Pose        windowPose = new Pose(new Vector3(0,0.1f,-0.3f), Quat.LookDir(-Vec3.Forward));
-		static LightMode   mode       = LightMode.Lights;
-		static Tex         cubemap    = null;
-		static Pose        previewPose = new Pose(0,-0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
+		static List<Light> lights      = new List<Light>();
+		static Pose        windowPose  = new Pose(0, 0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
+		static LightMode   mode        = LightMode.Lights;
+		static Tex         cubemap     = null;
+		static Pose        previewPose = new Pose(0, -0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 
 		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
 		Mesh       lightMesh     = Mesh.GenerateSphere(1);
@@ -35,7 +34,7 @@ namespace StereoKitTest
 		public void Shutdown() => FilePicker.Hide();
 		public void Update()
 		{
-			UI.WindowBegin("Direction", ref windowPose, new Vector2(20 * U.cm, 0));
+			UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
 			UI.Label("Mode");
 			if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
 			UI.SameLine();
@@ -88,15 +87,15 @@ namespace StereoKitTest
 		{
 			UI.PushId("window"+i);
 			bool dirty = UI.HandleBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
-			UI.LayoutArea(new Vector3(6,-3,0)*U.cm, new Vector2(10, 0)*U.cm);
-			if (lights[i].pose.position.Length() > 0.5f)
-				lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;
+			UI.LayoutArea(new Vec3(6,-3,0)*U.cm, new Vec2(10, 0)*U.cm);
+			if (lights[i].pose.position.Length > 0.5f)
+				lights[i].pose.position = lights[i].pose.position.Normalized * 0.5f;
 
 			lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3* U.cm), Color.HSV(lights[i].color));
 
-			dirty = UI.HSlider("H", ref lights[i].color.X, 0, 1, 0, 10 * U.cm) || dirty;
-			dirty = UI.HSlider("S", ref lights[i].color.Y, 0, 1, 0, 10 * U.cm) || dirty;
-			dirty = UI.HSlider("V", ref lights[i].color.Z, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("H", ref lights[i].color.v.X, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("S", ref lights[i].color.v.Y, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("V", ref lights[i].color.v.Z, 0, 1, 0, 10 * U.cm) || dirty;
 
 			UI.HandleEnd();
 			Lines.Add(
@@ -129,7 +128,7 @@ namespace StereoKitTest
 		{
 			SphericalHarmonics lighting = SphericalHarmonics.FromLights(lights
 				.ConvertAll(a => new SHLight{ 
-					directionTo = a.pose.position.Normalized(),
+					directionTo = a.pose.position.Normalized,
 					color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
 				.ToArray());
 
@@ -137,9 +136,9 @@ namespace StereoKitTest
 			Renderer.SkyLight = lighting;
 		}
 
-		float LightIntensity(Vector3 pos)
+		float LightIntensity(Vec3 pos)
 		{
-			return Math.Max(0, 2 - pos.Length() * 4);
+			return Math.Max(0, 2 - pos.Magnitude * 4);
 		}
 	}
 }

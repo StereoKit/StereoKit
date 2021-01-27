@@ -1,5 +1,4 @@
 ﻿using StereoKit;
-using System.Numerics;
 
 class DemoMath : ITest
 {
@@ -31,84 +30,84 @@ class DemoMath : ITest
 		bool planeRayActive = UI.HandleBegin("PlaneRay", ref posePlaneRay, new Bounds(Vec3.One*0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), planeRayActive ? active:notActive);
 
-		Plane ground    = new Plane(new Vector3(1,2,0), 0);
-		Ray   groundRay = new Ray(Vec3.Zero + new Vector3(0,0.2f,0), Vec3.AngleXZ(Time.Totalf*90, -2).Normalized());
+		Plane ground    = new Plane(new Vec3(1,2,0), 0);
+		Ray   groundRay = new Ray(Vec3.Zero + new Vec3(0,0.2f,0), Vec3.AngleXZ(Time.Totalf*90, -2).Normalized);
 
 		Lines.Add(groundRay.position, groundRay.At(0.1f), new Color32(255, 0, 0, 255), 2 * Units.mm2m);
-		planeMesh.Draw(material, Matrix.TRS(Vec3.Zero, Quat.LookDir(ground.Normal), 0.25f), colObj);
-		if (groundRay.Intersect(ground, out Vector3 groundAt))
+		planeMesh.Draw(material, Matrix.TRS(Vec3.Zero, Quat.LookDir(ground.normal), 0.25f), colObj);
+		if (groundRay.Intersect(ground, out Vec3 groundAt))
 			sphereMesh.Draw(material, Matrix.TS(groundAt, 0.02f), colIntersect);
 
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(posePlaneRay.position+new Vector3(0.0f,0.3f,0.15f), posePlaneRay.position + Vec3.Up*0.1f, 400, 400, "../../../docs/img/screenshots/RayIntersectPlane.jpg");
+			Renderer.Screenshot(posePlaneRay.position+new Vec3(0.0f,0.3f,0.15f), posePlaneRay.position + Vec3.Up*0.1f, 400, 400, "../../../docs/img/screenshots/RayIntersectPlane.jpg");
 
 		// Line and Plane
 		bool linePlaneActive = UI.HandleBegin("LinePlane", ref poseLinePlane, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), linePlaneActive ? active : notActive);
 
-		Plane   groundLinePlane = new Plane(new Vector3(1,2,0), 0);
-		Ray     groundLineRay   = new Ray  (Vec3.Zero + new Vector3(0,0.25f,0), Vec3.AngleXZ(Time.Totalf*90, -2).Normalized());
-		Vector3 groundLineP1    = groundLineRay.At((SKMath.Cos(Time.Totalf*3)+1)*0.2f);
-		Vector3 groundLineP2    = groundLineRay.At((SKMath.Cos(Time.Totalf*3)+1)*0.2f+ 0.1f);
+		Plane groundLinePlane = new Plane(new Vec3(1,2,0), 0);
+		Ray   groundLineRay   = new Ray  (Vec3.Zero + new Vec3(0,0.25f,0), Vec3.AngleXZ(Time.Totalf*90, -2).Normalized);
+		Vec3  groundLineP1    = groundLineRay.At((SKMath.Cos(Time.Totalf*3)+1)*0.2f);
+		Vec3  groundLineP2    = groundLineRay.At((SKMath.Cos(Time.Totalf*3)+1)*0.2f+ 0.1f);
 
 		Lines.Add(groundLineP1, groundLineP2, colTest, 2 * Units.mm2m);
 		sphereMesh.Draw(material, Matrix.TS(groundLineP1, 0.01f), colTest);
 		sphereMesh.Draw(material, Matrix.TS(groundLineP2, 0.01f), colTest);
-		bool groundLineIntersects = groundLinePlane.Intersect(groundLineP1, groundLineP2, out Vector3 groundLineAt);
-		planeMesh.Draw(material, Matrix.TRS(Vec3.Zero, Quat.LookDir(groundLinePlane.Normal), 0.25f), groundLineIntersects? colIntersect : colObj);
+		bool groundLineIntersects = groundLinePlane.Intersect(groundLineP1, groundLineP2, out Vec3 groundLineAt);
+		planeMesh.Draw(material, Matrix.TRS(Vec3.Zero, Quat.LookDir(groundLinePlane.normal), 0.25f), groundLineIntersects? colIntersect : colObj);
 		if (groundLineIntersects)
 			sphereMesh.Draw(material, Matrix.TS(groundLineAt, 0.02f), colIntersect);
 
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(poseLinePlane.position + new Vector3(0.0f, 0.3f, 0.15f), poseLinePlane.position + Vec3.Up * 0.1f, 400, 400, "../../../docs/img/screenshots/LineIntersectPlane.jpg");
+			Renderer.Screenshot(poseLinePlane.position + new Vec3(0.0f, 0.3f, 0.15f), poseLinePlane.position + Vec3.Up * 0.1f, 400, 400, "../../../docs/img/screenshots/LineIntersectPlane.jpg");
 
 		// Sphere and Ray
 		bool sphereRayActive = UI.HandleBegin("SphereRay", ref poseSphereRay, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), sphereRayActive ? active : notActive);
 
-		Sphere  sphere    = new Sphere(Vec3.Zero, 0.25f);
-		Vector3 sphereDir = Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf * 3) * 1.5f + 0.1f).Normalized();
-		Ray     sphereRay = new Ray(sphere.center - sphereDir * 0.35f, sphereDir);
+		Sphere sphere    = new Sphere(Vec3.Zero, 0.25f);
+		Vec3   sphereDir = Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf * 3) * 1.5f + 0.1f).Normalized;
+		Ray    sphereRay = new Ray(sphere.center - sphereDir * 0.35f, sphereDir);
 
 		Lines.Add(sphereRay.position, sphereRay.At(0.1f), colTest, 2 * Units.mm2m);
-		if (sphereRay.Intersect(sphere, out Vector3 sphereAt))
+		if (sphereRay.Intersect(sphere, out Vec3 sphereAt))
 			sphereMesh.Draw(material, Matrix.TS(sphereAt, 0.02f), colIntersect);
 		sphereMesh.Draw(material, Matrix.TS(sphere.center, 0.25f), colObj);
 
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(poseSphereRay.position + new Vector3(0.0f, 0.3f, 0.15f), poseSphereRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectSphere.jpg");
+			Renderer.Screenshot(poseSphereRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseSphereRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectSphere.jpg");
 
 		// Bounds and Ray
 		bool boundsRayActive = UI.HandleBegin("BoundsRay", ref poseBoundsRay, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), boundsRayActive ? active : notActive);
 
-		Bounds  bounds    = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
-		Vector3 boundsDir = Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf*3)*1.5f).Normalized();
-		Ray     boundsRay = new Ray(bounds.center - boundsDir * 0.35f, boundsDir);
+		Bounds bounds    = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
+		Vec3   boundsDir = Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf*3)*1.5f).Normalized;
+		Ray    boundsRay = new Ray(bounds.center - boundsDir * 0.35f, boundsDir);
 
 		Lines.Add(boundsRay.position, boundsRay.At(0.1f), colTest, 2 * Units.mm2m);
-		if (boundsRay.Intersect(bounds, out Vector3 boundsAt))
+		if (boundsRay.Intersect(bounds, out Vec3 boundsAt))
 			sphereMesh.Draw(material, Matrix.TS(boundsAt, 0.02f), colIntersect);
 		cubeMesh.Draw(material, Matrix.TS(bounds.center, 0.25f), colObj);
 
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(poseBoundsRay.position + new Vector3(0.0f, 0.3f, 0.15f), poseBoundsRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectBounds.jpg");
+			Renderer.Screenshot(poseBoundsRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsRay.position, 400, 400, "../../../docs/img/screenshots/RayIntersectBounds.jpg");
 
 		// Bounds and Line
 		bool boundsLineActive = UI.HandleBegin("BoundsLine", ref poseBoundsLine, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.TS(Vec3.Zero, 0.4f), boundsLineActive ? active : notActive);
 
-		Bounds  boundsLine   = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
-		Vector3 boundsLineP1 = boundsLine.center + Vec3.AngleXZ(Time.Totalf*45, SKMath.Cos(Time.Totalf*3)) * 0.35f;
-		Vector3 boundsLineP2 = boundsLine.center + Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf*6)) * SKMath.Cos(Time.Totalf)*0.35f;
+		Bounds boundsLine   = new Bounds(Vec3.Zero, Vec3.One * 0.25f);
+		Vec3   boundsLineP1 = boundsLine.center + Vec3.AngleXZ(Time.Totalf*45, SKMath.Cos(Time.Totalf*3)) * 0.35f;
+		Vec3   boundsLineP2 = boundsLine.center + Vec3.AngleXZ(Time.Totalf*90, SKMath.Cos(Time.Totalf*6)) * SKMath.Cos(Time.Totalf)*0.35f;
 
 		Lines.Add(boundsLineP1, boundsLineP2, colTest, 2*Units.mm2m);
 		sphereMesh.Draw(material, Matrix.TS(boundsLineP1, 0.01f), colTest);
@@ -119,16 +118,16 @@ class DemoMath : ITest
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(poseBoundsLine.position + new Vector3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
+			Renderer.Screenshot(poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position, 400, 400, "../../../docs/img/screenshots/LineIntersectBounds.jpg");
 
 		// Mesh and Ray
 		bool meshRayActive = UI.HandleBegin("MeshRay", ref poseMeshRay, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), meshRayActive ? active : notActive);
 		suzanne   .Draw(material,  Matrix.Identity, colObj);
 
-		Vector3 meshDir = Vec3.AngleXZ(Time.Totalf * 90, SKMath.Cos(Time.Totalf * 3) * 1.5f).Normalized();
-		Ray     meshRay = new Ray(bounds.center+Vec3.Up*0.1f - meshDir * 0.35f, meshDir);
-		if (meshRay.Intersect(suzanne, out Vector3 meshAt)) {
+		Vec3 meshDir = Vec3.AngleXZ(Time.Totalf * 90, SKMath.Cos(Time.Totalf * 3) * 1.5f).Normalized;
+		Ray  meshRay = new Ray(bounds.center+Vec3.Up*0.1f - meshDir * 0.35f, meshDir);
+		if (meshRay.Intersect(suzanne, out Vec3 meshAt)) {
 			Lines.Add(meshRay.position, meshAt, colTest, 2 * Units.mm2m);
 			sphereMesh.Draw(material, Matrix.TS(meshAt, 0.02f), colIntersect);
 		} else {
@@ -144,9 +143,9 @@ class DemoMath : ITest
 		bool crossActive = UI.HandleBegin("Cross", ref poseCross, new Bounds(Vec3.One * 0.4f));
 		boundsMesh.Draw(boundsMat, Matrix.S(0.4f), crossActive ? active : notActive);
 
-		Vector3 crossStart = Vec3.Zero;
+		Vec3 crossStart = Vec3.Zero;
 		//Vec3 right      = Vec3.Cross(Vec3.Forward, Vec3.Up); // These are the same!
-		Vector3 right      = Vec3.PerpendicularRight(Vec3.Forward, Vec3.Up);
+		Vec3 right      = Vec3.PerpendicularRight(Vec3.Forward, Vec3.Up);
 		Lines.Add(crossStart, crossStart + Vec3.Up*0.1f,      new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + Vec3.Forward*0.1f, new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + right * 0.1f,      new Color32(0, 255, 0, 255),  2*Units.mm2m);
@@ -157,7 +156,7 @@ class DemoMath : ITest
 		UI.HandleEnd();
 
 		if (Tests.IsTesting)
-			Renderer.Screenshot(poseCross.position + new Vector3(0.075f, 0.1f, 0.15f), poseCross.position + new Vector3(0.075f,0,0), 400, 400, "../../../docs/img/screenshots/CrossProduct.jpg");
+			Renderer.Screenshot(poseCross.position + new Vec3(0.075f, 0.1f, 0.15f), poseCross.position + new Vec3(0.075f,0,0), 400, 400, "../../../docs/img/screenshots/CrossProduct.jpg");
 	}
 
 	public void Initialize() {
