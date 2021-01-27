@@ -22,6 +22,9 @@ namespace StereoKit
 		/// origin to the surface of the plane.</summary>
 		public float d { get=>p.D; set=>p.D = value; }
 
+		public static implicit operator Plane(System.Numerics.Plane p) => new Plane(p.Normal, p.D);
+		public static implicit operator System.Numerics.Plane(Plane p) => p.p;
+
 		/// <summary>Creates a Plane directly from the ax + by + cz + d = 0
 		/// formula!</summary>
 		/// <param name="normal">Direction the plane is facing.</param>
