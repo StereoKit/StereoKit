@@ -22,7 +22,7 @@ namespace StereoKit
 	/// ```CSharp
 	///[StructLayout(LayoutKind.Sequential)]
 	///struct BufferData {
-	///	Vector3 windDirection;
+	///	Vec3    windDirection;
 	///	float   windStrength
 	///}
 	/// ```

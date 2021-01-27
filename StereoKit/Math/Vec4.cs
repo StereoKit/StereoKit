@@ -26,7 +26,7 @@ namespace StereoKit
 		public Vec2 YZ  { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
 		public Vec2 ZW  { get => new Vec2(z, w); set { z = value.x; w = value.y; } }
 		public Vec2 XZ  { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
-		public Vec3 XYZ { get => new Vec3(x, y, z); set { x = value.x; y = value.y; z = value.y; } }
+		public Vec3 XYZ { get => new Vec3(x, y, z); set { x = value.x; y = value.y; z = value.z; } }
 
 		/// <summary>A basic constructor, just copies the values in!</summary>
 		/// <param name="x">X component of the vector.</param>
@@ -34,19 +34,19 @@ namespace StereoKit
 		/// <param name="z">Z component of the vector.</param>
 		/// <param name="w">W component of the vector.</param>
 		public Vec4(float x, float y, float z, float w) 
-			=> v = new Vec4(x, y, z, w);
+			=> v = new Vector4(x, y, z, w);
 
 		/// <summary>A basic constructor, just copies the values in!</summary>
 		/// <param name="xyz">X, Y and Z components of the vector.</param>
 		/// <param name="w">W component of the vector.</param>
 		public Vec4(Vec3 xyz, float w)
-			=> v = new Vec4(xyz.x, xyz.y, xyz.z, w);
+			=> v = new Vector4(xyz.x, xyz.y, xyz.z, w);
 
 		/// <summary>A basic constructor, just copies the values in!</summary>
 		/// <param name="xy">X and Y components of the vector.</param>
 		/// <param name="zw">Z and W components of the vector.</param>
 		public Vec4(Vec2 xy, Vec2 zw)
-			=> v = new Vec4(xy.x, xy.y, zw.x, zw.y);
+			=> v = new Vector4(xy.x, xy.y, zw.x, zw.y);
 
 		public static implicit operator Vec4(Vector4 v) => new Vec4(v.X, v.Y, v.Z, v.W);
 		public static implicit operator Vector4(Vec4 v) => v.v;

@@ -36,7 +36,7 @@ namespace StereoKit
 		/// <returns>True if there's an intersetion, false if not. Refer to
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Plane  plane,  out Vec3 at)
+		public bool Intersect(Plane plane, out Vec3 at)
 			=> NativeAPI.plane_ray_intersect(plane, this, out at);
 
 		/// <summary>Checks the intersection of this ray with a sphere!

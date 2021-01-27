@@ -46,7 +46,7 @@ namespace StereoKit
 		/// <summary>This is the 'multiply by one!' of the quaternion
 		/// rotation world. It's basically a default, no rotation quaternion.
 		/// </summary>
-		public static readonly Quaternion Identity = Quaternion.Identity;
+		public static readonly Quat Identity = Quaternion.Identity;
 
 		/// <summary>A normalized quaternion has the same orientation, and a 
 		/// length of 1.</summary>
@@ -69,7 +69,7 @@ namespace StereoKit
 		public void Invert() => q = Quaternion.Inverse(q);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Vec3 Rotate(Vector3 pt) => Vector3.Transform(pt, q);
+		public Vec3 Rotate(Vec3 pt) => Vector3.Transform(pt, q);
 
 		/// <summary>Creates a rotation from a resting direction, to a
 		/// direction indicated by the direction of the two vectors provided
@@ -159,7 +159,7 @@ namespace StereoKit
 			=> Quaternion.CreateFromYawPitchRoll(pitchYawRollDeg.y * Units.deg2rad, pitchYawRollDeg.x * Units.deg2rad, pitchYawRollDeg.z * Units.deg2rad);
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Vec3 Rotate(Quaternion q, Vector3 pt) 
+		public static Vec3 Rotate(Quat q, Vec3 pt) 
 			=> Vector3.Transform(pt, q);
 
 		/// <summary>Spherical Linear intERPolation. Interpolates between two

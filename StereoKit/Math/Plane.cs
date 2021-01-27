@@ -78,7 +78,7 @@ namespace StereoKit
 		/// <returns>The point on the plane that's closest to the 'to'
 		/// parameter.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Vector3 Closest(Vector3 to)
+		public Vec3 Closest(Vec3 to)
 			=> NativeAPI.plane_point_closest(this, to);
 
 		/// <summary>Creates a plane from a normal, and any point on the 
@@ -88,7 +88,7 @@ namespace StereoKit
 		/// <param name="planeNormal">Direction the plane is facing.</param>
 		/// <returns>A plane that contains pointOnPlane, and faces
 		/// planeNormal.</returns>
-		public static Plane FromPoint(Vector3 pointOnPlane, Vector3 planeNormal)
+		public static Plane FromPoint(Vec3 pointOnPlane, Vec3 planeNormal)
 			=> new Plane(pointOnPlane, planeNormal);
 
 		// TODO: Define facing direction
@@ -98,7 +98,7 @@ namespace StereoKit
 		/// <param name="pointOnPlane2">Second point on the plane.</param>
 		/// <param name="pointOnPlane3">Third point on the plane.</param>
 		/// <returns>A plane that contains all three points.</returns>
-		public static Plane FromPoints(Vector3 pointOnPlane1, Vector3 pointOnPlane2, Vector3 pointOnPlane3)
+		public static Plane FromPoints(Vec3 pointOnPlane1, Vec3 pointOnPlane2, Vec3 pointOnPlane3)
 			=> new Plane(pointOnPlane1, pointOnPlane2, pointOnPlane3);
 	}
 }
