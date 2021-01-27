@@ -93,6 +93,8 @@ namespace StereoKit
 		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
+	/// <summary>Input from the system come from this class! Hands, eyes,
+	/// heads, mice and pointers!</summary>
 	public static class Input
 	{
 
@@ -106,7 +108,17 @@ namespace StereoKit
 		static bool                initialized = false;
 		static InputEventCallback  callback;
 
+		/// <summary>If the device has eye tracking hardware and the app has
+		/// permission to use it, then this is the eye's gaze pose. If not, 
+		/// then this is the same as the head's pose. Check 
+		/// SK.System.eyeTrackingPresent to see if this is eyes or head.
+		/// </summary>
 		public static Pose     Gaze        => Marshal.PtrToStructure<Pose>(NativeAPI.input_gaze());
+		/// <summary>If eye hardware is available and app has permission, 
+		/// then this is the tracking state of the eyes. Eyes may move out of
+		/// bounds, hardware may fail to detect eyes, or who knows what else!
+		/// If not, then this is whether or not the head is tracked, which is
+		/// pretty much always true.</summary>
 		public static BtnState GazeTracked => NativeAPI.input_gaze_tracked();
 
 		public static Pose  Head  => Marshal.PtrToStructure<Pose>(NativeAPI.input_head());

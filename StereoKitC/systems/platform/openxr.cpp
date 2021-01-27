@@ -39,9 +39,12 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
-	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
+	
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
+#if defined(SK_OS_WINDOWS)
+	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
+#endif
 #if defined(SK_OS_ANDROID)
 	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 #endif
@@ -446,8 +449,10 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME   ) == 0) xr_ext_depth_lsr                  = true;
 			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME             ) == 0) xr_ext_articulated_hands          = true;
 			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME     ) == 0) sk_info.spatial_bridge_present    = true;
-			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
 			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME      ) == 0) xr_ext_gaze                       = true;
+#if defined(SK_OS_WINDOWS)
+			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
+#endif
 		}
 	}
 
@@ -685,6 +690,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
 ///////////////////////////////////////////
 
 pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
+#if defined(SK_OS_WINDOWS)
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting perception anchors!");
 		return { {0,0,0}, {0,0,0,1} };
@@ -712,6 +718,10 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 	// Release the anchor, and return the resulting pose!
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 	return result;
+#else
+	log_warn("world_from_perception_anchor not available outside of Windows!");
+	return { {0,0,0}, {0,0,0,1} };
+#endif
 }
 
 } // namespace sk

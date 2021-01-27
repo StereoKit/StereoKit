@@ -83,8 +83,6 @@ namespace StereoKit
 		public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }
 
 		public override string ToString()
-		{
-			return string.Format("[center:{0} dimensions:{1}", center, dimensions);
-		}
+			=> string.Format("[center:{0} dimensions:{1}]", center, dimensions);
 	}
 }

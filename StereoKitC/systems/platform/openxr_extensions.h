@@ -9,7 +9,6 @@
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
-	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
 	_(xrGetVisibilityMaskKHR)                    \
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
@@ -29,9 +28,10 @@
 #endif
 
 #if defined(_WIN32)
-#define FOR_EACH_PLATFORM_FUNCTION(_)            \
-	_(xrConvertWin32PerformanceCounterToTimeKHR) \
-	_(xrConvertTimeToWin32PerformanceCounterKHR) \
+#define FOR_EACH_PLATFORM_FUNCTION(_)                \
+	_(xrConvertWin32PerformanceCounterToTimeKHR)     \
+	_(xrConvertTimeToWin32PerformanceCounterKHR)     \
+	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
 
 #else
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
