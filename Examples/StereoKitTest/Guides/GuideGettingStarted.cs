@@ -43,7 +43,7 @@ class Program
 {
 	static void Main(string[] args)
 	{
-		if (!SK.Initialize("Project"))
+		if (!SK.Initialize(new SKSettings{ appName = "Project" }))
 			Environment.Exit(1);
 
 		Model cube = Model.FromMesh(

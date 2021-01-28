@@ -111,8 +111,8 @@ namespace StereoKit
 		public static Quat LookDir(Vec3 direction) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, direction);
 
-		/// <summary>Creates a rotation from a resting direction, to the 
-		/// given direction! This prevents roll on the Z axis, Up is always 
+		/// <summary>Creates a rotation from a resting direction, to the
+		/// given direction! This prevents roll on the Z axis, Up is always
 		/// (0,1,0)</summary>
 		/// <param name="x">X component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
@@ -125,12 +125,13 @@ namespace StereoKit
 		public static Quat LookDir(float x, float y, float z) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, new Vec3(x, y, z));
 
-		/// <summary>This gives a relative rotation between the first and 
+		/// <summary>This gives a relative rotation between the first and
 		/// second quaternion rotations.
 		/// Remember that order is important here!</summary>
 		/// <param name="a">Starting rotation.</param>
 		/// <param name="b">Ending rotation.</param>
-		/// <returns>A rotation that will take a point from rotation a, to rotation b.</returns>
+		/// <returns>A rotation that will take a point from rotation a, to
+		/// rotation b.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Difference(Quat a, Quat b) 
 			=> NativeAPI.quat_difference(a, b);

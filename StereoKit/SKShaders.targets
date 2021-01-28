@@ -53,9 +53,9 @@
 			     work at all. Ideally Library projects would use this to mark the
 			     compiled shader as an element to copy over with the DLL. Instead,
 			     the app project needs to compile any shaders from here. -->
-			<!--<Content Include="%(SKShader.Outputs)">
+			<Content Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			</Content>-->
+			</Content>
 		</ItemGroup>
 	</Target>
 </Project>
