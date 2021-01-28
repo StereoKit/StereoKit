@@ -32,7 +32,7 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("android") then
-    add_requires("openxr_loader 1.0.13", {verify = false, configs = {vs_runtime="MD"}})
+    add_requires("openxr_loader 1.0.14", {verify = false, configs = {vs_runtime="MD"}})
 end
 add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD"}})
 

@@ -31,8 +31,8 @@ function Build-Config {
 
     #copy files into the project
     Copy-Item -Path "src\loader\Release\openxr_loader.lib" -Destination "..\..\..\StereoKitC\lib\bin\$config\Release\openxr_loader.lib" -Force -Confirm:$false
-    Copy-Item -Path "src\loader\Debug\openxr_loader.lib" -Destination "..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.lib" -Force -Confirm:$false
-    Copy-Item -Path "src\loader\Debug\openxr_loader.pdb" -Destination "..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.pdb" -Force -Confirm:$false
+    Copy-Item -Path "src\loader\Debug\openxr_loaderd.lib" -Destination "..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.lib" -Force -Confirm:$false
+    Copy-Item -Path "src\loader\openxr_loader.dir\Debug\openxr_loader.pdb" -Destination "..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.pdb" -Force -Confirm:$false
 
     Pop-Location
 }
