@@ -96,8 +96,10 @@ target("StereoKitC")
         else
             dist_os = "$(os)"
         end
-        build_folder = "$(buildir)/$(os)/$(arch)/$(mode)/"
+        build_folder = target:targetdir().."/"
         dist_folder  = "$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)/"
+
+        print("Copying binary files from "..build_folder.." to "..dist_folder)
 
         os.cp(build_folder.."*.dll", dist_folder)
         os.cp(build_folder.."*.so",  dist_folder)
@@ -117,7 +119,7 @@ target("StereoKitC")
 --------------------------------------------------
 
 option("tests")
-    set_default(false)
+    set_default(true)
     set_showmenu("true")
     set_description("Build native test project")
     set_values(true, false)
@@ -129,6 +131,11 @@ if has_config("tests") and is_plat("linux", "windows") then
         add_files("Examples/StereoKitCTest/*.cpp")
         add_includedirs("StereoKitC/")
         add_deps("StereoKitC")
+
+        after_build(function (target)
+            local assets_folder = path.join(target:targetdir(), "Assets")
+            os.cp("Examples/Assets/", assets_folder)
+        end)
 end
 
 --------------------------------------------------
