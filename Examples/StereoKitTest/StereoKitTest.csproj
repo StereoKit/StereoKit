@@ -36,7 +36,7 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
-		<SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildTo="Assets" />
+		<SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
 	</ItemGroup>
 
 	<!-- This guide file shouldn't be compiled -->

@@ -19,7 +19,6 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
-		<SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets"/>
 	</ItemGroup>
 
 </Project>

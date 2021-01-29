@@ -24,7 +24,7 @@ namespace StereoKitApp
 				Mesh.GenerateRoundedCube(Vec3.One * 0.1f, 0.02f),
 				Default.MaterialUI);
 
-			floorMaterial = new Material(Shader.FromFile("floor.hlsl.sks"));
+			floorMaterial = new Material(Shader.FromFile("floor.hlsl"));
 			floorMaterial.Transparency = Transparency.Blend;
 		}
 

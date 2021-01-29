@@ -111,13 +111,13 @@
   </ItemGroup>
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
   <!-- Copy assets, and build the app's shaders into the final app folder -->
-	<ItemGroup>
-		<Content Include="$(SolutionDir)Examples\Assets\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-		</Content>
-		<SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildTo="Assets" />
-	</ItemGroup>
+  <ItemGroup>
+    <Content Include="$(SolutionDir)Examples\Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
+  </ItemGroup>
   <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
