@@ -50,10 +50,8 @@ void common_update();
 void common_shutdown();
 void ruler_window();
 
-#if defined(WINDOWS_UWP)
+#if defined(_WIN32)
 const char* assets_folder = "Assets";
-#elif defined(_WIN32)
-const char* assets_folder = "../../Examples/Assets";
 #else
 // Assume running on Linux from repository root
 const char* assets_folder = "Examples/Assets";

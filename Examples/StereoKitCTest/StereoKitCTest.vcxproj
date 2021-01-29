@@ -97,6 +97,13 @@
       <Project>{95b47c8e-3a66-483c-abee-950e6c2f621a}</Project>
     </ProjectReference>
   </ItemGroup>
+  	<!-- Copy assets, and build the app's shaders into the final app folder -->
+	<ItemGroup>
+		<Content Include="$(SolutionDir)Examples\Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
+	</ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

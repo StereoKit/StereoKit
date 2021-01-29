@@ -8,18 +8,10 @@ using namespace sk;
 
 sprite_t ui_sprite;
 
-// TODO(Turtle1331) How can I do this more cleanly?
-#if defined(_WIN32)
-const char* logo_path = "../../../Documentation/img/StereoKitLogo.png";
-#else
-// Assume running on Linux from repository root
-const char* logo_path = "../../Documentation/img/StereoKitLogo.png";
-#endif
-
 ///////////////////////////////////////////
 
 void demo_ui_init() {
-	ui_sprite = sprite_create_file(logo_path, sprite_type_single);
+	ui_sprite = sprite_create_file("StereoKitWide.png", sprite_type_single);
 }
 
 ///////////////////////////////////////////
