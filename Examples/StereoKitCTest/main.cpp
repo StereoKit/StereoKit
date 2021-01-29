@@ -7,6 +7,7 @@ using namespace sk;
 #include "demo_basics.h"
 #include "demo_ui.h"
 #include "demo_sprites.h"
+#include "demo_lines.h"
 
 #include <stdio.h>
 
@@ -34,6 +35,11 @@ scene_t demos[] = {
 		demo_sprites_init,
 		demo_sprites_update,
 		demo_sprites_shutdown,
+	}, {
+		"Lines",
+		demo_lines_init,
+		demo_lines_update,
+		demo_lines_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
