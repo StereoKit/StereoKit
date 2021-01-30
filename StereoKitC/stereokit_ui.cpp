@@ -1234,6 +1234,9 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 		vec2 size = text_size(text, skui_font_style);
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
 		ui_text(at, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+
+		if (skui_layers.last().max_x > at.x - size.x - skui_settings.padding)
+			skui_layers.last().max_x = at.x - size.x - skui_settings.padding;
 	}
 	window.pose = pose;
 }

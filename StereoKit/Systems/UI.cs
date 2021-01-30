@@ -250,16 +250,35 @@ namespace StereoKit
 		/// <param name="pose">The pose state for the window! If showHeader 
 		/// is true, the user will be able to grab this header and move it 
 		/// around.</param>
-		/// <param name="size">Physical size of the window! Should be set to 
-		/// a non-zero value, otherwise it'll default to 32mm. If y is zero, 
-		/// it'll expand to contain all elements within it.</param>
+		/// <param name="size">Physical size of the window! If either 
+		/// dimension is 0, then the size on that axis will be auto-
+		/// calculated based on the content provided during the previous 
+		/// frame.</param>
 		/// <param name="windowType">Describes how the window should be drawn,
 		/// use a header, a body, neither, or both?</param>
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
 			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
-        
+
+		/// <summary>Begins a new window! This will push a pose onto the 
+		/// transform stack, and all UI elements will be relative to that new 
+		/// pose. The pose is actually the top-center of the window. Must be 
+		/// finished with a call to UI.WindowEnd(). This override omits the
+		/// size value, so the size will be auto-calculated based on the
+		/// content provided during the previous frame.</summary>
+		/// <param name="text">Text to display on the window title, should be 
+		/// unique as it will be used as the window's id.</param>
+		/// <param name="pose">The pose state for the window! If showHeader 
+		/// is true, the user will be able to grab this header and move it 
+		/// around.</param>
+		/// <param name="windowType">Describes how the window should be drawn,
+		/// use a header, a body, neither, or both?</param>
+		/// <param name="moveType">Describes how the window will move when 
+		/// dragged around.</param>
+		public static void WindowBegin(string text, ref Pose pose, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+			=> NativeAPI.ui_window_begin(text, ref pose, Vec2.Zero, windowType, moveType);
+
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>
 		public static void WindowEnd()
