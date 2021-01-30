@@ -77,6 +77,22 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\App.cs" />
+    <Compile Include="..\DebugToolWindow.cs" />
+    <Compile Include="..\ITest.cs" />
+    <Compile Include="..\Tests.cs" />
+    <Compile Include="..\Demos\*.cs" />
+  </ItemGroup>
+  <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+  <!-- Copy assets, and build the app's shaders into the final app folder -->
+  <ItemGroup>
+    <AndroidAsset Include="$(SolutionDir)Examples\Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </AndroidAsset>
+    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />

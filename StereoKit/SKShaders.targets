@@ -52,11 +52,16 @@
 	<!-- Ensure shader binaries get properly included in the build process -->
 	<Target Name="SKShaderCopy" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="SKShaderBuild">
 		<ItemGroup>
-			<Content Include="%(SKShader.Outputs)">
+			<Content Condition="'$(TargetFrameworkIdentifier)'!='MonoAndroid'" Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<DeploymentContent>true</DeploymentContent>
 				<Link>%(SKShader.RelativeName)</Link>
 			</Content>
+			
+			<AndroidAsset Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'" Include="%(SKShader.Outputs)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>%(SKShader.RelativeName)</Link>
+			</AndroidAsset>
 		</ItemGroup>
 	</Target>
 </Project>

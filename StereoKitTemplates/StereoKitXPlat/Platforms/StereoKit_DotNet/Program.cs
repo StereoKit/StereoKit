@@ -14,7 +14,7 @@ class SKLoader
 			? (App)Activator.CreateInstance(appType, new object[] { args })
 			: (App)Activator.CreateInstance(appType);
 		if (app == null)
-			throw new Exception("StereoKit loader couldn't construct an instance of the ISKApp!");
+			throw new Exception("StereoKit loader couldn't construct an instance of the App!");
 
 		// Initialize StereoKit, and the app
 		if (!SK.Initialize(app.Settings))
