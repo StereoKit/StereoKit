@@ -78,7 +78,6 @@ vec2   xr_bounds_size  = {};
 pose_t xr_bounds_pose  = { {}, quat_identity };
 
 XrDebugUtilsMessengerEXT xr_debug = {};
-XrEnvironmentBlendMode   xr_blend;
 XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////

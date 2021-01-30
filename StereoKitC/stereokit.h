@@ -80,7 +80,7 @@ typedef struct sk_settings_t {
 	const char   *app_name;
 	const char   *assets_folder;
 	display_mode_ display_preference;
-	bool32_t      display_fallback;
+	bool32_t      no_flatscreen_fallback;
 	depth_mode_   depth_mode;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;

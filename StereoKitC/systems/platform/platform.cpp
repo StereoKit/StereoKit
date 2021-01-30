@@ -46,7 +46,7 @@ bool platform_init() {
 
 	// Start up the current mode!
 	if (!platform_set_mode(sk_display_mode)) {
-		if (sk_display_fallback && sk_display_mode != display_mode_flatscreen) {
+		if (!sk_no_flatscreen_fallback && sk_display_mode != display_mode_flatscreen) {
 			log_infof("Runtime falling back to Flatscreen");
 			sk_display_mode = display_mode_flatscreen;
 			return platform_set_mode(sk_display_mode);

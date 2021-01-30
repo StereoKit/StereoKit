@@ -59,9 +59,9 @@ namespace StereoKit
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
 		public DisplayMode displayPreference;
-		/// <summary>If the preferred display fails, should we fall back to 
-		/// flatscreen? Default is no.</summary>
-		public bool        displayFallback;
+		/// <summary>If the preferred display fails, should we avoid falling
+		/// back to flatscreen and just crash out? Default is false.</summary>
+		public bool        noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing

@@ -27,8 +27,8 @@ namespace sk {
 
 const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
-display_mode_ sk_display_mode     = display_mode_mixedreality;
-bool          sk_display_fallback = false;
+display_mode_ sk_display_mode           = display_mode_mixedreality;
+bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings = {};
 system_info_t sk_info     = {};
 bool32_t      sk_focused  = true;
@@ -82,10 +82,10 @@ void sk_app_update() {
 ///////////////////////////////////////////
 
 bool32_t sk_init(sk_settings_t settings) {
-	sk_settings         = settings;
-	sk_display_mode     = sk_settings.display_preference;
-	sk_display_fallback = sk_settings.display_fallback;
-	sk_app_name         = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+	sk_settings               = settings;
+	sk_display_mode           = sk_settings.display_preference;
+	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
+	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
 
 	// Set some default values
 	if (sk_settings.flatscreen_width  == 0)
