@@ -504,9 +504,13 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
 	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
 
-	vec3 perp = dir.z < dir.x ? vec3{dir.y, -dir.x, 0} : vec3{0, -dir.z, dir.y};
-	vec3 axis_x = vec3_cross(dir, perp);
-	vec3 axis_y = vec3_cross(dir, axis_x);
+	// Calculate any perpendicular vector
+	vec3 perp = vec3{dir.z, dir.z, -dir.x-dir.y};
+	if (vec3_magnitude_sq(perp) == 0)
+		perp = vec3{-dir.y-dir.z, dir.x, dir.x};
+
+	vec3 axis_x = vec3_normalize(vec3_cross(dir, perp));
+	vec3 axis_y = vec3_normalize(vec3_cross(dir, axis_x));
 	vec3 z_off  = dir * (depth / 2.f);
 	vind_t ind = 0;
 
