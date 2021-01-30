@@ -56,7 +56,7 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="x">Numerator</param>
 		/// <param name="mod">Denominator</param>
-		/// <returns></returns>
+		/// <returns>x modulus mod</returns>
 		public static int Mod(int x, int mod)
 		{
 			int r = x % mod;

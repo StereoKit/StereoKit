@@ -55,7 +55,7 @@ namespace StereoKit_Android
 				// If the app has a constructor that takes a string array, then
 				// we'll use that, and pass the command line arguments into it on
 				// creation
-				Type appType = typeof(StereoKitApp.App);
+				Type appType = typeof(App);
 				app = appType.GetConstructor(new Type[] { typeof(string[]) }) != null
 					? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
 					: (App)Activator.CreateInstance(appType);
