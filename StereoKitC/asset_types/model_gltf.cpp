@@ -4,6 +4,7 @@
 #include "texture.h"
 #include "../sk_math.h"
 #include "../libraries/ferr_hash.h"
+#include "../systems/platform/platform_utils.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -263,7 +264,14 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
-	cgltf_data*   data    = nullptr;
+	options.file.read = [](const struct cgltf_memory_options* memory_options, const struct cgltf_file_options* file_options, const char* path, cgltf_size* size, void** data) {
+		return (cgltf_result)platform_read_file(path, data, size);
+	};
+	options.file.release = [](const struct cgltf_memory_options* memory_options, const struct cgltf_file_options* file_options, void* data) {
+		free(data);
+	};
+
+	cgltf_data *data       = nullptr;
 	const char *model_file = assets_file(filename);
 	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
 		return false;

@@ -92,52 +92,36 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	// Open file
 #if defined(SK_OS_ANDROID)
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
-	AAsset *asset = AAssetManager_open(android_asset_manager, filename, 0);
-	FILE   *fp;
+
+	// Try and load using Android API first!
+	AAsset *asset = AAssetManager_open(android_asset_manager, filename, AASSET_MODE_BUFFER);
 	if (asset) {
-		fp = funopen(asset,
-			[](void *cookie, char *buf, int size) {return AAsset_read((AAsset *)cookie, buf, size); },
-			[](void *cookie, const char *buf, int size) {return EACCES; },
-			[](void *cookie, fpos_t offset, int whence) {return AAsset_seek((AAsset *)cookie, offset, whence); },
-			[](void *cookie) { AAsset_close((AAsset *)cookie); return 0; } );
-	} else {
-		fp = fopen(filename, "rb");
-	}
+		*out_size = AAsset_getLength(asset);
+		*out_data = malloc(*out_size+1);
+		AAsset_read(asset, *out_data, *out_size);
+		AAsset_close(asset);
+		((uint8_t *)*out_data)[*out_size] = 0;
+		return true;
+	} 
 
-	if (fp == nullptr) {
-		log_errf("Can't find file %s!", filename);
-		return false;
-	}
-#elif defined(SK_OS_LINUX)
-
+	// Fall back to standard file io functions, they -can- work on Android
+#endif
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
 		log_errf("Can't find file %s!", filename);
 		return false;
 	}
 
-#else
-	FILE *fp;
-	if (fopen_s(&fp, filename, "rb") != 0 || fp == nullptr) {
-		log_errf("Can't find file %s!", filename);
-		return false;
-	}
-#endif
-
 	// Get length of file
-	fseek(fp, 0L, SEEK_END);
+	fseek(fp, 0, SEEK_END);
 	*out_size = ftell(fp);
-	rewind(fp);
+	fseek(fp, 0, SEEK_SET);
 
 	// Read the data
 	*out_data = malloc(*out_size+1);
 	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
 	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
-
-#if defined(SK_OS_ANDROID)
-	if (asset) AAsset_close(asset);
-#endif
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
