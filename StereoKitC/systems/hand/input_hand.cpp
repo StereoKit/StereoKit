@@ -182,7 +182,7 @@ void input_hand_init() {
 	tex_set_colors (gradient_tex, 16, 16, gradient);
 	tex_set_address(gradient_tex, tex_address_clamp);
 	material_set_texture     (hand_mat, "diffuse", gradient_tex);
-	material_set_queue_offset(hand_mat, -10);
+	material_set_queue_offset(hand_mat, 10);
 	
 	// Initialize the hands!
 	for (size_t i = 0; i < handed_max; i++) {

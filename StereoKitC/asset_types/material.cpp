@@ -84,9 +84,8 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 
 material_t material_create(shader_t shader) {
 	if (shader == nullptr) {
-		// TODO: Add a default shader if null is provided here
-		log_warn("TODO: Add a default shader if null is provided to material_create");
-		return nullptr;
+		log_warn("material_create was provided a null shader, defaulting to an unlit shader.");
+		shader = shader_find(default_id_shader_unlit);
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	assets_addref(shader->header);
