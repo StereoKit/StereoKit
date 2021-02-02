@@ -43,10 +43,6 @@ void hand_oxrc_update_frame() {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
-		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = xrc_point_action;
-		xrGetActionStatePose(xr_session, &get_info, &point_state);
-
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xrc_pose_action;
 		xrGetActionStatePose(xr_session, &get_info, &pose_state);
@@ -61,20 +57,6 @@ void hand_oxrc_update_frame() {
 		get_info.action = xrc_grip_action;
 		xrGetActionStateFloat(xr_session, &get_info, &grip_state);
 
-		// Update the hand point pose
-		pose_t     point_pose = {};
-		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
-		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
-		pointer->state   = button_make_state(pointer->state   & button_state_active, select_state.currentState > 0.5f);
-		if (openxr_get_space(xrc_point_space[hand], &point_pose)) {
-			point_pose.position    = matrix_mul_point   (root, point_pose.position);
-			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
-
-			pointer->ray.pos = point_pose.position;
-			pointer->ray.dir = point_pose.orientation * vec3_forward;
-			pointer->orientation = point_pose.orientation;
-		}
-
 		// Simulate the hand based on the state of the controller
 		pose_t hand_pose = {};
 		if (openxr_get_space(xr_hand_space[hand], &hand_pose)) {
@@ -87,8 +69,11 @@ void hand_oxrc_update_frame() {
 		}
 
 		// Get event poses, and fire our own events for them
+		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[hand]);
+		pointer->state = button_make_state(pointer->state & button_state_active, select_state.currentState > 0.5f);
+
 		const hand_t *curr_hand = input_hand((handed_)hand);
-		pose_t pose = {};
+		pose_t        pose      = {};
 		if (curr_hand->pinch_state & button_state_changed &&
 			openxr_get_space(xrc_point_space[hand], &pose, select_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point   (root, pose.position);

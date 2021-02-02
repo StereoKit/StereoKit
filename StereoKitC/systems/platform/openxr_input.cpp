@@ -2,6 +2,7 @@
 #include "openxr_input.h"
 #include "../hand/hand_oxr_controller.h"
 #include "../input.h"
+#include "../hand/input_hand.h"
 
 #include "platform_utils.h"
 #include "../../libraries/array.h"
@@ -368,8 +369,34 @@ void oxri_update_frame() {
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
 
-	pointer_t* pointer = input_get_pointer(xr_gaze_pointer);
+	// System pointer rays, these should be present regardless of whether
+	// we're using controllers or articulated hands.
+	matrix root = render_get_cam_root();
+	for (uint32_t hand = 0; hand < handed_max; hand++) {
+		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
+		get_info.subactionPath = xrc_hand_subaction_path[hand];
+
+		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
+		get_info.action = xrc_point_action;
+		xrGetActionStatePose(xr_session, &get_info, &point_state);
+
+		// Update the hand point pose
+		pose_t     point_pose = {};
+		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
+		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
+
+		if (openxr_get_space(xrc_point_space[hand], &point_pose)) {
+			point_pose.position    = matrix_mul_point   (root, point_pose.position);
+			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
+
+			pointer->ray.pos     = point_pose.position;
+			pointer->ray.dir     = point_pose.orientation * vec3_forward;
+			pointer->orientation = point_pose.orientation;
+		}
+	}
+
 	// Gaze input
+	pointer_t* pointer = input_get_pointer(xr_gaze_pointer);
 	if (sk_info.eye_tracking_present) {
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
