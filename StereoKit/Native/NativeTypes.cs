@@ -347,38 +347,92 @@ namespace StereoKit
 		Mirror,
 	}
 
-	/// <summary>Also known as 'alpha' for those in the know. But there's actually more than
-	/// one type of transparency in rendering! The horrors. We're keepin' it fairly simple for
-	/// now, so you get three options!</summary>
+	/// <summary>Also known as 'alpha' for those in the know. But there's 
+	/// actually more than one type of transparency in rendering! The 
+	/// horrors. We're keepin' it fairly simple for now, so you get three
+	/// options!</summary>
 	public enum Transparency
 	{
-		/// <summary>Not actually transparent! This is opaque! Solid! It's the default option, and
-		/// it's the fastest option! Opaque objects write to the z-buffer, the occlude pixels behind
-		/// them, and they can be used as input to important Mixed Reality features like Late 
-		/// Stage Reprojection that'll make your view more stable!</summary>
+		/// <summary>Not actually transparent! This is opaque! Solid! It's
+		/// the default option, and it's the fastest option! Opaque objects
+		/// write to the z-buffer, the occlude pixels behind them, and they
+		/// can be used as input to important Mixed Reality features like 
+		/// Late Stage Reprojection that'll make your view more stable!
+		/// </summary>
 		None = 1,
-		/// <summary>This will blend with the pixels behind it. This is transparent! It doesn't write
-		/// to the z-buffer, and it's slower than opaque materials.</summary>
+		/// <summary>This will blend with the pixels behind it. This is 
+		/// transparent! It doesn't write to the z-buffer, and it's slower
+		/// than opaque materials.</summary>
 		Blend,
-		/// <summary>This is sort of transparent! It can sample a texture, and discard pixels that are
-		/// below a certain threshold. It doesn't blend with colors behind it, but it's pretty fast, and
-		/// can write to the z-buffer no problem!</summary>
+		/// <summary>This is sort of transparent! It can sample a texture,
+		/// and discard pixels that are below a certain threshold. It doesn't
+		/// blend with colors behind it, but it's pretty fast, and can write
+		/// to the z-buffer no problem!</summary>
 		Clip,
 	}
 
-	/// <summary>Culling is discarding an object from the render pipeline! This enum describes how mesh
-	/// faces get discarded on the graphics card. With culling set to none, you can double the number of 
-	/// pixels the GPU ends up drawing, which can have a big impact on performance. None can be appropriate
-	/// in cases where the mesh is designed to be 'double sided'. Front can also be helpful when you want
-	/// to flip a mesh 'inside-out'!</summary>
+	/// <summary>Culling is discarding an object from the render pipeline!
+	/// This enum describes how mesh faces get discarded on the graphics
+	/// card. With culling set to none, you can double the number of pixels 
+	/// the GPU ends up drawing, which can have a big impact on performance. 
+	/// None can be appropriate in cases where the mesh is designed to be 
+	/// 'double sided'. Front can also be helpful when you want to flip a 
+	/// mesh 'inside-out'!</summary>
 	public enum Cull
 	{
-		/// <summary>Discard if the back of the triangle face is pointing towards the camera.</summary>
+		/// <summary>Discard if the back of the triangle face is pointing 
+		/// towards the camera.</summary>
 		Back = 0,
-		/// <summary>Discard if the front of the triangle face is pointing towards the camera.</summary>
+		/// <summary>Discard if the front of the triangle face is pointing 
+		/// towards the camera.</summary>
 		Front,
-		/// <summary>No culling at all! Draw the triangle regardless of which way it's pointing.</summary>
+		/// <summary>No culling at all! Draw the triangle regardless of which
+		/// way it's pointing.</summary>
 		None,
+	}
+
+	/// <summary>Depth test describes how this material looks at and responds
+	/// to depth information in the zbuffer! The default is Less, which means
+	/// if the material pixel's depth is Less than the existing depth data,
+	/// (basically, is this in front of some other object) it will draw that
+	/// pixel. Similarly, Greater would only draw the material if it's
+	/// 'behind' the depth buffer. Always would just draw all the time, and 
+	/// not read from the depth buffer at all.</summary>
+	public enum DepthTest
+	{
+		/// <summary>Default behavior, pixels behind the depth buffer will be
+		/// discarded, and pixels in front of it will be drawn.</summary>
+		Less = 0,
+		/// <summary>Pixels behind the depth buffer will be discarded, and
+		/// pixels in front of, or at the depth buffer's value it will be
+		/// drawn. This could be great for things that might be sitting 
+		/// exactly on a floor or wall.</summary>
+		LessOrEqual,
+		/// <summary>Pixels in front of the zbuffer will be discarded! This 
+		/// is opposite of how things normally work. Great for drawing 
+		/// indicators that something is occluded by a wall or other 
+		/// geometry.</summary>
+		Greater,
+		/// <summary>Pixels in front of (or exactly at) the zbuffer will be 
+		/// discarded! This is opposite of how things normally work. Great
+		/// for drawing indicators that something is occluded by a wall or
+		/// other geometry.</summary>
+		GreaterOrEqual,
+		/// <summary>Only draw pixels if they're at exactly the same depth as
+		/// the zbuffer!</summary>
+		Equal,
+		/// <summary>Draw any pixel that's not exactly at the value in the
+		/// zbuffer.</summary>
+		NotEqual,
+		/// <summary>Don't look at the zbuffer at all, just draw everything, 
+		/// always, all the time! At this poit, the order at which the mesh
+		/// gets drawn will be  super important, so don't forget about 
+		/// `Material.QueueOffset`!</summary>
+		Always,
+		/// <summary>Never draw a pixel, regardless of what's in the zbuffer.
+		/// I can think of better ways to do this, but uhh, this is here for
+		/// completeness! Maybe you can find a use for it.</summary>
+		Never,
 	}
 
 	/// <summary>What type of data does this material parameter need? This is used to tell the 

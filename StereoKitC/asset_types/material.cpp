@@ -92,6 +92,8 @@ material_t material_create(shader_t shader) {
 	assets_addref(shader->header);
 	result->alpha_mode = transparency_none;
 	result->shader     = shader;
+	result->depth_test = depth_test_less;
+	result->depth_write= true;
 	result->pipeline   = skg_pipeline_create(&result->shader->shader);
 
 	material_set_cull(result, cull_back);
@@ -245,8 +247,58 @@ void material_set_wireframe(material_t material, bool32_t wireframe) {
 
 ///////////////////////////////////////////
 
+void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
+	material->depth_test = depth_test_mode;
+	skg_pipeline_set_depth_test(&material->pipeline, (skg_depth_test_)depth_test_mode);
+}
+
+///////////////////////////////////////////
+
+void material_set_depth_write(material_t material, bool32_t write_enabled) {
+	material->depth_write = write_enabled;
+	skg_pipeline_set_depth_write(&material->pipeline, write_enabled);
+}
+
+///////////////////////////////////////////
+
 void material_set_queue_offset(material_t material, int32_t offset) {
 	material->queue_offset = offset;
+}
+
+///////////////////////////////////////////
+
+transparency_ material_get_transparency(material_t material) { 
+	return material->alpha_mode;
+}
+
+///////////////////////////////////////////
+
+cull_ material_get_cull(material_t material, cull_ mode) {
+	return material->cull;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_wireframe(material_t material) {
+	return material->wireframe;
+}
+
+///////////////////////////////////////////
+
+depth_test_ material_get_depth_test(material_t material) {
+	return material->depth_test;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_depth_write(material_t material) {
+	return material->depth_write;
+}
+
+///////////////////////////////////////////
+
+int32_t material_get_queue_offset(material_t material) {
+	return material->queue_offset;
 }
 
 ///////////////////////////////////////////

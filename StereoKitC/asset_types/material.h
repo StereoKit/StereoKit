@@ -25,6 +25,8 @@ struct _material_t {
 	transparency_     alpha_mode;
 	cull_             cull;
 	bool32_t          wireframe;
+	depth_test_       depth_test;
+	bool32_t          depth_write;
 	int32_t           queue_offset;
 	skg_pipeline_t    pipeline;
 };
