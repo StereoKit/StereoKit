@@ -178,7 +178,7 @@ void input_hand_init() {
 	} }
 	gradient_release(color_grad);
 
-	tex_t gradient_tex = tex_create();
+	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
 	tex_set_colors (gradient_tex, 16, 16, gradient);
 	tex_set_address(gradient_tex, tex_address_clamp);
 	material_set_texture     (hand_mat, "diffuse", gradient_tex);

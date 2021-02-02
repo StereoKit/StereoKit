@@ -18,10 +18,10 @@ namespace StereoKitTest
 	class DemoHands : ITest
 	{
 		static Pose optionsPose = new Pose(0,0,-0.3f, Quat.LookDir(-Vec3.Forward));
-		bool showHands = true;
-		bool showJoints = false;
-		bool showAxes = true;
-		bool showPointers = true;
+		bool showHands     = true;
+		bool showJoints    = false;
+		bool showAxes      = true;
+		bool showPointers  = true;
 		bool showHandMenus = true;
 
 		Mesh jointMesh = Mesh.GenerateSphere(1);
@@ -117,7 +117,7 @@ namespace StereoKitTest
 			UI.Toggle("Menu", ref showHandMenus);
 			UI.Label("Color");
 			if (UI.Button("Rainbow"))
-				ColorizeFingers(32, 
+				ColorizeFingers(16, 
 					new Gradient(
 						new GradientKey(Color.HSV(0.0f,1,1), 0.1f),
 						new GradientKey(Color.HSV(0.2f,1,1), 0.3f),
@@ -130,7 +130,7 @@ namespace StereoKitTest
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
 			if (UI.Button("Black"))
-				ColorizeFingers(32,
+				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
@@ -139,7 +139,7 @@ namespace StereoKitTest
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
 			if (UI.Button("Normal"))
-				ColorizeFingers(32,
+				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
@@ -159,7 +159,7 @@ namespace StereoKitTest
 
 		private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
 		{
-			Tex tex = new Tex();
+			Tex tex = new Tex(TexType.Image, TexFormat.Rgba32Linear);
 			tex.AddressMode = TexAddress.Clamp;
 
 			Color32[] pixels = new Color32[size*size];

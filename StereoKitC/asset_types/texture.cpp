@@ -118,7 +118,7 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
 	int      channels = 0;
 	int      width    = 0;
 	int      height   = 0;
-	uint8_t *col_data =  is_hdr ? 
+	uint8_t *col_data = is_hdr ? 
 		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4):
 		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
 
@@ -297,6 +297,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
 		texture->tex = skg_tex_create(type, use, format, use_mips);
+		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
 		if (texture->depth_buffer != nullptr)
