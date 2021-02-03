@@ -18,12 +18,13 @@ namespace StereoKit
 			set => NativeAPI.render_set_skytex(value._inst);
 		}
 
-		/// <summary>Sets the lighting information for the scene! You can build one through 
-		/// `SphericalHarmonics.FromLights`, or grab one from `Tex.FromEquirectangular` or 
-		/// `Tex.GenCubemap`</summary>
+		/// <summary>Sets the lighting information for the scene! You can
+		/// build one through `SphericalHarmonics.FromLights`, or grab one
+		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
 		public static SphericalHarmonics SkyLight
 		{
 			set => NativeAPI.render_set_skylight(value);
+			get => NativeAPI.render_get_skylight();
 		}
 
 		/// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque

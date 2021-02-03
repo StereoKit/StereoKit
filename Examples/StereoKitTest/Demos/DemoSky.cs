@@ -113,7 +113,8 @@ namespace StereoKitTest
 				FilePickerMode.Open,
 				Path.GetFullPath(SK.Settings.assetsFolder),
 				LoadSkyImage,
-				new FileFilter("HDR", "*.hdr"));
+				new FileFilter("HDR", "*.hdr"),
+				new FileFilter("Jpg", "*.jpg"));
 		}
 
 		void LoadSkyImage(string file)

@@ -295,6 +295,9 @@ SK_API color128 color_hsv   (float hue, float saturation, float value, float tra
 SK_API vec3     color_to_hsv(const sk_ref(color128) color);
 SK_API color128 color_lab   (float l, float a, float b, float transparency);
 SK_API vec3     color_to_lab(const sk_ref(color128) color);
+SK_API color128 color_to_linear(color128 srgb_gamma_correct);
+SK_API color128 color_to_gamma (color128 srgb_linear);
+
 
 #ifdef __cplusplus
 static inline color128  operator*  (const color128 &a, const float b)              { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
@@ -649,6 +652,7 @@ SK_API void     render_set_cam_root  (const sk_ref(matrix) cam_root);
 SK_API void     render_set_skytex    (tex_t sky_texture);
 SK_API tex_t    render_get_skytex    ();
 SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_info);
+SK_API spherical_harmonics_t render_get_skylight();
 SK_API void     render_set_clear_color(color128 color);
 SK_API void     render_enable_skytex (bool32_t show_sky);
 SK_API bool32_t render_enabled_skytex();

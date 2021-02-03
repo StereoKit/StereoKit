@@ -74,6 +74,7 @@ float                  render_fov         = 90;
 render_global_buffer_t render_global_buffer;
 mesh_t                 render_blit_quad;
 vec4                   render_lighting[9] = {};
+spherical_harmonics_t  render_lighting_src = {};
 color128               render_clear_color = {0,0,0,1};
 render_list_t          render_list_primary = -1;
 
@@ -228,7 +229,14 @@ tex_t render_get_skytex() {
 ///////////////////////////////////////////
 
 void render_set_skylight(const spherical_harmonics_t &light_info) {
+	render_lighting_src = light_info;
 	sh_to_fast(light_info, render_lighting);
+}
+
+///////////////////////////////////////////
+
+spherical_harmonics_t render_get_skylight() {
+	return render_lighting_src;
 }
 
 ///////////////////////////////////////////

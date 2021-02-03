@@ -279,6 +279,20 @@ void tex_destroy(tex_t tex) {
 ///////////////////////////////////////////
 
 void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
+	// If they want spherical harmonics, lets calculate it for them, or give
+	// them a good error message!
+	if (sh_lighting_info != nullptr) {
+		if (width != height || data_count != 6) {
+			log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
+			*sh_lighting_info = {};
+		} else if (!(texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128)) {
+			log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
+			*sh_lighting_info = {};
+		} else {
+			*sh_lighting_info = sh_calculate(data, texture->format, width);
+		}
+	}
+
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->tex.width != width || texture->tex.height != height || texture->tex.array_count != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))

@@ -105,6 +105,26 @@ vec3 color_to_lab(const color128 &color) {
 
 ///////////////////////////////////////////
 
+color128 color_to_linear(color128 srgb_gamma_correct) {
+	return {
+		powf(srgb_gamma_correct.r, 2.2f),
+		powf(srgb_gamma_correct.g, 2.2f),
+		powf(srgb_gamma_correct.b, 2.2f),
+		srgb_gamma_correct.a };
+}
+
+///////////////////////////////////////////
+
+color128 color_to_gamma(color128 srgb_linear) {
+	return {
+		powf(srgb_linear.r, 1/2.2f),
+		powf(srgb_linear.g, 1/2.2f),
+		powf(srgb_linear.b, 1/2.2f),
+		srgb_linear.a };
+}
+
+///////////////////////////////////////////
+
 gradient_t gradient_create() {
 	gradient_t result = (gradient_t)malloc(sizeof(_gradient_t));
 	*result = {};

@@ -8,15 +8,17 @@ class DemoPBR : ITest
 	Mesh       sphereMesh;
 
 	Tex oldSkyTex;
+	SphericalHarmonics oldSkyLight;
 
 	Pose modelPose = new Pose(Vec3.Zero, Quat.Identity);
 
 	public void Initialize()
 	{
-		oldSkyTex  = Renderer.SkyTex;
-		sphereMesh = Mesh.GenerateSphere(1, 5);
-		Renderer.SkyTex = Tex.FromCubemapEquirectangular("old_depot.jpg");
-		
+		oldSkyTex   = Renderer.SkyTex;
+		oldSkyLight = Renderer.SkyLight;
+		sphereMesh  = Mesh.GenerateSphere(1, 5);
+		Renderer.SkyTex   = Tex.FromCubemapEquirectangular("old_depot.hdr", out SphericalHarmonics lighting);
+		Renderer.SkyLight = lighting;
 
 		pbrModel = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
 		pbrMaterials = new Material[materialGrid*materialGrid];
@@ -32,7 +34,8 @@ class DemoPBR : ITest
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex = oldSkyTex;
+		Renderer.SkyTex   = oldSkyTex;
+		Renderer.SkyLight = oldSkyLight;
 	}
 
 	public void Update()
