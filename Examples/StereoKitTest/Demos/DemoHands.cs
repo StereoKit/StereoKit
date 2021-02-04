@@ -206,10 +206,13 @@ namespace StereoKitTest
 
 			// Decide the size and offset of the menu
 			Vec2  size   = new Vec2(4, 16);
-			float offset = handed == Handed.Left ? -4-size.x : 6+size.y;
+			float offset = handed == Handed.Left ? -2-size.x : 2+size.x;
 
-			// Position the menu relative to the palm
-			Pose menuPose = Input.Hand(handed).palm;
+			// Position the menu relative to the side of the hand
+			Hand hand     = Input.Hand(handed);
+			Pose menuPose = new Pose(
+				hand[FingerId.Little, JointId.KnuckleMajor].position,
+				hand[FingerId.Little, JointId.Root].orientation * Quat.FromAngles(-90,0,0));
 			menuPose.position += menuPose.Right * offset * U.cm;
 			menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 
