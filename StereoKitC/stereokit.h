@@ -470,7 +470,7 @@ SK_API void        shader_release     (shader_t shader);
 typedef enum transparency_ {
 	transparency_none = 1,
 	transparency_blend,
-	transparency_clip,
+	transparency_add,
 } transparency_;
 typedef enum cull_ {
 	cull_back = 0,

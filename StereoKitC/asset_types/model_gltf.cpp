@@ -224,8 +224,6 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_cull(result, cull_none);
 	if (material->alpha_mode == cgltf_alpha_mode_blend)
 		material_set_transparency(result, transparency_blend);
-	if (material->alpha_mode == cgltf_alpha_mode_mask)
-		material_set_transparency(result, transparency_clip);
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture))

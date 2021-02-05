@@ -364,11 +364,10 @@ namespace StereoKit
 		/// transparent! It doesn't write to the z-buffer, and it's slower
 		/// than opaque materials.</summary>
 		Blend,
-		/// <summary>This is sort of transparent! It can sample a texture,
-		/// and discard pixels that are below a certain threshold. It doesn't
-		/// blend with colors behind it, but it's pretty fast, and can write
-		/// to the z-buffer no problem!</summary>
-		Clip,
+		/// <summary>This will straight up add the pixel color to the color
+		/// buffer! This usually looks -really- glowy, so it makes for good
+		/// particles or lighting effects.</summary>
+		Add
 	}
 
 	/// <summary>Culling is discarding an object from the render pipeline!
