@@ -403,7 +403,7 @@ void render_check_screenshots() {
 		
 		// And save the screenshot to file
 		tex_get_data(render_capture_surface, buffer, size);
-		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 85);
+		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
 		free(buffer);
 		free(render_screenshot_list[i].filename);
 	}

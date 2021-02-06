@@ -191,9 +191,16 @@ namespace StereoKit
 		/// <summary>Retreives all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
-		/// controllers.</summary>
-		/// <param name="handed"></param>
-		/// <returns></returns>
+		/// controllers. 
+		/// 
+		/// Note that this is a copy of the hand information, and it's a good
+		/// chunk of data, so it's a good idea to grab it once and keep it
+		/// around for the frame, or at least function, rather than asking
+		/// for it again and again each time you want to touch something.
+		/// </summary>
+		/// <param name="handed">Do you want the left or the right hand?
+		/// </param>
+		/// <returns>A copy of the entire set of hand data!</returns>
 		public static Hand Hand(Handed handed)
 			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
 		/// <summary>This allows you to completely override the hand's pose 
