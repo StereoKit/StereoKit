@@ -318,7 +318,7 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f };
+	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = color_to_linear( { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f } );
 	material->args.buffer_dirty = true;
 }
 
@@ -329,7 +329,7 @@ void material_set_color(material_t material, const char *name, color128 value) {
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = color_to_linear( value );
 	material->args.buffer_dirty = true;
 }
 

@@ -271,17 +271,17 @@ void ui_settings(ui_settings_t settings) {
 void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	
-	skui_palette[0] = color;
-	skui_palette[1] = color_hsv(hsv.x, hsv.y * 0.5f,   hsv.z * 0.3f, color.a);
-	skui_palette[2] = color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.7f, color.a);
-	skui_palette[3] = color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.075f, hsv.z * 0.7f, color.a);
+	skui_palette[0] = color_to_linear( color );
+	skui_palette[1] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.2f,   hsv.z * 0.5f, color.a) );
+	skui_palette[2] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.8f, color.a) );
+	skui_palette[3] = color_to_linear( color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.075f, hsv.z * 0.8f, color.a) );
 	skui_palette[4] = color128{1, 1, 1, 1};
 }
 
 ///////////////////////////////////////////
 
 bool ui_init() {
-	ui_set_color(color_hsv(0.07f, 0.8f, 0.5f, 1));
+	ui_set_color(color_hsv(0.07f, 0.5f, 0.8f, 1));
 
 	ui_quadrant_mesh(skui_settings.padding);
 	skui_box_dbg  = mesh_gen_cube(vec3_one);
