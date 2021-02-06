@@ -139,6 +139,11 @@ namespace StereoKit
 		public static Color LAB(Vec3 lab, float opacity = 1)
 			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
+		public Color ToLinear()
+			=> NativeAPI.color_to_linear(this);
+		public Color ToGamma()
+			=> NativeAPI.color_to_gamma(this);
+
 		public static implicit operator Color32(Color c) 
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
 		public static Color operator *(Color a, float b) 

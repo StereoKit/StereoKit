@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 class DemoUISettings : ITest
 {
 	readonly static UISettings defaultSettings = new UISettings {
-		backplateBorder = 0.5f * Units.mm2m,
+		backplateBorder = 1f * Units.mm2m,
 		backplateDepth  = 0.4f,
-		depth           = 15 * Units.mm2m,
+		depth           = 10 * Units.mm2m,
 		gutter          = 10 * Units.mm2m,
 		padding         = 10 * Units.mm2m
 	};
@@ -18,7 +18,7 @@ class DemoUISettings : ITest
 	Pose              settingsPose   = new Pose( .25f, 0, 0, Quat.LookDir(-Vec3.Right));
 	Pose              colorPose      = new Pose(-.25f, 0, 0, Quat.LookDir( Vec3.Right));
 	static UISettings globalSettings = defaultSettings;
-	static Vec3       colorScheme    = new Vec3(0.07f, 0.8f, 0.5f);
+	static Vec3       colorScheme    = new Vec3(0.07f, 0.5f, 0.8f);
 
 	public void Update()
 	{
@@ -54,7 +54,7 @@ class DemoUISettings : ITest
 		UI.HSlider("y", ref colorScheme.v.Y, 0, 1, 0, 18 * U.cm);
 		UI.HSlider("z", ref colorScheme.v.Z, 0, 1, 0, 18 * U.cm);
 		Color color = Color.HSV(colorScheme.x, colorScheme.y, colorScheme.z);
-		Lines.Add(new Vec3(9, -16, 0) * U.cm, new Vec3(-9, -16, 0) * U.cm, color, .01f);
+		Lines.Add(new Vec3(9, -16, 0) * U.cm, new Vec3(-9, -16, 0) * U.cm, color.ToLinear(), .01f);
 		UI.ColorScheme = color;
 
 		UI.WindowEnd();

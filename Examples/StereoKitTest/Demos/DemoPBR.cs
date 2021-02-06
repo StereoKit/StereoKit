@@ -2,7 +2,7 @@
 
 class DemoPBR : ITest
 {
-	const int  materialGrid = 7;
+	const int  materialGrid = 6;
 	Material[] pbrMaterials;
 	Model      pbrModel;
 	Mesh       sphereMesh;
