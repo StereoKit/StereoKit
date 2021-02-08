@@ -9,6 +9,8 @@
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="25"/>
 
     <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
+    <uses-permission android:name="oculus.permission.HAND_TRACKING" />
+    <uses-feature android:name="oculus.software.handtracking" android:required="false" />
 
     <!-- This .apk has no Java code itself, so set hasCode to false. -->
     <application android:label="@string/app_name" android:hasCode="false">
