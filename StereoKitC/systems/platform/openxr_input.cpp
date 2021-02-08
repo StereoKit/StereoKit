@@ -17,7 +17,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 XrActionSet xrc_action_set;
-XrAction    xrc_gaze_action;
+XrAction    xrc_eyes_action;
 XrAction    xrc_pose_action;
 XrAction    xrc_point_action;
 XrAction    xrc_select_action;
@@ -28,7 +28,7 @@ XrSpace     xr_hand_space  [2] = {};
 XrSpace     xr_gaze_space = {};
 XrPath      xrc_pose_path  [2];
 
-int32_t xr_gaze_pointer;
+int32_t xr_eyes_pointer;
 
 struct xrc_profile_info_t {
 	const char *name;
@@ -53,7 +53,7 @@ bool oxri_init() {
 	xrc_offset_rot[0] = quat_identity;
 	xrc_offset_rot[1] = quat_identity;
 
-	xr_gaze_pointer = input_add_pointer(input_source_gaze | (sk_info.eye_tracking_present ? input_source_gaze_eyes : input_source_gaze_head));
+	xr_eyes_pointer = input_add_pointer(input_source_gaze | (sk_info.eye_tracking_present ? input_source_gaze_eyes : input_source_gaze_head));
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
@@ -115,7 +115,7 @@ bool oxri_init() {
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
 		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
 		snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Eye Gaze");
-		result = xrCreateAction(xrc_action_set, &action_info, &xrc_gaze_action);
+		result = xrCreateAction(xrc_action_set, &action_info, &xrc_eyes_action);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateAction failed: [%s]", openxr_string(result));
 			return false;
@@ -123,7 +123,7 @@ bool oxri_init() {
 
 		XrPath gaze_path;
 		xrStringToPath(xr_instance, "/user/eyes_ext/input/gaze_ext/pose", &gaze_path);
-		XrActionSuggestedBinding bindings = {xrc_gaze_action, gaze_path};
+		XrActionSuggestedBinding bindings = {xrc_eyes_action, gaze_path};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/ext/eye_gaze_interaction", &profile_path);
 		suggested_binds.interactionProfile     = profile_path;
@@ -135,7 +135,7 @@ bool oxri_init() {
 		}
 
 		XrActionSpaceCreateInfo create_space = {XR_TYPE_ACTION_SPACE_CREATE_INFO};
-		create_space.action            = xrc_gaze_action;
+		create_space.action            = xrc_eyes_action;
 		create_space.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
 		result = xrCreateActionSpace(xr_session, &create_space, &xr_gaze_space);
 		if (XR_FAILED(result)) {
@@ -395,28 +395,22 @@ void oxri_update_frame() {
 		}
 	}
 
-	// Gaze input
-	pointer_t* pointer = input_get_pointer(xr_gaze_pointer);
+	// eye input
+	pointer_t* pointer = input_get_pointer(xr_eyes_pointer);
 	if (sk_info.eye_tracking_present) {
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
-		action_info.action = xrc_gaze_action;
+		action_info.action = xrc_eyes_action;
 		xrGetActionStatePose(xr_session, &action_info, &action_pose);
 
-		input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, action_pose.isActive);
-		pointer->tracked = input_gaze_track_state;
+		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, action_pose.isActive);
+		pointer->tracked = input_eyes_track_state;
 
-		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_gaze_pose)) {
-			pointer->ray.pos     = input_gaze_pose.position;
-			pointer->ray.dir     = input_gaze_pose.orientation * vec3_forward;
-			pointer->orientation = input_gaze_pose.orientation;
+		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose)) {
+			pointer->ray.pos     = input_eyes_pose.position;
+			pointer->ray.dir     = input_eyes_pose.orientation * vec3_forward;
+			pointer->orientation = input_eyes_pose.orientation;
 		}
-	} else {
-		input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, true);
-		memcpy(&input_gaze_pose, input_head(), sizeof(pose_t));
-		pointer->ray.pos     = input_gaze_pose.position;
-		pointer->ray.dir     = input_gaze_pose.orientation * vec3_forward;
-		pointer->orientation = input_gaze_pose.orientation;
 	}
 }
 

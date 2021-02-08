@@ -310,8 +310,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_override(Handed hand, IntPtr hand_joints);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_mouse        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_head         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_gaze         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_gaze_tracked ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, bool visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_solid   (Handed hand, bool solid);

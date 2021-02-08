@@ -19,8 +19,8 @@ array_t<pointer_t>    input_pointers   = {};
 mouse_t               input_mouse_data = {};
 keyboard_t            input_key_data   = {};
 pose_t                input_head_pose  = { vec3_zero, quat_identity };
-pose_t                input_gaze_pose  = { vec3_zero, quat_identity };
-button_state_         input_gaze_track_state = button_state_inactive;
+pose_t                input_eyes_pose  = { vec3_zero, quat_identity };
+button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
 
@@ -134,14 +134,14 @@ const pose_t *input_head() {
 
 ///////////////////////////////////////////
 
-const pose_t *input_gaze() {
-	return &input_gaze_pose;
+const pose_t *input_eyes() {
+	return &input_eyes_pose;
 }
 
 ///////////////////////////////////////////
 
-button_state_ input_gaze_tracked() {
-	return input_gaze_track_state;
+button_state_ input_eyes_tracked() {
+	return input_eyes_track_state;
 }
 
 } // namespace sk {

@@ -167,17 +167,25 @@ namespace StereoKit
 		static InputEventCallback  callback;
 
 		/// <summary>If the device has eye tracking hardware and the app has
-		/// permission to use it, then this is the eye's gaze pose. If not, 
-		/// then this is the same as the head's pose. Check 
-		/// SK.System.eyeTrackingPresent to see if this is eyes or head.
+		/// permission to use it, then this is the most recently tracked eye
+		/// pose. Check `Input.EyesTracked` to see if the pose is up-to date,
+		/// or if it's a leftover!
+		/// 
+		/// You can also check `SK.System.eyeTrackingPresent` to see if the 
+		/// hardware is capable of providing eye tracking.
+		/// 
+		/// On Flatscreen when the MR sim is still enabled, then eyes are 
+		/// emulated using the cursor position when the user holds down Alt.
 		/// </summary>
-		public static Pose     Gaze        => Marshal.PtrToStructure<Pose>(NativeAPI.input_gaze());
+		public static Pose     Eyes        => Marshal.PtrToStructure<Pose>(NativeAPI.input_eyes());
 		/// <summary>If eye hardware is available and app has permission, 
 		/// then this is the tracking state of the eyes. Eyes may move out of
 		/// bounds, hardware may fail to detect eyes, or who knows what else!
-		/// If not, then this is whether or not the head is tracked, which is
-		/// pretty much always true.</summary>
-		public static BtnState GazeTracked => NativeAPI.input_gaze_tracked();
+		/// 
+		/// On Flatscreen when MR sim is still enabled, this will report 
+		/// whether the user is simulating eye input with the Alt key.
+		/// </summary>
+		public static BtnState EyesTracked => NativeAPI.input_eyes_tracked();
 
 		/// <summary>The position and orientation of the user's head! This is
 		/// the center point between the user's eyes, NOT the center of the

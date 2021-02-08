@@ -79,13 +79,23 @@ void flatscreen_input_update() {
 		render_set_cam_root(pose_matrix(input_head_pose));
 	}
 
-	input_gaze_track_state = button_make_state(input_gaze_track_state & button_state_active, true);
-	memcpy(&input_gaze_pose, input_head(), sizeof(pose_t));
+	if (sk_settings.disable_flatscreen_mr_sim) {
+		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, false);
+	} else {
+		bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
+		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
+		ray_t ray = {};
+		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
+			input_eyes_pose.position = ray.pos;
+			input_eyes_pose.orientation = quat_lookat(vec3_zero, ray.dir);
+		}
+	}
+	
 
 	pointer_t *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = input_gaze_pose.position;
-	pointer_head->ray.dir = input_gaze_pose.orientation * vec3_forward;
+	pointer_head->ray.pos = input_eyes_pose.position;
+	pointer_head->ray.dir = input_eyes_pose.orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////

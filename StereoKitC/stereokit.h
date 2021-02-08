@@ -766,8 +766,8 @@ SK_API pointer_t             input_pointer      (int32_t index, input_source_ fi
 SK_API const hand_t         *input_hand         (handed_ hand);
 SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
 SK_API const pose_t         *input_head         ();
-SK_API const pose_t         *input_gaze         ();
-SK_API button_state_         input_gaze_tracked ();
+SK_API const pose_t         *input_eyes         ();
+SK_API button_state_         input_eyes_tracked ();
 SK_API const mouse_t        *input_mouse        ();
 SK_API button_state_         input_key          (key_ key);
 SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
