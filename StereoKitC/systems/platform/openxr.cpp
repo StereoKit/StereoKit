@@ -272,7 +272,7 @@ bool openxr_init() {
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT types, const XrDebugUtilsMessengerCallbackDataEXT *msg, void* user_data) {
+	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT, const XrDebugUtilsMessengerCallbackDataEXT *msg, void*) {
 		// Print the debug message we got! There's a bunch more info we could
 		// add here too, but this is a pretty good start, and you can always
 		// add a breakpoint this line!
@@ -689,7 +689,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
 ///////////////////////////////////////////
 
 pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
-#if defined(SK_OS_WINDOWS)
+#if defined(SK_OS_WINDOWS_UWP)
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting perception anchors!");
 		return { {0,0,0}, {0,0,0,1} };
@@ -718,7 +718,7 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 	return result;
 #else
-	log_warn("world_from_perception_anchor not available outside of Windows!");
+	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
 	return { {0,0,0}, {0,0,0,1} };
 #endif
 }

@@ -141,8 +141,8 @@ public:
 		m_logicalHeight      = window.Bounds().Height;
 		m_nativeOrientation  = currentDisplayInformation.NativeOrientation ();
 		m_currentOrientation = currentDisplayInformation.CurrentOrientation();
-		sk_info.display_width  = dips_to_pixels(m_logicalWidth,  m_DPI);
-		sk_info.display_height = dips_to_pixels(m_logicalHeight, m_DPI);
+		sk_info.display_width  = (int32_t)dips_to_pixels(m_logicalWidth,  m_DPI);
+		sk_info.display_height = (int32_t)dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
@@ -324,8 +324,8 @@ private:
 	}
 
 	void HandleWindowSizeChanged() {
-		int outputWidth  = dips_to_pixels(m_logicalWidth, m_DPI);
-		int outputHeight = dips_to_pixels(m_logicalHeight, m_DPI);
+		int outputWidth  = (int)dips_to_pixels(m_logicalWidth, m_DPI);
+		int outputHeight = (int)dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 

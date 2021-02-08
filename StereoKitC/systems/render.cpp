@@ -662,13 +662,13 @@ void render_list_execute(render_list_t list_id, uint32_t view_count) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
-	size_t count = list->queue.count;
-	if (count == 0) {
+	size_t queue_count = list->queue.count;
+	if (queue_count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
 	if (!list->sorted) {
-		radix_sort7(&list->queue[0], count);
+		radix_sort7(&list->queue[0], queue_count);
 		list->sorted = true;
 	}
 
@@ -676,7 +676,7 @@ void render_list_execute(render_list_t list_id, uint32_t view_count) {
 	material_t     last_material = item->material;
 	skg_mesh_t    *last_mesh     = item->mesh;
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0; i < queue_count; i++) {
 		XMMATRIX transpose = XMMatrixTranspose(item->transform);
 
 		// Add a render instance
@@ -684,21 +684,21 @@ void render_list_execute(render_list_t list_id, uint32_t view_count) {
 
 		// If the next item is not the same as the current run of render 
 		// items, we'll collect the instances, and submit them to draw!
-		render_item_t *next = i+1>=count ? nullptr : &list->queue[i+1];
+		render_item_t *next = i+1>=queue_count ? nullptr : &list->queue[i+1];
 		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
 			render_set_material(item->material);
 			skg_mesh_bind      (item->mesh);
 			list->stats.swaps_mesh++;
 
 			// Collect and draw instances
-			int32_t offsets = 0, count = 0;
+			int32_t offsets = 0, inst_count = 0;
 			do {
-				skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
+				skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, inst_count);
 				skg_buffer_bind(instances, render_list_inst_bind, 0);
 
-				skg_draw(0, 0, item->mesh_inds, count * view_count);
+				skg_draw(0, 0, item->mesh_inds, inst_count * view_count);
 				list->stats.draw_calls     += 1;
-				list->stats.draw_instances += count;
+				list->stats.draw_instances += inst_count;
 
 			} while (offsets != 0);
 			render_instance_list.clear();

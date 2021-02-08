@@ -5,28 +5,16 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 0
-#define SK_VERSION_PRERELEASE 2
-
-#if defined(_DLL) || defined(BUILDING_DLL)
-	#ifdef __GNUC__
-	//#define SK_EXIMPORT __attribute__((dllexport))
-	#define SK_EXIMPORT
-	#else
-	#define SK_EXIMPORT __declspec(dllexport)
-	#endif
-#else
-	#ifdef __GNUC__
-	//#define SK_EXIMPORT __attribute__((dllimport))
-	#define SK_EXIMPORT
-	#else
-	#define SK_EXIMPORT __declspec(dllimport)
-	#endif
-#endif
+#define SK_VERSION_PRERELEASE 1
 
 #ifdef __GNUC__
-#define SK_DECL 
+#define SK_EXIMPORT
 #else
-#define SK_DECL __declspec
+	#if defined(_DLL) || defined(BUILDING_DLL)
+		#define SK_EXIMPORT __declspec(dllexport)
+	#else
+		#define SK_EXIMPORT __declspec(dllimport)
+	#endif
 #endif
 
 #ifdef __cplusplus
@@ -121,16 +109,16 @@ SK_API uint64_t      sk_version_id         ();
 
 ///////////////////////////////////////////
 
-SK_API float    time_getf_unscaled();
-SK_API double   time_get_unscaled ();
-SK_API float    time_getf();
-SK_API double   time_get ();
-SK_API float    time_elapsedf_unscaled();
-SK_API double   time_elapsed_unscaled ();
-SK_API float    time_elapsedf();
-SK_API double   time_elapsed ();
-SK_API void     time_scale(double scale);
-SK_API void     time_set_time(double total_seconds, double frame_elapsed_seconds sk_default(0));
+SK_API float  time_getf_unscaled();
+SK_API double time_get_unscaled ();
+SK_API float  time_getf();
+SK_API double time_get ();
+SK_API float  time_elapsedf_unscaled();
+SK_API double time_elapsed_unscaled ();
+SK_API float  time_elapsedf();
+SK_API double time_elapsed ();
+SK_API void   time_scale(double scale);
+SK_API void   time_set_time(double total_seconds, double frame_elapsed_seconds sk_default(0));
 
 ///////////////////////////////////////////
 
@@ -186,7 +174,7 @@ SK_API quat quat_inverse    (const sk_ref(quat) a);
 SK_API quat quat_mul        (const sk_ref(quat) a, const sk_ref(quat) b);
 SK_API vec3 quat_mul_vec    (const sk_ref(quat) a, const sk_ref(vec3) b);
 
-SK_API matrix pose_matrix(const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
+SK_API matrix pose_matrix    (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
 SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
@@ -291,10 +279,10 @@ typedef struct color128 {
 	float r, g, b, a;
 } color128;
 
-SK_API color128 color_hsv   (float hue, float saturation, float value, float transparency);
-SK_API vec3     color_to_hsv(const sk_ref(color128) color);
-SK_API color128 color_lab   (float l, float a, float b, float transparency);
-SK_API vec3     color_to_lab(const sk_ref(color128) color);
+SK_API color128 color_hsv      (float hue, float saturation, float value, float transparency);
+SK_API vec3     color_to_hsv   (const sk_ref(color128) color);
+SK_API color128 color_lab      (float l, float a, float b, float transparency);
+SK_API vec3     color_to_lab   (const sk_ref(color128) color);
 SK_API color128 color_to_linear(color128 srgb_gamma_correct);
 SK_API color128 color_to_gamma (color128 srgb_linear);
 
@@ -316,15 +304,15 @@ typedef struct gradient_key_t {
 } gradient_key_t;
 SK_DeclarePrivateType(gradient_t);
 
-SK_API gradient_t gradient_create ();
+SK_API gradient_t gradient_create     ();
 SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
-SK_API void       gradient_add    (gradient_t gradient, color128 color, float position);
-SK_API void       gradient_set    (gradient_t gradient, int32_t index, color128 color, float position);
-SK_API void       gradient_remove (gradient_t gradient, int32_t index);
-SK_API int32_t    gradient_count  (gradient_t gradient);
-SK_API color128   gradient_get    (gradient_t gradient, float at);
-SK_API color32    gradient_get32  (gradient_t gradient, float at);
-SK_API void       gradient_release(gradient_t gradient);
+SK_API void       gradient_add        (gradient_t gradient, color128 color, float position);
+SK_API void       gradient_set        (gradient_t gradient, int32_t index, color128 color, float position);
+SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
+SK_API int32_t    gradient_count      (gradient_t gradient);
+SK_API color128   gradient_get        (gradient_t gradient, float at);
+SK_API color32    gradient_get32      (gradient_t gradient, float at);
+SK_API void       gradient_release    (gradient_t gradient);
 
 ///////////////////////////////////////////
 
@@ -420,29 +408,29 @@ typedef enum tex_address_ {
 
 SK_DeclarePrivateType(tex_t);
 
-SK_API tex_t tex_find                (const char *id);
-SK_API tex_t tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
-SK_API tex_t tex_create_mem          (void *data, size_t data_size,       bool32_t srgb_data sk_default(true));
-SK_API tex_t tex_create_file         (const char *file,                   bool32_t srgb_data sk_default(true));
-SK_API tex_t tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
-SK_API tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
-SK_API void  tex_set_id              (tex_t texture, const char *id);
-SK_API void  tex_release             (tex_t texture);
-SK_API void  tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void  tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
-SK_API tex_t tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
-SK_API void  tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
-SK_API tex_t tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
-SK_API tex_t tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)  lookup, int32_t face_size);
-SK_API tex_format_  tex_get_format    (tex_t texture);
-SK_API int32_t      tex_get_width     (tex_t texture);
-SK_API int32_t      tex_get_height    (tex_t texture);
-SK_API void         tex_set_sample    (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
-SK_API tex_sample_  tex_get_sample    (tex_t texture);
-SK_API void         tex_set_address   (tex_t texture, tex_address_ address_mode sk_default(tex_address_wrap));
-SK_API tex_address_ tex_get_address   (tex_t texture);
-SK_API void         tex_set_anisotropy(tex_t texture, int32_t anisotropy_level sk_default(4));
-SK_API int32_t      tex_get_anisotropy(tex_t texture);
+SK_API tex_t        tex_find                (const char *id);
+SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
+SK_API tex_t        tex_create_mem          (void *data, size_t data_size,       bool32_t srgb_data sk_default(true));
+SK_API tex_t        tex_create_file         (const char *file,                   bool32_t srgb_data sk_default(true));
+SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_id              (tex_t texture, const char *id);
+SK_API void         tex_release             (tex_t texture);
+SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
+SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)  lookup, int32_t face_size);
+SK_API tex_format_  tex_get_format          (tex_t texture);
+SK_API int32_t      tex_get_width           (tex_t texture);
+SK_API int32_t      tex_get_height          (tex_t texture);
+SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
+SK_API tex_sample_  tex_get_sample          (tex_t texture);
+SK_API void         tex_set_address         (tex_t texture, tex_address_ address_mode sk_default(tex_address_wrap));
+SK_API tex_address_ tex_get_address         (tex_t texture);
+SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
+SK_API int32_t      tex_get_anisotropy      (tex_t texture);
 
 ///////////////////////////////////////////
 
@@ -497,39 +485,39 @@ typedef enum material_param_ {
 
 SK_DeclarePrivateType(material_t);
 
-SK_API material_t material_find            (const char *id);
-SK_API material_t material_create          (shader_t shader);
-SK_API material_t material_copy            (material_t material);
-SK_API material_t material_copy_id         (const char *id);
-SK_API void       material_set_id          (material_t material, const char *id);
-SK_API void       material_release         (material_t material);
-SK_API void       material_set_transparency(material_t material, transparency_ mode);
-SK_API void       material_set_cull        (material_t material, cull_ mode);
-SK_API void       material_set_wireframe   (material_t material, bool32_t wireframe);
-SK_API void       material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
-SK_API void       material_set_depth_write (material_t material, bool32_t write_enabled);
-SK_API void       material_set_queue_offset(material_t material, int32_t offset);
+SK_API material_t    material_find            (const char *id);
+SK_API material_t    material_create          (shader_t shader);
+SK_API material_t    material_copy            (material_t material);
+SK_API material_t    material_copy_id         (const char *id);
+SK_API void          material_set_id          (material_t material, const char *id);
+SK_API void          material_release         (material_t material);
+SK_API void          material_set_transparency(material_t material, transparency_ mode);
+SK_API void          material_set_cull        (material_t material, cull_ mode);
+SK_API void          material_set_wireframe   (material_t material, bool32_t wireframe);
+SK_API void          material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
+SK_API void          material_set_depth_write (material_t material, bool32_t write_enabled);
+SK_API void          material_set_queue_offset(material_t material, int32_t offset);
 SK_API transparency_ material_get_transparency(material_t material);
 SK_API cull_         material_get_cull        (material_t material);
 SK_API bool32_t      material_get_wireframe   (material_t material);
 SK_API depth_test_   material_get_depth_test  (material_t material);
 SK_API bool32_t      material_get_depth_write (material_t material);
 SK_API int32_t       material_get_queue_offset(material_t material);
-SK_API void       material_set_float       (material_t material, const char *name, float    value);
-SK_API void       material_set_color       (material_t material, const char *name, color128 value);
-SK_API void       material_set_vector      (material_t material, const char *name, vec4     value);
-SK_API void       material_set_matrix      (material_t material, const char *name, matrix   value);
-SK_API bool32_t   material_set_texture     (material_t material, const char *name, tex_t    value);
-SK_API bool32_t   material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
-SK_API bool32_t   material_has_param       (material_t material, const char *name, material_param_ type);
-SK_API void       material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
-SK_API void       material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
-SK_API bool32_t   material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
-SK_API bool32_t   material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
-SK_API void       material_get_param_info  (material_t material, int index, char **out_name, material_param_ *out_type);
-SK_API int        material_get_param_count (material_t material);
-SK_API void       material_set_shader      (material_t material, shader_t shader);
-SK_API shader_t   material_get_shader      (material_t material);
+SK_API void          material_set_float       (material_t material, const char *name, float    value);
+SK_API void          material_set_color       (material_t material, const char *name, color128 value);
+SK_API void          material_set_vector      (material_t material, const char *name, vec4     value);
+SK_API void          material_set_matrix      (material_t material, const char *name, matrix   value);
+SK_API bool32_t      material_set_texture     (material_t material, const char *name, tex_t    value);
+SK_API bool32_t      material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
+SK_API bool32_t      material_has_param       (material_t material, const char *name, material_param_ type);
+SK_API void          material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
+SK_API void          material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
+SK_API bool32_t      material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
+SK_API bool32_t      material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
+SK_API void          material_get_param_info  (material_t material, int index, char **out_name, material_param_ *out_type);
+SK_API int           material_get_param_count (material_t material);
+SK_API void          material_set_shader      (material_t material, shader_t shader);
+SK_API shader_t      material_get_shader      (material_t material);
 
 SK_DeclarePrivateType(material_buffer_t);
 
@@ -591,25 +579,25 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 
 SK_DeclarePrivateType(model_t);
 
-SK_API model_t    model_find         (const char *id);
-SK_API model_t    model_create       ();
-SK_API model_t    model_create_mesh  (mesh_t mesh, material_t material);
-SK_API model_t    model_create_mem   (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
-SK_API model_t    model_create_file  (const char *filename, shader_t shader sk_default(nullptr));
-SK_API void       model_set_id       (model_t model, const char *id);
-SK_API void       model_release      (model_t model);
-SK_API material_t model_get_material (model_t model, int32_t subset);
-SK_API mesh_t     model_get_mesh     (model_t model, int32_t subset);
-SK_API matrix     model_get_transform(model_t model, int32_t subset);
-SK_API void       model_set_material (model_t model, int32_t subset, material_t material);
-SK_API void       model_set_mesh     (model_t model, int32_t subset, mesh_t mesh);
-SK_API void       model_set_transform(model_t model, int32_t subset, const sk_ref(matrix) transform);
-SK_API void       model_remove_subset(model_t model, int32_t subset);
-SK_API int32_t    model_add_subset   (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
-SK_API int32_t    model_subset_count (model_t model);
+SK_API model_t    model_find              (const char *id);
+SK_API model_t    model_create            ();
+SK_API model_t    model_create_mesh       (mesh_t mesh, material_t material);
+SK_API model_t    model_create_mem        (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
+SK_API model_t    model_create_file       (const char *filename, shader_t shader sk_default(nullptr));
+SK_API void       model_set_id            (model_t model, const char *id);
+SK_API void       model_release           (model_t model);
+SK_API material_t model_get_material      (model_t model, int32_t subset);
+SK_API mesh_t     model_get_mesh          (model_t model, int32_t subset);
+SK_API matrix     model_get_transform     (model_t model, int32_t subset);
+SK_API void       model_set_material      (model_t model, int32_t subset, material_t material);
+SK_API void       model_set_mesh          (model_t model, int32_t subset, mesh_t mesh);
+SK_API void       model_set_transform     (model_t model, int32_t subset, const sk_ref(matrix) transform);
+SK_API void       model_remove_subset     (model_t model, int32_t subset);
+SK_API int32_t    model_add_subset        (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
+SK_API int32_t    model_subset_count      (model_t model);
 SK_API void       model_recalculate_bounds(model_t model);
-SK_API void       model_set_bounds   (model_t model, const sk_ref(bounds_t) bounds);
-SK_API bounds_t   model_get_bounds   (model_t model);
+SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
+SK_API bounds_t   model_get_bounds        (model_t model);
 
 ///////////////////////////////////////////
 
@@ -645,37 +633,37 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
-SK_API void     render_set_clip      (float near_plane sk_default(0.01f), float far_plane sk_default(50));
-SK_API void     render_set_fov       (float field_of_view_degrees sk_default(90.0f));
-SK_API matrix   render_get_cam_root  ();
-SK_API void     render_set_cam_root  (const sk_ref(matrix) cam_root);
-SK_API void     render_set_skytex    (tex_t sky_texture);
-SK_API tex_t    render_get_skytex    ();
-SK_API void     render_set_skylight  (const sk_ref(spherical_harmonics_t) light_info);
-SK_API spherical_harmonics_t render_get_skylight();
-SK_API void     render_set_clear_color(color128 color);
-SK_API void     render_enable_skytex (bool32_t show_sky);
-SK_API bool32_t render_enabled_skytex();
-SK_API void     render_add_mesh      (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
-SK_API void     render_add_model     (model_t model, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
-SK_API void     render_blit          (tex_t to_rendertarget, material_t material);
-SK_API void     render_screenshot    (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
-SK_API void     render_get_device    (void **device, void **context);
+SK_API void                  render_set_clip       (float near_plane sk_default(0.01f), float far_plane sk_default(50));
+SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
+SK_API matrix                render_get_cam_root   ();
+SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
+SK_API void                  render_set_skytex     (tex_t sky_texture);
+SK_API tex_t                 render_get_skytex     ();
+SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
+SK_API spherical_harmonics_t render_get_skylight   ();
+SK_API void                  render_set_clear_color(color128 color);
+SK_API void                  render_enable_skytex  (bool32_t show_sky);
+SK_API bool32_t              render_enabled_skytex ();
+SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
+SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
+SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
+SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
+SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////
 
-SK_API void     hierarchy_push       (const sk_ref(matrix) transform);
-SK_API void     hierarchy_pop        ();
-SK_API void     hierarchy_set_enabled(bool32_t enabled);
-SK_API bool32_t hierarchy_is_enabled ();
-SK_API const matrix *hierarchy_to_world();
-SK_API const matrix *hierarchy_to_local();
-SK_API vec3     hierarchy_to_local_point    (const sk_ref(vec3) world_pt);
-SK_API vec3     hierarchy_to_local_direction(const sk_ref(vec3) world_dir);
-SK_API quat     hierarchy_to_local_rotation (const sk_ref(quat) world_orientation);
-SK_API vec3     hierarchy_to_world_point    (const sk_ref(vec3) local_pt);
-SK_API vec3     hierarchy_to_world_direction(const sk_ref(vec3) local_dir);
-SK_API quat     hierarchy_to_world_rotation (const sk_ref(quat) local_orientation);
+SK_API void          hierarchy_push              (const sk_ref(matrix) transform);
+SK_API void          hierarchy_pop               ();
+SK_API void          hierarchy_set_enabled       (bool32_t enabled);
+SK_API bool32_t      hierarchy_is_enabled        ();
+SK_API const matrix *hierarchy_to_world          ();
+SK_API const matrix *hierarchy_to_local          ();
+SK_API vec3          hierarchy_to_local_point    (const sk_ref(vec3) world_pt);
+SK_API vec3          hierarchy_to_local_direction(const sk_ref(vec3) world_dir);
+SK_API quat          hierarchy_to_local_rotation (const sk_ref(quat) world_orientation);
+SK_API vec3          hierarchy_to_world_point    (const sk_ref(vec3) local_pt);
+SK_API vec3          hierarchy_to_world_direction(const sk_ref(vec3) local_dir);
+SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat) local_orientation);
 
 ///////////////////////////////////////////
 
@@ -792,10 +780,10 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 
 ///////////////////////////////////////////
 
-SK_API bool32_t world_has_bounds();
-SK_API vec2     world_get_bounds_size();
-SK_API pose_t   world_get_bounds_pose();
-SK_API pose_t   world_from_spatial_graph(uint8_t spatial_graph_node_id[16]);
+SK_API bool32_t world_has_bounds            ();
+SK_API vec2     world_get_bounds_size       ();
+SK_API pose_t   world_get_bounds_pose       ();
+SK_API pose_t   world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
 SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
 
 ///////////////////////////////////////////
@@ -811,18 +799,18 @@ typedef enum log_colors_ {
 	log_colors_none
 } log_colors_;
 
-       void log_diag      (const char* text);
-       void log_diagf     (const char* text, ...);
-       void log_info      (const char* text);
-       void log_infof     (const char* text, ...);
-       void log_warn      (const char* text);
-       void log_warnf     (const char* text, ...);
-       void log_err       (const char* text);
-       void log_errf      (const char* text, ...);
-       void log_writef    (log_ level, const char *text, ...);
-SK_API void log_write     (log_ level, const char* text);
-SK_API void log_set_filter(log_ level);
-SK_API void log_set_colors(log_colors_ colors);
+SK_API void log_diag       (const char* text);
+SK_API void log_diagf      (const char* text, ...);
+SK_API void log_info       (const char* text);
+SK_API void log_infof      (const char* text, ...);
+SK_API void log_warn       (const char* text);
+SK_API void log_warnf      (const char* text, ...);
+SK_API void log_err        (const char* text);
+SK_API void log_errf       (const char* text, ...);
+SK_API void log_writef     (log_ level, const char *text, ...);
+SK_API void log_write      (log_ level, const char* text);
+SK_API void log_set_filter (log_ level);
+SK_API void log_set_colors (log_colors_ colors);
 SK_API void log_subscribe  (void (*on_log)(log_, const char*));
 SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
 
@@ -834,32 +822,32 @@ static const char *default_id_material_font        = "default/material_font";
 static const char *default_id_material_hand        = "default/material_hand";
 static const char *default_id_material_ui          = "default/material_ui";
 static const char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
-static const char *default_id_tex       = "default/tex";
-static const char *default_id_tex_black = "default/tex_black";
-static const char *default_id_tex_gray  = "default/tex_gray";
-static const char *default_id_tex_flat  = "default/tex_flat";
-static const char *default_id_tex_rough = "default/tex_rough";
-static const char *default_id_cubemap   = "default/cubemap";
-static const char *default_id_font      = "default/font";
-static const char *default_id_mesh_quad      = "default/mesh_quad";
-static const char *default_id_mesh_cube      = "default/mesh_cube";
-static const char *default_id_mesh_sphere    = "default/mesh_sphere";
-static const char *default_id_mesh_lefthand  = "default/mesh_lefthand";
-static const char *default_id_mesh_righthand = "default/mesh_righthand";
-static const char *default_id_mesh_ui_button = "default/mesh_ui_button";
-static const char *default_id_shader             = "default/shader";
-static const char *default_id_shader_pbr         = "default/shader_pbr";
-static const char *default_id_shader_unlit       = "default/shader_unlit";
-static const char *default_id_shader_font        = "default/shader_font";
-static const char *default_id_shader_equirect    = "default/shader_equirect";
-static const char *default_id_shader_ui          = "default/shader_ui";
-static const char *default_id_shader_ui_quadrant = "default/shader_ui_quadrant";
-static const char *default_id_shader_sky         = "default/shader_sky";
-static const char *default_id_shader_lines       = "default/shader_lines";
-static const char *default_id_sound_click   = "default/sound_click";
-static const char *default_id_sound_unclick = "default/sound_unclick";
-static const char *default_id_sound_grab    = "default/sound_grab";
-static const char *default_id_sound_ungrab  = "default/sound_ungrab";
+static const char *default_id_tex                  = "default/tex";
+static const char *default_id_tex_black            = "default/tex_black";
+static const char *default_id_tex_gray             = "default/tex_gray";
+static const char *default_id_tex_flat             = "default/tex_flat";
+static const char *default_id_tex_rough            = "default/tex_rough";
+static const char *default_id_cubemap              = "default/cubemap";
+static const char *default_id_font                 = "default/font";
+static const char *default_id_mesh_quad            = "default/mesh_quad";
+static const char *default_id_mesh_cube            = "default/mesh_cube";
+static const char *default_id_mesh_sphere          = "default/mesh_sphere";
+static const char *default_id_mesh_lefthand        = "default/mesh_lefthand";
+static const char *default_id_mesh_righthand       = "default/mesh_righthand";
+static const char *default_id_mesh_ui_button       = "default/mesh_ui_button";
+static const char *default_id_shader               = "default/shader";
+static const char *default_id_shader_pbr           = "default/shader_pbr";
+static const char *default_id_shader_unlit         = "default/shader_unlit";
+static const char *default_id_shader_font          = "default/shader_font";
+static const char *default_id_shader_equirect      = "default/shader_equirect";
+static const char *default_id_shader_ui            = "default/shader_ui";
+static const char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+static const char *default_id_shader_sky           = "default/shader_sky";
+static const char *default_id_shader_lines         = "default/shader_lines";
+static const char *default_id_sound_click          = "default/sound_click";
+static const char *default_id_sound_unclick        = "default/sound_unclick";
+static const char *default_id_sound_grab           = "default/sound_grab";
+static const char *default_id_sound_ungrab         = "default/sound_ungrab";
 
 #ifdef __cplusplus
 } // namespace sk

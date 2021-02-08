@@ -272,7 +272,7 @@ transparency_ material_get_transparency(material_t material) {
 
 ///////////////////////////////////////////
 
-cull_ material_get_cull(material_t material, cull_ mode) {
+cull_ material_get_cull(material_t material) {
 	return material->cull;
 }
 
