@@ -160,6 +160,9 @@
     <ClCompile Include="systems\world.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="sk_memory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -353,9 +356,6 @@
     <ClInclude Include="sk_math.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\memory.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="systems\platform\linux.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
@@ -364,6 +364,9 @@
     </ClInclude>
     <ClInclude Include="libraries\sokol_time.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="sk_memory.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

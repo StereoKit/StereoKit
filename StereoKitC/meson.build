@@ -22,6 +22,7 @@ lib_stereokit_c = library(
 		'intersect.cpp',
 		'log.cpp',
 		'sk_math.cpp',
+		'sk_memory.cpp',
 		'spherical_harmonics.cpp',
 		'stereokit_ui.cpp',
 		'stereokit.cpp'
