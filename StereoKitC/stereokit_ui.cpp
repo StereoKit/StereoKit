@@ -1,6 +1,7 @@
 #include "stereokit_ui.h"
 #include "_stereokit_ui.h"
 #include "sk_math.h"
+#include "sk_memory.h"
 #include "systems/input.h"
 #include "systems/hand/input_hand.h"
 #include "libraries/ferr_hash.h"
@@ -154,11 +155,11 @@ void ui_quadrant_mesh(float padding) {
 	float radius = padding / 2;
 	skui_box_min = { padding, padding, 0 };
 
-	vind_t subd = (vind_t)3*4;
-	int vert_count = subd * 5 + 2;
-	int ind_count  = subd * 18;
-	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
-	vind_t *inds  = (vind_t *)malloc(ind_count  * sizeof(vind_t));
+	vind_t  subd       = (vind_t)3*4;
+	int     vert_count = subd * 5 + 2;
+	int     ind_count  = subd * 18;
+	vert_t *verts      = sk_malloc_t<vert_t>(vert_count);
+	vind_t *inds       = sk_malloc_t<vind_t>(ind_count );
 
 	vind_t ind = 0;
 

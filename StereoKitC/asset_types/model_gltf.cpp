@@ -3,6 +3,7 @@
 #include "model.h"
 #include "texture.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../libraries/ferr_hash.h"
 #include "../systems/platform/platform_utils.h"
 
@@ -50,7 +51,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
-			verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
+			verts      = sk_realloc_t<vert_t>(verts, vert_count);
 			for (size_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
 			}
@@ -81,8 +82,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 	}
 
 	// Now grab the mesh indices
-	int ind_count = (int)p->indices->count;
-	vind_t *inds = (vind_t *)malloc(sizeof(vind_t) * ind_count);
+	int     ind_count = (int)p->indices->count;
+	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
 	if (p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;

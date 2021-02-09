@@ -4,8 +4,6 @@
 #include "shader.h"
 #include "assets.h"
 
-#include <malloc.h>
-
 namespace sk {
 
 ///////////////////////////////////////////

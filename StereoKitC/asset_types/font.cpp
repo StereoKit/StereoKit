@@ -5,6 +5,7 @@
 #include "../libraries/stb_rect_pack.h"
 #include "../libraries/stb_truetype.h"
 #include "../systems/platform/platform_utils.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
 
@@ -45,7 +46,7 @@ font_t font_create(const char *file) {
 	stbtt_pack_context pc;
 	stbtt_packedchar chars[128];
 	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
-	bitmap = (uint8_t*)malloc(sizeof(uint8_t) * w * h);
+	bitmap = sk_malloc_t<uint8_t>(w * h);
 	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
 	stbtt_PackFontRange(&pc, data, 0, size, start_char, 95, chars);
 	stbtt_PackEnd(&pc);
@@ -67,7 +68,7 @@ font_t font_create(const char *file) {
 	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
 
 	// Convert to color data
-	color32 *colors = (color32*)malloc(w * h * sizeof(color32));
+	color32 *colors = sk_malloc_t<color32>(w * h);
 	for (size_t i = 0; i < w*h; i++) {
 		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}

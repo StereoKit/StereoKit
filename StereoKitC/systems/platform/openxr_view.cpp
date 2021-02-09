@@ -4,6 +4,7 @@
 
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
+#include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
@@ -111,7 +112,7 @@ bool openxr_views_create() {
 	uint32_t count = 0;
 	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, 0, &count, nullptr),
 		"xrEnumerateViewConfigurations failed [%s]");
-	XrViewConfigurationType *types = (XrViewConfigurationType *)malloc(sizeof(XrViewConfigurationType) * count);
+	XrViewConfigurationType *types = sk_malloc_t<XrViewConfigurationType>(count);
 	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, count, &count, types),
 		"xrEnumerateViewConfigurations failed [%s]");
 
@@ -181,19 +182,19 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	xr_check(xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, view_type, 0, &out_view.view_cap, nullptr),
 		"openxr_views_create can't find any valid view configurations");
 
-	out_view.view_configs = (XrViewConfigurationView *)malloc(sizeof(XrViewConfigurationView) * out_view.view_cap);
+	out_view.view_configs = sk_malloc_t<XrViewConfigurationView>(out_view.view_cap);
 	for (uint32_t i = 0; i < out_view.view_cap; i++) out_view.view_configs[i] = { XR_TYPE_VIEW_CONFIGURATION_VIEW };
 
 	// Extract information from the views we got
 	out_view.type             = view_type;
 	out_view.active           = true;
-	out_view.projection_data  = (XrCompositionLayerProjection*)malloc(sizeof(XrCompositionLayerProjection));
+	out_view.projection_data  = sk_malloc_t<XrCompositionLayerProjection>(1);
 	out_view.view_count       = 0;
-	out_view.views            = (XrView*)malloc(sizeof(XrView) * out_view.view_cap);
-	out_view.view_layers      = (XrCompositionLayerProjectionView*)malloc(sizeof(XrCompositionLayerProjectionView) * out_view.view_cap);
-	out_view.view_depths      = (XrCompositionLayerDepthInfoKHR  *)malloc(sizeof(XrCompositionLayerDepthInfoKHR)   * out_view.view_cap);
-	out_view.view_transforms  = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
-	out_view.view_projections = (matrix*)malloc(sizeof(matrix) * out_view.view_cap);
+	out_view.views            = sk_malloc_t<XrView>(out_view.view_cap);
+	out_view.view_layers      = sk_malloc_t<XrCompositionLayerProjectionView>(out_view.view_cap);
+	out_view.view_depths      = sk_malloc_t<XrCompositionLayerDepthInfoKHR>(out_view.view_cap);
+	out_view.view_transforms  = sk_malloc_t<matrix>(out_view.view_cap);
+	out_view.view_projections = sk_malloc_t<matrix>(out_view.view_cap);
 	for (uint32_t i = 0; i < out_view.view_cap; i++) {
 		out_view.views      [i] = { XR_TYPE_VIEW };
 		out_view.view_layers[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
@@ -241,8 +242,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// Create texture objects if we don't have 'em
 	if (display.swapchain_color.textures == nullptr) {
-		display.swapchain_color.textures = (tex_t *)malloc(sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
-		display.swapchain_depth.textures = (tex_t *)malloc(sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
+		display.swapchain_color.textures = sk_malloc_t<tex_t>(display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
+		display.swapchain_depth.textures = sk_malloc_t<tex_t>(display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
 		memset(display.swapchain_color.textures, 0, sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
 		memset(display.swapchain_depth.textures, 0, sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
 
@@ -338,7 +339,7 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	out_swapchain.handle        = handle;
 	if (out_swapchain.surface_count != surface_count) {
 		out_swapchain.surface_count = surface_count;
-		out_swapchain.images        = (XrSwapchainImage*)malloc(sizeof(XrSwapchainImage) * surface_count);
+		out_swapchain.images        = sk_malloc_t<XrSwapchainImage>(surface_count);
 	}
 	for (uint32_t i=0; i<surface_count; i++) {
 		out_swapchain.images[i] = { XR_TYPE_SWAPCHAIN_IMAGE };
@@ -367,7 +368,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	// Get the list of formats OpenXR would like
 	uint32_t count = 0;
 	xrEnumerateSwapchainFormats(xr_session, 0, &count, nullptr);
-	int64_t *formats = (int64_t *)malloc(sizeof(int64_t) * count);
+	int64_t *formats = sk_malloc_t<int64_t>(count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
 	// Check those against our formats, prefer OpenXR's pick for color format
@@ -404,7 +405,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 	uint32_t                blend_count = 0;
 	XrEnvironmentBlendMode *blend_modes;
 	xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, 0, &blend_count, nullptr);
-	blend_modes = (XrEnvironmentBlendMode*)malloc(sizeof(XrEnvironmentBlendMode) * blend_count);
+	blend_modes = sk_malloc_t<XrEnvironmentBlendMode>(blend_count);
 	xr_check(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, blend_count, &blend_count, blend_modes),
 		"xrEnumerateEnvironmentBlendModes failed [%s]");
 

@@ -7,6 +7,7 @@
 #include "../libraries/array.h"
 #include "../libraries/sokol_time.h"
 #include "../stereokit.h"
+#include "../sk_memory.h"
 
 namespace sk {
 
@@ -53,10 +54,10 @@ bool systems_sort() {
 	int32_t result = 0;
 	
 	// Turn dependency names into indices for update
-	sort_dependency_t *update_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * systems.count);
+	sort_dependency_t *update_ids = sk_malloc_t<sort_dependency_t>(systems.count);
 	for (size_t i = 0; i < systems.count; i++) {
 		update_ids[i].count = systems[i].update_dependency_count;
-		update_ids[i].ids   = (int32_t*)malloc(sizeof(int32_t) * systems[i].update_dependency_count);
+		update_ids[i].ids   = sk_malloc_t<int32_t>(systems[i].update_dependency_count);
 
 		for (size_t d = 0; d < systems[i].update_dependency_count; d++) {
 			update_ids[i].ids[d] = systems_find(systems[i].update_dependencies[d]);
@@ -79,10 +80,10 @@ bool systems_sort() {
 	}
 
 	// Turn dependency names into indices for init
-	sort_dependency_t *init_ids = (sort_dependency_t *)malloc(sizeof(sort_dependency_t) * systems.count);
+	sort_dependency_t *init_ids = sk_malloc_t<sort_dependency_t>(systems.count);
 	for (size_t i = 0; i < systems.count; i++) {
 		init_ids[i].count = systems[i].init_dependency_count;
-		init_ids[i].ids   = (int32_t*)malloc(sizeof(int32_t) * systems[i].init_dependency_count);
+		init_ids[i].ids   = sk_malloc_t<int32_t>(systems[i].init_dependency_count);
 
 		for (size_t d = 0; d < systems[i].init_dependency_count; d++) {
 			init_ids[i].ids[d] = systems_find(systems[i].init_dependencies[d]);
@@ -212,8 +213,8 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 	// Topological sort, Depth-first algorithm:
 	// https://en.wikipedia.org/wiki/Topological_sorting
 
-	*out_order           = (int32_t *)malloc(sizeof(int32_t) * count);
-	uint8_t *marks       = (uint8_t *)malloc(sizeof(uint8_t) * count);
+	*out_order           = sk_malloc_t<int32_t>(count);
+	uint8_t *marks       = sk_malloc_t<uint8_t>(count);
 	int32_t  sorted_curr = count-1;
 	memset(marks, 0, sizeof(uint8_t) * count);
 
@@ -263,7 +264,7 @@ int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, i
 
 void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order) {
 	uint8_t *src    = (uint8_t*)*list;
-	uint8_t *result = (uint8_t*)malloc(item_size * count);
+	uint8_t *result = (uint8_t*)sk_malloc(item_size * count);
 
 	for (int32_t i = 0; i < count; i++) {
 		memcpy(&result[i * item_size], &src[sort_order[i] * item_size], item_size);

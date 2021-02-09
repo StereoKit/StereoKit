@@ -1,6 +1,7 @@
 #include "line_drawer.h"
 #include "../stereokit.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../hierarchy.h"
 
 #include <stdlib.h>
@@ -57,12 +58,12 @@ void line_drawer_shutdown() {
 void line_ensure_cap(int32_t verts, int32_t inds) {
 	if (line_vert_ct + verts >= line_vert_cap) {
 		line_vert_cap = maxi(line_vert_ct + verts, line_vert_cap * 2);
-		line_verts    = (vert_t*)realloc(line_verts, line_vert_cap * sizeof(vert_t));
+		line_verts    = sk_realloc_t<vert_t>(line_verts, line_vert_cap);
 	}
 
 	if (line_ind_ct + inds >= line_ind_cap) {
 		line_ind_cap = maxi(line_ind_ct + inds, line_ind_cap * 2);
-		line_inds    = (vind_t*)realloc(line_inds, line_ind_cap * sizeof(vind_t));
+		line_inds    = sk_realloc_t<vind_t>(line_inds, line_ind_cap);
 	}
 }
 

@@ -1,5 +1,6 @@
 #include "assets.h"
 #include "../_stereokit.h"
+#include "../sk_memory.h"
 
 #include "mesh.h"
 #include "texture.h"
@@ -71,7 +72,7 @@ void *assets_allocate(asset_type_ type) {
 	char name[64];
 	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
 
-	asset_header_t *header = (asset_header_t *)malloc(size);
+	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
 	header->type  = type;
 	header->refs += 1;

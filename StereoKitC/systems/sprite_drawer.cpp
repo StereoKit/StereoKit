@@ -8,6 +8,7 @@
 #include "../libraries/array.h"
 #include "../hierarchy.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 
 #include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -35,11 +36,11 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 		return;
 
 	buffer.vert_cap = buffer.vert_count + 4;
-	buffer.verts    = (vert_t *)realloc(buffer.verts, sizeof(vert_t) * buffer.vert_cap);
+	buffer.verts    = sk_realloc_t<vert_t>(buffer.verts, buffer.vert_cap);
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = (vind_t *)malloc(quads * 6 * sizeof(vind_t));
+	vind_t *inds  = sk_malloc_t<vind_t>(quads * 6);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;

@@ -3,6 +3,7 @@
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "../stereokit.h"
 #include "../hierarchy.h"
@@ -384,7 +385,7 @@ void render_check_screenshots() {
 		// Create the screenshot surface
 		
 		size_t   size   = sizeof(color32) * w * h;
-		color32 *buffer = (color32*)malloc(size);
+		color32 *buffer = (color32*)sk_malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 		tex_set_colors (render_capture_surface, w, h, buffer);
 		tex_add_zbuffer(render_capture_surface);

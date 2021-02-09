@@ -90,7 +90,6 @@ void flatscreen_input_update() {
 			input_eyes_pose.orientation = quat_lookat(vec3_zero, ray.dir);
 		}
 	}
-	
 
 	pointer_t *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pointer_head->tracked = button_state_active;

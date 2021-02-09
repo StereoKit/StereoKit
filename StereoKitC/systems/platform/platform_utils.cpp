@@ -4,6 +4,7 @@
 #include "android.h"
 
 #include "../../stereokit.h"
+#include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
 
@@ -53,8 +54,8 @@ void platform_msgbox_err(const char *text, const char *header) {
 		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [src_text,src_title]() {
 		size_t   size_text  = strlen(src_text)+1;
 		size_t   size_title = strlen(src_title)+1;
-		wchar_t *w_text  = (wchar_t*)malloc(sizeof(wchar_t)*size_text);
-		wchar_t *w_title = (wchar_t*)malloc(sizeof(wchar_t)*size_title);
+		wchar_t *w_text  = sk_malloc_t<wchar_t>(size_text);
+		wchar_t *w_title = sk_malloc_t<wchar_t>(size_title);
 		mbstowcs_s(nullptr, w_text,  size_text,  src_text,   size_text);
 		mbstowcs_s(nullptr, w_title, size_title, src_title, size_title);
 
@@ -99,7 +100,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
-		*out_data = malloc(*out_size+1);
+		*out_data = sk_malloc(*out_size+1);
 		AAsset_read(asset, *out_data, *out_size);
 		AAsset_close(asset);
 		((uint8_t *)*out_data)[*out_size] = 0;
@@ -120,7 +121,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	fseek(fp, 0, SEEK_SET);
 
 	// Read the data
-	*out_data = malloc(*out_size+1);
+	*out_data = sk_malloc(*out_size+1);
 	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
 	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);

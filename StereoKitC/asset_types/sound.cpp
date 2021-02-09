@@ -1,4 +1,5 @@
 #include "../stereokit.h"
+#include "../sk_memory.h"
 #include "../asset_types/assets.h"
 #include "../systems/platform/platform_utils.h"
 #include "sound.h"
@@ -71,7 +72,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
 	au_decoder_config = ma_decoder_config_init(SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE);
-	result->sound_data = malloc(sizeof(float) * (size_t)(duration * SAMPLE_RATE));
+	result->sound_data = sk_malloc_t<float>((size_t)duration * (size_t)SAMPLE_RATE);
 	float *data = (float*)result->sound_data;
 	for (uint32_t i = 0, s = (size_t)(duration * SAMPLE_RATE); i < s; i += 1) {
 		data[i] = function((float)i / (float)SAMPLE_RATE);

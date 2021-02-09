@@ -3,9 +3,9 @@
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
 
 namespace sk {
@@ -52,7 +52,7 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
 
 	if (buff_size != 0) {
-		material->args.buffer       = malloc(buff_size);
+		material->args.buffer       = sk_malloc(buff_size);
 		material->args.buffer_size  = buff_size;
 		material->args.buffer_bind  = buff_info->bind;
 		material->args.buffer_dirty = true;
@@ -64,8 +64,8 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	}
 	if (meta->texture_count > 0) {
 		material->args.texture_count = meta->texture_count;
-		material->args.textures      = (tex_t      *)malloc(sizeof(tex_t)      * meta->texture_count);
-		material->args.texture_binds = (skg_bind_t *)malloc(sizeof(skg_bind_t) * meta->texture_count);
+		material->args.textures      = sk_malloc_t<tex_t     >(meta->texture_count);
+		material->args.texture_binds = sk_malloc_t<skg_bind_t>(meta->texture_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
 		for (size_t i = 0; i < meta->texture_count; i++) {
 			material->args.texture_binds[i] = meta->textures[i].bind;

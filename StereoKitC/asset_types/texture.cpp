@@ -3,6 +3,7 @@
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/ferr_hash.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "texture.h"
 
@@ -191,7 +192,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 		material_set_vector(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
 
 		render_blit (face, convert_material);
-		data[i] = malloc(size);
+		data[i] = sk_malloc(size);
 		tex_get_data(face, data[i], size);
 	}
 
@@ -469,7 +470,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	int32_t  size2 = size * size;
 	color128*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = (color128 *)malloc(size2 * sizeof(color128));
+		data[i] = sk_malloc_t<color128>(size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -528,7 +529,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 	int32_t  size2 = size * size;
 	color128 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = (color128 *)malloc(size2 * sizeof(color128));
+		data[i] = sk_malloc_t<color128>(size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);

@@ -1,5 +1,6 @@
 #include "../../stereokit.h"
 #include "../../sk_math.h"
+#include "../../sk_memory.h"
 #include "../input.h"
 #include "input_hand.h"
 #include "hand_poses.h"
@@ -14,7 +15,6 @@
 #include "../platform/platform_utils.h"
 
 #include <math.h>
-#include <malloc.h>
 #include <string.h>
 
 namespace sk {
@@ -410,8 +410,8 @@ void input_hand_update_mesh(handed_ hand) {
 	if (data.verts == nullptr) {
 		data.vert_count = (_countof(sincos) * SK_FINGERJOINTS + 1) * SK_FINGERS ; // verts: per joint, per finger 
 		data.ind_count  = (3 * 5 * 2 * (SK_FINGERJOINTS-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
-		data.verts      = (vert_t*)malloc(sizeof(vert_t) * data.vert_count);
-		data.inds       = (vind_t*)malloc(sizeof(vind_t) * data.ind_count );
+		data.verts      = sk_malloc_t<vert_t>(data.vert_count);
+		data.inds       = sk_malloc_t<vind_t>(data.ind_count );
 
 		int32_t ind = 0;
 		for (vind_t f = 0; f < SK_FINGERS; f++) {
