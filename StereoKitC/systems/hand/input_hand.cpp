@@ -88,7 +88,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {} },
 };
 int32_t      hand_system = -1;
-hand_state_t hand_state[2];
+hand_state_t hand_state[2] = {};
 int32_t      input_hand_pointer_id[handed_max] = {-1, -1};
 
 void input_hand_update_mesh(handed_ hand);
