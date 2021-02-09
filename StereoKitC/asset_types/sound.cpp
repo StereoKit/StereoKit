@@ -252,7 +252,7 @@ bool sound_init() {
 		log_diag("Using audio backend: ISAC");
 		return true;
 	} else if (hr == E_NOT_VALID_STATE){
-		log_info("ISAC not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
+		log_diag("ISAC not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
 	} else {
 		log_warnf("ISAC failed 0x%X, falling back to miniaudio!", hr);
 	}
