@@ -8,9 +8,12 @@ namespace SKTemplate_NetCore_Name
 		static void Main(string[] args)
 		{
 			// Initialize StereoKit
-			if (!SK.Initialize(new SKSettings {
+			SKSettings settings = new SKSettings
+			{
 				appName      = "SKTemplate_NetCore_Name",
-				assetsFolder = "Assets" }))
+				assetsFolder = "Assets",
+			};
+			if (!SK.Initialize(settings))
 				Environment.Exit(1);
 
 
