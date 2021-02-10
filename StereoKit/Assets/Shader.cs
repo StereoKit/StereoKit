@@ -31,12 +31,10 @@ namespace StereoKit
 				SK.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
 		}
 
-		/// <summary>Creates a shader asset from a precompiled StereoKit 
-		/// Shader file stored as bytes! If you don't have a precompiled
-		/// shader file, you can make one with the Shader.Compile method.
-		/// The Id will be the shader's internal name.</summary>
-		/// <param name="data">A precompiled StereoKit Shader file as bytes,
-		/// you can get these bytes from Shader.Compile!</param>
+		/// <summary>Creates a shader asset from a precompiled StereoKit
+		/// Shader file stored as bytes!</summary>
+		/// <param name="data">A precompiled StereoKit Shader file as bytes.
+		/// </param>
 		/// <returns>A shader from the given data, or null if it failed to 
 		/// load/compile.</returns>
 		public static Shader FromMemory(in byte[] data)
@@ -45,16 +43,16 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Shader(inst);
 		}
 
-		/// <summary>Loads and compiles a shader from an hlsl, or precompiled 
-		/// StereoKit Shader file! After loading an hlsl file, StereoKit will
-		/// hash it, and check to see if it has changed since the last time 
-		/// it cached a compiled version. If there is no cache for the hash, 
-		/// it'll compile it, and save the compiled shader to a cache folder 
-		/// in the asset path! The Id will be the shader's internal name.
-		/// </summary>
-		/// <param name="file">Path to a StereoKit Shader file, or hlsl code. 
-		/// This gets prefixed with the asset path in StereoKitApp.settings.
-		/// </param>
+		/// <summary>Loads a shader from a precompiled StereoKit Shader 
+		/// (.sks) file! HLSL files can be compiled using the skshaderc tool
+		/// included in the NuGet package. This should be taken care of by
+		/// MsBuild automatically, but you may need to ensure your HLSL file
+		/// is a &lt;SKShader /&gt; item type in the .csproj for this to 
+		/// work. You can also compile with the command line app manually if
+		/// you're compiling/distributing a shader some other way! </summary>
+		/// <param name="file">Path to a precompiled StereoKit Shader file!
+		/// If no .sks extension is part of this path, StereoKit will 
+		/// automatically add it and check that first.</param>
 		/// <returns>A shader from the given file, or null if it failed to 
 		/// load/compile.</returns>
 		public static Shader FromFile(string file)

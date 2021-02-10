@@ -72,7 +72,8 @@ class App
 		if (Tests.IsTesting)
 			return;
 
-		// Lets add floor bounds if we have 'em
+		/// :CodeSample: World.HasBounds World.BoundsSize World.BoundsPose
+		// Here's some quick and dirty lines for the play boundary rectangle!
 		if (World.HasBounds)
 		{
 			Vec2   s    = World.BoundsSize/2;
@@ -87,6 +88,7 @@ class App
 			Lines.Add(tl, bl, Color.White, 1.5f*U.cm);
 			Lines.Add(tr, br, Color.White, 1.5f*U.cm);
 		}
+		/// :End:
 
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));

@@ -107,8 +107,45 @@ namespace StereoKit
 			return result;
 		}
 
+		/// <summary>Checks the intersection point of this ray and a Mesh 
+		/// with collision data stored on the CPU. A mesh without collision
+		/// data will always return false. Ray must be in model space, 
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="modelSpaceRay">Ray must be in model space, the
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</param>
+		/// <param name="modelSpaceAt">The intersection point of the ray and
+		/// the mesh, if an intersection occurs. This is in model space, and
+		/// must be transformed back into world space later.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
+
+		/// <summary>Adds a mesh to the render queue for this frame! If the 
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
+		/// <param name="material">A Material to apply to the Mesh.</param>
+		/// <param name="transform">A Matrix that will transform the mesh 
+		/// from Model Space into the current Hierarchy Space.</param>
+		/// <param name="color">A per-instance color value to pass into the
+		/// shader! Normally this gets used like a material tint. If you're 
+		/// adventurous and don't need per-instance colors, this is a great 
+		/// spot to pack in extra per-instance data for the shader!</param>
+		public void Draw(Material material, Matrix transform, Color color)
+			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, color);
+
+		/// <summary>Adds a mesh to the render queue for this frame! If the
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
+		/// <param name="material">A Material to apply to the Mesh.</param>
+		/// <param name="transform">A Matrix that will transform the mesh 
+		/// from Model Space into the current Hierarchy Space.</param>
+		public void Draw(Material material, Matrix transform)
+			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White);
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
@@ -217,27 +254,5 @@ namespace StereoKit
 			IntPtr mesh = NativeAPI.mesh_find(meshId);
 			return mesh == IntPtr.Zero ? null : new Mesh(mesh);
 		}
-
-		/// <summary>Adds a mesh to the render queue for this frame! If the 
-		/// Hierarchy has a transform on it, that transform is combined with
-		/// the Matrix provided here.</summary>
-		/// <param name="material">A Material to apply to the Mesh.</param>
-		/// <param name="transform">A Matrix that will transform the mesh 
-		/// from Model Space into the current Hierarchy Space.</param>
-		/// <param name="color">A per-instance color value to pass into the
-		/// shader! Normally this gets used like a material tint. If you're 
-		/// adventurous and don't need per-instance colors, this is a great 
-		/// spot to pack in extra per-instance data for the shader!</param>
-		public void Draw(Material material, Matrix transform, Color color)
-			=>NativeAPI.render_add_mesh(_inst, material._inst, transform, color);
-
-		/// <summary>Adds a mesh to the render queue for this frame! If the
-		/// Hierarchy has a transform on it, that transform is combined with
-		/// the Matrix provided here.</summary>
-		/// <param name="material">A Material to apply to the Mesh.</param>
-		/// <param name="transform">A Matrix that will transform the mesh 
-		/// from Model Space into the current Hierarchy Space.</param>
-		public void Draw(Material material, Matrix transform)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White);
 	}
 }

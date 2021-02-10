@@ -12,9 +12,7 @@ class DemoEyes : ITest
 	public void Update()
 	{
 		Plane plane = new Plane(new Vec3(0,0,-1.5f), -Vec3.Forward);
-		Pose  gaze  = Input.Eyes;
-
-		if (gaze.Ray.Intersect(plane, out Vec3 at))
+		if (Input.Eyes.Ray.Intersect(plane, out Vec3 at))
 		{
 			Color stateColor = Input.EyesTracked.IsActive() 
 				? new Color(0,1,0)
