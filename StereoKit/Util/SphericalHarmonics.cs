@@ -8,7 +8,7 @@ namespace StereoKit
 	{
 		/// <summary>Direction to the light source.</summary>
 		public Vec3 directionTo;
-		/// <summary>Color of the light! Values here can exceed 1.</summary>
+		/// <summary>Color of the light in linear space! Values here can exceed 1.</summary>
 		public Color color;
 	}
 

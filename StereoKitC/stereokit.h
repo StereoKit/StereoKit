@@ -306,8 +306,8 @@ SK_DeclarePrivateType(gradient_t);
 
 SK_API gradient_t gradient_create     ();
 SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
-SK_API void       gradient_add        (gradient_t gradient, color128 color, float position);
-SK_API void       gradient_set        (gradient_t gradient, int32_t index, color128 color, float position);
+SK_API void       gradient_add        (gradient_t gradient, color128 color_linear, float position);
+SK_API void       gradient_set        (gradient_t gradient, int32_t index, color128 color_linear, float position);
 SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
 SK_API int32_t    gradient_count      (gradient_t gradient);
 SK_API color128   gradient_get        (gradient_t gradient, float at);
@@ -504,7 +504,7 @@ SK_API depth_test_   material_get_depth_test  (material_t material);
 SK_API bool32_t      material_get_depth_write (material_t material);
 SK_API int32_t       material_get_queue_offset(material_t material);
 SK_API void          material_set_float       (material_t material, const char *name, float    value);
-SK_API void          material_set_color       (material_t material, const char *name, color128 value);
+SK_API void          material_set_color       (material_t material, const char *name, color128 color_gamma);
 SK_API void          material_set_vector      (material_t material, const char *name, vec4     value);
 SK_API void          material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t      material_set_texture     (material_t material, const char *name, tex_t    value);
@@ -547,7 +547,7 @@ SK_MakeFlag(text_align_);
 
 typedef int32_t text_style_t;
 
-SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color);
+SK_API text_style_t text_make_style(font_t font, float character_height, material_t material, color128 color_gamma);
 SK_API void         text_add_at    (const char *text, const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
 SK_API void         text_add_in    (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
 SK_API vec2         text_size      (const char *text, text_style_t style sk_default(-1));
@@ -633,7 +633,7 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
-SK_API void                  render_set_clip       (float near_plane sk_default(0.01f), float far_plane sk_default(50));
+SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
 SK_API matrix                render_get_cam_root   ();
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
@@ -641,11 +641,11 @@ SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     ();
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   ();
-SK_API void                  render_set_clear_color(color128 color);
+SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color sk_default({1,1,1,1}));
+SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
+SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
 SK_API void                  render_get_device     (void **device, void **context);

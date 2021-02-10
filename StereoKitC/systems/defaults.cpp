@@ -172,7 +172,7 @@ bool defaults_init() {
 	sk_default_font = font_create(platform_default_font());
 	if (sk_default_font == nullptr)
 		return false;
-	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color32{ 255,255,255,255 });
+	sk_default_text_style = text_make_style(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
 
 	font_set_id(sk_default_font, default_id_font);
 

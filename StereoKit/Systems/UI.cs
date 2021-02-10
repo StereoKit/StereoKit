@@ -16,8 +16,8 @@ namespace StereoKit
 		/// <summary>UI sizing and layout settings. Set only for now</summary>
 		public static UISettings Settings    { set { NativeAPI.ui_settings(value); } }
 
-		/// <summary>StereoKit will generate a color palette from this color, and use it
-		/// to skin the UI!</summary>
+		/// <summary>StereoKit will generate a color palette from this gamma
+		/// space color, and use it to skin the UI!</summary>
 		public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
 		/// <summary>Shows or hides the collision volumes of the UI! This is for debug purposes,

@@ -131,12 +131,13 @@ namespace StereoKit
 		/// <param name="material">A Material to apply to the Mesh.</param>
 		/// <param name="transform">A Matrix that will transform the mesh 
 		/// from Model Space into the current Hierarchy Space.</param>
-		/// <param name="color">A per-instance color value to pass into the
-		/// shader! Normally this gets used like a material tint. If you're 
-		/// adventurous and don't need per-instance colors, this is a great 
-		/// spot to pack in extra per-instance data for the shader!</param>
-		public void Draw(Material material, Matrix transform, Color color)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, color);
+		/// <param name="colorLinear">A per-instance linear space color value
+		/// to pass into the shader! Normally this gets used like a material
+		/// tint. If you're  adventurous and don't need per-instance colors,
+		/// this is a great spot to pack in extra per-instance data for the
+		/// shader!</param>
+		public void Draw(Material material, Matrix transform, Color colorLinear)
+			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, colorLinear);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with

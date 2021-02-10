@@ -49,7 +49,7 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color) {
+text_style_t text_make_style(font_t font, float character_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
 	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
@@ -82,7 +82,7 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	_text_style_t style;
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
-	style.color           = color;
+	style.color           = color_to_32( color_to_linear( color ) );
 	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.5f;
 	

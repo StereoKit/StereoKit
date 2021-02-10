@@ -3,17 +3,24 @@
 	/// <summary>A collection of functions for rendering and working with text.</summary>
 	public class Text
 	{
-		/// <summary>Create a text style for use with other text functions! A text style
-		/// is a font plus size/color/material parameters, and are used to keep text looking
-		/// more consistent through the application by encouraging devs to re-use styles 
-		/// throughout the project.</summary>
-		/// <param name="font">Font asset you want attached to this style.</param>
-		/// <param name="characterHeight">Height of a text glpyh in meters. TODO: find what text glyph specifically!</param>
-		/// <param name="material">Which material should be used to render the text with?</param>
-		/// <param name="color">The color of the text style. This will be embedded in the vertex color of the text mesh.</param>
-		/// <returns>A text style id for use with text rendering functions.</returns>
-		public static TextStyle MakeStyle(Font font, float characterHeight, Material material, Color32 color)
-			=> NativeAPI.text_make_style(font._fontInst, characterHeight, material._inst, color);
+		/// <summary>Create a text style for use with other text functions! A
+		/// text style is a font plus size/color/material parameters, and are
+		/// used to keep text looking more consistent through the application
+		/// by encouraging devs to re-use styles throughout the project.
+		/// </summary>
+		/// <param name="font">Font asset you want attached to this style.
+		/// </param>
+		/// <param name="characterHeight">Height of a text glpyh in meters.
+		/// TODO: find what text glyph specifically!</param>
+		/// <param name="material">Which material should be used to render
+		/// the text with?</param>
+		/// <param name="colorGamma">The gamma space color of the text
+		/// style. This will be embedded in the vertex color of the text
+		/// mesh.</param>
+		/// <returns>A text style id for use with text rendering functions.
+		/// </returns>
+		public static TextStyle MakeStyle(Font font, float characterHeight, Material material, Color colorGamma)
+			=> NativeAPI.text_make_style(font._fontInst, characterHeight, material._inst, colorGamma);
 
 		/// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
 		/// <param name="text">What text should be drawn?</param>

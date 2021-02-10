@@ -211,17 +211,19 @@ namespace StereoKit
 		/// provided value. If no parameter is found, nothing happens, and
 		/// the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
-		/// <param name="value">New value for the parameter.</param>
-		public void SetColor(string name, Color32 value)
-			=> NativeAPI.material_set_color(_inst, name, new Color( value.r/255f, value.g/255f, value.b/255f, value.a/255f ));
+		/// <param name="colorGamma">The gamma space color for the shader
+		/// to use.</param>
+		public void SetColor(string name, Color32 colorGamma)
+			=> NativeAPI.material_set_color(_inst, name, new Color(colorGamma.r/255f, colorGamma.g/255f, colorGamma.b/255f, colorGamma.a/255f ));
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
 		/// the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
-		/// <param name="value">New value for the parameter.</param>
-		public void SetColor(string name, Color value)
-			=> NativeAPI.material_set_color(_inst, name, value);
+		/// <param name="colorGamma">The gamma space color for the shader
+		/// to use.</param>
+		public void SetColor(string name, Color colorGamma)
+			=> NativeAPI.material_set_color(_inst, name, colorGamma);
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and

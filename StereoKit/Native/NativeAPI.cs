@@ -198,7 +198,7 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style(IntPtr font, float character_height, IntPtr material, Color32 color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style(IntPtr font, float character_height, IntPtr material, Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_at    (string text, in Matrix transform, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_in    (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size      (string text, int style);

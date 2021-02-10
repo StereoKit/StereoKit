@@ -62,37 +62,37 @@ struct render_screenshot_t {
 
 ///////////////////////////////////////////
 
-array_t<render_transform_buffer_t> render_instance_list = {};
+array_t<render_transform_buffer_t> render_instance_list      = {};
 render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 819 } };
 
-material_buffer_t      render_shader_globals;
-skg_buffer_t           render_shader_blit;
-matrix                 render_camera_root     = matrix_identity;
-matrix                 render_camera_root_inv = matrix_identity;
-matrix                 render_default_camera_proj;
-vec2                   render_clip_planes = {0.01f, 50};
-float                  render_fov         = 90;
-render_global_buffer_t render_global_buffer;
-mesh_t                 render_blit_quad;
-vec4                   render_lighting[9] = {};
-spherical_harmonics_t  render_lighting_src = {};
-color128               render_clear_color = {0,0,0,1};
-render_list_t          render_list_primary = -1;
+material_buffer_t       render_shader_globals;
+skg_buffer_t            render_shader_blit;
+matrix                  render_camera_root     = matrix_identity;
+matrix                  render_camera_root_inv = matrix_identity;
+matrix                  render_default_camera_proj;
+vec2                    render_clip_planes     = {0.08f, 50};
+float                   render_fov             = 90;
+render_global_buffer_t  render_global_buffer;
+mesh_t                  render_blit_quad;
+vec4                    render_lighting[9]     = {};
+spherical_harmonics_t   render_lighting_src    = {};
+color128                render_clear_color     = {0,0,0,1};
+render_list_t           render_list_primary    = -1;
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
 
-mesh_t     render_sky_mesh    = nullptr;
-material_t render_sky_mat     = nullptr;
-tex_t      render_sky_cubemap = nullptr;
-bool32_t   render_sky_show    = false;
+mesh_t                  render_sky_mesh    = nullptr;
+material_t              render_sky_mat     = nullptr;
+tex_t                   render_sky_cubemap = nullptr;
+bool32_t                render_sky_show    = false;
 
-material_t render_last_material;
-shader_t   render_last_shader;
-mesh_t     render_last_mesh;
+material_t              render_last_material;
+shader_t                render_last_shader;
+mesh_t                  render_last_mesh;
 
-array_t< render_list_t> render_list_stack  = {};
-array_t<_render_list_t> render_lists       = {};
-render_list_t           render_list_active = -1;
+array_t< render_list_t> render_list_stack       = {};
+array_t<_render_list_t> render_lists            = {};
+render_list_t           render_list_active      = -1;
 skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel };
 skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
 skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
@@ -100,11 +100,8 @@ skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel };
 
 ///////////////////////////////////////////
 
-void render_set_material(material_t material);
-
-///////////////////////////////////////////
-
-skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
+void          render_set_material     (material_t material);
+skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_check_screenshots();
 
 ///////////////////////////////////////////
@@ -116,8 +113,10 @@ inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
 ///////////////////////////////////////////
 
 void render_set_clip(float near_plane, float far_plane) {
-	// near_plane will throw divide by zero errors if it's zero! So we'll clamp it :)
-	near_plane = fmaxf(0.0001f, near_plane);
+	// near_plane will throw divide by zero errors if it's zero! So we'll
+	// clamp it :) Anything this low will probably look bad due to depth
+	// artifacts though.
+	near_plane = fmaxf(0.001f, near_plane);
 	render_clip_planes = { near_plane, far_plane };
 	render_update_projection();
 }
@@ -255,7 +254,7 @@ bool32_t render_enabled_skytex() {
 ///////////////////////////////////////////
 
 void render_set_clear_color(color128 color) {
-	render_clear_color = color;
+	render_clear_color = color_to_linear(color);
 }
 
 //////////////////////////////////////////

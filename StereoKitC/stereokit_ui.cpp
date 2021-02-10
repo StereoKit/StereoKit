@@ -297,15 +297,15 @@ bool ui_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_32( skui_palette[4] ));
+	skui_font_style = text_make_style(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[4] ));
 	
 	skui_layers  .add({});
 	skui_id_stack.add({ HASH_FNV64_START });
 
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
-	skui_snd_grab   = sound_find(default_id_sound_grab);
-	skui_snd_ungrab = sound_find(default_id_sound_ungrab);
+	skui_snd_grab       = sound_find(default_id_sound_grab);
+	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
 
 	return true;
 }

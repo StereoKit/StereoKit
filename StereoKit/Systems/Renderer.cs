@@ -35,9 +35,9 @@ namespace StereoKit
 			set => NativeAPI.render_enable_skytex(value);
 		}
 
-		/// <summary>This is the color the renderer will clear the screen to
-		/// when beginning to draw a new frame. This is ignored on displays 
-		/// with transparent screens</summary>
+		/// <summary>This is the gamma space color the renderer will clear
+		/// the screen to when beginning to draw a new frame. This is ignored
+		/// on displays with transparent screens</summary>
 		public static Color ClearColor
 		{
 			set => NativeAPI.render_set_clear_color(value);
@@ -54,56 +54,69 @@ namespace StereoKit
 			set => NativeAPI.render_set_cam_root(value);
 		}
 
-		/// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
-		/// that transform is combined with the Matrix provided here.</summary>
+		/// <summary>Adds a mesh to the render queue for this frame! If the
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
 		/// <param name="mesh">A valid Mesh you wish to draw.</param>
 		/// <param name="material">A Material to apply to the Mesh.</param>
-		/// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
-		/// Hierarchy Space.</param>
+		/// <param name="transform">A Matrix that will transform the mesh
+		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Mesh mesh, Material material, Matrix transform)
 			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, Color.White);
-		/// <summary>Adds a mesh to the render queue for this frame! If the Hierarchy has a transform on it,
-		/// that transform is combined with the Matrix provided here.</summary>
+		/// <summary>Adds a mesh to the render queue for this frame! If the
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
 		/// <param name="mesh">A valid Mesh you wish to draw.</param>
 		/// <param name="material">A Material to apply to the Mesh.</param>
-		/// <param name="transform">A Matrix that will transform the mesh from Model Space into the current
-		/// Hierarchy Space.</param>
-		/// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
-		/// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
-		/// spot to pack in extra per-instance data for the shader!</param>
-		public static void Add(Mesh mesh, Material material, Matrix transform, Color color)
-			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, color);
+		/// <param name="transform">A Matrix that will transform the mesh
+		/// from Model Space into the current Hierarchy Space.</param>
+		/// <param name="colorLinear">A per-instance linear space color value
+		/// to pass into the shader! Normally this gets used like a material
+		/// tint. If you're  adventurous and don't need per-instance colors,
+		/// this is a great spot to pack in extra per-instance data for the
+		/// shader!</param>
+		public static void Add(Mesh mesh, Material material, Matrix transform, Color colorLinear)
+			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, colorLinear);
 
-		/// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
-		/// that transform is combined with the Matrix provided here.</summary>
+		/// <summary>Adds a Model to the render queue for this frame! If the
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
 		/// <param name="model">A valid Model you wish to draw.</param>
-		/// <param name="transform">A Matrix that will transform the Model from Model Space into the current
-		/// Hierarchy Space.</param>
+		/// <param name="transform">A Matrix that will transform the Model
+		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Model model, Matrix transform)
 			=> NativeAPI.render_add_model(model._inst, transform, Color.White);
-		/// <summary>Adds a Model to the render queue for this frame! If the Hierarchy has a transform on it,
-		/// that transform is combined with the Matrix provided here.</summary>
+		/// <summary>Adds a Model to the render queue for this frame! If the
+		/// Hierarchy has a transform on it, that transform is combined with
+		/// the Matrix provided here.</summary>
 		/// <param name="model">A valid Model you wish to draw.</param>
-		/// <param name="transform">A Matrix that will transform the Model from Model Space into the current
-		/// Hierarchy Space.</param>
-		/// <param name="color">A per-instance color value to pass into the shader! Normally this gets used 
-		/// like a material tint. If you're adventurous and don't need per-instance colors, this is a great 
-		/// spot to pack in extra per-instance data for the shader!</param>
-		public static void Add(Model model, Matrix transform, Color color)
-			=> NativeAPI.render_add_model(model._inst, transform, color);
+		/// <param name="transform">A Matrix that will transform the Model
+		/// from Model Space into the current Hierarchy Space.</param>
+		/// <param name="colorLinear">A per-instance linear space color value
+		/// to pass into the shader! Normally this gets used like a material
+		/// tint. If you're  adventurous and don't need per-instance colors,
+		/// this is a great spot to pack in extra per-instance data for the
+		/// shader!</param>
+		public static void Add(Model model, Matrix transform, Color colorLinear)
+			=> NativeAPI.render_add_model(model._inst, transform, colorLinear);
 
-		/// <summary>Set the near and far clipping planes of the camera! These are important
-		/// to z-buffer quality, especially when using low bit depth z-buffers as recommended
-		/// for devices like the HoloLens. The smaller the range between the near and far planes,
-		/// the better your z-buffer will look! If you see flickering on objects that are overlapping,
-		/// try making the range smaller. </summary>
-		/// <param name="nearPlane">The GPU discards pixels that are too close to the camera, this
-		/// is that distance! It must be larger than zero, due to the projection math, which also means
-		/// that numbers too close to zero may also produce weird results? This has an enforced minimum
-		/// of 0.0001.</param>
-		/// <param name="farPlane">At what distance from the camera does the GPU discard pixel? This is
-		/// not true distance, but rather Z-axis distance from zero in View Space coordinates!</param>
-		public static void SetClip(float nearPlane = 0.01f, float farPlane = 50)
+		/// <summary>Set the near and far clipping planes of the camera!
+		/// These are important to z-buffer quality, especially when using
+		/// low bit depth z-buffers as recommended for devices like the
+		/// HoloLens. The smaller the range between the near and far planes,
+		/// the better your z-buffer will look! If you see flickering on
+		/// objects that are overlapping, try making the range smaller.
+		/// </summary>
+		/// <param name="nearPlane">The GPU discards pixels that are too
+		/// close to the camera, this is that distance! It must be larger
+		/// than zero, due to the projection math, which also means that
+		/// numbers too close to zero will produce z-fighting artifacts. This
+		/// has an enforced minimum of 0.001, but you should probably stay
+		/// closer to 0.1.</param>
+		/// <param name="farPlane">At what distance from the camera does the
+		/// GPU discard pixel? This is not true distance, but rather Z-axis
+		/// distance from zero in View Space coordinates!</param>
+		public static void SetClip(float nearPlane = 0.08f, float farPlane = 50)
 			=> NativeAPI.render_set_clip(nearPlane, farPlane);
 
 		/// <summary>Only works for flatscreen! This updates the camera's 

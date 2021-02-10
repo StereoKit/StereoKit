@@ -28,14 +28,26 @@ namespace StereoKit
 		public static readonly Color32 BlackTransparent = new Color32(0, 0, 0, 0);
 	}
 
-	/// <summary>A color value stored as 4 floats with values that are generally between
-	/// 0 and 1! Note that there's also a Color32 structure, and that 4 floats is generally
-	/// a lot more than you need. So, use this for calculating individual colors at quality,
-	/// but maybe store them en-masse with Color32!
+	/// <summary>A color value stored as 4 floats with values that are
+	/// generally between 0 and 1! Note that there's also a Color32
+	/// structure, and that 4 floats is generally a lot more than you need.
+	/// So, use this for calculating individual colors at quality, but maybe
+	/// store them en-masse with Color32!
 	/// 
-	/// Also note that RGB is often a terrible color format for picking colors, but it's how
-	/// our displays work and we're stuck with it. If you want to create a color via code, 
-	/// try out the static Color.HSV method instead!</summary>
+	/// Also note that RGB is often a terrible color format for picking
+	/// colors, but it's how our displays work and we're stuck with it. If
+	/// you want to create a color via code, try out the static Color.HSV
+	/// method instead!
+	/// 
+	/// A note on gamma space vs. linear space colors! `Color` is not 
+	/// inherently one or the other, but most color values we work with tend
+	/// to be gamma space colors, so most functions in StereoKit are gamma
+	/// space. There are occasional functions that will ask for linear space
+	/// colors instead, primarily in performance critical places, or places
+	/// where a color may not always be a color! However, performing math on
+	/// gamma space colors is bad, and will result in incorrect colors. We do
+	/// our best to indicate what color space a function uses, but it's not
+	/// enforced through syntax!</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Color
 	{
@@ -72,75 +84,105 @@ namespace StereoKit
 			this.a = opacity;
 		}
 
-		/// <summary>Converts the color to a Hue/Saturation/Value format! Does not consider
-		/// transparency when calculating the result.</summary>
-		/// <returns>Hue, Saturation, and Value, stored in x, y, and z respectively. All
-		/// values are between 0-1.</returns>
+		/// <summary>Converts the gamma space color to a Hue/Saturation/Value
+		/// format! Does not consider transparency when calculating the
+		/// result.</summary>
+		/// <returns>Hue, Saturation, and Value, stored in x, y, and z
+		/// respectively. All values are between 0-1.</returns>
 		public Vec3 ToHSV()
 			=> NativeAPI.color_to_hsv(this);
 
-		/// <summary>Converts the RGB color to a CIE LAB color space value! Conversion back and forth
-		/// from LAB space could be somewhat lossy.</summary>
+		/// <summary>Converts the gamma space RGB color to a CIE LAB color
+		/// space value! Conversion back and forth from LAB space could be
+		/// somewhat lossy.</summary>
 		/// <returns>An LAB vector where x=L, y=A, z=B.</returns>
 		public Vec3 ToLAB()
 			=> NativeAPI.color_to_lab(this);
 
-		/// <summary>Creates a Red/Green/Blue color from Hue/Saturation/Value information.</summary>
-		/// <param name="hue">Hue most directly relates to the color as we think of it! 0 is red,
-		/// 0.1667 is yellow, 0.3333 is green, 0.5 is cyan, 0.6667 is blue, 0.8333 is magenta, and 1
-		/// is red again!</param>
-		/// <param name="saturation">The vibrancy of the color, where 0 is straight up a shade of gray,
-		/// and 1 is 'poke you in the eye colorful'.</param>
-		/// <param name="value">The brightness of the color! 0 is always black.</param>
-		/// <param name="opacity">Also known as alpha! This is does not affect the rgb components of the
-		/// resulting color, it'll just get slotted into the colors opacity value.</param>
-		/// <returns>An RGB color!</returns>
+		/// <summary>Creates a Red/Green/Blue gamma space color from
+		/// Hue/Saturation/Value information.</summary>
+		/// <param name="hue">Hue most directly relates to the color as we
+		/// think of it! 0 is red, 0.1667 is yellow, 0.3333 is green, 0.5 is
+		/// cyan, 0.6667 is blue, 0.8333 is magenta, and 1 is red again!
+		/// </param>
+		/// <param name="saturation">The vibrancy of the color, where 0 is
+		/// straight up a shade of gray, and 1 is 'poke you in the eye
+		/// colorful'.</param>
+		/// <param name="value">The brightness of the color! 0 is always
+		/// black.</param>
+		/// <param name="opacity">Also known as alpha! This is does not
+		/// affect the rgb components of the resulting color, it'll just get
+		/// slotted into the colors opacity value.</param>
+		/// <returns>A gamma space RGB color!</returns>
 		public static Color HSV(float hue, float saturation, float value, float opacity = 1)
 			=> NativeAPI.color_hsv(hue, saturation, value, opacity);
 
-		/// <summary>Creates a Red/Green/Blue color from Hue/Saturation/Value information.</summary>
+		/// <summary>Creates a Red/Green/Blue gamma space color from
+		/// Hue/Saturation/Value information.</summary>
 		/// <param name="hsvColor">For convenience, XYZ is HSV.
-		/// Hue most directly relates to the color as we think of it! 0 is red, 0.1667 is yellow, 
-		/// 0.3333 is green, 0.5 is cyan, 0.6667 is blue, 0.8333 is magenta, and 1
-		/// is red again!
-		/// Saturation is the vibrancy of the color, where 0 is straight up a shade of gray,
-		/// and 1 is 'poke you in the eye colorful'.
+		/// 
+		/// Hue most directly relates to the color as we think of it! 0 is
+		/// red, 0.1667 is yellow, 0.3333 is green, 0.5 is cyan, 0.6667 is
+		/// blue, 0.8333 is magenta, and 1 is red again!
+		/// 
+		/// Saturation is the vibrancy of the color, where 0 is straight up a
+		/// shade of gray, and 1 is 'poke you in the eye colorful'.
+		/// 
 		/// Value is the brightness of the color! 0 is always black.</param>
-		/// <param name="opacity">Also known as alpha! This is does not affect the rgb components of the
-		/// resulting color, it'll just get slotted into the colors opacity value.</param>
-		/// <returns>An RGB color!</returns>
+		/// <param name="opacity">Also known as alpha! This is does not
+		/// affect the rgb components of the resulting color, it'll just get
+		/// slotted into the colors opacity value.</param>
+		/// <returns>A gamma space RGB color!</returns>
 		public static Color HSV(Vec3 hsvColor, float opacity = 1)
 			=> NativeAPI.color_hsv(hsvColor.x, hsvColor.y, hsvColor.z, opacity);
 
-		/// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
-		/// human perception, and has significantly more accurate to perception lightness values, so this is 
-		/// an excellent color space for color operations that wish to preserve color brightness properly. 
-		/// Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1
-		/// range. If you hate it, let me know why!</summary>
+		/// <summary>Creates a gamma space RGB color from a CIE-L*ab color
+		/// space. CIE-L*ab is a color space that models human perception,
+		/// and has significantly more accurate to perception lightness
+		/// values, so this is an excellent color space for color operations
+		/// that wish to preserve color brightness properly.
+		/// 
+		/// Traditionally, values are L [0,100], a,b [-200,+200] but here we
+		/// normalize them all to the 0-1 range. If you hate it, let me know
+		/// why!</summary>
 		/// <param name="l">Lightness of the color! Range is 0-1.</param>
 		/// <param name="a">'a' is from red to green. Range is 0-1.</param>
 		/// <param name="b">'b' is from blue to yellow. Range is 0-1.</param>
 		/// <param name="opacity">The opacity copied into the final color!</param>
-		/// <returns>An RGBA color constructed from the LAB values.</returns>
+		/// <returns>A gamma space RGBA color constructed from the LAB
+		/// values.</returns>
 		public static Color LAB(float l, float a, float b, float opacity = 1)
 			=> NativeAPI.color_lab(l, a, b, opacity);
 
-		/// <summary>Creates an RGB color from a CIE-L*ab color space. CIE-L*ab is a color space that models
-		/// human perception, and has significantly more accurate to perception lightness values, so this is 
-		/// an excellent color space for color operations that wish to preserve color brightness properly. 
-		/// Traditionally, values are L [0,100], a,b [-200,+200] but here we normalize them all to the 0-1
-		/// range. If you hate it, let me know why!</summary>
+		/// <summary>Creates a gamma space RGB color from a CIE-L*ab color
+		/// space. CIE-L*ab is a color space that models human perception,
+		/// and has significantly more accurate to perception lightness
+		/// values, so this is an excellent color space for color operations
+		/// that wish to preserve color brightness properly.
+		/// 
+		/// Traditionally, values are L [0,100], a,b [-200,+200] but here we
+		/// normalize them all to the 0-1 range. If you hate it, let me know
+		/// why!</summary>
 		/// <param name="lab">For convenience, XYZ is LAB.
 		/// Lightness of the color! Range is 0-1.
 		/// 'a' is from red to green. Range is 0-1.
 		/// 'b' is from blue to yellow. Range is 0-1.</param>
 		/// <param name="opacity">The opacity copied into the final color!</param>
-		/// <returns>An RGBA color constructed from the LAB values.</returns>
+		/// <returns>A gamma space RGBA color constructed from the LAB
+		/// values.</returns>
 		public static Color LAB(Vec3 lab, float opacity = 1)
 			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
+		/// <summary>Converts this from a gamma space color, into a linear
+		/// space color! If this is not a gamma space color, this will just
+		/// make your color wacky!</summary>
+		/// <returns>A linear space color.</returns>
 		public Color ToLinear()
 			=> NativeAPI.color_to_linear(this);
+		/// <summary>Converts this from a linear space color, into a gamma
+		/// space color! If this is not a linear space color, this will just
+		/// make your color wacky!</summary>
+		/// <returns>A gamma space color.</returns>
 		public Color ToGamma()
 			=> NativeAPI.color_to_gamma(this);
 

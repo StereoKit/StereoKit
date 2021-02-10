@@ -21,7 +21,7 @@ class DemoText : ITest
 			Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
 			2 * U.cm,
 			Default.MaterialFont.Copy(), 
-			Color.HSV(0.05f, 0.7f, 0.8f));
+			Color.HSV(0.55f, 0.62f, 0.93f));
 		/// :End:
 	}
 
