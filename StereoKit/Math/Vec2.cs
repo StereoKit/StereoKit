@@ -35,13 +35,26 @@ namespace StereoKit
 		public static Vec2 operator /(Vec2 a, float b) => a.v/b;
 		public static Vec2 operator *(float b, Vec2 a) => a.v*b;
 
-		/// <summary>A Vec2 with all components at zero, same as new Vec2(0,0).</summary>
+		/// <summary>A Vec2 with all components at zero, this is the same as
+		/// `new Vec2(0,0)`.</summary>
 		public static readonly Vec2 Zero = new Vec2(0, 0);
-		/// <summary>A Vec2 with all components at one, same as new Vec2(1,1).</summary>
+		/// <summary>A Vec2 with all components at one, this is the same as
+		/// `new Vec2(1,1)`.</summary>
 		public static readonly Vec2 One = new Vec2(1, 1);
+		/// <summary>A normalized Vector that points down the X axis, this is
+		/// the same as `new Vec2(1,0)`.</summary>
+		public static readonly Vec2 UnitX = new Vec2(1,0);
+		/// <summary>A normalized Vector that points down the Y axis, this is
+		/// the same as `new Vec2(0,1)`.</summary>
+		public static readonly Vec2 UnitY = new Vec2(0,1);
 
+		/// <summary>A transpose swizzle property, returns (y,x)</summary>
 		public Vec2 YX  => new Vec2(y, x);
+		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Z axis.
+		/// </summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
+		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Y axis.
+		/// </summary>
 		public Vec3 X0Y => new Vec3(x, 0, y);
 
 		/// <summary>Magnitude is the length of the vector! Or the distance 

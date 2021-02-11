@@ -52,17 +52,35 @@ namespace StereoKit
 		public static readonly Vec3 Up = new Vec3(0, 1, 0);
 		/// <summary>StereoKit uses a right-handed coordinate system, which
 		/// means that forward is looking down the -Z axis! This value is the
-		/// same as `new Vec3(0,0,-1)`</summary>
+		/// same as `new Vec3(0,0,-1)`. This is NOT the same as UnitZ!
+		/// </summary>
 		public static readonly Vec3 Forward = new Vec3(0, 0, -1);
 		/// <summary>When looking forward, this is the direction to the 
 		/// right! In StereoKit, this is the same as `new Vec3(1,0,0)`
 		/// </summary>
 		public static readonly Vec3 Right = new Vec3(1, 0, 0);
+		/// <summary>A normalized Vector that points down the X axis, this is
+		/// the same as `new Vec3(1,0,0)`.</summary>
+		public static readonly Vec3 UnitX = new Vec3(1, 0, 0);
+		/// <summary>A normalized Vector that points down the Y axis, this is
+		/// the same as `new Vec3(0,1,0)`.</summary>
+		public static readonly Vec3 UnitY = new Vec3(0, 1, 0);
+		/// <summary>A normalized Vector that points down the Z axis, this is
+		/// the same as `new Vec3(0,0,1)`. This is NOT the same as Forward!
+		/// </summary>
+		public static readonly Vec3 UnitZ = new Vec3(0, 0, 1);
 
+		/// <summary>This extracts a Vec2 from the X and Y axes.</summary>
 		public Vec2 XY  { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
+		/// <summary>This extracts a Vec2 from the Y and Z axes.</summary>
 		public Vec2 YZ  { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
+		/// <summary>This extracts a Vec2 from the X and Z axes.</summary>
 		public Vec2 XZ  { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
+		/// <summary>This returns a Vec3 that has been flattened to 0 on the
+		/// Y axis. No other changes are made.</summary>
 		public Vec3 X0Z => new Vec3(x, 0, z);
+		/// <summary>This returns a Vec3 that has been flattened to 0 on the
+		/// Z axis. No other changes are made.</summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
 
 		/// <summary>Magnitude is the length of the vector! The distance from

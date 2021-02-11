@@ -92,13 +92,16 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
-		/// <summary>Adds some text to the layout! Text uses the UI's current font settings 
-		/// (which are currently not exposed). Can contain newlines! May have trouble with
-		/// non-latin characters. Will advance layout to next line.</summary>
-		/// <param name="text">Label text to display. Can contain newlines! May have trouble with
-		/// non-latin characters. Doesn't use text as id, so it can be non-unique.</param>
-		/// <param name="usePadding">Should padding be included for positioning this text?
-		/// Sometimes you just want un-padded text!</param>
+		/// <summary>Adds some text to the layout! Text uses the UI's current
+		/// font settings (which are currently not exposed). Can contain
+		/// newlines! May have trouble with non-latin characters. Will
+		/// advance layout to next line.</summary>
+		/// <param name="text">Label text to display. Can contain newlines!
+		/// May have trouble with non-latin characters. Doesn't use text as
+		/// id, so it can be non-unique.</param>
+		/// <param name="usePadding">Should padding be included for
+		/// positioning this text? Sometimes you just want un-padded text!
+		/// </param>
 		public static void Label (string text, bool usePadding = true) 
 			=> NativeAPI.ui_label(text, usePadding);
 
