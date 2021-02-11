@@ -22,6 +22,12 @@ array_t<text_buffer_t> text_buffers = {};
 
 ///////////////////////////////////////////
 
+inline bool text_is_space(char c) {
+	return c == ' ' || c=='\n' || c == '\r' || c== '\t';
+}
+
+//////////////////////////////////////////
+
 void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
 		return;
@@ -97,11 +103,11 @@ vec2 text_line_size(text_style_t style, const char *text) {
 	float       x    = 0;
 	while (*curr != '\0' && *curr != '\n') {
 		char         currch = *curr;
-		font_char_t &ch     = font->characters[(int)currch];
+		font_char_t &ch     = font->characters[(uint8_t)currch];
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += font->characters[(int)' '].xadvance * 4; break;
+		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
 		default:   x += ch.xadvance; break;
 		}
 		curr += 1;
@@ -122,11 +128,11 @@ vec2 text_size(const char *text, text_style_t style) {
 	while (*curr != '\0') {
 		char currch = *curr;
 		curr += 1;
-		font_char_t &ch = font->characters[(int)currch];
+		font_char_t &ch = font->characters[(uint8_t)currch];
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += font->characters[(int)' '].xadvance * 4; break;
+		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
 		case '\n': if (x > max_x) max_x = x; x = 0; y += 1; break;
 		default  : x += ch.xadvance; break;
 		}
@@ -143,7 +149,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		const char *curr = start;
 		float width = 0;
 		while (*curr != '\n' && *curr != '\0') {
-			width += step.style->font->characters[(int)*curr].xadvance;
+			width += step.style->font->characters[(uint8_t)*curr].xadvance;
 			curr++;
 		}
 		if (out_char_count != nullptr)
@@ -160,7 +166,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 
 	while (true) {
 		char curr = *ch;
-		bool is_space = isspace(curr);
+		bool is_space = text_is_space(curr);
 
 		// We prefer to line break at spaces, rather than in the middle of words
 		if (is_space || curr == '\0') {
@@ -173,7 +179,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 			break;
 
 		// Advance by character width
-		font_char_t &char_info = step.style->font->characters[(int)curr];
+		font_char_t &char_info = step.style->font->characters[(uint8_t)curr];
 		float next_width = char_info.xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
@@ -228,7 +234,7 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 }
 
 void text_step_position(char ch, const char *start, text_stepper_t &step) {
-	font_char_t &char_info = step.style->font->characters[(int)ch];
+	font_char_t &char_info = step.style->font->characters[(uint8_t)ch];
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
 		text_step_next_line(start+1, step);
@@ -237,7 +243,7 @@ void text_step_position(char ch, const char *start, text_stepper_t &step) {
 	}
 
 	switch (ch) {
-	case '\t': step.pos.x -= step.style->font->characters[(int)' '].xadvance * 4 * step.style->size; break;
+	case '\t': step.pos.x -= step.style->font->characters[(uint8_t)' '].xadvance * 4 * step.style->size; break;
 	case '\n': {
 	} break;
 	default : step.pos.x -= char_info.xadvance*step.style->size; break;
@@ -379,8 +385,8 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	bool clip = fit & text_fit_clip;
 	text_step_next_line(text, step);
 	for (int32_t i=0; i<text_length; i++) {
-		if (!isspace(text[i])) {
-			font_char_t &char_info = step.style->font->characters[(int)text[i]];
+		if (!text_is_space(text[i])) {
+			font_char_t &char_info = step.style->font->characters[(uint8_t)text[i]];
 			if (clip)
 				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
 			else
