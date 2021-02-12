@@ -81,14 +81,15 @@ float2 brdf_appx(half Roughness, half NoV ) {
 float4 ps(psIn input) : SV_TARGET{
 	float4 albedo      = diffuse  .Sample(diffuse_s,  input.uv) * input.color;
 	float3 emissive    = emission .Sample(emission_s, input.uv).rgb;
-	float3 metal_rough = metal    .Sample(metal_s,    input.uv).rgb; // b is metallic, rough is g
+	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // b is metallic, rough is g
+	float  ao          = occlusion.Sample(occlusion_s,input.uv).r;  // occlusion is sometimes part of the metal tex, uses r channel
 
 	float3 view        = normalize(sk_camera_pos[input.view_id].xyz - input.world);
 	float3 reflection  = reflect(-view, input.normal);
 	float  ndotv       = max(0,dot(input.normal, view));
 
-	float metallic_final = metal_rough.b * metallic;
-	float rough_final    = metal_rough.g * roughness;
+	float metallic_final = metal_rough.y * metallic;
+	float rough_final    = metal_rough.x * roughness;
 
 	float3 F0 = 0.04;
 	F0 = lerp(F0, albedo.rgb, metallic_final);
@@ -104,8 +105,8 @@ float4 ps(psIn input) : SV_TARGET{
 	float3 kD = 1 - kS;
 	kD *= 1.0 - metallic_final;
 
-	float3 diffuse = albedo.rgb * input.irradiance;
-	float3 color   = (kD * diffuse + specular);// *ao;
+	float3 diffuse = albedo.rgb * input.irradiance * ao;
+	float3 color   = (kD * diffuse + specular*ao);
 
 	return float4(color+emissive, albedo.a);
 }
