@@ -264,7 +264,9 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
 	options.file.read = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, const char* path, cgltf_size* size, void** data) {
-		return (cgltf_result)platform_read_file(path, data, size);
+		return platform_read_file(path, data, size)
+			? cgltf_result_success
+			: cgltf_result_file_not_found;
 	};
 	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
 		free(data);
@@ -272,11 +274,18 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	cgltf_data *data       = nullptr;
 	const char *model_file = assets_file(filename);
-	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
+
+	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);
+	if (result != cgltf_result_success) {
+		log_diagf("gltf parse err %d", result);
 		return false;
-	if (cgltf_load_buffers(&options, data, model_file) != cgltf_result_success) {
+	}
+
+	result = cgltf_load_buffers(&options, data, model_file);
+	if (result != cgltf_result_success) {
+		log_diagf("gltf buffer load err %d", result);
 		cgltf_free(data);
-		return true;
+		return false;
 	}
 
 	// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 

@@ -111,7 +111,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 #endif
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
-		log_errf("Can't find file %s!", filename);
+		log_diagf("platform_read_file can't find %s", filename);
 		return false;
 	}
 
@@ -122,7 +122,6 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 	// Read the data
 	*out_data = sk_malloc(*out_size+1);
-	if (*out_data == nullptr) { *out_size = 0; fclose(fp); return false; }
 	fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
 
