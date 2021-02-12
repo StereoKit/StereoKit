@@ -40,10 +40,9 @@ const char *xr_request_extensions[] = {
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
-	
 	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
 	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
-#if defined(SK_OS_WINDOWS)
+#if defined(SK_OS_WINDOWS_UWP)
 	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
 #endif
 #if defined(SK_OS_ANDROID)
@@ -450,7 +449,7 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME             ) == 0) xr_ext_articulated_hands          = true;
 			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME     ) == 0) sk_info.spatial_bridge_present    = true;
 			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME      ) == 0) xr_ext_gaze                       = true;
-#if defined(SK_OS_WINDOWS)
+#if defined(SK_OS_WINDOWS_UWP)
 			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
 #endif
 		}

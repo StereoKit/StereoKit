@@ -82,6 +82,7 @@
     <Compile Include="..\ITest.cs" />
     <Compile Include="..\Tests.cs" />
     <Compile Include="..\Demos\*.cs" />
+    <Compile Include="..\Tools\*.cs" />
   </ItemGroup>
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
   <!-- Copy assets, and build the app's shaders into the final app folder -->
