@@ -23,8 +23,9 @@ package("openxr_loader")
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
     add_deps("cmake")
+    
     on_install("linux", "windows", "android", function (package)
-        import("package.tools.cmake").install(package) -- , {"-DCMAKE_POSITION_INDEPENDENT_CODE=ON"})
+        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF"})
     end)
 package_end()
 
@@ -32,9 +33,9 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("android") then
-    add_requires("openxr_loader 1.0.14", {verify = false, configs = {vs_runtime="MD"}})
+    add_requires("openxr_loader 1.0.14", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
-add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD"}})
+add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
 
 option("uwp")
     set_default(false)
@@ -79,7 +80,12 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-        add_links("GL", "GLEW", "GLX", "X11")
+        add_links("GL", "GLEW", "GLX", "X11", "pthread")
+        -- stdc++fs needs to be added at the -end- of the list, but 
+        -- xmake's add_packages adds links after all the add_links links.
+        -- Fortunately, this one adds even after that, so we're all
+        -- good :)
+        add_shflags("-lstdc++fs")
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end
