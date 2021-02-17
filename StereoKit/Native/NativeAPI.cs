@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -153,8 +153,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, ulong data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string shader_get_name    (IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    shader_set_code    (IntPtr shader, [In] byte[] data, int data_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    shader_set_codefile(IntPtr shader, string filename);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_release     (IntPtr shader);
 
 		///////////////////////////////////////////
@@ -198,11 +196,16 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style(IntPtr font, float character_height, IntPtr material, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_at    (string text, in Matrix transform, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_in    (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size      (string text, int style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style       (IntPtr font, float character_height, Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_shader(IntPtr font, float character_height, IntPtr shader, Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_mat   (IntPtr font, float character_height, IntPtr material, Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_at           (string text, in Matrix transform, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_in           (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size             (string text, int style);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material(TextStyle style);
+
+		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr solid_create          (ref Vec3 position, ref Quat rotation, SolidType type = SolidType.Normal);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_release         (IntPtr solid);

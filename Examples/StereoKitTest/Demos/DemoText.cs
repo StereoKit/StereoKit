@@ -15,12 +15,12 @@ class DemoText : ITest
 
 	public void Initialize() {
 		/// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
-		/// In initialization, we can create the style from a font, a size, a 
-		/// material, and a base color.
+		/// In initialization, we can create the style from a font, a size, 
+		/// and a base color. Overloads for MakeStyle can allow you to 
+		/// override the default font shader, or provide a specific Material.
 		style = Text.MakeStyle(
 			Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
 			2 * U.cm,
-			Default.MaterialFont.Copy(), 
 			Color.HSV(0.55f, 0.62f, 0.93f));
 		/// :End:
 	}

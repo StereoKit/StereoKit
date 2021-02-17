@@ -494,6 +494,12 @@ namespace StereoKit
 	public struct TextStyle
 	{
 		internal int id;
+
+		/// <summary>This provides a reference to the Material used by this
+		/// style, so you can override certain features! Note that if you're
+		/// creating TextStyles with manually provided Materials, this 
+		/// Material may not be unique to this style.</summary>
+		public Material Material { get => new Material(NativeAPI.text_style_get_material(this)); }
 	}
 
 	/// <summary>This describes the behavior of a 'Solid' physics object! the physics 

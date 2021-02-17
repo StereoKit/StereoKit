@@ -55,10 +55,40 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, material_t material, color128 color) {
+text_style_t text_make_style(font_t font, float character_height, color128 color) {
+	shader_t     shader   = shader_find        (default_id_shader_font);
+	material_t   material = material_create    (shader);
+	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+
+	// The style now references the material if creation was successful, so
+	// we need to let go of things from here.
+	material_release(material);
+	shader_release  (shader);
+	return result;
+}
+
+///////////////////////////////////////////
+
+text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader, color128 color) {
+	material_t   material = material_create(shader);
+	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+
+	// The style now references the material if creation was successful, so
+	// we need to let go of it from here.
+	material_release(material);
+	return result;
+}
+
+///////////////////////////////////////////
+
+text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
 	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
+
+	if (font == nullptr) {
+		log_err("text_make_style was given a null font!");
+	}
 	
 	// Find or make a buffer for this style
 	for (size_t i = 0; i < text_buffers.count; i++) {
@@ -93,6 +123,12 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	style.line_spacing    = font->character_height * 0.5f;
 	
 	return (text_style_t)text_styles.add(style);
+}
+
+///////////////////////////////////////////
+
+material_t text_style_get_material(text_style_t style) {
+	return text_buffers[text_styles[style].buffer_index].material;
 }
 
 ///////////////////////////////////////////
