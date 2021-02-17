@@ -77,6 +77,22 @@ namespace StereoKit
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at(id, bounds);
 
+		/// <summary>This watches a volume of space for pinch interaction 
+		/// events! If a hand is inside the space indicated by the bounds,
+		/// this function will return that hand's pinch state, as well as
+		/// indicate which hand did it through the out parameter.
+		/// 
+		/// Note that since this only provides the hand's pinch state, it 
+		/// won't give you JustActive and JustInactive notifications for 
+		/// when the hand enters or leaves the volume.</summary>
+		/// <param name="bounds">A UI hierarchy space bounding volume.</param>
+		/// <param name="hand">This will be the last hand that provides a 
+		/// pinch state within this volume. That means that if both hands are
+		/// pinching in this volume, it will provide the Right hand.</param>
+		/// <returns>This will be the pinch state of the  last hand that
+		/// provides a pinch state within this volume. That means that if
+		/// both hands are pinching in this volume, it will provide the pinch
+		/// state of the Right hand.</returns>
 		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
 			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
 

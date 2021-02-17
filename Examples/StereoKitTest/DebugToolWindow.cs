@@ -80,8 +80,8 @@ class DebugToolWindow
 	public static void Step()
 	{
 		UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*U.cm);
-		if (UI.Button("Print Screenshot Pose")) HeadshotPose();
-		if (UI.Button("Print Hand Pose")) HandshotPose();
+		if (UI.Button("Print Screenshot Pose") || Input.Key(Key.F7).IsJustActive()) HeadshotPose();
+		if (UI.Button("Print Hand Pose") || Input.Key(Key.F8).IsJustActive()) HandshotPose();
 		if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
 		if (UI.Toggle("Record Head", ref recordHead)) ToggleRecordHead();
 		if (headAnim != null) {
@@ -144,7 +144,7 @@ class DebugToolWindow
 			{
 				recordingHead[i] = (recordingHead[i].time - rootTime, recordingHead[i].pose);
 				var f = recordingHead[i];
-				result += $"({f.time}f, new Pose(new Vector3({f.pose.position.x:0.000}f,{f.pose.position.y:0.000}f,{f.pose.position.z:0.000}f), new Quaternion({f.pose.orientation.x:0.000}f,{f.pose.orientation.y:0.000}f,{f.pose.orientation.z:0.000}f,{f.pose.orientation.w:0.000}f)))";
+				result += $"({f.time}f, new Pose(new Vec3({f.pose.position.x:0.000}f,{f.pose.position.y:0.000}f,{f.pose.position.z:0.000}f), new Quat({f.pose.orientation.x:0.000}f,{f.pose.orientation.y:0.000}f,{f.pose.orientation.z:0.000}f,{f.pose.orientation.w:0.000}f)))";
 				if (i < recordingHead.Count-1)
 					result += ",";
 			}
@@ -187,7 +187,7 @@ class DebugToolWindow
 				result.Append( $"({f.time}f,new HandJoint[]{{" );
 				for (int j = 0; j < f.pose.Length; j++)
 				{
-					result.Append($"new HandJoint(new Vector3({f.pose[j].position.x:0.000}f,{f.pose[j].position.y:0.000}f,{f.pose[j].position.z:0.000}f), new Quaternion({f.pose[j].orientation.x:0.000}f,{f.pose[j].orientation.y:0.000}f,{f.pose[j].orientation.z:0.000}f,{f.pose[j].orientation.w:0.000}f), {f.pose[j].radius:0.000}f)");
+					result.Append($"new HandJoint(new Vec3({f.pose[j].position.x:0.000}f,{f.pose[j].position.y:0.000}f,{f.pose[j].position.z:0.000}f), new Quat({f.pose[j].orientation.x:0.000}f,{f.pose[j].orientation.y:0.000}f,{f.pose[j].orientation.z:0.000}f,{f.pose[j].orientation.w:0.000}f), {f.pose[j].radius:0.000}f)");
 					if (j < f.pose.Length - 1)
 						result.Append(",");
 				}
@@ -207,7 +207,7 @@ class DebugToolWindow
 	{
 		Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
 		Vec3 fwd = pos + Input.Head.Forward;
-		Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vector3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vector3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+		Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
 	static void HandshotPose()
@@ -222,7 +222,7 @@ class DebugToolWindow
 		string result = ($"Tests.Hand(new HandJoint[]{{");
 		for (int j = 0; j < joints.Length; j++)
 		{
-			result += $"new HandJoint(new Vector3({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quaternion({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
+			result += $"new HandJoint(new Vec3({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quat({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
 			if (j < joints.Length - 1)
 				result += ",";
 		}

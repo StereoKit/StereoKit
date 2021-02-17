@@ -719,7 +719,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 
 		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, bounds)) {
 			button_state_ state = input_hand((handed_)i)->pinch_state;
-			if (state != button_state_active) {
+			if (state != button_state_inactive) {
 				result = state;
 				out_hand = (handed_)i;
 			}
