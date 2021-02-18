@@ -115,6 +115,10 @@ if ($fast -eq $false) {
 } else {
     xmake
 }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
 
 # Linux, via WSL
 Write-Host 'Beginning Linux build via WSL!'
@@ -122,6 +126,10 @@ if ($fast -eq $false) {
     cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake -r"
 } else {
     cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake"
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    exit
 }
 
 # Ensure the version string for the package matches the StereoKit version

@@ -90,8 +90,8 @@ namespace StereoKitTest
 					new HandMenuItem("Back", null, null, HandMenuAction.Back))));
 			/// :End:
 
+			Tests.RunForFrames(2);
 			Tests.Hand(new HandJoint[] { new HandJoint(new Vec3(-0.529f, -0.198f, -0.126f), new Quat(-0.744f, -0.530f, 0.156f, -0.376f), 0.004f), new HandJoint(new Vec3(-0.529f, -0.198f, -0.126f), new Quat(-0.744f, -0.530f, 0.156f, -0.376f), 0.010f), new HandJoint(new Vec3(-0.533f, -0.175f, -0.090f), new Quat(-0.786f, -0.550f, 0.126f, -0.254f), 0.009f), new HandJoint(new Vec3(-0.544f, -0.158f, -0.069f), new Quat(-0.729f, -0.564f, 0.027f, -0.387f), 0.008f), new HandJoint(new Vec3(-0.557f, -0.150f, -0.065f), new Quat(-0.585f, -0.548f, -0.140f, -0.582f), 0.006f), new HandJoint(new Vec3(-0.521f, -0.182f, -0.136f), new Quat(-0.277f, -0.826f, 0.317f, -0.376f), 0.004f), new HandJoint(new Vec3(-0.550f, -0.135f, -0.102f), new Quat(-0.277f, -0.826f, 0.317f, -0.376f), 0.009f), new HandJoint(new Vec3(-0.571f, -0.112f, -0.082f), new Quat(-0.244f, -0.843f, 0.256f, -0.404f), 0.008f), new HandJoint(new Vec3(-0.585f, -0.102f, -0.070f), new Quat(-0.200f, -0.866f, 0.165f, -0.428f), 0.007f), new HandJoint(new Vec3(-0.593f, -0.098f, -0.064f), new Quat(-0.172f, -0.874f, 0.110f, -0.440f), 0.005f), new HandJoint(new Vec3(-0.527f, -0.178f, -0.144f), new Quat(-0.185f, -0.817f, 0.370f, -0.401f), 0.004f), new HandJoint(new Vec3(-0.559f, -0.132f, -0.119f), new Quat(-0.185f, -0.817f, 0.370f, -0.401f), 0.009f), new HandJoint(new Vec3(-0.582f, -0.101f, -0.104f), new Quat(-0.175f, -0.809f, 0.371f, -0.420f), 0.008f), new HandJoint(new Vec3(-0.599f, -0.089f, -0.092f), new Quat(-0.109f, -0.856f, 0.245f, -0.443f), 0.007f), new HandJoint(new Vec3(-0.608f, -0.084f, -0.086f), new Quat(-0.075f, -0.871f, 0.180f, -0.450f), 0.005f), new HandJoint(new Vec3(-0.535f, -0.178f, -0.152f), new Quat(-0.132f, -0.786f, 0.408f, -0.445f), 0.003f), new HandJoint(new Vec3(-0.568f, -0.136f, -0.137f), new Quat(-0.132f, -0.786f, 0.408f, -0.445f), 0.008f), new HandJoint(new Vec3(-0.590f, -0.106f, -0.130f), new Quat(-0.131f, -0.762f, 0.432f, -0.464f), 0.007f), new HandJoint(new Vec3(-0.607f, -0.092f, -0.122f), new Quat(-0.071f, -0.810f, 0.332f, -0.477f), 0.006f), new HandJoint(new Vec3(-0.617f, -0.086f, -0.117f), new Quat(-0.029f, -0.836f, 0.260f, -0.482f), 0.004f), new HandJoint(new Vec3(-0.544f, -0.183f, -0.159f), new Quat(-0.060f, -0.749f, 0.481f, -0.452f), 0.003f), new HandJoint(new Vec3(-0.576f, -0.143f, -0.152f), new Quat(-0.060f, -0.749f, 0.481f, -0.452f), 0.007f), new HandJoint(new Vec3(-0.594f, -0.119f, -0.154f), new Quat(-0.061f, -0.684f, 0.534f, -0.493f), 0.006f), new HandJoint(new Vec3(-0.607f, -0.108f, -0.152f), new Quat(0.002f, -0.745f, 0.444f, -0.498f), 0.005f), new HandJoint(new Vec3(-0.616f, -0.102f, -0.150f), new Quat(0.045f, -0.780f, 0.378f, -0.496f), 0.004f), new HandJoint(new Vec3(-0.548f, -0.161f, -0.137f), new Quat(-0.267f, 0.849f, 0.204f, 0.407f), 0.000f), new HandJoint(new Vec3(-0.548f, -0.161f, -0.137f), new Quat(-0.267f, 0.849f, 0.204f, 0.407f), 0.000f) });
-			Tests.Screenshot(600, 600, "HandAxes.jpg", new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 		}
 
 		public void Shutdown()
@@ -155,6 +155,8 @@ namespace StereoKitTest
 				DrawHandMenu(Handed.Right);
 				DrawHandMenu(Handed.Left);
 			}
+
+			Tests.Screenshot(1, 600, 600, "HandAxes.jpg", new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 		}
 
 		private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)

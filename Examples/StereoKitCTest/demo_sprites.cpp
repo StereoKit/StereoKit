@@ -14,10 +14,8 @@ text_style_t sprite_text_style;
 ///////////////////////////////////////////
 
 void demo_sprites_init() {
-	material_t font_mat = material_create(shader_find("default/shader_font"));
-	font_t font         = font_find(default_id_font);
-	sprite_text_style = text_make_style(font, 0.1f, font_mat, { 1,1,1,1 });
-	material_release(font_mat);
+	font_t font       = font_find(default_id_font);
+	sprite_text_style = text_make_style(font, 0.1f, { 1,1,1,1 });
 
 	sprite = sprite_create_file("test.png");
 }

@@ -11,8 +11,9 @@ public static class Tests
 	static ITest activeScene;
 	static ITest nextScene;
 	static int   testIndex  = 0;
-	static int   runFrames  = int.MaxValue;
-	static float runSeconds = float.MaxValue;
+	static int   runFrames  = -1;
+	static float runSeconds = 0;
+	static int   sceneFrame = 0;
 	static float sceneTime  = 0;
 	static HashSet<string> screens = new HashSet<string>();
 
@@ -55,6 +56,7 @@ public static class Tests
 			nextScene   = null;
 		}
 		activeScene.Update();
+		sceneFrame++;
 
 		if (IsTesting && FinishedWithTest())
 		{
@@ -91,8 +93,10 @@ public static class Tests
 		}).First();
 		Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
 
-		runFrames  = int.MaxValue;
-		runSeconds = float.MaxValue;
+		sceneTime  = Time.Totalf;
+		sceneFrame = 0;
+		runFrames  = -1;
+		runSeconds = 0;
 		ActiveTest = result;
 	}
 	public static void Test(Func<bool> testFunction)
@@ -106,13 +110,11 @@ public static class Tests
 
 	private static bool FinishedWithTest()
 	{
-		if (runSeconds != float.MaxValue) { 
-			runSeconds -= Time.Elapsedf;
-			return runSeconds <= 0;
+		if (runSeconds != 0) {
+			return Time.Totalf-sceneTime > runSeconds;
 		}
-		if (runFrames != int.MaxValue) { 
-			runFrames -= 1;
-			return runFrames <= 0;
+		if (runFrames != -1) { 
+			return sceneFrame == runFrames;
 		}
 		return true;
 	}
@@ -123,9 +125,9 @@ public static class Tests
 
 	public static void Screenshot(int width, int height, string name, Vec3 from, Vec3 at) 
 		=> Screenshot(0, width, height, name, from, at);
-	public static void Screenshot(float time, int width, int height, string name, Vec3 from, Vec3 at)
+	public static void Screenshot(int frame, int width, int height, string name, Vec3 from, Vec3 at)
 	{
-		if (!IsTesting || time > (Time.Totalf-sceneTime) || screens.Contains(name))
+		if (!IsTesting || frame != sceneFrame || screens.Contains(name))
 			return;
 		screens.Add(name);
 		Renderer.Screenshot(from, at, width, height, $"../../../docs/img/screenshots/{name}");
