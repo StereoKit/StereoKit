@@ -6,7 +6,7 @@
     <a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates"><img src="https://img.shields.io/visual-studio-marketplace/i/NickKlingensmith.StereoKitTemplates" /></a>
 </p>
 
-StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR! It's designed to solve issues caused by using a Game Engine to create a Mixed Reality application or tool. Game Engines are one of the few places you can currently go to for rendering functionality, but lack features that streamline MR application development!
+StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR! Inspired by libraries like XNA and Processing, StereoKit is meant to be fun to use and easy to develop with, yet still quite capable of creating professional and business ready software.
 
 The getting started guide [can be found here](https://stereokit.net/Pages/Guides/Getting-Started.html)!
 
@@ -20,15 +20,16 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 StereoKit Features:
 - Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado Linux, and eventually everywhere OpenXR is!
-- Builds your application in seconds, not minutes
-- Input: articulated hands, pointers, keyboard/mouse
+- Flat screen mode with input emulation for easy development
+- Builds your application to device in seconds, not minutes
+- Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
 - Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, procedural
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Physics
-- Performance-by-default render pipeline
-- Flexible shader/material system
+- Performance-by-default instanced render pipeline
+- Flexible shader/material system with built-in PBR
 - [Documentation](https://stereokit.net/) is generated directly from the source code, including screenshots
 
 ## Getting started
