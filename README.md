@@ -1,17 +1,25 @@
-![StereoKit Logo](/Tools/img/StereoKitWide.svg)
+<p align="center"><img src="/Tools/img/StereoKitWide.svg" alt="StereoKit Logo" height="160"></p>
+<p align="center">
+    <img src="https://img.shields.io/github/last-commit/maluoi/stereokit/develop" />
+    <img src="https://img.shields.io/github/license/maluoi/stereokit" />
+    <img src="https://img.shields.io/nuget/v/StereoKit" />
+    <img src="https://img.shields.io/nuget/dt/stereokit" />
+</p>
 
-StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!
+StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR! It's designed to solve issues caused by using a Game Engine to create a Mixed Reality application or tool. Game Engines are one of the few places you can currently go to for rendering functionality, but lack features that streamline MR application development!
 
 The getting started guide [can be found here](https://stereokit.net/Pages/Guides/Getting-Started.html)!
 
-StereoKit is ready to use, but still early in its life! Check out [this Twitter thread](https://twitter.com/koujaku/status/1163977987705860097) for development news and gifs, or check [this blog](https://playdeck.net/project/stereokit) for more substantial updates!
-
-StereoKit is designed to solve issues that occur when using a game engine to create a Mixed Reality application or tool. Game engines are one of the few places you can currently go to get rendering functionality out of the box, but they lack features that would really streamline MR application development!
+Interested in news and updates about StereoKit? Maybe just looking for some extra help?
+- Submit bugs on the [Issues tab](https://github.com/maluoi/StereoKit/issues), and ask questions in the [Discussions tab](https://github.com/maluoi/StereoKit/discussions)!
+- Follow [koujaku](https://twitter.com/koujaku/) on Twitter for development news.
+- Drop into the [Discord channel](https://discord.gg/5fynxXw7) for discussion, help and updates.
+- Check out [this blog](https://playdeck.net/project/stereokit) for occasional substantial updates!
 
 ![Screenshot](/Tools/img/FeatureImage.jpg)
 
 StereoKit Features:
-- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, SteamVR, eventually everywhere OpenXR is!
+- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado Linux, and eventually everywhere OpenXR is!
 - Builds your application in seconds, not minutes
 - Input: articulated hands, pointers, keyboard/mouse
 - Easy and powerful UI and interactions
@@ -41,12 +49,20 @@ Long term, we'd love to add StereoKit Framework! Framework is a higher-level lay
 
 ## Dependencies
 
- Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
+Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
 
- - [OpenXR](https://www.khronos.org/openxr/)
- - DirectX 11
- - [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
- - [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
- - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
- - [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
- - [dr_wav](https://mackron.github.io/dr_wav) - wav format support
+- [OpenXR](https://www.khronos.org/openxr/)
+- [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
+- [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
+- [OpenFBX](https://github.com/nem0/OpenFBX) - fbx format support
+- [miniz](https://github.com/richgel999/miniz) - ofbx dependency
+- [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
+- [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
+- [dr_wav](https://mackron.github.io/dr_wav) - wav format support
+- [sokol_time](https://github.com/floooh/sokol) - cross platform high performance time
+
+And some of my own libraries that I maintain separately from this repository.
+
+- [sk_gpu.h](https://github.com/maluoi/sk_gpu) - cross platform graphics API
+- [ferr_hash.h](https://github.com/maluoi/header-libs) - string and data hashing
+- [array.h](https://github.com/maluoi/header-libs) - dynamic arrays
