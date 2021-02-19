@@ -1,9 +1,9 @@
 <p align="center"><img src="/Tools/img/StereoKitWide.svg" alt="StereoKit Logo" height="160"></p>
 <p align="center">
-    <img src="https://img.shields.io/github/last-commit/maluoi/stereokit/develop" />
-    <img src="https://img.shields.io/github/license/maluoi/stereokit" />
-    <img src="https://img.shields.io/nuget/v/StereoKit" />
-    <img src="https://img.shields.io/nuget/dt/stereokit" />
+    <a href="https://github.com/maluoi/stereokit/branches"><img src="https://img.shields.io/github/last-commit/maluoi/stereokit/develop" /></a>
+    <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/maluoi/stereokit" /></a>
+    <a href="https://www.nuget.org/packages/StereoKit/"><img src="https://img.shields.io/nuget/v/StereoKit" /></a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates"><img src="https://img.shields.io/visual-studio-marketplace/i/NickKlingensmith.StereoKitTemplates" /></a>
 </p>
 
 StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR! It's designed to solve issues caused by using a Game Engine to create a Mixed Reality application or tool. Game Engines are one of the few places you can currently go to for rendering functionality, but lack features that streamline MR application development!
