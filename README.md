@@ -1,4 +1,4 @@
-![StereoKit Logo](/Documentation/img/StereoKitWide.svg)
+![StereoKit Logo](/Tools/img/StereoKitWide.svg)
 
 StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!
 
@@ -8,7 +8,7 @@ StereoKit is ready to use, but still early in its life! Check out [this Twitter 
 
 StereoKit is designed to solve issues that occur when using a game engine to create a Mixed Reality application or tool. Game engines are one of the few places you can currently go to get rendering functionality out of the box, but they lack features that would really streamline MR application development!
 
-![Screenshot](/Documentation/img/FeatureImage.jpg)
+![Screenshot](/Tools/img/FeatureImage.jpg)
 
 StereoKit Features:
 - Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, SteamVR, eventually everywhere OpenXR is!
@@ -29,7 +29,7 @@ Follow [this guide](https://stereokit.net/Pages/Guides/Getting-Started.html) for
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
-![Hello World](/Documentation/img/StereoKitMin.gif)
+![Hello World](/Tools/img/StereoKitMin.gif)
 
 ## Roadmap
 
