@@ -50,7 +50,7 @@ namespace StereoKitTest
 		{
 			Task.Run(() =>
 			{
-				model      = Model.FromFile(filename, Default.ShaderPbr);
+				model      = Model.FromFile(filename);
 				modelScale = 1 / model.Bounds.dimensions.Magnitude;
 			});
 		}

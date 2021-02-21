@@ -117,6 +117,9 @@ bool defaults_init() {
 	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
 	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
 
+	// Android has issues with this shader, and I haven't figured out why 
+	// yet. For now, we'll just drop back to the default shader, but we'll 
+	// work this out completely later.
 #if defined(SK_OS_ANDROID)
 	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
 #else

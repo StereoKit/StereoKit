@@ -25,7 +25,7 @@ namespace StereoKitTest
 		static Tex         cubemap     = null;
 		static Pose        previewPose = new Pose(0, -0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 
-		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
+		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 		Mesh       lightMesh     = Mesh.GenerateSphere(1);
 		Material   lightProbeMat = Default.Material;
 		Material   lightSrcMat   = new Material(Default.ShaderUnlit);

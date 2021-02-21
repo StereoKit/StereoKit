@@ -20,7 +20,7 @@ class DemoPBR : ITest
 		Renderer.SkyTex   = Tex.FromCubemapEquirectangular("old_depot.hdr", out SphericalHarmonics lighting);
 		Renderer.SkyLight = lighting;
 
-		pbrModel = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
+		pbrModel = Model.FromFile("DamagedHelmet.gltf");
 		pbrMaterials = new Material[materialGrid*materialGrid];
 		for (int y = 0; y < materialGrid; y++) {
 		for (int x = 0; x < materialGrid; x++) {
