@@ -821,6 +821,8 @@ SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
 ///////////////////////////////////////////
 
 static const char *default_id_material             = "default/material";
+static const char *default_id_material_pbr         = "default/material_pbr";
+static const char *default_id_material_unlit       = "default/material_unlit";
 static const char *default_id_material_equirect    = "default/equirect_convert";
 static const char *default_id_material_font        = "default/material_font";
 static const char *default_id_material_hand        = "default/material_hand";

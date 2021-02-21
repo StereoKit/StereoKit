@@ -89,7 +89,7 @@ namespace StereoKit
 		/// <param name="hand">This will be the last hand that provides a 
 		/// pinch state within this volume. That means that if both hands are
 		/// pinching in this volume, it will provide the Right hand.</param>
-		/// <returns>This will be the pinch state of the  last hand that
+		/// <returns>This will be the pinch state of the last hand that
 		/// provides a pinch state within this volume. That means that if
 		/// both hands are pinching in this volume, it will provide the pinch
 		/// state of the Right hand.</returns>
