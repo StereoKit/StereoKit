@@ -99,30 +99,41 @@ bool modelfmt_stl_text(void *file_data, size_t, array_t<vert_t> *verts, array_t<
 ///////////////////////////////////////////
 
 bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
-	array_t<vert_t> verts = {};
-	array_t<vind_t> faces = {};
-
-	bool result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
-		modelfmt_stl_text  (file_data, file_length, &verts, &faces) :
-		modelfmt_stl_binary(file_data, file_length, &verts, &faces);
-
-	// Normalize all the normals
-	for (size_t i = 0; i < verts.count; i++)
-		verts[i].norm = vec3_normalize(verts[i].norm);
+	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
+	bool       result   = true;
 
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
-	mesh_t mesh = mesh_create();
-	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
-	mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
+	mesh_t mesh = mesh_find(id);
 
-	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
+	if (mesh) {
+		model_add_subset(model, mesh, material, matrix_identity);
+	} else {
+		array_t<vert_t> verts = {};
+		array_t<vind_t> faces = {};
 
-	mesh_release(mesh);
+		result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
+			modelfmt_stl_text  (file_data, file_length, &verts, &faces) :
+			modelfmt_stl_binary(file_data, file_length, &verts, &faces);
 
-	verts.free();
-	faces.free();
+		// Normalize all the normals
+		for (size_t i = 0; i < verts.count; i++)
+			verts[i].norm = vec3_normalize(verts[i].norm);
+
+		mesh = mesh_create();
+		mesh_set_id   (mesh, id);
+		mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
+		mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
+
+		model_add_subset(model, mesh, material, matrix_identity);
+
+		verts.free();
+		faces.free();
+	}
+
+	mesh_release    (mesh);
+	material_release(material);
+
 	return result;
 }
 

@@ -200,16 +200,13 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (shader != nullptr) {
 		result = material_create(shader);
 	} else {
-		shader_t mat_shader;
 		if (material->unlit) {
-			mat_shader = shader_find(default_id_shader_unlit);
+			result = material_copy_id(default_id_material_unlit);
 		} else if (material->has_pbr_metallic_roughness) {
-			mat_shader = shader_find(default_id_shader_pbr);
+			result = material_copy_id(default_id_material_pbr);
 		} else {
-			mat_shader = shader_find(default_id_shader);
+			result = material_copy_id(default_id_material);
 		}
-		result = material_create(mat_shader);
-		shader_release(mat_shader);
 	}
 	material_set_id(result, id);
 

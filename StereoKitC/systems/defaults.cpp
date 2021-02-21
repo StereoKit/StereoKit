@@ -28,6 +28,8 @@ shader_t     sk_default_shader_ui_quadrant;
 shader_t     sk_default_shader_sky;
 shader_t     sk_default_shader_lines;
 material_t   sk_default_material;
+material_t   sk_default_material_pbr;
+material_t   sk_default_material_unlit;
 material_t   sk_default_material_equirect;
 material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
@@ -151,12 +153,16 @@ bool defaults_init() {
 
 	// Materials
 	sk_default_material          = material_create(sk_default_shader);
+	sk_default_material_pbr      = material_create(sk_default_shader_pbr);
+	sk_default_material_unlit    = material_create(sk_default_shader_unlit);
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
 	sk_default_material_font     = material_create(sk_default_shader_font);
 	sk_default_material_ui       = material_create(sk_default_shader_ui);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
 
 	if (sk_default_material          == nullptr ||
+		sk_default_material_pbr      == nullptr ||
+		sk_default_material_unlit    == nullptr ||
 		sk_default_material_equirect == nullptr ||
 		sk_default_material_font     == nullptr ||
 		sk_default_material_ui       == nullptr ||
@@ -164,6 +170,8 @@ bool defaults_init() {
 		return false;
 
 	material_set_id(sk_default_material,          default_id_material);
+	material_set_id(sk_default_material_pbr,      default_id_material_pbr);
+	material_set_id(sk_default_material_unlit,    default_id_material_unlit);
 	material_set_id(sk_default_material_equirect, default_id_material_equirect);
 	material_set_id(sk_default_material_font,     default_id_material_font);
 	material_set_id(sk_default_material_ui,       default_id_material_ui);
@@ -233,6 +241,8 @@ void defaults_shutdown() {
 	font_release    (sk_default_font);
 	material_release(sk_default_material_equirect);
 	material_release(sk_default_material);
+	material_release(sk_default_material_pbr);
+	material_release(sk_default_material_unlit);
 	material_release(sk_default_material_font);
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_quadrant);

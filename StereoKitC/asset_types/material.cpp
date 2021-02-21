@@ -181,12 +181,18 @@ void material_set_shader(material_t material, shader_t shader) {
 	if (shader == material->shader)
 		return;
 
+	// Update references
+	if (shader != nullptr)
+		assets_addref(shader->header);
+
 	// Copy over any relevant values that are attached to the old shader
 	if (material->shader != nullptr && shader != nullptr) {
 		shader_t old_shader   = material->shader;
 		void    *old_buffer   = material->args.buffer;
 		tex_t   *old_textures = material->args.textures;
+		skg_bind_t *old_binds = material->args.texture_binds;
 		material_create_arg_defaults(material, shader);
+		material->shader = shader;
 
 		// Copy old param values
 		int32_t count = skg_shader_get_var_count(&old_shader->shader);
@@ -204,17 +210,22 @@ void material_set_shader(material_t material, shader_t shader) {
 			tex_release(old_textures[i]);
 		}
 
+		// And release the old shader content
+		if (old_shader != nullptr)
+			shader_release(old_shader);
+		skg_pipeline_destroy(&material->pipeline);
 		free(old_buffer);
 		free(old_textures);
+		free(old_binds);
 	}
 
-	// Update references
-	if (shader != nullptr)
-		assets_addref(shader->header);
-	if (material->shader != nullptr)
-		shader_release(material->shader);
-
-	material->shader = shader;
+	material->shader   = shader;
+	material->pipeline = skg_pipeline_create(&material->shader->shader);
+	material_set_cull        (material, material->cull);
+	material_set_depth_test  (material, material->depth_test);
+	material_set_depth_write (material, material->depth_write);
+	material_set_transparency(material, material->alpha_mode);
+	material_set_wireframe   (material, material->wireframe);
 }
 
 ///////////////////////////////////////////

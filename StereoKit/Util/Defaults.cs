@@ -6,11 +6,30 @@
 	/// since it could affect many things throughout the system.</summary>
 	public static class Default
 	{
-		/// <summary>The default material! This is used by any model or mesh
-		/// rendered from within StereoKit. Its shader may change based on 
-		/// system performance characteristics, so it can be great to copy 
-		/// this one when creating your own materials!</summary>
+		/// <summary>The default material! This is used by many models and
+		/// meshes rendered from within StereoKit. Its shader is tuned for 
+		/// high performance, and may change based on system performance
+		/// characteristics, so it can be great to copy this one when
+		/// creating your own materials! Or if you want to override
+		/// StereoKit's default material, here's where you do it!</summary>
 		public static Material Material         { get; private set; }
+		/// <summary>The default Physically Based Rendering material! This is
+		/// used by StereoKit anytime a mesh or model has metallic or 
+		/// roughness properties, or needs to look more realistic. Its shader
+		/// may change based on system performance characteristics, so it can
+		/// be great to copy this one when creating your own materials! Or if
+		/// you want to override StereoKit's default PBR behavior, here's
+		/// where you do it! Note that the shader used by default here is
+		/// much more costly than Default.Material.</summary>
+		public static Material MaterialPBR      { get; private set; }
+		/// <summary>The default unlit material! This is used by StereoKit 
+		/// any time a mesh or model needs to be rendered with an unlit 
+		/// surface. Its shader may change based on system performance 
+		/// characteristics, so it can be great to copy this one when 
+		/// creating your own materials! Or if you want to override 
+		/// StereoKit's default unlit behavior, here's where you do it!
+		/// </summary>
+		public static Material MaterialUnlit    { get; private set; }
 		/// <summary>This material is used for projecting equirectangular 
 		/// textures into cubemap faces. It's probably not a great idea to 
 		/// change this one much!</summary>
@@ -106,6 +125,8 @@
 		internal static void Initialize()
 		{
 			Material         = Material.Find(DefaultIds.material);
+			MaterialPBR      = Material.Find(DefaultIds.materialPBR);
+			MaterialUnlit    = Material.Find(DefaultIds.materialUnlit);
 			MaterialEquirect = Material.Find(DefaultIds.materialEquirect);
 			MaterialFont     = Material.Find(DefaultIds.materialFont);
 			MaterialHand     = Material.Find(DefaultIds.materialHand);

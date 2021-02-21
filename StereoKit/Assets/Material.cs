@@ -129,8 +129,10 @@ namespace StereoKit
 		/// material.</summary>
 		public int ParamCount => NativeAPI.material_get_param_count(_inst);
 		/// <summary>Gets a link to the Shader that the Material is currently 
-		/// using</summary>
-		public Shader Shader => new Shader(NativeAPI.material_get_shader(_inst));
+		/// using, or overrides the Shader this material uses.</summary>
+		public Shader Shader { 
+			get => new Shader(NativeAPI.material_get_shader(_inst));
+			set => NativeAPI.material_set_shader(_inst, value._inst); }
 
 		/// <summary>Creates a material from a shader, and uses the shader's 
 		/// default settings. Uses an auto-generated id.</summary>

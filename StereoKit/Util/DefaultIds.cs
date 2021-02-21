@@ -2,6 +2,8 @@
 	internal static class DefaultIds
 	{
 		internal const string material         = "default/material";
+		internal const string materialPBR      = "default/material_pbr";
+		internal const string materialUnlit    = "default/material_unlit";
 		internal const string materialEquirect = "default/equirect_convert";
 		internal const string materialFont     = "default/material_font";
 		internal const string materialHand     = "default/material_hand";
