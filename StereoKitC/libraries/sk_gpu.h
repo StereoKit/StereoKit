@@ -2171,6 +2171,7 @@ GLE(void,     glGetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_
 GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float param) \
 GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
 GLE(void,     glGetnTexImage,            uint32_t target, int32_t level, uint32_t format, uint32_t type, uint32_t bufSize, void *img) \
+GLE(void,     glReadPixels,              int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t format, uint32_t type, void *data) \
 GLE(void,     glActiveTexture,           uint32_t texture) \
 GLE(void,     glGenerateMipmap,          uint32_t target) \
 GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
@@ -3507,15 +3508,26 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 ///////////////////////////////////////////
 
 bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
-#if defined(_SKG_GL_WEB) || defined(_SKG_GL_ES)
-	return false;
-	// For GLES, you need to use glReadPixels after rendering to a 
-	// FrameBuffer, something like this:
-	// https://stackoverflow.com/questions/53993820/opengl-es-2-0-android-c-glgetteximage-alternative
-#else
 	int64_t format = skg_tex_fmt_to_gl_layout(tex->format);
 	glBindTexture (tex->_target, tex->_texture);
+
+#if defined(_SKG_GL_WEB) || defined(_SKG_GL_ES)
+	// Referenced from here:
+	// https://stackoverflow.com/questions/53993820/opengl-es-2-0-android-c-glgetteximage-alternative
+	uint32_t fbo = 0;
+	glGenFramebuffers     (1, &fbo); 
+	glBindFramebuffer     (GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, 0);
+
+	glReadPixels(0, 0, tex->width, tex->height, format, skg_tex_fmt_to_gl_type(tex->format), ref_data);
+
+	glBindFramebuffer   (GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &fbo);
+#else
+	glBindTexture (tex->_target, tex->_texture);
 	glGetnTexImage(tex->_target, 0, (uint32_t)format, skg_tex_fmt_to_gl_type(tex->format), (uint32_t)data_size, ref_data);
+#endif
+
 	bool result = glGetError() == 0;
 
 	// This is OpenGL, and textures are upside-down
@@ -3533,7 +3545,6 @@ bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
 	}
 
 	return result;
-#endif
 }
 
 ///////////////////////////////////////////
