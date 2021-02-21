@@ -38,6 +38,24 @@ Follow [this guide](https://stereokit.net/Pages/Guides/Getting-Started.html) for
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
+```CSharp
+using StereoKit;
+
+class Program
+{
+	static void Main(string[] args)
+	{
+		SK.Initialize(new SKSettings{ appName = "Project" });
+
+		Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
+
+		while (SK.Step(() => {
+			helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+		}));
+
+		SK.Shutdown();
+	}
+}```
 ![Hello World](/Tools/img/StereoKitMin.gif)
 
 ## Roadmap
