@@ -109,7 +109,7 @@ Write-Host 'Cleaned'
 
 # Do cross platform build code first
 Write-Host 'Beginning Android build!'
-xmake f -p android -a arm64-v8a
+xmake f -p android -a arm64-v8a -m release
 if ($fast -eq $false) {
     xmake -r
 } else {
@@ -123,9 +123,9 @@ if ($LASTEXITCODE -ne 0) {
 # Linux, via WSL
 Write-Host 'Beginning Linux build via WSL!'
 if ($fast -eq $false) {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake -r"
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake -r"
 } else {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 ; xmake"
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake"
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
