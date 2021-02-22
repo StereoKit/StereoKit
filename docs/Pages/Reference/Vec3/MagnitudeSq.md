@@ -6,6 +6,7 @@ description: This is the squared magnitude of the vector! It skips the Sqrt call
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).MagnitudeSq
 
 ## Description
-This is the squared magnitude of the vector! It skips the Sqrt call, and
-just gives you the squared version for speedy calculations that can work with it squared.
+This is the squared magnitude of the vector! It skips
+the Sqrt call, and just gives you the squared version for speedy
+calculations that can work with it squared.
 

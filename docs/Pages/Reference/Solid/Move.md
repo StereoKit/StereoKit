@@ -14,11 +14,13 @@ void Move([Vec3]({{site.url}}/Pages/Reference/Vec3.html) position, [Quat]({{site
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|The destination position!|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) rotation|The destination rotation!|
 
-This moves the Solid from its current location through space to the new location
-provided, colliding with things along the way. This is acheived by applying the velocity
-and angular velocity necessary to get to the destination in a single frame during the next
-physics step, then restoring the previous velocity info afterwards! See also Teleport for
-movement without collision.
+This moves the Solid from its current location through
+space to the new location provided, colliding with things along
+the way. This is acheived by applying the velocity and angular
+velocity necessary to get to the destination in a single frame
+during the next physics step, then restoring the previous
+velocity info afterwards! See also Teleport for movement without
+collision.
 
 
 

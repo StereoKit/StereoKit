@@ -14,8 +14,7 @@ with 2 dimensions to it!
 
 |  |  |
 |--|--|
-|float [x]({{site.url}}/Pages/Reference/Vec2/x.html)|Vector components.|
-|float [y]({{site.url}}/Pages/Reference/Vec2/y.html)|Vector components.|
+|Vector2 [v]({{site.url}}/Pages/Reference/Vec2/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
 
 
 ## Instance Methods
@@ -25,17 +24,24 @@ with 2 dimensions to it!
 |[Vec2]({{site.url}}/Pages/Reference/Vec2/Vec2.html)|A basic constructor, just copies the values in!|
 |[Angle]({{site.url}}/Pages/Reference/Vec2/Angle.html)|Returns the counter-clockwise degrees from [1,0]. Resulting value is between 0 and 360. Vector does not need to be normalized.|
 |[Normalize]({{site.url}}/Pages/Reference/Vec2/Normalize.html)|Turns this vector into a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
-|[Normalized]({{site.url}}/Pages/Reference/Vec2/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 
 
 ## Static Fields and Properties
 
 |  |  |
 |--|--|
+|float [Length]({{site.url}}/Pages/Reference/Vec2/Length.html)|This is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
+|float [LengthSq]({{site.url}}/Pages/Reference/Vec2/LengthSq.html)|This is the squared length/magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
 |float [Magnitude]({{site.url}}/Pages/Reference/Vec2/Magnitude.html)|Magnitude is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
 |float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec2/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [One]({{site.url}}/Pages/Reference/Vec2/One.html)|A Vec2 with all components at one, same as new Vec2(1,1).|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Zero]({{site.url}}/Pages/Reference/Vec2/Zero.html)|A Vec2 with all components at zero, same as new Vec2(0,0).|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Normalized]({{site.url}}/Pages/Reference/Vec2/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [One]({{site.url}}/Pages/Reference/Vec2/One.html)|A Vec2 with all components at one, this is the same as `new Vec2(1,1)`.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitX]({{site.url}}/Pages/Reference/Vec2/UnitX.html)|A normalized Vector that points down the X axis, this is the same as `new Vec2(1,0)`.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitY]({{site.url}}/Pages/Reference/Vec2/UnitY.html)|A normalized Vector that points down the Y axis, this is the same as `new Vec2(0,1)`.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Y]({{site.url}}/Pages/Reference/Vec2/X0Y.html)|Promotes this Vec2 to a Vec3, using 0 for the Y axis.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec2/XY0.html)|Promotes this Vec2 to a Vec3, using 0 for the Z axis.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YX]({{site.url}}/Pages/Reference/Vec2/YX.html)|A transpose swizzle property, returns (y,x)|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Zero]({{site.url}}/Pages/Reference/Vec2/Zero.html)|A Vec2 with all components at zero, this is the same as `new Vec2(0,0)`.|
 
 
 ## Static Methods
@@ -46,4 +52,7 @@ with 2 dimensions to it!
 |[Distance]({{site.url}}/Pages/Reference/Vec2/Distance.html)|Calculates the distance between two points in space! Make sure they're in the same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.|
 |[DistanceSq]({{site.url}}/Pages/Reference/Vec2/DistanceSq.html)|Calculates the distance between two points in space, but leaves them squared! Make sure they're in the same coordinate space! This is a fast function :)|
 |[Dot]({{site.url}}/Pages/Reference/Vec2/Dot.html)|The dot product is an extremely useful operation! One major use is to determine how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then the result will be 1 if the vectors are the same, -1 if they're opposite, and a gradient in-between with 0 being perpendicular. See [Freya Holmer's excellent visualization](https://twitter.com/FreyaHolmer/status/1200807790580768768) of this concept|
+|[Lerp]({{site.url}}/Pages/Reference/Vec2/Lerp.html)|Blends (Linear Interpolation) between two vectors, based on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp percent for you.|
+|[Max]({{site.url}}/Pages/Reference/Vec2/Max.html)|Returns a vector where each elements is the maximum value for each corresponding pair.|
+|[Min]({{site.url}}/Pages/Reference/Vec2/Min.html)|Returns a vector where each elements is the minimum value for each corresponding pair.|
 

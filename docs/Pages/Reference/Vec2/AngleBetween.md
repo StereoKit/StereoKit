@@ -11,7 +11,7 @@ static float AngleBetween([Vec2]({{site.url}}/Pages/Reference/Vec2.html) a, [Vec
 
 |  |  |
 |--|--|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) a|The first, initial vector, A. Does not need to be              normalized.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) a|The first, initial vector, A. Does not need to be             normalized.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) b|The second vector, B, that we're finding the              angle to. Does not need to be normalized.|
 |RETURNS: float|a signed angle between two vectors! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A.|
 

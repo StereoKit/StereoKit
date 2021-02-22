@@ -14,8 +14,9 @@ void SetVector(string name, [Vec4]({{site.url}}/Pages/Reference/Vec4.html) value
 |string name|Name of the shader parameter.|
 |[Vec4]({{site.url}}/Pages/Reference/Vec4.html) value|New value for the parameter.|
 
-Sets a shader parameter with the given name to the provided value. If no parameter
-is found, nothing happens, and the value is not set!
+Sets a shader parameter with the given name to the
+provided value. If no parameter is found, nothing happens, and
+the value is not set!
 
 
 

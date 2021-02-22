@@ -31,10 +31,10 @@ wave.
 ```csharp
 Sound genSound = Sound.Generate((t) =>
 {
-    float band1 = SKMath.Sin(t * 523.25f * SKMath.Tau); // a 'C' tone
-    float band2 = SKMath.Sin(t * 659.25f * SKMath.Tau); // an 'E' tone
-    const float volume = 0.1f;
-    return (band1*0.6f + band2*0.4f) * volume;
+	float band1 = SKMath.Sin(t * 523.25f * SKMath.Tau); // a 'C' tone
+	float band2 = SKMath.Sin(t * 659.25f * SKMath.Tau); // an 'E' tone
+	const float volume = 0.1f;
+	return (band1*0.6f + band2*0.4f) * volume;
 }, 0.5f);
 genSound.Play(Vec3.Zero);
 ```

@@ -6,17 +6,18 @@ description: Calculates the distance between two points in space, but leaves the
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).DistanceSq
 
 <div class='signature' markdown='1'>
-static float DistanceSq(Vec3& a, Vec3& b)
+static float DistanceSq([Vec3]({{site.url}}/Pages/Reference/Vec3.html) a, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) b)
 </div>
 
 |  |  |
 |--|--|
-|Vec3& a|The first point.|
-|Vec3& b|And the second point!|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) a|The first point.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) b|And the second point!|
 |RETURNS: float|Distance between the two points, but squared!|
 
-Calculates the distance between two points in space, but leaves them squared! Make
-sure they're in the same coordinate space! This is a fast function :)
+Calculates the distance between two points in space, but
+leaves them squared! Make sure they're in the same coordinate
+space! This is a fast function :)
 
 
 
@@ -29,7 +30,7 @@ Vec3 pointB = new Vec3(3, 2, 8);
 
 float distanceSquared = Vec3.DistanceSq(pointA, pointB);
 if (distanceSquared < 4*4) { 
-    Log.Info("Distance is less than 4");
+	Log.Info("Distance is less than 4");
 }
 ```
 

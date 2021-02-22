@@ -1,13 +1,15 @@
 ---
 layout: default
 title: Default.Material
-description: The default material! This is used by any model or mesh rendered from within StereoKit. Its shader may change based on system performance characteristics, so it can be great to copy this one when creating your own materials!
+description: The default material! This is used by many models and meshes rendered from within StereoKit. Its shader is tuned for high performance, and may change based on system performance characteristics, so it can be great to copy this one when creating your own materials! Or if you want to override StereoKit's default material, here's where you do it!
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).Material
 
 ## Description
-The default material! This is used by any model or mesh
-rendered from within StereoKit. Its shader may change based on
-system performance characteristics, so it can be great to copy
-this one when creating your own materials!
+The default material! This is used by many models and
+meshes rendered from within StereoKit. Its shader is tuned for
+high performance, and may change based on system performance
+characteristics, so it can be great to copy this one when
+creating your own materials! Or if you want to override
+StereoKit's default material, here's where you do it!
 

@@ -9,7 +9,8 @@ description: Creates an empty Mesh asset. Use SetVerts and SetInds to add data t
  Mesh()
 </div>
 
-Creates an empty Mesh asset. Use SetVerts and SetInds to add data to it!
+Creates an empty Mesh asset. Use SetVerts and SetInds to
+add data to it!
 
 
 

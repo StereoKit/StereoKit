@@ -11,13 +11,14 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) Slerp([Quat]({{site.url}}/
 
 |  |  |
 |--|--|
-|[Quat]({{site.url}}/Pages/Reference/Quat.html) a|Start quaternion, should be normalized/unit length.|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) a|Start quaternion, should be normalized/unit              length.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) b|End quaternion, should be normalized/unit length.|
-|float slerp|The interpolation amount! This'll be a if 0, and b if 1. Unclamped.|
+|float slerp|The interpolation amount! This'll be a if 0,              and b if 1. Unclamped.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A blend between the two quaternions!|
 
-Spherical Linear intERPolation. Interpolates between two quaternions! Both
-Quats should be normalized/unit quaternions, or you may get unexpected results.
+Spherical Linear intERPolation. Interpolates between two
+quaternions! Both Quats should be normalized/unit quaternions, or
+you may get unexpected results.
 
 
 

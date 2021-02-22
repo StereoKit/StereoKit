@@ -149,16 +149,16 @@ Color32 subLineColor = Color.HSV(0.6f,0.05f,.6f);
 // Loop through each pixel
 for (int y = 0; y < height; y++) {
 for (int x = 0; x < width;  x++) {
-    // If the pixel's x or y value is a multiple of 64, or 
-    // if it's adjacent to a multiple of 128, then we 
-    // choose the line color! Otherwise, we use the base.
-    if (x % 128 == 0 || (x+1)%128 == 0 || (x-1)%128 == 0 ||
-        y % 128 == 0 || (y+1)%128 == 0 || (y-1)%128 == 0)
-        colors[x+y*width] = lineColor;
-    else if (x % 64 == 0 || y % 64 == 0)
-        colors[x+y*width] = subLineColor;
-    else
-        colors[x+y*width] = baseColor;
+	// If the pixel's x or y value is a multiple of 64, or 
+	// if it's adjacent to a multiple of 128, then we 
+	// choose the line color! Otherwise, we use the base.
+	if (x % 128 == 0 || (x+1)%128 == 0 || (x-1)%128 == 0 ||
+		y % 128 == 0 || (y+1)%128 == 0 || (y-1)%128 == 0)
+		colors[x+y*width] = lineColor;
+	else if (x % 64 == 0 || y % 64 == 0)
+		colors[x+y*width] = subLineColor;
+	else
+		colors[x+y*width] = baseColor;
 } }
 
 // Put the pixel information into the texture

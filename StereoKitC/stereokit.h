@@ -5,7 +5,7 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 0
-#define SK_VERSION_PRERELEASE 3
+#define SK_VERSION_PRERELEASE 0
 
 #ifdef __GNUC__
 #define SK_EXIMPORT

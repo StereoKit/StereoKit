@@ -31,13 +31,13 @@ Bounds testArea = new Bounds(Vec3.One * 0.1f);
 // This is a decent way to show we're working with both hands
 for (int h = 0; h < (int)Handed.Max; h++)
 {
-    // Get the pose for the index fingertip
-    Hand hand      = Input.Hand((Handed)h);
-    Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
+	// Get the pose for the index fingertip
+	Hand hand      = Input.Hand((Handed)h);
+	Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
 
-    // Draw the fingertip pose axis if it's inside the volume
-    if (testArea.Contains(fingertip.position))
-        Lines.AddAxis(fingertip);
+	// Draw the fingertip pose axis if it's inside the volume
+	if (testArea.Contains(fingertip.position))
+		Lines.AddAxis(fingertip);
 }
 ```
 

@@ -5,16 +5,18 @@ description: This class represents a sound effect! Excellent for blips and bloop
 ---
 # Sound
 
-This class represents a sound effect! Excellent for blips and bloops
-and little clips that you might play around your scene. Not great for long
-streams of audio like you might see in a podcast. Right now, this only supports
-.wav files, and procedurally generated noises!
+This class represents a sound effect! Excellent for blips
+and bloops and little clips that you might play around your scene.
+Not great for long streams of audio like you might see in a podcast.
+Right now, this only supports .wav files, and procedurally generated
+noises!
 
-On HoloLens 2, sounds are automatically processed on the HPU, freeing up the CPU
-for more of your app's code. To simulate this same effect on your development PC,
-you need to enable spatial sound on your audio endpoint. To do this, right click
-the speaker icon in your system tray, navigate to "Spatial sound", and choose
-"Windows Sonic for Headphones." For more information, visit
+On HoloLens 2, sounds are automatically processed on the HPU, freeing
+up the CPU for more of your app's code. To simulate this same effect
+on your development PC, you need to enable spatial sound on your
+audio endpoint. To do this, right click the speaker icon in your
+system tray, navigate to "Spatial sound", and choose "Windows Sonic
+for Headphones." For more information, visit
 https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 
 
@@ -51,10 +53,10 @@ wave.
 ```csharp
 Sound genSound = Sound.Generate((t) =>
 {
-    float band1 = SKMath.Sin(t * 523.25f * SKMath.Tau); // a 'C' tone
-    float band2 = SKMath.Sin(t * 659.25f * SKMath.Tau); // an 'E' tone
-    const float volume = 0.1f;
-    return (band1*0.6f + band2*0.4f) * volume;
+	float band1 = SKMath.Sin(t * 523.25f * SKMath.Tau); // a 'C' tone
+	float band2 = SKMath.Sin(t * 659.25f * SKMath.Tau); // an 'E' tone
+	const float volume = 0.1f;
+	return (band1*0.6f + band2*0.4f) * volume;
 }, 0.5f);
 genSound.Play(Vec3.Zero);
 ```

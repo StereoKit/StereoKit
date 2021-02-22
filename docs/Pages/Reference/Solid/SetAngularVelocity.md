@@ -13,8 +13,8 @@ void SetAngularVelocity([Vec3]({{site.url}}/Pages/Reference/Vec3.html) radiansPe
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) radiansPerSecond|I think it's in radians. Maybe?|
 
-I wish I knew what angular velocity actually meant, perhaps you know? It's rotation
-velocity of some kind or another!
+I wish I knew what angular velocity actually meant,
+perhaps you know? It's rotation velocity of some kind or another!
 
 
 

@@ -23,7 +23,7 @@ same id, but a window cannot use the same id twice.
 |  |  |
 |--|--|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [AreaRemaining]({{site.url}}/Pages/Reference/UI/AreaRemaining.html)|How much space is available on the current layout! This is based on the current layout position, so X will give you the amount remaining on the current line, and Y will give you distance to the bottom of the layout, including the current line. These values will be 0 if you're using 0 for the layout size on that axis.|
-|[Color]({{site.url}}/Pages/Reference/Color.html) [ColorScheme]({{site.url}}/Pages/Reference/UI/ColorScheme.html)|StereoKit will generate a color palette from this color, and use it to skin the UI!|
+|[Color]({{site.url}}/Pages/Reference/Color.html) [ColorScheme]({{site.url}}/Pages/Reference/UI/ColorScheme.html)|StereoKit will generate a color palette from this gamma space color, and use it to skin the UI!|
 |float [LineHeight]({{site.url}}/Pages/Reference/UI/LineHeight.html)|This is the height of a single line of text with padding in the UI's layout system!|
 |[UISettings]({{site.url}}/Pages/Reference/UISettings.html) [Settings]({{site.url}}/Pages/Reference/UI/Settings.html)|UI sizing and layout settings. Set only for now|
 |bool [ShowVolumes]({{site.url}}/Pages/Reference/UI/ShowVolumes.html)|Shows or hides the collision volumes of the UI! This is for debug purposes, and can help identify visible and invisible collision issues.|
@@ -40,6 +40,7 @@ same id, but a window cannot use the same id twice.
 |[HandleEnd]({{site.url}}/Pages/Reference/UI/HandleEnd.html)|Finishes a handle! Must be called after UI.HandleBegin() and all elements have been drawn.|
 |[HSlider]({{site.url}}/Pages/Reference/UI/HSlider.html)|A horizontal slider element! You can stick your finger in it, and slide the value up and down.|
 |[Image]({{site.url}}/Pages/Reference/UI/Image.html)|Adds an image to the UI!|
+|[InteractVolume]({{site.url}}/Pages/Reference/UI/InteractVolume.html)|This watches a volume of space for pinch interaction events! If a hand is inside the space indicated by the bounds, this function will return that hand's pinch state, as well as indicate which hand did it through the out parameter.  Note that since this only provides the hand's pinch state, it won't give you JustActive and JustInactive notifications for when the hand enters or leaves the volume.|
 |[IsInteracting]({{site.url}}/Pages/Reference/UI/IsInteracting.html)|Tells if the user is currently interacting with a UI element! This will be true if the hand has an active or focused UI element.|
 |[Label]({{site.url}}/Pages/Reference/UI/Label.html)|Adds some text to the layout! Text uses the UI's current font settings (which are currently not exposed). Can contain newlines! May have trouble with non-latin characters. Will advance layout to next line.|
 |[LayoutArea]({{site.url}}/Pages/Reference/UI/LayoutArea.html)|Manually define what area is used for the UI layout. This is in the current Hierarchy's coordinate space on the X/Y plane.|

@@ -6,7 +6,7 @@ description: What type of transparency does this Material use? Default is None. 
 # [Material]({{site.url}}/Pages/Reference/Material.html).Transparency
 
 ## Description
-What type of transparency does this Material use? Default
-is None. Transparency has an impact on performance, and draw order.
-Check the Transparency enum for details.
+What type of transparency does this Material use?
+Default is None. Transparency has an impact on performance, and
+draw order. Check the Transparency enum for details.
 

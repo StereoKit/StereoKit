@@ -11,15 +11,16 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float dia
 
 |  |  |
 |--|--|
-|float diameter|Diameter of the circular part of the cylinder in meters. Diameter is              2*radius.|
+|float diameter|Diameter of the circular part of the             cylinder in meters. Diameter is 2*radius.|
 |float depth|How tall is this cylinder, in meters?|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction|What direction do the circular surfaces face? This is the surface normal             for the top, it does not need to be normalized.|
-|int subdivisions|How many vertices compose the edges of the cylinder? More is smoother,             but less performant.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction|What direction do the circular surfaces              face? This is the surface normal for the top, it does not need to             be normalized.|
+|int subdivisions|How many vertices compose the edges of             the cylinder? More is smoother, but less performant.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|Returns a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now.|
 
-Generates a cylinder mesh, pre-sized to the given diameter and depth,
-UV coordinates are from a flattened top view right now. Additional development is needed for
-making better UVs for the edges.
+Generates a cylinder mesh, pre-sized to the given
+diameter and depth, UV coordinates are from a flattened top view
+right now. Additional development is needed for making better UVs
+for the edges.
 
 
 

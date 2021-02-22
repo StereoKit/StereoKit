@@ -6,5 +6,6 @@ description: Is the hand making a pinch gesture right now? Finger and thumb toge
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).pinch
 
 ## Description
-Is the hand making a pinch gesture right now? Finger and thumb together.
+Is the hand making a pinch gesture right now? Finger and
+thumb together.
 

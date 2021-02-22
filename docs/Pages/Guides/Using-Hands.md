@@ -24,7 +24,7 @@ finger joint.
 Hand hand = Input.Hand(Handed.Right);
 if (hand.IsTracked)
 { 
-    Vec3 fingertip = hand[FingerId.Index, JointId.Tip].position;
+	Vec3 fingertip = hand[FingerId.Index, JointId.Tip].position;
 }
 ```
 Pretty straightforward! And if you prefer calling a function instead of using the
@@ -55,14 +55,14 @@ this.
 ```csharp
 static bool HandFacingHead(Handed handed)
 {
-    Hand hand = Input.Hand(handed);
-    if (!hand.IsTracked)
-        return false;
+	Hand hand = Input.Hand(handed);
+	if (!hand.IsTracked)
+		return false;
 
-    Vec3 palmDirection   = (hand.palm.Forward).Normalized();
-    Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized();
+	Vec3 palmDirection   = (hand.palm.Forward).Normalized;
+	Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized;
 
-    return Vec3.Dot(palmDirection, directionToHead) > 0.5f;
+	return Vec3.Dot(palmDirection, directionToHead) > 0.5f;
 }
 ```
 Once you have that information, it's simply a matter of placing a
@@ -72,24 +72,27 @@ is required for each hand.
 ```csharp
 public static void DrawHandMenu(Handed handed)
 {
-    if (!HandFacingHead(handed))
-        return;
+	if (!HandFacingHead(handed))
+		return;
 
-    // Decide the size and offset of the menu
-    Vec2  size   = new Vec2(4, 16);
-    float offset = handed == Handed.Left ? -4-size.x : 6+size.x;
+	// Decide the size and offset of the menu
+	Vec2  size   = new Vec2(4, 16);
+	float offset = handed == Handed.Left ? -2-size.x : 2+size.x;
 
-    // Position the menu relative to the palm
-    Pose menuPose = Input.Hand(handed).palm;
-    menuPose.position += menuPose.Right * offset * U.cm;
-    menuPose.position += menuPose.Up * (size.y/2) * U.cm;
+	// Position the menu relative to the side of the hand
+	Hand hand     = Input.Hand(handed);
+	Pose menuPose = new Pose(
+		hand[FingerId.Little, JointId.KnuckleMajor].position,
+		hand[FingerId.Little, JointId.Root].orientation * Quat.FromAngles(-90,0,0));
+	menuPose.position += menuPose.Right * offset * U.cm;
+	menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 
-    // And make a menu!
-    UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, UIWin.Empty);
-    UI.Button("Test");
-    UI.Button("That");
-    UI.Button("Hand");
-    UI.WindowEnd();
+	// And make a menu!
+	UI.WindowBegin("HandMenu", ref menuPose, size * U.cm, UIWin.Empty);
+	UI.Button("Test");
+	UI.Button("That");
+	UI.Button("Hand");
+	UI.WindowEnd();
 }
 ```
 ## Pointers
@@ -102,13 +105,13 @@ abstract a few more input sources nicely!
 ```csharp
 public static void DrawPointers()
 {
-    int hands = Input.PointerCount(InputSource.Hand);
-    for (int i = 0; i < hands; i++)
-    {
-        Pointer pointer = Input.Pointer(i, InputSource.Hand);
-        Lines.Add    (pointer.ray, 0.5f, Color.White, Units.mm2m);
-        Lines.AddAxis(pointer.Pose);
-    }
+	int hands = Input.PointerCount(InputSource.Hand);
+	for (int i = 0; i < hands; i++)
+	{
+		Pointer pointer = Input.Pointer(i, InputSource.Hand);
+		Lines.Add    (pointer.ray, 0.5f, Color.White, Units.mm2m);
+		Lines.AddAxis(pointer.Pose);
+	}
 }
 ```
 The code in context for this document can be found [on Github here](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoHands.cs)!

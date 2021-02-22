@@ -84,14 +84,15 @@ public void Update()
 
 	// Create a ray that's in the Mesh's model space
 	Matrix transform = boxPose.ToMatrix();
-	Ray ray = transform.Inverse() 
-		* Ray.FromTo(castPose.position, boxPose.position);
+	Ray    ray       = transform
+		.Inverse
+		.Transform(Ray.FromTo(castPose.position, boxPose.position));
 
 	// Draw a sphere at the intersection point, if the ray intersects 
 	// with the mesh.
 	if (ray.Intersect(boxMesh, out Vec3 at))
 	{
-		sphereMesh.Draw(Default.Material, Matrix.TS(transform * at, 0.02f));
+		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at), 0.02f));
 	}
 }
 ```

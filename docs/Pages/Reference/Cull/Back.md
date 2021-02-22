@@ -6,5 +6,6 @@ description: Discard if the back of the triangle face is pointing towards the ca
 # [Cull]({{site.url}}/Pages/Reference/Cull.html).Back
 
 ## Description
-Discard if the back of the triangle face is pointing towards the camera.
+Discard if the back of the triangle face is pointing
+towards the camera.
 

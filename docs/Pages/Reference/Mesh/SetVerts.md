@@ -13,10 +13,12 @@ void SetVerts(Vertex[] verts)
 |--|--|
 |Vertex[] verts|An array of vertices to add to the mesh.|
 
-Assigns the vertices for this Mesh! This will create a vertex buffer object
-on the graphics card right away. If you're calling this a second time, the buffer will
-be marked as dynamic and re-allocated. If you're calling this a third time, the buffer
-will only re-allocate if the buffer is too small, otherwise it just copies in the data!
+Assigns the vertices for this Mesh! This will create a
+vertex buffer object on the graphics card right away. If you're
+calling this a second time, the buffer will be marked as dynamic
+and re-allocated. If you're calling this a third time, the buffer
+will only re-allocate if the buffer is too small, otherwise it
+just copies in the data!
 
 
 
@@ -40,36 +42,36 @@ uint  [] inds  = new uint  [gridSize*gridSize*6];
 
 for (int y = 0; y < gridSize; y++) {
 for (int x = 0; x < gridSize; x++) {
-    // Create a vertex on a grid, centered about the origin. The dimensions extends
-    // from -0.5 to +0.5 on the X and Z axes. The Y value is then sampled from 
-    // a sin wave using the x and y values.
-    //
-    // The normal of the vertex is then calculated from the derivative of the Y 
-    // value!
-    verts[x+y*gridSize] = new Vertex(
-        new Vec3(
-            x/(float)gridSize-0.5f, 
-            SKMath.Sin((x+y) * 0.7f)*0.1f, 
-            y/(float)gridSize-0.5f),
-        new Vec3(
-            -SKMath.Cos((x+y) * 0.7f), 
-            1, 
-            -SKMath.Cos((x+y) * 0.7f)).Normalized());
+	// Create a vertex on a grid, centered about the origin. The dimensions extends
+	// from -0.5 to +0.5 on the X and Z axes. The Y value is then sampled from 
+	// a sin wave using the x and y values.
+	//
+	// The normal of the vertex is then calculated from the derivative of the Y 
+	// value!
+	verts[x+y*gridSize] = new Vertex(
+		new Vec3(
+			x/(float)gridSize-0.5f, 
+			SKMath.Sin((x+y) * 0.7f)*0.1f, 
+			y/(float)gridSize-0.5f),
+		new Vec3(
+			-SKMath.Cos((x+y) * 0.7f), 
+			1, 
+			-SKMath.Cos((x+y) * 0.7f)).Normalized);
 
-    // Create triangle face indices from the current vertex, and the vertices
-    // on the next row and column! Since there is no 'next' row and column on
-    // the last row and column, we guard this with a check for size-1.
-    if (x<gridSize-1 && y<gridSize-1)
-    {
-        int ind = (x+y*gridSize)*6;
-        inds[ind  ] = (uint)((x+1)+(y+1)*gridSize);
-        inds[ind+1] = (uint)((x+1)+(y  )*gridSize);
-        inds[ind+2] = (uint)((x  )+(y+1)*gridSize);
+	// Create triangle face indices from the current vertex, and the vertices
+	// on the next row and column! Since there is no 'next' row and column on
+	// the last row and column, we guard this with a check for size-1.
+	if (x<gridSize-1 && y<gridSize-1)
+	{
+		int ind = (x+y*gridSize)*6;
+		inds[ind  ] = (uint)((x+1)+(y+1)*gridSize);
+		inds[ind+1] = (uint)((x+1)+(y  )*gridSize);
+		inds[ind+2] = (uint)((x  )+(y+1)*gridSize);
 
-        inds[ind+3] = (uint)((x  )+(y+1)*gridSize);
-        inds[ind+4] = (uint)((x+1)+(y  )*gridSize);
-        inds[ind+5] = (uint)((x  )+(y  )*gridSize);
-    }
+		inds[ind+3] = (uint)((x  )+(y+1)*gridSize);
+		inds[ind+4] = (uint)((x+1)+(y  )*gridSize);
+		inds[ind+5] = (uint)((x  )+(y  )*gridSize);
+	}
 } }
 demoProcMesh = new Mesh();
 demoProcMesh.SetVerts(verts);

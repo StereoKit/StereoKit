@@ -9,7 +9,8 @@ description: A normalized quaternion has the same orientation, and a length of 1
 void Normalize()
 </div>
 
-A normalized quaternion has the same orientation, and a length of 1.
+A normalized quaternion has the same orientation, and a
+length of 1.
 
 
 

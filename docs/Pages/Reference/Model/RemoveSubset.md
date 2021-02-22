@@ -11,7 +11,7 @@ void RemoveSubset(int subsetIndex)
 
 |  |  |
 |--|--|
-|int subsetIndex|Index of the subset to remove, should be less than SubsetCount.|
+|int subsetIndex|Index of the subset to remove, should             be less than SubsetCount.|
 
 Removes and dereferences a subset from the model.
 

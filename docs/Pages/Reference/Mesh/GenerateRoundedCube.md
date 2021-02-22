@@ -11,14 +11,14 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateRoundedCube([Vec3]
 
 |  |  |
 |--|--|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions|How large is this cube on each axis, in meters?|
-|float edgeRadius|Radius of the corner rounding, in meters.|
-|int subdivisions|How many subdivisions should be used for creating the corners?              A larger value results in smoother corners, but can decrease performance.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions|How large is this cube on each axis, in             meters?|
+|float edgeRadius|Radius of the corner rounding, in             meters.|
+|int subdivisions|How many subdivisions should be used             for creating the corners?              A larger value results in smoother corners, but can decrease             performance.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A cube mesh with rounded corners, pre-sized to the given dimensions.|
 
-Generates a cube mesh with rounded corners, pre-sized to the given
-dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded
-corners.
+Generates a cube mesh with rounded corners, pre-sized to
+the given dimensions. UV coordinates are 0,0 -> 1,1 on each face,
+meeting at the middle of the rounded corners.
 
 
 

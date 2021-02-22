@@ -12,11 +12,12 @@ int AddSubset([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{
 |  |  |
 |--|--|
 |[Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh|The Mesh for the subset, may not be null.|
-|[Material]({{site.url}}/Pages/Reference/Material.html) material|The Material for the subset, may not be null.|
-|Matrix& transform|A transform Matrix representing the Mesh's location             relative to the origin of the Model.|
+|[Material]({{site.url}}/Pages/Reference/Material.html) material|The Material for the subset, may not be              null.|
+|Matrix& transform|A transform Matrix representing the              Mesh's location relative to the origin of the Model.|
 |RETURNS: int|The index of the subset that was just added.|
 
-Adds a new subset to the Model, and recalculates the bounds.
+Adds a new subset to the Model, and recalculates the
+bounds.
 
 
 
@@ -25,8 +26,8 @@ Adds a new subset to the Model, and recalculates the bounds.
 
 ```csharp
 model.AddSubset(
-    Mesh   .GenerateSphere(1),
-    Default.Material,
-    Matrix .T(0,1,0));
+	Mesh   .GenerateSphere(1),
+	Default.Material,
+	Matrix .T(0,1,0));
 ```
 

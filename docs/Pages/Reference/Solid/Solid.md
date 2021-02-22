@@ -13,9 +13,10 @@ description: Creates a Solid physics object and adds it to the physics system.
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|Initial location of the Solid.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) rotation|Initial rotation of the Solid.|
-|[SolidType]({{site.url}}/Pages/Reference/SolidType.html) type|What sort of physics properties does this object exhibit?|
+|[SolidType]({{site.url}}/Pages/Reference/SolidType.html) type|What sort of physics properties does this              object exhibit?|
 
-Creates a Solid physics object and adds it to the physics system.
+Creates a Solid physics object and adds it to the
+physics system.
 
 
 
