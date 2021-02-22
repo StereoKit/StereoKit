@@ -15,8 +15,9 @@ description: Creates a vector from x, y, and z values! StereoKit uses a right-ha
 |float y|The y axis.|
 |float z|The z axis.|
 
-Creates a vector from x, y, and z values! StereoKit uses a right-handed metric
-coordinate system, where +x is to the right, +y is upwards, and -z is forward.
+Creates a vector from x, y, and z values! StereoKit uses
+a right-handed metric coordinate system, where +x is to the
+right, +y is upwards, and -z is forward.
 
 
 

@@ -1,36 +1,30 @@
-// [name] app/floor
+#include <stereokit.hlsli>
 
-#include <stereokit>
+//--name = app/floor
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1, 1, 1, 1}
-	float4 _color;
-	// [param] vector radius {5, 10, 0, 0}
-	float4 radius;
-};
+//--color:color = 0,0,0,1
+float4 color;
+//--radius      = 5,10,0,0
+float4 radius;
+
 struct vsIn {
-	float4 pos  : SV_POSITION;
-	float3 norm : NORMAL;
-	float4 col  : COLOR;
+	float4 pos : SV_POSITION;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
-	float4 color : COLOR0;
 	float4 world : TEXCOORD0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-	output.world = mul(input.pos,    sk_inst[id].world);
-	output.pos   = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
-	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
+	o.world = mul(input.pos, sk_inst[id].world);
+	o.pos   = mul(o.world,   sk_viewproj[o.view_id]);
 
-	output.view_id = sk_inst[id].view_id;
-	output.color   = _color * input.col * sk_inst[id].color;
-	output.color.rgb *= Lighting(normal);
-	return output;
+	return o;
 }
 float4 ps(psIn input) : SV_TARGET{
 	// This line algorithm is inspired by :
@@ -54,6 +48,6 @@ float4 ps(psIn input) : SV_TARGET{
 	// combine, and drop transparent pixels
 	val = max(val*0.6, axisVal);
 	if (val <= 0) discard;
-		
-	return float4(0, 0, 0, val) * input.color;
+
+	return float4(color.rgb, val);
 }

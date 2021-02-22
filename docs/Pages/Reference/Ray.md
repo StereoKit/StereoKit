@@ -23,6 +23,7 @@ shapes.
 |  |  |
 |--|--|
 |[Ray]({{site.url}}/Pages/Reference/Ray/Ray.html)|Basic initialization constructor! Just copies the parameters into the fields.|
+|[At]({{site.url}}/Pages/Reference/Ray/At.html)|Gets a point along the ray! This is basically just position + direction*percent. If Ray.direction is normalized, then percent is functionally distance, and can be used to find the point a certain distance out along the ray.|
 |[Intersect]({{site.url}}/Pages/Reference/Ray/Intersect.html)|Checks the intersection of this ray with a plane!|
 
 

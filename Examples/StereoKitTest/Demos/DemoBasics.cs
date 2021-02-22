@@ -11,7 +11,7 @@ class DemoBasics : ITest
 
 	public void Initialize()
 	{
-		gltf = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
+		gltf = Model.FromFile("DamagedHelmet.gltf");
 
 		floorSolid = new Solid(new Vec3(0, -1.5f, 0), Quat.Identity, SolidType.Immovable);
 		floorSolid.AddBox(new Vec3(20, .01f, 20));
@@ -36,7 +36,7 @@ class DemoBasics : ITest
 				Input.HandSolid((Handed)i, false);
 		}
 
-		UI.WindowBegin("Options", ref optionsPose, Vec2.Zero);
+		UI.WindowBegin("Options", ref optionsPose);
 		if (UI.Button("Add"))
 		{
 			objects.Add(new Solid(new Vec3(0, 3, 0), Quat.Identity));

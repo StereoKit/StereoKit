@@ -23,8 +23,6 @@ enum hand_system_ {
 	hand_system_mouse,
 	hand_system_oxr_controllers,
 	hand_system_oxr_articulated,
-	hand_system_mirage,
-	hand_system_leap,
 	hand_system_override
 };
 
@@ -40,7 +38,7 @@ void input_hand_update_predicted();
 
 void input_hand_update_meshes();
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand);
-void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
+void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
 void input_hand_state_update(handed_ handedness);
 void input_hand_make_solid();
 

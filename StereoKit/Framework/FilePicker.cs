@@ -79,7 +79,7 @@ namespace StereoKit.Framework
 		{
 			if (_inst != null) _inst._onCancel?.Invoke();
 			if (_inst == null) { 
-				_inst = StereoKitApp.AddStepper(new FilePicker());
+				_inst = SK.AddStepper(new FilePicker());
 				Vec3 pos = Input.Head.position + Input.Head.Forward * .5f + Input.Head.Up * 0.2f;
 				_inst._windowPose = new Pose(pos, Quat.LookAt(pos, Input.Head.position));
 			}
@@ -90,7 +90,7 @@ namespace StereoKit.Framework
 		public static void Hide()
 		{
 			if (_inst != null)
-				StereoKitApp.RemoveStepper(_inst);
+				SK.RemoveStepper(_inst);
 			_inst = null;
 		}
 		/// <summary>Is the file picker visible and doing things?</summary>

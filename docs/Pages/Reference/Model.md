@@ -11,15 +11,16 @@ complex objects that have multiple parts in them, and in fact, most
 model formats are composed this way already!
 
 This class contains a number of methods for creation. If you pass in
-a .obj, .stl, .gltf, or .glb, StereoKit will load that model from file,
-and assemble materials and transforms from the file information. But
-you can also assemble a model from procedurally generated meshes!
+a .obj, .stl, .gltf, or .glb, StereoKit will load that model from
+file, and assemble materials and transforms from the file
+information. But you can also assemble a model from procedurally
+generated meshes!
 
-Because models include an offset transform for each mesh element, this
-does have the overhead of an extra matrix multiplication in order to
-execute a render command. So if you need speed, and only have a single
-mesh with a precalculated transform matrix, it can be faster to render
-a Mesh instead of a Model!
+Because models include an offset transform for each mesh element,
+this does have the overhead of an extra matrix multiplication in
+order to execute a render command. So if you need speed, and only
+have a single mesh with a precalculated transform matrix, it can be
+faster to render a Mesh instead of a Model!
 
 
 

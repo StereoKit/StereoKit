@@ -13,7 +13,8 @@ void SetType([SolidType]({{site.url}}/Pages/Reference/SolidType.html) type)
 |--|--|
 |[SolidType]({{site.url}}/Pages/Reference/SolidType.html) type|The new solid type!|
 
-Changes the behavior type of the solid after it's created.
+Changes the behavior type of the solid after it's
+created.
 
 
 

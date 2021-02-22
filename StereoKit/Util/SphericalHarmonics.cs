@@ -7,8 +7,8 @@ namespace StereoKit
 	public struct SHLight
 	{
 		/// <summary>Direction to the light source.</summary>
-		public Vec3  directionTo;
-		/// <summary>Color of the light! Values here can exceed 1.</summary>
+		public Vec3 directionTo;
+		/// <summary>Color of the light in linear space! Values here can exceed 1.</summary>
 		public Color color;
 	}
 
@@ -26,15 +26,15 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SphericalHarmonics
 	{
-		private Vec3 coefficient1;
-		private Vec3 coefficient2;
-		private Vec3 coefficient3;
-		private Vec3 coefficient4;
-		private Vec3 coefficient5;
-		private Vec3 coefficient6;
-		private Vec3 coefficient7;
-		private Vec3 coefficient8;
-		private Vec3 coefficient9;
+		public Vec3 coefficient1;
+		public Vec3 coefficient2;
+		public Vec3 coefficient3;
+		public Vec3 coefficient4;
+		public Vec3 coefficient5;
+		public Vec3 coefficient6;
+		public Vec3 coefficient7;
+		public Vec3 coefficient8;
+		public Vec3 coefficient9;
 
 		/// <summary>Look up the color information in a particular direction!</summary>
 		/// <param name="normal">The direction to look in. Should be normalized.</param>
@@ -48,6 +48,5 @@ namespace StereoKit
 		/// from a set of directional lights!</returns>
 		public static SphericalHarmonics FromLights(SHLight[] directional_lights)
 			=> NativeAPI.sh_create(directional_lights, directional_lights.Length);
-
 	}
 }

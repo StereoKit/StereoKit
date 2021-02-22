@@ -4,7 +4,8 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-  IgnorableNamespaces="uap mp">
+  xmlns:uap2="http://schemas.microsoft.com/appx/manifest/uap/windows10/2"
+  IgnorableNamespaces="uap mp uap2">
 
   <Identity
     Name="7a3e0fd1-c5f9-4a7a-b7d0-0b635a1d399e"
@@ -45,6 +46,8 @@
 
   <Capabilities>
     <Capability Name="internetClient" />
+    <uap2:Capability Name="spatialPerception"/>
     <DeviceCapability Name="webcam"/>
+    <DeviceCapability Name="gazeInput"/>
   </Capabilities>
 </Package>

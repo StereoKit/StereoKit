@@ -56,17 +56,17 @@ function that will convert from UWP's coordinates into our own.
 ```csharp
 struct QRData
 { 
-    public Pose   pose;
-    public float  size;
-    public string text;
-    public static QRData FromCode(QRCode qr)
-    {
-        QRData result = new QRData();
-        result.pose = Pose.FromSpatialNode(qr.SpatialGraphNodeId);
-        result.size = qr.PhysicalSideLength;
-        result.text = qr.Data == null ? "" : qr.Data;
-        return result;
-    }
+	public Pose   pose;
+	public float  size;
+	public string text;
+	public static QRData FromCode(QRCode qr)
+	{
+		QRData result = new QRData();
+		result.pose = World.FromSpatialNode(qr.SpatialGraphNodeId);
+		result.size = qr.PhysicalSideLength;
+		result.text = qr.Data == null ? "" : qr.Data;
+		return result;
+	}
 }
 ```
 Ok, cool! Now here's the data we'll be tracking for this demo,
@@ -90,23 +90,23 @@ before the session began. We don't need that, so we're ignoring those.
 ```csharp
 public void Initialize()
 {
-    // Ask for permission to use the QR code tracking system
-    var status = QRCodeWatcher.RequestAccessAsync().Result;
-    if (status != QRCodeWatcherAccessStatus.Allowed)
-        return;
+	// Ask for permission to use the QR code tracking system
+	var status = QRCodeWatcher.RequestAccessAsync().Result;
+	if (status != QRCodeWatcherAccessStatus.Allowed)
+		return;
 
-    // Set up the watcher, and listen for QR code events.
-    watcherStart = DateTime.Now;
-    watcher      = new QRCodeWatcher();
-    watcher.Added   += (o, qr) => {
-        // QRCodeWatcher will provide QR codes from before session start,
-        // so we often want to filter those out.
-        if (qr.Code.LastDetectedTime > watcherStart) 
-            poses.Add(qr.Code.Id, QRData.FromCode(qr.Code)); 
-    };
-    watcher.Updated += (o, qr) => poses[qr.Code.Id] = QRData.FromCode(qr.Code);
-    watcher.Removed += (o, qr) => poses.Remove(qr.Code.Id);
-    watcher.Start();
+	// Set up the watcher, and listen for QR code events.
+	watcherStart = DateTime.Now;
+	watcher      = new QRCodeWatcher();
+	watcher.Added   += (o, qr) => {
+		// QRCodeWatcher will provide QR codes from before session start,
+		// so we often want to filter those out.
+		if (qr.Code.LastDetectedTime > watcherStart) 
+			poses.Add(qr.Code.Id, QRData.FromCode(qr.Code)); 
+	};
+	watcher.Updated += (o, qr) => poses[qr.Code.Id] = QRData.FromCode(qr.Code);
+	watcher.Removed += (o, qr) => poses.Remove(qr.Code.Id);
+	watcher.Start();
 }
 
 // For shutdown, we just need to stop the watcher
@@ -123,18 +123,18 @@ forward, in front of the code!
 ```csharp
 public void Update()
 {
-    foreach(QRData d in poses.Values)
-    { 
-        Lines.AddAxis(d.pose, d.size);
-        Text .Add(
-            d.text, 
-            Matrix.TRS(
-                d.pose.position + d.pose.Forward*d.size*0.1f, 
-                Quat.FromAngles(0, 0, 180)*d.pose.orientation),
-            Vec2.One * d.size,
-            TextFit.Squeeze,
-            TextAlign.XLeft | TextAlign.YTop);
-    }
+	foreach(QRData d in poses.Values)
+	{ 
+		Lines.AddAxis(d.pose, d.size);
+		Text .Add(
+			d.text, 
+			Matrix.TR(
+				d.pose.position + d.pose.Forward*d.size*0.1f, 
+				Quat.FromAngles(0, 0, 180)*d.pose.orientation),
+			Vec2.One * d.size,
+			TextFit.Squeeze,
+			TextAlign.XLeft | TextAlign.YTop);
+	}
 }
 ```
 And that's all there is to it! You can find all this code

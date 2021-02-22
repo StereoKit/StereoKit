@@ -6,5 +6,6 @@ description: No culling at all! Draw the triangle regardless of which way it's p
 # [Cull]({{site.url}}/Pages/Reference/Cull.html).None
 
 ## Description
-No culling at all! Draw the triangle regardless of which way it's pointing.
+No culling at all! Draw the triangle regardless of which
+way it's pointing.
 

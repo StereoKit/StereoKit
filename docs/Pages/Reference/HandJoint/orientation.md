@@ -1,11 +1,14 @@
 ---
 layout: default
 title: HandJoint.orientation
-description: The joint's world space orientation, where Forward points to the next joint down the finger.
+description: The joint's world space orientation, where Forward points to the next joint down the finger, and Up will point towards the back of the hand. On the left hand, Right will point towards the thumb, and on the right hand, Right will point away from the thumb.
 ---
 # [HandJoint]({{site.url}}/Pages/Reference/HandJoint.html).orientation
 
 ## Description
-The joint's world space orientation, where Forward points
-to the next joint down the finger.
+The joint's world space orientation, where Forward
+points to the next joint down the finger, and Up will point
+towards the back of the hand. On the left hand, Right will point
+towards the thumb, and on the right hand, Right will point away
+from the thumb.
 

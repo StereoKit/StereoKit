@@ -11,7 +11,7 @@ void SetMaterial(int subsetIndex, [Material]({{site.url}}/Pages/Reference/Materi
 
 |  |  |
 |--|--|
-|int subsetIndex|Index of the model subset to replace, should be less than SubsetCount.|
+|int subsetIndex|Index of the model subset to replace,              should be less than SubsetCount.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|The new Material, cannot be null.|
 
 Changes the Material for the subset to a new one!
@@ -24,12 +24,12 @@ Changes the Material for the subset to a new one!
 ```csharp
 for (int i = 0; i < model.SubsetCount; i++)
 {
-    // GetMaterial will often returned a shared resource, so 
-    // copy it if you don't wish to change all assets that 
-    // share it.
-    Material mat = model.GetMaterial(i).Copy();
-    mat[MatParamName.ColorTint] = Color.HSV(0, 1, 1);
-    model.SetMaterial(i, mat);
+	// GetMaterial will often returned a shared resource, so 
+	// copy it if you don't wish to change all assets that 
+	// share it.
+	Material mat = model.GetMaterial(i).Copy();
+	mat[MatParamName.ColorTint] = Color.HSV(0, 1, 1);
+	model.SetMaterial(i, mat);
 }
 ```
 

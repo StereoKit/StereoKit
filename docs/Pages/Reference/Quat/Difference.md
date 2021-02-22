@@ -15,7 +15,8 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) Difference([Quat]({{site.u
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) b|Ending rotation.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that will take a point from rotation a, to rotation b.|
 
-This gives a relative rotation between the first and second quaternion rotations.
+This gives a relative rotation between the first and
+second quaternion rotations.
 Remember that order is important here!
 
 

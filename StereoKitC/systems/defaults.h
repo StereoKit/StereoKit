@@ -4,7 +4,7 @@
 
 namespace sk {
 
-bool defaults_init();
+bool defaults_init    ();
 void defaults_shutdown();
 
 extern tex_t        sk_default_tex;
@@ -20,6 +20,8 @@ extern shader_t     sk_default_shader_unlit;
 extern shader_t     sk_default_shader_font;
 extern shader_t     sk_default_shader_equirect;
 extern shader_t     sk_default_shader_ui;
+extern shader_t     sk_default_shader_sky;
+extern shader_t     sk_default_shader_lines;
 extern material_t   sk_default_material;
 extern material_t   sk_default_material_equirect;
 extern material_t   sk_default_material_font;

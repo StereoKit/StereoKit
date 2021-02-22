@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Shader.FromMemory
-description: Creates a shader asset from a precompiled StereoKit Shader file stored as bytes! If you don't have a precompiled shader file, you can make one with the Shader.Compile method. The Id will be the shader's internal name.
+description: Creates a shader asset from a precompiled StereoKit Shader file stored as bytes!
 ---
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).FromMemory
 
@@ -11,13 +11,11 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) FromMemory(Byte[]& dat
 
 |  |  |
 |--|--|
-|Byte[]& data|A precompiled StereoKit Shader file as bytes,             you can get these bytes from Shader.Compile!|
+|Byte[]& data|A precompiled StereoKit Shader file as bytes.|
 |RETURNS: [Shader]({{site.url}}/Pages/Reference/Shader.html)|A shader from the given data, or null if it failed to load/compile.|
 
 Creates a shader asset from a precompiled StereoKit
-Shader file stored as bytes! If you don't have a precompiled
-shader file, you can make one with the Shader.Compile method.
-The Id will be the shader's internal name.
+Shader file stored as bytes!
 
 
 

@@ -1,7 +1,7 @@
 #include "line_drawer.h"
 #include "../stereokit.h"
-#include "../shaders_builtin/shader_builtin.h"
-#include "../math.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../hierarchy.h"
 
 #include <stdlib.h>
@@ -25,12 +25,9 @@ bool line_drawer_init() {
 	line_mesh = mesh_create();
 	mesh_set_id(line_mesh, "render/line_mesh");
 
-	shader_t line_shader = shader_create_mem((void*)shader_builtin_lines, sizeof(shader_builtin_lines));
-	shader_set_id(line_shader, "render/line_shader");
-	line_material = material_create(line_shader);
+	line_material = material_create(shader_find(default_id_shader_lines));
 	material_set_id(line_material, "render/line_material");
 	material_set_transparency(line_material, transparency_blend);
-	shader_release(line_shader);
 	return true;
 }
 
@@ -61,12 +58,12 @@ void line_drawer_shutdown() {
 void line_ensure_cap(int32_t verts, int32_t inds) {
 	if (line_vert_ct + verts >= line_vert_cap) {
 		line_vert_cap = maxi(line_vert_ct + verts, line_vert_cap * 2);
-		line_verts    = (vert_t*)realloc(line_verts, line_vert_cap * sizeof(vert_t));
+		line_verts    = sk_realloc_t<vert_t>(line_verts, line_vert_cap);
 	}
 
 	if (line_ind_ct + inds >= line_ind_cap) {
 		line_ind_cap = maxi(line_ind_ct + inds, line_ind_cap * 2);
-		line_inds    = (vind_t*)realloc(line_inds, line_ind_cap * sizeof(vind_t));
+		line_inds    = sk_realloc_t<vind_t>(line_inds, line_ind_cap);
 	}
 }
 

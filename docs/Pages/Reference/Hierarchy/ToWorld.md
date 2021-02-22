@@ -14,7 +14,8 @@ static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) ToWorld([Vec3]({{site.url}
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) localPoint|A point in local space.|
 |RETURNS: [Vec3]({{site.url}}/Pages/Reference/Vec3.html)|The provided point now in world space!|
 
-Converts a local point relative to the current hierarchy stack into world space!
+Converts a local point relative to the current hierarchy
+stack into world space!
 <div class='signature' markdown='1'>
 static [Quat]({{site.url}}/Pages/Reference/Quat.html) ToWorld([Quat]({{site.url}}/Pages/Reference/Quat.html) localOrientation)
 </div>
@@ -24,7 +25,8 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) ToWorld([Quat]({{site.url}
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) localOrientation|A rotation in local space.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|The provided rotation now in world space!|
 
-Converts a local rotation relative to the current hierarchy stack into world space!
+Converts a local rotation relative to the current
+hierarchy stack into world space!
 
 
 

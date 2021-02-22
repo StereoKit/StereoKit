@@ -22,7 +22,7 @@ model_t gltf;
 void demo_basics_init() {
 
 	// Load a gltf model
-	gltf = model_create_file("DamagedHelmet.gltf");
+	gltf = model_create_file("DamagedHelmet.gltf", shader_find(default_id_shader_pbr));
 }
 
 ///////////////////////////////////////////
@@ -33,7 +33,7 @@ void demo_basics_update() {
 	static pose_t window_pose = //pose_t{ vec3{1,1,1} * 0.9f, quat_lookat({1,1,1}, {0,0,0}) };
 		pose_t{ {0,0,-0.25f}, quat_lookat({0,0,-0.25f}, {0,0,0}) };
 	ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
-
+	
 	static float scale = 0.25f;
 	ui_hslider("scale", scale, 0.05f, 0.25f, 0, 72 * mm2m); ui_sameline();
 	ui_model(gltf, vec2{ 10,10 }*mm2m, scale*0.1f);
@@ -62,7 +62,7 @@ void demo_basics_update() {
 	// Render solid helmets
 	for (size_t i = 0; i < phys_objs.size(); i++) {
 		solid_get_pose  (phys_objs[i].solid, tr);
-		render_add_model(gltf, pose_matrix(tr, vec3_one*0.25f));
+		render_add_model(gltf, pose_matrix(tr, vec3_one * phys_objs[i].scale));
 	}
 }
 
@@ -72,5 +72,6 @@ void demo_basics_shutdown() {
 	// Release everything
 	for (size_t i = 0; i < phys_objs.size(); i++)
 		solid_release(phys_objs[i].solid);
+	phys_objs.clear();
 	model_release(gltf);
 }

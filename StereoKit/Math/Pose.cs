@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -16,15 +15,20 @@ namespace StereoKit
 		/// <summary>Calculates the forward direction from this pose. This is done by 
 		/// multiplying the orientation with Vec3.Forward. Remember that Forward points
 		/// down the -Z axis!</summary>
-		public Vec3 Forward => orientation * Vec3.Forward;
+		public Vec3 Forward => Vec3.Forward * orientation;
 
 		/// <summary>Calculates the right (+X) direction from this pose. This is done by 
 		/// multiplying the orientation with Vec3.Right.</summary>
-		public Vec3 Right => orientation * Vec3.Right;
+		public Vec3 Right => Vec3.Right * orientation;
 
 		/// <summary>Calculates the up (+Y) direction from this pose. This is done by 
 		/// multiplying the orientation with Vec3.Up.</summary>
-		public Vec3 Up => orientation * Vec3.Up;
+		public Vec3 Up => Vec3.Up * orientation;
+
+		/// <summary>This creates a ray starting at the Pose's position, and
+		/// pointing in the 'Forward' direction. The Ray direction is a unit
+		/// vector/normalized. </summary>
+		public Ray Ray => new Ray(position, Forward);
 
 		/// <summary>Basic initialization constructor! Just copies in the provided values directly.</summary>
 		/// <param name="position">Location of the pose.</param>
@@ -50,18 +54,21 @@ namespace StereoKit
 		/// <param name="scale">A scale vector! Vec3.One would be an identity scale.</param>
 		/// <returns>A Matrix that transforms to the given pose.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Matrix ToMatrix(Vec3 scale) => NativeAPI.pose_matrix(this, scale);
+		public Matrix ToMatrix(Vec3 scale) 
+			=> Matrix.TRS(position, orientation, scale);
 
 		/// <summary>Converts this pose into a transform matrix, incorporating a provided scale value.</summary>
 		/// <param name="scale">A uniform scale factor! 1 would be an identity scale.</param>
 		/// <returns>A Matrix that transforms to the given pose.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Matrix ToMatrix(float scale) => NativeAPI.pose_matrix(this, new Vec3(scale, scale, scale));
+		public Matrix ToMatrix(float scale)
+			=> Matrix.TRS(position, orientation, scale);
 
 		/// <summary>Converts this pose into a transform matrix.</summary>
 		/// <returns>A Matrix that transforms to the given pose.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Matrix ToMatrix()           => NativeAPI.pose_matrix(this, Vec3.One);
+		public Matrix ToMatrix() 
+			=> Matrix.TR(position, orientation);
 
 		/// <summary>Interpolates between two poses! t is unclamped, so values outside of (0,1) will
 		/// extrapolate their position.</summary>
@@ -71,9 +78,6 @@ namespace StereoKit
 		/// <returns>A new pose, blended between a and b based on percent!</returns>
 		public static Pose Lerp(Pose a, Pose b, float percent)
 			=> new Pose(Vec3.Lerp(a.position, b.position, percent), Quat.Slerp(a.orientation, b.orientation, percent));
-
-		public static Pose FromSpatialNode(Guid spatialNodeGuid)
-			=> NativeAPI.pose_from_spatial(spatialNodeGuid.ToByteArray());
 
 		public override string ToString()
 			=> string.Format("{0}, {1}", position, Forward);

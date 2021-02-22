@@ -74,6 +74,8 @@
   <ItemGroup>
     <Compile Include="..\*.cs" />
     <Compile Include="..\Demos\*.cs" />
+    <Compile Include="..\Tools\*.cs" />
+    <Compile Include="..\Tests\*.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -109,11 +111,14 @@
       <Name>StereoKit</Name>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+  <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
-    <Content Include="..\..\Assets\**">
+    <Content Include="$(SolutionDir)Examples\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
+    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

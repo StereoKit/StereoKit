@@ -28,77 +28,13 @@ namespace StereoKit
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)
-				NativeAPI.shader_release(_inst);
+				SK.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
 		}
 
-		/// <summary>This will compile an HLSL shader into a StereoKit binary
-		/// storage format. StereoKit does not need to be initialized for 
-		/// this method to work! The binary format includes data about shader
-		/// parameters and textures, as well as pre-compiled shaders for 
-		/// different platforms. Currently only supports HLSL, but can support
-		/// more. The results can be passed into Shader.FromMemory to get a 
-		/// final shader asset, or it can be saved to file!
-		/// Note: If the shader uses file relative #includes, they will not 
-		/// work without providing the filename of the hlsl. See the other
-		/// overload for this method!</summary>
-		/// <param name="hlsl">HLSL code, including metadata comments.</param>
-		/// <returns>Binary data representing a StereoKit compiled shader data
-		/// file. This can be passed into Shader.FromMemory to get a final
-		/// shader asset, or it can be saved to file!</returns>
-		public static byte[] Compile(string hlsl)
-		{
-			if (!NativeAPI.shader_compile(hlsl, IntPtr.Zero, out IntPtr ptr, out ulong size))
-				return new byte[]{ };
-
-			byte[] result = new byte[size];
-			Marshal.Copy(ptr, result, 0, (int)size);
-			return result;
-		}
-
-		/// <summary>This will compile an HLSL shader into a StereoKit binary
-		/// storage format. StereoKit does not need to be initialized for 
-		/// this method to work! The binary format includes data about shader
-		/// parameters and textures, as well as pre-compiled shaders for 
-		/// different platforms. Currently only supports HLSL, but can support
-		/// more. The results can be passed into Shader.FromMemory to get a 
-		/// final shader asset, or it can be saved to file!</summary>
-		/// <param name="hlsl">HLSL code, including metadata comments.</param>
-		/// <param name="filename">The file that this shader code came from!
-		/// This is used to find relative #includes in the shader code.</param>
-		/// <returns>Binary data representing a StereoKit compiled shader data
-		/// file. This can be passed into Shader.FromMemory to get a final
-		/// shader asset, or it can be saved to file!</returns>
-		public static byte[] Compile(string hlsl, string filename)
-		{
-			if (!NativeAPI.shader_compile(hlsl, filename, out IntPtr ptr, out ulong size))
-				return new byte[] { };
-
-			byte[] result = new byte[size];
-			Marshal.Copy(ptr, result, 0, (int)size);
-			return result;
-		}
-
-		/// <summary>Creates a shader from a piece of HLSL code! Shader stuff
-		/// like this may change in the future, since HLSL may not be all that
-		/// portable. Also, before compiling the shader code, StereoKit hashes 
-		/// the contents, and looks to see if it has that shader cached. If 
-		/// so, it'll just load that instead of compiling it again. The Id 
-		/// will be the shader's internal name.</summary>
-		/// <param name="hlsl">A vertex and pixel shader written in HLSL, 
-		/// check the shader guides for more on this later!</param>
-		/// <returns>A shader from the given code, or null if it failed to 
-		/// load/compile.</returns>
-		public static Shader FromHLSL(string hlsl) { 
-			IntPtr inst = NativeAPI.shader_create_hlsl(hlsl);
-			return inst == IntPtr.Zero ? null : new Shader(inst);
-		}
-
-		/// <summary>Creates a shader asset from a precompiled StereoKit 
-		/// Shader file stored as bytes! If you don't have a precompiled
-		/// shader file, you can make one with the Shader.Compile method.
-		/// The Id will be the shader's internal name.</summary>
-		/// <param name="data">A precompiled StereoKit Shader file as bytes,
-		/// you can get these bytes from Shader.Compile!</param>
+		/// <summary>Creates a shader asset from a precompiled StereoKit
+		/// Shader file stored as bytes!</summary>
+		/// <param name="data">A precompiled StereoKit Shader file as bytes.
+		/// </param>
 		/// <returns>A shader from the given data, or null if it failed to 
 		/// load/compile.</returns>
 		public static Shader FromMemory(in byte[] data)
@@ -107,16 +43,16 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Shader(inst);
 		}
 
-		/// <summary>Loads and compiles a shader from an hlsl, or precompiled 
-		/// StereoKit Shader file! After loading an hlsl file, StereoKit will
-		/// hash it, and check to see if it has changed since the last time 
-		/// it cached a compiled version. If there is no cache for the hash, 
-		/// it'll compile it, and save the compiled shader to a cache folder 
-		/// in the asset path! The Id will be the shader's internal name.
-		/// </summary>
-		/// <param name="file">Path to a StereoKit Shader file, or hlsl code. 
-		/// This gets prefixed with the asset path in StereoKitApp.settings.
-		/// </param>
+		/// <summary>Loads a shader from a precompiled StereoKit Shader 
+		/// (.sks) file! HLSL files can be compiled using the skshaderc tool
+		/// included in the NuGet package. This should be taken care of by
+		/// MsBuild automatically, but you may need to ensure your HLSL file
+		/// is a &lt;SKShader /&gt; item type in the .csproj for this to 
+		/// work. You can also compile with the command line app manually if
+		/// you're compiling/distributing a shader some other way! </summary>
+		/// <param name="file">Path to a precompiled StereoKit Shader file!
+		/// If no .sks extension is part of this path, StereoKit will 
+		/// automatically add it and check that first.</param>
 		/// <returns>A shader from the given file, or null if it failed to 
 		/// load/compile.</returns>
 		public static Shader FromFile(string file)

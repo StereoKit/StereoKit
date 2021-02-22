@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Reference from here: http://reedbeta.com/blog/custom-toolchain-with-msbuild/ 
+     And another interesting ref over here: https://github.com/lexxmark/winflexbison/blob/master/custom_build_rules/win_bison_only/win_bison_custom_build.targets -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+		<!-- Include definitions from SKShader.xml, which defines the SKShader item. -->
+		<PropertyPageSchema Include="$(MSBuildThisFileDirectory)SKShader.xml" />
+		<!-- Hook up SKShader items to be built by the target. -->
+		<AvailableItemName Include="SKShader">
+			<Targets>SKShaderBuild</Targets>
+		</AvailableItemName>
+	</ItemGroup>
+
+	<!-- Make sure the project rebuilds when .hlsl files change -->
+	<ItemGroup>
+		<UpToDateCheckInput Include="**/*.hlsl" />
+	</ItemGroup>
+
+	<!-- This target builds all SKShader items. This is skipped for Library
+	     type projects. -->
+	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths">
+		<!-- For debug builds, include shader debug info -->
+		<PropertyGroup>
+			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
+			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'==''">$(OutDir)%(SKShader.RelativeDir)/</SKOutDir>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'!=''">$(OutDir)%(SkShader.BuildTo)/</SKOutDir>
+		</PropertyGroup>
+
+		<!-- Setup metadata for custom build tool -->
+		<ItemGroup>
+			<SKShader>
+				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/skshaderc.exe'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../tools/'))include" -o "$(SKOutDir)" "%(SKShader.Identity)"</Command>
+				<Outputs>$(SKOutDir)%(SKShader.Filename)%(SKShader.Extension).sks</Outputs>
+				<RelativeName Condition="'%(SKShader.BuildRoot)'!=''">$([MSBuild]::MakeRelative("%(SKShader.BuildRoot)", "%(SKShader.Identity).sks"))</RelativeName>
+				<RelativeName Condition="'%(SKShader.BuildRoot)'==''">@(SKShader).sks</RelativeName>
+			</SKShader>
+		</ItemGroup>
+
+		<!-- Run the compile commands -->
+		<Exec Command="%(SKShader.Command)" Outputs="%(SKShader.Outputs)">
+			<Output ItemName="Generated" TaskParameter="Outputs" />
+		</Exec>
+
+		<!-- FileWrite them so they get cleaned up on rebuilds -->
+		<ItemGroup>
+			<FileWrites Include="%(SKShader.Outputs)"/>
+		</ItemGroup>
+	</Target>
+
+	<!-- Ensure shader binaries get properly included in the build process -->
+	<Target Name="SKShaderCopy" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="SKShaderBuild">
+		<ItemGroup>
+			<Content Condition="'$(TargetFrameworkIdentifier)'!='MonoAndroid'" Include="%(SKShader.Outputs)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<DeploymentContent>true</DeploymentContent>
+				<Link>%(SKShader.RelativeName)</Link>
+			</Content>
+			
+			<AndroidAsset Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'" Include="%(SKShader.Outputs)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>%(SKShader.RelativeName)</Link>
+			</AndroidAsset>
+		</ItemGroup>
+	</Target>
+</Project>

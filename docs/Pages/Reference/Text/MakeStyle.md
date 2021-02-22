@@ -1,26 +1,69 @@
 ---
 layout: default
 title: Text.MakeStyle
-description: Create a text style for use with other text functions! A text style is a font plus size/color/material parameters, and are used to keep text looking more consistent through the application by encouraging devs to re-use styles throughout the project.
+description: Create a text style for use with other text functions! A text style is a font plus size/color/material parameters, and are used to keep text looking more consistent through the application by encouraging devs to re-use styles throughout the project.  This overload will create a unique Material for this style based on Default.ShaderFont.
 ---
 # [Text]({{site.url}}/Pages/Reference/Text.html).MakeStyle
 
 <div class='signature' markdown='1'>
-static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Material]({{site.url}}/Pages/Reference/Material.html) material, [Color32]({{site.url}}/Pages/Reference/Color32.html) color)
+static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
 </div>
 
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeight|Height of a text glpyh in meters. TODO: find what text glyph specifically!|
-|[Material]({{site.url}}/Pages/Reference/Material.html) material|Which material should be used to render the text with?|
-|[Color32]({{site.url}}/Pages/Reference/Color32.html) color|The color of the text style. This will be embedded in the vertex color of the text mesh.|
+|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
+|[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
 
-Create a text style for use with other text functions! A text style
-is a font plus size/color/material parameters, and are used to keep text looking
-more consistent through the application by encouraging devs to re-use styles
-throughout the project.
+Create a text style for use with other text functions! A
+text style is a font plus size/color/material parameters, and are
+used to keep text looking more consistent through the application
+by encouraging devs to re-use styles throughout the project.
+
+This overload will create a unique Material for this style based
+on Default.ShaderFont.
+<div class='signature' markdown='1'>
+static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Shader]({{site.url}}/Pages/Reference/Shader.html) shader, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
+</div>
+
+|  |  |
+|--|--|
+|[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
+|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|This style will create and use a unique             Material based on the Shader that you provide here.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
+|RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
+
+Create a text style for use with other text functions! A
+text style is a font plus size/color/material parameters, and are
+used to keep text looking more consistent through the application
+by encouraging devs to re-use styles throughout the project.
+
+This overload will create a unique Material for this style based
+on the provided Shader.
+<div class='signature' markdown='1'>
+static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Material]({{site.url}}/Pages/Reference/Material.html) material, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
+</div>
+
+|  |  |
+|--|--|
+|[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
+|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
+|[Material]({{site.url}}/Pages/Reference/Material.html) material|Which material should be used to render             the text with? Note that this does NOT duplicate the material, so             some parameters of this Material instance will get overwritten,              like the texture used for the glyph atlas. You should either use             a new Material, or a Material that was already used with this             same font.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
+|RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
+
+Create a text style for use with other text functions! A
+text style is a font plus size/color/material parameters, and are
+used to keep text looking more consistent through the application
+by encouraging devs to re-use styles throughout the project.
+
+This overload allows you to set the specific Material that is
+used. This can be helpful if you're keeping styles similar enough
+to re-use the material and save on draw calls. If you don't know
+what that means, then prefer using the overload that takes a
+Shader, or takes neither a Shader nor a Material!
 
 
 
@@ -33,14 +76,14 @@ We can use a TextStyle object to control how text gets displayed!
 ```csharp
 TextStyle style;
 ```
-In initialization, we can create the style from a font, a size, a
-material, and a base color.
+In initialization, we can create the style from a font, a size,
+and a base color. Overloads for MakeStyle can allow you to
+override the default font shader, or provide a specific Material.
 ```csharp
 style = Text.MakeStyle(
-    Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
-    2 * U.cm,
-lt.MaterialFont.Copy(), 
-    Color.HSV(0.05f, 0.7f, 0.8f));
+	Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
+	2 * U.cm,
+	Color.HSV(0.55f, 0.62f, 0.93f));
 ```
 Then it's pretty trivial to just draw some text on the screen! Just call
 Text.Add on update. If you don't have a TextStyle available, calling it
@@ -48,12 +91,12 @@ without one will just fall back on the default style.
 ```csharp
 // Text with an explicit text style
 Text.Add(
-    "Here's\nSome\nMulti-line\nText!!", 
-    Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
-    style);
+	"Here's\nSome\nMulti-line\nText!!", 
+	Matrix.TR(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
+	style);
 // Text using the default text style
 Text.Add(
-    "Here's\nSome\nMulti-line\nText!!", 
-    Matrix.TRS(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
+	"Here's\nSome\nMulti-line\nText!!", 
+	Matrix.TR(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
 ```
 

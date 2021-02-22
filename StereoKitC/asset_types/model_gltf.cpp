@@ -2,13 +2,25 @@
 
 #include "model.h"
 #include "texture.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
+#include "../libraries/ferr_hash.h"
+#include "../systems/platform/platform_utils.h"
 
-#include <math.h>
-
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning( disable : 26451 )
+#else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-pragmas"
+#endif
 #define CGLTF_IMPLEMENTATION
 #include "../libraries/cgltf.h"
-#pragma warning( default: 26451 )
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma clang diagnostic pop
+#endif
 
 namespace sk {
 
@@ -22,7 +34,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh/%d_%s", filename, node_id, m->name);
+	snprintf(id, sizeof(id), "%s/mesh/%d_%s", filename, node_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -39,7 +51,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
-			verts = (vert_t *)realloc(verts, sizeof(vert_t) * vert_count);
+			verts      = sk_realloc_t<vert_t>(verts, vert_count);
 			for (size_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
 			}
@@ -70,8 +82,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 	}
 
 	// Now grab the mesh indices
-	int ind_count = (int)p->indices->count;
-	vind_t *inds = (vind_t *)malloc(sizeof(vind_t) * ind_count);
+	int     ind_count = (int)p->indices->count;
+	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
 	if (p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
@@ -106,21 +118,25 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 
 void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
-		char *last1 = strrchr((char*)filename, '/');
-		char *last2 = strrchr((char*)filename, '\\');
-		char *last  = max(last1, last2);
-		sprintf_s(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+		char *last1 = strrchr((char *)filename, '/');
+		char *last2 = strrchr((char *)filename, '\\');
+		char *last  = (char*)maxi((uint64_t)last1, (uint64_t)last2);
+		if (last == nullptr) {
+			snprintf(dest, dest_length, "%s", image->uri);
+		} else {
+			snprintf(dest, dest_length, "%.*s/%s", (int)(last - filename), filename, image->uri);
+		}
 		return;
 	}
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			sprintf_s(dest, dest_length, "%s/tex/%d", filename, (int)i);
+			snprintf(dest, dest_length, "%s/tex/%d", filename, (int)i);
 			return;
 		}
 	}
 
-	sprintf_s(dest, dest_length, "%s/unknown_image", filename);
+	snprintf(dest, dest_length, "%s/unknown_image", filename);
 }
 
 ///////////////////////////////////////////
@@ -167,18 +183,34 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader) {
 	// Check if we've already loaded this material
-	const char *mat_name = material == nullptr ? "null" : material->name;
 	char id[512];
-	sprintf_s(id, 512, "%s/mat/%s", filename, mat_name);
+	if (material == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/null", filename);
+	else if (material->name == nullptr)
+		snprintf(id, sizeof(id), "%s/mat/%u", filename, hash_fnv32_data(material, sizeof(cgltf_material)));
+	else
+		snprintf(id, sizeof(id), "%s/mat/%s", filename, material->name);
 	material_t result = material_find(id);
 	if (result != nullptr) {
 		return result;
 	}
 
-	result = shader == nullptr ? material_copy_id(default_id_material) : material_create(shader);
+	// Use the shader that was provided, or pick a shader based on the 
+	// material's attributes.
+	if (shader != nullptr) {
+		result = material_create(shader);
+	} else {
+		if (material->unlit) {
+			result = material_copy_id(default_id_material_unlit);
+		} else if (material->has_pbr_metallic_roughness) {
+			result = material_copy_id(default_id_material_pbr);
+		} else {
+			result = material_copy_id(default_id_material);
+		}
+	}
 	material_set_id(result, id);
 
-	// If it's a null material, we can just stop here
+	// If we failed to create a material, we can just stop here
 	if (material == nullptr)
 		return result;
 
@@ -205,8 +237,6 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_cull(result, cull_none);
 	if (material->alpha_mode == cgltf_alpha_mode_blend)
 		material_set_transparency(result, transparency_blend);
-	if (material->alpha_mode == cgltf_alpha_mode_mask)
-		material_set_transparency(result, transparency_clip);
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture))
@@ -245,13 +275,29 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 
 bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
-	cgltf_data*   data    = NULL;
+	options.file.read = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, const char* path, cgltf_size* size, void** data) {
+		return platform_read_file(path, data, size)
+			? cgltf_result_success
+			: cgltf_result_file_not_found;
+	};
+	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
+		free(data);
+	};
+
+	cgltf_data *data       = nullptr;
 	const char *model_file = assets_file(filename);
-	if (cgltf_parse(&options, file_data, file_size, &data) != cgltf_result_success)
+
+	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);
+	if (result != cgltf_result_success) {
+		log_diagf("gltf parse err %d", result);
 		return false;
-	if (cgltf_load_buffers(&options, data, model_file) != cgltf_result_success) {
+	}
+
+	result = cgltf_load_buffers(&options, data, model_file);
+	if (result != cgltf_result_success) {
+		log_diagf("gltf buffer load err %d", result);
 		cgltf_free(data);
-		return true;
+		return false;
 	}
 
 	// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 

@@ -1,4 +1,5 @@
 #include "../stereokit.h"
+#include "../sk_memory.h"
 #include "model.h"
 #include "../libraries/miniz.h"
 #include "../libraries/ofbx.h"
@@ -27,13 +28,13 @@ tex_t modelfmt_fbx_texture(const char *filename, const char *folder, const ofbx:
 	const char *asset_filename;
 	struct stat check = {};
 
-	sprintf_s(tex_file, "%s/%s", folder, tex_name);
+	snprintf(tex_file, sizeof(tex_file), "%s/%s", folder, tex_name);
 	asset_filename = assets_file(tex_file);
 	if (stat(asset_filename, &check) == 0)
 		result = tex_create_file(tex_file);
 
 	if (result == nullptr) {
-		sprintf_s(tex_file, "%s/textures/%s", folder, tex_name);
+		snprintf(tex_file, sizeof(tex_file), "%s/textures/%s", folder, tex_name);
 		asset_filename = assets_file(tex_file);
 		if (stat(asset_filename, &check) == 0)
 			result = tex_create_file(tex_file);
@@ -50,7 +51,7 @@ tex_t modelfmt_fbx_texture(const char *filename, const char *folder, const ofbx:
 
 material_t modelfmt_fbx_material(const char *filename, const char *folder, shader_t shader, const ofbx::Material *mat) {
 	char id[512];
-	sprintf_s(id, 512, "%s/mat/%s", filename, mat->name);
+	snprintf(id, sizeof(id), "%s/mat/%s", filename, mat->name);
 	material_t result = material_find(id);
 	if (result != nullptr)
 		return result;
@@ -78,14 +79,14 @@ material_t modelfmt_fbx_material(const char *filename, const char *folder, shade
 
 mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const char *name, const ofbx::Geometry *geo) {
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh/%s", filename, name);
+	snprintf(id, sizeof(id), "%s/mesh/%s", filename, name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr)
 		return result;
 
 	// Assemble vertex data
 	int32_t vert_count = geo->getVertexCount();
-	vert_t *verts = (vert_t *)malloc(vert_count * sizeof(vert_t));
+	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
 	const ofbx::Vec3 *source_verts  = geo->getVertices();
 	const ofbx::Vec3 *source_norms  = geo->getNormals();
 	const ofbx::Vec2 *source_uvs    = geo->getUVs();
@@ -116,7 +117,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 
 	// Assemble face data
 	int32_t ind_count = geo->getIndexCount();
-	vind_t *inds      = (vind_t *)malloc(ind_count * sizeof(vind_t));
+	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
 	const int32_t *source_inds = geo->getFaceIndices();
 	for (int32_t i = 0; i < ind_count; i++) {
 		inds[i] = (vind_t)(source_inds[i] < 0 ? -source_inds[i]-1 : source_inds[i]);
@@ -136,7 +137,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 ///////////////////////////////////////////
 
 bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
-	ofbx::IScene *scene = ofbx::load((ofbx::u8*)file_data, file_length, (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
+	ofbx::IScene *scene = ofbx::load((ofbx::u8*)file_data, (int)file_length, (ofbx::u64)ofbx::LoadFlags::TRIANGULATE);
 
 	stref_t path, name;
 	stref_file_path(stref_make(filename), path, name);

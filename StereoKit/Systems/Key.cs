@@ -148,7 +148,7 @@
 		LCmd = 0x5B,
 		/// <summary>The Windows/Mac Command button on the right side of the keyboard</summary>
 		RCmd = 0x5C,
-        
+
 		/// <summary>Numpad '*', NOT the same as number row '*'</summary>
 		Multiply = 0x6A,
 		/// <summary>Numpad '+', NOT the same as number row '+'</summary>

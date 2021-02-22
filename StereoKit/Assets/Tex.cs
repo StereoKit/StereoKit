@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
 	/// <summary>This is the texture asset class! This encapsulates 2D images,
 	/// texture arrays, cubemaps, and rendertargets! It can load any image
 	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
-	/// plus more later on, and you can also create textures procedurally.</summary>
+	/// plus more later on, and you can also create textures procedurally.
+	/// </summary>
 	public class Tex
 	{
 		#region Fields and Properties
@@ -70,7 +70,7 @@ namespace StereoKit
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
-				NativeAPI.tex_release(_inst);
+				SK.ExecuteOnMain(()=>NativeAPI.tex_release(_inst));
 		}
 
 		#endregion

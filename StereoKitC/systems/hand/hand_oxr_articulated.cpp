@@ -19,9 +19,9 @@ hand_joint_t     oxra_hand_joints[2][26];
 
 bool hand_oxra_available() {
 	return
-		sk_active_runtime()  == runtime_mixedreality &&
-		xr_session           != XR_NULL_HANDLE       &&
-		xr_articulated_hands == true;
+		sk_active_display_mode() == display_mode_mixedreality &&
+		xr_session               != XR_NULL_HANDLE            &&
+		xr_has_articulated_hands == true;
 }
 
 ///////////////////////////////////////////
@@ -33,7 +33,9 @@ void hand_oxra_init() {
 		info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
-			log_warnf("xrCreateHandTrackerMSFT failed: [%s]", openxr_string(result));
+			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
+			xr_has_articulated_hands = false;
+			input_hand_refresh_system();
 			return;
 		}
 	}
@@ -58,28 +60,28 @@ void hand_oxra_update_joints() {
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
 
-		XrHandJointLocationEXT joint_locations[XR_HAND_JOINT_COUNT_EXT];
+		XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
 		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
-		locations.isActive = XR_FALSE;
-		locations.jointCount = XR_HAND_JOINT_COUNT_EXT;
+		locations.isActive       = XR_FALSE;
+		locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
 		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
 		// Update the tracking state of the hand
-		hand_t& inp_hand = (hand_t&)input_hand((handed_)h);
-		inp_hand.tracked_state = button_make_state(inp_hand.tracked_state & button_state_active, locations.isActive);
+		hand_t *inp_hand = (hand_t*)input_hand((handed_)h);
+		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, locations.isActive);
 
 		// Not tracked? Then we don't care about the pose!
-		if (!locations.isActive)
+		if (!locations.isActive) {
 			continue;
+		}
 
 		// Get joint poses from OpenXR
 		matrix root = render_get_cam_root();
-		for (int32_t j = 0; j < locations.jointCount; j++) {
+		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
-			oxra_hand_joints[h][j].radius = locations.jointLocations[j].radius * 0.85f;
-
+			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
 			oxra_hand_joints[h][j].position    = matrix_mul_point   (root, oxra_hand_joints[h][j].position);
 			oxra_hand_joints[h][j].orientation = matrix_mul_rotation(root, oxra_hand_joints[h][j].orientation);
 		}
@@ -90,8 +92,8 @@ void hand_oxra_update_joints() {
 		memcpy(&pose[0], &oxra_hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t)); // Thumb metacarpal is duplicated at the same location
 
 		static const quat face_forward = quat_from_angles(-90,0,0);
-		inp_hand.palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
-		inp_hand.wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
+		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 	}
 }
 

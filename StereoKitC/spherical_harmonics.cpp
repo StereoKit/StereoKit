@@ -1,52 +1,95 @@
 #include "spherical_harmonics.h"
-#include "math.h"
+#include "sk_math.h"
 #include "asset_types/texture.h"
 
 namespace sk {
 
+void sh_add      (spherical_harmonics_t &to, vec3 light_dir, vec3 light_color);
+void sh_windowing(spherical_harmonics_t &harmonics, float window_width);
+
+///////////////////////////////////////////
 
 vec3 to_color_128(uint8_t *color) { return *(vec3 *)color; }
 vec3 to_color_32 (uint8_t *color) { return vec3{color[0]/255.f,color[1]/255.f,color[2]/255.f}; }
+vec3 to_color_32_linear(uint8_t *color) { return vec3{ powf(color[0] / 255.f,2.2f),powf(color[1] / 255.f,2.2f),powf(color[2] / 255.f,2.2f) }; }
+
+///////////////////////////////////////////
+
+// Reference here:
+// https://github.com/kayru/Probulator/blob/master/Source/Probulator/SphericalHarmonics.h#L317
+void sh_windowing(spherical_harmonics_t &harmonics, float window_width) {
+	int i = 0;
+	for(int band = 0; band <= 2; band++) {
+		float s = 1.0f / (1.0f + window_width * band * band * (band + 1.0f) * (band + 1.0f));
+		for(int m = -band; m <= band; m++) {
+			harmonics.coefficients[i++] *= s;
+		}
+	}
+}
 
 ///////////////////////////////////////////
 
 spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 	spherical_harmonics_t result = {};
 	for (size_t i = 0; i < light_count; i++) {
-		sh_add(result, vec3_normalize(lights[i].dir_to), lights[i].color);
+		sh_add(result, vec3_normalize(lights[i].dir_to), { lights[i].color.r, lights[i].color.g, lights[i].color.b });
 	}
 	for (size_t i = 0; i < 9; i++) {
 		result.coefficients[i] /= (float)light_count;
 	}
+
+	// Apply windowing to prevent overshooting
+	sh_windowing(result, .01f);
+
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void sh_add(spherical_harmonics_t &to, vec3 light_dir, color128 light_color) {
-	vec3 col = { light_color.r, light_color.g, light_color.b };
+void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
+	light_dir = { -light_dir.x, -light_dir.y, light_dir.z };
 
-	// From here:
-	// https://graphics.stanford.edu/papers/envmap/envmap.pdf
-	to.coefficients[0] += col * 0.282095f; // Y00
-	to.coefficients[1] += col * 0.488603f *  light_dir.y; // Y11
-	to.coefficients[2] += col * 0.488603f *  light_dir.z; // Y10
-	to.coefficients[3] += col * 0.488603f *  light_dir.x; // Y1_1
-	to.coefficients[4] += col * 1.092548f * (light_dir.y*light_dir.z); // Y21
-	to.coefficients[5] += col * 1.092548f * (light_dir.x*light_dir.z); // Y2_1
-	to.coefficients[6] += col * 1.092548f * (light_dir.x*light_dir.y); // Y2_2
-	to.coefficients[7] += col * 0.946176f * (light_dir.z * light_dir.z - 0.315392f); // Y20
-	to.coefficients[8] += col * 0.546274f * (light_dir.y*light_dir.y - light_dir.x*light_dir.x); // Y22
+	// From DirectXMath's XMSHEvalDirectionalLight. See:
+	// https://github.com/microsoft/DirectXMath/blob/master/SHMath/DirectXSH.cpp#L4476
+
+	// CosWtInt
+	const float fCW0 = 0.25f;
+	const float fCW1 = 0.5f;
+	const float fRet = MATH_PI / (fCW0 + fCW1);
+	light_color = light_color * fRet;
+
+	// The rest is a mix of XMSHEvalDirectionalLight, XMSHEvalDirection, and
+	// sh_eval_basis_2
+	const float z2 = light_dir.z*light_dir.z;
+	const float s1 = light_dir.y;
+	const float c1 = light_dir.x;
+	const float s2 = light_dir.x*s1 + light_dir.y*c1;
+	const float c2 = light_dir.x*c1 - light_dir.y*s1;
+
+	to.coefficients[0] += light_color * 0.282094791773878140f;
+	to.coefficients[2] += light_color * 0.488602511902919920f*light_dir.z;
+	to.coefficients[6] += light_color * (0.946174695757560080f*z2 + -0.315391565252520050f);
+	to.coefficients[1] += light_color * -0.488602511902919920f*s1;
+	to.coefficients[3] += light_color * -0.488602511902919920f*c1;
+	const float p_2_1 = -1.092548430592079200f*light_dir.z;
+	to.coefficients[5] += light_color * p_2_1*s1;
+	to.coefficients[7] += light_color * p_2_1*c1;
+	to.coefficients[4] += light_color * 0.546274215296039590f*s2;
+	to.coefficients[8] += light_color * 0.546274215296039590f*c2;
 }
 
 ///////////////////////////////////////////
 
 spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int32_t face_size) {
-	spherical_harmonics_t result = {};
-	size_t   col_size            = tex_format_size(format);
-	vec3   (*convert)(uint8_t *) = format == tex_format_rgba128 ?
-		to_color_128 :
-		to_color_32;
+	spherical_harmonics_t result   = {};
+	size_t                col_size = tex_format_size(format);
+	vec3     (*convert)(uint8_t *) = nullptr;
+	switch (format) {
+	case tex_format_rgba128:       convert = to_color_128;       break;
+	case tex_format_rgba32:        convert = to_color_32_linear; break;
+	case tex_format_rgba32_linear: convert = to_color_32;        break;
+	default: return {};
+	}
 
 	float half_px = 0.5f / face_size;
 	for (int32_t i = 0; i < 6; i++) {
@@ -77,18 +120,7 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 				pt = vec3_normalize(pt);
 
 				vec3 color = convert(&data[(x + y * face_size) * col_size]);
-
-				// From here:
-				// https://graphics.stanford.edu/papers/envmap/envmap.pdf
-				result.coefficients[0] += color * 0.282095f; // Y00
-				result.coefficients[1] += color * 0.488603f *  pt.y; // Y11
-				result.coefficients[2] += color * 0.488603f *  pt.z; // Y10
-				result.coefficients[3] += color * 0.488603f *  pt.x; // Y1_1
-				result.coefficients[4] += color * 1.092548f * (pt.y*pt.z); // Y21
-				result.coefficients[5] += color * 1.092548f * (pt.x*pt.z); // Y2_1
-				result.coefficients[6] += color * 1.092548f * (pt.x*pt.y); // Y2_2
-				result.coefficients[7] += color * 0.946176f * (pt.z * pt.z - 0.315392f); // Y20
-				result.coefficients[8] += color * 0.546274f * (pt.y*pt.y - pt.x*pt.x); // Y22
+				sh_add(result, pt, color);
 			}
 		}
 	}
@@ -96,6 +128,9 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 	float count = face_size * face_size * 6.f;
 	for (size_t i = 0; i < 9; i++)
 		result.coefficients[i] /= count;
+
+	// Apply windowing to prevent overshooting
+	sh_windowing(result, .01f);
 
 	return result;
 }

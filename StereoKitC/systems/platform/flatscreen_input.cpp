@@ -1,5 +1,3 @@
-#ifndef SK_NO_FLATSCREEN
-
 #include "../../_stereokit.h"
 #include "platform_utils.h"
 #include "flatscreen_input.h"
@@ -14,8 +12,6 @@ namespace sk {
 int   fltscr_gaze_pointer;
 float fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
 vec2  fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
-vec3  fltscr_head_rot   = {};
-vec3  fltscr_head_pos   = {};
 
 ///////////////////////////////////////////
 
@@ -26,9 +22,7 @@ void flatscreen_mouse_update();
 void flatscreen_input_init() {
 	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
-	fltscr_head_pos = vec3{ 0,0.2f,0.4f };
-	fltscr_head_rot = vec3{ -21, 0.0001f, 0 };
-	input_head_pose = { fltscr_head_pos, quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z) };
+	input_head_pose = { vec3{ 0,0.2f,0.4f }, quat_from_angles(-21, 0.0001f, 0) };
 	render_set_cam_root(pose_matrix(input_head_pose));
 }
 
@@ -62,32 +56,45 @@ void flatscreen_input_update() {
 			movement = vec3_normalize(movement);
 
 		// head rotation
+		vec3 head_rot = matrix_to_angles(render_get_cam_root());
+		vec3 head_pos = matrix_mul_point(render_get_cam_root(), vec3_zero);
 		quat orientation;
 		if (input_key(key_mouse_right) & button_state_active) {
-			mouse_t mouse = input_mouse();
-			fltscr_head_rot.y -= mouse.pos_change.x * fltscr_rot_speed.x * time_elapsedf();
-			fltscr_head_rot.x -= mouse.pos_change.y * fltscr_rot_speed.y * time_elapsedf();
-			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+			const mouse_t *mouse = input_mouse();
+			head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
+			head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			head_rot.x = fmaxf(-89.9f, fminf(head_rot.x, 89.9f));
+			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
 
-			vec2 prev_pt = mouse.pos - mouse.pos_change;
+			vec2 prev_pt = mouse->pos - mouse->pos_change;
 			input_mouse_data.pos = prev_pt;
 			platform_set_cursor(prev_pt);
 		} else {
-			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
+			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
 		}
 		// Apply movement to the camera
-		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
-		input_head_pose = { fltscr_head_pos, orientation };
+		head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
+		input_head_pose = { head_pos, orientation };
 
 		render_set_cam_root(pose_matrix(input_head_pose));
 	}
 
-	pointer_t   *pointer_head = input_get_pointer(fltscr_gaze_pointer);
-	pose_t       head         = input_head();
+	if (sk_settings.disable_flatscreen_mr_sim) {
+		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, false);
+	} else {
+		bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
+		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
+		ray_t ray = {};
+		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
+			input_eyes_pose.position = ray.pos;
+			input_eyes_pose.orientation = quat_lookat(vec3_zero, ray.dir);
+		}
+	}
 
+	pointer_t *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = head.position;
-	pointer_head->ray.dir = head.orientation * vec3_forward;
+	pointer_head->ray.pos = input_eyes_pose.position;
+	pointer_head->ray.dir = input_eyes_pose.orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////
@@ -112,12 +119,10 @@ void flatscreen_mouse_update() {
 ///////////////////////////////////////////
 
 bool flatscreen_is_simulating_movement() {
-	return sk_runtime == runtime_flatscreen
+	return sk_display_mode == display_mode_flatscreen
 		&& sk_settings.disable_flatscreen_mr_sim == false
 		&& (   input_key(key_caps_lock) & button_state_active
 			|| input_key(key_shift)     & button_state_active);
 }
 
 } // namespace sk
-
-#endif // SK_NO_FLATSCREEN

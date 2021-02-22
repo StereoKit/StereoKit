@@ -29,6 +29,7 @@ Pose represents a location and orientation in space, excluding scale!
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Forward]({{site.url}}/Pages/Reference/Pose/Forward.html)|Calculates the forward direction from this pose. This is done by multiplying the orientation with Vec3.Forward. Remember that Forward points down the -Z axis!|
+|[Ray]({{site.url}}/Pages/Reference/Ray.html) [Ray]({{site.url}}/Pages/Reference/Pose/Ray.html)|This creates a ray starting at the Pose's position, and pointing in the 'Forward' direction. The Ray direction is a unit vector/normalized.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Right]({{site.url}}/Pages/Reference/Pose/Right.html)|Calculates the right (+X) direction from this pose. This is done by multiplying the orientation with Vec3.Right.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Up]({{site.url}}/Pages/Reference/Pose/Up.html)|Calculates the up (+Y) direction from this pose. This is done by multiplying the orientation with Vec3.Up.|
 

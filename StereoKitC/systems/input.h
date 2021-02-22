@@ -8,16 +8,18 @@ struct keyboard_t {
 	uint8_t keys[key_MAX];
 };
 
-extern mouse_t    input_mouse_data;
-extern keyboard_t input_key_data;
-extern pose_t     input_head_pose;
+extern mouse_t       input_mouse_data;
+extern keyboard_t    input_key_data;
+extern pose_t        input_head_pose;
+extern pose_t        input_eyes_pose;
+extern button_state_ input_eyes_track_state;
 
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int32_t id);
 
-bool input_init    ();
-void input_shutdown();
-void input_update  ();
+bool input_init            ();
+void input_shutdown        ();
+void input_update          ();
 void input_update_predicted();
 
 inline button_state_ button_make_state(bool32_t was, bool32_t is) { 

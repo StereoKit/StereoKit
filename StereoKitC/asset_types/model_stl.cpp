@@ -1,7 +1,7 @@
 #include "model.h"
 #include "../libraries/stref.h"
-#include "../libraries/stb_ds.h"
-#include "../math.h"
+#include "../libraries/array.h"
+#include "../sk_math.h"
 
 #include <stdio.h>
 
@@ -19,50 +19,45 @@ struct stl_triangle_t {
 	uint16_t attribute;
 };
 
-struct point_hash_t {
-	vec3   key;
-	vind_t value;
-};
-
 ///////////////////////////////////////////
 
-vind_t indexof(vec3 pt, vec3 normal, vert_t **verts, point_hash_t **indmap) {
-	vind_t result = hmget(*indmap, pt);
-	if (result == -1) {
-		result = (vind_t)arrlen(*verts);
-		hmput(*indmap, pt, result);
-		arrput(*verts, (vert_t{ pt, {}, {}, {255,255,255,255} }));
+vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vind_t> *indmap) {
+	vind_t  result = 0;
+	int64_t id     = indmap->contains(pt);
+	if (id < 0) {
+		result = (vind_t)verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
+		indmap->add_or_set(pt, result);
+	} else {
+		result = indmap->items[id];
 	}
-	(*verts)[result].norm += normal;
+	verts->get(result).norm += normal;
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary(void *file_data, size_t, vert_t **verts, vind_t **faces) {
+bool modelfmt_stl_binary(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
 	stl_header_t *header = (stl_header_t *)file_data;
-	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, (vind_t)-1);
+	hashmap_t<vec3, vind_t> indmap = {};
 
 	stl_triangle_t *tris = (stl_triangle_t *)(((uint8_t *)file_data) + sizeof(stl_header_t));
 	for (uint32_t i = 0; i < header->tri_count; i++) {
-		arrput(*faces, indexof(tris[i].verts[0], tris[i].normal, verts, &indmap) );
-		arrput(*faces, indexof(tris[i].verts[1], tris[i].normal, verts, &indmap) );
-		arrput(*faces, indexof(tris[i].verts[2], tris[i].normal, verts, &indmap) );
+		faces->add(indexof(tris[i].verts[0], tris[i].normal, verts, &indmap));
+		faces->add(indexof(tris[i].verts[1], tris[i].normal, verts, &indmap));
+		faces->add(indexof(tris[i].verts[2], tris[i].normal, verts, &indmap));
 	}
 
-	hmfree(indmap);
+	indmap.free();
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text(void *file_data, size_t, vert_t **verts, vind_t **faces) {
-	point_hash_t *indmap = nullptr;
-	hmdefault(indmap, (vind_t)-1);
+bool modelfmt_stl_text(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
+	hashmap_t<vec3, vind_t> indmap = {};
 	
-	vec3    normal = {};
-	vind_t  curr[4] = {};
+	vec3    normal     = {};
+	vind_t  curr[4]    = {};
 	int32_t curr_count = 0;
 
 	stref_t data = stref_make((const char *)file_data);
@@ -80,9 +75,9 @@ bool modelfmt_stl_text(void *file_data, size_t, vert_t **verts, vind_t **faces) 
 				if (stref_nextword(line, word)) normal.z = stref_to_f(word);
 			}
 		} else if (stref_equals(word, "endfacet")) {
-			arrput(*faces, curr[0]); arrput(*faces, curr[1]); arrput(*faces, curr[2]);
+			faces->add(curr[0]); faces->add(curr[1]); faces->add(curr[2]);
 			if (curr_count == 4) {
-				arrput(*faces, curr[0]); arrput(*faces, curr[2]); arrput(*faces, curr[3]);
+				faces->add(curr[0]); faces->add(curr[2]); faces->add(curr[3]);
 			}
 			curr_count = 0;
 		} else if (stref_equals(word, "vertex")) {
@@ -97,37 +92,48 @@ bool modelfmt_stl_text(void *file_data, size_t, vert_t **verts, vind_t **faces) 
 		}
 	}
 
-	hmfree(indmap);
+	indmap.free();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
-	vert_t *verts = nullptr;
-	vind_t *faces = nullptr;
-
-	bool result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
-		modelfmt_stl_text  (file_data, file_length, &verts, &faces) :
-		modelfmt_stl_binary(file_data, file_length, &verts, &faces);
-
-	// Normalize all the normals
-	for (int i = 0, len = (int)arrlen(verts); i < len; i++)
-		verts[i].norm = vec3_normalize(verts[i].norm);
+	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
+	bool       result   = true;
 
 	char id[512];
-	sprintf_s(id, 512, "%s/mesh", filename);
-	mesh_t mesh = mesh_create();
-	mesh_set_id   (mesh, id);
-	mesh_set_verts(mesh, &verts[0], (int)arrlen(verts));
-	mesh_set_inds (mesh, &faces[0], (int)arrlen(faces));
+	snprintf(id, sizeof(id), "%s/mesh", filename);
+	mesh_t mesh = mesh_find(id);
 
-	model_add_subset(model, mesh, shader == nullptr ? material_find(default_id_material) : material_create(shader), matrix_identity);
+	if (mesh) {
+		model_add_subset(model, mesh, material, matrix_identity);
+	} else {
+		array_t<vert_t> verts = {};
+		array_t<vind_t> faces = {};
 
-	mesh_release(mesh);
+		result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
+			modelfmt_stl_text  (file_data, file_length, &verts, &faces) :
+			modelfmt_stl_binary(file_data, file_length, &verts, &faces);
 
-	arrfree(verts);
-	arrfree(faces);
+		// Normalize all the normals
+		for (size_t i = 0; i < verts.count; i++)
+			verts[i].norm = vec3_normalize(verts[i].norm);
+
+		mesh = mesh_create();
+		mesh_set_id   (mesh, id);
+		mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
+		mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
+
+		model_add_subset(model, mesh, material, matrix_identity);
+
+		verts.free();
+		faces.free();
+	}
+
+	mesh_release    (mesh);
+	material_release(material);
+
 	return result;
 }
 

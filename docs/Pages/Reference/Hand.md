@@ -12,15 +12,22 @@ Information about a hand!
 
 |  |  |
 |--|--|
+|HandJoint[] [fingers]({{site.url}}/Pages/Reference/Hand/fingers.html)|This is a 2D array with 25 HandJoints. You can get the right joint by `finger*5 + joint`, but really, just use Hand.Get or Hand[] instead. See Hand.Get for more info!|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [grip]({{site.url}}/Pages/Reference/Hand/grip.html)|Is the hand making a grip gesture right now? Fingers next to the palm.|
 |float [gripActivation]({{site.url}}/Pages/Reference/Hand/gripActivation.html)|What percentage of activation is the grip gesture right now? Where 0 is a hand in an outstretched resting position, and 1 is ring finger touching the base of the palm, within a device error tolerant threshold.|
 |[Handed]({{site.url}}/Pages/Reference/Handed.html) [handed]({{site.url}}/Pages/Reference/Hand/handed.html)|Is this a right hand, or a left hand?|
-|[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the flat of the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [pinch]({{site.url}}/Pages/Reference/Hand/pinch.html)|Is the hand making a pinch gesture right now? Finger and thumb together.|
 |float [pinchActivation]({{site.url}}/Pages/Reference/Hand/pinchActivation.html)|What percentage of activation is the pinch gesture right now? Where 0 is a hand in an outstretched resting position, and 1 is fingers touching, within a device error tolerant threshold.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [tracked]({{site.url}}/Pages/Reference/Hand/tracked.html)|Is the hand being tracked by the sensors right now?|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [wrist]({{site.url}}/Pages/Reference/Hand/wrist.html)|Pose of the wrist. TODO: Not populated right now.|
 
+
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Get]({{site.url}}/Pages/Reference/Hand/Get.html)|Returns the joint information of the indicated hand joint! This also includes fingertips as a 'joint'. This is the same as the [] operator. Note that for thumbs, there are only 4 'joints' in reality, so StereoKit has JointId.Root and JointId.KnuckleMajor as the same pose, so JointId.Tip is still the tip of the thumb!|
 
 
 ## Static Fields and Properties
@@ -36,9 +43,9 @@ Information about a hand!
 |bool [IsJustUntracked]({{site.url}}/Pages/Reference/Hand/IsJustUntracked.html)|Has the hand just stopped being tracked this frame?|
 |bool [IsPinched]({{site.url}}/Pages/Reference/Hand/IsPinched.html)|Are the fingers currently pinched?|
 |bool [IsTracked]({{site.url}}/Pages/Reference/Hand/IsTracked.html)|Is the hand being tracked by the sensors right now?|
-|[Material]({{site.url}}/Pages/Reference/Material.html) [Material]({{site.url}}/Pages/Reference/Hand/Material.html)|Set the Material used to render the hand! The default material uses an offset of -10 for optimization and transparency order.|
-|bool [Solid]({{site.url}}/Pages/Reference/Hand/Solid.html)|Should the hand be considered solid by the physics system?|
-|bool [Visible]({{site.url}}/Pages/Reference/Hand/Visible.html)|Should the hand be rendered?|
+|[Material]({{site.url}}/Pages/Reference/Material.html) [Material]({{site.url}}/Pages/Reference/Hand/Material.html)|Set the Material used to render the hand! The default material uses an offset of 10 to ensure it gets drawn overtop of other elements.|
+|bool [Solid]({{site.url}}/Pages/Reference/Hand/Solid.html)|Does StereoKit register the hand with the physics system? By default, this is true. Right now this is just a single block collider, but later will involve per-joint colliders!|
+|bool [Visible]({{site.url}}/Pages/Reference/Hand/Visible.html)|Sets whether or not StereoKit should render this hand for you. Turn this to false if you're going to render your own, or don't need the hand itself to be visible.|
 
 
 
@@ -53,13 +60,13 @@ Bounds testArea = new Bounds(Vec3.One * 0.1f);
 // This is a decent way to show we're working with both hands
 for (int h = 0; h < (int)Handed.Max; h++)
 {
-    // Get the pose for the index fingertip
-    Hand hand      = Input.Hand((Handed)h);
-    Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
+	// Get the pose for the index fingertip
+	Hand hand      = Input.Hand((Handed)h);
+	Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
 
-    // Draw the fingertip pose axis if it's inside the volume
-    if (testArea.Contains(fingertip.position))
-        Lines.AddAxis(fingertip);
+	// Draw the fingertip pose axis if it's inside the volume
+	if (testArea.Contains(fingertip.position))
+		Lines.AddAxis(fingertip);
 }
 ```
 

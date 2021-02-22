@@ -16,8 +16,9 @@ description: You may want to use static creation methods, like Quat.LookAt, or Q
 |float z|Z component of the Quat.|
 |float w|W component of the Quat.|
 
-You may want to use static creation methods, like Quat.LookAt,
-or Quat.Identity instead of this one! Unless you know what you're doing.
+You may want to use static creation methods, like
+Quat.LookAt, or Quat.Identity instead of this one! Unless you
+know what you're doing.
 
 
 

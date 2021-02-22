@@ -3,101 +3,68 @@
 /// 
 /// ## Prerequisites
 /// 
-/// Before we get started, you'll need some software! You may have some of this already, but here's the list!
+/// Before we get started, you'll need some software! You may have some of
+/// this already, but here's the list!
 /// 
-/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - not 2017, the Community version is great! Use these workloads:
+/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - the Community version is great! Use these workloads:
 ///   - .NET Desktop development
-///   - Universal Windows Platform development
-///   - .NET Core cross-platform development
-/// - An OpenXR runtime, pick one or more:
-///   - Windows Mixed Reality's runtime - Ensure [this](https://www.microsoft.com/store/productId/9n5cvvl23qbt) is installed and enabled!
-///   - Oculus's runtime - Requires the Oculus App v19 or later
-///   - SteamVR's runtime - See [their setup](https://store.steampowered.com/newshub/app/250820/view/2396425843528787269)
+///   - Universal Windows Platform development (for HoloLens)
+///   - Mobile development with .Net (for Quest)
 /// - [StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates) - The fastest way to set up a StereoKit project!
 ///   - You can also directly install the [NuGet package](https://www.nuget.org/packages/StereoKit) into your project of choice.
-/// - Enable Developer Mode (for UWP/HoloLens builds)
+/// - Any OpenXR runtime: Windows MR, Oculus, SteamVR, Monado, a HoloLens, or an Oculus Quest
+/// - Enable Developer Mode (for UWP/HoloLens)
 ///   - Windows Settings->Update and Security->For Developers->Developer Mode
 /// 
-/// The source for StereoKit is [available on Github](https://github.com/maluoi/StereoKit) if you're interested in peeking
-/// at the code or modifying it yourself, but it's a bit more complex to dive into! If you're just getting started 
-/// with StereoKit, you won't need anything from the repository to get up and running :)
+/// The source for StereoKit is [available on Github](https://github.com/maluoi/StereoKit)
+/// if you're interested in peeking at the code or modifying it yourself, but
+/// it's a bit more complex to dive into! If you're just getting started with
+/// StereoKit, you won't need anything from the repository to get up and
+/// running :)
 /// 
 /// ## The Template
 /// 
 /// ![Create New Project]({{site.url}}/img/screenshots/VSNewProject.png)
 /// 
-/// There are two templates to pick from! One is for UWP, and one is for .NET Core. Choose the UWP one if you're deploying
-/// to HoloLens 2, and choose the .NET Core one if you're doing development on a Windows Mixed Reality headset! When using
-/// UWP, iterating is fastest with Debug/x64, using desktop VR or the flatscreen mode.
+/// There are two templates to pick from! One is for UWP, and one is for .NET
+/// Core. Choose the UWP one if you're deploying to HoloLens 2, and choose
+/// the .NET Core one if you're doing development for a desktop Windows or
+/// Linux environment! Iteration is slower in UWP due to the way it builds
+/// applications, so only choose UWP if HoloLens is important for you.
 /// 
-/// The starting code is pretty simple! Initialize StereoKit in Mixed Reality mode, create a 3D model that's a rounded
-/// cube with a default material, make a floor grid with a custom shader, and then draw them every step of the application!
-/// We also use UI.Handle to make the cube something we can do basic interactions with, as well as only rendering the floor
-/// if we're in a VR headset
+/// The starting code is pretty simple! Initialize StereoKit in Mixed Reality
+/// mode, create a 3D model that's a rounded cube with a default material,
+/// and then draw that model every step of the application!
 /// 
-/// With that, you automatically get hands, environment, interaction, and lighting right away!
+/// With that, you automatically get hands, environment, and lighting right
+/// away!
 /// 
 using System;
-using StereoKit;
-
-namespace StereoKitTemplate
-{
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			// Initialize StereoKit
-			StereoKitApp.settings.assetsFolder = "Assets";
-			if (!StereoKitApp.Initialize("StereoKitTemplate", Runtime.MixedReality))
-				Environment.Exit(1);
-
-
-			// Create assets used by the app
-			Pose cubePose = new Pose(0, 0, -0.5f, Quat.Identity);
-			Model cube = Model.FromMesh(
-				Mesh.GenerateRoundedCube(Vec3.One * 0.1f, 0.02f),
-				Default.MaterialUI);
-
-			Matrix floorTransform = Matrix.TS(new Vec3(0, -1.5f, 0), new Vec3(30, 0.1f, 30));
-			Material floorMaterial = new Material(Shader.FromFile("floor.hlsl"));
-			floorMaterial.Transparency = Transparency.Blend;
-
-
-			// Core application loop
-			while (StereoKitApp.Step(() =>
-			{
-				if (StereoKitApp.System.displayType == Display.Opaque)
-					Default.MeshCube.Draw(floorMaterial, floorTransform);
-
-				UI.Handle("Cube", ref cubePose, cube.Bounds);
-				cube.Draw(cubePose.ToMatrix());
-			})) ;
-			StereoKitApp.Shutdown();
-		}
-	}
-}
-/// 
-/// Alternatively, you could replace all this with the barest minimum amount of code. While the template provides some 
-/// basic functionality, it really doesn't take much to make StereoKit functional! Here's the bare essentials:
-/// 
 using StereoKit;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		StereoKitApp.Initialize("StereoKitMinimum");
+		if (!SK.Initialize(new SKSettings{ appName = "Project" }))
+			Environment.Exit(1);
 
-		while (StereoKitApp.Step(() => {
-			Default.MeshSphere.Draw(Default.Material, Matrix.Identity);
+		Model cube = Model.FromMesh(
+			Mesh.GenerateRoundedCube(Vec3.One, 0.2f),
+			Default.Material);
+
+		while (SK.Step(() =>
+		{
+			cube.Draw(Matrix.TS(Vec3.Zero, 0.1f));
 		}));
 
-		StereoKitApp.Shutdown();
+		SK.Shutdown();
 	}
 }
-///
+/// 
 /// Awesome! That's pretty easy, but what next? [Why don't we build some UI]({{site.url}}/Pages/Guides/User-Interface.html)?
 /// Alternatively, you can check out the [sample painting application](https://github.com/maluoi/StereoKit-PaintTutorial)
-/// repository, which contains a finger-painting application written in about 220 lines of code! It's well commented, and is
-/// a good example to pick through.
+/// repository, which contains a finger-painting application written in about
+/// 220 lines of code! It's well commented, and is a good example to pick
+/// through.
 /// :End:

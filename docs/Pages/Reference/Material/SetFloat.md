@@ -14,8 +14,9 @@ void SetFloat(string name, float value)
 |string name|Name of the shader parameter.|
 |float value|New value for the parameter.|
 
-Sets a shader parameter with the given name to the provided value. If no parameter
-is found, nothing happens, and the value is not set!
+Sets a shader parameter with the given name to the
+provided value. If no parameter is found, nothing happens, and
+the value is not set!
 
 
 

@@ -2,7 +2,8 @@
 
 #include <string.h>
 #include <math.h>
-#include "math.h"
+#include "sk_math.h"
+#include "sk_memory.h"
 
 namespace sk {
 
@@ -104,8 +105,28 @@ vec3 color_to_lab(const color128 &color) {
 
 ///////////////////////////////////////////
 
+color128 color_to_linear(color128 srgb_gamma_correct) {
+	return {
+		powf(srgb_gamma_correct.r, 2.2f),
+		powf(srgb_gamma_correct.g, 2.2f),
+		powf(srgb_gamma_correct.b, 2.2f),
+		srgb_gamma_correct.a };
+}
+
+///////////////////////////////////////////
+
+color128 color_to_gamma(color128 srgb_linear) {
+	return {
+		powf(srgb_linear.r, 1/2.2f),
+		powf(srgb_linear.g, 1/2.2f),
+		powf(srgb_linear.b, 1/2.2f),
+		srgb_linear.a };
+}
+
+///////////////////////////////////////////
+
 gradient_t gradient_create() {
-	gradient_t result = (gradient_t)malloc(sizeof(_gradient_t));
+	gradient_t result = sk_malloc_t<_gradient_t>(1);
 	*result = {};
 	return result;
 }
@@ -115,7 +136,7 @@ gradient_t gradient_create() {
 gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count) {
 	gradient_t result = gradient_create();
 	result->capacity = count;
-	result->keys     = (gradient_key_t*)malloc(sizeof(gradient_key_t) * count);
+	result->keys     = sk_malloc_t<gradient_key_t>(count);
 	for (int32_t i = 0; i < count; i++) {
 		gradient_add(result, keys[i].color, keys[i].position);
 	}
@@ -127,7 +148,7 @@ gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count) {
 void gradient_add(gradient_t gradient, color128 color, float position) {
 	if (gradient->count + 1 >= gradient->capacity) {
 		gradient->capacity += 1;
-		gradient->keys = (gradient_key_t*)realloc(gradient->keys, sizeof(gradient_key_t) * gradient->capacity);
+		gradient->keys = sk_realloc_t<gradient_key_t>(gradient->keys, gradient->capacity);
 	}
 
 	int index = gradient->count;

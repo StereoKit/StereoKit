@@ -12,7 +12,7 @@ bool Intersect([Ray]({{site.url}}/Pages/Reference/Ray.html) ray, Vec3& at)
 |  |  |
 |--|--|
 |[Ray]({{site.url}}/Pages/Reference/Ray.html) ray|Ray we're checking with.|
-|Vec3& at|An out parameter that will hold the intersection point.              If there's no intersection, this will be (0,0,0).|
+|Vec3& at|An out parameter that will hold the intersection             point. If there's no intersection, this will be (0,0,0).|
 |RETURNS: bool|True if there's an intersetion, false if not. Refer to the 'at' parameter for intersection information!|
 
 Checks the intersection of a ray with this plane!
@@ -24,7 +24,7 @@ bool Intersect([Vec3]({{site.url}}/Pages/Reference/Vec3.html) lineStart, [Vec3](
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lineStart|Start of the line.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lineEnd|End of the line.|
-|Vec3& at|An out parameter that will hold the intersection point.              If there's no intersection, this will be (0,0,0).|
+|Vec3& at|An out parameter that will hold the intersection             point. If there's no intersection, this will be (0,0,0).|
 |RETURNS: bool|True if there's an intersetion, false if not. Refer to the 'at' parameter for intersection information!|
 
 Checks the intersection of a line with this plane!

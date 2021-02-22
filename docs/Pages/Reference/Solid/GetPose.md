@@ -13,7 +13,8 @@ description: Retreives the current pose of the Solid from the physics simulation
 |--|--|
 |RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|The Solid's current pose.|
 
-Retreives the current pose of the Solid from the physics simulation.
+Retreives the current pose of the Solid from the physics
+simulation.
 <div class='signature' markdown='1'>
 void GetPose(Pose& pose)
 </div>
@@ -22,7 +23,8 @@ void GetPose(Pose& pose)
 |--|--|
 |Pose& pose|Out param for the Solid's current pose.|
 
-Retreives the current pose of the Solid from the physics simulation.
+Retreives the current pose of the Solid from the physics
+simulation.
 
 
 

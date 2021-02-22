@@ -1,4 +1,5 @@
 #include "stereokit.h"
+#include "sk_memory.h"
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
@@ -16,7 +17,11 @@ namespace sk {
 typedef void(*log_listener_t)(log_, const char *);
 array_t<log_listener_t> log_listeners = {};
 
+#if _DEBUG
+log_        log_filter = log_diagnostic;
+#else
 log_        log_filter = log_inform;
+#endif
 log_colors_ log_colors = log_colors_ansi;
 
 char       *log_fail_reason_str = nullptr;
@@ -79,7 +84,7 @@ const int    log_code_size [] = { _countof(LOG_C_CLEAR),     _countof(LOG_NONE_C
 ///////////////////////////////////////////
 
 char *log_replace_colors(const char *text, const char **color_keys, const char **color_codes, int count, int code_size) {
-	// Looking for words that look like this: 
+	// Looking for words that look like this:
 	// <~red>red text here<~clr>
 
 	const char *ch = text;
@@ -111,8 +116,8 @@ char *log_replace_colors(const char *text, const char **color_keys, const char *
 		return nullptr;
 
 	// New string with new color values
-	char *result = (char*)malloc((len - remove) + (add * code_size));
-	char *at = result;
+	char *result = sk_malloc_t<char>((len - remove) + (add * code_size));
+	char *at     = result;
 	ch   = text;
 	curr = 0;
 	char key[4] = "   ";
@@ -169,12 +174,12 @@ void log_write(log_ level, const char *text) {
 	}
 
 	size_t len       = strlen(tag) + strlen(text) + 10;
-	char  *full_text = (char*)malloc(len * sizeof(char));
-	sprintf_s(full_text, len, "[SK %s] %s\n", tag, text);
+	char  *full_text = sk_malloc_t<char>(len);
+	snprintf(full_text, len, "[SK %s] %s\n", tag, text);
 
 	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
-	printf(colored_text);
-	
+	printf("%s", colored_text);
+
 	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
 	if (log_colors != log_colors_none) {
 		free(colored_text);
@@ -184,21 +189,24 @@ void log_write(log_ level, const char *text) {
 	for (size_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i](level, colored_text);
 	}
-	platform_debug_output(colored_text);
+	platform_debug_output(level, colored_text);
 	free(colored_text);
-	
+
 	free(full_text);
 }
 
 ///////////////////////////////////////////
 
 void _log_writef(log_ level, const char* text, va_list args) {
-	size_t length = vsnprintf(nullptr, 0, text, args);
-	char* buffer = (char*)malloc(length + 2);
-	vsnprintf(buffer, length + 2, text, args);
+    va_list copy;
+    va_copy(copy, args);
+    size_t length = vsnprintf(nullptr, 0, text, args);
+    char*  buffer = sk_malloc_t<char>(length + 2);
+    vsnprintf(buffer, length + 2, text, copy);
 
-	log_write(level, buffer);
-	free(buffer);
+    log_write(level, buffer);
+    free(buffer);
+    va_end(copy);
 }
 
 ///////////////////////////////////////////
@@ -272,7 +280,7 @@ void log_fail_reasonf(int32_t confidence, const char *fail_reason, ...) {
 	va_list args;
 	va_start(args, fail_reason);
 	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
-	char* buffer = (char*)malloc(length + 2);
+	char*  buffer = sk_malloc_t<char>(length + 2);
 	vsnprintf(buffer, length + 2, fail_reason, args);
 
 	log_fail_reason(confidence, buffer);

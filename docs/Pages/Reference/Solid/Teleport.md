@@ -14,7 +14,8 @@ void Teleport([Vec3]({{site.url}}/Pages/Reference/Vec3.html) position, [Quat]({{
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|The destination position!|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) rotation|The destination rotation!|
 
-Moves the Solid to the new pose, without colliding with objects on the way there.
+Moves the Solid to the new pose, without colliding with
+objects on the way there.
 
 
 

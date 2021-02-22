@@ -22,6 +22,8 @@ Information about a system's capabilities and properties!
 
 |  |  |
 |--|--|
-|bool [spatialBridge]({{site.url}}/Pages/Reference/SystemInfo/spatialBridge.html)|Does the device we're currently on have the spatial graph bridge extension? The extension is provided through the function `Pose.FromSpatialNode`. This allows OpenXR to talk with certain windows APIs, such as the QR code API that provides Graph Node GUIDs for the pose.|
+|bool [eyeTrackingPresent]({{site.url}}/Pages/Reference/SystemInfo/eyeTrackingPresent.html)|Does the device we're on have eye tracking support present? This is _not_ an indicator that the user has given the application permission to access this information. See `Input.Gaze` for how to use this data.|
+|bool [perceptionBridgePresent]({{site.url}}/Pages/Reference/SystemInfo/perceptionBridgePresent.html)|Can the device work with externally provided spatial anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`?|
+|bool [spatialBridgePresent]({{site.url}}/Pages/Reference/SystemInfo/spatialBridgePresent.html)|Does the device we're currently on have the spatial graph bridge extension? The extension is provided through the function `Pose.FromSpatialNode`. This allows OpenXR to talk with certain windows APIs, such as the QR code API that provides Graph Node GUIDs for the pose.|
 
 

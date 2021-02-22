@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include "../math.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
 #include "material.h"
@@ -9,6 +10,7 @@
 #include "../systems/platform/platform_utils.h"
 
 #include <stdio.h>
+#include <string.h>
 
 namespace sk {
 
@@ -80,7 +82,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 	void  *data;
 	size_t length;
-	if (!platform_read_file(assets_file(filename), data, length))
+	if (!platform_read_file(assets_file(filename), &data, &length))
 		return nullptr;
 
 	result = model_create_mem(filename, data, length, shader);
@@ -190,7 +192,7 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
-	model->subsets                      = (model_subset_t *)realloc(model->subsets, sizeof(model_subset_t) * (model->subset_count + 1));
+	model->subsets                      = sk_realloc_t<model_subset_t>(model->subsets, model->subset_count + 1);
 	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
 	assets_addref(mesh->header);
 	assets_addref(material->header);

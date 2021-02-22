@@ -3,22 +3,70 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	/// <summary>Specifies details about how StereoKit should start up!</summary>
-	public enum Runtime
+	/// <summary>Specifies a type of display mode StereoKit uses, like 
+	/// Mixed Reality headset display vs. a PC display, or even just 
+	/// rendering to an offscreen surface, or not rendering at all!</summary>
+	public enum DisplayMode
 	{
-		/// <summary>Creates a flat, Win32 window, and simulates some MR 
-		/// functionality. Great for debugging.</summary>
-		Flatscreen   = 0,
 		/// <summary>Creates an OpenXR instance, and drives display/input 
 		/// through that.</summary>
-		MixedReality = 1
+		MixedReality = 0,
+		/// <summary>Creates a flat, Win32 window, and simulates some MR 
+		/// functionality. Great for debugging.</summary>
+		Flatscreen = 1,
+		/// <summary>Not tested yet, but this is meant to run StereoKit 
+		/// without rendering to any display at all. This would allow for
+		/// rendering to textures, running a server that can do MR related
+		/// tasks, etc.</summary>
+		None = 2,
 	}
 
-	/// <summary>StereoKit miscellaneous initialization settings! Setup 
-	/// StereoKit.settings with your data before calling StereoKitApp.Initialize.</summary>
-	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-	public struct Settings
+	/// <summary>This is used to determine what kind of depth buffer 
+	/// StereoKit uses!</summary>
+	public enum DepthMode
 	{
+		/// <summary>Default mode, uses 16 bit on mobile devices like 
+		/// HoloLens and Quest, and 32 bit on higher powered platforms like
+		/// PC. If you need a far view distance even on mobile devices,
+		/// prefer D32 or Stencil instead.</summary>
+		Balanced = 0,
+		/// <summary>16 bit depth buffer, this is fast and recommended for 
+		/// devices like the HoloLens. This is especially important for fast
+		/// depth based reprojection. Far view distances will suffer here 
+		/// though, so keep your clipping far plane as close as possible.
+		/// </summary>
+		D16,
+		/// <summary>32 bit depth buffer, should look great at any distance! 
+		/// If you must have the best, then this is the best. If you're
+		/// interested in this one, Stencil may also be plenty for you, as 24
+		/// bit depth is also pretty peachy.</summary>
+		D32,
+		/// <summary>24 bit depth buffer with 8 bits of stencil data. 24 bits
+		/// is generally plenty for a depth buffer, so using the rest for 
+		/// stencil can open up some nice options! StereoKit has limited
+		/// stencil support right now though (v0.3).</summary>
+		Stencil,
+	}
+
+	/// <summary>StereoKit initialization settings! Setup SK.settings with 
+	/// your data before calling SK.Initialize.</summary>
+	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+	public struct SKSettings
+	{
+		private IntPtr _appName;
+		private IntPtr _assetsFolder;
+
+		/// <summary>Which display type should we try to load? Default is 
+		/// `DisplayMode.MixedReality`.</summary>
+		public DisplayMode displayPreference;
+		/// <summary>If the preferred display fails, should we avoid falling
+		/// back to flatscreen and just crash out? Default is false.</summary>
+		public bool        noFlatscreenFallback;
+		/// <summary>What kind of depth buffer should StereoKit use? A fast
+		/// one, a detailed one, one that uses stencils? By default, 
+		/// StereoKit uses a balanced mix depending on platform, prioritizing
+		/// speed but opening up when there's headroom.</summary>
+		public DepthMode   depthMode;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -31,15 +79,40 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>Where to look for assets when loading files! Final path 
-		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
-		/// unnecessary.</summary>
-		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-		public string assetsFolder;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public bool disableFlatscreenMRSim;
+
+		public IntPtr androidJavaVm;
+		public IntPtr androidActivity;
+
+		/// <summary>Name of the application, this shows up an the top of the
+		/// Win32 window, and is submitted to OpenXR. OpenXR caps this at 128
+		/// characters.</summary>
+		public string appName {
+			set {
+				if (_appName != IntPtr.Zero) Marshal.FreeHGlobal(_appName);
+
+				_appName = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			}
+			get => Marshal.PtrToStringAnsi(_appName);
+		}
+		/// <summary>Where to look for assets when loading files! Final path 
+		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+		/// unnecessary.</summary>
+		public string assetsFolder { 
+			set { 
+				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder); 
+
+				_assetsFolder = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			} 
+			get => Marshal.PtrToStringAnsi(_assetsFolder);
+		}
 	}
 
 	/// <summary>This describes the type of display tech used on a Mixed
@@ -70,13 +143,27 @@ namespace StereoKit
 		/// <summary>Height of the display surface, in pixels! For a stereo
 		/// display, this will be the height of a single eye.</summary>
 		public int displayHeight;
+
 		/// <summary>Does the device we're currently on have the spatial 
 		/// graph bridge extension? The extension is provided through the 
 		/// function `Pose.FromSpatialNode`. This allows OpenXR to talk with 
 		/// certain windows APIs, such as the QR code API that provides Graph
 		/// Node GUIDs for the pose.</summary>
-		public  bool spatialBridge { get => _spatialBridge > 0; }
-		private int _spatialBridge;
+		public  bool spatialBridgePresent { get => _spatialBridgePresent > 0; }
+		private int _spatialBridgePresent;
+
+		/// <summary>Can the device work with externally provided spatial
+		/// anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`?
+		/// </summary>
+		public bool perceptionBridgePresent { get => _perceptionBridgePresent > 0; }
+		private int _perceptionBridgePresent;
+
+		/// <summary>Does the device we're on have eye tracking support
+		/// present? This is _not_ an indicator that the user has given the 
+		/// application permission to access this information. See 
+		/// `Input.Gaze` for how to use this data.</summary>
+		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
+		private int _eyeTrackingPresent;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
@@ -103,12 +190,12 @@ namespace StereoKit
 	public struct Vertex
 	{
 		/// <summary>Position of the vertex, in model space coordinates.</summary>
-		public Vec3    pos;
+		public Vec3 pos;
 		/// <summary>The normal of this vertex, or the direction the vertex is 
 		/// facing. Preferably normalized.</summary>
-		public Vec3    norm;
+		public Vec3 norm;
 		/// <summary>The texture coordinates at this vertex.</summary>
-		public Vec2    uv;
+		public Vec2 uv;
 		/// <summary>The color of the vertex. If you aren't using it, set it to 
 		/// white.</summary>
 		public Color32 col;
@@ -124,6 +211,12 @@ namespace StereoKit
 			uv   = textureCoordinates;
 			col  = color;
 		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Rect
+	{
+		public float x, y, width, height;
 	}
 
 	/// <summary>Textures come in various types and flavors! These are bit-flags
@@ -177,6 +270,8 @@ namespace StereoKit
 		/// of the time you're dealing with color data! Matches well with the 
 		/// Color32 struct.</summary>
 		Rgba32Linear,
+		Bgra32,
+		Bgra32Linear,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
 		/// per-channel! This is not common, but you might encounter it with
 		/// raw photos, or HDR images.</summary>
@@ -252,38 +347,91 @@ namespace StereoKit
 		Mirror,
 	}
 
-	/// <summary>Also known as 'alpha' for those in the know. But there's actually more than
-	/// one type of transparency in rendering! The horrors. We're keepin' it fairly simple for
-	/// now, so you get three options!</summary>
+	/// <summary>Also known as 'alpha' for those in the know. But there's 
+	/// actually more than one type of transparency in rendering! The 
+	/// horrors. We're keepin' it fairly simple for now, so you get three
+	/// options!</summary>
 	public enum Transparency
 	{
-		/// <summary>Not actually transparent! This is opaque! Solid! It's the default option, and
-		/// it's the fastest option! Opaque objects write to the z-buffer, the occlude pixels behind
-		/// them, and they can be used as input to important Mixed Reality features like Late 
-		/// Stage Reprojection that'll make your view more stable!</summary>
+		/// <summary>Not actually transparent! This is opaque! Solid! It's
+		/// the default option, and it's the fastest option! Opaque objects
+		/// write to the z-buffer, the occlude pixels behind them, and they
+		/// can be used as input to important Mixed Reality features like 
+		/// Late Stage Reprojection that'll make your view more stable!
+		/// </summary>
 		None = 1,
-		/// <summary>This will blend with the pixels behind it. This is transparent! It doesn't write
-		/// to the z-buffer, and it's slower than opaque materials.</summary>
+		/// <summary>This will blend with the pixels behind it. This is 
+		/// transparent! It doesn't write to the z-buffer, and it's slower
+		/// than opaque materials.</summary>
 		Blend,
-		/// <summary>This is sort of transparent! It can sample a texture, and discard pixels that are
-		/// below a certain threshold. It doesn't blend with colors behind it, but it's pretty fast, and
-		/// can write to the z-buffer no problem!</summary>
-		Clip,
+		/// <summary>This will straight up add the pixel color to the color
+		/// buffer! This usually looks -really- glowy, so it makes for good
+		/// particles or lighting effects.</summary>
+		Add
 	}
 
-	/// <summary>Culling is discarding an object from the render pipeline! This enum describes how mesh
-	/// faces get discarded on the graphics card. With culling set to none, you can double the number of 
-	/// pixels the GPU ends up drawing, which can have a big impact on performance. None can be appropriate
-	/// in cases where the mesh is designed to be 'double sided'. Front can also be helpful when you want
-	/// to flip a mesh 'inside-out'!</summary>
+	/// <summary>Culling is discarding an object from the render pipeline!
+	/// This enum describes how mesh faces get discarded on the graphics
+	/// card. With culling set to none, you can double the number of pixels 
+	/// the GPU ends up drawing, which can have a big impact on performance. 
+	/// None can be appropriate in cases where the mesh is designed to be 
+	/// 'double sided'. Front can also be helpful when you want to flip a 
+	/// mesh 'inside-out'!</summary>
 	public enum Cull
 	{
-		/// <summary>Discard if the back of the triangle face is pointing towards the camera.</summary>
+		/// <summary>Discard if the back of the triangle face is pointing 
+		/// towards the camera.</summary>
 		Back = 0,
-		/// <summary>Discard if the front of the triangle face is pointing towards the camera.</summary>
+		/// <summary>Discard if the front of the triangle face is pointing 
+		/// towards the camera.</summary>
 		Front,
-		/// <summary>No culling at all! Draw the triangle regardless of which way it's pointing.</summary>
+		/// <summary>No culling at all! Draw the triangle regardless of which
+		/// way it's pointing.</summary>
 		None,
+	}
+
+	/// <summary>Depth test describes how this material looks at and responds
+	/// to depth information in the zbuffer! The default is Less, which means
+	/// if the material pixel's depth is Less than the existing depth data,
+	/// (basically, is this in front of some other object) it will draw that
+	/// pixel. Similarly, Greater would only draw the material if it's
+	/// 'behind' the depth buffer. Always would just draw all the time, and 
+	/// not read from the depth buffer at all.</summary>
+	public enum DepthTest
+	{
+		/// <summary>Default behavior, pixels behind the depth buffer will be
+		/// discarded, and pixels in front of it will be drawn.</summary>
+		Less = 0,
+		/// <summary>Pixels behind the depth buffer will be discarded, and
+		/// pixels in front of, or at the depth buffer's value it will be
+		/// drawn. This could be great for things that might be sitting 
+		/// exactly on a floor or wall.</summary>
+		LessOrEqual,
+		/// <summary>Pixels in front of the zbuffer will be discarded! This 
+		/// is opposite of how things normally work. Great for drawing 
+		/// indicators that something is occluded by a wall or other 
+		/// geometry.</summary>
+		Greater,
+		/// <summary>Pixels in front of (or exactly at) the zbuffer will be 
+		/// discarded! This is opposite of how things normally work. Great
+		/// for drawing indicators that something is occluded by a wall or
+		/// other geometry.</summary>
+		GreaterOrEqual,
+		/// <summary>Only draw pixels if they're at exactly the same depth as
+		/// the zbuffer!</summary>
+		Equal,
+		/// <summary>Draw any pixel that's not exactly at the value in the
+		/// zbuffer.</summary>
+		NotEqual,
+		/// <summary>Don't look at the zbuffer at all, just draw everything, 
+		/// always, all the time! At this poit, the order at which the mesh
+		/// gets drawn will be  super important, so don't forget about 
+		/// `Material.QueueOffset`!</summary>
+		Always,
+		/// <summary>Never draw a pixel, regardless of what's in the zbuffer.
+		/// I can think of better ways to do this, but uhh, this is here for
+		/// completeness! Maybe you can find a use for it.</summary>
+		Never,
 	}
 
 	/// <summary>What type of data does this material parameter need? This is used to tell the 
@@ -346,6 +494,12 @@ namespace StereoKit
 	public struct TextStyle
 	{
 		internal int id;
+
+		/// <summary>This provides a reference to the Material used by this
+		/// style, so you can override certain features! Note that if you're
+		/// creating TextStyles with manually provided Materials, this 
+		/// Material may not be unique to this style.</summary>
+		public Material Material { get => new Material(NativeAPI.text_style_get_material(this)); }
 	}
 
 	/// <summary>This describes the behavior of a 'Solid' physics object! the physics 
@@ -501,13 +655,13 @@ namespace StereoKit
 	{
 		/// <summary>Is the mouse available to use? Most MR systems likely won't have
 		/// a mouse!</summary>
-		public bool  available;
+		public bool available;
 		/// <summary>Position of the mouse relative to the window it's in! This is the number
 		/// of pixels from the top left corner of the screen.</summary>
-		public Vec2  pos;
+		public Vec2 pos;
 		/// <summary>How much has the mouse's position changed in the current frame? Measured 
 		/// in pixels.</summary>
-		public Vec2  posChange;
+		public Vec2 posChange;
 		/// <summary>What's the current scroll value for the mouse's scroll wheel? TODO: Units</summary>
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>

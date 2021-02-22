@@ -14,7 +14,7 @@ struct font_char_t {
 struct _font_t {
 	asset_header_t header;
 	tex_t       font_tex;
-	font_char_t characters[128];
+	font_char_t characters[256];
 	float       character_height;
 };
 

@@ -1,8 +1,10 @@
 #include "sprite.h"
 #include "assets.h"
 #include "texture.h"
-#include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 #include "../systems/sprite_drawer.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
 
@@ -37,7 +39,7 @@ void sprite_set_id(sprite_t sprite, const char *id) {
 
 material_t sprite_create_material(int index_id) {
 	char id[64];
-	sprintf_s(id, 64, "render/sprite_mat_%d", index_id);
+	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);
 	material_t result = material_create(shader_find(default_id_shader_unlit));
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
@@ -55,7 +57,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
-	result->aspect = image->width / (float)image->height;
+	result->aspect = image->tex.width / (float)image->tex.height;
 	if (result->aspect > 1) // Width is larger than height
 		result->dimensions_normalized = { 1, 1.f / result->aspect };
 	else                    // Height is larger than, or equal to width
@@ -73,7 +75,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		material_set_texture(result->material, "diffuse", image);
 	} else {
 		// Find the atlas for this id
-		uint64_t     map_id = string_hash(atlas_id);
+		uint64_t     map_id = hash_fnv64_string(atlas_id);
 		spritemap_t *map    = nullptr;
 		int32_t      index  = -1;
 		for (int32_t i = 0; i < sprite_map_count; i++) {
@@ -87,7 +89,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		if (map == nullptr) {
 			index             = sprite_map_count;
 			sprite_map_count += 1;
-			sprite_maps       = (spritemap_t*)realloc(sprite_maps, sizeof(spritemap_t) * sprite_map_count);
+			sprite_maps       = sk_realloc_t<spritemap_t>(sprite_maps, sprite_map_count);
 			map               = &sprite_maps[sprite_map_count-1];
 
 			*map = {};
@@ -98,8 +100,8 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 		// Add a sprite to the list
 		if (map->sprite_count + 1 > map->sprite_cap) {
-			map->sprite_cap = max(1, map->sprite_cap * 2);
-			map->sprites    = (sprite_t *)realloc(map->sprites, map->sprite_cap);
+			map->sprite_cap = maxi(1, map->sprite_cap * 2);
+			map->sprites    = sk_realloc_t<sprite_t>(map->sprites, map->sprite_cap);
 		}
 		map->sprites[map->sprite_count] = result;
 		map->sprite_count += 1;

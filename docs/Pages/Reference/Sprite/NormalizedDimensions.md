@@ -6,5 +6,6 @@ description: Width and height of the sprite, normalized so the maximum value is 
 # [Sprite]({{site.url}}/Pages/Reference/Sprite.html).NormalizedDimensions
 
 ## Description
-Width and height of the sprite, normalized so the maximum value is 1.
+Width and height of the sprite, normalized so the
+maximum value is 1.
 

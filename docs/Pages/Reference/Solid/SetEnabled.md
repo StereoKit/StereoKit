@@ -11,10 +11,11 @@ void SetEnabled(bool enabled)
 
 |  |  |
 |--|--|
-|bool enabled|False to disable physics on this object, true to enable it.|
+|bool enabled|False to disable physics on this object,              true to enable it.|
 
-Same as Enabled. Is the Solid enabled in the physics simulation? Set this to false if you
-want to prevent physics from influencing this solid!
+Same as Enabled. Is the Solid enabled in the physics
+simulation? Set this to false if you want to prevent physics from
+influencing this solid!
 
 
 

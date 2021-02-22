@@ -42,24 +42,24 @@ clean to provide lists of items! This means you can assemble the whole
 menu on a single 'line'. You can still pass arrays instead if you prefer
 that!
 ```csharp
-handMenu = StereoKitApp.AddStepper(new HandMenuRadial(
-    new HandRadialLayer("Root",
-        new HandMenuItem("File",   null, null, "File"),
-        new HandMenuItem("Edit",   null, null, "Edit"),
-        new HandMenuItem("About",  null, () => Log.Info(StereoKitApp.VersionName)),
-        new HandMenuItem("Cancel", null, null)),
-    new HandRadialLayer("File", 
-        new HandMenuItem("New",   null, () => Log.Info("New")),
-        new HandMenuItem("Open",  null, () => Log.Info("Open")),
-        new HandMenuItem("Close", null, () => Log.Info("Close")),
-        new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
-    new HandRadialLayer("Edit",
-        new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
-        new HandMenuItem("Paste", null, () => Log.Info("Paste")),
-        new HandMenuItem("Back", null, null, HandMenuAction.Back))));
+handMenu = SK.AddStepper(new HandMenuRadial(
+	new HandRadialLayer("Root",
+		new HandMenuItem("File",   null, null, "File"),
+		new HandMenuItem("Edit",   null, null, "Edit"),
+		new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
+		new HandMenuItem("Cancel", null, null)),
+	new HandRadialLayer("File", 
+		new HandMenuItem("New",   null, () => Log.Info("New")),
+		new HandMenuItem("Open",  null, () => Log.Info("Open")),
+		new HandMenuItem("Close", null, () => Log.Info("Close")),
+		new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
+	new HandRadialLayer("Edit",
+		new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
+		new HandMenuItem("Paste", null, () => Log.Info("Paste")),
+		new HandMenuItem("Back", null, null, HandMenuAction.Back))));
 ```
 
 ```csharp
-StereoKitApp.RemoveStepper(handMenu); 
+SK.RemoveStepper(handMenu); 
 ```
 

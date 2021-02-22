@@ -7,9 +7,10 @@
 
 #include "../libraries/array.h"
 #include "../hierarchy.h"
-#include "../math.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
 
-#include <directxmath.h> // Matrix math functions and objects
+#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {
@@ -35,11 +36,11 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 		return;
 
 	buffer.vert_cap = buffer.vert_count + 4;
-	buffer.verts    = (vert_t *)realloc(buffer.verts, sizeof(vert_t) * buffer.vert_cap);
+	buffer.verts    = sk_realloc_t<vert_t>(buffer.verts, buffer.vert_cap);
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = (vind_t *)malloc(quads * 6 * sizeof(vind_t));
+	vind_t *inds  = sk_malloc_t<vind_t>(quads * 6);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;
@@ -99,10 +100,10 @@ bool sprite_drawer_init() {
 	// Default rendering quad
 	sprite_quad = mesh_create();
 	vert_t verts[4] = {
-		vec3{0, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255},
-		vec3{1, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255},
-		vec3{1,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255},
-		vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255},
+		{ vec3{0, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
+		{ vec3{1, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{1,-1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} },
+		{ vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id   (sprite_quad, "render/sprite_quad");

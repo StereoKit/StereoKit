@@ -49,32 +49,8 @@ codes are as follows:
 
 ## Examples
 
-### An in-application log window
-Here's an example of using the Log.Subscribe method to build a
-simple logging window. This can be pretty handy to have around
-somewhere in your application!
-
-Here's the code for the window, and log tracking.
-```csharp
-static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-static List<string> logList = new List<string>();
-static void OnLog(LogLevel level, string text)
-{
-    if (logList.Count > 10)
-        logList.RemoveAt(logList.Count - 1);
-    logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
-}
-static void LogWindow()
-{
-    UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-    for (int i = 0; i < logList.Count; i++)
-        UI.Label(logList[i], false);
-    UI.WindowEnd();
-}
-```
-
-Then you add the OnLog method into the log events like this in your initialization
-code!
+Then you add the OnLog method into the log events like this in
+your initialization code!
 ```csharp
 Log.Subscribe(OnLog);
 ```
@@ -84,4 +60,28 @@ And in your Update loop, you can draw the window.
 LogWindow();
 ```
 And that's it!
+
+### An in-application log window
+Here's an example of using the Log.Subscribe method to build a simple
+logging window. This can be pretty handy to have around somewhere in
+your application!
+
+Here's the code for the window, and log tracking.
+```csharp
+static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+static List<string> logList = new List<string>();
+static void OnLog(LogLevel level, string text)
+{
+	if (logList.Count > 10)
+		logList.RemoveAt(logList.Count - 1);
+	logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
+}
+static void LogWindow()
+{
+	UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
+	for (int i = 0; i < logList.Count; i++)
+		UI.Label(logList[i], false);
+	UI.WindowEnd();
+}
+```
 

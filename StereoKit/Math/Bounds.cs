@@ -51,7 +51,7 @@ namespace StereoKit
 		/// <returns>A Bounds object that extends from bottomLeftBack to topRightFront.</returns>
 		public static Bounds FromCorners(Vec3 bottomLeftBack, Vec3 topRightFront)
 			=> new Bounds(bottomLeftBack/2 + topRightFront/2, topRightFront-bottomLeftBack);
-        
+
 
 		/// <summary>Calculate the intersection between a Ray, and these bounds. Returns false
 		/// if no intersection occurred, and 'at' will contain the nearest intersection point to 
@@ -83,8 +83,6 @@ namespace StereoKit
 		public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }
 
 		public override string ToString()
-		{
-			return string.Format("[center:{0} dimensions:{1}", center, dimensions);
-		}
+			=> string.Format("[center:{0} dimensions:{1}]", center, dimensions);
 	}
 }

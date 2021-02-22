@@ -11,11 +11,11 @@ void SetTransform(int subsetIndex, Matrix& transform)
 
 |  |  |
 |--|--|
-|int subsetIndex|Index of the transform to replace, should be less than SubsetCount.|
+|int subsetIndex|Index of the transform to replace,             should be less than SubsetCount.|
 |Matrix& transform|The new transform.|
 
-Changes the transform for the subset to a new one! This is in Model space, so it's
-relative to the origin of the model.
+Changes the transform for the subset to a new one! This
+is in Model space, so it's relative to the origin of the model.
 
 
 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
+
 struct scene_t {
+	std::string name;
 	void (*init)(void);
 	void (*update)(void);
 	void (*shutdown)(void);

@@ -6,139 +6,140 @@ using System.IO;
 
 namespace StereoKitTest
 {
-    class Light
-    {
-        public Pose pose;
-        public Vec3 color;
-    }
-    enum LightMode
-    {
-        Lights,
-        Image,
-    }
+	class Light
+	{
+		public Pose pose;
+		public Vec3 color;
+	}
+	enum LightMode
+	{
+		Lights,
+		Image,
+	}
 
-    class DemoSky : ITest
-    {
-        static List<Light> lights     = new List<Light>();
-        static Pose        windowPose = new Pose(new Vec3(0,0.1f,-0.3f), Quat.LookDir(-Vec3.Forward));
-        static LightMode   mode       = LightMode.Lights;
-        static Tex         cubemap    = null;
-		static Pose        previewPose = new Pose(0,-0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
+	class DemoSky : ITest
+	{
+		static List<Light> lights      = new List<Light>();
+		static Pose        windowPose  = new Pose(0, 0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
+		static LightMode   mode        = LightMode.Lights;
+		static Tex         cubemap     = null;
+		static Pose        previewPose = new Pose(0, -0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 
-		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf", Default.ShaderPbr);
-        Mesh       lightMesh     = Mesh.GenerateSphere(1);
-        Material   lightProbeMat = Default.Material;
-        Material   lightSrcMat   = new Material(Default.ShaderUnlit);
+		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
+		Mesh       lightMesh     = Mesh.GenerateSphere(1);
+		Material   lightProbeMat = Default.Material;
+		Material   lightSrcMat   = new Material(Default.ShaderUnlit);
 
-        public void Initialize() { }
-        public void Shutdown() => FilePicker.Hide();
-        public void Update()
-        {
-            UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
-            UI.Label("Mode");
-            if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
-            UI.SameLine();
-            if (UI.Radio("Image",  mode == LightMode.Image))  mode = LightMode.Image;
+		public void Initialize() { }
+		public void Shutdown() => FilePicker.Hide();
+		public void Update()
+		{
+			UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
+			UI.Label("Mode");
+			if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
+			UI.SameLine();
+			if (UI.Radio("Image",  mode == LightMode.Image))  mode = LightMode.Image;
 
-            if (mode == LightMode.Lights)
-            { 
-                UI.Label("Lights");
-                if (UI.Button("Add"))
-                {
-                    lights.Add(new Light { 
-                        pose  = new Pose(Vec3.Up*25*U.cm, Quat.LookDir(-Vec3.Forward)), 
-                        color = Vec3.One });
-                    UpdateLights();
-                }
+			if (mode == LightMode.Lights)
+			{ 
+				UI.Label("Lights");
+				if (UI.Button("Add"))
+				{
+					lights.Add(new Light { 
+						pose  = new Pose(Vec3.Up*25*U.cm, Quat.LookDir(-Vec3.Forward)), 
+						color = Vec3.One });
+					UpdateLights();
+				}
 
-                UI.SameLine();
-                if (UI.Button("Remove") && lights.Count > 1)
-                { 
-                    lights.RemoveAt(lights.Count-1);
-                    UpdateLights();
-                }
-            }
+				UI.SameLine();
+				if (UI.Button("Remove") && lights.Count > 1)
+				{ 
+					lights.RemoveAt(lights.Count-1);
+					UpdateLights();
+				}
+			}
 
-            if (mode == LightMode.Image)
-            {
-                UI.Label("Image");
-                if (!FilePicker.Active && UI.Button("Open"))
-                    ShowPicker();
-            }
+			if (mode == LightMode.Image)
+			{
+				UI.Label("Image");
+				if (!FilePicker.Active && UI.Button("Open"))
+					ShowPicker();
+			}
 
-            UI.WindowEnd();
+			UI.WindowEnd();
 
-            lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
+			lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
 			UI.Handle("Preview", ref previewPose, previewModel.Bounds*0.1f);
 			previewModel.Draw(previewPose.ToMatrix(0.1f));
 
-            if (mode == LightMode.Lights)
-            { 
-                bool needsUpdate = false;
-                for (int i = 0; i < lights.Count; i++) {
-                    needsUpdate = LightHandle(i) || needsUpdate;
-                }
-                if (needsUpdate)
-                    UpdateLights();
-            }
-        }
+			if (mode == LightMode.Lights)
+			{ 
+				bool needsUpdate = false;
+				for (int i = 0; i < lights.Count; i++) {
+					needsUpdate = LightHandle(i) || needsUpdate;
+				}
+				if (needsUpdate)
+					UpdateLights();
+			}
+		}
 
-        bool LightHandle(int i)
-        {
-            UI.PushId("window"+i);
-            bool dirty = UI.HandleBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
-            UI.LayoutArea(new Vec3(6,-3,0)*U.cm, new Vec2(10, 0)*U.cm);
-            if (lights[i].pose.position.Magnitude > 0.5f)
-                lights[i].pose.position = lights[i].pose.position.Normalized() * 0.5f;
+		bool LightHandle(int i)
+		{
+			UI.PushId("window"+i);
+			bool dirty = UI.HandleBegin("Color", ref lights[i].pose, new Bounds(Vec3.One * 3 * U.cm));
+			UI.LayoutArea(new Vec3(6,-3,0)*U.cm, new Vec2(10, 0)*U.cm);
+			if (lights[i].pose.position.Length > 0.5f)
+				lights[i].pose.position = lights[i].pose.position.Normalized * 0.5f;
 
-            lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3* U.cm), Color.HSV(lights[i].color));
+			lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3* U.cm), Color.HSV(lights[i].color));
 
-            dirty = UI.HSlider("H", ref lights[i].color.x, 0, 1, 0, 10 * U.cm) || dirty;
-            dirty = UI.HSlider("S", ref lights[i].color.y, 0, 1, 0, 10 * U.cm) || dirty;
-            dirty = UI.HSlider("V", ref lights[i].color.z, 0, 1, 0, 10 * U.cm) || dirty;
-            
-            UI.HandleEnd();
-            Lines.Add(
-                lights[i].pose.position, Vec3.Zero, 
-                Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 
-                U.mm);
+			dirty = UI.HSlider("H", ref lights[i].color.v.X, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("S", ref lights[i].color.v.Y, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("V", ref lights[i].color.v.Z, 0, 1, 0, 10 * U.cm) || dirty;
 
-            UI.PopId();
-            return dirty;
-        }
+			UI.HandleEnd();
+			Lines.Add(
+				lights[i].pose.position, Vec3.Zero, 
+				Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 
+				U.mm);
 
-        void ShowPicker()
-        {
-            FilePicker.Show(
-                FilePickerMode.Open,
-                Path.GetFullPath(StereoKitApp.settings.assetsFolder),
-                LoadSkyImage,
-                new FileFilter("HDR", "*.hdr"));
-        }
+			UI.PopId();
+			return dirty;
+		}
 
-        void LoadSkyImage(string file)
-        {
-            cubemap = Tex.FromCubemapEquirectangular(file, out SphericalHarmonics lighting);
+		void ShowPicker()
+		{
+			FilePicker.Show(
+				FilePickerMode.Open,
+				Path.GetFullPath(SK.Settings.assetsFolder),
+				LoadSkyImage,
+				new FileFilter("HDR", "*.hdr"),
+				new FileFilter("Jpg", "*.jpg"));
+		}
 
-            Renderer.SkyTex   = cubemap;
-            Renderer.SkyLight = lighting;
-        }
+		void LoadSkyImage(string file)
+		{
+			cubemap = Tex.FromCubemapEquirectangular(file, out SphericalHarmonics lighting);
 
-        void UpdateLights()
-        {
-            SphericalHarmonics lighting = SphericalHarmonics.FromLights(lights
-                .ConvertAll(a => new SHLight{ 
-                    directionTo = a.pose.position.Normalized(),
-                    color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
-                .ToArray());
+			Renderer.SkyTex   = cubemap;
+			Renderer.SkyLight = lighting;
+		}
 
-            Renderer.SkyTex   = Tex.GenCubemap(lighting);
-            Renderer.SkyLight = lighting;
-        }
+		void UpdateLights()
+		{
+			SphericalHarmonics lighting = SphericalHarmonics.FromLights(lights
+				.ConvertAll(a => new SHLight{ 
+					directionTo = a.pose.position.Normalized,
+					color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
+				.ToArray());
 
-        float LightIntensity(Vec3 pos)
-        {
-            return Math.Max(0, 2 - pos.Magnitude * 4);
-        }
-    }
+			Renderer.SkyTex   = Tex.GenCubemap(lighting);
+			Renderer.SkyLight = lighting;
+		}
+
+		float LightIntensity(Vec3 pos)
+		{
+			return Math.Max(0, 2 - pos.Magnitude * 4);
+		}
+	}
 }

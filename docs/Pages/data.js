@@ -53,8 +53,10 @@ var documents =
 				{name : 'Color'},
 				{name : 'HSV'},
 				{name : 'LAB'},
+				{name : 'ToGamma'},
 				{name : 'ToHSV'},
 				{name : 'ToLAB'},
+				{name : 'ToLinear'},
 			]
 			},
 			{name : 'Color32',
@@ -82,7 +84,9 @@ var documents =
 				{name : 'MaterialEquirect'},
 				{name : 'MaterialFont'},
 				{name : 'MaterialHand'},
+				{name : 'MaterialPBR'},
 				{name : 'MaterialUI'},
+				{name : 'MaterialUnlit'},
 				{name : 'MeshCube'},
 				{name : 'MeshQuad'},
 				{name : 'MeshSphere'},
@@ -101,11 +105,38 @@ var documents =
 				{name : 'TexRough'},
 			]
 			},
+			{name : 'DepthMode',
+			 pages: [
+				{name : 'Balanced'},
+				{name : 'D16'},
+				{name : 'D32'},
+				{name : 'Stencil'},
+			]
+			},
+			{name : 'DepthTest',
+			 pages: [
+				{name : 'Always'},
+				{name : 'Equal'},
+				{name : 'Greater'},
+				{name : 'GreaterOrEqual'},
+				{name : 'Less'},
+				{name : 'LessOrEqual'},
+				{name : 'Never'},
+				{name : 'NotEqual'},
+			]
+			},
 			{name : 'Display',
 			 pages: [
 				{name : 'Additive'},
 				{name : 'Opaque'},
 				{name : 'Passthrough'},
+			]
+			},
+			{name : 'DisplayMode',
+			 pages: [
+				{name : 'Flatscreen'},
+				{name : 'MixedReality'},
+				{name : 'None'},
 			]
 			},
 			{name : 'FilePicker',
@@ -150,6 +181,7 @@ var documents =
 			},
 			{name : 'Hand',
 			 pages: [
+				{name : 'fingers'},
 				{name : 'grip'},
 				{name : 'gripActivation'},
 				{name : 'handed'},
@@ -170,6 +202,7 @@ var documents =
 				{name : 'tracked'},
 				{name : 'Visible'},
 				{name : 'wrist'},
+				{name : 'Get'},
 			]
 			},
 			{name : 'Handed',
@@ -185,6 +218,7 @@ var documents =
 				{name : 'Pose'},
 				{name : 'position'},
 				{name : 'radius'},
+				{name : 'HandJoint'},
 			]
 			},
 			{name : 'HandMenuAction',
@@ -233,6 +267,21 @@ var documents =
 				{name : 'ToLocalDirection'},
 				{name : 'ToWorld'},
 				{name : 'ToWorldDirection'},
+			]
+			},
+			{name : 'Input',
+			 pages: [
+				{name : 'Eyes'},
+				{name : 'EyesTracked'},
+				{name : 'Head'},
+				{name : 'Mouse'},
+				{name : 'Hand'},
+				{name : 'HandClearOverride'},
+				{name : 'HandMaterial'},
+				{name : 'HandOverride'},
+				{name : 'HandSolid'},
+				{name : 'HandVisible'},
+				{name : 'Key'},
 			]
 			},
 			{name : 'InputSource',
@@ -382,6 +431,8 @@ var documents =
 			},
 			{name : 'Material',
 			 pages: [
+				{name : 'DepthTest'},
+				{name : 'DepthWrite'},
 				{name : 'FaceCull'},
 				{name : 'ParamCount'},
 				{name : 'QueueOffset'},
@@ -396,6 +447,12 @@ var documents =
 				{name : 'SetMatrix'},
 				{name : 'SetTexture'},
 				{name : 'SetVector'},
+			]
+			},
+			{name : 'MaterialBuffer`1',
+			 pages: [
+				{name : 'MaterialBuffer`1'},
+				{name : 'Set'},
 			]
 			},
 			{name : 'MaterialParam',
@@ -424,10 +481,13 @@ var documents =
 			 pages: [
 				{name : 'Identity'},
 				{name : 'Inverse'},
+				{name : 'Invert'},
+				{name : 'R'},
+				{name : 'S'},
 				{name : 'T'},
-				{name : 'TransformDirection'},
-				{name : 'TransformPoint'},
-				{name : 'TransformRay'},
+				{name : 'TR'},
+				{name : 'Transform'},
+				{name : 'TransformNormal'},
 				{name : 'TRS'},
 				{name : 'TS'},
 			]
@@ -444,6 +504,7 @@ var documents =
 				{name : 'GeneratePlane'},
 				{name : 'GenerateRoundedCube'},
 				{name : 'GenerateSphere'},
+				{name : 'Intersect'},
 				{name : 'SetInds'},
 				{name : 'SetVerts'},
 			]
@@ -482,8 +543,11 @@ var documents =
 			 pages: [
 				{name : 'd'},
 				{name : 'normal'},
+				{name : 'p'},
 				{name : 'Plane'},
 				{name : 'Closest'},
+				{name : 'FromPoint'},
+				{name : 'FromPoints'},
 				{name : 'Intersect'},
 			]
 			},
@@ -502,6 +566,7 @@ var documents =
 				{name : 'Forward'},
 				{name : 'orientation'},
 				{name : 'position'},
+				{name : 'Ray'},
 				{name : 'Right'},
 				{name : 'Up'},
 				{name : 'Pose'},
@@ -512,14 +577,13 @@ var documents =
 			{name : 'Quat',
 			 pages: [
 				{name : 'Identity'},
-				{name : 'w'},
-				{name : 'x'},
-				{name : 'y'},
-				{name : 'z'},
+				{name : 'Inverse'},
+				{name : 'Normalized'},
+				{name : 'q'},
 				{name : 'Quat'},
 				{name : 'Difference'},
 				{name : 'FromAngles'},
-				{name : 'Inverse'},
+				{name : 'Invert'},
 				{name : 'LookAt'},
 				{name : 'LookDir'},
 				{name : 'Normalize'},
@@ -531,6 +595,7 @@ var documents =
 				{name : 'direction'},
 				{name : 'position'},
 				{name : 'Ray'},
+				{name : 'At'},
 				{name : 'FromTo'},
 				{name : 'Intersect'},
 			]
@@ -549,29 +614,11 @@ var documents =
 				{name : 'SetFOV'},
 			]
 			},
-			{name : 'Runtime',
-			 pages: [
-				{name : 'Flatscreen'},
-				{name : 'MixedReality'},
-			]
-			},
-			{name : 'Settings',
-			 pages: [
-				{name : 'assetsFolder'},
-				{name : 'disableFlatscreenMRSim'},
-				{name : 'flatscreenHeight'},
-				{name : 'flatscreenPosX'},
-				{name : 'flatscreenPosY'},
-				{name : 'flatscreenWidth'},
-			]
-			},
 			{name : 'Shader',
 			 pages: [
 				{name : 'Name'},
-				{name : 'Compile'},
 				{name : 'Find'},
 				{name : 'FromFile'},
-				{name : 'FromHLSL'},
 				{name : 'FromMemory'},
 			]
 			},
@@ -579,6 +626,20 @@ var documents =
 			 pages: [
 				{name : 'color'},
 				{name : 'directionTo'},
+			]
+			},
+			{name : 'SK',
+			 pages: [
+				{name : 'ActiveDisplayMode'},
+				{name : 'IsInitialized'},
+				{name : 'Settings'},
+				{name : 'System'},
+				{name : 'VersionId'},
+				{name : 'VersionName'},
+				{name : 'Initialize'},
+				{name : 'Quit'},
+				{name : 'Shutdown'},
+				{name : 'Step'},
 			]
 			},
 			{name : 'SKMath',
@@ -589,8 +650,23 @@ var documents =
 				{name : 'Cos'},
 				{name : 'Exp'},
 				{name : 'Lerp'},
+				{name : 'Mod'},
 				{name : 'Sin'},
 				{name : 'Sqrt'},
+			]
+			},
+			{name : 'SKSettings',
+			 pages: [
+				{name : 'appName'},
+				{name : 'assetsFolder'},
+				{name : 'depthMode'},
+				{name : 'disableFlatscreenMRSim'},
+				{name : 'displayPreference'},
+				{name : 'flatscreenHeight'},
+				{name : 'flatscreenPosX'},
+				{name : 'flatscreenPosY'},
+				{name : 'flatscreenWidth'},
+				{name : 'noFlatscreenFallback'},
 			]
 			},
 			{name : 'Solid',
@@ -657,26 +733,14 @@ var documents =
 				{name : 'Single'},
 			]
 			},
-			{name : 'StereoKitApp',
-			 pages: [
-				{name : 'ActiveRuntime'},
-				{name : 'IsInitialized'},
-				{name : 'settings'},
-				{name : 'System'},
-				{name : 'VersionId'},
-				{name : 'VersionName'},
-				{name : 'Initialize'},
-				{name : 'Quit'},
-				{name : 'Shutdown'},
-				{name : 'Step'},
-			]
-			},
 			{name : 'SystemInfo',
 			 pages: [
 				{name : 'displayHeight'},
 				{name : 'displayType'},
 				{name : 'displayWidth'},
-				{name : 'spatialBridge'},
+				{name : 'eyeTrackingPresent'},
+				{name : 'perceptionBridgePresent'},
+				{name : 'spatialBridgePresent'},
 			]
 			},
 			{name : 'Tex',
@@ -745,7 +809,11 @@ var documents =
 				{name : 'YTop'},
 			]
 			},
-			{name : 'TextStyle'},
+			{name : 'TextStyle',
+			 pages: [
+				{name : 'Material'},
+			]
+			},
 			{name : 'TexType',
 			 pages: [
 				{name : 'Cubemap'},
@@ -773,8 +841,8 @@ var documents =
 			},
 			{name : 'Transparency',
 			 pages: [
+				{name : 'Add'},
 				{name : 'Blend'},
-				{name : 'Clip'},
 				{name : 'None'},
 			]
 			},
@@ -800,6 +868,7 @@ var documents =
 				{name : 'HandleEnd'},
 				{name : 'HSlider'},
 				{name : 'Image'},
+				{name : 'InteractVolume'},
 				{name : 'IsInteracting'},
 				{name : 'Label'},
 				{name : 'LayoutArea'},
@@ -850,13 +919,32 @@ var documents =
 				{name : 'rad2deg'},
 			]
 			},
+			{name : 'V',
+			 pages: [
+				{name : 'X0Z'},
+				{name : 'XX'},
+				{name : 'XXX'},
+				{name : 'XXXX'},
+				{name : 'XY'},
+				{name : 'XY0'},
+				{name : 'XYZ'},
+				{name : 'XYZW'},
+			]
+			},
 			{name : 'Vec2',
 			 pages: [
+				{name : 'Length'},
+				{name : 'LengthSq'},
 				{name : 'Magnitude'},
 				{name : 'MagnitudeSq'},
+				{name : 'Normalized'},
 				{name : 'One'},
-				{name : 'x'},
-				{name : 'y'},
+				{name : 'UnitX'},
+				{name : 'UnitY'},
+				{name : 'v'},
+				{name : 'X0Y'},
+				{name : 'XY0'},
+				{name : 'YX'},
 				{name : 'Zero'},
 				{name : 'Vec2'},
 				{name : 'Angle'},
@@ -864,21 +952,32 @@ var documents =
 				{name : 'Distance'},
 				{name : 'DistanceSq'},
 				{name : 'Dot'},
+				{name : 'Lerp'},
+				{name : 'Max'},
+				{name : 'Min'},
 				{name : 'Normalize'},
-				{name : 'Normalized'},
 			]
 			},
 			{name : 'Vec3',
 			 pages: [
 				{name : 'Forward'},
+				{name : 'Length'},
+				{name : 'LengthSq'},
 				{name : 'Magnitude'},
 				{name : 'MagnitudeSq'},
+				{name : 'Normalized'},
 				{name : 'One'},
 				{name : 'Right'},
+				{name : 'UnitX'},
+				{name : 'UnitY'},
+				{name : 'UnitZ'},
 				{name : 'Up'},
-				{name : 'x'},
-				{name : 'y'},
-				{name : 'z'},
+				{name : 'v'},
+				{name : 'X0Z'},
+				{name : 'XY'},
+				{name : 'XY0'},
+				{name : 'XZ'},
+				{name : 'YZ'},
 				{name : 'Zero'},
 				{name : 'Vec3'},
 				{name : 'AngleXY'},
@@ -888,18 +987,29 @@ var documents =
 				{name : 'DistanceSq'},
 				{name : 'Dot'},
 				{name : 'Lerp'},
+				{name : 'Max'},
+				{name : 'Min'},
 				{name : 'Normalize'},
-				{name : 'Normalized'},
 				{name : 'PerpendicularRight'},
 			]
 			},
 			{name : 'Vec4',
 			 pages: [
-				{name : 'w'},
-				{name : 'x'},
-				{name : 'y'},
-				{name : 'z'},
+				{name : 'UnitW'},
+				{name : 'UnitX'},
+				{name : 'UnitY'},
+				{name : 'UnitZ'},
+				{name : 'v'},
+				{name : 'XY'},
+				{name : 'XYZ'},
+				{name : 'XZ'},
+				{name : 'YZ'},
+				{name : 'ZW'},
 				{name : 'Vec4'},
+				{name : 'Dot'},
+				{name : 'Lerp'},
+				{name : 'Max'},
+				{name : 'Min'},
 			]
 			},
 			{name : 'Vertex',
@@ -908,6 +1018,14 @@ var documents =
 				{name : 'norm'},
 				{name : 'pos'},
 				{name : 'uv'},
+			]
+			},
+			{name : 'World',
+			 pages: [
+				{name : 'BoundsPose'},
+				{name : 'BoundsSize'},
+				{name : 'HasBounds'},
+				{name : 'FromSpatialNode'},
 			]
 			},
 		]

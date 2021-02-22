@@ -16,8 +16,8 @@ namespace StereoKit
 		/// <summary>UI sizing and layout settings. Set only for now</summary>
 		public static UISettings Settings    { set { NativeAPI.ui_settings(value); } }
 
-		/// <summary>StereoKit will generate a color palette from this color, and use it
-		/// to skin the UI!</summary>
+		/// <summary>StereoKit will generate a color palette from this gamma
+		/// space color, and use it to skin the UI!</summary>
 		public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
 		/// <summary>Shows or hides the collision volumes of the UI! This is for debug purposes,
@@ -77,6 +77,22 @@ namespace StereoKit
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at(id, bounds);
 
+		/// <summary>This watches a volume of space for pinch interaction 
+		/// events! If a hand is inside the space indicated by the bounds,
+		/// this function will return that hand's pinch state, as well as
+		/// indicate which hand did it through the out parameter.
+		/// 
+		/// Note that since this only provides the hand's pinch state, it 
+		/// won't give you JustActive and JustInactive notifications for 
+		/// when the hand enters or leaves the volume.</summary>
+		/// <param name="bounds">A UI hierarchy space bounding volume.</param>
+		/// <param name="hand">This will be the last hand that provides a 
+		/// pinch state within this volume. That means that if both hands are
+		/// pinching in this volume, it will provide the Right hand.</param>
+		/// <returns>This will be the pinch state of the last hand that
+		/// provides a pinch state within this volume. That means that if
+		/// both hands are pinching in this volume, it will provide the pinch
+		/// state of the Right hand.</returns>
 		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
 			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
 
@@ -92,13 +108,16 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
-		/// <summary>Adds some text to the layout! Text uses the UI's current font settings 
-		/// (which are currently not exposed). Can contain newlines! May have trouble with
-		/// non-latin characters. Will advance layout to next line.</summary>
-		/// <param name="text">Label text to display. Can contain newlines! May have trouble with
-		/// non-latin characters. Doesn't use text as id, so it can be non-unique.</param>
-		/// <param name="usePadding">Should padding be included for positioning this text?
-		/// Sometimes you just want un-padded text!</param>
+		/// <summary>Adds some text to the layout! Text uses the UI's current
+		/// font settings (which are currently not exposed). Can contain
+		/// newlines! May have trouble with non-latin characters. Will
+		/// advance layout to next line.</summary>
+		/// <param name="text">Label text to display. Can contain newlines!
+		/// May have trouble with non-latin characters. Doesn't use text as
+		/// id, so it can be non-unique.</param>
+		/// <param name="usePadding">Should padding be included for
+		/// positioning this text? Sometimes you just want un-padded text!
+		/// </param>
 		public static void Label (string text, bool usePadding = true) 
 			=> NativeAPI.ui_label(text, usePadding);
 
@@ -250,16 +269,35 @@ namespace StereoKit
 		/// <param name="pose">The pose state for the window! If showHeader 
 		/// is true, the user will be able to grab this header and move it 
 		/// around.</param>
-		/// <param name="size">Physical size of the window! Should be set to 
-		/// a non-zero value, otherwise it'll default to 32mm. If y is zero, 
-		/// it'll expand to contain all elements within it.</param>
+		/// <param name="size">Physical size of the window! If either 
+		/// dimension is 0, then the size on that axis will be auto-
+		/// calculated based on the content provided during the previous 
+		/// frame.</param>
 		/// <param name="windowType">Describes how the window should be drawn,
 		/// use a header, a body, neither, or both?</param>
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
 			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
-        
+
+		/// <summary>Begins a new window! This will push a pose onto the 
+		/// transform stack, and all UI elements will be relative to that new 
+		/// pose. The pose is actually the top-center of the window. Must be 
+		/// finished with a call to UI.WindowEnd(). This override omits the
+		/// size value, so the size will be auto-calculated based on the
+		/// content provided during the previous frame.</summary>
+		/// <param name="text">Text to display on the window title, should be 
+		/// unique as it will be used as the window's id.</param>
+		/// <param name="pose">The pose state for the window! If showHeader 
+		/// is true, the user will be able to grab this header and move it 
+		/// around.</param>
+		/// <param name="windowType">Describes how the window should be drawn,
+		/// use a header, a body, neither, or both?</param>
+		/// <param name="moveType">Describes how the window will move when 
+		/// dragged around.</param>
+		public static void WindowBegin(string text, ref Pose pose, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+			=> NativeAPI.ui_window_begin(text, ref pose, Vec2.Zero, windowType, moveType);
+
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>
 		public static void WindowEnd()

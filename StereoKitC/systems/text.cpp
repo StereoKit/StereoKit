@@ -4,10 +4,13 @@
 #include "../asset_types/assets.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
-#include "../math.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
 #include "../libraries/array.h"
 
-#include <directxmath.h> // Matrix math functions and objects
+#include <ctype.h>
+
+#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {
@@ -19,16 +22,22 @@ array_t<text_buffer_t> text_buffers = {};
 
 ///////////////////////////////////////////
 
+inline bool text_is_space(char c) {
+	return c == ' ' || c=='\n' || c == '\r' || c== '\t';
+}
+
+//////////////////////////////////////////
+
 void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
 		return;
 
 	buffer.vert_cap = buffer.vert_count + (int)characters * 4;
-	buffer.verts    = (vert_t *)realloc(buffer.verts, sizeof(vert_t) * buffer.vert_cap);
+	buffer.verts    = sk_realloc_t<vert_t>(buffer.verts, buffer.vert_cap);
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = (vind_t *)malloc(quads * 6 * sizeof(vind_t));
+	vind_t *inds  = sk_malloc_t<vind_t>(quads * 6);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;
@@ -46,10 +55,40 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, material_t material, color32 color) {
+text_style_t text_make_style(font_t font, float character_height, color128 color) {
+	shader_t     shader   = shader_find        (default_id_shader_font);
+	material_t   material = material_create    (shader);
+	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+
+	// The style now references the material if creation was successful, so
+	// we need to let go of things from here.
+	material_release(material);
+	shader_release  (shader);
+	return result;
+}
+
+///////////////////////////////////////////
+
+text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader, color128 color) {
+	material_t   material = material_create(shader);
+	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+
+	// The style now references the material if creation was successful, so
+	// we need to let go of it from here.
+	material_release(material);
+	return result;
+}
+
+///////////////////////////////////////////
+
+text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
 	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
+
+	if (font == nullptr) {
+		log_err("text_make_style was given a null font!");
+	}
 	
 	// Find or make a buffer for this style
 	for (size_t i = 0; i < text_buffers.count; i++) {
@@ -79,11 +118,17 @@ text_style_t text_make_style(font_t font, float character_height, material_t mat
 	_text_style_t style;
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
-	style.color           = color;
+	style.color           = color_to_32( color_to_linear( color ) );
 	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.5f;
 	
 	return (text_style_t)text_styles.add(style);
+}
+
+///////////////////////////////////////////
+
+material_t text_style_get_material(text_style_t style) {
+	return text_buffers[text_styles[style].buffer_index].material;
 }
 
 ///////////////////////////////////////////
@@ -94,11 +139,11 @@ vec2 text_line_size(text_style_t style, const char *text) {
 	float       x    = 0;
 	while (*curr != '\0' && *curr != '\n') {
 		char         currch = *curr;
-		font_char_t &ch     = font->characters[(int)currch];
+		font_char_t &ch     = font->characters[(uint8_t)currch];
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += font->characters[(int)' '].xadvance * 4; break;
+		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
 		default:   x += ch.xadvance; break;
 		}
 		curr += 1;
@@ -119,11 +164,11 @@ vec2 text_size(const char *text, text_style_t style) {
 	while (*curr != '\0') {
 		char currch = *curr;
 		curr += 1;
-		font_char_t &ch = font->characters[(int)currch];
+		font_char_t &ch = font->characters[(uint8_t)currch];
 
 		// Do spacing for whitespace characters
 		switch (currch) {
-		case '\t': x += font->characters[(int)' '].xadvance * 4; break;
+		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
 		case '\n': if (x > max_x) max_x = x; x = 0; y += 1; break;
 		default  : x += ch.xadvance; break;
 		}
@@ -140,7 +185,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		const char *curr = start;
 		float width = 0;
 		while (*curr != '\n' && *curr != '\0') {
-			width += step.style->font->characters[*curr].xadvance;
+			width += step.style->font->characters[(uint8_t)*curr].xadvance;
 			curr++;
 		}
 		if (out_char_count != nullptr)
@@ -157,7 +202,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 
 	while (true) {
 		char curr = *ch;
-		bool is_space = isspace(curr);
+		bool is_space = text_is_space(curr);
 
 		// We prefer to line break at spaces, rather than in the middle of words
 		if (is_space || curr == '\0') {
@@ -170,7 +215,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 			break;
 
 		// Advance by character width
-		font_char_t &char_info = step.style->font->characters[curr];
+		font_char_t &char_info = step.style->font->characters[(uint8_t)curr];
 		float next_width = char_info.xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
@@ -225,7 +270,7 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 }
 
 void text_step_position(char ch, const char *start, text_stepper_t &step) {
-	font_char_t &char_info = step.style->font->characters[ch];
+	font_char_t &char_info = step.style->font->characters[(uint8_t)ch];
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
 		text_step_next_line(start+1, step);
@@ -234,7 +279,7 @@ void text_step_position(char ch, const char *start, text_stepper_t &step) {
 	}
 
 	switch (ch) {
-	case '\t': step.pos.x -= step.style->font->characters[(int)' '].xadvance * 4 * step.style->size; break;
+	case '\t': step.pos.x -= step.style->font->characters[(uint8_t)' '].xadvance * 4 * step.style->size; break;
 	case '\n': {
 	} break;
 	default : step.pos.x -= char_info.xadvance*step.style->size; break;
@@ -376,8 +421,8 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	bool clip = fit & text_fit_clip;
 	text_step_next_line(text, step);
 	for (int32_t i=0; i<text_length; i++) {
-		if (!isspace(text[i])) {
-			font_char_t &char_info = step.style->font->characters[text[i]];
+		if (!text_is_space(text[i])) {
+			font_char_t &char_info = step.style->font->characters[(uint8_t)text[i]];
 			if (clip)
 				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
 			else

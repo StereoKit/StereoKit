@@ -5,11 +5,13 @@ description: Culling is discarding an object from the render pipeline! This enum
 ---
 # Cull
 
-Culling is discarding an object from the render pipeline! This enum describes how mesh
-faces get discarded on the graphics card. With culling set to none, you can double the number of
-pixels the GPU ends up drawing, which can have a big impact on performance. None can be appropriate
-in cases where the mesh is designed to be 'double sided'. Front can also be helpful when you want
-to flip a mesh 'inside-out'!
+Culling is discarding an object from the render pipeline!
+This enum describes how mesh faces get discarded on the graphics
+card. With culling set to none, you can double the number of pixels
+the GPU ends up drawing, which can have a big impact on performance.
+None can be appropriate in cases where the mesh is designed to be
+'double sided'. Front can also be helpful when you want to flip a
+mesh 'inside-out'!
 
 
 

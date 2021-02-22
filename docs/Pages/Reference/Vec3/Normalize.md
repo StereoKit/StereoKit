@@ -9,8 +9,9 @@ description: Turns this vector into a normalized vector (vector with a length of
 void Normalize()
 </div>
 
-Turns this vector into a normalized vector (vector with a length of 1) from the
-current vector. Will not work properly if the vector has a length of zero.
+Turns this vector into a normalized vector (vector with
+a length of 1) from the current vector. Will not work properly if
+the vector has a length of zero.
 
 
 

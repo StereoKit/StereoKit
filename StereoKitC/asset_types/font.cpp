@@ -4,6 +4,8 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../libraries/stb_rect_pack.h"
 #include "../libraries/stb_truetype.h"
+#include "../systems/platform/platform_utils.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
 
@@ -29,34 +31,24 @@ font_t font_create(const char *file) {
 	result = (font_t)assets_allocate(asset_type_font);
 	assets_set_id(result->header, file);
 
-	FILE *fp;
-	if (fopen_s(&fp, assets_file(file), "rb") != 0 || fp == nullptr)
+	unsigned char *data;
+	size_t length;
+	if (!platform_read_file(file, (void**)&data, &length))
 		return nullptr;
 
-	// Get length of file
-	fseek(fp, 0L, SEEK_END);
-	size_t length = ftell(fp);
-	rewind(fp);
-
-	// Read the data
-	unsigned char *data = (unsigned char *)malloc(sizeof(unsigned char) *length);
-	if (data == nullptr) { fclose(fp); return nullptr; }
-	fread(data, 1, length, fp);
-	fclose(fp);
-
 	// Load and pack font data
-	const int w = 512;
-	const int h = 512;
+	const int w = 1024;
+	const int h = 1024;
 	const float size = 64;
 	const int start_char = 32;
 	//stbtt_fontinfo font;
 	uint8_t *bitmap;
 	stbtt_pack_context pc;
-	stbtt_packedchar chars[128];
+	stbtt_packedchar chars[256];
 	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
-	bitmap = (uint8_t*)malloc(sizeof(uint8_t) * w * h);
+	bitmap = sk_malloc_t<uint8_t>(w * h);
 	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
-	stbtt_PackFontRange(&pc, data, 0, size, start_char, 95, chars);
+	stbtt_PackFontRange(&pc, data, 0, size, start_char, 254, chars);
 	stbtt_PackEnd(&pc);
 	free(data);
 	
@@ -73,10 +65,10 @@ font_t font_create(const char *file) {
 			chars[i].xadvance/size,
 		};
 	}
-	result->character_height = fabsf(chars['T'].yoff/size);
+	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
 
 	// Convert to color data
-	color32 *colors = (color32*)malloc(w * h * sizeof(color32));
+	color32 *colors = sk_malloc_t<color32>(w * h);
 	for (size_t i = 0; i < w*h; i++) {
 		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}

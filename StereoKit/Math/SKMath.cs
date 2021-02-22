@@ -51,5 +51,16 @@ namespace StereoKit
 			if (delta < 0) delta += 360;
 			return delta > 180 ? delta-180 : delta;
 		}
+
+		/// <summary>Modulus, works better than '%' for negative values.
+		/// </summary>
+		/// <param name="x">Numerator</param>
+		/// <param name="mod">Denominator</param>
+		/// <returns>x modulus mod</returns>
+		public static int Mod(int x, int mod)
+		{
+			int r = x % mod;
+			return r<0 ? r+mod : r;
+		}
 	}
 }

@@ -164,7 +164,7 @@ namespace StereoKit.Framework
 			// Push the Menu's pose onto the stack, so we can draw, and work
 			// in local space.
 			Hierarchy.Push(menuPose.ToMatrix(activation));
-            
+
 			// Calculate the status of the menu!
 			Vec3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
 			Vec3  tipLocal = Hierarchy.ToLocal(tipWorld);
@@ -179,7 +179,7 @@ namespace StereoKit.Framework
 			while (fingerAngle < 0) fingerAngle += 360;
 			int angleId = (int)(fingerAngle / step);
 			Lines.Add(Vec3.Zero, new Vec3(tipLocal.x, tipLocal.y, 0), Color.White * 0.5f, 0.001f);
-            
+
 			// Draw the menu inner and outer circles
 			Lines.Add(circle);
 			Lines.Add(innerCircle);
@@ -194,7 +194,7 @@ namespace StereoKit.Framework
 				Lines.Add(dir * minDist, dir * maxDist, highlightLine ? Color.White : Color.White*0.5f, highlightLine?0.002f:0.001f);
 				Text .Add(layer.items[i].name, Matrix.TRS(Vec3.AngleXY(currAngle + halfStep)*midDist, Quat.FromAngles(0, 0, currAngle + halfStep - 90), highlightText?1.2f:1), TextAlign.XCenter | TextAlign.YBottom);
 			}
-            
+
 			// Done with local work
 			Hierarchy.Pop();
 
@@ -253,12 +253,12 @@ namespace StereoKit.Framework
 			if (!hand.IsTracked)
 				return false;
 
-			Vec3 palmDirection   = (hand.palm.Forward).Normalized();
-			Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized();
+			Vec3 palmDirection   = hand.palm.Forward.Normalized;
+			Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized;
 
 			return Vec3.Dot(palmDirection, directionToHead) > 0.5f;
 		}
-        
+
 		#endregion
 	}
 }

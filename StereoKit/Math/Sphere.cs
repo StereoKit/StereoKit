@@ -43,15 +43,15 @@ namespace StereoKit
 		/// <returns>True if intersection occurs, false if it doesn't. Refer to the 'at'
 		/// parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Ray ray, out Vec3 at) =>
-			NativeAPI.sphere_ray_intersect(this, ray, out at);
+		public bool Intersect(Ray ray, out Vec3 at)
+			=> NativeAPI.sphere_ray_intersect(this, ray, out at);
 
 		/// <summary>A fast check to see if the given point is contained in or on 
 		/// a sphere!</summary>
 		/// <param name="point">A point in the same coordinate space as this sphere.</param>
 		/// <returns>True if in or on the sphere, false if outside.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Contains(Vec3 point) =>
-			NativeAPI.sphere_point_contains(this, point);
+		public bool Contains(Vec3 point)
+			=> NativeAPI.sphere_point_contains(this, point);
 	}
 }

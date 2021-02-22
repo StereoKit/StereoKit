@@ -1,85 +1,105 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Platforms>x64;ARM64</Platforms>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<Platforms>x64;ARM64</Platforms>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\bin\</OutputPath>
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<OutputPath>..\bin\</OutputPath>
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutputPath>..\bin</OutputPath>
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+		<OutputPath>..\bin</OutputPath>
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+	</PropertyGroup>
 
-  <!-- NuGet package -->
-  <PropertyGroup>
-    <Id>StereoKit</Id>
-    <Version>0.2.0</Version>
-    <Title>StereoKit</Title>
-    <Authors>Nick Klingensmith</Authors>
-    <PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
-    <PackageIcon>images\StereoKitLogo64.png</PackageIcon>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
-    <FileVersion>0.1.0.0</FileVersion>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|x64'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <OutputPath>..\bin</OutputPath>
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|x64'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|ARM64'">
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-    <OutputPath>..\bin</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|ARM64'">
-    <DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-    <OutputPath>..\bin</OutputPath>
-  </PropertyGroup>
+	<!-- NuGet package -->
+	<PropertyGroup>
+		<Id>StereoKit</Id>
+		<Version>0.3.0</Version>
+		<Title>StereoKit</Title>
+		<Authors>Nick Klingensmith</Authors>
+		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
+		<PackageIcon>images\StereoKitLogo64.png</PackageIcon>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
+		<FileVersion>0.1.0.0</FileVersion>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|x64'">
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<OutputPath>..\bin</OutputPath>
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|x64'">
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|ARM64'">
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+		<OutputPath>..\bin</OutputPath>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|ARM64'">
+		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+		<OutputPath>..\bin</OutputPath>
+	</PropertyGroup>
 
-  <!-- Files and DLLs that are needed for the NuGet package -->
-  <ItemGroup>
-    <None Include="..\Documentation\img\StereoKitLogo64.png" Pack="true" PackagePath="images\" />
+	<!-- Files and DLLs that are needed for the NuGet package -->
+	<ItemGroup>
+		<None Include="..\Tools\img\StereoKitLogo64.png" Pack="true" PackagePath="images\" />
 
-    <!-- Win32 DLLs -->
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\LeapC.dll" PackagePath="runtimes\win-x64\native\" />
-    <Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
+		<!-- Win32 DLLs -->
+		<Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
+		<Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
 
-    <!-- UWP DLLs -->
-    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\native\" />
-    <Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\native\" />
+		<!-- Android Libraries -->
+		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libStereoKitC.so" PackagePath="runtimes\android-arm64-v8a\native" />
+		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\StereoKitC.sym" PackagePath="runtimes\android-arm64-v8a\native" />
+		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libopenxr_loader.so" PackagePath="runtimes\android-arm64-v8a\native" />
 
-    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
-    <Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
+		<!-- Linux Libraries -->
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\libStereoKitC.so" PackagePath="runtimes\linux-x64\native\" />
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\StereoKitC.sym" PackagePath="runtimes\linux-x64\native\" />
 
-    <Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
-    
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
+		<!-- UWP DLLs -->
+		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\native\" />
+		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\native\" />
+
+		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
+		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
+
+		<!-- Shader compile tools -->
+		<Content Pack="true" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />
+		<Content Pack="true" Include="..\Tools\dxil.dll" PackagePath="tools\" />
+		<Content Pack="true" Include="..\Tools\dxcompiler.dll" PackagePath="tools\" />
+		<Content Pack="true" Include="..\Tools\include\*.*" PackagePath="tools\include\" />
+
+		<!-- Targets and copies and commands for the NuGet package once it's in
+		the user's project. -->
+		<Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
+		<Content Pack="true" Include="SKShaders.targets" PackagePath="build\" />
+		<Content Pack="true" Include="SKShader.xml" PackagePath="build\" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
+		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
+	</ItemGroup>
 </Project>

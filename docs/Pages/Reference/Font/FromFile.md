@@ -27,14 +27,14 @@ We can use a TextStyle object to control how text gets displayed!
 ```csharp
 TextStyle style;
 ```
-In initialization, we can create the style from a font, a size, a
-material, and a base color.
+In initialization, we can create the style from a font, a size,
+and a base color. Overloads for MakeStyle can allow you to
+override the default font shader, or provide a specific Material.
 ```csharp
 style = Text.MakeStyle(
-    Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
-    2 * U.cm,
-lt.MaterialFont.Copy(), 
-    Color.HSV(0.05f, 0.7f, 0.8f));
+	Font.FromFile("C:/Windows/Fonts/Arial.ttf"), 
+	2 * U.cm,
+	Color.HSV(0.55f, 0.62f, 0.93f));
 ```
 Then it's pretty trivial to just draw some text on the screen! Just call
 Text.Add on update. If you don't have a TextStyle available, calling it
@@ -42,12 +42,12 @@ without one will just fall back on the default style.
 ```csharp
 // Text with an explicit text style
 Text.Add(
-    "Here's\nSome\nMulti-line\nText!!", 
-    Matrix.TRS(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
-    style);
+	"Here's\nSome\nMulti-line\nText!!", 
+	Matrix.TR(new Vec3(0.1f, 0, 0), Quat.LookDir(0, 0, 1)),
+	style);
 // Text using the default text style
 Text.Add(
-    "Here's\nSome\nMulti-line\nText!!", 
-    Matrix.TRS(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
+	"Here's\nSome\nMulti-line\nText!!", 
+	Matrix.TR(new Vec3(-0.1f, 0, 0), Quat.LookDir(0, 0, 1)));
 ```
 

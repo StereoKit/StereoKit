@@ -23,10 +23,9 @@ Matrices are prominently used within shaders for mesh transforms!
 
 |  |  |
 |--|--|
-|[Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
-|[TransformDirection]({{site.url}}/Pages/Reference/Matrix/TransformDirection.html)|Transforms a point through the Matrix, but excluding translation! This is great for transforming vectors that are -directions- rather than points in space. Use this to transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.|
-|[TransformPoint]({{site.url}}/Pages/Reference/Matrix/TransformPoint.html)|Transforms a point through the Matrix! This is basically just multiplying a vector (x,y,z,1) with the Matrix.|
-|[TransformRay]({{site.url}}/Pages/Reference/Matrix/TransformRay.html)|Shorthand to transform a ray though the Matrix! This properly transforms the position with the point transform method, and the direction with the direction transform method. Does not normalize, nor does it preserve a normalized direction if the Matrix contains scale data.|
+|[Invert]({{site.url}}/Pages/Reference/Matrix/Invert.html)|Inverts this Matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
+|[Transform]({{site.url}}/Pages/Reference/Matrix/Transform.html)|Transforms a point through the Matrix! This is basically just multiplying a vector (x,y,z,1) with the Matrix.|
+|[TransformNormal]({{site.url}}/Pages/Reference/Matrix/TransformNormal.html)|Transforms a point through the Matrix, but excluding translation! This is great for transforming vectors that are -directions- rather than points in space. Use this to transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.|
 
 
 ## Static Fields and Properties
@@ -34,13 +33,17 @@ Matrices are prominently used within shaders for mesh transforms!
 |  |  |
 |--|--|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Identity]({{site.url}}/Pages/Reference/Matrix/Identity.html)|An identity Matrix is the matrix equivalent of '1'! Transforming anything by this will leave it at the exact same place.|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
 
 
 ## Static Methods
 
 |  |  |
 |--|--|
+|[R]({{site.url}}/Pages/Reference/Matrix/R.html)|Create a rotation matrix from a Quaternion.|
+|[S]({{site.url}}/Pages/Reference/Matrix/S.html)|Creates a scaling Matrix, where scale can be different on each axis (non-uniform).|
 |[T]({{site.url}}/Pages/Reference/Matrix/T.html)|Translate. Creates a translation Matrix!|
+|[TR]({{site.url}}/Pages/Reference/Matrix/TR.html)|Translate, Rotate. Creates a transform Matrix using these components!|
 |[TRS]({{site.url}}/Pages/Reference/Matrix/TRS.html)|Translate, Rotate, Scale. Creates a transform Matrix using all these components!|
 |[TS]({{site.url}}/Pages/Reference/Matrix/TS.html)|Translate, Scale. Creates a transform Matrix using both these components!|
 

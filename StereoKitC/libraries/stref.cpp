@@ -6,9 +6,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#define STB_DS_IMPLEMENTATION
-#include "stb_ds.h"
-
 ///////////////////////////////////////////
 
 char *string_copy(const char *aString) {
@@ -56,6 +53,7 @@ char *string_append(char *aBase, uint32_t aCount, ...) {
 ///////////////////////////////////////////
 
 bool  string_eq(const char *a, const char *b) {
+	if (a == nullptr || b == nullptr) return false;
 	while (*a != '\0' && *b != '\0') {
 		if (*a != *b)
 			return false;
@@ -318,10 +316,7 @@ bool stref_nextword(stref_t &line, stref_t &word, char separator, char capture_c
 
 	char *curr = (char*)(word.start + word.length);
 	if (*curr == separator) curr++;
-	while (*curr == ' ' || *curr == '\t') { 
-		if (*curr == separator && separator != ' ') {
-			int x = 0;
-		}
+	while (*curr == ' ' || *curr == '\t') {
 		curr++; 
 	}
 	if ( *curr == '\n' || *curr == '\r' || *curr == '\0') return false;
@@ -391,34 +386,6 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 	}
 	stref_trim(result);
 	return result;
-}
-
-///////////////////////////////////////////
-
-#pragma warning(push)
-#pragma warning(disable: 4706)
-
-// FNV-1a hash (64bit): http://isthe.com/chongo/tech/comp/fnv/, start_hash = 14695981039346656037
-uint64_t  string_hash(const char* string, uint64_t start_hash) {
-	uint64_t hash = start_hash;
-	uint8_t  c;
-	while (c = *string++)
-		hash = (hash ^ c) * 1099511628211;
-	return hash;
-}
-
-#pragma warning(pop)
-
-///////////////////////////////////////////
-
-uint64_t stref_hash(const stref_t &ref) {
-	uint64_t hash = 14695981039346656037;
-	uint8_t  c;
-	for (uint32_t i=0; i<ref.length; i++) {
-		c = *(ref.start + i);
-		hash = (hash ^ c) * 1099511628211;
-	}
-	return hash;
 }
 
 ///////////////////////////////////////////

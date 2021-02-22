@@ -6,5 +6,6 @@ description: Is the hand making a grip gesture right now? Fingers next to the pa
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).grip
 
 ## Description
-Is the hand making a grip gesture right now? Fingers next to the palm.
+Is the hand making a grip gesture right now? Fingers
+next to the palm.
 

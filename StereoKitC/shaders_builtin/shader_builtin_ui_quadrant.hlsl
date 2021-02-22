@@ -1,31 +1,32 @@
-// [name] sk/default_ui_quadrant
+#include "stereokit.hlsli"
 
-#include <stereokit>
+//--name = sk/default_ui_quadrant
+//--color:color = 1, 1, 1, 1
 
-cbuffer ParamBuffer : register(b2) {
-	// [param] color color {1, 1, 1, 1}
-	float4 _color;
-};
+float4 color;
+
 struct vsIn {
-	float4 pos      : SV_POSITION;
-	float4 color    : COLOR0;
-	float3 norm     : NORMAL;
+	float4 pos      : SV_Position;
+	float3 norm     : NORMAL0;
 	float2 quadrant : TEXCOORD0;
+	float4 color    : COLOR0;
 };
 struct psIn {
-	float4 pos     : SV_POSITION;
+	float4 pos     : SV_Position;
+	float3 normal  : NORMAL0;
 	float4 color   : COLOR0;
 	float4 world   : TEXCOORD1;
-	float3 normal  : NORMAL;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
-	psIn output;
-
+	psIn o;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
+	
 	// Extract scale from the matrix
 	float4x4 world_mat = sk_inst[id].world;
-	float2 scale = float2(
+	float2   scale     = float2(
 		length(world_mat._11_12_13),
 		length(world_mat._21_22_23)
 	);
@@ -38,17 +39,16 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	sized_pos.xy = input.pos.xy + input.quadrant * scale * 0.5;
 	sized_pos.zw = input.pos.zw;
 
-	output.world  = mul(sized_pos, world_mat);
-	output.pos    = mul(output.world, sk_viewproj[sk_inst[id].view_id]);
-	output.normal = normalize(mul(input.norm, (float3x3)world_mat));
+	o.world  = mul(sized_pos, world_mat);
+	o.pos    = mul(o.world, sk_viewproj[o.view_id]);
+	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
-	output.view_id    = sk_inst[id].view_id;
-	output.color      = lerp(_color, sk_inst[id].color, input.color.a);
-	output.color.rgb *= Lighting(output.normal);
-	return output;
+	o.color      = lerp(color, sk_inst[id].color, input.color.a);
+	o.color.rgb *= Lighting(o.normal);
+	return o;
 }
 
-float4 ps(psIn input) : SV_TARGET {
+float4 ps(psIn input) : SV_TARGET{
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {

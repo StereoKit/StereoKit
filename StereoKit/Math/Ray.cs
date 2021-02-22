@@ -24,7 +24,7 @@ namespace StereoKit
 		/// direction.</param>
 		public Ray(Vec3 position, Vec3 direction)
 		{
-			this.position = position;
+			this.position  = position;
 			this.direction = direction;
 		}
 
@@ -36,8 +36,8 @@ namespace StereoKit
 		/// <returns>True if there's an intersetion, false if not. Refer to
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Plane  plane,  out Vec3 at) =>
-			NativeAPI.plane_ray_intersect(plane, this, out at);
+		public bool Intersect(Plane plane, out Vec3 at)
+			=> NativeAPI.plane_ray_intersect(plane, this, out at);
 
 		/// <summary>Checks the intersection of this ray with a sphere!
 		/// </summary>
@@ -49,8 +49,8 @@ namespace StereoKit
 		/// <returns>True if intersection occurs, false if it doesn't. Refer 
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Sphere sphere, out Vec3 at) =>
-			NativeAPI.sphere_ray_intersect(sphere, this, out at);
+		public bool Intersect(Sphere sphere, out Vec3 at)
+			=> NativeAPI.sphere_ray_intersect(sphere, this, out at);
 
 		/// <summary>Checks the intersection of this ray with a bounding box!
 		/// </summary>
@@ -62,8 +62,8 @@ namespace StereoKit
 		/// <returns>True if intersection occurs, false if it doesn't. Refer 
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public bool Intersect(Bounds bounds, out Vec3 at) =>
-			NativeAPI.bounds_ray_intersect(bounds, this, out at);
+		public bool Intersect(Bounds bounds, out Vec3 at)
+			=> NativeAPI.bounds_ray_intersect(bounds, this, out at);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -78,8 +78,8 @@ namespace StereoKit
 		/// must be transformed back into world space later.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt) =>
-			NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
+		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
 
 		/// <summary>A convenience function that creates a ray from point a, 
 		/// towards point b. Resulting direction is not normalized.</summary>
@@ -88,5 +88,16 @@ namespace StereoKit
 		/// <returns>A ray from point a to point b. Not normalized.</returns>
 		public static Ray FromTo(Vec3 a, Vec3 b)
 			=> new Ray(a, b-a);
+
+		/// <summary>Gets a point along the ray! This is basically just
+		/// position + direction*percent. If Ray.direction is normalized, 
+		/// then percent is functionally distance, and can be used to find
+		/// the point a certain distance out along the ray.</summary>
+		/// <param name="percent">How far along the ray should we get the 
+		/// point at? This is in multiples of Ray.direction's magnitude. If
+		/// Ray.direction is normalized, this is functionally the distance.
+		/// </param>
+		/// <returns>The point at position + direction*percent.</returns>
+		public Vec3 At(float percent) => position + direction*percent;
 	}
 }
