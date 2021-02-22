@@ -318,6 +318,14 @@ bool openxr_init() {
 	xr_has_articulated_hands = false;
 #endif
 
+	// Oculus's depth LSR does something bad here, so we'll turn it off for 
+	// the moment until I can figure out what it is.
+	if (strcmp(properties.systemName, "Miramar") == 0 || // Quest 2 on Desktop reports as Miramar
+		strcmp(properties.systemName, "Quest")   == 0 || // Quest 1 on Desktop reports as Quest
+		properties.vendorId == 4294955582) {
+		xr_has_depth_lsr = false;
+	}
+
 	if (xr_has_articulated_hands) log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_depth_lsr)         log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
