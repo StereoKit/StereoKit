@@ -36,7 +36,7 @@ Follow [this guide]({{site.url}}/Pages/Guides/Getting-Started.html) for a detail
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
-```CSharp
+```csharp
 using StereoKit;
 
 class Program
@@ -55,7 +55,7 @@ class Program
 	}
 }
 ```
-![Hello World](/Tools/img/StereoKitMin.gif)
+![Hello World]({{site.url}}/img/StereoKitMin.gif)
 
 Interested in the [source for StereoKit](https://github.com/maluoi/StereoKit)? It's open and MIT licensed! You don't need to build from source to use it, but if you want to, it's there for you to modify or debug with!
 
