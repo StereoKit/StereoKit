@@ -130,7 +130,6 @@ namespace StereoKit.Framework
 					observer = new SpatialSurfaceObserver();
 					observer.ObservedSurfacesChanged += OnSurfaceUpdate;
 					UpdateBounds(center, radius);
-					Log.Info("Got Observer");
 				}
 			};
 
@@ -139,7 +138,6 @@ namespace StereoKit.Framework
 			if (locator != null) {
 				locator.LocatabilityChanged += OnLocated;
 				OnLocated(locator, null);
-				Log.Info("Located");
 			}
 			return true;
 		}
@@ -150,7 +148,6 @@ namespace StereoKit.Framework
 			frame  = loc.CreateStationaryFrameOfReferenceAtCurrentLocation();
 			anchor = SpatialAnchor.TryCreateRelativeTo(frame.CoordinateSystem);
 			root   = World.FromPerceptionAnchor(anchor).ToMatrix();
-			Log.Info(""+World.FromPerceptionAnchor(anchor));
 			UpdateBounds(center, radius);
 		}
 
@@ -166,7 +163,6 @@ namespace StereoKit.Framework
 
 				mesh.localTransform = s.CoordinateSystem.TryGetTransformTo(frame.CoordinateSystem) ?? Matrix.Identity;
 				mesh.transform      = mesh.localTransform * root;
-				Log.Info(mesh.transform.Transform(Vec3.Zero).ToString());
 			}
 			queuedUpdates.Clear();
 		}
