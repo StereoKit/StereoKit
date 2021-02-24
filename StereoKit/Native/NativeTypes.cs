@@ -380,10 +380,11 @@ namespace StereoKit
 	public enum Cull
 	{
 		/// <summary>Discard if the back of the triangle face is pointing 
-		/// towards the camera.</summary>
+		/// towards the camera. This is the default behavior.</summary>
 		Back = 0,
 		/// <summary>Discard if the front of the triangle face is pointing 
-		/// towards the camera.</summary>
+		/// towards the camera. This is opposite the default behavior.
+		/// </summary>
 		Front,
 		/// <summary>No culling at all! Draw the triangle regardless of which
 		/// way it's pointing.</summary>
