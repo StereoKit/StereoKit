@@ -24,13 +24,12 @@
         </header>
 
         <div id="search-bar">
-            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.." />
+            <input type="text" id="search" oninput="updateSearch(this.value)" placeholder="Search.." aria-label="docs search box" />
             <span onclick="var input = document.getElementById('search'); input.value = ''; updateSearch(''); console.log(input);"></span>
         </div>
 
         <div id="breadcrumbs">
-            <a href="https://github.com/maluoi/StereoKit">View source on Github</a>
-            <a href="https://discord.gg/FG64bvmE">Say hi on Discord</a>
+            <a href="https://github.com/maluoi/StereoKit">View source on Github</a> - <a href="https://discord.gg/FG64bvmE">Say hi on Discord</a>
         </div>
 
         <nav id="nav">

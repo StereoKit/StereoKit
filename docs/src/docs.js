@@ -73,7 +73,8 @@ function renderFolder(folder, parent, hierarchy) {
         var expander = document.createElement("input");
         expander.className = "tree-branch-check";
         expander.type      = "checkbox";
-        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); console.log(folder.name); };
+        expander.setAttribute('aria-label', "Expand " + folder.name);
+        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); };
         folder.check = expander;
         folderItem.appendChild(expander);
 
@@ -83,14 +84,14 @@ function renderFolder(folder, parent, hierarchy) {
 
     // Link to the actual document
     var link = document.createElement("a");
-    link.href      = "{{site.url}}/"+hierarchy+"/"+folder.name.replace(" ", "-")+".html";
+    link.href      = "{{site.url}}/"+hierarchy+"/"+folder.name.replace(/ /g, '-')+".html";
     link.innerText = folder.name;
     folderItem.appendChild(link);
 
     // Render sub-folders
     if (hasChildren) {
         // Update the URL hierarchy
-        hierarchy += "/"+folder.name.replace(" ", "-");
+        hierarchy += "/"+folder.name.replace(/ /g, '-');
 
         // We need a sub-menu for the folding to work
         var subList = document.createElement("ul");

@@ -5,23 +5,23 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 ---
 <table style="max-width:34em;">
 <tr><td style="width:25%;">
-<img src="{{site.url}}/img/StereoKitLogoLight.svg" />
+<img src="{{site.url}}/img/StereoKitLogoLight.svg" alt="StereoKit Logo" />
 </td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates">Install</a> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/maluoi/StereoKit/">View Source</a></p></td></tr></table>
 
 <video autoplay loop muted><source src='{{site.url}}/img/SKHighlightReel.mp4' type='video/mp4'>Your browser doesn't seem to play .mp4s!</video>
 
 ## StereoKit Features:
-
-- Platforms: HoloLens 2, Windows Mixed Reality, Oculus Desktop, eventually everywhere OpenXR is!
-- Builds your application in seconds, not minutes
-- Input: articulated hands, pointers, keyboard/mouse
+- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado Linux, and eventually everywhere OpenXR is!
+- Flat screen mode with input emulation for easy development
+- Builds your application to device in seconds, not minutes
+- Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
 - Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, procedural
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Physics
-- Performance-by-default render pipeline
-- Flexible shader/material system
+- Performance-by-default instanced render pipeline
+- Flexible shader/material system with built-in PBR
 - Documentation is generated directly from the source code, including screenshots
 
 ## About
@@ -36,6 +36,25 @@ Follow [this guide]({{site.url}}/Pages/Guides/Getting-Started.html) for a detail
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
+```csharp
+using StereoKit;
+
+class Program
+{
+	static void Main(string[] args)
+	{
+		SK.Initialize(new SKSettings{ appName = "Project" });
+
+		Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
+
+		while (SK.Step(() => {
+			helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+		}));
+
+		SK.Shutdown();
+	}
+}
+```
 ![Hello World]({{site.url}}/img/StereoKitMin.gif)
 
 Interested in the [source for StereoKit](https://github.com/maluoi/StereoKit)? It's open and MIT licensed! You don't need to build from source to use it, but if you want to, it's there for you to modify or debug with!
