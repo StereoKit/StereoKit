@@ -18,9 +18,10 @@
 
 		internal const string font = "default/font";
 
-		internal const string meshQuad   = "default/mesh_quad";
-		internal const string meshCube   = "default/mesh_cube";
-		internal const string meshSphere = "default/mesh_sphere";
+		internal const string meshQuad       = "default/mesh_quad";
+		internal const string meshScreenQuad = "default/mesh_screen_quad";
+		internal const string meshCube       = "default/mesh_cube";
+		internal const string meshSphere     = "default/mesh_sphere";
 
 		internal const string shader         = "default/shader";
 		internal const string shaderPbr      = "default/shader_pbr";

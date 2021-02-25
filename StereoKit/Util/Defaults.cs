@@ -72,11 +72,17 @@
 		/// lighting.</summary>
 		public static Tex Cubemap  { get; private set; }
 
-		/// <summary>A default quad mesh, 2 triangles, 4 verts, from (-1,-1,0) 
-		/// to (1,1,0) and facing forward on the Z axis (0,0,-1). White 
-		/// vertex colors, and UVs from (0,0) at vertex (-1,-1,0) to (1,1) at 
-		/// vertex (1,1,0).</summary>
+		/// <summary>A default quad mesh, 2 triangles, 4 verts, from 
+		/// (-.5,-.5,0) to (.5,.5,0) and facing forward on the Z axis 
+		/// (0,0,-1). White vertex colors, and UVs from (0,0) at vertex 
+		/// (-1,-1,0) to (1,1) at vertex (1,1,0).</summary>
 		public static Mesh MeshQuad   { get; private set; }
+		/// <summary>A default quad mesh designed for full-screen rendering.
+		/// 2 triangles, 4 verts, from (-1,-1,0) to (1,1,0) and facing
+		/// backwards on the Z axis (0,0,1). White vertex colors, and UVs
+		/// from (0,0) at vertex (-1,-1,0) to (1,1) at vertex (1,1,0).
+		/// </summary>
+		public static Mesh MeshScreenQuad { get; private set; }
 		/// <summary>A cube with dimensions of (1,1,1), this is equivalent to
 		/// Mesh.GenerateCube(Vec3.One).</summary>
 		public static Mesh MeshCube   { get; private set; }
@@ -139,9 +145,10 @@
 			TexRough = Tex.Find(DefaultIds.texRough);
 			Cubemap  = Tex.Find(DefaultIds.cubemap);
 
-			MeshQuad   = Mesh.Find(DefaultIds.meshQuad);
-			MeshCube   = Mesh.Find(DefaultIds.meshCube);
-			MeshSphere = Mesh.Find(DefaultIds.meshSphere);
+			MeshQuad       = Mesh.Find(DefaultIds.meshQuad);
+			MeshScreenQuad = Mesh.Find(DefaultIds.meshScreenQuad);
+			MeshCube       = Mesh.Find(DefaultIds.meshCube);
+			MeshSphere     = Mesh.Find(DefaultIds.meshSphere);
 
 			Shader         = Shader.Find(DefaultIds.shader);
 			ShaderPbr      = Shader.Find(DefaultIds.shaderPbr);

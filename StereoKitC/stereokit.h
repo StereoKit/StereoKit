@@ -836,6 +836,7 @@ static const char *default_id_tex_rough            = "default/tex_rough";
 static const char *default_id_cubemap              = "default/cubemap";
 static const char *default_id_font                 = "default/font";
 static const char *default_id_mesh_quad            = "default/mesh_quad";
+static const char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";
 static const char *default_id_mesh_cube            = "default/mesh_cube";
 static const char *default_id_mesh_sphere          = "default/mesh_sphere";
 static const char *default_id_mesh_lefthand        = "default/mesh_lefthand";

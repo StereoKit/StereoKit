@@ -436,7 +436,7 @@ bool render_init() {
 	render_set_clip(render_clip_planes.x, render_clip_planes.y);
 
 	// Set up resources for doing blit operations
-	render_blit_quad = mesh_find(default_id_mesh_quad);
+	render_blit_quad = mesh_find(default_id_mesh_screen_quad);
 	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox

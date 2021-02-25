@@ -292,7 +292,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 	int u   = ((i+1) / 2)   % 2; // U: 0,1,1,0
 	int v   = (i / 2)       % 2; // V: 0,0,1,1
 
-	uv   = { (float)u, (float)v };
+	uv   = { (float)u, 1.0f-(float)v };
 	norm = { nx*neg, ny*neg, nz*neg };
 	pos  = {
 		size.x * (nx ? neg : ny ? (u?-1:1)*neg : (u?1:-1)*neg),
@@ -314,8 +314,8 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
 	vind_t *inds  = sk_malloc_t<vind_t>(ind_count );
 
-	vec3 right = vec3_cross(plane_normal, plane_top_direction);
-	vec3 up    = vec3_cross(plane_normal, right);
+	vec3 right = vec3_cross(plane_top_direction, plane_normal);
+	vec3 up    = vec3_cross(right,               plane_normal);
 
 	// Make vertices
 	for (vind_t y = 0; y < subd; y++) {
@@ -333,13 +333,13 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 	int ind = 0;
 	for (vind_t y = 0; y < subd-1; y++) {
 	for (vind_t x = 0; x < subd-1; x++) {
-			inds[ind++] =  x    +  y    * subd;
+			inds[ind++] = (x+1) + (y+1) * subd;
 			inds[ind++] = (x+1) +  y    * subd;
-			inds[ind++] = (x+1) + (y+1) * subd;
-
 			inds[ind++] =  x    +  y    * subd;
-			inds[ind++] = (x+1) + (y+1) * subd;
+
 			inds[ind++] =  x    + (y+1) * subd;
+			inds[ind++] = (x+1) + (y+1) * subd;
+			inds[ind++] =  x    +  y    * subd;
 	} }
 
 	mesh_set_verts(result, verts, vert_count);
@@ -499,7 +499,7 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	float radius = diameter / 2;
 
 	vind_t subd = (vind_t)subdivisions;
-	int vert_count = subdivisions * 4 + 2;
+	int vert_count = (subdivisions+1) * 4 + 2;
 	int ind_count  = subdivisions * 12;
 	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
 	vind_t *inds  = sk_malloc_t<vind_t>(ind_count);
@@ -514,28 +514,31 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	vec3 z_off  = dir * (depth / 2.f);
 	vind_t ind = 0;
 
-	for (vind_t i = 0; i < subd; i++) {
-		float ang = ((float)i / subd) * (float)M_PI * 2;
-		float x = cosf(ang);
-		float y = sinf(ang);
+	for (vind_t i = 0; i <= subd; i++) {
+		float u   = ((float)i / subd);
+		float ang = u * (float)M_PI * 2;
+		float x   = cosf(ang);
+		float y   = sinf(ang);
 		vec3 normal  = axis_x * x + axis_y * y;
 		vec3 top_pos = normal*radius + z_off;
 		vec3 bot_pos = normal*radius - z_off;
 
 		// strip first
-		verts[i * 4  ] = { top_pos,  normal, {x,y}, {255,255,255,255} };
-		verts[i * 4+1] = { bot_pos,  normal, {x,y}, {255,255,255,255} };
+		verts[i * 4  ] = { top_pos,  normal, {u,0}, {255,255,255,255} };
+		verts[i * 4+1] = { bot_pos,  normal, {u,1}, {255,255,255,255} };
 		// now circular faces
-		verts[i * 4+2] = { top_pos,  dir,    {x,y}, {255,255,255,255} };
-		verts[i * 4+3] = { bot_pos, -dir,    {x,y}, {255,255,255,255} };
+		verts[i * 4+2] = { top_pos,  dir,    {u,0}, {255,255,255,255} };
+		verts[i * 4+3] = { bot_pos, -dir,    {u,1}, {255,255,255,255} };
 
-		vind_t in = (i + 1) % subd;
+		if (i == subd) continue;
+
+		vind_t in = (i + 1) % (subd+1);
 		// Top slice
 		inds[ind++] = i  * 4 + 2;
 		inds[ind++] = in * 4 + 2;
-		inds[ind++] = subd * 4;
+		inds[ind++] = (subd+1) * 4;
 		// Bottom slice
-		inds[ind++] = subd * 4+1;
+		inds[ind++] = (subd+1) * 4+1;
 		inds[ind++] = in * 4 + 3;
 		inds[ind++] = i  * 4 + 3;
 		// Now edge strip quad
@@ -547,8 +550,8 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 		inds[ind++] = i  * 4;
 	}
 	// center points for the circle
-	verts[subdivisions*4]   = {  z_off,  dir, {.5f,.5f}, {255,255,255,255} };
-	verts[subdivisions*4+1] = { -z_off, -dir, {.5f,.5f}, {255,255,255,255} };
+	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
+	verts[(subdivisions+1)*4+1] = { -z_off, -dir, {0.5f,0.99f}, {255,255,255,255} };
 
 	mesh_set_verts(result, verts, vert_count);
 	mesh_set_inds (result, inds,  ind_count);

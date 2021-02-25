@@ -16,6 +16,7 @@ tex_t        sk_default_tex_flat;
 tex_t        sk_default_tex_rough;
 tex_t        sk_default_cubemap;
 mesh_t       sk_default_quad;
+mesh_t       sk_default_screen_quad;
 mesh_t       sk_default_sphere;
 mesh_t       sk_default_cube;
 shader_t     sk_default_shader;
@@ -92,22 +93,35 @@ bool defaults_init() {
 	render_set_skylight(lighting);
 	render_enable_skytex(true);
 
-	// Default rendering quad
+	// Default quad mesh
 	sk_default_quad = mesh_create();
 	vert_t verts[4] = {
-		{ vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
-		{ vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
-		{ vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
-		{ vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} }, };
-	vind_t inds[6] = { 0,1,2, 0,2,3 };
+		{ vec3{-0.5f,-0.5f,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
+		{ vec3{ 0.5f,-0.5f,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} },
+		{ vec3{ 0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{-0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} }, };
+	vind_t inds[6] = { 2,1,0, 3,2,0 };
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);
-	mesh_set_id   (sk_default_quad, default_id_mesh_quad);
+	
+	// Default rendering quad
+	sk_default_screen_quad = mesh_create();
+	vert_t sq_verts[4] = {
+		{ vec3{-1,-1,0}, vec3{0,0,1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{ 1,-1,0}, vec3{0,0,1}, vec2{1,0}, color32{255,255,255,255} },
+		{ vec3{ 1, 1,0}, vec3{0,0,1}, vec2{1,1}, color32{255,255,255,255} },
+		{ vec3{-1, 1,0}, vec3{0,0,1}, vec2{0,1}, color32{255,255,255,255} }, };
+	vind_t sq_inds[6] = { 0,1,2, 0,2,3 };
+	mesh_set_verts(sk_default_screen_quad, sq_verts, 4);
+	mesh_set_inds (sk_default_screen_quad, sq_inds,  6);
+	
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
 
-	mesh_set_id(sk_default_cube,   default_id_mesh_cube);
-	mesh_set_id(sk_default_sphere, default_id_mesh_sphere);
+	mesh_set_id(sk_default_quad,        default_id_mesh_quad);
+	mesh_set_id(sk_default_screen_quad, default_id_mesh_screen_quad);
+	mesh_set_id(sk_default_cube,        default_id_mesh_cube);
+	mesh_set_id(sk_default_sphere,      default_id_mesh_sphere);
 
 	// Shaders
 	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
@@ -254,7 +268,10 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_quadrant);
 	shader_release  (sk_default_shader_sky);
+	mesh_release    (sk_default_cube);
+	mesh_release    (sk_default_sphere);
 	mesh_release    (sk_default_quad);
+	mesh_release    (sk_default_screen_quad);
 	tex_release     (sk_default_tex);
 	tex_release     (sk_default_tex_black);
 	tex_release     (sk_default_tex_gray);
