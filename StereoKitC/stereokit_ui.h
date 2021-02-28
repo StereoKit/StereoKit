@@ -38,8 +38,10 @@ SK_API void     ui_reserve_box   (vec2 size);
 SK_API void     ui_space         (float space);
 SK_API uint64_t ui_push_id       (const char *id);
 SK_API void     ui_pop_id        ();
+SK_API uint64_t ui_stack_hash    (const char *string);
 
-SK_API bool32_t ui_is_interacting(handed_ hand);
+SK_API bool32_t ui_is_interacting (handed_ hand);
+SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float &finger_offset, button_state_ &button_state, button_state_ &focus_state);
 
 SK_API void     ui_model_at       (model_t model, vec3 start, vec3 size, color128 color);
 SK_API bool32_t ui_volume_at      (const char *id, bounds_t bounds);

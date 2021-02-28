@@ -315,5 +315,11 @@ namespace StereoKit
 		/// the one before it!</summary>
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
+
+		public static ulong StackHash(string id)
+			=> NativeAPI.ui_stack_hash(id);
+
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash(id), out fingerOffset, out buttonState, out focusState);
 	}
 }

@@ -94,8 +94,6 @@ color128 skui_palette[5];
 
 ///////////////////////////////////////////
 
-uint64_t ui_stack_hash(const char *string);
-
 // Layout
 void ui_push_pose  (pose_t &pose, vec3 offset);
 void ui_pop_pose   ();
@@ -110,7 +108,6 @@ void ui_space       (float space);
 // Interaction
 bool32_t ui_in_box             (vec3 pt1, vec3 pt2, bounds_t box);
 void     ui_box_interaction_1h (uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t &out_hand);
-void     ui_button_behavior    (vec3 window_relative_pos, vec2 size, uint64_t id, float& finger_offset, button_state_& button_state, button_state_& focus_state);
 bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused);
 bool32_t ui_focus_set          (handed_ hand, uint64_t for_el_id, float priority);
 
