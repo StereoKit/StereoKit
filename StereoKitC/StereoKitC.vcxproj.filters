@@ -163,6 +163,9 @@
     <ClCompile Include="sk_memory.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\model_ply.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -367,6 +370,9 @@
     </ClInclude>
     <ClInclude Include="sk_memory.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\micro_ply.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

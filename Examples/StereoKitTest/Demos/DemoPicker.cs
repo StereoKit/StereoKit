@@ -43,7 +43,8 @@ namespace StereoKitTest
 				new FileFilter("GLB", "*.glb"),
 				new FileFilter("OBJ", "*.obj"),
 				new FileFilter("STL", "*.stl"),
-				new FileFilter("FBX", "*.fbx"));
+				new FileFilter("FBX", "*.fbx"),
+				new FileFilter("PLY", "*.ply"));
 		}
 
 		private void LoadModel(string filename)

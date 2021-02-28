@@ -66,6 +66,9 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	} else if (string_endswith(filename, ".stl", false)) {
 		if (!modelfmt_stl (result, filename, data, data_size, shader))
 			log_errf("Issue loading STL file: %s!", filename);
+	} else if (string_endswith(filename, ".ply", false)) {
+		if (!modelfmt_ply (result, filename, data, data_size, shader))
+			log_errf("Issue loading PLY file: %s!", filename);
 	} else {
 		log_errf("Issue loading %s! Unrecognized file extension.", filename);
 	}
