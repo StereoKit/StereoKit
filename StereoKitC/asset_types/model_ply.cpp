@@ -51,14 +51,14 @@ bool modelfmt_ply(model_t model, const char *filename, void *file_data, size_t f
 			{ PLY_PROP_COLOR_G,     ply_prop_uint,    sizeof(uint8_t), 33, &white },
 			{ PLY_PROP_COLOR_B,     ply_prop_uint,    sizeof(uint8_t), 34, &white },
 			{ PLY_PROP_COLOR_A,     ply_prop_uint,    sizeof(uint8_t), 35, &white }, };
-		ply_convert(&file, PLY_ELEMENT_VERTICES, map_verts, _countof(map_verts), sizeof(vert_t), (void**)&verts, &vert_count);
+		ply_convert(&file, PLY_ELEMENT_VERTICES, map_verts, sizeof(map_verts)/sizeof(map_verts[0]), sizeof(vert_t), (void**)&verts, &vert_count);
 
 		// Properties defined as lists in the PLY format will get triangulated 
 		// during conversion, so you don't need to worry about quads or n-gons in 
 		// the geometry.
 		uint32_t  izero = 0;
 		ply_map_t map_inds[] = { { PLY_PROP_INDICES, ply_prop_uint, sizeof(uint32_t), 0, &izero } };
-		ply_convert(&file, PLY_ELEMENT_FACES, map_inds, _countof(map_inds), sizeof(uint32_t), (void**)&inds, &ind_count);
+		ply_convert(&file, PLY_ELEMENT_FACES, map_inds, sizeof(map_inds)/sizeof(map_inds[0]), sizeof(uint32_t), (void**)&inds, &ind_count);
 
 		// You gotta free the memory manually!
 		ply_free(&file);
