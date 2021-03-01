@@ -3,7 +3,7 @@
 	<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28" />
 	<application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/AppTheme"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="oculus.permission.HAND_TRACKING" />
+	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
 	<uses-feature android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
 	<uses-feature android:name="oculus.software.handtracking"     android:required="false" />
 </manifest>

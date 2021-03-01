@@ -313,11 +313,6 @@ bool openxr_init() {
 	sk_info.eye_tracking_present = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
 	xr_has_depth_lsr             = xr_ext_depth_lsr;
 
-#if defined(SK_OS_ANDROID)
-	log_warn("Temporarily disabled articulated hands for Oculus");
-	xr_has_articulated_hands = false;
-#endif
-
 	// Oculus's depth LSR does something bad here, so we'll turn it off for 
 	// the moment until I can figure out what it is.
 	if (strcmp(properties.systemName, "Miramar") == 0 || // Quest 2 on Desktop reports as Miramar
