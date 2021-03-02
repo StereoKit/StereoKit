@@ -13,7 +13,7 @@ The getting started guide [can be found here](https://stereokit.net/Pages/Guides
 Interested in news and updates about StereoKit? Maybe just looking for some extra help?
 - Submit bugs on the [Issues tab](https://github.com/maluoi/StereoKit/issues), and ask questions in the [Discussions tab](https://github.com/maluoi/StereoKit/discussions)!
 - Follow [koujaku](https://twitter.com/koujaku/) on Twitter for development news.
-- Drop into the [Discord channel](https://discord.gg/5fynxXw7) for discussion, help and updates.
+- Drop into the [Discord channel](https://discord.gg/jtZpfS7nyK) for discussion, help and updates.
 - Check out [this blog](https://playdeck.net/project/stereokit) for occasional substantial updates!
 
 ![Screenshot](/Tools/img/FeatureImage.jpg)
