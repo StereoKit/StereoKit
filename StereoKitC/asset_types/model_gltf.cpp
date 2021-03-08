@@ -59,24 +59,108 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 
 		// Check what info is in this attribute, and copy it over to our mesh
 		if (attr->type == cgltf_attribute_type_position) {
-			for (size_t v = 0; v < attr->data->count; v++) {
-				vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
-				verts[v].pos = *pos;
+			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
+				// Ideal case is vec3 floats
+				for (size_t v = 0; v < attr->data->count; v++) {
+					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					verts[v].pos = *pos;
+				}
+			} else {
+				// For everything else, we'll convert to floats, and use that
+				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
+				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_accessor_unpack_floats(attr->data, floats, count);
+
+				if (attr->data->type == cgltf_type_vec3) {
+					for (size_t v = 0; v < attr->data->count; v++) {
+						vec3 *pos = (vec3*)&floats[v * 3];
+						verts[v].pos = *pos;
+					}
+				} else {
+					log_errf("Unimplemented vertex position format in %s", filename);
+				}
+				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
-			for (size_t v = 0; v < attr->data->count; v++) {
-				vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
-				verts[v].norm = *norm;
+			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
+				// Ideal case is vec3 floats
+				for (size_t v = 0; v < attr->data->count; v++) {
+					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					verts[v].norm = *norm;
+				}
+			} else {
+				// For everything else, we'll convert to floats, and use that
+				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
+				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_accessor_unpack_floats(attr->data, floats, count);
+
+				if (attr->data->type == cgltf_type_vec3) {
+					for (size_t v = 0; v < attr->data->count; v++) {
+						vec3 *norm = (vec3*)&floats[v * 3];
+						verts[v].norm = *norm;
+					}
+				} else {
+					log_errf("Unimplemented vertex normal format in %s", filename);
+				}
+				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
-			for (size_t v = 0; v < attr->data->count; v++) {
-				vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
-				verts[v].uv = *uv;
+			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
+				// Ideal case is vec2 floats
+				for (size_t v = 0; v < attr->data->count; v++) {
+					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
+					verts[v].uv = *uv;
+				}
+			} else {
+				// For everything else, we'll convert to floats, and use that
+				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
+				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_accessor_unpack_floats(attr->data, floats, count);
+
+				if (attr->data->type == cgltf_type_vec2) {
+					for (size_t v = 0; v < attr->data->count; v++) {
+						vec2 *uv = (vec2*)&floats[v * 2];
+						verts[v].uv = *uv;
+					}
+				} else {
+					log_errf("Unimplemented vertex uv format in %s", filename);
+				}
+				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
-			for (size_t v = 0; v < attr->data->count; v++) {
-				color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
-				verts[v].col = color_to_32(*col);
+			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
+				// Ideal case is vec4 uint8_t colors
+				for (size_t v = 0; v < attr->data->count; v++) {
+					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
+					verts[v].col = *col;
+				}
+			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
+				// vec4 float colors are also pretty straightforward
+				for (size_t v = 0; v < attr->data->count; v++) {
+					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
+					verts[v].col = color_to_32(*col);
+				}
+			} else {
+				// For everything else, we'll just load them as floats, and
+				// then convert down to color32
+				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
+				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_accessor_unpack_floats(attr->data, floats, count);
+
+				if (attr->data->type == cgltf_type_vec4) {
+					for (size_t v = 0; v < attr->data->count; v++) {
+						color128 *col = (color128 *)&floats[v * 4];
+						verts[v].col = color_to_32(*col);
+					}
+				} else if (attr->data->type == cgltf_type_vec3) {
+					for (size_t v = 0; v < attr->data->count; v++) {
+						cgltf_float *col = (cgltf_float *)&floats[v * 3];
+						verts[v].col = color_to_32({ col[0], col[1], col[2], 1 });
+					}
+				} else {
+					log_errf("Unimplemented vertex color format in %s", filename);
+				}
+				free(floats);
 			}
 		}
 	}
@@ -84,14 +168,21 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 	// Now grab the mesh indices
 	int     ind_count = (int)p->indices->count;
 	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
-	if (p->indices->component_type == cgltf_component_type_r_16u) {
+	if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
+		cgltf_buffer_view *buff   = p->indices->buffer_view;
+		size_t             offset = buff->offset + p->indices->offset;
+		for (size_t v = 0; v < ind_count; v++) {
+			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * v) + offset);
+			inds[v] = *ind;
+		}
+	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
 			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + offset);
 			inds[v] = *ind;
 		}
-	} else if (p->indices->component_type == cgltf_component_type_r_32u) {
+	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
@@ -102,6 +193,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
 			inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
 #endif
 		}
+	} else {
+		log_errf("Unimplemented vertex index format in %s", filename);
 	}
 
 	result = mesh_create();
@@ -200,7 +293,9 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (shader != nullptr) {
 		result = material_create(shader);
 	} else {
-		if (material->unlit) {
+		if (material == nullptr) {
+			result = material_copy_id(default_id_material);
+		} else if (material->unlit) {
 			result = material_copy_id(default_id_material_unlit);
 		} else if (material->has_pbr_metallic_roughness) {
 			result = material_copy_id(default_id_material_pbr);
@@ -208,9 +303,15 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 			result = material_copy_id(default_id_material);
 		}
 	}
-	material_set_id(result, id);
 
 	// If we failed to create a material, we can just stop here
+	if (result == nullptr)
+		return nullptr;
+
+	material_set_id(result, id);
+
+	// If we don't actually have material information, ditch out here using
+	// the base material's defaults
 	if (material == nullptr)
 		return result;
 
