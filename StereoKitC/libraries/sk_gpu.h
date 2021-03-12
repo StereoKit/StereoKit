@@ -2025,7 +2025,7 @@ wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
 #define GL_REPEAT 0x2901
 #define GL_CLAMP_TO_EDGE 0x812F
 #define GL_MIRRORED_REPEAT 0x8370
-#define GL_TEXTURE_MAX_ANISOTROPY 0x84FE
+#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
 #define GL_TEXTURE0 0x84C0
 #define GL_FRAMEBUFFER 0x8D40
 #define GL_DRAW_FRAMEBUFFER_BINDING 0x8CA6
@@ -3452,7 +3452,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	glTexParameteri(tex->_target, GL_TEXTURE_MIN_FILTER, min_filter);
 	glTexParameteri(tex->_target, GL_TEXTURE_MAG_FILTER, filter    );
 #ifdef _SKG_GL_DESKTOP
-	glTexParameterf(tex->_target, GL_TEXTURE_MAX_ANISOTROPY, sample == skg_tex_sample_anisotropic ? anisotropy : 1.0f);
+	glTexParameterf(tex->_target, GL_TEXTURE_MAX_ANISOTROPY_EXT, sample == skg_tex_sample_anisotropic ? anisotropy : 1.0f);
 #endif
 }
 
