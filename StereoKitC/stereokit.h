@@ -746,6 +746,7 @@ typedef struct mouse_t {
 
 // Based on VK codes
 typedef enum key_ {
+	key_none      = 0x00,
 	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04, key_mouse_forward = 0x05, key_mouse_back = 0x06,
 	key_backspace = 0x08, key_tab       = 0x09,
 	key_return    = 0x0D, key_shift     = 0x10,

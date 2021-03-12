@@ -12,6 +12,7 @@
 #include "../../asset_types/texture.h"
 #include "../render.h"
 #include "../input.h"
+#include "../input_keyboard.h"
 #include "../hand/input_hand.h"
 
 namespace sk {
@@ -64,6 +65,17 @@ bool win32_start() {
 		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
 		case WM_SETFOCUS:  sk_focused = true;  break;
 		case WM_KILLFOCUS: sk_focused = false; break;
+		case WM_LBUTTONDOWN: input_keyboard_inject_press  (key_mouse_left);   break;
+		case WM_LBUTTONUP:   input_keyboard_inject_release(key_mouse_left);   break;
+		case WM_RBUTTONDOWN: input_keyboard_inject_press  (key_mouse_right);  break;
+		case WM_RBUTTONUP:   input_keyboard_inject_release(key_mouse_right);  break;
+		case WM_MBUTTONDOWN: input_keyboard_inject_press  (key_mouse_center); break;
+		case WM_MBUTTONUP:   input_keyboard_inject_release(key_mouse_center); break;
+		case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); break;
+		case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); break;
+		case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     break;
+		case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     break;
+		case WM_CHAR:        input_keyboard_inject_char(wParam);
 		case WM_MOUSEWHEEL:win32_scroll += (short)HIWORD(wParam); break;
 		case WM_SYSCOMMAND: {
 			// Has the user pressed the restore/'un-maximize' button?

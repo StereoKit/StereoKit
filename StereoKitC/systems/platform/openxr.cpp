@@ -14,6 +14,7 @@
 #include "../hand/input_hand.h"
 #include "android.h"
 #include "linux.h"
+#include "uwp.h"
 #include "platform_utils.h"
 
 #include <openxr/openxr.h>
@@ -410,8 +411,11 @@ bool openxr_init() {
 		openxr_shutdown();
 		return false;
 	}
+
 #if defined(SK_OS_LINUX)
 	linux_finish_openxr_init();
+#elif defined(SK_OS_WINDOWS_UWP)
+	uwp_init_after_openxr();
 #endif
 
 	return true;

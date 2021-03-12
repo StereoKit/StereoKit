@@ -3,6 +3,8 @@
 #include "sk_math.h"
 #include "sk_memory.h"
 #include "systems/input.h"
+#include "systems/input_keyboard.h"
+#include "systems/platform/platform_utils.h"
 #include "systems/hand/input_hand.h"
 #include "libraries/ferr_hash.h"
 #include "libraries/array.h"
@@ -113,6 +115,7 @@ bool32_t ui_focus_set          (handed_ hand, uint64_t for_el_id, float priority
 
 // Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
+void ui_cube     (vec3 start, vec3 size, material_t material, color128 color);
 void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align);
 
 ///////////////////////////////////////////
@@ -666,6 +669,15 @@ void ui_box(vec3 start, vec3 size, material_t material, color128 color) {
 
 ///////////////////////////////////////////
 
+void ui_cube(vec3 start, vec3 size, material_t material, color128 color) {
+	vec3   pos = start - size / 2;
+	matrix mx  = matrix_trs(pos, quat_identity, size);
+
+	render_add_mesh(skui_box_dbg, material, mx, color);
+}
+
+///////////////////////////////////////////
+
 void ui_cylinder(vec3 start, float radius, float depth, material_t material, color128 color) {
 	vec3   pos = start - (vec3{ radius, radius, depth } / 2);
 	matrix mx  = matrix_trs(pos, quat_identity, {radius, radius, depth});
@@ -932,52 +944,74 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 ///////////////////////////////////////////
 
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
-	uint64_t id_hash = ui_stack_hash(id);
-	bool     result  = false;
-	vec3     offset  = skui_layers.last().offset;
-	vec3 box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
+	uint64_t id_hash  = ui_stack_hash(id);
+	bool     result   = false;
+	vec3     offset   = skui_layers.last().offset;
+	vec3     box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
 
-	for (size_t i = 0; i < handed_max; i++) {
-		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(offset, box_size))) {
-			ui_focus_set((handed_)i, id_hash, 0);
-			skui_input_target = id_hash;
-		}
+	// Find out if the user is trying to focus this UI element
+	button_state_ state;
+	int32_t hand;
+	ui_box_interaction_1h(id_hash, offset, box_size, offset, box_size, &state, hand);
+	if (state & button_state_just_active) {
+		platform_keyboard_show(true);
+		skui_input_target = id_hash;
+		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
+
+	// Unfocus this if the user starts interacting with something else
 	if (skui_input_target == id_hash) {
-		char add = '\0';
-		bool shift = input_key(key_shift) & button_state_active;
-		if (input_key(key_backspace) & button_state_just_active) {
-			size_t len = strlen(buffer);
-			if (len > 0) {
-				buffer[len - 1] = '\0';
-				result = true;
-			}
-		}
-		if (input_key(key_space) & button_state_just_active) add = ' ';
-		for (int32_t k = 0; k < 26; k++) {
-			if (input_key((key_)(key_a + k)) & button_state_just_active) {
-				add = (char)((shift ? 'A' : 'a') + k);
-			}
-		}
-		for (int32_t k = 0; k < 10; k++) {
-			if (input_key((key_)(key_0 + k)) & button_state_just_active) {
-				const char *nums = ")!@#$%^&*(";
-				add = (char)(shift ? nums[k] : '0'+k);
-			}
-		}
-		if (add != '\0') {
-			size_t len = strlen(buffer);
-			if (len + 2 < buffer_size) {
-				buffer[len] = add;
-				buffer[len + 1] = '\0';
-				result = true;
-			}
+		for (int32_t i = 0; i < handed_max; i++) {
+			if (ui_is_hand_preoccupied((handed_)i, id_hash, false))
+				skui_input_target = 0;
 		}
 	}
 
+	// If focused, acquire any input in the keyboard's queue
+	if (skui_input_target == id_hash) {
+		uint16_t curr = input_keyboard_char_consume();
+		while (curr != 0) {
+			char add = '\0';
+
+			if (curr == key_backspace) {
+				size_t len = strlen(buffer);
+				if (len > 0) {
+					buffer[len - 1] = '\0';
+					result = true;
+				}
+			} else if (curr == 0x0D) { // Enter, carriage return
+				skui_input_target = 0;
+			} else if (curr == 0x0A) { // Shift+Enter, linefeed
+				add = '\n';
+			} else if (curr == 0x1B) { // Escape
+			} else {
+				add = curr;
+			}
+
+			if (add != '\0') {
+				size_t len = strlen(buffer);
+				if (len + 2 < buffer_size) {
+					buffer[len] = add;
+					buffer[len + 1] = '\0';
+					result = true;
+				}
+			}
+
+			curr = input_keyboard_char_consume();
+		}
+	}
+
+	// Render the input UI
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * (skui_input_target == id_hash ? 0.5f : 1.f) );
+	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * (skui_input_target == id_hash ? 0.75f+sinf(time_getf()*4)*.25f : 1.f) );
 	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	
+	// Show a blinking text carat
+	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
+		float carat_at = skui_settings.padding + fminf(text_size(buffer, skui_font_style).x, size.x - skui_settings.padding * 2);
+		float line     = ui_line_height() * 0.5f;
+		ui_cube(offset - vec3{ carat_at,size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
+	}
 	ui_nextline();
 
 	return result;
