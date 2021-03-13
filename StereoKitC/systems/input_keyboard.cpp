@@ -16,7 +16,7 @@ struct keyboard_event_t {
 struct keyboard_t {
 	uint8_t                   keys[key_MAX];
 	array_t<keyboard_event_t> events;
-	array_t<uint16_t>         characters;
+	array_t<uint32_t>         characters;
 	int32_t                   queue_counter;
 };
 
@@ -24,7 +24,7 @@ struct keyboard_t {
 
 keyboard_t                input_key_data        = {};
 array_t<keyboard_event_t> input_key_pending     = {};
-array_t<uint16_t>         input_chars_pending   = {};
+array_t<uint32_t>         input_chars_pending   = {};
 mtx_t                     input_key_pending_mtx = {};
 bool                      input_key_suspended   = false;
 
@@ -127,7 +127,7 @@ button_state_ input_keyboard_get(key_ key) {
 
 ///////////////////////////////////////////
 
-void input_keyboard_inject_char(uint16_t character) {
+void input_keyboard_inject_char(uint32_t character) {
 	// Don't inject characters if input is suspended
 	if (input_key_suspended) return;
 
@@ -140,7 +140,7 @@ void input_keyboard_inject_char(uint16_t character) {
 
 ///////////////////////////////////////////
 
-uint16_t input_keyboard_char_consume() {
+uint32_t input_keyboard_char_consume() {
 	// Return false if queue is empty
 	if (input_key_data.queue_counter >= input_key_data.characters.count) return 0;
 

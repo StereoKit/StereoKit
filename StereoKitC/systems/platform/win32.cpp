@@ -2,8 +2,6 @@
 
 #if defined(SK_OS_WINDOWS)
 
-#include "flatscreen_input.h"
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -14,6 +12,7 @@
 #include "../input.h"
 #include "../input_keyboard.h"
 #include "../hand/input_hand.h"
+#include "flatscreen_input.h"
 
 namespace sk {
 

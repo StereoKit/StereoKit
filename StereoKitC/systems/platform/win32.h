@@ -18,4 +18,4 @@ void*win32_hwnd      ();
 
 } // namespace sk
 
-#endif // WINDOWS_UWP
+#endif // defined(SK_OS_WINDOWS)
