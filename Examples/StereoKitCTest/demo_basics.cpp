@@ -36,7 +36,7 @@ void demo_basics_update() {
 	
 	static float scale = 0.25f;
 	ui_hslider("scale", scale, 0.05f, 0.25f, 0, 72 * mm2m); ui_sameline();
-	ui_model(gltf, vec2{ 10,10 }*mm2m, scale*0.1f);
+	ui_model(gltf, vec2{ 40,10 }*mm2m, scale*0.1f);
 
 	static bool pressed = false;
 	if (ui_button("Spawn")) {

@@ -66,6 +66,7 @@ font_t          skui_font;
 text_style_t    skui_font_style;
 material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
+float           skui_finger_radius = 0;
 bool32_t        skui_show_volumes = false;
 uint64_t        skui_input_target = 0;
 
@@ -106,7 +107,7 @@ void ui_reserve_box (vec2 size);
 void ui_space       (float space);
 
 // Interaction
-bool32_t ui_in_box             (vec3 pt1, vec3 pt2, bounds_t box);
+bool32_t ui_in_box             (vec3 pt1, vec3 pt2, float radius, bounds_t box);
 void     ui_box_interaction_1h (uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t &out_hand);
 bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused);
 bool32_t ui_focus_set          (handed_ hand, uint64_t for_el_id, float priority);
@@ -317,9 +318,11 @@ void ui_update() {
 
 	skui_layers[0] = {};
 
+	skui_finger_radius = 0;
 	for (size_t i = 0; i < handed_max; i++) {
 		const hand_t *hand = input_hand((handed_)i);
 
+		skui_finger_radius += hand->fingers[1][4].radius;
 		skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
 		skui_hand[i].finger_world      = hand->fingers[1][4].position;
 		skui_hand[i].focused_prev = skui_hand[i].focused;
@@ -342,6 +345,7 @@ void ui_update() {
 			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
 		}
 	}
+	skui_finger_radius /= handed_max;
 
 	//char text[80];
 	//snprintf(text, sizeof(text), "%llu - %llu", skui_hand[handed_right].focused_prev, skui_hand[handed_right].active_prev);
@@ -555,7 +559,7 @@ void ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfoc
 			box_size  = box_focused_size;
 		}
 
-		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(box_start, box_size))) {
+		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, ui_size_box(box_start, box_size))) {
 			hand = i;
 			ui_focus_set((handed_)i, id, 0);
 			button_state_ focus_state = button_state_active;
@@ -575,10 +579,10 @@ void ui_box_interaction_1h(uint64_t id, vec3 box_unfocused_start, vec3 box_unfoc
 
 ///////////////////////////////////////////
 
-bool32_t ui_in_box(vec3 pt, vec3 pt_prev, bounds_t box) {
+bool32_t ui_in_box(vec3 pt, vec3 pt_prev, float radius, bounds_t box) {
 	if (skui_show_volumes)
 		render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
-	return bounds_line_contains(box, pt, pt_prev);
+	return bounds_capsule_contains(box, pt, pt_prev, radius);
 }
 
 
@@ -608,19 +612,25 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 	focus_state  = button_state_inactive;
 	int32_t hand = -1;
 
-	// Button interaction focus is detected in the front half of the button to prevent 'reverse'
-	// or 'side' presses where the finger comes from the back or side.
+	// Button interaction focus is detected out in front of the button to 
+	// prevent 'reverse' or 'side' presses where the finger comes from the
+	// back or side.
 	//
-	// Once focused is gained, interaction is tracked within a volume that extends from the 
-	// front, to a good distance through the button's back. This is to help when the user's
-	// finger inevitably goes completely through the button. May consider expanding the volume 
-	// a bit too on the X/Y axes later.
-	vec3    box_start = window_relative_pos + vec3{ 0, 0, -skui_settings.depth/2.f };
-	vec3    box_size  = vec3{ size.x, size.y, skui_settings.depth/2.f };
+	// Once focused is gained, interaction is tracked within a volume that
+	// extends from the detection plane, to a good distance through the
+	// button's back. This is to help when the user's finger inevitably goes
+	// completely through the button. Width and height is added to this 
+	// volume to account for vertical or horizontal movement during a press,
+	// such as the downward motion often accompanying a 'poke' motion.
+	float activation_plane = skui_settings.depth + skui_finger_radius;
+	vec3  activation_start = window_relative_pos + vec3{ 0, 0, -activation_plane };
+	vec3  activation_size  = vec3{ size.x, size.y, 0.0001f };
+
+	vec3  box_size  = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
+	vec3  box_start = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + box_size.z };
 	ui_box_interaction_1h(id,
-		box_start, box_size,
-		box_start + vec3{ cm2m, cm2m, cm2m * 6 },
-		box_size  + vec3{ cm2m*2,cm2m*2, cm2m * 6 },
+		activation_start, activation_size,
+		box_start,        box_size,
 		&focus_state, hand);
 
 	// If a hand is interacting, adjust the button surface accordingly
@@ -636,7 +646,7 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 		} else if (skui_hand[hand].active_prev == id) {
 			button_state |= button_state_just_inactive;
 		}
-		finger_offset = fmaxf(2*mm2m, finger_offset);
+		finger_offset = fminf(fmaxf(2*mm2m, finger_offset), skui_settings.depth);
 	} else if (focus_state & button_state_just_inactive) {
 		if (skui_hand[hand].active_prev == id) {
 			button_state |= button_state_just_inactive;
@@ -693,7 +703,7 @@ bool32_t ui_volume_at(const char *id, bounds_t bounds) {
 			size.dimensions = bounds.dimensions + vec3_one*skui_settings.padding;
 		}
 
-		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, size)) {
+		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, size)) {
 			ui_focus_set((handed_)i, id_hash, 0);
 			if (!was_focused)
 				result = true;
@@ -714,7 +724,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 		if (was_active || was_focused)
 			continue;
 
-		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, bounds)) {
+		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, bounds)) {
 			button_state_ state = input_hand((handed_)i)->pinch_state;
 			if (state != button_state_inactive) {
 				result = state;
@@ -925,7 +935,7 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 
 	ui_reserve_box(size);
 	size = size / 2;
-	ui_model_at(model, { offset.x + size.x, offset.y - size.y, offset.z }, vec3_one * model_scale, { 1,1,1,1 });
+	ui_model_at(model, { offset.x - size.x, offset.y - size.y, offset.z }, vec3_one * model_scale, { 1,1,1,1 });
 	ui_nextline();
 }
 
@@ -938,7 +948,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	vec3 box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
 
 	for (size_t i = 0; i < handed_max; i++) {
-		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, ui_size_box(offset, box_size))) {
+		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, ui_size_box(offset, box_size))) {
 			ui_focus_set((handed_)i, id_hash, 0);
 			skui_input_target = id_hash;
 		}
