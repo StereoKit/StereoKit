@@ -166,6 +166,12 @@
     <ClCompile Include="asset_types\model_ply.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="systems\input_keyboard.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\tinycthread.c">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -372,6 +378,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="libraries\micro_ply.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\input_keyboard.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\tinycthread.h">
       <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>

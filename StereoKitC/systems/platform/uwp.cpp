@@ -9,6 +9,7 @@
 #include "../../asset_types/texture.h"
 #include "../render.h"
 #include "../input.h"
+#include "../input_keyboard.h"
 #include "flatscreen_input.h"
 
 namespace sk {
@@ -37,14 +38,39 @@ using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::ApplicationModel::Activation;
 using namespace winrt::Windows::UI::Core;
-//using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
-//using namespace DirectX;
 
 using namespace sk;
+
+void uwp_on_corewindow_character(CoreWindow const &, CharacterReceivedEventArgs const &args) {
+	input_keyboard_inject_char((uint32_t)args.KeyCode());
+}
+
+void uwp_on_corewindow_keypress(CoreDispatcher const &, AcceleratorKeyEventArgs const & args) {
+	// https://github.com/microsoft/DirectXTK/blob/master/Src/Keyboard.cpp#L466
+	CorePhysicalKeyStatus status = args.KeyStatus();
+	int32_t               vk     = (int32_t)args.VirtualKey();
+
+	bool down;
+	switch (args.EventType()) {
+	case CoreAcceleratorKeyEventType::KeyDown:
+	case CoreAcceleratorKeyEventType::SystemKeyDown: down = true; break;
+	case CoreAcceleratorKeyEventType::KeyUp:
+	case CoreAcceleratorKeyEventType::SystemKeyUp:   down = false; break;
+	default:                                         return;
+	}
+
+	/*switch (vk) {
+	case VK_SHIFT:   vk = status.ScanCode == 0x36 ? VK_RSHIFT   : VK_LSHIFT;   break;
+	case VK_CONTROL: vk = status.IsExtendedKey    ? VK_RCONTROL : VK_LCONTROL; break;
+	case VK_MENU:    vk = status.IsExtendedKey    ? VK_RMENU    : VK_LMENU;    break;
+	}*/
+	if (down) input_keyboard_inject_press  ((key_)vk);
+	else      input_keyboard_inject_release((key_)vk);
+}
 
 inline float dips_to_pixels(float dips, float DPI) {
 	return dips * DPI / 96.f + 0.5f;
@@ -59,11 +85,9 @@ public:
 	static ViewProvider *inst;
 	bool initialized = false;
 	bool valid       = false;
-	const CoreWindow *core_window;
 	vec2  mouse_point;
 	float mouse_scroll = 0;
-	bool  mouse_down[2];
-	uint8_t key_state[255];
+	
 	float m_DPI;
 
 	ViewProvider() :
@@ -91,15 +115,10 @@ public:
 	void Uninitialize() { 
 	}
 
-	void SetWindow(CoreWindow const & window)
-	{
-		core_window = &window;
-
+	void SetWindow(CoreWindow const & window) {
 		auto dispatcher                = CoreWindow::GetForCurrentThread().Dispatcher();
 		auto navigation                = SystemNavigationManager::GetForCurrentView();
 		auto currentDisplayInformation = DisplayInformation::GetForCurrentView();
-
-		key_state[key_caps_lock] = window.GetKeyState(VirtualKey::CapitalLock) == CoreVirtualKeyStates::Locked ? true : false;
 
 		window.SizeChanged({ this, &ViewProvider::OnWindowSizeChanged });
 
@@ -111,21 +130,13 @@ public:
 			// Requires Windows 10 Creators Update (10.0.15063) or later
 		}
 #endif
-		window.KeyDown([this](auto &&, auto &&args) {
-			key_ key = (key_)args.VirtualKey();
-			key_state[key] = key == key_caps_lock ? !key_state[key] : true;
-		});
-		window.KeyUp([this](auto &&, auto &&args) { 
-			key_ key = (key_)args.VirtualKey();
-			if (key != key_caps_lock)
-				key_state[key] = false; 
-		});
-		window.PointerPressed                         ({ this, &ViewProvider::OnMouseButtonChanged });
-		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonChanged });
+		window.PointerPressed                         ({ this, &ViewProvider::OnMouseButtonDown    });
+		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonUp      });
 		window.PointerMoved                           ({ this, &ViewProvider::OnMouseChanged       });
 		window.PointerWheelChanged                    ({ this, &ViewProvider::OnWheelChanged       });
 		window.VisibilityChanged                      ({ this, &ViewProvider::OnVisibilityChanged  });
-		dispatcher.AcceleratorKeyActivated            ({ this, &ViewProvider::OnAcceleratorKeyActivated });
+		window.CharacterReceived                      (uwp_on_corewindow_character);
+		dispatcher.AcceleratorKeyActivated            (uwp_on_corewindow_keypress);
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
 		
@@ -232,15 +243,22 @@ protected:
 		HandleWindowSizeChanged();
 	}
 
-	void OnMouseButtonChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
-		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
+	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
+		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
+		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
+		if (args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_inactive) input_keyboard_inject_press(key_mouse_back);
+		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
+	}
+	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
+		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
+		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
+		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_keyboard_inject_release(key_mouse_back);
+		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_keyboard_inject_release(key_mouse_forward);
 	}
 
 	void OnMouseChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		key_state[key_mouse_left ] = args.CurrentPoint().Properties().IsLeftButtonPressed();
-		key_state[key_mouse_right] = args.CurrentPoint().Properties().IsRightButtonPressed();
-
 		Point p = args.CurrentPoint().RawPosition();
 		mouse_point = { 
 			dips_to_pixels(p.X, m_DPI),
@@ -363,35 +381,57 @@ bool uwp_get_mouse(vec2 &out_pos) {
 	out_pos = ViewProvider::inst->mouse_point;
 	return true;
 }
+
+///////////////////////////////////////////
+
 void uwp_set_mouse(vec2 window_pos) {
 	ViewProvider::inst->mouse_point = window_pos;
 
-	winrt::Windows::ApplicationModel::Core::CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(
-		winrt::Windows::UI::Core::CoreDispatcherPriority::High, [window_pos]() {
-			Rect pos = CoreWindow::GetForCurrentThread().Bounds();
-			CoreWindow::GetForCurrentThread().PointerPosition(Point(
-				pixels_to_dips(window_pos.x, ViewProvider::inst->m_DPI) + pos.X,
-				pixels_to_dips(window_pos.y, ViewProvider::inst->m_DPI) + pos.Y));
-		});
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::High, [window_pos]() {
+		Rect pos = CoreWindow::GetForCurrentThread().Bounds();
+		CoreWindow::GetForCurrentThread().PointerPosition(Point(
+			pixels_to_dips(window_pos.x, ViewProvider::inst->m_DPI) + pos.X,
+			pixels_to_dips(window_pos.y, ViewProvider::inst->m_DPI) + pos.Y));
+	});
 }
+
+///////////////////////////////////////////
 
 float uwp_get_scroll() {
 	return ViewProvider::inst->mouse_scroll;
 }
 
-bool uwp_mouse_button(int button) {
-	return ViewProvider::inst->mouse_down[button];
+///////////////////////////////////////////
+
+void uwp_show_keyboard(bool show) {
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
+		bool result = show 
+			? InputPane::GetForCurrentView().TryShow()
+			: InputPane::GetForCurrentView().TryHide();
+	});
 }
-bool uwp_key_down(int vk) {
-	return ViewProvider::inst->key_state[vk];
-}
+
+///////////////////////////////////////////
 
 bool uwp_init() {
 	return true;
 }
 
+///////////////////////////////////////////
+
+void uwp_init_after_openxr() {
+	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
+	});
+}
+
+///////////////////////////////////////////
+
 void uwp_shutdown() {
 }
+
+///////////////////////////////////////////
 
 bool uwp_start() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
@@ -415,9 +455,14 @@ bool uwp_start() {
 	return ViewProvider::inst->valid;
 }
 
+///////////////////////////////////////////
+
 void uwp_step_begin() {
 	flatscreen_input_update();
 }
+
+///////////////////////////////////////////
+
 void uwp_step_end() { 
 	skg_draw_begin();
 
@@ -433,9 +478,14 @@ void uwp_step_end() {
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
 }
+
+///////////////////////////////////////////
+
 void uwp_vsync() {
 	skg_swapchain_present(&uwp_swapchain);
 }
+
+///////////////////////////////////////////
 
 void uwp_stop() {
 	flatscreen_input_shutdown();

@@ -181,20 +181,6 @@ float platform_get_scroll() {
 
 ///////////////////////////////////////////
 
-bool platform_key_down(key_ key) {
-#if defined(SK_OS_WINDOWS_UWP)
-	return uwp_key_down(key);
-#elif defined(SK_OS_WINDOWS)
-	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
-#elif defined(SK_OS_LINUX)
-	return linux_key_down(key);
-#else
-	return false;
-#endif
-}
-
-///////////////////////////////////////////
-
 void platform_debug_output(log_ level, const char *text) {
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	OutputDebugStringA(text);
@@ -218,6 +204,31 @@ void platform_sleep(int ms) {
 #else
 	usleep(ms * 1000);
 #endif
+}
+
+///////////////////////////////////////////
+
+bool platform_keyboard_available() {
+#if defined(SK_OS_WINDOWS_UWP)
+	return true;
+#else
+	return false;
+#endif
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show(bool visible) {
+#if defined(SK_OS_WINDOWS_UWP)
+	uwp_show_keyboard(visible);
+#else
+#endif
+}
+
+///////////////////////////////////////////
+
+bool platform_keyboard_visible() {
+	return false;
 }
 
 ///////////////////////////////////////////

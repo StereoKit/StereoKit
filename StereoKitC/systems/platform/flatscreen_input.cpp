@@ -34,12 +34,6 @@ void flatscreen_input_shutdown() {
 ///////////////////////////////////////////
 
 void flatscreen_input_update() {
-	for (int32_t i = 0; i < key_MAX; i++) {
-		input_key_data.keys[i] = (uint8_t)button_make_state(
-			input_key_data.keys[i] & button_state_active,
-			platform_key_down((key_)i));
-	}
-
 	flatscreen_mouse_update();
 
 	if (flatscreen_is_simulating_movement()) {

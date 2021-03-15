@@ -1,26 +1,29 @@
 #include "linux.h"
+
 #if defined(SK_OS_LINUX)
 
-#include "../../log.h"
-#include "../../stereokit.h"
+#include <X11/keysym.h>
+#include <X11/XKBlib.h>
 
 #include "openxr.h"
 #include "flatscreen_input.h"
 #include "../render.h"
 #include "../input.h"
+#include "../input_keyboard.h"
 #include "../../_stereokit.h"
+#include "../../log.h"
 #include "../../libraries/sk_gpu.h"
-#include <unistd.h>
-#include <signal.h>
 
 namespace sk {
 
-skg_swapchain_t linux_swapchain;
-
 ///////////////////////////////////////////
+
+skg_swapchain_t         linux_swapchain;
 
 Display                *dpy;
 Window                  root;
+XIM                     linux_input_method;
+XIC                     linux_input_context;
 
 GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
 GLint                   fb_att[] = {
@@ -42,224 +45,196 @@ Colormap                cmap;
 XSetWindowAttributes    swa;
 Window                  win;
 
-bool                    fix_glx_oxr = true;
-
-uint32_t                key_mask;
-
 ///////////////////////////////////////////
-// Start input thread
+// Start input
 ///////////////////////////////////////////
 
-enum _linux_key_types {
-	notakey  = 0, // {0} initialized will always be this
-	keysym   = 1,
-	mouse    = 2,
-	capslock = 3,
-} _linux_key_types;
+key_  linux_xk_map_upper[255] = {};
+key_  linux_xk_map_lower[255] = {};
+float linux_scroll  = 0;
+int   linux_mouse_x = 0;
+int   linux_mouse_y = 0;
 
-struct _linux_key_map {
-	int what; // true if XQueryPointer, false if XQueryKeymap
-	int xkey_or_key_mask[8]; // X keysyms are a lot more specific than VK keys. for example, capital A vs lowercase a go into xk_a, or left and right shift go into... just.. shift.
-};
+void linux_init_key_lookups() {
+	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
+	linux_xk_map_upper[0xFF & XK_Tab] = key_tab;
+	linux_xk_map_upper[0xFF & XK_Linefeed] = key_return;
+	linux_xk_map_upper[0xFF & XK_Return] = key_return;
+	linux_xk_map_upper[0xFF & XK_Escape] = key_esc;
+	linux_xk_map_upper[0xFF & XK_Delete] = key_del;
+	linux_xk_map_upper[0xFF & XK_Home] = key_home;
+	linux_xk_map_upper[0xFF & XK_Left] = key_left;
+	linux_xk_map_upper[0xFF & XK_Up] = key_up;
+	linux_xk_map_upper[0xFF & XK_Right] = key_down;
+	linux_xk_map_upper[0xFF & XK_Down] = key_down;
+	linux_xk_map_upper[0xFF & XK_End] = key_end;
+	linux_xk_map_upper[0xFF & XK_Begin] = key_home;
+	linux_xk_map_upper[0xFF & XK_Page_Up] = key_page_up;
+	linux_xk_map_upper[0xFF & XK_Page_Down] = key_page_down;
+	linux_xk_map_upper[0xFF & XK_KP_0] = key_num0;
+	linux_xk_map_upper[0xFF & XK_KP_1] = key_num1;
+	linux_xk_map_upper[0xFF & XK_KP_2] = key_num2;
+	linux_xk_map_upper[0xFF & XK_KP_3] = key_num3;
+	linux_xk_map_upper[0xFF & XK_KP_4] = key_num4;
+	linux_xk_map_upper[0xFF & XK_KP_5] = key_num5;
+	linux_xk_map_upper[0xFF & XK_KP_6] = key_num6;
+	linux_xk_map_upper[0xFF & XK_KP_7] = key_num7;
+	linux_xk_map_upper[0xFF & XK_KP_8] = key_num8;
+	linux_xk_map_upper[0xFF & XK_KP_9] = key_num9;
+	linux_xk_map_upper[0xFF & XK_F1] = key_f1;
+	linux_xk_map_upper[0xFF & XK_F2] = key_f2;
+	linux_xk_map_upper[0xFF & XK_F3] = key_f3;
+	linux_xk_map_upper[0xFF & XK_F4] = key_f4;
+	linux_xk_map_upper[0xFF & XK_F5] = key_f5;
+	linux_xk_map_upper[0xFF & XK_F6] = key_f6;
+	linux_xk_map_upper[0xFF & XK_F7] = key_f7;
+	linux_xk_map_upper[0xFF & XK_F8] = key_f8;
+	linux_xk_map_upper[0xFF & XK_F9] = key_f9;
+	linux_xk_map_upper[0xFF & XK_F10] = key_f10;
+	linux_xk_map_upper[0xFF & XK_F11] = key_f11;
+	linux_xk_map_upper[0xFF & XK_F12] = key_f12;
+	linux_xk_map_upper[0xFF & XK_Control_L] = key_ctrl;
+	linux_xk_map_upper[0xFF & XK_Control_R] = key_ctrl;
+	linux_xk_map_upper[0xFF & XK_Shift_L] = key_shift;
+	linux_xk_map_upper[0xFF & XK_Shift_R] = key_shift;
+	linux_xk_map_upper[0xFF & XK_Caps_Lock] = key_caps_lock;
 
-struct _linux_key_map map[256] = {
-{0},
-{/*0x01 - key_mouse_left */ mouse,{(1<<8),} },
-{/*0x02 - key_mouse_right */ mouse,{(1<<9),} },{0},
-{/*0x04 - key_mouse_center */ mouse,{(1<<10),} },
-{/*0x05 - key_mouse_forward */ mouse,{(1<<11),} },
-{/*0x06 - key_mouse_back */ mouse,{(1<<12),} },{0},
-{/*0x08 - key_backspace */ keysym,{XK_BackSpace,} },
-{/*0x09 - key_tab */ keysym,{XK_Tab,} },{0},{0},{0},
-{/*0x0D - key_return */ keysym,{XK_Return,} },{0},{0},
-{/*0x10 - key_shift */ keysym,{XK_Shift_L,XK_Shift_R} },
-{/*0x11 - key_ctrl */ keysym,{XK_Control_L,XK_Control_R} },
-{/*0x12 - key_alt */ keysym,{XK_Alt_L,XK_Alt_R} },{0},
-{/*0x14 - key_caps_lock */ capslock,{XK_Caps_Lock,} },{0},{0},{0},{0},{0},{0},
-{/*0x1B - key_esc */ keysym,{XK_Escape,} },{0},{0},{0},{0},
-{/*0x20 - key_space */ keysym,{XK_space,XK_KP_Space} },{0},{0},
-{/*0x23 - key_end */ keysym,{XK_End,XK_KP_End} },
-{/*0x24 - key_home */ keysym,{XK_Home,XK_KP_Home} },
-{/*0x25 - key_left */ keysym,{XK_Left,XK_KP_Left} },
-{/*0x26 - key_up */ keysym,{XK_Up,XK_KP_Up} },
-{/*0x27 - key_right */ keysym,{XK_Right,XK_KP_Right} },
-{/*0x28 - key_down */ keysym,{XK_Down,XK_KP_Down} },{0},
-{/*0x2A - key_printscreen */ keysym,{XK_Print,} },{0},{0},
-{/*0x2D - key_insert */ keysym,{XK_Insert,XK_KP_Insert} },
-{/*0x2E - key_del */ keysym,{XK_Delete,XK_KP_Delete} },{0},
-{/*0x30 - key_0 */ keysym,{XK_0,} },
-{/*0x31 - key_1 */ keysym,{XK_1,} },
-{/*0x32 - key_2 */ keysym,{XK_2,} },
-{/*0x33 - key_3 */ keysym,{XK_3,} },
-{/*0x34 - key_4 */ keysym,{XK_4,} },
-{/*0x35 - key_5 */ keysym,{XK_5,} },
-{/*0x36 - key_6 */ keysym,{XK_6,} },
-{/*0x37 - key_7 */ keysym,{XK_7,} },
-{/*0x38 - key_8 */ keysym,{XK_8,} },
-{/*0x39 - key_9 */ keysym,{XK_9,} },{0},{0},{0},{0},{0},{0},{0},
-{/*0x41 - key_a */ keysym,{XK_A,XK_a} },
-{/*0x42 - key_b */ keysym,{XK_B,XK_b} },
-{/*0x43 - key_c */ keysym,{XK_C,XK_c} },
-{/*0x44 - key_d */ keysym,{XK_D,XK_d} },
-{/*0x45 - key_e */ keysym,{XK_E,XK_e} },
-{/*0x46 - key_f */ keysym,{XK_F,XK_f} },
-{/*0x47 - key_g */ keysym,{XK_G,XK_g} },
-{/*0x48 - key_h */ keysym,{XK_H,XK_h} },
-{/*0x49 - key_i */ keysym,{XK_I,XK_i} },
-{/*0x4A - key_j */ keysym,{XK_J,XK_j} },
-{/*0x4B - key_k */ keysym,{XK_K,XK_k} },
-{/*0x4C - key_l */ keysym,{XK_L,XK_l} },
-{/*0x4D - key_m */ keysym,{XK_M,XK_m} },
-{/*0x4E - key_n */ keysym,{XK_N,XK_n} },
-{/*0x4F - key_o */ keysym,{XK_O,XK_o} },
-{/*0x50 - key_p */ keysym,{XK_P,XK_p} },
-{/*0x51 - key_q */ keysym,{XK_Q,XK_q} },
-{/*0x52 - key_r */ keysym,{XK_R,XK_r} },
-{/*0x53 - key_s */ keysym,{XK_S,XK_s} },
-{/*0x54 - key_t */ keysym,{XK_T,XK_t} },
-{/*0x55 - key_u */ keysym,{XK_U,XK_u} },
-{/*0x56 - key_v */ keysym,{XK_V,XK_v} },
-{/*0x57 - key_w */ keysym,{XK_W,XK_w} },
-{/*0x58 - key_x */ keysym,{XK_X,XK_x} },
-{/*0x59 - key_y */ keysym,{XK_Y,XK_y} },
-{/*0x5A - key_z */ keysym,{XK_Z,XK_z} },
-{/*0x5B - key_lcmd */ keysym,{XK_Super_L,} },
-{/*0x5C - key_rcmd */ keysym,{XK_Super_R,} },{0},{0},{0},
-{/*0x60 - key_num0 */ keysym,{XK_KP_0,} },
-{/*0x61 - key_num1 */ keysym,{XK_KP_1,} },
-{/*0x62 - key_num2 */ keysym,{XK_KP_2,} },
-{/*0x63 - key_num3 */ keysym,{XK_KP_3,} },
-{/*0x64 - key_num4 */ keysym,{XK_KP_4,} },
-{/*0x65 - key_num5 */ keysym,{XK_KP_5,} },
-{/*0x66 - key_num6 */ keysym,{XK_KP_6,} },
-{/*0x67 - key_num7 */ keysym,{XK_KP_7,} },
-{/*0x68 - key_num8 */ keysym,{XK_KP_8,} },
-{/*0x69 - key_num9 */ keysym,{XK_KP_9,} },
-{/*0x6A - key_multiply */ keysym,{XK_KP_Multiply,} },
-{/*0x6B - key_add */ keysym,{XK_KP_Add,} },{0},
-{/*0x6D - key_subtract */ keysym,{XK_KP_Subtract,} },
-{/*0x6E - key_decimal */ keysym,{XK_KP_Decimal,} },
-{/*0x6F - key_divide */ keysym,{XK_KP_Divide,} },
-{/*0x70 - key_f1 */ keysym,{XK_F1,} },
-{/*0x71 - key_f2 */ keysym,{XK_F2,} },
-{/*0x72 - key_f3 */ keysym,{XK_F3,} },
-{/*0x73 - key_f4 */ keysym,{XK_F4,} },
-{/*0x74 - key_f5 */ keysym,{XK_F5,} },
-{/*0x75 - key_f6 */ keysym,{XK_F6,} },
-{/*0x76 - key_f7 */ keysym,{XK_F7,} },
-{/*0x77 - key_f8 */ keysym,{XK_F8,} },
-{/*0x78 - key_f9 */ keysym,{XK_F9,} },
-{/*0x79 - key_f10 */ keysym,{XK_F10,} },
-{/*0x7A - key_f11 */ keysym,{XK_F11,} },
-{/*0x7B - key_f12 */ keysym,{XK_F12,} },{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},
-{/*0xFF - key_MAX */ keysym,{0x69,} },
-}; 
+	linux_xk_map_lower[XK_space] = key_space;
+	linux_xk_map_lower[XK_apostrophe] = key_apostrophe;
+	linux_xk_map_lower[XK_comma] = key_comma;
+	linux_xk_map_lower[XK_minus] = key_minus;
+	linux_xk_map_lower[XK_period] = key_period;
+	linux_xk_map_lower[XK_slash] = key_slash_fwd;
+	linux_xk_map_lower[XK_0] = key_0;
+	linux_xk_map_lower[XK_1] = key_1;
+	linux_xk_map_lower[XK_2] = key_2;
+	linux_xk_map_lower[XK_3] = key_3;
+	linux_xk_map_lower[XK_4] = key_4;
+	linux_xk_map_lower[XK_5] = key_5;
+	linux_xk_map_lower[XK_6] = key_6;
+	linux_xk_map_lower[XK_7] = key_7;
+	linux_xk_map_lower[XK_8] = key_8;
+	linux_xk_map_lower[XK_9] = key_9;
+	linux_xk_map_lower[XK_semicolon] = key_semicolon;
+	linux_xk_map_lower[XK_equal] = key_equals;
+	linux_xk_map_lower[XK_a] = key_a;
+	linux_xk_map_lower[XK_b] = key_b;
+	linux_xk_map_lower[XK_c] = key_c;
+	linux_xk_map_lower[XK_d] = key_d;
+	linux_xk_map_lower[XK_e] = key_e;
+	linux_xk_map_lower[XK_f] = key_f;
+	linux_xk_map_lower[XK_g] = key_g;
+	linux_xk_map_lower[XK_h] = key_h;
+	linux_xk_map_lower[XK_i] = key_i;
+	linux_xk_map_lower[XK_j] = key_j;
+	linux_xk_map_lower[XK_k] = key_k;
+	linux_xk_map_lower[XK_l] = key_l;
+	linux_xk_map_lower[XK_m] = key_m;
+	linux_xk_map_lower[XK_n] = key_n;
+	linux_xk_map_lower[XK_o] = key_o;
+	linux_xk_map_lower[XK_p] = key_p;
+	linux_xk_map_lower[XK_q] = key_q;
+	linux_xk_map_lower[XK_r] = key_r;
+	linux_xk_map_lower[XK_s] = key_s;
+	linux_xk_map_lower[XK_t] = key_t;
+	linux_xk_map_lower[XK_u] = key_u;
+	linux_xk_map_lower[XK_v] = key_v;
+	linux_xk_map_lower[XK_w] = key_w;
+	linux_xk_map_lower[XK_x] = key_x;
+	linux_xk_map_lower[XK_y] = key_y;
+	linux_xk_map_lower[XK_z] = key_z;
+	linux_xk_map_lower[XK_bracketleft] = key_bracket_open;
+	linux_xk_map_lower[XK_bracketright] = key_bracket_close;
+	linux_xk_map_lower[XK_backslash] = key_slash_back;
+	linux_xk_map_lower[XK_grave] = key_backtick;
+}
 
-bool  _linux_pressed_sk_keys[256] = {0};
-float scrollwheel = 0;
-int   mouseX = 0;
-int   mouseY = 0;
-
-bool _pthread_continue = true;
-
-void *linux_input_pthread(void *) {
-	
+void linux_events() {
 	XEvent event;
-	XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
-	Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
-	XSetWMProtocols(dpy, win, &wm_delete, 1);
 
-	/* event loop */
-	while (_pthread_continue) {
+	while (XPending(dpy)) {
 		XNextEvent(dpy, &event);
-		/* keyboard events */
-		if (event.type == KeyPress || event.type == KeyRelease) {
-			char keys_return[32];
-			XQueryKeymap(dpy, keys_return);
+		
+		bool is_pressed = false;
+		switch(event.type) {
+			case KeyPress: is_pressed = true;
+			case KeyRelease: {
+				// Translate keypress to utf-8 character, and submit that
+				char   keys_return[32];
+				Status status;
+				KeySym keysym = NoSymbol;
+				int    count  = Xutf8LookupString(linux_input_context, &event.xkey, keys_return, sizeof(keys_return), &keysym, &status);
 
-			for (int i = 0; i < key_MAX; i++) {
-				if (map[i].what != keysym) {
-					continue;
+				if ((status == XLookupChars || status == XLookupBoth) && keysym != 0xFF08) {
+					input_keyboard_inject_char((uint32_t)keysym);
 				}
 
-				bool isPressed = false;
-				for (int j = 0; j < 7; j++) {
-					if (map[i].xkey_or_key_mask[j] == 0) {
-						break;
-					}
-					KeyCode kc2 = XKeysymToKeycode(dpy, map[i].xkey_or_key_mask[j]);
-					isPressed = !!(keys_return[kc2 >> 3] & (1 << (kc2 & 7)));
-					if (isPressed == true) {
-						_linux_pressed_sk_keys[i] = true;
-						break;
+				// Translate keypress to a hardware key, and submit that
+				uint32_t sym = XkbKeycodeToKeysym(dpy, event.xkey.keycode, 0, 0);
+				key_     key = key_none;
+				if      ((sym & 0xFFFFFF00U) == 0xFF00U) key = linux_xk_map_upper[sym & 0xFFU];
+				else if ((sym & 0xFFFFFF00U) == 0x0000U) key = linux_xk_map_lower[sym];
+
+				if (key != key_none) {
+					if (is_pressed) input_keyboard_inject_press  (key);
+					else            input_keyboard_inject_release(key);
+
+					// Some non-text characters get fed into the text system as well
+					if (is_pressed) {
+						if (key == key_backspace || key == key_return || key == key_esc) {
+							input_keyboard_inject_char((uint32_t)key);
+						}
 					}
 				}
-				if (isPressed == false) {
-					_linux_pressed_sk_keys[i] = false;
+			} break;
+			case ButtonPress: {
+				switch (event.xbutton.button) {
+				case (1): input_keyboard_inject_press(key_mouse_left);    break;
+				case (2): input_keyboard_inject_press(key_mouse_center);  break;
+				case (3): input_keyboard_inject_press(key_mouse_right);   break;
+				case (9): input_keyboard_inject_press(key_mouse_forward); break;
+				case (8): input_keyboard_inject_press(key_mouse_back);    break;
+				case (4): linux_scroll += 120; break; // scroll up
+				case (5): linux_scroll -= 120; break; // scroll down
 				}
-			}
-		} else if (event.type == ButtonPress) {
-			switch (event.xbutton.button) {
-			case (1): _linux_pressed_sk_keys[key_mouse_left  ] = true; break;
-			case (2): _linux_pressed_sk_keys[key_mouse_center] = true; break;
-			case (3): _linux_pressed_sk_keys[key_mouse_right ] = true; break;
-			case (4): /*scroll up*/
-				scrollwheel += 120;
-				break;
-			case (5): /*scroll down*/
-				scrollwheel -= 120;
-				break;
-			case (9): _linux_pressed_sk_keys[key_mouse_forward] = true; break;
-			case (8): _linux_pressed_sk_keys[key_mouse_back   ] = true; break;
-			}
-		} else if (event.type == ButtonRelease) {
-			switch (event.xbutton.button) {
-			case (1): _linux_pressed_sk_keys[key_mouse_left   ] = false; break;
-			case (2): _linux_pressed_sk_keys[key_mouse_center ] = false; break;
-			case (3): _linux_pressed_sk_keys[key_mouse_right  ] = false; break;
-			case (9): _linux_pressed_sk_keys[key_mouse_forward] = false; break;
-			case (8): _linux_pressed_sk_keys[key_mouse_back   ] = false; break;
-				/* 	We get a ButtonRelease event directly after ButtonPress for scroll wheel stuff.
-					Since all it does is bump a variable up or down, we don't need to do anything for release.
-					(If we get ButtonPress for scroll up, but never get a ButtonRelease .... that would be very weird)*/
-			}
-		} else if (event.type == MotionNotify) {
-			mouseX = event.xmotion.x;
-			mouseY = event.xmotion.y;
-		} else if (event.type == ConfigureNotify) {
-			//Todo: only call this when the user is done resizing
-			linux_resize(event.xconfigure.width, event.xconfigure.height);
-		} else if (event.type == ClientMessage) {
-			if (!strcmp(XGetAtomName(dpy, event.xclient.message_type), "WM_PROTOCOLS")) {
-				sk_quit();
-				return 0;
-			}
+			} break;
+			case ButtonRelease: {
+				switch (event.xbutton.button) {
+				case (1): input_keyboard_inject_release(key_mouse_left);    break;
+				case (2): input_keyboard_inject_release(key_mouse_center);  break;
+				case (3): input_keyboard_inject_release(key_mouse_right);   break;
+				case (9): input_keyboard_inject_release(key_mouse_forward); break;
+				case (8): input_keyboard_inject_release(key_mouse_back);    break;
+				}
+			} break;
+			case MotionNotify: {
+				linux_mouse_x = event.xmotion.x;
+				linux_mouse_y = event.xmotion.y;
+			} break;
+			case ConfigureNotify: {
+				//Todo: only call this when the user is done resizing
+				linux_resize(event.xconfigure.width, event.xconfigure.height);
+			} break;
+			case ClientMessage: {
+				if (!strcmp(XGetAtomName(dpy, event.xclient.message_type), "WM_PROTOCOLS")) {
+					sk_quit();
+					return;
+				}
+			} break;
 		}
-		XKeyboardState x;
-		XGetKeyboardControl(dpy, &x);
-		_linux_pressed_sk_keys[key_caps_lock] = (x.led_mask & 1);
 	}
-	return 0;
 }
 
 ///////////////////////////////////////////
-// End input thread
+// End input
 ///////////////////////////////////////////
 
 bool window_closed_because_openxr = false;
 
 ///////////////////////////////////////////
 
-void _linux_sigint_handler(int sig) {
-	_pthread_continue = false;
-	sk_quit();
-}
-
-///////////////////////////////////////////
-
 bool linux_init() {
-	signal(SIGINT, _linux_sigint_handler);
-	XInitThreads();
+	linux_init_key_lookups();
 
 	dpy = XOpenDisplay(0);
 	if (dpy == nullptr) {
@@ -298,6 +273,30 @@ bool linux_init() {
 	XMapWindow(dpy, win);
 	XStoreName(dpy, win, sk_app_name);
 
+	// loads the XMODIFIERS environment variable to see what input method to use
+    XSetLocaleModifiers("");
+
+    linux_input_method = XOpenIM(dpy, 0, 0, 0);
+    if (!linux_input_method) {
+        // fallback to internal input method
+        XSetLocaleModifiers("@im=none");
+        linux_input_method = XOpenIM(dpy, 0, 0, 0);
+    }
+
+    // X input context, you can have multiple for text boxes etc, but having a
+    // single one is the easiest.
+    linux_input_context = XCreateIC(linux_input_method,
+                        XNInputStyle,   XIMPreeditNothing | XIMStatusNothing,
+                        XNClientWindow, win,
+                        XNFocusWindow,  win,
+                        nullptr);
+    XSetICFocus(linux_input_context);
+
+	// Setup for window events
+	XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
+	Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
+	XSetWMProtocols(dpy, win, &wm_delete, 1);
+
 	skg_setup_xlib(dpy, vi, &fbconfig, &win);
 
 	return true;
@@ -323,10 +322,7 @@ bool linux_start() {
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
 
-	pthread_t imnotimportant;
-
 	flatscreen_input_init();
-	pthread_create(&imnotimportant,nullptr,linux_input_pthread,(void*)1);
 
 	XWindowAttributes wa;
 	XGetWindowAttributes(dpy,win,&wa);
@@ -353,21 +349,15 @@ void linux_resize(int width, int height) {
 ///////////////////////////////////////////
 
 bool linux_get_cursor(vec2 &out_pos) {
-	out_pos.x = (float)mouseX;
-	out_pos.y = (float)mouseY;
+	out_pos.x = (float)linux_mouse_x;
+	out_pos.y = (float)linux_mouse_y;
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool linux_key_down(key_ key) {
-	return _linux_pressed_sk_keys[key];
-}
-
-///////////////////////////////////////////
-
 float linux_get_scroll() {
-	return (float)scrollwheel;
+	return linux_scroll;
 }
 
 ///////////////////////////////////////////
@@ -405,6 +395,7 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin() {
+	linux_events();
 	flatscreen_input_update();
 }
 
