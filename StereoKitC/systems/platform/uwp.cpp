@@ -408,7 +408,7 @@ void uwp_show_keyboard(bool show) {
 		bool result = show 
 			? InputPane::GetForCurrentView().TryShow()
 			: InputPane::GetForCurrentView().TryHide();
-		});
+	});
 }
 
 ///////////////////////////////////////////
@@ -420,8 +420,10 @@ bool uwp_init() {
 ///////////////////////////////////////////
 
 void uwp_init_after_openxr() {
-	CoreApplication::MainView().CoreWindow()             .CharacterReceived      (uwp_on_corewindow_character);
 	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
+	});
 }
 
 ///////////////////////////////////////////

@@ -972,8 +972,10 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	// Unfocus this if the user starts interacting with something else
 	if (skui_input_target == id_hash) {
 		for (int32_t i = 0; i < handed_max; i++) {
-			if (ui_is_hand_preoccupied((handed_)i, id_hash, false))
+			if (ui_is_hand_preoccupied((handed_)i, id_hash, false)) {
 				skui_input_target = 0;
+				platform_keyboard_show(false);
+			}
 		}
 	}
 
@@ -991,9 +993,12 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
+				platform_keyboard_show(false);
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
+				skui_input_target = 0;
+				platform_keyboard_show(false);
 			} else {
 				add = curr;
 			}
@@ -1133,7 +1138,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		vec3 finger_pos = matrix_mul_point( to_local, finger_pos_world );
 
 		vec3 from_pt = finger_pos;
-		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, box)) {
+		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
 			ui_focus_set((handed_)i, id, 0);
 			skui_hand[i].focused = id;
 		} else {
