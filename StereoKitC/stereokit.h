@@ -260,15 +260,16 @@ static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,
 
 ///////////////////////////////////////////
 
-SK_API bool32_t plane_ray_intersect  (plane_t plane, ray_t ray, vec3 *out_pt);
-SK_API bool32_t plane_line_intersect (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt);
-SK_API vec3     plane_point_closest  (plane_t plane, vec3 pt);
-SK_API bool32_t sphere_ray_intersect (sphere_t sphere, ray_t ray, vec3 *out_pt);
-SK_API bool32_t sphere_point_contains(sphere_t sphere, vec3 pt);
-SK_API bool32_t bounds_ray_intersect (bounds_t bounds, ray_t ray, vec3 *out_pt);
-SK_API bool32_t bounds_point_contains(bounds_t bounds, vec3 pt);
-SK_API bool32_t bounds_line_contains (bounds_t bounds, vec3 pt1, vec3 pt2);
-SK_API vec3     ray_point_closest    (ray_t ray, vec3 pt);
+SK_API bool32_t plane_ray_intersect    (plane_t plane, ray_t ray, vec3 *out_pt);
+SK_API bool32_t plane_line_intersect   (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt);
+SK_API vec3     plane_point_closest    (plane_t plane, vec3 pt);
+SK_API bool32_t sphere_ray_intersect   (sphere_t sphere, ray_t ray, vec3 *out_pt);
+SK_API bool32_t sphere_point_contains  (sphere_t sphere, vec3 pt);
+SK_API bool32_t bounds_ray_intersect   (bounds_t bounds, ray_t ray, vec3 *out_pt);
+SK_API bool32_t bounds_point_contains  (bounds_t bounds, vec3 pt);
+SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
+SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
+SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////
 
