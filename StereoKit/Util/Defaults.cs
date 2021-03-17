@@ -58,10 +58,10 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color:color = .6, .6, .6, 1
-		/// border_size_min = 0.005
-		/// border_size_max = 0.03
-		/// border_affect_radius = 0.2```
+		/// ```color                - color
+		/// border_size          - meters
+		/// border_size_scale    - percent of border_size
+		/// border_affect_radius - meters```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
 
@@ -145,10 +145,10 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color:color = .6, .6, .6, 1
-		/// border_size_min = 0.005
-		/// border_size_max = 0.03
-		/// border_affect_radius = 0.2```
+		/// ```color                - color
+		/// border_size          - meters
+		/// border_size_scale    - percent of border_size
+		/// border_affect_radius - meters```
 		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a 

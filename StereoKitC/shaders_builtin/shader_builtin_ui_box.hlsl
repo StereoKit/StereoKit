@@ -2,12 +2,12 @@
 
 //--name = sk/default_ui_box
 //--color:color = .6, .6, .6, 1
-//--border_size_min = 0.005
-//--border_size_max = 0.03
+//--border_size = 0.005
+//--border_size_scale = 3
 //--border_affect_radius = 0.2
 float4       color;
-float        border_size_min;
-float        border_size_max;
+float        border_size;
+float        border_size_scale;
 float        border_affect_radius;
 
 struct vsIn {
@@ -22,6 +22,7 @@ struct psIn {
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
 	float4 world : TEXCOORD1;
+	float2 scale : TEXCOORD2;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -37,12 +38,17 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 		length(world_mat._21_22_23),
 		length(world_mat._31_32_33));
 
+	// Switch scale axes based on the model's normal
+	if      (abs(input.norm.y) > 0.75) o.scale = scale.xz;
+	else if (abs(input.norm.x) > 0.75) o.scale = scale.zy;
+	else                               o.scale = scale.xy;
+
 	o.world  = mul(input .pos, sk_inst    [id].world);
 	o.pos    = mul(o.world,    sk_viewproj[o.view_id]);
 	o.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
-	o.uv    = input.uv;
-	o.color = color * input.col * sk_inst[id].color;
+	o.uv     = input.uv-0.5;
+	o.color  = color * input.col * sk_inst[id].color;
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET{
@@ -50,9 +56,9 @@ float4 ps(psIn input) : SV_TARGET{
 	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
 	glow.x = min(1,glow.x / border_affect_radius);
 	
-	float  border_size= lerp(border_size_max, border_size_min, glow.x);
-	float2 border_pos = abs(input.uv - 0.5f);
-	float  corner     = saturate((max(border_pos.x, border_pos.y)+border_size-0.5)*100);
+	float  border_scale= lerp(1, border_size_scale, glow.x);
+	float2 border_pos  = (0.5-abs(input.uv)) * input.scale*border_scale;
+	float  corner      = 1-saturate((min(border_pos.x, border_pos.y)-border_size)*100);
 	
 	if (max(glow.y,corner) < 0.1) discard;
 

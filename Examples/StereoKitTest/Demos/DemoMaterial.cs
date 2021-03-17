@@ -13,6 +13,7 @@ class DemoMaterial : ITest
 	Material matUnlit;
 	Material matParameters;
 	Material matPBR;
+	Material matUIBox;
 
 	Tex                oldSkyTex;
 	SphericalHarmonics oldSkyLight;
@@ -102,6 +103,10 @@ class DemoMaterial : ITest
 		/// ![PBR material example]({{site.screen_url}}/MaterialPBR.jpg)
 		/// :End:
 
+		matUIBox = Default.MaterialUIBox.Copy();
+		matUIBox["border_size_min"] = 0.01f;
+		matUIBox["border_size_max"] = 0.02f;
+
 		matParameters = Default.Material.Copy();
 		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		matParameters[MatParamName.ColorTint ] = Color.HSV(0.6f, 0.7f, 1f);
@@ -135,6 +140,7 @@ class DemoMaterial : ITest
 		ShowMaterial(matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(matParameters, "MaterialParameters.jpg");
+		ShowMaterial(matUIBox,      "MaterialUIBox.jpg");
 	}
 
 	public void Shutdown()
