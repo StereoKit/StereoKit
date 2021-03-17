@@ -47,6 +47,23 @@
 		/// that creates a 'finger shadow' that shows how close the finger is 
 		/// to the UI.</summary>
 		public static Material MaterialUI       { get; private set; }
+		/// <summary>
+		/// A material for indicating interaction volumes! It renders a
+		/// border around the edges of the UV coordinates that will 'grow' on
+		/// proximity to the user's finger. It will discard pixels outside
+		/// of that border, but will also show the finger shadow. This is
+		/// meant to be an opaque material, so it works well for depth LSR.
+		/// 
+		/// This material works best on cube-like meshes where each face has
+		/// UV coordinates from 0-1.
+		/// 
+		/// Shader Parameters:
+		/// ```color:color = .6, .6, .6, 1
+		/// border_size_min = 0.005
+		/// border_size_max = 0.03
+		/// border_affect_radius = 0.2```
+		/// </summary>
+		public static Material MaterialUIBox { get; private set; }
 
 		/// <summary>Default 2x2 white opaque texture, this is the texture 
 		/// referred to as 'white' in the shader texture defaults.</summary>
@@ -118,6 +135,21 @@
 		/// distance circle effect that helps indicate finger distance from 
 		/// the surface of the object.</summary>
 		public static Shader ShaderUI       { get; private set; }
+		/// A shader for indicating interaction volumes! It renders a
+		/// border around the edges of the UV coordinates that will 'grow' on
+		/// proximity to the user's finger. It will discard pixels outside
+		/// of that border, but will also show the finger shadow. This is
+		/// meant to be an opaque shader, so it works well for depth LSR.
+		/// 
+		/// This shader works best on cube-like meshes where each face has
+		/// UV coordinates from 0-1.
+		/// 
+		/// Shader Parameters:
+		/// ```color:color = .6, .6, .6, 1
+		/// border_size_min = 0.005
+		/// border_size_max = 0.03
+		/// border_affect_radius = 0.2```
+		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a 
 		/// procedurally generated sound based on a mouse press, with extra 
@@ -137,6 +169,7 @@
 			MaterialFont     = Material.Find(DefaultIds.materialFont);
 			MaterialHand     = Material.Find(DefaultIds.materialHand);
 			MaterialUI       = Material.Find(DefaultIds.materialUI);
+			MaterialUIBox    = Material.Find(DefaultIds.materialUIBox);
 
 			Tex      = Tex.Find(DefaultIds.tex);
 			TexBlack = Tex.Find(DefaultIds.texBlack);
@@ -156,6 +189,7 @@
 			ShaderFont     = Shader.Find(DefaultIds.shaderFont);
 			ShaderEquirect = Shader.Find(DefaultIds.shaderEquirect);
 			ShaderUI       = Shader.Find(DefaultIds.shaderUI);
+			ShaderUIBox    = Shader.Find(DefaultIds.shaderUIBox);
 
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
@@ -168,6 +202,7 @@
 			MaterialFont     = null;
 			MaterialHand     = null;
 			MaterialUI       = null;
+			MaterialUIBox    = null;
 
 			Tex      = null;
 			TexBlack = null;
@@ -186,6 +221,7 @@
 			ShaderFont     = null;
 			ShaderEquirect = null;
 			ShaderUI       = null;
+			ShaderUIBox    = null;
 
 			SoundClick   = null;
 			SoundUnclick = null;

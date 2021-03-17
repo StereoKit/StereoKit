@@ -15,12 +15,7 @@ namespace StereoKitTest
 		bool       genPrevContains = false;
 		List<LinePoint> genPath = new List<LinePoint>();
 
-		Mesh boundsMesh = Mesh.GenerateCube(Vec3.One);
-		Material boundsMat = Default.MaterialUI.Copy();
-
 		public void Initialize() {
-			boundsMat.Transparency = Transparency.Blend;
-			boundsMat[MatParamName.ColorTint] = new Color(1, 1, 1, 0.25f);
 
 			/// :CodeSample: Sound Sound.FromFile Sound.Play
 			/// ### Basic usage
@@ -57,7 +52,7 @@ namespace StereoKitTest
 				genSound.Play(windowPose.position);
 			UI.WindowEnd();
 
-			boundsMesh.Draw(boundsMat, Matrix.TS(genVolume.center, genVolume.dimensions));
+			Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(genVolume.center, genVolume.dimensions));
 
 			Hand hand     = Input.Hand(Handed.Right);
 			bool contains = genVolume.Contains(hand[FingerId.Index, JointId.Tip].position);

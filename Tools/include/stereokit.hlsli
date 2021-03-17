@@ -47,3 +47,27 @@ float3 Lighting(float3 normal) {
 	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
 	return result;
 }
+
+///////////////////////////////////////////
+
+float2 FingerGlowEx(float3 world_pos, float3 world_norm) {
+	float dist = 1;
+	float ring = 0;
+	for	(int i=0;i<2;i++) {
+		float3 delta = sk_fingertip[i].xyz - world_pos;
+		float  d     = length(delta);
+		float3 norm  = delta / d;
+		ring = max( ring, min(1, 1 - abs(max(0,dot(world_norm, norm))-0.9)*100) );
+		dist = min( dist, d );
+	}
+
+	return float2(dist, ring);
+}
+
+///////////////////////////////////////////
+
+float FingerGlow(float3 world_pos, float3 world_norm) {
+	float2 glow = FingerGlowEx(world_pos, world_norm);
+	glow.x = pow(saturate(1 - glow.x / 0.12), 2);
+	return (glow.x * 0.2) + (glow.y * glow.x);
+}
