@@ -33,11 +33,30 @@ namespace StereoKit
 		public static Matrix operator *(Matrix a, Matrix b) => a.m*b.m;
 		public static Vec3   operator *(Matrix a, Vec3   b) => Vector3.Transform(b.v, a.m);
 		public static Ray    operator *(Matrix a, Ray    b) => a.Transform(b);
+		public static Pose   operator *(Matrix a, Pose   b) => a.Transform(b);
 
 		/// <summary>An identity Matrix is the matrix equivalent of '1'! 
 		/// Transforming anything by this will leave it at the exact same
 		/// place.</summary>
 		public static Matrix Identity => Matrix4x4.Identity;
+
+		/// <summary>A fast Property that will return or set the translation
+		/// component embedded in this transform matrix.</summary>
+		public Vector3 Translation { get => m.Translation; set => m.Translation = value; }
+		/// <summary>Returns the scale embedded in this transform matrix. Not
+		/// exactly cheap, requires 3 sqrt calls, but is cheaper than calling
+		/// Decompose.</summary>
+		public Vector3 Scale => NativeAPI.matrix_extract_scale(m);
+		/// <summary>A slow function that returns the rotation quaternion 
+		/// embedded in this transform matrix. This is backed by Decompose,
+		/// so if you need any additional info, it's better to just call
+		/// Decompose instead.</summary>
+		public Quat    Rotation => NativeAPI.matrix_extract_rotation(m);
+		/// <summary>Extracts translation and rotation information from the
+		/// transform matrix, and makes a Pose from it! Not exactly fast.
+		/// This is backed by Decompose, so if you need any additional info,
+		/// it's better to just call Decompose instead.</summary>
+		public Pose    Pose => NativeAPI.matrix_extract_pose(m);
 
 		/// <summary>Creates an inverse matrix! If the matrix takes a point 
 		/// from a -> b, then its inverse takes the point from b -> a.
@@ -72,6 +91,29 @@ namespace StereoKit
 		/// <returns>The transformed ray!</returns>
 		public Ray Transform(Ray ray) 
 			=> new Ray(Vector3.Transform(ray.position, m), Vector3.TransformNormal(ray.direction, m));
+		/// <summary>Shorthand for transforming a Pose! This will transform
+		/// the position of the Pose with the matrix, extract a rotation Quat
+		/// from the matrix and apply that to the Pose's orientation. Note
+		/// that extracting a rotation Quat is an expensive operation, so if
+		/// you're doing it more than once, you should cache the rotation 
+		/// Quat and do this transform manually.</summary>
+		/// <param name="pose">The original pose.</param>
+		/// <returns>The transformed pose.</returns>
+		public Pose Transform(Pose pose)
+			=> NativeAPI.matrix_mul_pose(m, pose);
+
+		/// <summary>Returns this transformation matrix to its original 
+		/// translation, rotation and scale components. Not exactly a cheap
+		/// function. If this is not a transform matrix, there's a chance
+		/// this call will fail, and return false.</summary>
+		/// <param name="translation">XYZ translation of the matrix.</param>
+		/// <param name="rotation">The rotation quaternion, some lossiness
+		/// may be encountered when composing/decomposing.</param>
+		/// <param name="scale">XYZ scale components.</param>
+		/// <returns>If this is not a transform matrix, there's a chance this
+		/// call will fail, and return false.</returns>
+		public bool Decompose(out Vec3 translation, out Quat rotation, out Vec3 scale)
+			=> Matrix4x4.Decompose(m, out scale.v, out rotation.q, out translation.v);
 
 		/// <summary>Translate. Creates a translation Matrix!</summary>
 		/// <param name="translation">Move an object by this amount.</param>

@@ -188,23 +188,25 @@ vec3 matrix_mul_direction(const XMMATRIX &transform, const vec3 &direction) {
 ///////////////////////////////////////////
 
 quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
-	XMMATRIX mat = XMMatrixRotationQuaternion(math_quat_to_fast(orientation));
-	XMMATRIX fast_transform;
-	math_matrix_to_fast(transform, &fast_transform);
-	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixMultiply(mat, fast_transform)));
-}
-
-///////////////////////////////////////////
-
-void matrix_decompose(const matrix &transform, vec3 &out_position, vec3 &out_scale, quat &out_orientation) {
 	XMVECTOR pos, scale, rot;
 	XMMATRIX mat;
 	math_matrix_to_fast(transform, &mat);
 	XMMatrixDecompose(&scale, &rot, &pos, mat);
+	XMVECTOR orient = math_quat_to_fast(orientation);
+	return math_fast_to_quat(XMQuaternionMultiply(rot, orient));
+}
 
-	out_position    = math_fast_to_vec3(pos);
-	out_scale       = math_fast_to_vec3(scale);
-	out_orientation = math_fast_to_quat(rot);
+///////////////////////////////////////////
+
+pose_t matrix_mul_pose(const matrix& transform, const pose_t& pose) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+	XMVECTOR orient = math_quat_to_fast(pose.orientation);
+	return pose_t{
+		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
+		math_fast_to_quat(XMQuaternionMultiply(rot, orient)) };
 }
 
 ///////////////////////////////////////////
@@ -243,6 +245,60 @@ void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orient
 		XMLoadFloat4((XMFLOAT4 *)& orientation),
 		XMLoadFloat3((XMFLOAT3 *)& position));
 	math_fast_to_matrix(mat, &out_result);
+}
+
+///////////////////////////////////////////
+
+bool32_t matrix_decompose(const matrix &transform, vec3 &out_position, vec3 &out_scale, quat &out_orientation) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	bool result = XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+	out_position    = math_fast_to_vec3(pos);
+	out_scale       = math_fast_to_vec3(scale);
+	out_orientation = math_fast_to_quat(rot);
+	return result;
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_extract_translation(const matrix &transform) {
+	// Last row of the matrix
+	return vec3{ transform.m[12], transform.m[13], transform.m[14] }; 
+}
+
+///////////////////////////////////////////
+
+vec3 matrix_extract_scale(const matrix &transform) {
+	return vec3{
+		XMVectorGetX(XMVector3Length(XMLoadFloat4((DirectX::XMFLOAT4 *)&transform.row[0]))),
+		XMVectorGetX(XMVector3Length(XMLoadFloat4((DirectX::XMFLOAT4 *)&transform.row[1]))),
+		XMVectorGetX(XMVector3Length(XMLoadFloat4((DirectX::XMFLOAT4 *)&transform.row[2]))) };
+}
+
+///////////////////////////////////////////
+
+quat matrix_extract_rotation(const matrix &transform) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+	return math_fast_to_quat(rot);
+}
+
+///////////////////////////////////////////
+
+pose_t matrix_extract_pose(const matrix &transform) {
+	XMVECTOR pos, scale, rot;
+	XMMATRIX mat;
+	math_matrix_to_fast(transform, &mat);
+	XMMatrixDecompose(&scale, &rot, &pos, mat);
+
+	return pose_t {
+		math_fast_to_vec3(pos),
+		math_fast_to_quat(rot) };
 }
 
 ///////////////////////////////////////////

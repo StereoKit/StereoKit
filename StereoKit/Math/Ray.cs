@@ -99,5 +99,8 @@ namespace StereoKit
 		/// </param>
 		/// <returns>The point at position + direction*percent.</returns>
 		public Vec3 At(float percent) => position + direction*percent;
+
+		public override string ToString()
+			=> string.Format("{0}, {1}", position, direction);
 	}
 }
