@@ -3,11 +3,11 @@
 //--name = sk/default_ui_box
 //--color:color = .6, .6, .6, 1
 //--border_size = 0.005
-//--border_size_scale = 3
+//--border_size_grow = 0.01
 //--border_affect_radius = 0.2
 float4       color;
 float        border_size;
-float        border_size_scale;
+float        border_size_grow;
 float        border_affect_radius;
 
 struct vsIn {
@@ -56,9 +56,9 @@ float4 ps(psIn input) : SV_TARGET{
 	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
 	glow.x = min(1,glow.x / border_affect_radius);
 	
-	float  border_scale= lerp(1, border_size_scale, glow.x);
-	float2 border_pos  = (0.5-abs(input.uv)) * input.scale*border_scale;
-	float  corner      = 1-saturate((min(border_pos.x, border_pos.y)-border_size)*100);
+	float  border_grow = -glow.x * border_size_grow + border_size;
+	float2 border_pos  = (0.5-abs(input.uv)) * input.scale;
+	float  corner      = 1-saturate((min(border_pos.x, border_pos.y)-border_grow)*100);
 	
 	if (max(glow.y,corner) < 0.1) discard;
 

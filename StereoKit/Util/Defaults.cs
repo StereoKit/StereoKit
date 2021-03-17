@@ -60,7 +60,7 @@
 		/// Shader Parameters:
 		/// ```color                - color
 		/// border_size          - meters
-		/// border_size_scale    - percent of border_size
+		/// border_size_grow     - meters
 		/// border_affect_radius - meters```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
@@ -147,7 +147,7 @@
 		/// Shader Parameters:
 		/// ```color                - color
 		/// border_size          - meters
-		/// border_size_scale    - percent of border_size
+		/// border_size_grow     - meters
 		/// border_affect_radius - meters```
 		public static Shader ShaderUIBox { get; private set; }
 

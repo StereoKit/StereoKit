@@ -445,6 +445,8 @@
     <None Include="..\Tools\include\stereokit.hlsli">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_ui_box.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </None>
   </ItemGroup>
 </Project>

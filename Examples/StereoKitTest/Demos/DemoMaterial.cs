@@ -104,8 +104,8 @@ class DemoMaterial : ITest
 		/// :End:
 
 		matUIBox = Default.MaterialUIBox.Copy();
-		matUIBox["border_size_min"] = 0.01f;
-		matUIBox["border_size_max"] = 0.02f;
+		matUIBox["border_size"] = 0.01f;
+		matUIBox["border_size_grow"] = 0.02f;
 
 		matParameters = Default.Material.Copy();
 		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
