@@ -74,8 +74,8 @@ bool win32_start() {
 		case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); break;
 		case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     break;
 		case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     break;
-		case WM_CHAR:        input_keyboard_inject_char(wParam);
-		case WM_MOUSEWHEEL:win32_scroll += (short)HIWORD(wParam); break;
+		case WM_CHAR:        input_keyboard_inject_char(wParam); break;
+		case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); break;
 		case WM_SYSCOMMAND: {
 			// Has the user pressed the restore/'un-maximize' button?
 			// WM_SIZE happens -after- this event, and contains the new size.
