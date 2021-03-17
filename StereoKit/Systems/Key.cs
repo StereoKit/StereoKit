@@ -167,7 +167,7 @@
 		/// <summary>-/_</summary>
 		Minus = 0xBD,
 		/// <summary>=/+</summary>
-		Euqals = 0xBB,
+		Equals = 0xBB,
 		/// <summary>`/~</summary>
 		Backtick = 0xC0,
 
