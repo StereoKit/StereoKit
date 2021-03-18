@@ -171,12 +171,12 @@ void input_hand_init() {
 
 	gradient_t color_grad = gradient_create();
 	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0f);
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.2f);
+	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.4f);
 	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
-		color32 col = gradient_get32(color_grad, y/15.f);
+		color32 col = gradient_get32(color_grad, 1-y/15.f);
 	for (int32_t x = 0; x < 16; x++) {
 		gradient[x + y * 16] = col;
 	} }
@@ -425,22 +425,25 @@ const vec3 sincos_norm[] = {
 	{cosf(234*deg2rad), sinf(234*deg2rad), 0},
 	{cosf(162*deg2rad), sinf(162*deg2rad), 0},};
 
+const float texcoord_v[SK_FINGERJOINTS + 1] = { 1, 1-0.44f, 1-0.69f, 1-0.85f, 1-0.96f, 1-0.99f };
+
 void input_hand_update_mesh(handed_ hand) {
 	hand_mesh_t &data = hand_state[hand].mesh;
 
-	const int32_t ring_count = _countof(sincos);
+	const int32_t ring_count  = _countof(sincos);
+	const int32_t slice_count = SK_FINGERJOINTS + 1;
 
 	// if this mesh hasn't been initialized yet
 	if (data.verts == nullptr) {
-		data.vert_count = (_countof(sincos) * SK_FINGERJOINTS + 1) * SK_FINGERS ; // verts: per joint, per finger 
-		data.ind_count  = (3 * 5 * 2 * (SK_FINGERJOINTS-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
+		data.vert_count = (_countof(sincos) * slice_count + 1) * SK_FINGERS ; // verts: per joint, per finger 
+		data.ind_count  = (3 * 5 * 2 * (slice_count-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 		data.verts      = sk_malloc_t<vert_t>(data.vert_count);
 		data.inds       = sk_malloc_t<vind_t>(data.ind_count );
 
 		int32_t ind = 0;
 		for (vind_t f = 0; f < SK_FINGERS; f++) {
-			vind_t start_vert =  f    * (ring_count * SK_FINGERJOINTS + 1);
-			vind_t end_vert   = (f+1) * (ring_count * SK_FINGERJOINTS + 1) - (ring_count + 1);
+			vind_t start_vert =  f    * (ring_count * slice_count + 1);
+			vind_t end_vert   = (f+1) * (ring_count * slice_count + 1) - (ring_count + 1);
 
 			// start cap
 			data.inds[ind++] = start_vert+2;
@@ -456,7 +459,7 @@ void input_hand_update_mesh(handed_ hand) {
 			data.inds[ind++] = start_vert+6;
 		
 			// tube faces
-			for (vind_t j = 0; j < SK_FINGERJOINTS-1; j++) {
+			for (vind_t j = 0; j < slice_count-1; j++) {
 			for (vind_t c = 0; c < ring_count-1; c++) {
 				if (c == 2) c++;
 				vind_t curr1 = start_vert +  j    * ring_count + c;
@@ -496,12 +499,10 @@ void input_hand_update_mesh(handed_ hand) {
 
 		// Generate uvs and colors for the mesh
 		int v = 0;
-		for (int f = 0; f < SK_FINGERS;      f++) {
-			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERJOINTS);
-		for (int j = 0; j < SK_FINGERJOINTS; j++) {
-			float y = f == 0 
-				? (fmaxf(0,(float)j-1) / (float)(SK_FINGERJOINTS-2)) 
-				: (j / (float)(SK_FINGERJOINTS-1));
+		for (int f = 0; f < SK_FINGERS; f++) {
+			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERS);
+		for (int j = 0; j < slice_count; j++) {
+			float y = texcoord_v[f==0 ? max(0,j-1) : j];
 			
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 255,255,255,255 };
@@ -518,7 +519,7 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 200,200,200,255 };
 		} 
-		data.verts[v  ].uv  = { x,1.0f };
+		data.verts[v  ].uv  = { x,0 };
 		data.verts[v++].col = { 255,255,255,255 };
 		}
 
@@ -531,31 +532,43 @@ void input_hand_update_mesh(handed_ hand) {
 
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
-	for (int j = 0; j < SK_FINGERJOINTS; j++) {
-		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
-		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
-		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
+		const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
+		vec3 tip_fwd = pose_last.orientation * vec3_forward;
+		vec3 tip_up  = pose_last.orientation * vec3_up;
+		for (int j = 0; j < SK_FINGERJOINTS; j++) {
+			const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
+			const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
+			quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
-		// Make local right and up axis vectors
-		vec3  right = orientation * vec3_right;
-		vec3  up    = orientation * vec3_up;
+			// Make local right and up axis vectors
+			vec3  right = orientation * vec3_right;
+			vec3  up    = orientation * vec3_up;
 
-		// Find the scale for this joint
-		float scale = pose.radius;
-		if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
+			// Find the scale for this joint
+			float scale = pose.radius;
+			if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
 
-		// Use the local axis to create a ring of verts
-		for (size_t i = 0; i < ring_count; i++) {
-			data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
-			v++;
+			// Use the local axis to create a ring of verts
+			for (size_t i = 0; i < ring_count; i++) {
+				data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+				data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
+				v++;
+			}
+
+			// Last ring to blunt the fingertip
+			if (j == SK_FINGERJOINTS - 1) {
+				scale = scale * 0.75f;
+				for (size_t i = 0; i < ring_count; i++) {
+					vec3 at = pose.position + tip_fwd * pose.radius * 0.65f;
+					data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+					data.verts[v].pos  = at + (up*sincos[i].y + right*sincos[i].x)*scale + tip_up * pose.radius*0.25f;
+					v++;
+				}
+			}
 		}
-	}
-	const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-2];
-	const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
-	data.verts[v].norm = vec3_normalize(pose_last.position - pose_prev.position);
-	data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius;
-	v++;
+		data.verts[v].norm = tip_fwd;
+		data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius + tip_up * pose_last.radius * 0.9f;
+		v++;
 	}
 
 	// And update the mesh vertices!

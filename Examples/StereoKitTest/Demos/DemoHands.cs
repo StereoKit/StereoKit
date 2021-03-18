@@ -129,7 +129,7 @@ namespace StereoKitTest
 						new GradientKey(Color.HSV(0.8f,1,1), 0.9f)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.2f),
+						new GradientKey(new Color(1,1,1,0), 0.4f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
 			if (UI.Button("Black"))
@@ -141,12 +141,20 @@ namespace StereoKitTest
 						new GradientKey(new Color(1,1,1,1), 0.6f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
+			if (UI.Button("Full Black"))
+				ColorizeFingers(16,
+					new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
+					new Gradient(
+						new GradientKey(new Color(1, 1, 1, 0), 0),
+						new GradientKey(new Color(1, 1, 1, 1), 0.05f),
+						new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
+			UI.SameLine();
 			if (UI.Button("Normal"))
 				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.2f),
+						new GradientKey(new Color(1,1,1,0), 0.4f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.WindowEnd();
 
@@ -171,7 +179,7 @@ namespace StereoKitTest
 			Color32[] pixels = new Color32[size*size];
 			for (int y = 0; y < size; y++)
 			{
-				Color v = vertical.Get(y / (size-1.0f));
+				Color v = vertical.Get(1 - y / (size-1.0f));
 				for (int x = 0; x < size; x++)
 				{
 					Color h = horizontal.Get(x / (size-1.0f));
