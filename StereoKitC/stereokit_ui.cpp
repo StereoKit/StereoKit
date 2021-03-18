@@ -41,6 +41,7 @@ struct ui_hand_t {
 	vec3     finger_world;
 	vec3     finger_world_prev;
 	bool     tracked;
+	bool     ray_enabled;
 	uint64_t focused_prev = {};
 	uint64_t focused = {};
 	float    focus_priority;
@@ -337,13 +338,13 @@ void ui_update() {
 		skui_hand[i].finger       = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
 		skui_hand[i].finger_prev  = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
 		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
+		skui_hand[i].ray_enabled  = skui_hand[i].tracked && (vec3_dot(hand->palm.orientation * vec3_forward, input_head()->position - hand->palm.position) < 0);
 
 		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
 		// draw hand rays
-		if (skui_hand[i].focused_prev == 0 && skui_hand[i].tracked 
-			&& vec3_dot(hand->palm.orientation * vec3_forward, hand->palm.position - input_head()->position)) {
+		if (skui_hand[i].ray_enabled && skui_hand[i].focused_prev == 0) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
 			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
 		}
@@ -1147,7 +1148,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
 			ui_focus_set((handed_)i, id, 0);
 			skui_hand[i].focused = id;
-		} else {
+		} else if (skui_hand[i].ray_enabled) {
 			pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 			if (ptr->tracked & button_state_active) {
 				vec3  at;
