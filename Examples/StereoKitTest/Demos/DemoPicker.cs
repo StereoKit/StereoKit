@@ -7,13 +7,21 @@ namespace StereoKitTest
 {
 	class DemoPicker : ITest
 	{
-		Model model      = null;
-		float modelScale = 1;
-		float menuScale  = 1;
-		Pose  modelPose  = new Pose(-.3f,0,0, Quat.LookDir(-Vec3.Forward));
-		Pose  menuPose   = new Pose(0.3f,0,0, Quat.LookDir(-Vec3.Forward));
+		Model    model      = null;
+		float    modelScale = 1;
+		float    menuScale  = 1;
+		Pose     modelPose  = new Pose(-.3f,0,0, Quat.LookDir(-Vec3.Forward));
+		Pose     menuPose   = new Pose(0.3f,0,0, Quat.LookDir(-Vec3.Forward));
+		Material volumeMat;
 
-		public void Initialize() => ShowPicker();
+		public void Initialize()
+		{
+			volumeMat = Default.MaterialUIBox.Copy();
+			volumeMat["border_size"] = 0;
+			volumeMat["border_affect_radius"] = 0.3f;
+
+			ShowPicker();
+		}
 		public void Shutdown() => FilePicker.Hide();
 
 		public void Update() {
@@ -27,7 +35,9 @@ namespace StereoKitTest
 			UI.WindowEnd();
 
 			if (model != null) {
-				UI.HandleBegin("Model", ref modelPose, model.Bounds*modelScale*menuScale);
+				Bounds scaled = model.Bounds * modelScale * menuScale;
+				UI.HandleBegin("Model", ref modelPose, scaled);
+				Default.MeshCube.Draw(volumeMat, Matrix.TS(scaled.center, scaled.dimensions));
 				model.Draw(Matrix.TS(Vec3.Zero, modelScale*menuScale));
 				UI.HandleEnd();
 			}
