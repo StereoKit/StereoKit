@@ -73,6 +73,12 @@ namespace StereoKit
 		/// <summary>Is the hand making a grip gesture right now? Fingers
 		/// next to the palm.</summary>
 		public  BtnState    grip;
+		/// <summary>This is the size of the hand, calculated by measuring 
+		/// the length of the middle finger! This is calculated by adding the 
+		/// distances between each joint, then adding the joint radius of the
+		/// root and tip. This value is recalculated at relatively frequent 
+		/// intervals, and can vary by as much as a centimeter.</summary>
+		public float size;
 		/// <summary>What percentage of activation is the pinch gesture right
 		/// now? Where 0 is a hand in an outstretched resting position, and 1
 		/// is fingers touching, within a device error tolerant threshold.

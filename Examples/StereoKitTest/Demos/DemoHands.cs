@@ -23,6 +23,7 @@ namespace StereoKitTest
 		bool showAxes      = true;
 		bool showPointers  = true;
 		bool showHandMenus = true;
+		bool showHandSize  = true;
 
 		Mesh jointMesh = Mesh.GenerateSphere(1);
 		HandMenuRadial handMenu;
@@ -112,6 +113,8 @@ namespace StereoKitTest
 			UI.SameLine();
 			UI.Toggle("Axes", ref showAxes);
 			UI.SameLine();
+			UI.Toggle("Hand Size", ref showHandSize);
+			UI.SameLine();
 			UI.Toggle("Pointers", ref showPointers);
 			UI.SameLine();
 			UI.Toggle("Menu", ref showHandMenus);
@@ -150,6 +153,7 @@ namespace StereoKitTest
 			if (showJoints)   DrawJoints(jointMesh, Default.Material);
 			if (showAxes)     DrawAxes();
 			if (showPointers) DrawPointers();
+			if (showHandSize) DrawHandSize();
 			if (showHandMenus) 
 			{ 
 				DrawHandMenu(Handed.Right);
@@ -276,6 +280,26 @@ namespace StereoKitTest
 			}
 		}
 		/// :End:
+
+		public static void DrawHandSize()
+		{
+			for (int h = 0; h < (int)Handed.Max; h++)
+			{
+				Hand hand = Input.Hand((Handed)h);
+				if (!hand.IsTracked)
+					continue;
+
+				HandJoint at = hand[FingerId.Middle, JointId.Tip];
+				Vec3 pos = at.position + at.Pose.Forward * at.radius;
+				Quat rot = at.orientation * Quat.FromAngles(-90, 0, 0);
+				if (!HandFacingHead((Handed)h)) rot = rot * Quat.FromAngles(0,180,0);
+
+				Text.Add(
+					(hand.size * 100).ToString(".0")+"cm", 
+					Matrix.TRS(pos, rot, 0.3f),
+					TextAlign.XCenter|TextAlign.YBottom);
+			}
+		}
 	}
 }
 

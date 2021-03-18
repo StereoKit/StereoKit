@@ -1214,8 +1214,6 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							dest_rot = quat_difference(start_2h_rot, dest_rot);
 						} break;
 						case ui_move_face_user: {
-							//dest_rot = quat_lookat_up(finger_pos[0], finger_pos[1], vec3_cross(matrix_mul_point(to_local, input_head()->position) - dest_pos, finger_pos[1] - dest_pos));
-							//dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head()->position));
 							dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
 							dest_rot = quat_difference(start_2h_rot, dest_rot);
 						} break;
@@ -1237,6 +1235,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
 					}
 
+					// If one of the hands just let go, reset their starting
+					// locations so the handle doesn't 'pop' when switching
+					// back to 1-handed interaction.
 					if ((input_hand(handed_left)->pinch_state & button_state_just_inactive) || (input_hand(handed_right)->pinch_state & button_state_just_inactive)) {
 						start_handle_pos[i] = movement.position;
 						start_handle_rot[i] = movement.orientation;

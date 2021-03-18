@@ -89,6 +89,7 @@ hand_system_t hand_sources[] = { // In order of priority
 };
 int32_t      hand_system = -1;
 hand_state_t hand_state[2] = {};
+float        hand_size_update = 0;
 int32_t      input_hand_pointer_id[handed_max] = {-1, -1};
 
 void input_hand_update_mesh(handed_ hand);
@@ -137,6 +138,9 @@ void input_hand_refresh_system() {
 			hand_sources [hand_system].init();
 			hand_sources [hand_system].initialized = true;
 		}
+
+		// Force the hand size to recalculate next update
+		hand_size_update = 0;
 	}
 }
 
@@ -249,6 +253,26 @@ void input_hand_shutdown() {
 void input_hand_update() {
 	
 	hand_sources[hand_system].update_frame();
+
+	// Update the hand size every second
+	hand_size_update -= time_elapsedf();
+	if (hand_size_update <= 0) {
+		hand_size_update = 1;
+
+		for (size_t h = 0; h < handed_max; h++) {
+			if (!(hand_state[h].info.tracked_state & button_state_active))
+				continue;
+
+			hand_state[h].info.size = 0;
+			for (size_t j = 0; j < hand_joint_tip-1; j++) {
+				hand_state[h].info.size += vec3_magnitude(
+					hand_state[h].info.fingers[hand_finger_middle][j  ].position -
+					hand_state[h].info.fingers[hand_finger_middle][j+1].position);
+			}
+			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_root].radius;
+			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_tip].radius;
+		}
+	}
 
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand states

@@ -738,6 +738,7 @@ typedef struct hand_t {
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
+	float size;
 	float pinch_activation;
 	float grip_activation;
 } hand_t;
