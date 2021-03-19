@@ -169,7 +169,7 @@
     <ClCompile Include="systems\input_keyboard.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\tinycthread.c">
+    <ClCompile Include="libraries\tinycthread.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
   </ItemGroup>

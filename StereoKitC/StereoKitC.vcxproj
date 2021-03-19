@@ -145,7 +145,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
-    <ClCompile Include="libraries\tinycthread.c" />
+    <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="sk_math.cpp" />
     <ClCompile Include="sk_memory.cpp" />

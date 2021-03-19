@@ -502,7 +502,7 @@ void input_hand_update_mesh(handed_ hand) {
 		for (int f = 0; f < SK_FINGERS; f++) {
 			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERS);
 		for (int j = 0; j < slice_count; j++) {
-			float y = texcoord_v[f==0 ? max(0,j-1) : j];
+			float y = texcoord_v[f==0 ? maxi(0,j-1) : j];
 			
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 255,255,255,255 };

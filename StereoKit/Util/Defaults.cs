@@ -47,12 +47,12 @@
 		/// that creates a 'finger shadow' that shows how close the finger is 
 		/// to the UI.</summary>
 		public static Material MaterialUI       { get; private set; }
-		/// <summary>
-		/// A material for indicating interaction volumes! It renders a
-		/// border around the edges of the UV coordinates that will 'grow' on
-		/// proximity to the user's finger. It will discard pixels outside
-		/// of that border, but will also show the finger shadow. This is
-		/// meant to be an opaque material, so it works well for depth LSR.
+		/// <summary> A material for indicating interaction volumes! It
+		/// renders a border around the edges of the UV coordinates that will
+		/// 'grow' on proximity to the user's finger. It will discard pixels
+		/// outside of that border, but will also show the finger shadow.
+		/// This is meant to be an opaque material, so it works well for
+		/// depth LSR.
 		/// 
 		/// This material works best on cube-like meshes where each face has
 		/// UV coordinates from 0-1.
@@ -135,9 +135,9 @@
 		/// distance circle effect that helps indicate finger distance from 
 		/// the surface of the object.</summary>
 		public static Shader ShaderUI       { get; private set; }
-		/// A shader for indicating interaction volumes! It renders a
-		/// border around the edges of the UV coordinates that will 'grow' on
-		/// proximity to the user's finger. It will discard pixels outside
+		/// <summary>A shader for indicating interaction volumes! It renders
+		/// a border around the edges of the UV coordinates that will 'grow'
+		/// on proximity to the user's finger. It will discard pixels outside
 		/// of that border, but will also show the finger shadow. This is
 		/// meant to be an opaque shader, so it works well for depth LSR.
 		/// 
@@ -148,7 +148,7 @@
 		/// ```color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```
+		/// border_affect_radius - meters```</summary>
 		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a 
