@@ -25,9 +25,11 @@ struct ui_settings_t {
 	float backplate_border;
 };
 
-SK_API void     ui_show_volumes(bool32_t      show);
-SK_API void     ui_settings    (ui_settings_t settings);
-SK_API void     ui_set_color   (color128      color);
+SK_API void     ui_show_volumes        (bool32_t      show);
+SK_API void     ui_enable_far_interact (bool32_t      enable);
+SK_API bool32_t ui_far_interact_enabled();
+SK_API void     ui_settings            (ui_settings_t settings);
+SK_API void     ui_set_color           (color128      color);
 
 SK_API void     ui_layout_area   (vec3 start, vec2 dimensions);
 SK_API vec2     ui_area_remaining();

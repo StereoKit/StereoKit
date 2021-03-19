@@ -20,9 +20,17 @@ namespace StereoKit
 		/// space color, and use it to skin the UI!</summary>
 		public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
-		/// <summary>Shows or hides the collision volumes of the UI! This is for debug purposes,
-		/// and can help identify visible and invisible collision issues.</summary>
+		/// <summary>Shows or hides the collision volumes of the UI! This is
+		/// for debug purposes, and can help identify visible and invisible
+		/// collision issues.</summary>
 		public static bool       ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
+
+		/// <summary>Enables or disables the far ray grab interaction for 
+		/// Handle elements like the Windows. It can be enabled and disabled
+		/// for individual UI elements, and if this remains disabled at the
+		/// start of the next frame, then the hand ray indicators will not be
+		/// visible. This is enabled by default. </summary>
+		public static bool       EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
 
 		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
 		public static float      LineHeight => NativeAPI.ui_line_height();

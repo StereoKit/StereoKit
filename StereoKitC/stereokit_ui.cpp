@@ -47,6 +47,7 @@ struct ui_hand_t {
 	float    focus_priority;
 	uint64_t active_prev = {};
 	uint64_t active = {};
+	button_state_ pinch_state;
 };
 
 struct ui_id_t {
@@ -71,6 +72,7 @@ material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius = 0;
 bool32_t        skui_show_volumes = false;
+bool32_t        skui_enable_far_interact = true;
 uint64_t        skui_input_target = 0;
 
 sound_t         skui_snd_interact;
@@ -257,6 +259,18 @@ void ui_show_volumes(bool32_t show) {
 
 ///////////////////////////////////////////
 
+void ui_enable_far_interact(bool32_t enable) {
+	skui_enable_far_interact = enable;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_far_interact_enabled() {
+	return skui_enable_far_interact;
+}
+
+///////////////////////////////////////////
+
 void ui_settings(ui_settings_t settings) {
 	if (settings.backplate_border == 0) settings.backplate_border = 0.5f * mm2m;
 	if (settings.backplate_depth  == 0) settings.backplate_depth  = 0.4f;
@@ -344,7 +358,7 @@ void ui_update() {
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
 		// draw hand rays
-		if (skui_hand[i].ray_enabled && skui_hand[i].focused_prev == 0) {
+		if (skui_enable_far_interact && skui_hand[i].ray_enabled && skui_hand[i].focused_prev == 0) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
 			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
 		}
@@ -595,7 +609,7 @@ bool32_t ui_in_box(vec3 pt, vec3 pt_prev, float radius, bounds_t box) {
 bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused) {
 	const ui_hand_t &h = skui_hand[hand];
 	return (include_focused && h.focused_prev != 0 && h.focused_prev != for_el_id)
-		|| (h.active_prev  != 0 && h.active_prev  != for_el_id);
+		|| (h.active_prev != 0 && h.active_prev != for_el_id);
 }
 
 ///////////////////////////////////////////
@@ -1148,7 +1162,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
 			ui_focus_set((handed_)i, id, 0);
 			skui_hand[i].focused = id;
-		} else if (skui_hand[i].ray_enabled) {
+		} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 			pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 			if (ptr->tracked & button_state_active) {
 				vec3  at;
