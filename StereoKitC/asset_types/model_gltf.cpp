@@ -26,15 +26,15 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, const char *filename) {
+mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const char *filename) {
 	cgltf_mesh      *m = mesh;
-	cgltf_primitive *p = &m->primitives[0];
+	cgltf_primitive *p = &m->primitives[primitive_id];
 
 	if (p->type != cgltf_primitive_type_triangles)
 		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
 
 	char id[512];
-	snprintf(id, sizeof(id), "%s/mesh/%d_%s", filename, node_id, m->name);
+	snprintf(id, sizeof(id), "%s/mesh/%d_%d_%s", filename, node_id, primitive_id, m->name);
 	mesh_t result = mesh_find(id);
 	if (result != nullptr) {
 		return result;
@@ -413,14 +413,17 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 		matrix transform = matrix_identity;
 		gltf_build_node_matrix(n, transform);
-		matrix     offset   = transform * orientation_correction;
-		mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, filename);
-		material_t material = gltf_parsematerial(data, n->mesh->primitives[0].material, filename, shader);
+		matrix offset = transform * orientation_correction;
 
-		model_add_subset(model, mesh, material, offset);
+		for (int32_t p = 0; p < n->mesh->primitives_count; p++) {
+			mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, p, filename);
+			material_t material = gltf_parsematerial(data, n->mesh->primitives[p].material, filename, shader);
 
-		mesh_release    (mesh);
-		material_release(material);
+			model_add_subset(model, mesh, material, offset);
+
+			mesh_release    (mesh);
+			material_release(material);
+		}
 	}
 	cgltf_free(data);
 	return true;
