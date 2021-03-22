@@ -85,6 +85,10 @@ if ($fast -eq $true) {
 $version = Get-Version
 Write-Host "v$version"
 
+# Ensure the version string for the package matches the StereoKit version
+Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
+Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
+
 # Run tests before anything else!
 if ($fast -eq $false) {
     Write-Host 'Running tests...'
@@ -131,9 +135,6 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
     exit
 }
-
-# Ensure the version string for the package matches the StereoKit version
-Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 
 # Build ARM first
 $result = Build -mode "Release|ARM64"

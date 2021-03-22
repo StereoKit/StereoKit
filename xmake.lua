@@ -46,7 +46,7 @@ option("uwp")
     
 target("StereoKitC")
     add_options("uwp")
-    set_version("0.3.0")
+    set_version("0.3.1-preview.2")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
@@ -59,6 +59,11 @@ target("StereoKitC")
     else
         set_languages("cxx11")
     end
+
+    -- 2.5.3 is needed for utils.install.pkgconfig_importfiles, use `xmake update -s master`
+    -- to get access to required functionality in the meantime
+    set_xmakever("2.5.2") 
+    add_rules("utils.install.pkgconfig_importfiles")
     
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
