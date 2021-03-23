@@ -444,9 +444,9 @@ bool render_init() {
 	vind_t inds [] = {2,1,0, 3,2,0};
 	vert_t verts[] = {
 		vert_t{ {-1, 1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
-		vert_t{ { 1, 1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
-		vert_t{ { 1,-1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
-		vert_t{ {-1,-1,1}, {0,0,1}, {0,0}, {255,255,255,255} }, };
+		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
+		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
+		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
 	mesh_set_inds (render_sky_mesh, inds,  _countof(inds));
 	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
 	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
