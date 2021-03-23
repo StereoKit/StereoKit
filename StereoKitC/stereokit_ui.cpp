@@ -354,6 +354,12 @@ void ui_update() {
 		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
 		skui_hand[i].ray_enabled  = skui_hand[i].tracked && (vec3_dot(hand->palm.orientation * vec3_forward, input_head()->position - hand->palm.position) < 0);
 
+		// Don't let the hand trigger things while popping in and out of
+		// tracking
+		if (hand->tracked_state & button_state_just_active) {
+			skui_hand[i].finger_prev       = skui_hand[i].finger;
+			skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
+		}
 		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
