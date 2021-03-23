@@ -64,7 +64,8 @@ target("StereoKitC")
     -- to get access to required functionality in the meantime
     set_xmakever("2.5.2") 
     add_rules("utils.install.pkgconfig_importfiles")
-    
+    add_headerfiles("StereoKitC/stereokit*.h")
+
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
