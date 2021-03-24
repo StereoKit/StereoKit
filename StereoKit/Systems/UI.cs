@@ -135,6 +135,9 @@ namespace StereoKit
 		public static void Label(string text, Vec2 size)
 			=> NativeAPI.ui_label_sz(text, size);
 
+		public static void Text(string text)
+			=> NativeAPI.ui_text(text);
+
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the components is 0, 
@@ -142,7 +145,7 @@ namespace StereoKit
 		/// ratio.</param>
 		public static void Image (Sprite image, Vec2 size) 
 			=> NativeAPI.ui_image(image._inst, size);
-        
+
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
 		/// vertically and horizontally. Text is re-used as the id. Will return true only on 
 		/// the first frame it is pressed!</summary>

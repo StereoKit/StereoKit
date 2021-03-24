@@ -374,6 +374,7 @@ void ui_update() {
 			skui_hand[i].finger_prev       = skui_hand[i].finger;
 			skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
 		}
+
 		skui_layers[0].finger_pos [i] = skui_hand[i].finger;
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
@@ -811,6 +812,7 @@ void ui_hseparator() {
 
 void ui_label_sz(const char *text, vec2 size) {
 	vec3 offset;
+	size.x -= skui_settings.gutter;
 	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
 	ui_nextline();
@@ -824,12 +826,25 @@ void ui_label(const char *text, bool32_t use_padding) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  txt_size = text_size(text, skui_font_stack.last());
 	vec2  size     = txt_size;
-	float pad      = use_padding ? skui_settings.padding : 0;
+	float pad      = use_padding ? skui_settings.gutter : 0;
 
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
 	ui_nextline();
 	ui_text(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+}
+
+///////////////////////////////////////////
+
+void ui_text(const char *text) {
+	vec3  offset   = skui_layers.last().offset;
+	vec2  size     = { ui_area_remaining().x-skui_settings.gutter*2, 0 };
+
+	vec3 at = offset - vec3{ skui_settings.gutter, 0, skui_settings.depth / 2 };
+	size.y = text_add_in(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_top, at.x, at.y, at.z);
+
+	ui_reserve_box(size);
+	ui_nextline();
 }
 
 ///////////////////////////////////////////

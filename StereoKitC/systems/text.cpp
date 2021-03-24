@@ -358,8 +358,8 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 
 ///////////////////////////////////////////
 
-void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	if (text == nullptr) return;
+float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+	if (text == nullptr) return 0;
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
@@ -437,6 +437,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 		}
 		text_step_position(text[i], &text[i], step);
 	}
+	return (step.start.y - step.pos.y) + step.style->size * step.style->font->character_height;
 }
 
 ///////////////////////////////////////////

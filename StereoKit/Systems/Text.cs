@@ -116,10 +116,10 @@ namespace StereoKit
 		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at(text, transform, -1, position, align, offX, offY, offZ);
 
-		public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
 
-		public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in(text, transform, size, fit, -1, position, align, offX, offY, offZ);
 
 		/// <summary>Sometimes you just need to know how much room some text takes up! This finds

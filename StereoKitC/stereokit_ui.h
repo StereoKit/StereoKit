@@ -58,6 +58,7 @@ SK_API bool32_t ui_hslider_at     (const char *id,   float &value, float min, fl
 SK_API void     ui_hseparator  ();
 SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
 SK_API void     ui_label_sz    (const char *text, vec2 size);
+SK_API void     ui_text        (const char *text);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
 SK_API bool32_t ui_button_sz   (const char *text, vec2 size);

@@ -206,7 +206,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_shader(IntPtr font, float character_height, IntPtr shader, Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_mat   (IntPtr font, float character_height, IntPtr material, Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_at           (string text, in Matrix transform, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_in           (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_add_in           (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size             (string text, int style);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
@@ -382,6 +382,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_hseparator  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label       (string text, bool use_padding);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label_sz    (string text, Vec2 size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_text        (string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_image       (IntPtr sprite_image, Vec2 size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button      (string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button_sz   (string text, Vec2 size);
