@@ -536,8 +536,8 @@ void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, 
 
 void ui_reserve_box(vec2 size) {
 	layer_t &layer = skui_layers.last();
-	if (layer.max_x > layer.offset.x - size.x - skui_settings.padding)
-		layer.max_x = layer.offset.x - size.x - skui_settings.padding;
+	if (layer.max_x > layer.offset.x - size.x)
+		layer.max_x = layer.offset.x - size.x;
 	if (layer.line_height < size.y)
 		layer.line_height = size.y;
 
