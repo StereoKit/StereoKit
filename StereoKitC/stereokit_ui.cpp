@@ -779,6 +779,22 @@ void ui_text(vec3 start, vec2 size, const char *text, text_align_ position, text
 ///////////   UI Components   /////////////
 ///////////////////////////////////////////
 
+void ui_hseparator() {
+	vec3 offset = skui_layers.last().offset;
+	vec2 size   = { ui_area_remaining().x-skui_settings.gutter, skui_box_min.y };
+
+	// Draw the UI
+	ui_reserve_box(size);
+	ui_nextline();
+
+	ui_box(
+		vec3{ offset.x, offset.y, offset.z }, 
+		vec3{ size.x, size.y, size.y*skui_settings.backplate_depth+mm2m+mm2m }, 
+		skui_mat_quad, skui_palette[2]);
+}
+
+///////////////////////////////////////////
+
 void ui_label_sz(const char *text, vec2 size) {
 	vec3 offset;
 	ui_layout_exact(size, offset);
