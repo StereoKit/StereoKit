@@ -316,12 +316,10 @@ bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.8f, 1));
 
 	ui_quadrant_mesh(skui_settings.padding);
-	skui_box_dbg  = mesh_gen_cube(vec3_one);
-	//skui_box      = mesh_gen_cube(vec3{skui_settings.padding * 2,skui_settings.padding * 2,1});//mesh_gen_cylinder(skui_settings.padding * 2, 1,{ 0,0,1 }, 24);// mesh_gen_rounded_cube(vec3_one * skui_settings.padding * 2, skui_settings.padding * 2 * 0.2f, 2); // mesh_gen_cube(vec3_one);
+	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find(default_id_material_ui);
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
-	//material_set_wireframe(skui_mat_quad, true);
 	skui_mat_dbg  = material_copy(skui_mat);
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color(skui_mat_dbg, "color", { 0,1,0,0.25f });
@@ -798,16 +796,15 @@ void ui_text(vec3 start, vec2 size, const char *text, text_align_ position, text
 
 void ui_hseparator() {
 	vec3 offset = skui_layers.last().offset;
-	vec2 size   = { ui_area_remaining().x-skui_settings.gutter, skui_box_min.y };
+	vec2 size   = { ui_area_remaining().x, text_style_get_char_height(skui_font_stack.last()) * 0.4f };
 
 	// Draw the UI
 	ui_reserve_box(size);
 	ui_nextline();
 
-	ui_box(
-		vec3{ offset.x, offset.y, offset.z }, 
-		vec3{ size.x, size.y, size.y*skui_settings.backplate_depth+mm2m+mm2m }, 
-		skui_mat_quad, skui_palette[2]);
+	ui_cube(
+		offset, vec3{ size.x, size.y, size.y/2.0f }, 
+		skui_mat, skui_palette[0]);
 }
 
 ///////////////////////////////////////////

@@ -121,6 +121,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	style.color           = color_to_32( color_to_linear( color ) );
 	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.5f;
+	style.char_height     = character_height;
 	
 	return (text_style_t)text_styles.add(style);
 }
@@ -129,6 +130,12 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 
 material_t text_style_get_material(text_style_t style) {
 	return text_buffers[text_styles[style].buffer_index].material;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_char_height(text_style_t style) {
+	return text_styles[style].char_height;
 }
 
 ///////////////////////////////////////////

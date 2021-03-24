@@ -209,7 +209,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_in           (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size             (string text, int style);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material(TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_char_height(TextStyle style);
 
 		///////////////////////////////////////////
 

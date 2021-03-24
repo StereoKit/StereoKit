@@ -560,7 +560,8 @@ SK_API void         text_add_at           (const char *text, const sk_ref(matrix
 SK_API void         text_add_in           (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
 SK_API vec2         text_size             (const char *text, text_style_t style sk_default(-1));
 
-SK_API material_t   text_style_get_material(text_style_t style);
+SK_API material_t   text_style_get_material   (text_style_t style);
+SK_API float        text_style_get_char_height(text_style_t style);
 
 ///////////////////////////////////////////
 

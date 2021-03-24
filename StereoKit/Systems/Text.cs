@@ -1,5 +1,27 @@
-﻿namespace StereoKit
+﻿using System.Runtime.InteropServices;
+
+namespace StereoKit
 {
+	/// <summary>A text style is a font plus size/color/material parameters, and are 
+	/// used to keep text looking more consistent through the application by encouraging 
+	/// devs to re-use styles throughout the project. See Text.MakeStyle for making a 
+	/// TextStyle object.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct TextStyle
+	{
+		internal int id;
+
+		/// <summary>This provides a reference to the Material used by this
+		/// style, so you can override certain features! Note that if you're
+		/// creating TextStyles with manually provided Materials, this 
+		/// Material may not be unique to this style.</summary>
+		public Material Material  => new Material(NativeAPI.text_style_get_material(this));
+
+		/// <summary>Returns the maximum height of a text character using
+		/// this style, in meters.</summary>
+		public float CharHeight => NativeAPI.text_style_get_char_height(this);
+	}
+
 	/// <summary>A collection of functions for rendering and working with text.</summary>
 	public class Text
 	{
