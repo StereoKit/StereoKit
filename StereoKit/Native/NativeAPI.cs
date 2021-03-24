@@ -376,6 +376,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_toggle_at      (string text, ref bool pressed, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_hslider_at     (string id,   ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_hseparator  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label       (string text, bool use_padding);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label_sz    (string text, Vec2 size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_image       (IntPtr sprite_image, Vec2 size);

@@ -116,6 +116,9 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
+		public static void HSeparator()
+			=> NativeAPI.ui_hseparator();
+
 		/// <summary>Adds some text to the layout! Text uses the UI's current
 		/// font settings (which are currently not exposed). Can contain
 		/// newlines! May have trouble with non-latin characters. Will
