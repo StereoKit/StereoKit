@@ -354,6 +354,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_far_interact_enabled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_settings            (UISettings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_color           (Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_layout_area   (Vec3 start, Vec2 dimensions);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2  ui_area_remaining();

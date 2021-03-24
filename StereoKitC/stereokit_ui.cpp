@@ -57,6 +57,7 @@ struct ui_id_t {
 array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
+array_t<text_style_t>skui_font_stack = {};
 mesh_t          skui_box          = nullptr;
 vec3            skui_box_min      = {};
 mesh_t          skui_box_dbg      = nullptr;
@@ -67,7 +68,6 @@ material_t      skui_mat;
 material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 font_t          skui_font;
-text_style_t    skui_font_style;
 material_t      skui_font_mat;
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius = 0;
@@ -296,6 +296,22 @@ void ui_set_color(color128 color) {
 
 ///////////////////////////////////////////
 
+void ui_push_text_style(text_style_t style) {
+	skui_font_stack.add(style);
+}
+
+///////////////////////////////////////////
+
+void ui_pop_text_style() {
+	if (skui_font_stack.count <= 1) {
+		log_errf("ui_pop_text_style: tried to pop too many style! Do you have a push/pop mismatch?");
+		return;
+	}
+	skui_font_stack.pop();
+}
+
+///////////////////////////////////////////
+
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.8f, 1));
 
@@ -313,7 +329,7 @@ bool ui_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_style = text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[4] ));
+	skui_font_stack.add( text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[4] )) );
 	
 	skui_layers  .add({});
 	skui_id_stack.add({ HASH_FNV64_START });
@@ -382,6 +398,7 @@ void ui_shutdown() {
 	skui_sl_windows.free();
 	skui_layers    .free();
 	skui_id_stack  .free();
+	skui_font_stack.free();
 
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
@@ -772,7 +789,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 ///////////////////////////////////////////
 
 void ui_text(vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align) {
-	text_add_in(text, matrix_identity, size, text_fit_squeeze, skui_font_style, position, align, start.x, start.y, start.z);
+	text_add_in(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
 }
 
 ///////////////////////////////////////////
@@ -808,7 +825,7 @@ void ui_label_sz(const char *text, vec2 size) {
 
 void ui_label(const char *text, bool32_t use_padding) {
 	vec3  offset   = skui_layers.last().offset;
-	vec2  txt_size = text_size(text, skui_font_style);
+	vec2  txt_size = text_size(text, skui_font_stack.last());
 	vec2  size     = txt_size;
 	float pad      = use_padding ? skui_settings.padding : 0;
 
@@ -876,7 +893,7 @@ bool32_t ui_button_sz(const char *text, vec2 size) {
 bool32_t ui_button(const char *text) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size(text, skui_font_style), offset, size);
+	ui_layout_box (text_size(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
@@ -918,7 +935,7 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 bool32_t ui_toggle(const char *text, bool32_t &pressed) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size(text, skui_font_style), offset, size);
+	ui_layout_box (text_size(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
@@ -1060,7 +1077,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
-		float carat_at = skui_settings.padding + fminf(text_size(buffer, skui_font_style).x, size.x - skui_settings.padding * 2);
+		float carat_at = skui_settings.padding + fminf(text_size(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
 		float line     = ui_line_height() * 0.5f;
 		ui_cube(offset - vec3{ carat_at,size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
 	}
@@ -1372,7 +1389,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 
 	// draw label
 	if (window.type & ui_win_head) {
-		vec2 size = text_size(text, skui_font_style);
+		vec2 size = text_size(text, skui_font_stack.last());
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
 		ui_text(at, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 

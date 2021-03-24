@@ -327,6 +327,12 @@ namespace StereoKit
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
 
+		public static void PushTextStyle(TextStyle style) 
+			=> NativeAPI.ui_push_text_style(style);
+
+		public static void PopTextStyle() 
+			=> NativeAPI.ui_pop_text_style();
+
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash(id);
 
