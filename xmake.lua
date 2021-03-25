@@ -23,6 +23,10 @@ package("openxr_loader")
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
     add_deps("cmake")
+
+    if is_plat("linux") then
+        add_syslinks("stdc++fs", "jsoncpp")
+    end
     
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF"})
@@ -87,11 +91,6 @@ target("StereoKitC")
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
         add_links("GL", "GLEW", "GLX", "X11", "pthread")
-        -- stdc++fs needs to be added at the -end- of the list, but 
-        -- xmake's add_packages adds links after all the add_links links.
-        -- Fortunately, this one adds even after that, so we're all
-        -- good :)
-        add_shflags("-lstdc++fs")
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end
