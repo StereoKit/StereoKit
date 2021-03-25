@@ -274,6 +274,12 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
+		public static Tex FromFiles(string[] files, bool sRGBData = true)
+		{
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData);
+			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
 		/// <summary>Loads an image file stored in memory directly into a 
 		/// texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
 		/// hdr, pic. Asset Id will be the same as the filename.</summary>

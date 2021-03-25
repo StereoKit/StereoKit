@@ -163,6 +163,78 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
+tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+	// Hash the names of all of the files together
+	uint64_t hash = HASH_FNV64_START;
+	for (size_t i = 0; i < file_count; i++) {
+		hash_fnv64_string(files[i], hash);
+	}
+	char file_id[64];
+	snprintf(file_id, sizeof(file_id), "tex_arr/%llu", hash);
+
+	// And see if it's already been loaded
+	tex_t result = tex_find(file_id);
+	if (result != nullptr)
+		return result;
+
+	// Load all files
+	uint8_t **data = sk_malloc_t<uint8_t*>(file_count);
+	int  final_width  = 0;
+	int  final_height = 0;
+	bool loaded       = true;
+	for (size_t i = 0; i < file_count; i++) {
+		int channels = 0;
+		int width    = 0;
+		int height   = 0;
+		data[i] = stbi_load(assets_file(files[i]), &width, &height, &channels, 4);
+
+		// Check if there were issues, or one of the images is the wrong size!
+		if (data[i] == nullptr || 
+			(final_width  != 0 && final_width  != width ) ||
+			(final_height != 0 && final_height != height)) {
+			loaded = false;
+			log_errf("Issue loading image array '%s', file not found, invalid image format, or images of different sizes?", files[i]);
+			break;
+		}
+		final_width  = width;
+		final_height = height;
+	}
+
+	// free memory if we failed
+	if (!loaded) {
+		for (size_t i = 0; i < file_count; i++) {
+			free(data[i]);
+		}
+		free(data);
+		return nullptr;
+	}
+
+	// Create with the data we have
+	result = tex_create(type, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, sh_lighting_info);
+	tex_set_id       (result, file_id);
+	for (size_t i = 0; i < file_count; i++) {
+		free(data[i]);
+	}
+	free(data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_data) {
+	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, nullptr);
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, sh_lighting_info);
+}
+
+///////////////////////////////////////////
+
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
 	tex_t result = tex_find(equirectangular_file);
 	if (result != nullptr)
@@ -204,55 +276,6 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_release(equirect);
 	tex_release(face);
 
-	for (size_t i = 0; i < 6; i++) {
-		free(data[i]);
-	}
-
-	return result;
-}
-
-///////////////////////////////////////////
-
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
-	tex_t result = tex_find(cube_face_file_xxyyzz[0]);
-	if (result != nullptr)
-		return result;
-
-	// Load all 6 faces
-	uint8_t *data[6] = {};
-	int  final_width  = 0;
-	int  final_height = 0;
-	bool loaded       = true;
-	for (size_t i = 0; i < 6; i++) {
-		int channels = 0;
-		int width    = 0;
-		int height   = 0;
-		data[i] = stbi_load(assets_file(cube_face_file_xxyyzz[i]), &width, &height, &channels, 4);
-
-		// Check if there were issues, or one of the images is the wrong size!
-		if (data[i] == nullptr || 
-			(final_width  != 0 && final_width  != width ) ||
-			(final_height != 0 && final_height != height)) {
-			loaded = false;
-			log_errf("Issue loading cubemap image '%s', file not found, invalid image format, or faces of different sizes?", cube_face_file_xxyyzz[i]);
-			break;
-		}
-		final_width  = width;
-		final_height = height;
-	}
-
-	// free memory if we failed
-	if (!loaded) {
-		for (size_t i = 0; i < 6; i++) {
-			free(data[i]);
-		}
-		return nullptr;
-	}
-
-	// Create with the data we have
-	result = tex_create(tex_type_image | tex_type_cubemap, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6, sh_lighting_info);
-	tex_set_id       (result, cube_face_file_xxyyzz[0]);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
