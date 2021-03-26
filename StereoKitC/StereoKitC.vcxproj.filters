@@ -172,6 +172,9 @@
     <ClCompile Include="libraries\tinycthread.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="systems\audio.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -388,6 +391,9 @@
     </ClInclude>
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h">
       <Filter>shaders_builtin</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\audio.h">
+      <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

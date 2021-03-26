@@ -10,6 +10,7 @@
 #include "systems/physics.h"
 #include "systems/system.h"
 #include "systems/text.h"
+#include "systems/audio.h"
 #include "systems/sprite_drawer.h"
 #include "systems/line_drawer.h"
 #include "systems/defaults.h"
@@ -19,7 +20,6 @@
 #include "systems/platform/openxr.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
-#include "asset_types/sound.h"
 
 namespace sk {
 
@@ -167,17 +167,17 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_renderer.func_shutdown           = render_shutdown;
 	systems_add(&sys_renderer);
 
-	system_t sys_sound = { "Sound" };
-	const char *sound_deps       [] = {"Platform"};
-	const char *sound_update_deps[] = {"Platform"};
-	sys_sound.init_dependencies       = sound_deps;
-	sys_sound.init_dependency_count   = _countof(sound_deps);
-	sys_sound.update_dependencies     = sound_update_deps;
-	sys_sound.update_dependency_count = _countof(sound_update_deps);
-	sys_sound.func_initialize         = sound_init;
-	sys_sound.func_update             = sound_update;
-	sys_sound.func_shutdown           = sound_shutdown;
-	systems_add(&sys_sound);
+	system_t sys_audio = { "Audio" };
+	const char *audio_deps       [] = {"Platform"};
+	const char *audio_update_deps[] = {"Platform"};
+	sys_audio.init_dependencies       = audio_deps;
+	sys_audio.init_dependency_count   = _countof(audio_deps);
+	sys_audio.update_dependencies     = audio_update_deps;
+	sys_audio.update_dependency_count = _countof(audio_update_deps);
+	sys_audio.func_initialize         = audio_init;
+	sys_audio.func_update             = audio_update;
+	sys_audio.func_shutdown           = audio_shutdown;
+	systems_add(&sys_audio);
 
 	system_t sys_input = { "Input" };
 	const char *input_deps       [] = {"Platform", "Defaults"};
