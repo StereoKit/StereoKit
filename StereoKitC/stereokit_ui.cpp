@@ -1317,7 +1317,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 					} break;
 					case ui_move_face_user: {
-						dest_rot = quat_lookat(movement.position, matrix_mul_point(to_local, input_head()->position));
+						dest_rot = quat_lookat(vec3{movement.position.x, finger_pos[i].y, 0 }, matrix_mul_point(to_local, input_head()->position));
 						dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 					} break;
 					case ui_move_pos_only: {
