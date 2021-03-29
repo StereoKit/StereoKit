@@ -16,6 +16,7 @@ struct _tex_t {
 	int32_t        anisotropy;
 	skg_tex_t      tex;
 	tex_t          depth_buffer;
+	spherical_harmonics_t *light_info;
 };
 
 void        tex_destroy          (tex_t texture);

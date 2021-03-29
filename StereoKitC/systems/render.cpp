@@ -209,6 +209,7 @@ void render_set_skytex(tex_t sky_texture) {
 		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
 		return;
 	}
+	if (sky_texture == render_sky_cubemap) return;
 
 	if (render_sky_cubemap != nullptr)
 		tex_release(render_sky_cubemap);
@@ -223,6 +224,7 @@ void render_set_skytex(tex_t sky_texture) {
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
+	assets_addref(render_sky_cubemap->header);
 	return render_sky_cubemap;
 }
 

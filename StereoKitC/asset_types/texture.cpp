@@ -174,8 +174,11 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
-	if (result != nullptr)
+	if (result != nullptr) {
+		if (result->light_info && sh_lighting_info)
+			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
+	}
 
 	// Load all files
 	uint8_t **data = sk_malloc_t<uint8_t*>(file_count);
@@ -213,6 +216,12 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	result = tex_create(type, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, sh_lighting_info);
 	tex_set_id       (result, file_id);
+
+	if (sh_lighting_info) {
+		result->light_info = sk_malloc_t<spherical_harmonics_t>(1);
+		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+	}
+
 	for (size_t i = 0; i < file_count; i++) {
 		free(data[i]);
 	}
@@ -237,8 +246,11 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
 	tex_t result = tex_find(equirectangular_file);
-	if (result != nullptr)
+	if (result != nullptr) {
+		if (result->light_info && sh_lighting_info)
+			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
+	}
 
 	const vec3 up   [6] = { -vec3_up, -vec3_up, vec3_forward, -vec3_forward, -vec3_up, -vec3_up };
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
@@ -272,6 +284,11 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_set_color_arr(result, width, height, (void**)&data, 6, sh_lighting_info);
 	tex_set_id       (result, equirectangular_file);
 
+	if (sh_lighting_info) {
+		result->light_info = sk_malloc_t<spherical_harmonics_t>(1);
+		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+	}
+
 	material_release(convert_material);
 	tex_release(equirect);
 	tex_release(face);
@@ -294,6 +311,7 @@ void tex_release(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_destroy(tex_t tex) {
+	free(tex->light_info);
 	skg_tex_destroy(&tex->tex);
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
