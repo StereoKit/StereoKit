@@ -100,6 +100,10 @@ class App
 				Tests.SetDemoActive(i);
 			UI.SameLine();
 		}
+		UI.NextLine();
+		UI.HSeparator();
+		if (UI.Button("Exit"))
+			SK.Quit();
 		UI.WindowEnd();
 
 		RulerWindow();
