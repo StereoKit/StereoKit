@@ -8,14 +8,13 @@
 namespace sk {
 
 bool  linux_init      ();
+void  linux_init_after_openxr();
 bool  linux_start     ();
 void  linux_stop      ();
 void  linux_shutdown  ();
 void  linux_step_begin();
 void  linux_step_end  ();
 void  linux_vsync     ();
-
-void  linux_finish_openxr_init();
 
 void  linux_resize(int width, int height);
 

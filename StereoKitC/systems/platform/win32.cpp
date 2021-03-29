@@ -21,6 +21,7 @@ namespace sk {
 HWND            win32_window    = nullptr;
 skg_swapchain_t win32_swapchain = {};
 float           win32_scroll    = 0;
+LONG_PTR        win32_openxr_base_winproc = 0;
 
 // For managing window resizing
 bool win32_check_resize = true;
@@ -48,6 +49,62 @@ bool win32_init() {
 
 ///////////////////////////////////////////
 
+bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
+	switch(message) {
+	case WM_LBUTTONDOWN: input_keyboard_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   input_keyboard_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: input_keyboard_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   input_keyboard_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: input_keyboard_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   input_keyboard_inject_release(key_mouse_center); return true;
+	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     return true;
+	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     return true;
+	case WM_CHAR:        input_keyboard_inject_char(wParam); return true;
+	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
+	default: return false;
+	}
+}
+
+///////////////////////////////////////////
+
+LRESULT win32_openxr_winproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	if (!win32_window_message_common(message, wParam, lParam))
+		return CallWindowProc((WNDPROC)win32_openxr_base_winproc, hWnd, message, wParam, lParam);
+	return 0;
+}
+
+///////////////////////////////////////////
+
+void win32_init_after_openxr() {
+	// Try and see if there's a window attached to this process, this doesn't
+	// seem to really work.
+	win32_window = GetActiveWindow();
+
+	// If not, then try and find a WMR window
+	if (win32_window == nullptr) {
+		EnumWindows([](HWND hwnd, LPARAM l_id) {
+			char name[256];
+			GetClassName(hwnd, name, 256);
+			if (strcmp(name, "WinXR Holographic Class") == 0) {
+				win32_window = hwnd;
+				return (BOOL)false;
+			}
+			return (BOOL)true;
+		}, 0);
+	}
+
+	if (win32_window == nullptr) {
+		log_warn("Couldn't find OpenXR's window, keyboard input won't be seen!");
+	} else {
+		win32_openxr_base_winproc = GetWindowLongPtr(win32_window, GWLP_WNDPROC);
+		SetWindowLongPtr(win32_window, GWLP_WNDPROC, (LONG_PTR)win32_openxr_winproc);
+	}
+}
+
+///////////////////////////////////////////
+
 void win32_shutdown() {
 }
 
@@ -60,49 +117,40 @@ bool win32_start() {
 
 	WNDCLASS wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-		switch(message) {
-		case WM_CLOSE:     sk_run     = false; PostQuitMessage(0); break;
-		case WM_SETFOCUS:  sk_focused = true;  break;
-		case WM_KILLFOCUS: sk_focused = false; break;
-		case WM_LBUTTONDOWN: input_keyboard_inject_press  (key_mouse_left);   break;
-		case WM_LBUTTONUP:   input_keyboard_inject_release(key_mouse_left);   break;
-		case WM_RBUTTONDOWN: input_keyboard_inject_press  (key_mouse_right);  break;
-		case WM_RBUTTONUP:   input_keyboard_inject_release(key_mouse_right);  break;
-		case WM_MBUTTONDOWN: input_keyboard_inject_press  (key_mouse_center); break;
-		case WM_MBUTTONUP:   input_keyboard_inject_release(key_mouse_center); break;
-		case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); break;
-		case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); break;
-		case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     break;
-		case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     break;
-		case WM_CHAR:        input_keyboard_inject_char(wParam); break;
-		case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); break;
-		case WM_SYSCOMMAND: {
-			// Has the user pressed the restore/'un-maximize' button?
-			// WM_SIZE happens -after- this event, and contains the new size.
-			if (GET_SC_WPARAM(wParam) == SC_RESTORE)
-				win32_check_resize = true;
+		if (!win32_window_message_common(message, wParam, lParam)) {
+			switch(message) {
+			case WM_CLOSE:      sk_run     = false; PostQuitMessage(0); break;
+			case WM_SETFOCUS:   sk_focused = true;  break;
+			case WM_KILLFOCUS:  sk_focused = false; break;
+			case WM_MOUSEWHEEL: win32_scroll += (short)HIWORD(wParam); break;
+			case WM_SYSCOMMAND: {
+				// Has the user pressed the restore/'un-maximize' button?
+				// WM_SIZE happens -after- this event, and contains the new size.
+				if (GET_SC_WPARAM(wParam) == SC_RESTORE)
+					win32_check_resize = true;
 			
-			// Disable alt menu
-			if (GET_SC_WPARAM(wParam) == SC_KEYMENU) 
-				return (LRESULT)0; 
-		} return DefWindowProc(hWnd, message, wParam, lParam); 
-		case WM_SIZE: {
-			win32_resize_x = (UINT)LOWORD(lParam);
-			win32_resize_y = (UINT)HIWORD(lParam);
+				// Disable alt menu
+				if (GET_SC_WPARAM(wParam) == SC_KEYMENU) 
+					return (LRESULT)0; 
+			} return DefWindowProc(hWnd, message, wParam, lParam); 
+			case WM_SIZE: {
+				win32_resize_x = (UINT)LOWORD(lParam);
+				win32_resize_y = (UINT)HIWORD(lParam);
 
-			// Don't check every time the size changes, this can lead to ugly memory alloc.
-			// If a restore event, a maximize, or something else says we should resize, check it!
-			if (win32_check_resize || wParam == SIZE_MAXIMIZED) { 
-				win32_check_resize = false; 
-				win32_resize(win32_resize_x, win32_resize_y); 
+				// Don't check every time the size changes, this can lead to ugly memory alloc.
+				// If a restore event, a maximize, or something else says we should resize, check it!
+				if (win32_check_resize || wParam == SIZE_MAXIMIZED) { 
+					win32_check_resize = false; 
+					win32_resize(win32_resize_x, win32_resize_y); 
+				}
+			} return DefWindowProc(hWnd, message, wParam, lParam);
+			case WM_EXITSIZEMOVE: {
+				// If the user was dragging the window around, WM_SIZE is called -before- this 
+				// event, so we can go ahead and resize now!
+				win32_resize(win32_resize_x, win32_resize_y);
+			} return DefWindowProc(hWnd, message, wParam, lParam);
+			default: return DefWindowProc(hWnd, message, wParam, lParam);
 			}
-		} return DefWindowProc(hWnd, message, wParam, lParam);
-		case WM_EXITSIZEMOVE: {
-			// If the user was dragging the window around, WM_SIZE is called -before- this 
-			// event, so we can go ahead and resize now!
-			win32_resize(win32_resize_x, win32_resize_y);
-		} return DefWindowProc(hWnd, message, wParam, lParam);
-		default: return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		return (LRESULT)0;
 	};

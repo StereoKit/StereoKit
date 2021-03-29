@@ -15,6 +15,7 @@
 #include "android.h"
 #include "linux.h"
 #include "uwp.h"
+#include "win32.h"
 #include "platform_utils.h"
 
 #include <openxr/openxr.h>
@@ -413,7 +414,9 @@ bool openxr_init() {
 	}
 
 #if defined(SK_OS_LINUX)
-	linux_finish_openxr_init();
+	linux_init_after_openxr();
+#elif defined(SK_OS_WINDOWS)
+	win32_init_after_openxr();
 #elif defined(SK_OS_WINDOWS_UWP)
 	uwp_init_after_openxr();
 #endif

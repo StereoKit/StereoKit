@@ -274,23 +274,23 @@ bool linux_init() {
 	XStoreName(dpy, win, sk_app_name);
 
 	// loads the XMODIFIERS environment variable to see what input method to use
-    XSetLocaleModifiers("");
+	XSetLocaleModifiers("");
 
-    linux_input_method = XOpenIM(dpy, 0, 0, 0);
-    if (!linux_input_method) {
-        // fallback to internal input method
-        XSetLocaleModifiers("@im=none");
-        linux_input_method = XOpenIM(dpy, 0, 0, 0);
-    }
+	linux_input_method = XOpenIM(dpy, 0, 0, 0);
+	if (!linux_input_method) {
+		// fallback to internal input method
+		XSetLocaleModifiers("@im=none");
+		linux_input_method = XOpenIM(dpy, 0, 0, 0);
+	}
 
-    // X input context, you can have multiple for text boxes etc, but having a
-    // single one is the easiest.
-    linux_input_context = XCreateIC(linux_input_method,
-                        XNInputStyle,   XIMPreeditNothing | XIMStatusNothing,
-                        XNClientWindow, win,
-                        XNFocusWindow,  win,
-                        nullptr);
-    XSetICFocus(linux_input_context);
+	// X input context, you can have multiple for text boxes etc, but having a
+	// single one is the easiest.
+	linux_input_context = XCreateIC(linux_input_method,
+						XNInputStyle,   XIMPreeditNothing | XIMStatusNothing,
+						XNClientWindow, win,
+						XNFocusWindow,  win,
+						nullptr);
+	XSetICFocus(linux_input_context);
 
 	// Setup for window events
 	XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
@@ -304,7 +304,7 @@ bool linux_init() {
 
 ///////////////////////////////////////////
 
-void linux_finish_openxr_init(){
+void linux_init_after_openxr(){
 	window_closed_because_openxr = true;
 	XDestroyWindow(dpy,win);
 	XFlush(dpy);
