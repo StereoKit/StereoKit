@@ -16,6 +16,7 @@ text_style_t sprite_text_style;
 void demo_sprites_init() {
 	font_t font       = font_find(default_id_font);
 	sprite_text_style = text_make_style(font, 0.1f, { 1,1,1,1 });
+	font_release(font);
 
 	sprite = sprite_create_file("test.png");
 }

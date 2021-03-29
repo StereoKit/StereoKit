@@ -160,6 +160,11 @@
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
+		/// <summary>The default font used by StereoKit's text. This varies
+		/// from platform to platform, but is typically a sans-serif general
+		/// purpose font, such as Segoe UI.</summary>
+		public static Font Font { get; private set; }
+
 		internal static void Initialize()
 		{
 			Material         = Material.Find(DefaultIds.material);
@@ -177,6 +182,8 @@
 			TexFlat  = Tex.Find(DefaultIds.texFlat);
 			TexRough = Tex.Find(DefaultIds.texRough);
 			Cubemap  = Tex.Find(DefaultIds.cubemap);
+
+			Font = Font.Find(DefaultIds.font);
 
 			MeshQuad       = Mesh.Find(DefaultIds.meshQuad);
 			MeshScreenQuad = Mesh.Find(DefaultIds.meshScreenQuad);
@@ -210,6 +217,8 @@
 			TexFlat  = null;
 			TexRough = null;
 			Cubemap  = null;
+
+			Font = null;
 
 			MeshQuad   = null;
 			MeshCube   = null;
