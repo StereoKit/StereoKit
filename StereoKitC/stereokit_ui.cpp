@@ -874,16 +874,13 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active || focus & button_state_active ? 2.f : 1;
-	float back_size   = skui_settings.backplate_border;
-	if (ui_anim_has(id, .1f)) {
-		float t     = ui_anim_elapsed    (id, .1f);
-		back_size   = math_ease_hop      (back_size, fmaxf(mm2m*2, back_size*2.f), t);
-		color_blend = math_ease_overshoot(1, 2.f, 10, t);
+	float color_blend = state & button_state_active ? 2.f : 1;
+	if (ui_anim_has(id, .2f)) {
+		float t     = ui_anim_elapsed    (id, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
 	}
 
 	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
-	//ui_box (window_relative_pos + vec3{back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat_quad, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
@@ -923,11 +920,9 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 	if (state & button_state_just_active)
 		ui_anim_start(id);
 	float color_blend = pressed || focus & button_state_active ? 2.f : 1;
-	float back_size   = skui_settings.backplate_border;
-	if (ui_anim_has(id, .1f)) {
-		float t     = ui_anim_elapsed    (id, .1f);
-		back_size   = math_ease_hop      (back_size, fmaxf(mm2m*2, back_size*2.f), t);
-		color_blend = math_ease_overshoot(1, 2.f, 10, t);
+	if (ui_anim_has(id, .2f)) {
+		float t     = ui_anim_elapsed    (id, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
 	}
 
 	if (state & button_state_just_active) {
@@ -936,7 +931,6 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
 	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
-	//ui_box (window_relative_pos + vec3{ back_size, back_size, mm2m}, vec3{ size.x+back_size*2, size.y+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m }, skui_mat_quad, skui_color_border * color_blend);
 	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
@@ -975,12 +969,11 @@ bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relati
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active || focus & button_state_active ? 2.f : 1;
+	float color_blend = state & button_state_active ? 2.f : 1;
 	float back_size   = skui_settings.backplate_border;
-	if (ui_anim_has(id, .1f)) {
-		float t     = ui_anim_elapsed    (id, .1f);
-		back_size   = math_ease_hop      (back_size, fmaxf(mm2m*2, back_size*2.f), t);
-		color_blend = math_ease_overshoot(1, 2.f, 10, t);
+	if (ui_anim_has(id, .2f)) {
+		float t     = ui_anim_elapsed    (id, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
 	}
 
 	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_palette[2] * color_blend);
@@ -1035,6 +1028,14 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
 
+	if (state & button_state_just_active)
+		ui_anim_start(id_hash);
+	float color_blend = skui_input_target == id_hash ? 2.f : 1;
+	if (ui_anim_has(id_hash, .2f)) {
+		float t     = ui_anim_elapsed    (id_hash, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	}
+
 	// Unfocus this if the user starts interacting with something else
 	if (skui_input_target == id_hash) {
 		for (int32_t i = 0; i < handed_max; i++) {
@@ -1084,7 +1085,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 	// Render the input UI
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * (skui_input_target == id_hash ? 0.75f+sinf(time_getf()*4)*.25f : 1.f) );
+	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * color_blend );
 	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
 	
 	// Show a blinking text carat
@@ -1101,9 +1102,8 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 ///////////////////////////////////////////
 
 bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size) {
-	uint64_t   id     = ui_stack_hash(id_text);
-	bool       result = false;
-	float      color  = 1;
+	uint64_t id     = ui_stack_hash(id_text);
+	bool     result = false;
 
 	// Find sizes of slider elements
 	float rule_size = fmaxf(skui_settings.padding, size.y / 6.f);
@@ -1129,6 +1129,14 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 		skui_hand[hand].active = id;
 	}
 
+	if (focus_state & button_state_just_active)
+		ui_anim_start(id);
+	float color_blend = focus_state & button_state_active ? 2.f : 1;
+	if (ui_anim_has(id, .2f)) {
+		float t     = ui_anim_elapsed    (id, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	}
+
 	// Draw the UI
 	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
@@ -1139,13 +1147,13 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	ui_box(
 		vec3{ x, line_y, window_relative_pos.z }, 
 		vec3{ size.x, rule_size, rule_size*skui_settings.backplate_depth+mm2m+mm2m }, 
-		skui_mat_quad, skui_palette[2] * color);
+		skui_mat_quad, skui_palette[2] * color_blend);
 	ui_cylinder(
 		vec3{ x - slide_x_rel + size.y/4.f, slide_y, window_relative_pos.z}, 
-		size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0] * color);
+		size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0]);
 	ui_cylinder(
 		vec3{ x+back_size - slide_x_rel + size.y/4.f, slide_y + back_size, window_relative_pos.z}, 
-		size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border * color);
+		size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border);
 	
 
 	if (focus_state & button_state_just_active)
