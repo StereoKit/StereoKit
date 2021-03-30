@@ -133,7 +133,13 @@ void android_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
-bool android_start() {
+bool android_start_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool android_start_flat() {
 	if (android_window) {
 		android_create_swapchain();
 	}
@@ -143,7 +149,7 @@ bool android_start() {
 
 ///////////////////////////////////////////
 
-void android_stop() {
+void android_stop_flat() {
 	flatscreen_input_shutdown();
 	if (android_window) {
 		skg_swapchain_destroy(&android_swapchain);
@@ -160,7 +166,12 @@ void android_shutdown() {
 
 ///////////////////////////////////////////
 
-void android_step_begin() {
+void android_step_begin_xr() {
+}
+
+///////////////////////////////////////////
+
+void android_step_begin_flat() {
 	flatscreen_input_update();
 
 	if (android_next_win_ready) {
@@ -193,7 +204,7 @@ void android_step_begin() {
 
 ///////////////////////////////////////////
 
-void android_step_end() {
+void android_step_end_flat() {
 	input_update_predicted();
 
 	if (!android_window)

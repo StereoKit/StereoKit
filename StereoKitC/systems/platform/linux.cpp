@@ -304,15 +304,17 @@ bool linux_init() {
 
 ///////////////////////////////////////////
 
-void linux_init_after_openxr(){
+bool linux_start_xr(){
 	window_closed_because_openxr = true;
 	XDestroyWindow(dpy,win);
 	XFlush(dpy);
+
+	return true;
 }
 
 ///////////////////////////////////////////
 
-bool linux_start() {
+bool linux_start_flat() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -377,7 +379,7 @@ void linux_set_cursor(vec2 window_pos) {
 
 ///////////////////////////////////////////
 
-void linux_stop() {
+void linux_stop_flat() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy(&linux_swapchain);
 }
@@ -394,14 +396,19 @@ void linux_shutdown() {
 
 ///////////////////////////////////////////
 
-void linux_step_begin() {
+void linux_step_begin_xr() {
+}
+
+///////////////////////////////////////////
+
+void linux_step_begin_flat() {
 	linux_events();
 	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
 
-void linux_step_end() {
+void linux_step_end_flat() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();

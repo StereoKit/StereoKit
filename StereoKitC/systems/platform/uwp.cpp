@@ -419,11 +419,12 @@ bool uwp_init() {
 
 ///////////////////////////////////////////
 
-void uwp_init_after_openxr() {
+bool uwp_start_xr() {
 	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
 		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
 	});
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -433,7 +434,7 @@ void uwp_shutdown() {
 
 ///////////////////////////////////////////
 
-bool uwp_start() {
+bool uwp_start_flat() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -457,13 +458,18 @@ bool uwp_start() {
 
 ///////////////////////////////////////////
 
-void uwp_step_begin() {
+void uwp_step_begin_xr() {
+}
+
+///////////////////////////////////////////
+
+void uwp_step_begin_flat() {
 	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
 
-void uwp_step_end() { 
+void uwp_step_end_flat() { 
 	skg_draw_begin();
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
@@ -487,7 +493,7 @@ void uwp_vsync() {
 
 ///////////////////////////////////////////
 
-void uwp_stop() {
+void uwp_stop_flat() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();

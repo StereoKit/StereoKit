@@ -41,11 +41,6 @@ void win32_resize(int width, int height) {
 	render_update_projection();
 }
 
-///////////////////////////////////////////
-
-bool win32_init() {
-	return true;
-}
 
 ///////////////////////////////////////////
 
@@ -70,37 +65,47 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 ///////////////////////////////////////////
 
 LRESULT win32_openxr_winproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (!win32_window_message_common(message, wParam, lParam))
-		return CallWindowProc((WNDPROC)win32_openxr_base_winproc, hWnd, message, wParam, lParam);
+	if (!win32_window_message_common(message, wParam, lParam)) {
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
 	return 0;
 }
 
 ///////////////////////////////////////////
 
-void win32_init_after_openxr() {
-	// Try and see if there's a window attached to this process, this doesn't
-	// seem to really work.
-	win32_window = GetActiveWindow();
+bool win32_start_xr() {
+	// Create a window just to grab input
+	WNDCLASS wc = {0}; 
+	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+		if (!win32_window_message_common(message, wParam, lParam)) {
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		return (LRESULT)0;
+	};
+	wc.hInstance     = GetModuleHandle(NULL);
+	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
+	wc.lpszClassName = sk_app_name;
+	if( !RegisterClass(&wc) ) return false;
 
-	// If not, then try and find a WMR window
-	if (win32_window == nullptr) {
-		EnumWindows([](HWND hwnd, LPARAM l_id) {
-			char name[256];
-			GetClassName(hwnd, name, 256);
-			if (strcmp(name, "WinXR Holographic Class") == 0) {
-				win32_window = hwnd;
-				return (BOOL)false;
-			}
-			return (BOOL)true;
-		}, 0);
-	}
+	win32_window = CreateWindow(
+		wc.lpszClassName, 
+		sk_app_name, 
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		0, 0, 0, 0,
+		0, 0, 
+		wc.hInstance, 
+		nullptr);
 
-	if (win32_window == nullptr) {
-		log_warn("Couldn't find OpenXR's window, keyboard input won't be seen!");
-	} else {
-		win32_openxr_base_winproc = GetWindowLongPtr(win32_window, GWLP_WNDPROC);
-		SetWindowLongPtr(win32_window, GWLP_WNDPROC, (LONG_PTR)win32_openxr_winproc);
+	if (!win32_window) {
+		return false;
 	}
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool win32_init() {
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -110,7 +115,7 @@ void win32_shutdown() {
 
 ///////////////////////////////////////////
 
-bool win32_start() {
+bool win32_start_flat() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
@@ -197,14 +202,22 @@ bool win32_start() {
 
 ///////////////////////////////////////////
 
-void win32_stop() {
+void win32_stop_flat() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy(&win32_swapchain);
 }
 
 ///////////////////////////////////////////
 
-void win32_step_begin() {
+void win32_step_begin_xr() {
+	MSG msg = {0};
+	if (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage (&msg);
+	}
+}
+
+void win32_step_begin_flat() {
 	MSG msg = {0};
 	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
@@ -215,7 +228,7 @@ void win32_step_begin() {
 
 ///////////////////////////////////////////
 
-void win32_step_end() {
+void win32_step_end_flat() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();

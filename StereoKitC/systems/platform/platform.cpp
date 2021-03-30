@@ -106,15 +106,26 @@ bool platform_set_mode(display_mode_ mode) {
 	bool result = true;
 	if        (mode == display_mode_mixedreality) {
 		result = openxr_init ();
+		if (result) {
+#if defined(SK_OS_ANDROID)
+			result = android_start_xr();
+#elif defined(SK_OS_LINUX)
+			result = linux_start_xr();
+#elif defined(SK_OS_WINDOWS_UWP)
+			result = uwp_start_xr();
+#elif defined(SK_OS_WINDOWS)
+			result = win32_start_xr();
+#endif
+		}
 	} else if (mode == display_mode_flatscreen) {
 #if   defined(SK_OS_ANDROID)
-		result = android_start();
+		result = android_start_flat();
 #elif defined(SK_OS_LINUX)
-		result = linux_start  ();
+		result = linux_start_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		result = uwp_start    ();
+		result = uwp_start_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		result = win32_start  ();
+		result = win32_start_flat  ();
 #endif
 	}
 
@@ -130,16 +141,27 @@ bool platform_set_mode(display_mode_ mode) {
 void platform_step_begin() {
 	switch (platform_mode) {
 	case display_mode_none: break;
-	case display_mode_mixedreality: openxr_step_begin(); break;
+	case display_mode_mixedreality: {
+#if   defined(SK_OS_ANDROID)
+		android_step_begin_xr();
+#elif defined(SK_OS_LINUX)
+		linux_step_begin_xr  ();
+#elif defined(SK_OS_WINDOWS_UWP)
+		uwp_step_begin_xr    ();
+#elif defined(SK_OS_WINDOWS)
+		win32_step_begin_xr  ();
+#endif
+		openxr_step_begin();
+	} break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_step_begin();
+		android_step_begin_flat();
 #elif defined(SK_OS_LINUX)
-		linux_step_begin  ();
+		linux_step_begin_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_begin    ();
+		uwp_step_begin_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_step_begin  ();
+		win32_step_begin_flat  ();
 #endif
 	} break;
 	}
@@ -153,13 +175,13 @@ void platform_step_end() {
 	case display_mode_mixedreality: openxr_step_end(); break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_step_end();
+		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
-		linux_step_end    ();
+		linux_step_end_flat    ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_end    ();
+		uwp_step_end_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_step_end  ();
+		win32_step_end_flat  ();
 #endif
 	} break;
 	}
@@ -193,13 +215,13 @@ void platform_stop_mode() {
 	case display_mode_mixedreality: openxr_shutdown(); break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_stop();
+		android_stop_flat();
 #elif defined(SK_OS_LINUX)
-		linux_stop  ();
+		linux_stop_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_stop    ();
+		uwp_stop_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_stop  ();
+		win32_stop_flat  ();
 #endif
 	} break;
 	}

@@ -413,14 +413,6 @@ bool openxr_init() {
 		return false;
 	}
 
-#if defined(SK_OS_LINUX)
-	linux_init_after_openxr();
-#elif defined(SK_OS_WINDOWS)
-	win32_init_after_openxr();
-#elif defined(SK_OS_WINDOWS_UWP)
-	uwp_init_after_openxr();
-#endif
-
 	return true;
 }
 
