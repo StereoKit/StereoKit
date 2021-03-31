@@ -304,11 +304,17 @@ bool linux_init() {
 
 ///////////////////////////////////////////
 
-bool linux_start_xr(){
-	window_closed_because_openxr = true;
-	XDestroyWindow(dpy,win);
-	XFlush(dpy);
+bool linux_start_pre_xr() {
+	//window_closed_because_openxr = true;
+	//XDestroyWindow(dpy,win);
+	//XFlush(dpy);
 
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool linux_start_post_xr() {
 	return true;
 }
 
@@ -397,6 +403,20 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
+	linux_events();
+
+	static char text[256] = "";
+	text_add_at(text, matrix_trs({0,0,-0.2f}, quat_lookat(vec3_zero, {0,0,1})));
+
+	input_keyboard_char_reset();
+	int32_t ch = input_keyboard_char_consume();
+	while (ch) {
+		size_t len = strlen(text);
+		text[len] = (char)ch;
+		text[len+1] = 0;
+		ch = input_keyboard_char_consume();
+	}
+	input_keyboard_char_reset();
 }
 
 ///////////////////////////////////////////

@@ -104,17 +104,34 @@ bool platform_set_mode(display_mode_ mode) {
 	platform_stop_mode();
 
 	bool result = true;
-	if        (mode == display_mode_mixedreality) {
-		result = openxr_init ();
+	if (mode == display_mode_mixedreality) {
+
+		// Platform init before OpenXR
+#if defined(SK_OS_ANDROID)
+			result = android_start_pre_xr();
+#elif defined(SK_OS_LINUX)
+			result = linux_start_pre_xr();
+#elif defined(SK_OS_WINDOWS_UWP)
+			result = uwp_start_pre_xr();
+#elif defined(SK_OS_WINDOWS)
+			result = win32_start_pre_xr();
+#endif
+
+		// Init OpenXR
+		if (result) {
+			result = openxr_init ();
+		}
+
+		// Platform init after OpenXR
 		if (result) {
 #if defined(SK_OS_ANDROID)
-			result = android_start_xr();
+			result = android_start_post_xr();
 #elif defined(SK_OS_LINUX)
-			result = linux_start_xr();
+			result = linux_start_post_xr();
 #elif defined(SK_OS_WINDOWS_UWP)
-			result = uwp_start_xr();
+			result = uwp_start_post_xr();
 #elif defined(SK_OS_WINDOWS)
-			result = win32_start_xr();
+			result = win32_start_post_xr();
 #endif
 		}
 	} else if (mode == display_mode_flatscreen) {

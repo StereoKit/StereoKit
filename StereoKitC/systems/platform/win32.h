@@ -8,7 +8,8 @@ namespace sk {
 extern float win32_scroll;
 
 bool win32_init           ();
-bool win32_start_xr       ();
+bool win32_start_pre_xr   ();
+bool win32_start_post_xr  ();
 bool win32_start_flat     ();
 void win32_step_begin_xr  ();
 void win32_step_begin_flat();

@@ -3,7 +3,8 @@
 namespace sk {
 
 bool uwp_init           ();
-bool uwp_start_xr       ();
+bool uwp_start_pre_xr   ();
+bool uwp_start_post_xr  ();
 bool uwp_start_flat     ();
 void uwp_step_begin_xr  ();
 void uwp_step_begin_flat();

@@ -8,7 +8,8 @@
 namespace sk {
 
 bool  linux_init           ();
-bool  linux_start_xr       ();
+bool  linux_start_pre_xr   ();
+bool  linux_start_post_xr  ();
 bool  linux_start_flat     ();
 void  linux_step_begin_xr  ();
 void  linux_step_begin_flat();

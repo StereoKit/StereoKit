@@ -133,7 +133,13 @@ void android_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
-bool android_start_xr() {
+bool android_start_pre_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool android_start_post_xr() {
 	return true;
 }
 

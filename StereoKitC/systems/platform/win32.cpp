@@ -73,7 +73,13 @@ LRESULT win32_openxr_winproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 ///////////////////////////////////////////
 
-bool win32_start_xr() {
+bool win32_start_post_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool win32_start_post_xr() {
 	// Create a window just to grab input
 	WNDCLASS wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

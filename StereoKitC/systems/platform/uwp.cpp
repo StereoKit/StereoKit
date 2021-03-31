@@ -419,7 +419,13 @@ bool uwp_init() {
 
 ///////////////////////////////////////////
 
-bool uwp_start_xr() {
+bool uwp_start_pre_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool uwp_start_post_xr() {
 	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
 		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
