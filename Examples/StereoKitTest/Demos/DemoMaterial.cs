@@ -103,9 +103,19 @@ class DemoMaterial : ITest
 		/// ![PBR material example]({{site.screen_url}}/MaterialPBR.jpg)
 		/// :End:
 
+		/// :CodeSample: Default.MaterialUIBox
+		/// The UI Box material has 3 parameters to control how the box wires
+		/// are rendered. The initial size in meters is 'border_size', and 
+		/// can grow by 'border_size_grow' meters based on distance to the
+		/// user's hand. That distance can be configured via the
+		/// 'border_affect_radius' property of the shader, which is also in
+		/// meters.
 		matUIBox = Default.MaterialUIBox.Copy();
-		matUIBox["border_size"] = 0.01f;
-		matUIBox["border_size_grow"] = 0.02f;
+		matUIBox["border_size"]          = 0.005f;
+		matUIBox["border_size_grow"]     = 0.01f;
+		matUIBox["border_affect_radius"] = 0.2f;
+		/// ![UI box material example]({{site.screen_url}}/MaterialUIBox.jpg)
+		/// :End:
 
 		matParameters = Default.Material.Copy();
 		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
@@ -115,32 +125,34 @@ class DemoMaterial : ITest
 
 	int showCount;
 	int showGrid = 3;
-	void ShowMaterial(Material material, string screenshotName) 
+	void ShowMaterial(Mesh mesh, Material material, string screenshotName, Vec3? from = null) 
 	{
 		float x = ((showCount % showGrid)-showGrid/2) * 0.2f;
 		float y = ((showCount / showGrid)-showGrid/2) * 0.2f;
 		showCount++;
 
 		if (Tests.IsTesting)
-			y += 20;
+			y = 10000 + y*100;
+		Log.Info(""+y);
 
-		meshSphere.Draw(material, Matrix.TS(x, y, -0.5f, 0.1f));
-		Tests.Screenshot(400, 400, screenshotName, new Vec3(x, y, -0.42f), new Vec3(x,y,-0.5f));
+		Vec3 at = new Vec3(x, y, -0.5f);
+		mesh.Draw(material, Matrix.TS(at, 0.1f));
+		Tests.Screenshot(400, 400, screenshotName, at + (from ?? new Vec3(0, 0, -0.08f)), at);
 	}
 
 	public void Update()
 	{
 		showCount=0;
-		ShowMaterial(matDefault,    "MaterialDefault.jpg");
-		ShowMaterial(matWireframe,  "MaterialWireframe.jpg");
-		ShowMaterial(matCull,       "MaterialCull.jpg");
-		ShowMaterial(matTextured,   "MaterialTextured.jpg");
-		ShowMaterial(matAlphaAdd,   "MaterialAlphaAdd.jpg");
-		ShowMaterial(matAlphaBlend, "MaterialAlphaBlend.jpg");
-		ShowMaterial(matUnlit,      "MaterialUnlit.jpg");
-		ShowMaterial(matPBR,        "MaterialPBR.jpg");
-		ShowMaterial(matParameters, "MaterialParameters.jpg");
-		ShowMaterial(matUIBox,      "MaterialUIBox.jpg");
+		ShowMaterial(meshSphere, matDefault,    "MaterialDefault.jpg");
+		ShowMaterial(meshSphere, matWireframe,  "MaterialWireframe.jpg");
+		ShowMaterial(meshSphere, matCull,       "MaterialCull.jpg");
+		ShowMaterial(meshSphere, matTextured,   "MaterialTextured.jpg");
+		ShowMaterial(meshSphere, matAlphaAdd,   "MaterialAlphaAdd.jpg");
+		ShowMaterial(meshSphere, matAlphaBlend, "MaterialAlphaBlend.jpg");
+		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
+		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
+		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");
+		ShowMaterial(Default.MeshCube, matUIBox,"MaterialUIBox.jpg", new Vec3(0.07f, 0.07f, -0.08f));
 	}
 
 	public void Shutdown()
