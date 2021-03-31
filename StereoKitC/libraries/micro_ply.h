@@ -347,6 +347,8 @@ bool ply_read(const void *data, size_t data_size, ply_file_t *out_file) {
 			}
 		}
 	}
+
+	return true;
 }
 
 ///////////////////////////////////////////

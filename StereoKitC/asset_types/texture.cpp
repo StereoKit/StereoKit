@@ -170,7 +170,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "tex_arr/%llu", hash);
+	snprintf(file_id, sizeof(file_id), "tex_arr/%lu", hash);
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
