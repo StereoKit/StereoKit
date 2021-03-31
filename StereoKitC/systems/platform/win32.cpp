@@ -73,7 +73,7 @@ LRESULT win32_openxr_winproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 ///////////////////////////////////////////
 
-bool win32_start_post_xr() {
+bool win32_start_pre_xr() {
 	return true;
 }
 

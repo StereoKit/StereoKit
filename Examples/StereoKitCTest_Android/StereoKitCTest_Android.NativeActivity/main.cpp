@@ -32,7 +32,6 @@ void android_main(struct android_app* state) {
 	settings.android_activity   = state->activity->clazz;
 	settings.android_java_vm    = state->activity->vm;
 	settings.display_preference = display_mode_mixedreality;
-	settings.display_fallback   = true;
 	if (!sk_init(settings))
 		return;
 
