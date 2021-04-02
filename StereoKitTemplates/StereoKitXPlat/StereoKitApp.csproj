@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="StereoKit" Version="0.3.0-preview.12" />
+    <PackageReference Include="StereoKit" Version="0.3.1-preview.2" />
   </ItemGroup>
 
 </Project>

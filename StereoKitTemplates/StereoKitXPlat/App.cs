@@ -8,7 +8,6 @@ namespace StereoKitApp
 		public SKSettings Settings => new SKSettings { 
 			appName           = "StereoKit Template",
 			assetsFolder      = "Assets",
-			displayFallback   = true,
 			displayPreference = DisplayMode.MixedReality
 		};
 
