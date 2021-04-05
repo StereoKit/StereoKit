@@ -733,17 +733,30 @@ typedef struct hand_joint_t {
 } hand_joint_t;
 
 typedef struct hand_t {
-	hand_joint_t fingers[5][5];
-	pose_t  wrist;
-	pose_t  palm;
-	handed_ handedness;
+	hand_joint_t  fingers[5][5];
+	pose_t        wrist;
+	pose_t        palm;
+	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
-	float size;
-	float pinch_activation;
-	float grip_activation;
+	float         size;
+	float         pinch_activation;
+	float         grip_activation;
 } hand_t;
+
+typedef struct controller_t {
+	pose_t        pose;
+	pose_t        aim;
+	button_state_ tracked_state;
+	button_state_ menu;
+	button_state_ stick_click;
+	button_state_ x1;
+	button_state_ x2;
+	float         trigger;
+	float         grip;
+	vec2          stick;
+} controller_t;
 
 typedef struct mouse_t {
 	bool32_t available;
@@ -781,6 +794,7 @@ SK_API int                   input_pointer_count(input_source_ filter sk_default
 SK_API pointer_t             input_pointer      (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t         *input_hand         (handed_ hand);
 SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
+SK_API const controller_t   *input_controller   (handed_ hand);
 SK_API const pose_t         *input_head         ();
 SK_API const pose_t         *input_eyes         ();
 SK_API button_state_         input_eyes_tracked ();

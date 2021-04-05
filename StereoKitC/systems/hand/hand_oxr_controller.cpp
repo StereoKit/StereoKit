@@ -45,22 +45,22 @@ void hand_oxrc_update_frame() {
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
 		XrActionStatePose pose_state = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = xrc_pose_action;
+		get_info.action = xrc_action_pose_grip;
 		xrGetActionStatePose(xr_session, &get_info, &pose_state);
 
 		// Events come with a timestamp
 		XrActionStateFloat select_state = { XR_TYPE_ACTION_STATE_FLOAT };
-		get_info.action = xrc_select_action;
+		get_info.action = xrc_action_trigger;
 		xrGetActionStateFloat(xr_session, &get_info, &select_state);
 
 		// Events come with a timestamp
 		XrActionStateFloat grip_state = { XR_TYPE_ACTION_STATE_FLOAT };
-		get_info.action = xrc_grip_action;
+		get_info.action = xrc_action_grip;
 		xrGetActionStateFloat(xr_session, &get_info, &grip_state);
 
 		// Simulate the hand based on the state of the controller
 		pose_t hand_pose = {};
-		if (openxr_get_space(xr_hand_space[hand], &hand_pose)) {
+		if (openxr_get_space(xrc_space_grip[hand], &hand_pose)) {
 			hand_pose.position    = matrix_mul_point   (root, hand_pose.position);
 			hand_pose.orientation = root_q * hand_pose.orientation;
 
@@ -76,7 +76,7 @@ void hand_oxrc_update_frame() {
 		const hand_t *curr_hand = input_hand((handed_)hand);
 		pose_t        pose      = {};
 		if (curr_hand->pinch_state & button_state_changed &&
-			openxr_get_space(xrc_point_space[hand], &pose, select_state.lastChangeTime)) {
+			openxr_get_space(xrc_space_aim[hand], &pose, select_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point(root, pose.position);
 			pose.orientation = root_q * pose.orientation;
 
@@ -89,7 +89,7 @@ void hand_oxrc_update_frame() {
 
 		}
 		if (curr_hand->grip_state & button_state_changed &&
-			openxr_get_space(xrc_point_space[hand], &pose, grip_state.lastChangeTime)) {
+			openxr_get_space(xrc_space_aim[hand], &pose, grip_state.lastChangeTime)) {
 			pose.position    = matrix_mul_point(root, pose.position);
 			pose.orientation = root_q * pose.orientation;
 

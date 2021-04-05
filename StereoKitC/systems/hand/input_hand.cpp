@@ -102,6 +102,12 @@ const hand_t *input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
+const controller_t *input_controller(handed_ hand) {
+	return &input_controllers[hand];
+}
+
+///////////////////////////////////////////
+
 hand_system_ input_hand_get_system() {
 	return hand_sources[hand_system].system;
 }
