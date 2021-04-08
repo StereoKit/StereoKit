@@ -106,6 +106,10 @@ const controller_t *input_controller(handed_ hand) {
 	return &input_controllers[hand];
 }
 
+button_state_ input_controller_menu() {
+	return input_controller_menubtn;
+}
+
 ///////////////////////////////////////////
 
 hand_system_ input_hand_get_system() {

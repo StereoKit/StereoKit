@@ -9,6 +9,7 @@ extern pose_t        input_head_pose;
 extern pose_t        input_eyes_pose;
 extern button_state_ input_eyes_track_state;
 extern controller_t  input_controllers[2];
+extern button_state_ input_controller_menubtn;
 
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int32_t id);

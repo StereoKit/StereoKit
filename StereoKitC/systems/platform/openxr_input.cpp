@@ -242,11 +242,15 @@ bool oxri_init() {
 	{ // microsoft/motion_controller
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath wmr_grip[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &wmr_grip[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &wmr_grip[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
 			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
 			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
-			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+			{ xrc_action_grip,       wmr_grip        [0] }, { xrc_action_grip,        wmr_grip        [1] },
 			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
 			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
 			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
@@ -325,11 +329,15 @@ bool oxri_init() {
 	{ // htc/vive_controller
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath vive_grip[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &vive_grip[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &vive_grip[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
 			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
 			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
-			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+			{ xrc_action_grip,       vive_grip       [0] }, { xrc_action_grip,        vive_grip       [1] },
 			{ xrc_action_menu,       path_menu       [0] }, { xrc_action_menu,        path_menu       [1] },
 		};
 
@@ -358,6 +366,10 @@ bool oxri_init() {
 
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath index_menu[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/system/click",  &index_menu[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/system/click", &index_menu[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
 			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
@@ -366,7 +378,7 @@ bool oxri_init() {
 			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
 			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
 			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu       [0] }, { xrc_action_menu,        path_menu       [1] },
+			{ xrc_action_menu,       index_menu      [0] }, { xrc_action_menu,        index_menu      [1] },
 			{ xrc_action_x1,         path_x1         [0] }, { xrc_action_x1,          path_x1         [1] },
 			{ xrc_action_x2,         path_x2         [0] }, { xrc_action_x2,          path_x2         [1] },
 		};
@@ -404,7 +416,7 @@ bool oxri_init() {
 			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
 			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
 			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu       [0] }, // { xrc_action_menu,        path_menu       [1] },
+			{ xrc_action_menu,       path_menu       [0] },
 			{ xrc_action_x1,         path_x1         [0] }, { xrc_action_x1,          path_x1         [1] },
 			{ xrc_action_x2,         path_x2         [0] }, { xrc_action_x2,          path_x2         [1] },
 		};
@@ -514,6 +526,7 @@ void oxri_update_frame() {
 	xrSyncActions(xr_session, &sync_info);
 
 	// Get input from whatever controllers may be present
+	bool   menu_button = false;;
 	matrix root = render_get_cam_root();
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
@@ -564,7 +577,7 @@ void oxri_update_frame() {
 		XrActionStateBoolean state_menu = { XR_TYPE_ACTION_STATE_BOOLEAN };
 		get_info.action = xrc_action_menu;
 		xrGetActionStateBoolean(xr_session, &get_info, &state_menu);
-		input_controllers[hand].menu = button_make_state(input_controllers[hand].menu & button_state_active, state_menu.currentState);
+		menu_button = menu_button || state_menu.currentState;
 
 		// Stick click
 		XrActionStateBoolean state_stick_click = { XR_TYPE_ACTION_STATE_BOOLEAN };
@@ -598,6 +611,7 @@ void oxri_update_frame() {
 			pointer->orientation = point_pose.orientation;
 		}
 	}
+	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
 	// eye input
 	pointer_t* pointer = input_get_pointer(xr_eyes_pointer);
