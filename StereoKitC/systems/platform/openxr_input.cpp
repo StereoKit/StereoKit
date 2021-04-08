@@ -526,8 +526,8 @@ void oxri_update_frame() {
 	xrSyncActions(xr_session, &sync_info);
 
 	// Get input from whatever controllers may be present
-	bool   menu_button = false;;
-	matrix root = render_get_cam_root();
+	bool   menu_button = false;
+	matrix root        = render_get_cam_root();
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
@@ -538,8 +538,20 @@ void oxri_update_frame() {
 		XrActionStatePose state_grip = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xrc_action_pose_grip;
 		xrGetActionStatePose(xr_session, &get_info, &state_grip);
-		openxr_get_space(xrc_space_grip[hand], &input_controllers[hand].pose);
-		input_controllers[hand].tracked_state = button_make_state(input_controllers[hand].tracked_state & button_state_active, state_grip.isActive);
+
+		// Get the grip pose the verbose way, since we want to know if
+		// rotation or position are tracked independently of eachother.
+		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
+		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		if (XR_UNQUALIFIED_SUCCESS(res)) {
+			bool tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)    != 0;
+			bool tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+			if (tracked_pos) memcpy(&input_controllers[hand].pose.position,    &space_location.pose.position,    sizeof(vec3));
+			if (tracked_rot) memcpy(&input_controllers[hand].pose.orientation, &space_location.pose.orientation, sizeof(quat));
+			input_controllers[hand].tracked_pos = button_make_state(input_controllers[hand].tracked_pos & button_state_active, tracked_pos);
+			input_controllers[hand].tracked_rot = button_make_state(input_controllers[hand].tracked_rot & button_state_active, tracked_rot);
+		}
+		input_controllers[hand].tracked = button_make_state(input_controllers[hand].tracked & button_state_active, state_grip.isActive);
 
 		// Controller aim pose
 		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };

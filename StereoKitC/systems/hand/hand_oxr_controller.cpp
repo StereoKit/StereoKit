@@ -43,7 +43,7 @@ void hand_oxrc_update_frame() {
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 
 		// Simulate the hand based on the state of the controller
-		bool tracked = input_controllers[hand].tracked_state & button_state_active;
+		bool tracked = input_controllers[hand].tracked & button_state_active;
 		
 		pose_t hand_pose = input_hand((handed_)hand)->palm;
 		if (tracked) {
