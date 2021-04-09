@@ -167,26 +167,27 @@ namespace StereoKit
 		/// <summary>The grip pose of the controller. This approximately
 		/// represents the center of the hand's position. Check `trackedPos`
 		/// and `trackedRot` for the current state of the pose data.</summary>
-		public Pose     pose;
+		public Pose pose;
 		/// <summary>The aim pose of a controller is where the controller
 		/// 'points' from and to. This is great for pointer rays and far
 		/// interactions.</summary>
-		public Pose     aim;
+		public Pose aim;
 		/// <summary>This tells the current tracking state of this controller
 		/// overall. If either position or rotation are trackable, then this
 		/// will report tracked. Typically, positional tracking will be lost
 		/// first, when the controller goes out of view, and rotational 
 		/// tracking will often remain as long as the controller is still 
-		/// connected.</summary>
+		/// connected. This is a good way to check if the controller is
+		/// connected to the system at all.</summary>
 		public BtnState tracked;
 		/// <summary>This tells the current tracking state of the 
 		/// controller's position information. This is often the first part
 		/// of tracking data to go, so it can often be good to account for 
 		/// this on occasions.</summary>
-		public BtnState trackedPos;
+		public TrackState trackedPos;
 		/// <summary>This tells the current tracking state of the
 		/// controller's rotational information.</summary>
-		public BtnState trackedRot;
+		public TrackState trackedRot;
 		/// <summary>This represents the click state of the controller's
 		/// analog stick or directional controller.</summary>
 		public BtnState stickClick;
@@ -207,19 +208,19 @@ namespace StereoKit
 		/// provided as a value from 0.0 -> 1.0, where 0 is no interaction,
 		/// and 1 is full interaction. If a controller has binary activation,
 		/// this will jump straight from 0 to 1.</summary>
-		public float    trigger;
+		public float trigger;
 		/// <summary>The grip button typically sits under the user's middle
 		/// finger. These buttons occasionally have a wide range of
 		/// activation, so this is provided as a value from 0.0 -> 1.0, where
 		/// 0 is no interaction, and 1 is full interaction. If a controller
 		/// has binary activation, this will jump straight from 0 to 1.</summary>
-		public float    grip;
+		public float grip;
 		/// <summary>This is the current 2-axis position of the analog stick
 		/// or equivalent directional controller. This generally ranges from 
 		/// -1 to +1 on each axis. This is a raw input, so dead-zones and
 		/// similar issues are not accounted for here, unless modified by the
 		/// OpenXR platform itself.</summary>
-		public Vec2     stick;
+		public Vec2 stick;
 
 		/// <summary>Is the controller's X1 button currently pressed? 
 		/// Depending on the specific hardware, this is the first general
@@ -275,26 +276,6 @@ namespace StereoKit
 		public bool IsJustTracked   => (tracked & BtnState.JustActive)   > 0;
 		/// <summary>Has the controller just stopped being tracked this frame?</summary>
 		public bool IsJustUntracked => (tracked & BtnState.JustInactive) > 0;
-
-		/// <summary>Is the controller's position being tracked by the
-		/// sensors right now?</summary>
-		public bool IsPosTracked => (tracked & BtnState.Active) > 0;
-		/// <summary>Has the controller's position just started being tracked
-		/// this frame?</summary>
-		public bool IsPosJustTracked => (tracked & BtnState.JustActive) > 0;
-		/// <summary>Has the controller's position just stopped being tracked
-		/// this frame?</summary>
-		public bool IsPosJustUntracked => (tracked & BtnState.JustInactive) > 0;
-
-		/// <summary>Is the controller's orientation being tracked by the
-		/// sensors right now?</summary>
-		public bool IsRotTracked => (tracked & BtnState.Active) > 0;
-		/// <summary>Has the controller's orientation just started being
-		/// tracked this frame?</summary>
-		public bool IsRotJustTracked => (tracked & BtnState.JustActive) > 0;
-		/// <summary>Has the controller's orientation just stopped being
-		/// tracked this frame?</summary>
-		public bool IsRotJustUntracked => (tracked & BtnState.JustInactive) > 0;
 	}
 
 	/// <summary>Input from the system come from this class! Hands, eyes,

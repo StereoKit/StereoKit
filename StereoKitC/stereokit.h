@@ -718,6 +718,12 @@ typedef enum button_state_ {
 } button_state_;
 SK_MakeFlag(button_state_);
 
+typedef enum track_state_ {
+	track_state_lost     = 0,
+	track_state_inferred = 1,
+	track_state_known    = 2,
+} track_state_;
+
 typedef struct pointer_t {
 	input_source_ source;
 	button_state_ tracked;
@@ -749,8 +755,8 @@ typedef struct controller_t {
 	pose_t        pose;
 	pose_t        aim;
 	button_state_ tracked;
-	button_state_ tracked_pos;
-	button_state_ tracked_rot;
+	track_state_  tracked_pos;
+	track_state_  tracked_rot;
 	button_state_ stick_click;
 	button_state_ x1;
 	button_state_ x2;

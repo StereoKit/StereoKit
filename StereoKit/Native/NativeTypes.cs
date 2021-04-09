@@ -585,6 +585,27 @@ namespace StereoKit
 
 	}
 
+	/// <summary>This is the tracking state of a sensory input in the world,
+	/// like a controller's position sensor, or a QR code identified by a 
+	/// tracking system.</summary>
+	public enum TrackState
+	{
+		/// <summary>The system has no current knowledge about the state of
+		/// this input. It may be out of visibility, or possibly just
+		/// disconnected.</summary>
+		Lost     = 0,
+		/// <summary>The system doesn't know for sure where this is, but it
+		/// has an educated guess that may be inferred from previous data at
+		/// a lower quality. For example, a controller may still have 
+		/// accelerometer data after going out of view, which can still be
+		/// accurate for a short time after losing optical tracking.</summary>
+		Inferred = 1,
+		/// <summary>The system actively knows where this input is. Within
+		/// the constraints of the relevant hardware's capabilities, this is
+		/// as accurate as it gets!</summary>
+		Known    = 2
+	}
+
 	/// <summary>A collection of extension methods for the BtnState enum that makes
 	/// bit-field checks a little easier.</summary>
 	public static class BtnStateExtensions
