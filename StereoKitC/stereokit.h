@@ -748,7 +748,9 @@ typedef struct hand_t {
 typedef struct controller_t {
 	pose_t        pose;
 	pose_t        aim;
-	button_state_ tracked_state;
+	button_state_ tracked;
+	button_state_ tracked_pos;
+	button_state_ tracked_rot;
 	button_state_ stick_click;
 	button_state_ x1;
 	button_state_ x2;
