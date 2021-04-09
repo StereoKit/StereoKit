@@ -352,7 +352,8 @@ void ui_update() {
 
 	skui_finger_radius = 0;
 	for (size_t i = 0; i < handed_max; i++) {
-		const hand_t *hand = input_hand((handed_)i);
+		const hand_t    *hand    = input_hand((handed_)i);
+		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i]);
 
 		skui_finger_radius += hand->fingers[1][4].radius;
 		skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
@@ -366,7 +367,7 @@ void ui_update() {
 		skui_hand[i].finger       = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
 		skui_hand[i].finger_prev  = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
 		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
-		skui_hand[i].ray_enabled  = skui_hand[i].tracked && (vec3_dot(hand->palm.orientation * vec3_forward, input_head()->position - hand->palm.position) < 0);
+		skui_hand[i].ray_enabled  = pointer->tracked > 0 && skui_hand[i].tracked && (vec3_dot(hand->palm.orientation * vec3_forward, input_head()->position - hand->palm.position) < 0);
 
 		// Don't let the hand trigger things while popping in and out of
 		// tracking
@@ -381,14 +382,14 @@ void ui_update() {
 		// draw hand rays
 		if (skui_enable_far_interact && skui_hand[i].ray_enabled && skui_hand[i].focused_prev == 0) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
-			line_add(r.pos, r.pos + r.dir * 0.1f, { 255,255,255,255 }, { 50, 50, 50, 0 }, 0.002f);
+			line_point_t points[3] = {
+				line_point_t{r.pos,             0.002f, color32{255,255,255,0}},
+				line_point_t{r.pos+r.dir*0.02f, 0.002f, color32{255,255,255,255}},
+				line_point_t{r.pos+r.dir*0.10f, 0.002f, color32{255,255,255,0}} };
+			line_add_listv(points, 3);
 		}
 	}
 	skui_finger_radius /= handed_max;
-
-	//char text[80];
-	//snprintf(text, sizeof(text), "%llu - %llu", skui_hand[handed_right].focused_prev, skui_hand[handed_right].active_prev);
-	//text_add_at(text, matrix_trs(skui_hand[handed_right].finger_world));
 }
 
 ///////////////////////////////////////////

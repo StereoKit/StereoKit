@@ -42,6 +42,20 @@ void hand_oxrc_update_frame() {
 	quat   root_q = matrix_extract_rotation(root);
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 
+		// Update the hand point pose
+		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[hand]);
+		pointer->tracked = input_controllers[hand].tracked;
+
+		if (pointer->tracked > 0) {
+			pose_t point_pose = {
+				matrix_mul_point   (root, input_controllers[hand].aim.position),
+				matrix_mul_rotation(root, input_controllers[hand].aim.orientation) };
+
+			pointer->ray.pos     = point_pose.position;
+			pointer->ray.dir     = point_pose.orientation * vec3_forward;
+			pointer->orientation = point_pose.orientation;
+		}
+
 		// Simulate the hand based on the state of the controller
 		bool tracked = input_controllers[hand].tracked & button_state_active;
 		
@@ -57,7 +71,6 @@ void hand_oxrc_update_frame() {
 		input_hand_sim((handed_)hand, false, hand_pose.position, hand_pose.orientation, tracked, input_controllers[hand].trigger > 0.5f, input_controllers[hand].grip > 0.5f);
 
 		// Get event poses, and fire our own events for them
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[hand]);
 		pointer->state = button_make_state(pointer->state & button_state_active, input_controllers[hand].trigger > 0.5f);
 
 		const hand_t *curr_hand = input_hand((handed_)hand);

@@ -608,22 +608,6 @@ void oxri_update_frame() {
 		xrGetActionStateBoolean(xr_session, &get_info, &state_x2);
 		input_controllers[hand].x1 = button_make_state(input_controllers[hand].x1 & button_state_active, state_x1.currentState);
 		input_controllers[hand].x2 = button_make_state(input_controllers[hand].x2 & button_state_active, state_x2.currentState);
-
-		//// Pointer based on aim pose
-
-		// Update the hand point pose
-		pose_t     point_pose = {};
-		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
-		pointer->tracked = button_make_state(pointer->tracked & button_state_active, state_aim.isActive);
-
-		if (openxr_get_space(xrc_space_aim[hand], &point_pose)) {
-			point_pose.position    = matrix_mul_point   (root, point_pose.position);
-			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
-
-			pointer->ray.pos     = point_pose.position;
-			pointer->ray.dir     = point_pose.orientation * vec3_forward;
-			pointer->orientation = point_pose.orientation;
-		}
 	}
 	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
