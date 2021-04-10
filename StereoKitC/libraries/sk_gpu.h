@@ -609,33 +609,51 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 	// Find the right adapter to use:
 	IDXGIAdapter1 *final_adapter = nullptr;
-	if (adapter_id != nullptr) {
-		IDXGIFactory1 *dxgi_factory;
-		CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)(&dxgi_factory));
+	IDXGIAdapter1 *curr_adapter  = nullptr;
+	IDXGIFactory1 *dxgi_factory  = nullptr;
+	int            curr          = 0;
+	SIZE_T         video_mem     = 0;
+	CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)(&dxgi_factory));
+	while (dxgi_factory->EnumAdapters1(curr++, &curr_adapter) == S_OK) {
+		DXGI_ADAPTER_DESC1 adapterDesc;
+		curr_adapter->GetDesc1(&adapterDesc);
 
-		int curr = 0;
-		IDXGIAdapter1 *curr_adapter = nullptr;
-		while (dxgi_factory->EnumAdapters1(curr++, &curr_adapter) == S_OK) {
-			DXGI_ADAPTER_DESC1 adapterDesc;
-			curr_adapter->GetDesc1(&adapterDesc);
-
-			if (memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(LUID)) == 0) {
-				final_adapter = curr_adapter;
-				break;
-			}
-			curr_adapter->Release();
+		// By default, we pick the adapter that has the most available memory
+		if (adapterDesc.DedicatedVideoMemory > video_mem) {
+			video_mem = adapterDesc.DedicatedVideoMemory;
+			if (final_adapter != nullptr) final_adapter->Release();
+			final_adapter = curr_adapter;
+			final_adapter->AddRef();
 		}
-		dxgi_factory->Release();
-	}
 
+		// If the user asks for a specific device though, return it right away!
+		if (adapter_id != nullptr && memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(LUID)) == 0) {
+			if (final_adapter != nullptr) final_adapter->Release();
+			final_adapter = curr_adapter;
+			final_adapter->AddRef();
+			break;
+		}
+		curr_adapter->Release();
+	}
+	dxgi_factory->Release();
+
+	// Create the interface to the graphics card
 	D3D_FEATURE_LEVEL feature_levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
 	if (FAILED(D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, feature_levels, _countof(feature_levels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context))) {
 		return -1;
 	}
-	skg_log(skg_log_info, "Using Direct3D 11");
 
-	if (final_adapter != nullptr)
+	// Notify what device and API we're using
+	if (final_adapter != nullptr) {
+		DXGI_ADAPTER_DESC1 final_adapter_info;
+		final_adapter->GetDesc1(&final_adapter_info);
+		char d3d_info_txt[128];
+		snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Using Direct3D 11: %ls", &final_adapter_info.Description);
+		skg_log(skg_log_info, d3d_info_txt);
 		final_adapter->Release();
+	} else {
+		skg_log(skg_log_info, "Using Direct3D 11: default device");
+	}
 
 	// Hook into debug information
 	ID3D11Debug *d3d_debug = nullptr;

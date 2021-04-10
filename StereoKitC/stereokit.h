@@ -718,6 +718,12 @@ typedef enum button_state_ {
 } button_state_;
 SK_MakeFlag(button_state_);
 
+typedef enum track_state_ {
+	track_state_lost     = 0,
+	track_state_inferred = 1,
+	track_state_known    = 2,
+} track_state_;
+
 typedef struct pointer_t {
 	input_source_ source;
 	button_state_ tracked;
@@ -733,17 +739,31 @@ typedef struct hand_joint_t {
 } hand_joint_t;
 
 typedef struct hand_t {
-	hand_joint_t fingers[5][5];
-	pose_t  wrist;
-	pose_t  palm;
-	handed_ handedness;
+	hand_joint_t  fingers[5][5];
+	pose_t        wrist;
+	pose_t        palm;
+	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
-	float size;
-	float pinch_activation;
-	float grip_activation;
+	float         size;
+	float         pinch_activation;
+	float         grip_activation;
 } hand_t;
+
+typedef struct controller_t {
+	pose_t        pose;
+	pose_t        aim;
+	button_state_ tracked;
+	track_state_  tracked_pos;
+	track_state_  tracked_rot;
+	button_state_ stick_click;
+	button_state_ x1;
+	button_state_ x2;
+	float         trigger;
+	float         grip;
+	vec2          stick;
+} controller_t;
 
 typedef struct mouse_t {
 	bool32_t available;
@@ -777,18 +797,20 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
-SK_API int                   input_pointer_count(input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer      (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t         *input_hand         (handed_ hand);
-SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
-SK_API const pose_t         *input_head         ();
-SK_API const pose_t         *input_eyes         ();
-SK_API button_state_         input_eyes_tracked ();
-SK_API const mouse_t        *input_mouse        ();
-SK_API button_state_         input_key          (key_ key);
-SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid   (handed_ hand, bool32_t solid);
-SK_API void                  input_hand_material(handed_ hand, material_t material);
+SK_API int                   input_pointer_count  (input_source_ filter sk_default(input_source_any));
+SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
+SK_API const hand_t         *input_hand           (handed_ hand);
+SK_API void                  input_hand_override  (handed_ hand, hand_joint_t *hand_joints);
+SK_API const controller_t   *input_controller     (handed_ hand);
+SK_API button_state_         input_controller_menu();
+SK_API const pose_t         *input_head           ();
+SK_API const pose_t         *input_eyes           ();
+SK_API button_state_         input_eyes_tracked   ();
+SK_API const mouse_t        *input_mouse          ();
+SK_API button_state_         input_key            (key_ key);
+SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
+SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
+SK_API void                  input_hand_material  (handed_ hand, material_t material);
 
 SK_API void input_subscribe  (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
