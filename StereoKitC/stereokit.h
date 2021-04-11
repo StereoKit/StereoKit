@@ -390,7 +390,11 @@ typedef enum tex_format_ {
 	tex_format_rgba32_linear,
 	tex_format_bgra32,
 	tex_format_bgra32_linear,
-	tex_format_rgba64,
+	tex_format_rg11b10,
+	tex_format_rgb10a2,
+	tex_format_rgba64, // TODO: remove during major version update
+	tex_format_rgba64s,
+	tex_format_rgba64f,
 	tex_format_rgba128,
 	tex_format_r8,
 	tex_format_r16,
@@ -398,6 +402,8 @@ typedef enum tex_format_ {
 	tex_format_depthstencil,
 	tex_format_depth32,
 	tex_format_depth16,
+
+	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
 
 typedef enum tex_sample_ {

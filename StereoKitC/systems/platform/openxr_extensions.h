@@ -13,6 +13,8 @@
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
 	_(xrLocateHandJointsEXT)                     \
+	_(xrEnumerateColorSpacesFB)                  \
+	_(xrSetColorSpaceFB)                         \
 	_(xrCreateSpatialGraphNodeSpaceMSFT)         \
 	_(xrCreateDebugUtilsMessengerEXT)            \
 	_(xrDestroyDebugUtilsMessengerEXT)

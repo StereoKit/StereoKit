@@ -272,10 +272,14 @@ namespace StereoKit
 		Rgba32Linear,
 		Bgra32,
 		Bgra32Linear,
+		Rg11b10,
+		Rgb10a2,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
 		/// per-channel! This is not common, but you might encounter it with
 		/// raw photos, or HDR images.</summary>
 		Rgba64,
+		Rgba64s,
+		Rgba64f,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
 		/// expensive. Don't use this unless you know -exactly- what you're

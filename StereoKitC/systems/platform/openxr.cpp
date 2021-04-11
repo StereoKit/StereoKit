@@ -38,6 +38,7 @@ const char *xr_request_extensions[] = {
 	XR_TIME_EXTENSION,
 	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
 	XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME,
+	XR_FB_COLOR_SPACE_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
 	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
 	XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME,
@@ -311,7 +312,7 @@ bool openxr_init() {
 
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
-	log_diagf("Using system: %s", properties.systemName);
+	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
 	xr_has_articulated_hands     = xr_ext_articulated_hands && properties_tracking.supportsHandTracking;
 	sk_info.eye_tracking_present = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
 	xr_has_depth_lsr             = xr_ext_depth_lsr;
@@ -444,7 +445,15 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	// Flag any extensions the app will need to know about
 	if (out_extensions != nullptr) {
 		for (uint32_t i = 0; i < ext_count; i++) {
-			log_diagf("OpenXR ext: %s", exts[i].extensionName);
+			bool used = false;
+			for (uint32_t e = 0; e < out_extension_count; e++) {
+				if (strcmp(exts[i].extensionName, out_extensions[e]) == 0) {
+					used = true;
+					break;
+				}
+			}
+			if (used) log_diagf("REQUESTED: <~grn>%s<~clr>", exts[i].extensionName);
+			else      log_diagf("available: %s", exts[i].extensionName);
 		}
 		
 		for (uint32_t i = 0; i < out_extension_count; i++) {
