@@ -16,25 +16,34 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+struct xrc_actions_t {
+};
+
 XrActionSet xrc_action_set;
-XrAction    xrc_eyes_action;
-XrAction    xrc_pose_action;
-XrAction    xrc_point_action;
-XrAction    xrc_select_action;
-XrAction    xrc_grip_action;
+XrAction    xrc_action_eyes;
+XrAction    xrc_action_pose_grip;
+XrAction    xrc_action_pose_aim;
+XrAction    xrc_action_trigger;
+XrAction    xrc_action_grip;
+XrAction    xrc_action_stick_x;
+XrAction    xrc_action_stick_y;
+XrAction    xrc_action_stick_click;
+XrAction    xrc_action_x1;
+XrAction    xrc_action_x2;
+XrAction    xrc_action_menu;
+
 XrPath      xrc_hand_subaction_path[2];
-XrSpace     xrc_point_space[2];
-XrSpace     xr_hand_space  [2] = {};
-XrSpace     xr_gaze_space = {};
-XrPath      xrc_pose_path  [2];
+XrSpace     xrc_space_aim          [2];
+XrSpace     xrc_space_grip         [2] = {};
+XrSpace     xr_gaze_space              = {};
 
 int32_t xr_eyes_pointer;
 
 struct xrc_profile_info_t {
 	const char *name;
-	XrPath profile;
-	quat   offset_rot[2];
-	vec3   offset_pos[2];
+	XrPath      profile;
+	quat        offset_rot[2];
+	vec3        offset_pos[2];
 };
 array_t<xrc_profile_info_t> xrc_profile_offsets = {};
 XrPath                      xrc_active_profile[2] = { 0xFFFFFFFF, 0xFFFFFFFF };
@@ -72,9 +81,9 @@ bool oxri_init() {
 	action_info.countSubactionPaths = _countof(xrc_hand_subaction_path);
 	action_info.subactionPaths      = xrc_hand_subaction_path;
 	action_info.actionType          = XR_ACTION_TYPE_POSE_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_pose");
-	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Pose");
-	result = xrCreateAction(xrc_action_set, &action_info, &xrc_pose_action);
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip_pose");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip Pose");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_pose_grip);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
 		return false;
@@ -82,9 +91,9 @@ bool oxri_init() {
 
 	// Create an action to track the pointing position and orientation!
 	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "hand_point");
-	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Hand Point");
-	result = xrCreateAction(xrc_action_set, &action_info, &xrc_point_action);
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "aim_pose");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Aim Pose");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_pose_aim);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
 		return false;
@@ -93,9 +102,9 @@ bool oxri_init() {
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
 	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "select");
-	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Select");
-	result = xrCreateAction(xrc_action_set, &action_info, &xrc_select_action);
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "trigger");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Trigger");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_trigger);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
 		return false;
@@ -104,18 +113,75 @@ bool oxri_init() {
 	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
 	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip");
-	result = xrCreateAction(xrc_action_set, &action_info, &xrc_grip_action);
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_grip);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
 		return false;
 	}
 
+	// Stick axes for X and Y
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "stick_x");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Stick X");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_stick_x);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "stick_y");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Stick Y");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_stick_y);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+
+	// Button actions
+
+	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "stick_click");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Stick Click");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_stick_click);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+
+	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "menu");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Menu");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_menu);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+
+	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "button_x1");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Button X1");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_x1);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+
+	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "button_x2");
+	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Button X2");
+	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_x2);
+	if (XR_FAILED(result)) {
+		log_infof("xrCreateAction failed: [%s]", openxr_string(result));
+		return false;
+	}
+
+	// Eye tracking
 	if (sk_info.eye_tracking_present) {
 		action_info = { XR_TYPE_ACTION_CREATE_INFO };
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
 		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
 		snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Eye Gaze");
-		result = xrCreateAction(xrc_action_set, &action_info, &xrc_eyes_action);
+		result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_eyes);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateAction failed: [%s]", openxr_string(result));
 			return false;
@@ -123,7 +189,7 @@ bool oxri_init() {
 
 		XrPath gaze_path;
 		xrStringToPath(xr_instance, "/user/eyes_ext/input/gaze_ext/pose", &gaze_path);
-		XrActionSuggestedBinding bindings = {xrc_eyes_action, gaze_path};
+		XrActionSuggestedBinding bindings = {xrc_action_eyes, gaze_path};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/ext/eye_gaze_interaction", &profile_path);
 		suggested_binds.interactionProfile     = profile_path;
@@ -135,7 +201,7 @@ bool oxri_init() {
 		}
 
 		XrActionSpaceCreateInfo create_space = {XR_TYPE_ACTION_SPACE_CREATE_INFO};
-		create_space.action            = xrc_eyes_action;
+		create_space.action            = xrc_action_eyes;
 		create_space.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
 		result = xrCreateActionSpace(xr_session, &create_space, &xr_gaze_space);
 		if (XR_FAILED(result)) {
@@ -147,25 +213,48 @@ bool oxri_init() {
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
 	// preferences. For example, if the runtime allows you to remap buttons, or provides input
 	// accessibility settings.
-	XrPath point_path [2];
-	XrPath select_path[2];
-	XrPath grip_path  [2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",  &xrc_pose_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose", &xrc_pose_path[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",   &point_path[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",  &point_path[1]);
+	XrPath path_pose_aim   [2];
+	XrPath path_pose_grip  [2];
+	XrPath path_trigger    [2];
+	XrPath path_grip       [2];
+	XrPath path_stick_x    [2];
+	XrPath path_stick_y    [2];
+	XrPath path_stick_click[2];
+	XrPath path_x1         [2];
+	XrPath path_x2         [2];
+	XrPath path_menu       [2];
+	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",  &path_pose_grip[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose", &path_pose_grip[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",   &path_pose_aim[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",  &path_pose_aim[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &path_grip[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &path_grip[1]);
 
-	// microsoft / motion_controller
-	{
-		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/thumbstick/x",      &path_stick_x[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/thumbstick/x",     &path_stick_x[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/thumbstick/y",      &path_stick_y[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/thumbstick/y",     &path_stick_y[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/thumbstick/click",  &path_stick_click[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/thumbstick/click", &path_stick_click[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/menu/click",        &path_menu[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/menu/click",       &path_menu[1]);
+
+	{ // microsoft/motion_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath wmr_grip[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &wmr_grip[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &wmr_grip[1]);
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
-			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
-			{ xrc_select_action, select_path  [0] }, { xrc_select_action, select_path  [1] },
-			{ xrc_grip_action,   grip_path    [0] }, { xrc_grip_action,   grip_path    [1] },
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       wmr_grip        [0] }, { xrc_action_grip,        wmr_grip        [1] },
+			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
+			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       path_menu       [0] }, { xrc_action_menu,        path_menu       [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
@@ -192,17 +281,64 @@ bool oxri_init() {
 		}
 	}
 
-	// htc / vive_controller
-	{
-		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
+	{ // hp/mixed_reality_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/x/click",        &path_x1[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/y/click",        &path_x2[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/b/click",       &path_x2[1]);
+
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
-			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
-			{ xrc_select_action, select_path  [0] }, { xrc_select_action, select_path  [1] },
-			{ xrc_grip_action,   grip_path    [0] }, { xrc_grip_action,   grip_path    [1] },
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
+			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       path_menu       [0] }, { xrc_action_menu,        path_menu       [1] },
+			{ xrc_action_x1,         path_x1         [0] }, { xrc_action_x1,          path_x1         [1] },
+			{ xrc_action_x2,         path_x2         [0] }, { xrc_action_x2,          path_x2         [1] },
+		};
+
+		xrStringToPath(xr_instance, "/interaction_profiles/hp/mixed_reality_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = &bindings[0];
+		suggested_binds.countSuggestedBindings = _countof(bindings);
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for WMR vs. HoloLens controllers
+			xrc_profile_info_t info;
+			info.profile = profile_path;
+			info.name    = "hp/mixed_reality_controller";
+			if (sk_info.display_type == display_opaque) {
+				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
+				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
+				info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
+				info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
+			} else {
+				info.offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
+				info.offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
+				info.offset_pos[handed_left ] = { 0, 0.005f, 0 };
+				info.offset_pos[handed_right] = { 0, 0.005f, 0 };
+			}
+			xrc_profile_offsets.add(info);
+		}
+	}
+
+	{ // htc/vive_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath vive_grip[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &vive_grip[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &vive_grip[1]);
+		XrActionSuggestedBinding bindings[] = {
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       vive_grip       [0] }, { xrc_action_grip,        vive_grip       [1] },
+			{ xrc_action_menu,       path_menu       [0] }, { xrc_action_menu,        path_menu       [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/htc/vive_controller", &profile_path);
@@ -222,17 +358,29 @@ bool oxri_init() {
 		}
 	}
 
-	// valve / index_controller
-	{
-		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
+	{ // valve/index_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/a/click",        &path_x1[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/b/click",        &path_x2[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/b/click",       &path_x2[1]);
+
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+
+		XrPath index_menu[2];
+		xrStringToPath(xr_instance, "/user/hand/left/input/system/click",  &index_menu[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/system/click", &index_menu[1]);
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
-			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
-			{ xrc_select_action, select_path  [0] }, { xrc_select_action, select_path  [1] },
-			{ xrc_grip_action,   grip_path    [0] }, { xrc_grip_action,   grip_path    [1] },
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
+			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       index_menu      [0] }, { xrc_action_menu,        index_menu      [1] },
+			{ xrc_action_x1,         path_x1         [0] }, { xrc_action_x1,          path_x1         [1] },
+			{ xrc_action_x2,         path_x2         [0] }, { xrc_action_x2,          path_x2         [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/valve/index_controller", &profile_path);
@@ -252,17 +400,25 @@ bool oxri_init() {
 		}
 	}
 
-	// oculus / touch_controller
-	{
-		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &select_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &select_path[1]);
-		xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &grip_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &grip_path[1]);
+	{ // oculus/touch_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/x/click",        &path_x1[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/y/click",        &path_x2[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/b/click",       &path_x2[1]);
+
+		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
-			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
-			{ xrc_select_action, select_path  [0] }, { xrc_select_action, select_path  [1] },
-			{ xrc_grip_action,   grip_path    [0] }, { xrc_grip_action,   grip_path    [1] },
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+			{ xrc_action_stick_x,    path_stick_x    [0] }, { xrc_action_stick_x,     path_stick_x    [1] },
+			{ xrc_action_stick_y,    path_stick_y    [0] }, { xrc_action_stick_y,     path_stick_y    [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       path_menu       [0] },
+			{ xrc_action_x1,         path_x1         [0] }, { xrc_action_x1,          path_x1         [1] },
+			{ xrc_action_x2,         path_x2         [0] }, { xrc_action_x2,          path_x2         [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/oculus/touch_controller", &profile_path);
@@ -282,15 +438,15 @@ bool oxri_init() {
 		}
 	}
 
-	// khr / simple_controller
 #if !defined(SK_OS_ANDROID)
-	{
-		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &select_path[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &select_path[1]);
+	{ // khr/simple_controller
+		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &path_trigger[1]);
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_pose_action,   xrc_pose_path[0] }, { xrc_pose_action,   xrc_pose_path[1] },
-			{ xrc_point_action,  point_path   [0] }, { xrc_point_action,  point_path   [1] },
-			{ xrc_select_action, select_path  [0] }, { xrc_select_action, select_path  [1] },
+			{ xrc_action_pose_grip, path_pose_grip[0] }, { xrc_action_pose_grip, path_pose_grip[1] },
+			{ xrc_action_pose_aim,  path_pose_aim [0] }, { xrc_action_pose_aim,  path_pose_aim [1] },
+			{ xrc_action_trigger,   path_trigger  [0] }, { xrc_action_trigger,   path_trigger  [1] },
+			{ xrc_action_menu,      path_menu     [0] }, { xrc_action_menu,      path_menu     [1] },
 		};
 
 		xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
@@ -302,7 +458,7 @@ bool oxri_init() {
 			info.profile = profile_path;
 			info.name    = "khr/simple_controller";
 			info.offset_rot[handed_left ] = quat_identity;
-			info.offset_rot[handed_right] = quat_identity;;
+			info.offset_rot[handed_right] = quat_identity;
 			info.offset_pos[handed_left ] = vec3_zero;
 			info.offset_pos[handed_right] = vec3_zero;
 			xrc_profile_offsets.add(info);
@@ -315,8 +471,8 @@ bool oxri_init() {
 		XrActionSpaceCreateInfo action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
 		action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
 		action_space_info.subactionPath     = xrc_hand_subaction_path[i];
-		action_space_info.action            = xrc_pose_action;
-		result = xrCreateActionSpace(xr_session, &action_space_info, &xr_hand_space[i]);
+		action_space_info.action            = xrc_action_pose_grip;
+		result = xrCreateActionSpace(xr_session, &action_space_info, &xrc_space_grip[i]);
 		if (XR_FAILED(result)) {
 			log_infof("xrCreateActionSpace failed: [%s]", openxr_string(result));
 			return false;
@@ -325,8 +481,8 @@ bool oxri_init() {
 		action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
 		action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
 		action_space_info.subactionPath     = xrc_hand_subaction_path[i];
-		action_space_info.action            = xrc_point_action;
-		result = xrCreateActionSpace(xr_session, &action_space_info, &xrc_point_space[i]);
+		action_space_info.action            = xrc_action_pose_aim;
+		result = xrCreateActionSpace(xr_session, &action_space_info, &xrc_space_aim[i]);
 		if (XR_FAILED(result)) {
 			log_infof("xrCreateActionSpace failed: [%s]", openxr_string(result));
 			return false;
@@ -352,9 +508,9 @@ bool oxri_init() {
 
 void oxri_shutdown() {
 	xrc_profile_offsets.free();
-	if (xr_hand_space[0]) { xrDestroySpace    (xr_hand_space[0]); xr_hand_space[0] = {}; }
-	if (xr_hand_space[1]) { xrDestroySpace    (xr_hand_space[1]); xr_hand_space[1] = {}; }
-	if (xrc_action_set  ) { xrDestroyActionSet(xrc_action_set  ); xrc_action_set   = {}; }
+	if (xrc_space_grip[0]) { xrDestroySpace    (xrc_space_grip[0]); xrc_space_grip[0] = {}; }
+	if (xrc_space_grip[1]) { xrDestroySpace    (xrc_space_grip[1]); xrc_space_grip[1] = {}; }
+	if (xrc_action_set   ) { xrDestroyActionSet(xrc_action_set   ); xrc_action_set    = {}; }
 }
 
 ///////////////////////////////////////////
@@ -369,38 +525,98 @@ void oxri_update_frame() {
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
 
-	// System pointer rays, these should be present regardless of whether
-	// we're using controllers or articulated hands.
-	matrix root = render_get_cam_root();
+	// Get input from whatever controllers may be present
+	bool   menu_button = false;
+	matrix root        = render_get_cam_root();
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
-		XrActionStatePose point_state = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = xrc_point_action;
-		xrGetActionStatePose(xr_session, &get_info, &point_state);
+		//// Pose actions
 
-		// Update the hand point pose
-		pose_t     point_pose = {};
-		pointer_t* pointer    = input_get_pointer(input_hand_pointer_id[hand]);
-		pointer->tracked = button_make_state(pointer->tracked & button_state_active, point_state.isActive);
+		// Controller grip pose
+		XrActionStatePose state_grip = { XR_TYPE_ACTION_STATE_POSE };
+		get_info.action = xrc_action_pose_grip;
+		xrGetActionStatePose(xr_session, &get_info, &state_grip);
 
-		if (openxr_get_space(xrc_point_space[hand], &point_pose)) {
-			point_pose.position    = matrix_mul_point   (root, point_pose.position);
-			point_pose.orientation = matrix_mul_rotation(root, point_pose.orientation);
-
-			pointer->ray.pos     = point_pose.position;
-			pointer->ray.dir     = point_pose.orientation * vec3_forward;
-			pointer->orientation = point_pose.orientation;
+		// Get the grip pose the verbose way, since we want to know if
+		// rotation or position are tracked independently of eachother.
+		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
+		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		if (XR_UNQUALIFIED_SUCCESS(res)) {
+			bool tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT)    != 0;
+			bool tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
+			bool valid_pos   = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)      != 0;
+			bool valid_rot   = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)   != 0;
+			if (valid_pos) memcpy(&input_controllers[hand].pose.position,    &space_location.pose.position,    sizeof(vec3));
+			if (valid_rot) memcpy(&input_controllers[hand].pose.orientation, &space_location.pose.orientation, sizeof(quat));
+			input_controllers[hand].tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
+			input_controllers[hand].tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
 		}
+		input_controllers[hand].tracked = button_make_state(input_controllers[hand].tracked & button_state_active, state_grip.isActive);
+
+		// Controller aim pose
+		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };
+		get_info.action = xrc_action_pose_aim;
+		xrGetActionStatePose(xr_session, &get_info, &state_aim);
+		openxr_get_space(xrc_space_aim[hand], &input_controllers[hand].aim);
+
+		//// Float actions
+
+		// Trigger
+		XrActionStateFloat state_trigger = { XR_TYPE_ACTION_STATE_FLOAT };
+		get_info.action = xrc_action_trigger;
+		xrGetActionStateFloat(xr_session, &get_info, &state_trigger);
+		input_controllers[hand].trigger = state_trigger.currentState;
+
+		// Grip button
+		XrActionStateFloat state_grip_btn = { XR_TYPE_ACTION_STATE_FLOAT };
+		get_info.action = xrc_action_grip;
+		xrGetActionStateFloat(xr_session, &get_info, &state_grip_btn);
+		input_controllers[hand].grip = state_grip_btn.currentState;
+
+		// Analog stick X and Y
+		XrActionStateFloat grip_stick_x = { XR_TYPE_ACTION_STATE_FLOAT };
+		XrActionStateFloat grip_stick_y = { XR_TYPE_ACTION_STATE_FLOAT };
+		get_info.action = xrc_action_stick_x;
+		xrGetActionStateFloat(xr_session, &get_info, &grip_stick_x);
+		get_info.action = xrc_action_stick_y;
+		xrGetActionStateFloat(xr_session, &get_info, &grip_stick_y);
+		input_controllers[hand].stick.x = -grip_stick_x.currentState;
+		input_controllers[hand].stick.y =  grip_stick_y.currentState;
+
+		//// Bool actions
+
+		// Menu button
+		XrActionStateBoolean state_menu = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		get_info.action = xrc_action_menu;
+		xrGetActionStateBoolean(xr_session, &get_info, &state_menu);
+		menu_button = menu_button || state_menu.currentState;
+
+		// Stick click
+		XrActionStateBoolean state_stick_click = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		get_info.action = xrc_action_stick_click;
+		xrGetActionStateBoolean(xr_session, &get_info, &state_stick_click);
+		input_controllers[hand].stick_click = button_make_state(input_controllers[hand].stick_click & button_state_active, state_stick_click.currentState);
+
+		// Button x1 and x2
+		XrActionStateBoolean state_x1 = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		XrActionStateBoolean state_x2 = { XR_TYPE_ACTION_STATE_BOOLEAN };
+		get_info.action = xrc_action_x1;
+		xrGetActionStateBoolean(xr_session, &get_info, &state_x1);
+		get_info.action = xrc_action_x2;
+		xrGetActionStateBoolean(xr_session, &get_info, &state_x2);
+		input_controllers[hand].x1 = button_make_state(input_controllers[hand].x1 & button_state_active, state_x1.currentState);
+		input_controllers[hand].x2 = button_make_state(input_controllers[hand].x2 & button_state_active, state_x2.currentState);
 	}
+	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
 	// eye input
 	pointer_t* pointer = input_get_pointer(xr_eyes_pointer);
 	if (sk_info.eye_tracking_present) {
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
-		action_info.action = xrc_eyes_action;
+		action_info.action = xrc_action_eyes;
 		xrGetActionStatePose(xr_session, &action_info, &action_pose);
 
 		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, action_pose.isActive);

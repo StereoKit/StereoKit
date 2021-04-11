@@ -146,7 +146,11 @@ const char *render_fmt_name(tex_format_ format) {
 	case tex_format_bgra32_linear: return "bgra32_linear";
 	case tex_format_rgba32:        return "rgba32_sRGB";
 	case tex_format_rgba32_linear: return "rgba32_linear";
-	case tex_format_rgba64:        return "rgba64";
+	case tex_format_rgb10a2:       return "rgb10a2";
+	case tex_format_rg11b10:       return "rg11b10";
+	case tex_format_rgba64u:       return "rgba64u";
+	case tex_format_rgba64s:       return "rgba64s";
+	case tex_format_rgba64f:       return "rgba64f";
 	case tex_format_rgba128:       return "rgba128";
 	case tex_format_r8:            return "r8";
 	case tex_format_r16:           return "r16";

@@ -15,9 +15,11 @@ struct input_event_t {
 	void (*event_callback)(input_source_ source, button_state_ evt, const pointer_t &pointer);
 };
 
-array_t<input_event_t>input_listeners  = {};
-array_t<pointer_t>    input_pointers   = {};
-mouse_t               input_mouse_data = {};
+array_t<input_event_t>input_listeners      = {};
+array_t<pointer_t>    input_pointers       = {};
+mouse_t               input_mouse_data     = {};
+controller_t          input_controllers[2] = {};
+button_state_         input_controller_menubtn = {};
 
 pose_t                input_head_pose  = { vec3_zero, quat_identity };
 pose_t                input_eyes_pose  = { vec3_zero, quat_identity };

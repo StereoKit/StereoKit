@@ -171,8 +171,24 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	openxr_preferred_format(out_view.color_format, out_view.depth_format);
 	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
 
+	// Tell OpenXR what sort of color space we're rendering in
+	if (xr_extensions.xrSetColorSpaceFB != nullptr) {
+		const char    *colorspace_str = "XR_COLOR_SPACE_REC709_FB";
+		XrColorSpaceFB colorspace     =  XR_COLOR_SPACE_REC709_FB;
+		skg_tex_fmt_   fmt            = skg_tex_fmt_from_native(out_view.color_format);
+
+		// Maybe?
+		if (fmt != skg_tex_fmt_bgra32 && fmt != skg_tex_fmt_rgba32) {
+			colorspace_str = "XR_COLOR_SPACE_REC2020_FB";
+			colorspace     =  XR_COLOR_SPACE_REC2020_FB;
+		}
+
+		if (XR_SUCCEEDED(xr_extensions.xrSetColorSpaceFB(xr_session, colorspace)))
+			log_diagf("Set color space to <~grn>%s<~clr>", colorspace_str);
+	}
+
 	// Debug print the view and format info
-	log_diagf("Creating view: %s color:%s depth:%s",
+	log_diagf("Creating view: <~grn>%s<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>",
 		openxr_view_name(view_type),
 		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),
 		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.depth_format )));
@@ -221,7 +237,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 		&& h == display.swapchain_color.height) {
 		return true;
 	}
-	log_diagf("Setting view: %s to %dx%d", openxr_view_name(display.type), w, h);
+	log_diagf("Setting view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d", openxr_view_name(display.type), w, h);
 
 	// Create the new swapchaines for the current size
 	int samples = display.view_configs[0].recommendedSwapchainSampleCount;
@@ -251,7 +267,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 			for (int32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
 				int32_t index = layer*display.swapchain_color.surface_count + s;
 
-				display.swapchain_color.textures[index] = tex_create(tex_type_rendertarget, tex_format_rgba32);
+				display.swapchain_color.textures[index] = tex_create(tex_type_rendertarget, tex_get_tex_format(display.color_format));
 				display.swapchain_depth.textures[index] = tex_create(tex_type_depth,        tex_get_tex_format(display.depth_format));
 
 				char           name[64];
@@ -355,10 +371,13 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 
 void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	int64_t pixel_formats[] = {
-		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
-		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear),
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
-		skg_tex_fmt_to_native(skg_tex_fmt_bgra32)};
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32),
+		skg_tex_fmt_to_native(skg_tex_fmt_rg11b10),
+		skg_tex_fmt_to_native(skg_tex_fmt_rgb10a2),
+		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
+		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
+
 	int64_t depth_formats[] = {
 		skg_tex_fmt_to_native(render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
@@ -373,16 +392,32 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 
 	// Check those against our formats, prefer OpenXR's pick for color format
 	out_color_dx = 0;
-	for (uint32_t i=0; i<count; i++) {
-		for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
-			if (formats[i] == pixel_formats[f]) {
-				out_color_dx = pixel_formats[f];
-				break;
+	if (xr_extensions.xrSetColorSpaceFB == nullptr) {
+		for (uint32_t i=0; i<count; i++) {
+			for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
+				if (formats[i] == pixel_formats[f]) {
+					out_color_dx = pixel_formats[f];
+					break;
+				}
+			}
+		}
+	} else {
+		// Currently, Oculus sorts swapchain formats numerically instead of
+		// by preference, and gives us formats that don't work well first. So
+		// for Oculus, we'll pick -our- preference instead.
+		// TODO: monitor for if Oculus ever fixes this
+		for (uint32_t i=0; i<_countof(pixel_formats); i++) {
+			for (int32_t f=0; out_color_dx == 0 && f<count; f++) {
+				if (formats[f] == pixel_formats[i]) {
+					out_color_dx = pixel_formats[i];
+					break;
+				}
 			}
 		}
 	}
 
-	// For depth, prefer our top pick over OpenXR's top pick
+	// For depth, prefer our top pick over OpenXR's top pick, since we have
+	// some extra qualifications to our selection.
 	out_depth_dx = 0;
 	for (int32_t f=0;  f<_countof(depth_formats); f++) {
 		for (uint32_t i=0; out_depth_dx == 0 && i<count; i++) {

@@ -47,43 +47,48 @@ struct hand_state_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
-	bool         initialized;
 	bool (*available)();
 	void (*init)();
 	void (*shutdown)();
+	void (*update_inactive)();
 	void (*update_frame)();
 	void (*update_predicted)();
 } hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
-	{ hand_system_override, false,
+	{ hand_system_override,
 		hand_override_available,
 		hand_override_init,
 		hand_override_shutdown,
+		nullptr,
 		hand_override_update_frame,
 		hand_override_update_predicted },
-	{ hand_system_oxr_articulated, false,
+	{ hand_system_oxr_articulated,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
+		hand_oxra_update_inactive,
 		hand_oxra_update_frame,
 		hand_oxra_update_predicted },
-	{ hand_system_oxr_controllers, false,
+	{ hand_system_oxr_controllers,
 		hand_oxrc_available,
 		hand_oxrc_init,
 		hand_oxrc_shutdown,
+		nullptr,
 		hand_oxrc_update_frame,
 		hand_oxrc_update_predicted },
-	{ hand_system_mouse, false,
+	{ hand_system_mouse,
 		hand_mouse_available,
 		hand_mouse_init,
 		hand_mouse_shutdown,
+		nullptr,
 		hand_mouse_update_frame,
 		hand_mouse_update_predicted },
-	{ hand_system_none, false,
+	{ hand_system_none,
 		[]() {return true;},
 		[]() {},
 		[]() {},
+		nullptr,
 		[]() {},
 		[]() {} },
 };
@@ -98,6 +103,16 @@ void input_hand_update_mesh(handed_ hand);
 
 const hand_t *input_hand(handed_ hand) {
 	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
+const controller_t *input_controller(handed_ hand) {
+	return &input_controllers[hand];
+}
+
+button_state_ input_controller_menu() {
+	return input_controller_menubtn;
 }
 
 ///////////////////////////////////////////
@@ -117,11 +132,6 @@ void input_hand_refresh_system() {
 		}
 	}
 	if (available_source != hand_system) {
-		// TODO: Only really necessary for oxrc -> mirage transition, when mirage dies, this can go away
-		if (hand_system >= 0) {
-			hand_sources[hand_system].shutdown();
-			hand_sources[hand_system].initialized = false;
-		}
 		hand_system = available_source;
 
 		const char *source_name = "N/A";
@@ -134,10 +144,6 @@ void input_hand_refresh_system() {
 		}
 
 		log_diagf("Switched to input source: %s", source_name);
-		if (!hand_sources[hand_system].initialized) {
-			hand_sources [hand_system].init();
-			hand_sources [hand_system].initialized = true;
-		}
 
 		// Force the hand size to recalculate next update
 		hand_size_update = 0;
@@ -225,6 +231,10 @@ void input_hand_init() {
 	tex_release(gradient_tex);
 	material_release(hand_mat);
 
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		hand_sources[i].init();
+	}
+
 	input_hand_refresh_system();
 }
 
@@ -232,9 +242,7 @@ void input_hand_init() {
 
 void input_hand_shutdown() {
 	for (size_t i = 0; i < _countof(hand_sources); i++) {
-		if (hand_sources[i].initialized)
-			hand_sources[i].shutdown();
-		hand_sources[i].initialized = false;
+		hand_sources[i].shutdown();
 	}
 
 	for (size_t i = 0; i < handed_max; i++) {
@@ -251,7 +259,6 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	
 	hand_sources[hand_system].update_frame();
 
 	// Update the hand size every second
@@ -291,6 +298,11 @@ void input_hand_update() {
 				solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
 			}
 		}
+	}
+
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
+			hand_sources[i].update_inactive();
 	}
 }
 

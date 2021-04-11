@@ -97,7 +97,11 @@ typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_rgba32_linear,
 	skg_tex_fmt_bgra32,
 	skg_tex_fmt_bgra32_linear,
-	skg_tex_fmt_rgba64,
+	skg_tex_fmt_rg11b10,
+	skg_tex_fmt_rgb10a2,
+	skg_tex_fmt_rgba64u,
+	skg_tex_fmt_rgba64s,
+	skg_tex_fmt_rgba64f,
 	skg_tex_fmt_rgba128,
 	skg_tex_fmt_r8,
 	skg_tex_fmt_r16,
@@ -609,33 +613,51 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 	// Find the right adapter to use:
 	IDXGIAdapter1 *final_adapter = nullptr;
-	if (adapter_id != nullptr) {
-		IDXGIFactory1 *dxgi_factory;
-		CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)(&dxgi_factory));
+	IDXGIAdapter1 *curr_adapter  = nullptr;
+	IDXGIFactory1 *dxgi_factory  = nullptr;
+	int            curr          = 0;
+	SIZE_T         video_mem     = 0;
+	CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)(&dxgi_factory));
+	while (dxgi_factory->EnumAdapters1(curr++, &curr_adapter) == S_OK) {
+		DXGI_ADAPTER_DESC1 adapterDesc;
+		curr_adapter->GetDesc1(&adapterDesc);
 
-		int curr = 0;
-		IDXGIAdapter1 *curr_adapter = nullptr;
-		while (dxgi_factory->EnumAdapters1(curr++, &curr_adapter) == S_OK) {
-			DXGI_ADAPTER_DESC1 adapterDesc;
-			curr_adapter->GetDesc1(&adapterDesc);
-
-			if (memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(LUID)) == 0) {
-				final_adapter = curr_adapter;
-				break;
-			}
-			curr_adapter->Release();
+		// By default, we pick the adapter that has the most available memory
+		if (adapterDesc.DedicatedVideoMemory > video_mem) {
+			video_mem = adapterDesc.DedicatedVideoMemory;
+			if (final_adapter != nullptr) final_adapter->Release();
+			final_adapter = curr_adapter;
+			final_adapter->AddRef();
 		}
-		dxgi_factory->Release();
-	}
 
+		// If the user asks for a specific device though, return it right away!
+		if (adapter_id != nullptr && memcmp(&adapterDesc.AdapterLuid, adapter_id, sizeof(LUID)) == 0) {
+			if (final_adapter != nullptr) final_adapter->Release();
+			final_adapter = curr_adapter;
+			final_adapter->AddRef();
+			break;
+		}
+		curr_adapter->Release();
+	}
+	dxgi_factory->Release();
+
+	// Create the interface to the graphics card
 	D3D_FEATURE_LEVEL feature_levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
 	if (FAILED(D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, feature_levels, _countof(feature_levels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context))) {
 		return -1;
 	}
-	skg_log(skg_log_info, "Using Direct3D 11");
 
-	if (final_adapter != nullptr)
+	// Notify what device and API we're using
+	if (final_adapter != nullptr) {
+		DXGI_ADAPTER_DESC1 final_adapter_info;
+		final_adapter->GetDesc1(&final_adapter_info);
+		char d3d_info_txt[128];
+		snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Using Direct3D 11: %ls", &final_adapter_info.Description);
+		skg_log(skg_log_info, d3d_info_txt);
 		final_adapter->Release();
+	} else {
+		skg_log(skg_log_info, "Using Direct3D 11: default device");
+	}
 
 	// Hook into debug information
 	ID3D11Debug *d3d_debug = nullptr;
@@ -1491,8 +1513,11 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 		case skg_tex_fmt_rgba32_linear: 
 			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
-		case skg_tex_fmt_rgba64:
+		case skg_tex_fmt_rgba64u:
 			skg_downsample_4((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			break;
+		case skg_tex_fmt_rgba64s:
+			skg_downsample_4((int16_t  *)mip_data, mip_w, mip_h, (int16_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba128:
 			skg_downsample_4((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
@@ -1829,7 +1854,11 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	case skg_tex_fmt_rgba32_linear: return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case skg_tex_fmt_bgra32:        return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
 	case skg_tex_fmt_bgra32_linear: return DXGI_FORMAT_B8G8R8A8_UNORM;
-	case skg_tex_fmt_rgba64:        return DXGI_FORMAT_R16G16B16A16_UNORM;
+	case skg_tex_fmt_rg11b10:       return DXGI_FORMAT_R11G11B10_FLOAT;
+	case skg_tex_fmt_rgb10a2:       return DXGI_FORMAT_R10G10B10A2_UNORM;
+	case skg_tex_fmt_rgba64u:       return DXGI_FORMAT_R16G16B16A16_UNORM;
+	case skg_tex_fmt_rgba64s:       return DXGI_FORMAT_R16G16B16A16_SNORM;
+	case skg_tex_fmt_rgba64f:       return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case skg_tex_fmt_rgba128:       return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case skg_tex_fmt_depth16:       return DXGI_FORMAT_D16_UNORM;
 	case skg_tex_fmt_depth32:       return DXGI_FORMAT_D32_FLOAT;
@@ -1849,7 +1878,11 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case DXGI_FORMAT_R8G8B8A8_UNORM:      return skg_tex_fmt_rgba32_linear;
 	case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: return skg_tex_fmt_bgra32;
 	case DXGI_FORMAT_B8G8R8A8_UNORM:      return skg_tex_fmt_bgra32_linear;
-	case DXGI_FORMAT_R16G16B16A16_UNORM:  return skg_tex_fmt_rgba64;
+	case DXGI_FORMAT_R11G11B10_FLOAT:     return skg_tex_fmt_rg11b10;
+	case DXGI_FORMAT_R10G10B10A2_UNORM:   return skg_tex_fmt_rgb10a2;
+	case DXGI_FORMAT_R16G16B16A16_UNORM:  return skg_tex_fmt_rgba64u;
+	case DXGI_FORMAT_R16G16B16A16_SNORM:  return skg_tex_fmt_rgba64s;
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:  return skg_tex_fmt_rgba64f;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:  return skg_tex_fmt_rgba128;
 	case DXGI_FORMAT_D16_UNORM:           return skg_tex_fmt_depth16;
 	case DXGI_FORMAT_D32_FLOAT:           return skg_tex_fmt_depth32;
@@ -2034,6 +2067,7 @@ wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
 #define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
 
 #define GL_RED 0x1903
+#define GL_RGB 0x1907
 #define GL_RGBA 0x1908
 #define GL_SRGB_ALPHA 0x8C42
 #define GL_DEPTH_COMPONENT 0x1902
@@ -2071,8 +2105,11 @@ wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
 #define GL_RGBA16 0x805B
 #define GL_BGRA 0x80E1
 #define GL_SRGB8_ALPHA8 0x8C43
+#define GL_R11F_G11F_B10F 0x8C3A
+#define GL_RGB10_A2 0x8059
 #define GL_RGBA32F 0x8814
 #define GL_RGBA16F 0x881A
+#define GL_RGBA16I 0x8D88
 #define GL_RGBA16UI 0x8D76
 #define GL_COMPRESSED_RGB8_ETC2 0x9274
 #define GL_COMPRESSED_SRGB8_ETC2 0x9275
@@ -3589,7 +3626,11 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	switch (format) {
 	case skg_tex_fmt_rgba32:        return GL_SRGB8_ALPHA8;
 	case skg_tex_fmt_rgba32_linear: return GL_RGBA8;
-	case skg_tex_fmt_rgba64:        return GL_RGBA16UI;
+	case skg_tex_fmt_rg11b10:       return GL_R11F_G11F_B10F;
+	case skg_tex_fmt_rgb10a2:       return GL_RGB10_A2;
+	case skg_tex_fmt_rgba64u:       return GL_RGBA16UI;
+	case skg_tex_fmt_rgba64s:       return GL_RGBA16I;
+	case skg_tex_fmt_rgba64f:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba128:       return GL_RGBA32F;
 	case skg_tex_fmt_depth16:       return GL_DEPTH_COMPONENT16;
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT32F;
@@ -3607,7 +3648,11 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	switch (format) {
 	case GL_SRGB8_ALPHA8:       return skg_tex_fmt_rgba32;
 	case GL_RGBA8:              return skg_tex_fmt_rgba32_linear;
-	case GL_RGBA16UI:           return skg_tex_fmt_rgba64;
+	case GL_R11F_G11F_B10F:     return skg_tex_fmt_rg11b10;
+	case GL_RGB10_A2:           return skg_tex_fmt_rgb10a2;
+	case GL_RGBA16UI:           return skg_tex_fmt_rgba64u;
+	case GL_RGBA16I:            return skg_tex_fmt_rgba64s;
+	case GL_RGBA16F:            return skg_tex_fmt_rgba64f;
 	case GL_RGBA32F:            return skg_tex_fmt_rgba128;
 	case GL_DEPTH_COMPONENT16:  return skg_tex_fmt_depth16;
 	case GL_DEPTH_COMPONENT32F: return skg_tex_fmt_depth32;
@@ -3625,8 +3670,12 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	switch (format) {
 	case skg_tex_fmt_rgba32:
 	case skg_tex_fmt_rgba32_linear:
-	case skg_tex_fmt_rgba64:
+	case skg_tex_fmt_rgb10a2:
+	case skg_tex_fmt_rgba64u:
+	case skg_tex_fmt_rgba64s:
+	case skg_tex_fmt_rgba64f:
 	case skg_tex_fmt_rgba128:       return GL_RGBA;
+	case skg_tex_fmt_rg11b10:       return GL_RGB;
 	case skg_tex_fmt_bgra32:
 	case skg_tex_fmt_bgra32_linear:
 		#ifdef _SKG_GL_WEB // WebGL has no GL_BGRA?
@@ -3652,7 +3701,11 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rgba32_linear: return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_bgra32:        return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_bgra32_linear: return GL_UNSIGNED_BYTE;
-	case skg_tex_fmt_rgba64:        return GL_UNSIGNED_SHORT;
+	case skg_tex_fmt_rgb10a2:       return GL_FLOAT;
+	case skg_tex_fmt_rg11b10:       return GL_FLOAT;
+	case skg_tex_fmt_rgba64u:       return GL_UNSIGNED_SHORT;
+	case skg_tex_fmt_rgba64s:       return GL_SHORT;
+	case skg_tex_fmt_rgba64f:       return GL_FLOAT;
 	case skg_tex_fmt_rgba128:       return GL_FLOAT;
 	case skg_tex_fmt_depth16:       return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_depth32:       return GL_FLOAT;
@@ -4367,11 +4420,15 @@ const skg_shader_var_t *skg_shader_get_var_info(const skg_shader_t *shader, int3
 
 uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	switch (format) {
-	case skg_tex_fmt_rgba32:        return sizeof(uint8_t )*4;
-	case skg_tex_fmt_rgba32_linear: return sizeof(uint8_t )*4;
-	case skg_tex_fmt_bgra32:        return sizeof(uint8_t )*4;
-	case skg_tex_fmt_bgra32_linear: return sizeof(uint8_t )*4;
-	case skg_tex_fmt_rgba64:        return sizeof(uint16_t)*4;
+	case skg_tex_fmt_rgba32:
+	case skg_tex_fmt_rgba32_linear:
+	case skg_tex_fmt_bgra32:
+	case skg_tex_fmt_bgra32_linear:
+	case skg_tex_fmt_rg11b10: 
+	case skg_tex_fmt_rgb10a2:       return sizeof(uint8_t )*4;
+	case skg_tex_fmt_rgba64u:
+	case skg_tex_fmt_rgba64s:
+	case skg_tex_fmt_rgba64f:       return sizeof(uint16_t)*4;
 	case skg_tex_fmt_rgba128:       return sizeof(uint32_t)*4;
 	case skg_tex_fmt_depth16:       return sizeof(uint16_t);
 	case skg_tex_fmt_depth32:       return sizeof(uint32_t);
