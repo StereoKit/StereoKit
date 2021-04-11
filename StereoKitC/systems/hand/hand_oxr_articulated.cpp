@@ -15,6 +15,7 @@ namespace sk {
 XrHandTrackerEXT oxra_hand_tracker[2];
 hand_joint_t     oxra_hand_joints[2][26];
 bool             oxra_hand_active = true;
+bool             oxra_system_initialized = false;
 
 ///////////////////////////////////////////
 
@@ -31,6 +32,8 @@ bool hand_oxra_available() {
 bool hand_oxra_is_tracked() {
 	if (xr_time <= 0)
 		return true;
+	if (!oxra_system_initialized)
+		return false;
 
 	// If hand tracking isn't active, we'll just want to check if it ever
 	// resumes activity, and then switch back to it.
@@ -75,11 +78,14 @@ void hand_oxra_init() {
 		}
 	}
 	oxra_hand_active = hand_oxra_is_tracked();
+	oxra_system_initialized = true;
 }
 
 ///////////////////////////////////////////
 
 void hand_oxra_shutdown() {
+	if (!oxra_system_initialized) return;
+	
 	for (int32_t h = 0; h < handed_max; h++) {
 		xr_extensions.xrDestroyHandTrackerEXT(oxra_hand_tracker[h]);
 	}

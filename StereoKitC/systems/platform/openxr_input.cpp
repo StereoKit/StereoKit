@@ -281,6 +281,7 @@ bool oxri_init() {
 		}
 	}
 
+	if (xr_ext_hp_controller)
 	{ // hp/mixed_reality_controller
 		xrStringToPath(xr_instance, "/user/hand/left/input/x/click",        &path_x1[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);

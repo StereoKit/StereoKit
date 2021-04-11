@@ -137,6 +137,7 @@ extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_has_articulated_hands;
 extern bool       xr_has_depth_lsr;
+extern bool       xr_ext_hp_controller;
 extern XrExtTable xr_extensions;
 extern XrTime     xr_time;
 extern XrSpace    xrc_space_grip[2];

@@ -64,6 +64,7 @@ bool xr_ext_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
 bool xr_ext_articulated_hands = false;
 bool xr_ext_gaze              = false;
+bool xr_ext_hp_controller     = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -457,10 +458,11 @@ bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 		}
 		
 		for (uint32_t i = 0; i < out_extension_count; i++) {
-			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME   ) == 0) xr_ext_depth_lsr                  = true;
-			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME             ) == 0) xr_ext_articulated_hands          = true;
-			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME     ) == 0) sk_info.spatial_bridge_present    = true;
-			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME      ) == 0) xr_ext_gaze                       = true;
+			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME    ) == 0) xr_ext_depth_lsr                  = true;
+			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME              ) == 0) xr_ext_articulated_hands          = true;
+			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME      ) == 0) sk_info.spatial_bridge_present    = true;
+			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME       ) == 0) xr_ext_gaze                       = true;
+			else if (strcmp(out_extensions[i], XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME) == 0) xr_ext_hp_controller              = true;
 #if defined(SK_OS_WINDOWS_UWP)
 			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
 #endif
