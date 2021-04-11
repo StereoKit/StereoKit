@@ -57,6 +57,11 @@ bool hand_oxra_is_tracked() {
 ///////////////////////////////////////////
 
 void hand_oxra_init() {
+	if (sk_active_display_mode() != display_mode_mixedreality ||
+		xr_session               == XR_NULL_HANDLE            ||
+		xr_has_articulated_hands == false)
+		return;
+
 	for (int32_t h = 0; h < handed_max; h++) {
 		XrHandTrackerCreateInfoEXT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT };
 		info.hand         = h == handed_left ? XR_HAND_LEFT_EXT : XR_HAND_RIGHT_EXT;
