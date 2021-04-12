@@ -59,6 +59,11 @@ struct render_screenshot_t {
 	int width;
 	int height;
 };
+struct render_viewpoint_t {
+	tex_t rendertarget;
+	matrix camera;
+	matrix projection;
+};
 
 ///////////////////////////////////////////
 
@@ -80,6 +85,7 @@ color128                render_clear_color     = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
+array_t<render_viewpoint_t>   render_viewpoint_list  = {};
 
 mesh_t                  render_sky_mesh    = nullptr;
 material_t              render_sky_mat     = nullptr;
@@ -103,6 +109,7 @@ skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel };
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_check_screenshots();
+void          render_check_viewpoints ();
 
 ///////////////////////////////////////////
 
@@ -363,6 +370,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 ///////////////////////////////////////////
 
 void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count) {
+	render_check_viewpoints();
 	render_draw_queue(views, projections, count);
 	render_check_screenshots();
 }
@@ -370,6 +378,8 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 ///////////////////////////////////////////
 
 void render_check_screenshots() {
+	if (render_screenshot_list.count == 0) return;
+
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (size_t i = 0; i < render_screenshot_list.count; i++) {
 		int32_t  w = render_screenshot_list[i].width;
@@ -380,12 +390,7 @@ void render_check_screenshots() {
 			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
 		matrix_inverse(view, view);
 
-		matrix proj;
-		math_fast_to_matrix(XMMatrixPerspectiveFovRH(
-			render_fov * deg2rad, 
-			(float)w/h, 
-			render_clip_planes.x, 
-			render_clip_planes.y), &proj);
+		matrix proj = matrix_perspective(render_fov, (float)w/h, render_clip_planes.x, render_clip_planes.y);
 
 		// Create the screenshot surface
 		
@@ -414,6 +419,33 @@ void render_check_screenshots() {
 		free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
+	skg_tex_target_bind(old_target, false, nullptr);
+}
+
+///////////////////////////////////////////
+
+void render_check_viewpoints() {
+	if (render_viewpoint_list.count == 0) return;
+
+	skg_tex_t *old_target = skg_tex_target_get();
+	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
+
+		// Setup to render the screenshot
+		float color[4] = {
+			render_clear_color.r / 255.f,
+			render_clear_color.g / 255.f,
+			render_clear_color.b / 255.f,
+			render_clear_color.a / 255.f };
+		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex, true, color);
+
+		// Render!
+		render_draw_queue(&render_viewpoint_list[i].camera, &render_viewpoint_list[i].projection, 1);
+		skg_tex_target_bind(nullptr, false, nullptr);
+
+		// Release the reference we added, the user should have their own ref
+		assets_releaseref(render_viewpoint_list[i].rendertarget->header);
+	}
+	render_viewpoint_list.clear();
 	skg_tex_target_bind(old_target, false, nullptr);
 }
 
@@ -487,6 +519,7 @@ void render_shutdown() {
 	render_lists.free();
 	render_list_stack.free();
 	render_screenshot_list.free();
+	render_viewpoint_list.free();
 	render_instance_list.free();
 
 	material_release(render_sky_mat);
@@ -538,6 +571,20 @@ void render_blit(tex_t to, material_t material) {
 void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const char *file) {
 	char *file_copy = string_copy(file);
 	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height });
+}
+
+///////////////////////////////////////////
+
+void render_render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection) {
+	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
+		log_err("render_render_to texture must be a render target texture type!");
+		return;
+	}
+	assets_addref(to_rendertarget->header);
+	
+	matrix inv_cam;
+	matrix_inverse(camera, inv_cam);
+	render_viewpoint_list.add({ to_rendertarget, inv_cam, projection });
 }
 
 ///////////////////////////////////////////

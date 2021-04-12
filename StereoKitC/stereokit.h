@@ -186,6 +186,8 @@ SK_API pose_t   matrix_mul_pose     (const sk_ref(matrix) transform, const sk_re
 SK_API vec3     matrix_to_angles    (const sk_ref(matrix) transform);
 SK_API matrix   matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
 SK_API void     matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API matrix   matrix_perspective  (float fov_degrees, float aspect_ratio, float near_clip, float far_clip);
+SK_API matrix   matrix_orthographic (float width, float height, float near_clip, float far_clip);
 SK_API bool32_t matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
 SK_API vec3     matrix_extract_translation(const sk_ref(matrix) transform);
 SK_API vec3     matrix_extract_scale      (const sk_ref(matrix) transform);
@@ -666,6 +668,7 @@ SK_API void                  render_add_mesh       (mesh_t mesh, material_t mate
 SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
+SK_API void                  render_render_to      (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection);
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////

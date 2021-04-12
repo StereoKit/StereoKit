@@ -201,6 +201,25 @@ namespace StereoKit
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
+
+		/// <summary>Set the texture's size without providing any color data.
+		/// In most cases, you should probably just call SetColors instead,
+		/// but this can be useful if you're adding color data some other
+		/// way, such as when blitting or rendering to it.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two 
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		public void SetSize(int width, int height)
+			=> NativeAPI.tex_set_colors(_inst, width, height, IntPtr.Zero);
+
+		/// <summary>Only applicable if this texture is a rendertarget! 
+		/// This creates and attaches a zbuffer surface to the texture for
+		/// use when rendering to it.</summary>
+		/// <param name="depthFormat">The format of the depth texture, must
+		/// be a depth format type!</param>
+		public void AddZBuffer(TexFormat depthFormat)
+			=> NativeAPI.tex_add_zbuffer(_inst, depthFormat);
 		#endregion
 
 		#region Static Methods

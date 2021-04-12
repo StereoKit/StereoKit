@@ -147,5 +147,21 @@ namespace StereoKit
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
 			=> NativeAPI.render_screenshot(from, at, width, height, filename);
 
+		/// <summary>This renders the current scene to the indicated 
+		/// rendertarget texture, from the specified viewpoint. This call 
+		/// enqueues a render that occurs immediately before the screen 
+		/// itself is rendered.</summary>
+		/// <param name="toRendertarget">The texture to which the scene will
+		/// be rendered to. This must be a Rendertarget type texture.</param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use 
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection)
+			=> NativeAPI.render_from_viewpoint(toRendertarget._inst, camera, projection);
+
 	}
 }

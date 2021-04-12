@@ -313,5 +313,43 @@ namespace StereoKit
 		/// information into a single Matrix!</returns>
 		public static Matrix TRS(Vec3 translation, Vec3 pitchYawRollDeg, Vec3 scale) 
 			=> NativeAPI.matrix_trs(translation, Quat.FromAngles(pitchYawRollDeg), scale);
+
+		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. Perspective projection 
+		/// matrices will cause parallel lines to converge at the horizon. 
+		/// This is great for normal looking content.</summary>
+		/// <param name="fovDegrees">This is the vertical field of view of
+		/// the perspective matrix, units are in degrees.</param>
+		/// <param name="aspectRatio">The projection surface's width/height.
+		/// </param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		public static Matrix Perspective(float fovDegrees, float aspectRatio, float nearClip, float farClip)
+			=> Matrix4x4.CreatePerspectiveFieldOfView(fovDegrees*Units.deg2rad, aspectRatio, nearClip, farClip);
+
+		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. Orthographic projection 
+		/// matrices will preserve parallel lines. This is great for 2D 
+		/// scenes or content.</summary>
+		/// <param name="width">The width, in meters, of the area that will 
+		/// be projected.</param>
+		/// <param name="height">The height, in meters, of the area that will
+		/// be projected.</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final orhtographic matrix.</returns>
+		public static Matrix Orthographic(float width, float height, float nearClip, float farClip)
+			=> Matrix4x4.CreateOrthographic(width, height, nearClip, farClip);
 	}
 }

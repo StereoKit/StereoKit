@@ -249,6 +249,26 @@ void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orient
 
 ///////////////////////////////////////////
 
+matrix matrix_perspective(float fov_degrees, float aspect_ratio, float near_clip, float far_clip) {
+	matrix result;
+	math_fast_to_matrix(XMMatrixPerspectiveFovRH(
+		fov_degrees * deg2rad, aspect_ratio,
+		near_clip, far_clip), &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
+matrix matrix_orthographic(float width, float height, float near_clip, float far_clip) {
+	matrix result;
+	math_fast_to_matrix(XMMatrixOrthographicRH(
+		width, height,
+		near_clip, far_clip), &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool32_t matrix_decompose(const matrix &transform, vec3 &out_position, vec3 &out_scale, quat &out_orientation) {
 	XMVECTOR pos, scale, rot;
 	XMMATRIX mat;
