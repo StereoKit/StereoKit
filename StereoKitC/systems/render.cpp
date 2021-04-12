@@ -575,9 +575,9 @@ void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const c
 
 ///////////////////////////////////////////
 
-void render_render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection) {
+void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection) {
 	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
-		log_err("render_render_to texture must be a render target texture type!");
+		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
 	assets_addref(to_rendertarget->header);

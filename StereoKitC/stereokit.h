@@ -668,7 +668,7 @@ SK_API void                  render_add_mesh       (mesh_t mesh, material_t mate
 SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
-SK_API void                  render_render_to      (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection);
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection);
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////

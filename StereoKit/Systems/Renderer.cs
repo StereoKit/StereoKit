@@ -161,7 +161,7 @@ namespace StereoKit
 		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
 		/// helpful as well.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection)
-			=> NativeAPI.render_from_viewpoint(toRendertarget._inst, camera, projection);
+			=> NativeAPI.render_to(toRendertarget._inst, camera, projection);
 
 	}
 }
