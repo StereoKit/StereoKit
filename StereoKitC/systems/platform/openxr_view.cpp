@@ -188,10 +188,16 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	}
 
 	// Debug print the view and format info
-	log_diagf("Creating view: <~grn>%s<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>",
+	const char *blend_mode_str = "NA";
+	switch (out_view.blend) {
+	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    blend_mode_str = "Additive";    break;
+	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: blend_mode_str = "Alpha Blend"; break;
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      blend_mode_str = "Opaque";      break; }
+	log_diagf("Creating view: <~grn>%s<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr> blend:<~grn>%s<~clr>",
 		openxr_view_name(view_type),
-		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.color_format )),
-		render_fmt_name((tex_format_)skg_tex_fmt_from_native( out_view.depth_format )));
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native(out_view.color_format)),
+		render_fmt_name((tex_format_)skg_tex_fmt_from_native(out_view.depth_format)),
+		blend_mode_str);
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
@@ -444,16 +450,41 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 	xr_check(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, blend_count, &blend_count, blend_modes),
 		"xrEnumerateEnvironmentBlendModes failed [%s]");
 
+	// Add any preferences from the user
+	array_t<XrEnvironmentBlendMode> blend_search = {};
+	if (sk_settings.blend_preference & display_blend   ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND);
+	if (sk_settings.blend_preference & display_additive) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ADDITIVE);
+	if (sk_settings.blend_preference & display_opaque  ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_OPAQUE);
+
+	// Search for the first user preference
+	for (size_t s = 0; s < blend_search.count; s++) {
+		for (size_t b = 0; b < blend_count; b++) {
+			if (blend_modes[b] == blend_search[s]) {
+				out_blend = blend_modes[b];
+
+				free(blend_modes);
+				blend_search.free();
+				return true;
+			}
+		}
+	}
+
+	// If none found, return the first blend mode StereoKit recognizes.
 	for (size_t i = 0; i < blend_count; i++) {
 		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
 			out_blend = blend_modes[i];
+
+			free(blend_modes);
+			blend_search.free();
 			return true;
 		}
 	}
 
 	log_info("openxr_preferred_blend couldn't find a valid blend mode!");
+	free(blend_modes);
+	blend_search.free();
 	return false;
 }
 

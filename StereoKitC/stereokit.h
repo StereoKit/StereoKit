@@ -64,12 +64,22 @@ typedef enum depth_mode_ {
 	depth_mode_stencil,
 } depth_mode_;
 
+typedef enum display_ {
+	display_none            = 0,
+	display_opaque          = 1 << 0,
+	display_additive        = 1 << 1,
+	display_blend           = 1 << 2,
+	display_passthrough     = 1 << 2, // TODO: remove this in v0.4
+	display_any_transparent = display_additive | display_blend,
+} display_;
+
 typedef struct sk_settings_t {
-	const char   *app_name;
-	const char   *assets_folder;
-	display_mode_ display_preference;
-	bool32_t      no_flatscreen_fallback;
-	depth_mode_   depth_mode;
+	const char    *app_name;
+	const char    *assets_folder;
+	display_mode_  display_preference;
+	display_       blend_preference;
+	bool32_t       no_flatscreen_fallback;
+	depth_mode_    depth_mode;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
@@ -79,12 +89,6 @@ typedef struct sk_settings_t {
 	void    *android_java_vm;  // JavaVM*
 	void    *android_activity; // jobject
 } sk_settings_t;
-
-typedef enum display_ {
-	display_opaque = 0,
-	display_additive,
-	display_passthrough,
-} display_;
 
 typedef struct system_info_t {
 	display_ display_type;

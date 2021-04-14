@@ -7,6 +7,7 @@ class App
 	SKSettings settings  = new SKSettings {
 		appName           = "StereoKit C#",
 		assetsFolder      = "Assets",
+		blendPreference   = Display.AnyTransparent,
 		displayPreference = DisplayMode.MixedReality };
 
 	public SKSettings Settings => settings;
