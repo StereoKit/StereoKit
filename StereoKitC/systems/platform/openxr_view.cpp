@@ -172,7 +172,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	if (!openxr_preferred_blend (view_type, out_view.blend)) return false;
 
 	// Tell OpenXR what sort of color space we're rendering in
-	if (xr_extensions.xrSetColorSpaceFB != nullptr) {
+	if (xr_ext_available.FB_color_space) {
 		const char    *colorspace_str = "XR_COLOR_SPACE_REC709_FB";
 		XrColorSpaceFB colorspace     =  XR_COLOR_SPACE_REC709_FB;
 		skg_tex_fmt_   fmt            = skg_tex_fmt_from_native(out_view.color_format);
@@ -398,7 +398,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 
 	// Check those against our formats, prefer OpenXR's pick for color format
 	out_color_dx = 0;
-	if (xr_extensions.xrSetColorSpaceFB == nullptr) {
+	if (!xr_ext_available.FB_color_space) {
 		for (uint32_t i=0; i<count; i++) {
 			for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
 				if (formats[i] == pixel_formats[f]) {

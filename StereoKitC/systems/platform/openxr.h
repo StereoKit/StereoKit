@@ -120,10 +120,8 @@ void openxr_step_begin    ();
 void openxr_step_end      ();
 void openxr_poll_events   ();
 bool openxr_render_frame  ();
-void openxr_make_actions  ();
 void openxr_poll_actions  ();
 
-bool        openxr_get_stage_bounds(rect_t *out_rect);
 void       *openxr_get_luid ();
 int64_t     openxr_get_time ();
 bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
@@ -137,11 +135,9 @@ extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_has_articulated_hands;
 extern bool       xr_has_depth_lsr;
-extern bool       xr_ext_hp_controller;
-extern XrExtTable xr_extensions;
+extern bool       xr_has_bounds;
 extern XrTime     xr_time;
 extern XrSpace    xrc_space_grip[2];
-extern bool       xr_has_bounds;
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
 

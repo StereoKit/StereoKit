@@ -31,44 +31,16 @@ namespace sk {
 ///////////////////////////////////////////
 
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-
-const char *xr_request_extensions[] = {
-	XR_GFX_EXTENSION,
-	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
-	XR_TIME_EXTENSION,
-	XR_EXT_HAND_TRACKING_EXTENSION_NAME,
-	XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME,
-	XR_FB_COLOR_SPACE_EXTENSION_NAME,
-	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
-	XR_MSFT_HAND_INTERACTION_EXTENSION_NAME,
-	XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME,
-	XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME,
-	XR_MSFT_SECONDARY_VIEW_CONFIGURATION_EXTENSION_NAME,
-	XR_MSFT_FIRST_PERSON_OBSERVER_EXTENSION_NAME,
-	XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME,
-#if defined(SK_OS_WINDOWS_UWP)
-	XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME,
-#endif
-#if defined(SK_OS_ANDROID)
-	XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
-#endif
-#ifdef _DEBUG
-	XR_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#endif
-};
 const char *xr_request_layers[] = {
 	"",
 };
 bool xr_has_depth_lsr         = false;
-bool xr_ext_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
-bool xr_ext_articulated_hands = false;
-bool xr_ext_gaze              = false;
-bool xr_ext_hp_controller     = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
 XrExtTable     xr_extensions    = {};
+XrExtInfo      xr_ext_available = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
@@ -209,13 +181,8 @@ bool openxr_init() {
 	}
 #endif
 
-	uint32_t extension_count = 0;
-	if (!openxr_preferred_extensions(extension_count, nullptr)) {
-		log_fail_reasonf(90, "Couldn't load an OpenXR runtime");
-		return false;
-	}
-	const char **extensions = sk_malloc_t<const char *>(extension_count);
-	openxr_preferred_extensions(extension_count, extensions);
+	array_t<const char *> extensions = openxr_list_extensions([](const char *ext) {log_diagf("available: %s", ext);});
+	extensions.each([](const char *&ext) { log_diagf("REQUESTED: <~grn>%s<~clr>", ext); });
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);
@@ -223,8 +190,8 @@ bool openxr_init() {
 	openxr_preferred_layers(layer_count, layers);
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount = extension_count;
-	create_info.enabledExtensionNames = extensions;
+	create_info.enabledExtensionCount = extensions.count;
+	create_info.enabledExtensionNames = extensions.data;
 	create_info.enabledApiLayerCount  = layer_count;
 	create_info.enabledApiLayerNames  = layers;
 	create_info.applicationInfo.applicationVersion = 1;
@@ -246,7 +213,7 @@ bool openxr_init() {
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
-	free(extensions);
+	extensions.free();
 	free(layers);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
@@ -290,7 +257,7 @@ bool openxr_init() {
 		return (XrBool32)XR_FALSE;
 	};
 	// Start up the debug utils!
-	if (xr_extensions.xrCreateDebugUtilsMessengerEXT)
+	if (xr_ext_available.EXT_debug_utils)
 		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
 #endif
 
@@ -314,9 +281,9 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
-	xr_has_articulated_hands     = xr_ext_articulated_hands && properties_tracking.supportsHandTracking;
-	sk_info.eye_tracking_present = xr_ext_gaze              && properties_gaze    .supportsEyeGazeInteraction;
-	xr_has_depth_lsr             = xr_ext_depth_lsr;
+	xr_has_articulated_hands     = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
+	sk_info.eye_tracking_present = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
+	xr_has_depth_lsr             = xr_ext_available.KHR_composition_layer_depth;
 
 	// Oculus's depth LSR does something bad here, so we'll turn it off for 
 	// the moment until I can figure out what it is.
@@ -415,61 +382,6 @@ bool openxr_init() {
 		openxr_shutdown();
 		return false;
 	}
-
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions) {
-	// Find what extensions are available on this system!
-	uint32_t ext_count = 0;
-	if (XR_FAILED(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr)))
-		return false;
-	XrExtensionProperties *exts = sk_malloc_t<XrExtensionProperties>(ext_count);
-	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
-	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
-
-	// Count how many there are, and copy them out
-	out_extension_count = 0;
-	for (int32_t e = 0; e < _countof(xr_request_extensions); e++) {
-		for (uint32_t i = 0; i < ext_count; i++) {
-			if (strcmp(exts[i].extensionName, xr_request_extensions[e]) == 0) {
-				if (out_extensions != nullptr)
-					out_extensions[out_extension_count] = xr_request_extensions[e];
-				out_extension_count += 1;
-				break;
-			}
-		}
-	}
-
-	// Flag any extensions the app will need to know about
-	if (out_extensions != nullptr) {
-		for (uint32_t i = 0; i < ext_count; i++) {
-			bool used = false;
-			for (uint32_t e = 0; e < out_extension_count; e++) {
-				if (strcmp(exts[i].extensionName, out_extensions[e]) == 0) {
-					used = true;
-					break;
-				}
-			}
-			if (used) log_diagf("REQUESTED: <~grn>%s<~clr>", exts[i].extensionName);
-			else      log_diagf("available: %s", exts[i].extensionName);
-		}
-		
-		for (uint32_t i = 0; i < out_extension_count; i++) {
-			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME    ) == 0) xr_ext_depth_lsr                  = true;
-			else if (strcmp(out_extensions[i], XR_EXT_HAND_TRACKING_EXTENSION_NAME              ) == 0) xr_ext_articulated_hands          = true;
-			else if (strcmp(out_extensions[i], XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME      ) == 0) sk_info.spatial_bridge_present    = true;
-			else if (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME       ) == 0) xr_ext_gaze                       = true;
-			else if (strcmp(out_extensions[i], XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME) == 0) xr_ext_hp_controller              = true;
-#if defined(SK_OS_WINDOWS_UWP)
-			else if (strcmp(out_extensions[i], XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME) == 0) sk_info.perception_bridge_present = true;
-#endif
-		}
-	}
-
-	free(exts);
 
 	return true;
 }
