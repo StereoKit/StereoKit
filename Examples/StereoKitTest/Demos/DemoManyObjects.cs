@@ -12,7 +12,7 @@ namespace StereoKitTest
 
 		public void Initialize() {
 			for (int i = 0; i < cacheCount; i++) {
-				poseCache.Add(new Pose(Vec3.Zero, Quat.Identity));
+				poseCache.Add(Pose.Identity);
 			}
 		}
 

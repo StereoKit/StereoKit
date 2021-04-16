@@ -53,7 +53,7 @@ class TestMath : ITest
 		if (Vec3.Distance(tRay2.direction, V.XYZ(2,0,0))   > tolerance) return false;
 
 		// Check pose transforms
-		Pose pose1 = new Pose(Vec3.Zero, Quat.Identity);
+		Pose pose1 = Pose.Identity;
 		Pose pose2 = new Pose(V.XYZ(1,0,0), Quat.FromAngles(0,90,0));
 
 		Pose tPose1 = mat.Transform(pose1);

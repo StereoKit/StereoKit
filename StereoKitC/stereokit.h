@@ -264,6 +264,7 @@ static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
 static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
+static const pose_t pose_identity   = { vec3_zero, quat_identity };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
