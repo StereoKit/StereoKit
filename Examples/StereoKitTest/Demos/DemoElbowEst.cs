@@ -33,11 +33,12 @@ class DemoElbowEst : ITest
 		// Now for each arm
 		for (int h = 0; h < 2; h++)
 		{
-			float hand = h == 0 ? -1 : 1;
-			Vec3 handPos = Input.Hand((Handed)h).wrist.position;
+			float handed  = h == 0 ? -1 : 1;
+			Hand  hand    = Input.Hand((Handed)h);
+			Vec3  handPos = hand.wrist.position;
 
 			armLine[0].pt = headLine[2].pt;
-			armLine[1].pt = armLine[0].pt + right*hand*.2f - Vec3.Up*0.05f;
+			armLine[1].pt = armLine[0].pt + right*handed*.2f - Vec3.Up*0.05f;
 			armLine[2].pt = Vec3.Lerp(armLine[1].pt, handPos, 0.5f);
 			armLine[3].pt = handPos;
 
@@ -66,6 +67,8 @@ class DemoElbowEst : ITest
 			armLine[2].pt = at + dirDown * offsetH;
 
 			Lines.Add(armLine);
+			for (int i = 1; i < 5; i++)
+				Lines.Add(handPos, hand[(FingerId)i, JointId.KnuckleMajor].position, Color32.White, new Color32(255,255,255,0), 0.01f);
 		}
 	}
 
