@@ -371,7 +371,7 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_
 		0,
 		handedness == handed_right ?  90.f : -90.f, 
 		handedness == handed_right ? -90.f :  90.f) * orientation;
-	
+
 	// Update hand state based on inputs
 	bool was_tracked = hand.tracked_state & button_state_active;
 	hand.tracked_state = button_make_state(was_tracked, tracked);
@@ -414,6 +414,9 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_
 			hand.fingers[f][j].orientation = rot * orientation;
 			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
 		} }
+
+		hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
+		hand.wrist.orientation = hand.palm.orientation;
 	}
 }
 
