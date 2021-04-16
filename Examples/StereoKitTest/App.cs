@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System.Collections.Generic;
 
 class App
@@ -54,6 +55,9 @@ class App
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+
+		if (!Tests.IsTesting)
+			SK.AddStepper(new RenderCamera(new Pose(0.3f, 0, .5f, Quat.FromAngles(0,-90,0)), 1000, 1000));
 	}
 
 	//////////////////////

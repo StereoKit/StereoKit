@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -200,6 +201,17 @@ namespace StereoKit
 				return;
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
+		}
+
+		public void GetColors(ref Color32[] colorData)
+		{
+			if (colorData == null)
+				colorData = new Color32[Width*Height];
+
+			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
+			IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+			NativeAPI.tex_get_data(_inst, pointer, (ulong)(colorData.Length * 4));
+			pinnedArray.Free();
 		}
 
 		/// <summary>Set the texture's size without providing any color data.
