@@ -36,10 +36,10 @@ class DemoElbowEst : ITest
 			float handed  = h == 0 ? -1 : 1;
 			Hand  hand    = Input.Hand((Handed)h);
 			Vec3  handPos = hand.wrist.position;
+			if (!hand.IsTracked) continue;
 
 			armLine[0].pt = headLine[2].pt;
 			armLine[1].pt = armLine[0].pt + right*handed*.2f - Vec3.Up*0.05f;
-			armLine[2].pt = Vec3.Lerp(armLine[1].pt, handPos, 0.5f);
 			armLine[3].pt = handPos;
 
 			// Triangle represented by 3 edges, forearm, uarm, and armDist
