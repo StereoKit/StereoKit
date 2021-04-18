@@ -667,7 +667,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		color128 col    = sk_info.display_type == display_opaque
 			? render_get_clear_color()
 			: color128{ 0,0,0,0 };
-		skg_tex_target_bind(&target->tex, true, &col.r);
+		skg_tex_target_bind(&target->tex);
+		skg_target_clear(true, &col.r);
 
 		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers);
 	}

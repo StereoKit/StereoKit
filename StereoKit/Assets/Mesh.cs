@@ -136,8 +136,14 @@ namespace StereoKit
 		/// tint. If you're  adventurous and don't need per-instance colors,
 		/// this is a great spot to pack in extra per-instance data for the
 		/// shader!</param>
-		public void Draw(Material material, Matrix transform, Color colorLinear)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, colorLinear);
+		/// <param name="layer">All visuals are rendered using a layer 
+		/// bit-flag. By default, all layers are rendered, but this can be 
+		/// useful for filtering out objects for different rendering 
+		/// purposes! For example: rendering a mesh over the user's head from
+		/// a 3rd person perspective, but filtering it out from the 1st
+		/// person perspective.</param>
+		public void Draw(Material material, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, colorLinear, layer);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -146,7 +152,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the mesh 
 		/// from Model Space into the current Hierarchy Space.</param>
 		public void Draw(Material material, Matrix transform)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White);
+			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White, RenderLayer.Layer0);
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV

@@ -658,6 +658,30 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
+typedef enum render_layer_ {
+	render_layer_0 = 1 << 0,
+	render_layer_1 = 1 << 1,
+	render_layer_2 = 1 << 2,
+	render_layer_3 = 1 << 3,
+	render_layer_4 = 1 << 4,
+	render_layer_5 = 1 << 5,
+	render_layer_6 = 1 << 6,
+	render_layer_7 = 1 << 7,
+	render_layer_8 = 1 << 8,
+	render_layer_9 = 1 << 9,
+	render_layer_vfx         = 1 << 10,
+	render_layer_all         = 0xFFFF,
+	render_layer_all_regular = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
+} render_layer_;
+SK_MakeFlag(render_layer_);
+
+typedef enum render_clear_ {
+	render_clear_none  = 0,
+	render_clear_color = 1 << 0,
+	render_clear_depth = 1 << 1,
+	render_clear_all   = render_clear_color | render_clear_depth,
+} render_clear_;
+
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
 SK_API matrix                render_get_cam_root   ();
@@ -666,14 +690,16 @@ SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     ();
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   ();
+SK_API void                  render_set_filter     (render_layer_ layer_filter);
+SK_API render_layer_         render_get_filter     ();
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
+SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection);
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear = render_clear_all, rect_t viewport = {});
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////

@@ -236,6 +236,13 @@ namespace StereoKit
 	public struct Rect
 	{
 		public float x, y, width, height;
+		public Rect(float x, float y, float width, float height)
+		{
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.height = height;
+		}
 	}
 
 	/// <summary>Textures come in various types and flavors! These are bit-flags
@@ -562,6 +569,31 @@ namespace StereoKit
 			this.thickness = thickness;
 			this.color     = color;
 		}
+	}
+
+	public enum RenderLayer
+	{
+		Layer0 = 1 << 0,
+		Layer1 = 1 << 1,
+		Layer2 = 1 << 2,
+		Layer3 = 1 << 3,
+		Layer4 = 1 << 4,
+		Layer5 = 1 << 5,
+		Layer6 = 1 << 6,
+		Layer7 = 1 << 7,
+		Layer8 = 1 << 8,
+		Layer9 = 1 << 9,
+		Vfx    = 1 << 10,
+		All    = 0xFFFF,
+		AllRegular = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
+	}
+
+	public enum RenderClear
+	{
+		None  = 0,
+		Color = 1 << 0,
+		Depth = 1 << 1,
+		All   = Color|Depth
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a bit-flag that can 

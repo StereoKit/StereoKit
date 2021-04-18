@@ -271,22 +271,24 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clip      (float near_plane, float far_plane);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_fov       (float field_of_view_degrees);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix render_get_cam_root  ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_cam_root  (Matrix cam_root);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skytex    (IntPtr sky_texture);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr render_get_skytex    ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_skylight  (in SphericalHarmonics lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics render_get_skylight();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_set_clear_color(Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_enable_skytex (bool show_sky);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   render_enabled_skytex();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_add_mesh      (IntPtr mesh, IntPtr material, in Matrix transform, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_add_model     (IntPtr model, in Matrix transform, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_blit          (IntPtr to_rendertarget, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_screenshot    (Vec3 from_viewpt, Vec3 at, int width, int height, string file);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   render_to            (IntPtr to_rendertarget, in Matrix camera, in Matrix projection);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_clip       (float near_plane, float far_plane);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_fov        (float field_of_view_degrees);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix             render_get_cam_root   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_cam_root   (Matrix cam_root);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_skytex     (IntPtr sky_texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_skytex     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_skylight   (in SphericalHarmonics lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer        render_get_filter     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_filter     (RenderLayer layer_filter);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics render_get_skylight   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_clear_color(Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_enable_skytex  (bool show_sky);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool               render_enabled_skytex ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_mesh       (IntPtr mesh, IntPtr material, in Matrix transform, Color color, RenderLayer layer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model      (IntPtr model, in Matrix transform, Color color, RenderLayer layer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_blit           (IntPtr to_rendertarget, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     (Vec3 from_viewpt, Vec3 at, int width, int height, string file);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 
 		///////////////////////////////////////////

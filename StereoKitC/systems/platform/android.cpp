@@ -218,7 +218,8 @@ void android_step_end_flat() {
 
 	skg_draw_begin();
 	color128 color = render_get_clear_color();
-	skg_swapchain_bind(&android_swapchain, true, &color.r);
+	skg_swapchain_bind(&android_swapchain);
+	skg_target_clear(true, &color.r);
 
 	matrix view = render_get_cam_root  ();
 	matrix proj = render_get_projection();

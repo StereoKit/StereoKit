@@ -434,6 +434,7 @@ void                skg_draw                     (int32_t index_start, int32_t i
 void                skg_viewport                 (const int32_t *xywh);
 void                skg_viewport_get             (int32_t *out_xywh);
 void                skg_scissor                  (const int32_t *xywh);
+void                skg_target_clear             (bool depth, const float *clear_color_4);
 
 skg_buffer_t        skg_buffer_create            (const void *data, uint32_t size_count, uint32_t size_stride, skg_buffer_type_ type, skg_use_ use);
 bool                skg_buffer_is_valid          (const skg_buffer_t *buffer);
@@ -482,7 +483,7 @@ void                skg_pipeline_destroy         (      skg_pipeline_t *pipeline
 skg_swapchain_t     skg_swapchain_create         (void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height);
 void                skg_swapchain_resize         (      skg_swapchain_t *swapchain, int32_t width, int32_t height);
 void                skg_swapchain_present        (      skg_swapchain_t *swapchain);
-void                skg_swapchain_bind           (      skg_swapchain_t *swapchain, bool clear, const float *clear_color_4);
+void                skg_swapchain_bind           (      skg_swapchain_t *swapchain);
 void                skg_swapchain_destroy        (      skg_swapchain_t *swapchain);
 
 skg_tex_t           skg_tex_create_from_existing (void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_count);
@@ -495,7 +496,7 @@ void                skg_tex_set_contents         (      skg_tex_t *tex, const vo
 void                skg_tex_set_contents_arr     (      skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
 bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
 void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
-void                skg_tex_target_bind          (      skg_tex_t *render_target, bool clear, const float *clear_color_4);
+void                skg_tex_target_bind          (      skg_tex_t *render_target);
 skg_tex_t          *skg_tex_target_get           ();
 void                skg_tex_destroy              (      skg_tex_t *tex);
 int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
@@ -749,7 +750,7 @@ bool skg_capability(skg_cap_ capability) {
 
 ///////////////////////////////////////////
 
-void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clear_color_4) {
+void skg_tex_target_bind(skg_tex_t *render_target) {
 	d3d_active_rendertarget = render_target;
 
 	if (render_target == nullptr) {
@@ -761,15 +762,19 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 
 	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)render_target->width, (float)render_target->height);
 	d3d_context->RSSetViewports(1, &viewport);
-
-	if (clear) {
-		d3d_context->ClearRenderTargetView(render_target->_target_view, clear_color_4);
-		if (render_target->_depth_view) {
-			UINT clear_flags = D3D11_CLEAR_DEPTH;
-			d3d_context->ClearDepthStencilView(render_target->_depth_view, clear_flags, 1.0f, 0);
-		}
-	}
 	d3d_context->OMSetRenderTargets(1, &render_target->_target_view, render_target->_depth_view);
+}
+
+///////////////////////////////////////////
+
+void skg_target_clear(bool depth, const float *clear_color_4) {
+	if (!d3d_active_rendertarget) return;
+	if (clear_color_4)
+		d3d_context->ClearRenderTargetView(d3d_active_rendertarget->_target_view, clear_color_4);
+	if (depth && d3d_active_rendertarget->_depth_view) {
+		UINT clear_flags = D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
+		d3d_context->ClearDepthStencilView(d3d_active_rendertarget->_depth_view, clear_flags, 1.0f, 0);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1375,8 +1380,8 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 
 ///////////////////////////////////////////
 
-void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
-	skg_tex_target_bind(swapchain->_target.format != 0 ? &swapchain->_target : nullptr, clear, clear_color_4);
+void skg_swapchain_bind(skg_swapchain_t *swapchain) {
+	skg_tex_target_bind(swapchain->_target.format != 0 ? &swapchain->_target : nullptr);
 }
 
 ///////////////////////////////////////////
@@ -2606,7 +2611,7 @@ void skg_draw_begin() {
 
 ///////////////////////////////////////////
 
-void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clear_color_4) {
+void skg_tex_target_bind(skg_tex_t *render_target) {
 	gl_active_rendertarget = render_target;
 	gl_current_framebuffer = render_target == nullptr ? 0 : render_target->_framebuffer;
 
@@ -2624,14 +2629,23 @@ void skg_tex_target_bind(skg_tex_t *render_target, bool clear, const float *clea
 		glDisable(GL_FRAMEBUFFER_SRGB);
 	}
 #endif
+}
 
-	if (clear) {
+///////////////////////////////////////////
+
+void skg_target_clear(bool depth, const float *clear_color_4) {
+	uint32_t clear_mask = 0;
+	if (depth) {
+		clear_mask = GL_DEPTH_BUFFER_BIT;
 		// If DepthMask is false, glClear won't clear depth
 		glDepthMask(true);
-
-		glClearColor(clear_color_4[0], clear_color_4[1], clear_color_4[2], clear_color_4[3]);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
+	if (clear_color_4) {
+		clear_mask = clear_mask | GL_COLOR_BUFFER_BIT;
+		glClearColor(clear_color_4[0], clear_color_4[1], clear_color_4[2], clear_color_4[3]);
+	}
+
+	glClear(clear_mask);
 }
 
 ///////////////////////////////////////////
@@ -3297,7 +3311,8 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
-	skg_tex_target_bind(nullptr, true, clear);
+	skg_tex_target_bind(nullptr);
+	skg_target_clear   (true, clear);
 	skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
 	skg_mesh_bind     (&swapchain->_quad_mesh);
 	skg_pipeline_bind (&swapchain->_convert_pipe);
@@ -3307,20 +3322,20 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 
 ///////////////////////////////////////////
 
-void skg_swapchain_bind(skg_swapchain_t *swapchain, bool clear, const float *clear_color_4) {
+void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	gl_active_width  = swapchain->width;
 	gl_active_height = swapchain->height;
 #if   defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
-	skg_tex_target_bind(&swapchain->_surface, clear, clear_color_4);
+	skg_tex_target_bind(&swapchain->_surface);
 #elif defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
-	skg_tex_target_bind(nullptr, clear, clear_color_4);
+	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
-	skg_tex_target_bind(nullptr, clear, clear_color_4);
+	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
-	skg_tex_target_bind(nullptr, clear, clear_color_4);
+	skg_tex_target_bind(nullptr);
 #endif
 }
 

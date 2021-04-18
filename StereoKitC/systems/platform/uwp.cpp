@@ -480,7 +480,8 @@ void uwp_step_end_flat() {
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	color128 color = render_get_clear_color();
-	skg_swapchain_bind(&uwp_swapchain, true, &color.r);
+	skg_swapchain_bind(&uwp_swapchain);
+	skg_target_clear(true, &color.r);
 
 	input_update_predicted();
 

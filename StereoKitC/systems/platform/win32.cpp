@@ -238,7 +238,8 @@ void win32_step_end_flat() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();
-	skg_swapchain_bind(&win32_swapchain, true, &col.r);
+	skg_swapchain_bind(&win32_swapchain);
+	skg_target_clear(true, &col.r);
 
 	input_update_predicted();
 

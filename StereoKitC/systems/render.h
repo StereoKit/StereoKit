@@ -30,6 +30,7 @@ struct render_item_t {
 	int32_t     mesh_inds;
 	material_t  material;
 	uint64_t    sort_id;
+	uint16_t    layer;
 };
 
 enum render_list_state_ {
@@ -63,13 +64,14 @@ bool render_init    ();
 void render_update  ();
 void render_shutdown();
 
-render_list_t render_list_create ();
-void          render_list_release(render_list_t list);
-void          render_list_push   (render_list_t list);
-void          render_list_pop    ();
-void          render_list_add    (const render_item_t *item);
-void          render_list_add_to (render_list_t list, const render_item_t *item);
-void          render_list_execute(render_list_t list, uint32_t view_count);
-void          render_list_clear  (render_list_t list);
+render_list_t render_list_create          ();
+void          render_list_release         (render_list_t list);
+void          render_list_push            (render_list_t list);
+void          render_list_pop             ();
+void          render_list_add             (const render_item_t *item);
+void          render_list_add_to          (render_list_t list, const render_item_t *item);
+void          render_list_execute         (render_list_t list, render_layer_ filter,  uint32_t view_count);
+void          render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, material_t override_material);
+void          render_list_clear           (render_list_t list);
 
 } // namespace sk

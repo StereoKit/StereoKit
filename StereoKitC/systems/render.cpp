@@ -60,9 +60,13 @@ struct render_screenshot_t {
 	int height;
 };
 struct render_viewpoint_t {
-	tex_t rendertarget;
-	matrix camera;
-	matrix projection;
+	tex_t         rendertarget;
+	matrix        camera;
+	matrix        projection;
+	rect_t        viewport;
+	material_t    override_material;
+	render_layer_ layer_filter;
+	render_clear_ clear;
 };
 
 ///////////////////////////////////////////
@@ -81,8 +85,9 @@ render_global_buffer_t  render_global_buffer;
 mesh_t                  render_blit_quad;
 vec4                    render_lighting[9]     = {};
 spherical_harmonics_t   render_lighting_src    = {};
-color128                render_clear_color     = {0,0,0,1};
+color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
+render_layer_           render_primary_filter  = render_layer_all;
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
@@ -254,6 +259,18 @@ spherical_harmonics_t render_get_skylight() {
 
 ///////////////////////////////////////////
 
+render_layer_ render_get_filter() {
+	return render_primary_filter;
+}
+
+///////////////////////////////////////////
+
+void render_set_filter(render_layer_ layer_filter) {
+	render_primary_filter = layer_filter;
+}
+
+///////////////////////////////////////////
+
 void render_enable_skytex(bool32_t show_sky) {
 	render_sky_show = show_sky;
 }
@@ -267,24 +284,25 @@ bool32_t render_enabled_skytex() {
 ///////////////////////////////////////////
 
 void render_set_clear_color(color128 color) {
-	render_clear_color = color_to_linear(color);
+	render_clear_col = color_to_linear(color);
 }
 
 //////////////////////////////////////////
 
 color128 render_get_clear_color() {
-	return render_clear_color;
+	return render_clear_col;
 }
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color) {
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
 	render_item_t item;
 	item.mesh     = &mesh->gpu_mesh;
 	item.mesh_inds= mesh->ind_draw;
 	item.material = material;
 	item.color    = color;
 	item.sort_id  = render_queue_id(material, mesh);
+	item.layer    = layer;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, item.transform);
 	} else {
@@ -295,7 +313,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, const matrix &transform, color128 color) {
+void render_add_model(model_t model, const matrix &transform, color128 color, render_layer_ layer) {
 	XMMATRIX root;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, root);
@@ -310,6 +328,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 		item.material = model->subsets[i].material;
 		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
+		item.layer    = layer;
 		matrix_mul(model->subsets[i].offset, root, item.transform);
 		render_list_add(&item);
 	}
@@ -317,7 +336,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count) {
+void render_draw_queue(const matrix *views, const matrix *projections, render_layer_ filter, int32_t view_count) {
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -364,14 +383,14 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		skg_tex_bind(&render_sky_cubemap->tex, render_list_sky_bind);
 	}
 
-	render_list_execute(render_list_primary, view_count);
+	render_list_execute(render_list_primary, filter, view_count);
 }
 
 ///////////////////////////////////////////
 
 void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, count);
+	render_draw_queue(views, projections, render_primary_filter, count);
 	render_check_screenshots();
 }
 
@@ -401,16 +420,21 @@ void render_check_screenshots() {
 		tex_add_zbuffer(render_capture_surface);
 
 		// Setup to render the screenshot
+		skg_tex_target_bind(&render_capture_surface->tex);
+
+		int32_t viewport[4] = { 0,0,w,h };
+		skg_viewport(viewport);
+
 		float color[4] = {
-			render_clear_color.r / 255.f,
-			render_clear_color.g / 255.f,
-			render_clear_color.b / 255.f,
-			render_clear_color.a / 255.f };
-		skg_tex_target_bind(&render_capture_surface->tex, true, color);
+			render_clear_col.r / 255.f,
+			render_clear_col.g / 255.f,
+			render_clear_col.b / 255.f,
+			render_clear_col.a / 255.f };
+		skg_target_clear(true, color);
 		
 		// Render!
-		render_draw_queue(&view, &proj, 1);
-		skg_tex_target_bind(nullptr, false, nullptr);
+		render_draw_queue(&view, &proj, render_primary_filter, 1);
+		skg_tex_target_bind(nullptr);
 		
 		// And save the screenshot to file
 		tex_get_data(render_capture_surface, buffer, size);
@@ -419,7 +443,7 @@ void render_check_screenshots() {
 		free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
-	skg_tex_target_bind(old_target, false, nullptr);
+	skg_tex_target_bind(old_target);
 }
 
 ///////////////////////////////////////////
@@ -429,24 +453,40 @@ void render_check_viewpoints() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
-
 		// Setup to render the screenshot
-		float color[4] = {
-			render_clear_color.r / 255.f,
-			render_clear_color.g / 255.f,
-			render_clear_color.b / 255.f,
-			render_clear_color.a / 255.f };
-		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex, true, color);
+		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex);
+
+		// Clear the viewport
+		if (render_viewpoint_list[i].clear != render_clear_none) {
+			float color[4] = {
+				render_clear_col.r / 255.f,
+				render_clear_col.g / 255.f,
+				render_clear_col.b / 255.f,
+				render_clear_col.a / 255.f };
+			skg_target_clear(
+				(render_viewpoint_list[i].clear & render_clear_depth),
+				(render_viewpoint_list[i].clear & render_clear_color) ? &color[0] : (float *)nullptr);
+		}
+
+		// Set up the viewport if we've got one!
+		if (render_viewpoint_list[i].viewport.w != 0) {
+			int32_t viewport[4] = {
+				render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width,
+				render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height,
+				render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width,
+				render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height };
+			skg_viewport(viewport);
+		}
 
 		// Render!
-		render_draw_queue(&render_viewpoint_list[i].camera, &render_viewpoint_list[i].projection, 1);
-		skg_tex_target_bind(nullptr, false, nullptr);
+		render_draw_queue(&render_viewpoint_list[i].camera, &render_viewpoint_list[i].projection, render_viewpoint_list[i].layer_filter, 1);
+		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref
 		assets_releaseref(render_viewpoint_list[i].rendertarget->header);
 	}
 	render_viewpoint_list.clear();
-	skg_tex_target_bind(old_target, false, nullptr);
+	skg_tex_target_bind(old_target);
 }
 
 ///////////////////////////////////////////
@@ -506,7 +546,7 @@ void render_update() {
 		log_err("Render transform stack doesn't have matching begin/end calls!");
 
 	if (render_sky_show && sk_system_info().display_type == display_opaque) {
-		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
+		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity, {1,1,1,1}, render_layer_vfx);
 	}
 }
 
@@ -541,7 +581,8 @@ void render_blit(tex_t to, material_t material) {
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	skg_tex_t *old_target = skg_tex_target_get();
 	float      color[4]   = { 0,0,0,0 };
-	skg_tex_target_bind(&to->tex, true, color);
+	skg_tex_target_bind(&to->tex);
+	skg_target_clear(true, color);
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
@@ -559,7 +600,7 @@ void render_blit(tex_t to, material_t material) {
 	// And draw to it!
 	skg_draw(0, 0, render_blit_quad->ind_count, 1);
 
-	skg_tex_target_bind(old_target, false, nullptr);
+	skg_tex_target_bind(old_target);
 
 	render_last_material = nullptr;
 	render_last_mesh     = nullptr;
@@ -575,7 +616,7 @@ void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const c
 
 ///////////////////////////////////////////
 
-void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection) {
+void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
 	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
@@ -584,7 +625,14 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 	
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_viewpoint_list.add({ to_rendertarget, inv_cam, projection });
+	render_viewpoint_t viewpoint = {};
+	viewpoint.rendertarget = to_rendertarget;
+	viewpoint.camera       = inv_cam;
+	viewpoint.projection   = projection;
+	viewpoint.layer_filter = layer_filter;
+	viewpoint.viewport     = viewport;
+	viewpoint.clear        = clear;
+	render_viewpoint_list.add(viewpoint);
 }
 
 ///////////////////////////////////////////
@@ -711,7 +759,27 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, uint32_t view_count) {
+inline void render_list_execute_run(_render_list_t *list, material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t view_count) {
+	render_set_material(material);
+	skg_mesh_bind      (mesh);
+	list->stats.swaps_mesh++;
+
+	// Collect and draw instances
+	int32_t offsets = 0, inst_count = 0;
+	do {
+		skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, inst_count);
+		skg_buffer_bind(instances, render_list_inst_bind, 0);
+
+		skg_draw(0, 0, mesh_inds, inst_count * view_count);
+		list->stats.draw_calls     += 1;
+		list->stats.draw_instances += inst_count;
+
+	} while (offsets != 0);
+}
+
+///////////////////////////////////////////
+
+void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
@@ -725,44 +793,87 @@ void render_list_execute(render_list_t list_id, uint32_t view_count) {
 		list->sorted = true;
 	}
 
-	render_item_t *item          = &list->queue[0];
-	material_t     last_material = item->material;
-	skg_mesh_t    *last_mesh     = item->mesh;
-
+	render_item_t *run_start = nullptr;
 	for (size_t i = 0; i < queue_count; i++) {
-		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+		render_item_t *item = &list->queue[i];
+		
+		// Skip this item if it's filtered out
+		if ((item->layer & filter) == 0) continue;
 
-		// Add a render instance
-		render_instance_list.add(render_transform_buffer_t { transpose, item->color });
-
-		// If the next item is not the same as the current run of render 
-		// items, we'll collect the instances, and submit them to draw!
-		render_item_t *next = i+1>=queue_count ? nullptr : &list->queue[i+1];
-		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
-			render_set_material(item->material);
-			skg_mesh_bind      (item->mesh);
-			list->stats.swaps_mesh++;
-
-			// Collect and draw instances
-			int32_t offsets = 0, inst_count = 0;
-			do {
-				skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, inst_count);
-				skg_buffer_bind(instances, render_list_inst_bind, 0);
-
-				skg_draw(0, 0, item->mesh_inds, inst_count * view_count);
-				list->stats.draw_calls     += 1;
-				list->stats.draw_instances += inst_count;
-
-			} while (offsets != 0);
-			render_instance_list.clear();
-
-			// Update the material/mesh info, so we know when to draw next
-			if (next != nullptr) {
-				last_material = next->material;
-				last_mesh     = next->mesh;
-			}
+		// If it's the first in the run, record the material/mesh
+		if (run_start == nullptr) {
+			run_start = item;
 		}
-		item = next;
+		// If the material/mesh changed
+		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
+			// Render the run that just ended
+			render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_instance_list.clear();
+			// Start the next run
+			run_start = item;
+		}
+
+		// Add the current item to the run of instances
+		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+		render_instance_list.add(render_transform_buffer_t{ transpose, item->color });
+	}
+	// Render the last remaining run, which won't be triggered by the loop's
+	// conditions
+	if (render_instance_list.count > 0) {
+		render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_instance_list.clear();
+	}
+
+	list->state = render_list_state_rendered;
+}
+
+///////////////////////////////////////////
+
+void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
+	_render_list_t *list = &render_lists[list_id];
+	list->state = render_list_state_rendering;
+
+	size_t queue_count = list->queue.count;
+	if (queue_count == 0) {
+		list->state = render_list_state_rendered;
+		return;
+	}
+	// TODO: this isn't entirely optimal here, this would be best if sorted
+	// solely by the mesh id since we only have one single material.
+	if (!list->sorted) {
+		radix_sort7(&list->queue[0], queue_count);
+		list->sorted = true;
+	}
+
+	render_item_t *run_start = nullptr;
+	for (size_t i = 0; i < queue_count; i++) {
+		render_item_t *item = &list->queue[i];
+
+		// Skip this item if it's filtered out
+		if ((item->layer & filter) == 0) continue;
+
+		// If it's the first in the run, record the material/mesh
+		if (run_start == nullptr) {
+			run_start = item;
+		}
+		// If the mesh changed
+		else if (run_start->mesh != item->mesh) {
+			// Render the run that just ended
+			render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_instance_list.clear();
+			// Start the next run
+			run_start = item;
+		}
+
+		// Add the current item to the run of instances
+		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+		render_instance_list.add(render_transform_buffer_t{ transpose, item->color });
+	}
+	// Render the last remaining run, which won't be triggered by the loop's
+	// conditions
+	if (render_instance_list.count > 0) {
+		render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_instance_list.clear();
 	}
 
 	list->state = render_list_state_rendered;
