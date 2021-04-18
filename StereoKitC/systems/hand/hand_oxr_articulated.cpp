@@ -158,7 +158,7 @@ void hand_oxra_update_joints() {
 
 		static const quat face_forward = quat_from_angles(-90,0,0);
 		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
-		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
 		// Create pointers for the hands
 		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1 : -1);
