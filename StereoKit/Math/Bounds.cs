@@ -80,6 +80,16 @@ namespace StereoKit
 		public bool Contains(Vec3 linePt1, Vec3 linePt2)
 			=> NativeAPI.bounds_line_contains(this, linePt1, linePt2);
 
+		/// <summary>Does the bounds contain or intersect with the given
+		/// capsule?</summary>
+		/// <param name="linePt1">Start of the capsule.</param>
+		/// <param name="linePt2">End of the capsule</param>
+		/// <param name="radius">Radius of the capsule.</param>
+		/// <returns>True if the capsule is in, or intersects with the 
+		/// bounds.</returns>
+		public bool Contains(Vec3 linePt1, Vec3 linePt2, float radius)
+			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius);
+
 		public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }
 
 		public override string ToString()

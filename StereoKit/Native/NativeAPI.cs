@@ -55,14 +55,16 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool plane_ray_intersect  (Plane plane, Ray ray, out Vec3 out_pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool plane_line_intersect (Plane plane, Vec3 p1, Vec3 p2, out Vec3 out_pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 plane_point_closest  (Plane plane, Vec3 pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool sphere_ray_intersect (Sphere sphere, Ray ray, out Vec3 out_pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool sphere_point_contains(Sphere sphere, Vec3 pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_ray_intersect (Bounds bounds, Ray ray, out Vec3 out_pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_point_contains(Bounds bounds, Vec3 pt);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_line_contains (Bounds bounds, Vec3 linePt1, Vec3 linePt2);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool plane_ray_intersect    (Plane plane, Ray ray, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool plane_line_intersect   (Plane plane, Vec3 p1, Vec3 p2, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 plane_point_closest    (Plane plane, Vec3 pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool sphere_ray_intersect   (Sphere sphere, Ray ray, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool sphere_point_contains  (Sphere sphere, Vec3 pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_ray_intersect   (Bounds bounds, Ray ray, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_point_contains  (Bounds bounds, Vec3 pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_line_contains   (Bounds bounds, Vec3 linePt1, Vec3 linePt2);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool bounds_capsule_contains(Bounds bounds, Vec3 linePt1, Vec3 linePt2, float radius);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 ray_point_closest      (Ray ray, Vec3 pt);
 
 		///////////////////////////////////////////
 
