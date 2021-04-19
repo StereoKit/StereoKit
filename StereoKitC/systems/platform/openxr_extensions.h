@@ -1,7 +1,6 @@
 #pragma once
 
 #include "openxr.h"
-#include "openxr_su.h"
 #include "../../stereokit.h"
 #include "../../libraries/array.h"
 #include <openxr/openxr.h>
