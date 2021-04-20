@@ -471,10 +471,10 @@ void render_check_viewpoints() {
 		// Set up the viewport if we've got one!
 		if (render_viewpoint_list[i].viewport.w != 0) {
 			int32_t viewport[4] = {
-				render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width,
-				render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height,
-				render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width,
-				render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height };
+				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width),
+				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height),
+				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width),
+				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height) };
 			skg_viewport(viewport);
 		}
 
