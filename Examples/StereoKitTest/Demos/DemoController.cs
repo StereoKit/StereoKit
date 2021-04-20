@@ -17,17 +17,18 @@ namespace StereoKitTest
 			Default.MaterialHand[MatParamName.ColorTint] = new Color(1,1,1,1);
 		}
 
-		Pose windowPose = new Pose(0.4f,0,-0.4f, Quat.LookDir(-1,0,1));
 		public void Update()
 		{
-			UI.WindowBegin("Controllers", ref windowPose);
-
-			UI.WindowEnd();
-
 			ShowController(Handed.Right);
 			ShowController(Handed.Left);
 		}
 
+		/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose
+		/// ### Controller Debug Visualizer
+		/// This function shows a debug visualization of the current state of
+		/// the controller! It's not something you'd show to users, but it's
+		/// nice for just seeing how the API works, or as a temporary 
+		/// visualization.
 		void ShowController(Handed hand)
 		{
 			Controller c = Input.Controller(hand);
@@ -69,5 +70,6 @@ namespace StereoKitTest
 			// And show the pointer
 			Default.MeshCube.Draw(Default.Material, c.aim.ToMatrix(new Vec3(1,1,4) * U.cm), Color.HSV(0,0.5f,0.8f).ToLinear());
 		}
+		/// :End:
 	}
 }
