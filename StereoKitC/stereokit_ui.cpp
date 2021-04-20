@@ -42,6 +42,8 @@ struct ui_hand_t {
 	vec3     finger_world_prev;
 	bool     tracked;
 	bool     ray_enabled;
+	bool     ray_discard;
+	float    ray_visibility;
 	uint64_t focused_prev = {};
 	uint64_t focused = {};
 	float    focus_priority;
@@ -355,6 +357,8 @@ void ui_update() {
 		const hand_t    *hand    = input_hand((handed_)i);
 		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i]);
 
+		bool was_ray_enabled = skui_hand[i].ray_enabled && !skui_hand[i].ray_discard;
+
 		skui_finger_radius += hand->fingers[1][4].radius;
 		skui_hand[i].finger_world_prev = skui_hand[i].finger_world;
 		skui_hand[i].finger_world      = hand->fingers[1][4].position;
@@ -380,14 +384,21 @@ void ui_update() {
 		skui_layers[0].finger_prev[i] = skui_hand[i].finger_prev;
 
 		// draw hand rays
-		if (skui_enable_far_interact && skui_hand[i].ray_enabled && skui_hand[i].focused_prev == 0) {
+		skui_hand[i].ray_visibility = math_lerp(skui_hand[i].ray_visibility,
+			was_ray_enabled && skui_enable_far_interact && skui_hand[i].ray_enabled && !skui_hand[i].ray_discard ? 1 : 0,
+			20 * time_elapsedf_unscaled());
+		if (skui_hand[i].focused_prev != 0) skui_hand[i].ray_visibility = 0;
+		if (skui_hand[i].ray_visibility > 0.004f) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
-			line_point_t points[3] = {
-				line_point_t{r.pos,             0.002f, color32{255,255,255,0}},
-				line_point_t{r.pos+r.dir*0.02f, 0.002f, color32{255,255,255,255}},
-				line_point_t{r.pos+r.dir*0.10f, 0.002f, color32{255,255,255,0}} };
-			line_add_listv(points, 3);
+			line_point_t points[5] = {
+				line_point_t{r.pos+r.dir*0.01f, 0.001f,  color32{255,255,255,0}},
+				line_point_t{r.pos+r.dir*0.02f, 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 60 )}},
+				line_point_t{r.pos+r.dir*0.03f, 0.0020f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 80)}},
+				line_point_t{r.pos+r.dir*0.08f, 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 25 )}},
+				line_point_t{r.pos+r.dir*0.12f, 0.001f,  color32{255,255,255,0}} };
+			line_add_listv(points, 5);
 		}
+		skui_hand[i].ray_discard = false;
 	}
 	skui_finger_radius /= handed_max;
 }
@@ -1231,19 +1242,21 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				if (bounds_ray_intersect(box, far_ray, &at)) {
 					vec3  window_world = hierarchy_to_world_point(vec3_zero);
 					float curr_mag     = vec3_magnitude_sq(input_head_pose.position - window_world);
-					bool  inside_range = curr_mag > 0.75f * 0.75f;
-					if (inside_range) {
-						// Add this window, but prioritize it based on its distance
-						ui_focus_set((handed_)i, id, curr_mag + 10);
-					} else {
+
+					if (curr_mag < 0.75f * 0.75f) {
 						// Reset id to zero if we found a window that's within touching distance
 						ui_focus_set((handed_)i, 0, 10);
-					}
-					// If it was the item that won focus last frame, lets go with it!
-					if (skui_hand[i].focused_prev == id) {
-						matrix_mul_point(to_local, window_world);
-						line_add(far_ray.pos*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
-						from_pt = matrix_mul_point(to_local, hierarchy_to_world_point(vec3_zero));
+						skui_hand[i].ray_discard = true;
+					} else {
+						// Add this window, but prioritize it based on its distance
+						ui_focus_set((handed_)i, id, curr_mag + 10);
+
+						// If it was the item that won focus last frame, lets go with it!
+						if (skui_hand[i].focused_prev == id) {
+							matrix_mul_point(to_local, window_world);
+							line_add(far_ray.pos*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
+							from_pt = matrix_mul_point(to_local, hierarchy_to_world_point(vec3_zero));
+						}
 					}
 				}
 			}
