@@ -133,7 +133,6 @@ class DemoMaterial : ITest
 
 		if (Tests.IsTesting)
 			y = 10000 + y*100;
-		Log.Info(""+y);
 
 		Vec3 at = new Vec3(x, y, -0.5f);
 		mesh.Draw(material, Matrix.TS(at, 0.1f));
