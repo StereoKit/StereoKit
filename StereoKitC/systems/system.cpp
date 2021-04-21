@@ -173,9 +173,9 @@ void systems_shutdown() {
 	}
 
 	log_info("Session Performance Report:");
-	log_info("<~BLK>\xDA\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xBF<~clr>");
-	log_info("<~BLK>\xB3<~clr>         <~YLW>System <~BLK>\xB3<~clr> <~YLW>Initialize <~BLK>\xB3<~clr>   <~YLW>Update <~BLK>\xB3<~clr>  <~YLW>Shutdown <~BLK>\xB3<~clr>");
-	log_info("<~BLK>\xC3\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xB4<~clr>");
+	log_info("<~BLK>______________________________________________________<~clr>");
+	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < systems.count; i++) {
 		int32_t index = i;
 
@@ -199,10 +199,10 @@ void systems_shutdown() {
 			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
 		
-		log_infof("<~BLK>\xB3<~CYN>%15s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr>", systems[index].name, start_time, update_time, shutdown_time);
+		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_info("<~BLK>\xC0\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xD9<~clr>");
-
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
+	
 	systems.free();
 	free(system_init_order);
 }

@@ -72,6 +72,7 @@ namespace StereoKit_Android
 				// Now loop until finished, and then shut down
 				while (SK.Step(app.Step)) { }
 				SK.Shutdown();
+				Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
 			});
 		}
 
