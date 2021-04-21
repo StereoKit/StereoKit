@@ -33,7 +33,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return o;
 }
 
-float4 ps(psIn input) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET {
 	// From an excellent article about text rendering by Ben Golus:
 	// https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec
 	float2 dx = ddx(input.uv);

@@ -78,7 +78,7 @@ float2 brdf_appx(half Roughness, half NoV ) {
 	return AB;
 }
 
-float4 ps(psIn input) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET {
 	float4 albedo      = diffuse  .Sample(diffuse_s,  input.uv) * input.color;
 	float3 emissive    = emission .Sample(emission_s, input.uv).rgb;
 	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // b is metallic, rough is g

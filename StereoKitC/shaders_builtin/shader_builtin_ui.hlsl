@@ -37,7 +37,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.color.rgb *= Lighting(o.normal);
 	return o;
 }
-float4 ps(psIn input) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET {
 	float  glow = FingerGlow(input.world.xyz, input.normal);
 	float4 col  = float4(lerp(input.color.rgb, float3(1,1,1), glow), input.color.a);
 

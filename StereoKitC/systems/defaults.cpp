@@ -135,17 +135,12 @@ bool defaults_init() {
 	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
 	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
 	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
-
-	// Android has issues with this shader, and I haven't figured out why 
-	// yet. For now, we'll just drop back to the default shader, but we'll 
-	// work this out completely later.
-#if defined(SK_OS_ANDROID)
-	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
-#else
 	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
-#endif
+
+	// Android seems to give us a hard time about this one, so let's fall
+	// back at least somewhat gently.
 	if (!sk_default_shader_pbr)
-		sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+		sk_default_shader_pbr = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_pbr         == nullptr ||

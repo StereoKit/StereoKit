@@ -55,7 +55,7 @@ psIn vs(vsIn input) {
 	return o;
 }
 
-float4 ps(psIn input) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET {
 	float4 color = source.Sample(source_s, ToEquirect(normalize(input.norm)));
 	return color;
 }
