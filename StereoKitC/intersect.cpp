@@ -112,7 +112,7 @@ bool32_t bounds_line_contains(bounds_t bounds, vec3 pt1, vec3 pt2) {
 bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius) {
 	// A simple hack with some slight error at the corners, is to just
 	// inflate the bounds by the radius of the capsule!
-	return bounds_line_contains(bounds_t{ bounds.center, bounds.dimensions + vec3{radius,radius,radius} }, pt1, pt2);
+	return bounds_line_contains(bounds_t{ bounds.center, bounds.dimensions + vec3{radius*2,radius*2,radius*2} }, pt1, pt2);
 }
 
 ///////////////////////////////////////////
