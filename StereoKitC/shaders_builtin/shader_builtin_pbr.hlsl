@@ -39,6 +39,7 @@ struct psIn {
 	float4 color   : COLOR0;
 	float3 irradiance: COLOR1;
 	float3 world   : TEXCOORD1;
+	float3 view_dir: TEXCOORD2;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -54,6 +55,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.uv         = input.uv * tex_scale;
 	o.color      = input.color * sk_inst[id].color * color;
 	o.irradiance = Lighting(o.normal);
+	o.view_dir   = sk_camera_pos[o.view_id].xyz - o.world;
 	return o;
 }
 
@@ -84,7 +86,7 @@ float4 ps(psIn input) : SV_TARGET {
 	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // b is metallic, rough is g
 	float  ao          = occlusion.Sample(occlusion_s,input.uv).r;  // occlusion is sometimes part of the metal tex, uses r channel
 
-	float3 view        = normalize(sk_camera_pos[input.view_id].xyz - input.world);
+	float3 view        = normalize(input.view_dir);
 	float3 reflection  = reflect(-view, input.normal);
 	float  ndotv       = max(0,dot(input.normal, view));
 
