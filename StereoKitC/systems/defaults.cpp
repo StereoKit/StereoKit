@@ -198,7 +198,9 @@ bool defaults_init() {
 	material_set_cull(sk_default_material_ui_box, cull_none);
 
 	// Text!
-	sk_default_font = font_create(platform_default_font());
+	char font_name[512];
+	platform_default_font(font_name, sizeof(font_name));
+	sk_default_font = font_create(font_name);
 	if (sk_default_font == nullptr)
 		return false;
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });

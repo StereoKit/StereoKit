@@ -26,12 +26,11 @@ bool  platform_get_cursor(vec2 &out_pos);
 void  platform_set_cursor(vec2 window_pos);
 float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
-void  platform_sleep     (int ms);
+void  platform_sleep       (int ms);
+void  platform_default_font(char *fontname_buffer, size_t buffer_size);
 
 bool  platform_keyboard_available();
 void  platform_keyboard_show     (bool visible);
 bool  platform_keyboard_visible  ();
-
-const char *platform_default_font();
 
 }

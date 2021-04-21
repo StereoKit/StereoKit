@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <android/font_matcher.h>
+#include <android/font.h>
 #include <errno.h>
 #endif
 
@@ -233,13 +235,30 @@ bool platform_keyboard_visible() {
 
 ///////////////////////////////////////////
 
-const char *platform_default_font() {
-#if   defined(SK_OS_ANDROID)
-	return "/system/fonts/DroidSans.ttf";
+void platform_default_font(char *fontname_buffer, size_t buffer_size) {
+#if defined(SK_OS_ANDROID)
+
+	// If we're using Android API 29+, we can just look up the system font!
+	bool found_font = false;
+#if __ANDROID_API__ >= 29
+	AFontMatcher *matcher = AFontMatcher_create();
+	uint16_t      text[2] = {'A', 0};
+	AFont        *font    = AFontMatcher_match(matcher, "sans-serif", text, 2, nullptr);
+	if (font) {
+		const char *result = AFont_getFontFilePath(font);
+		snprintf(fontname_buffer, buffer_size, result);
+		AFont_close(font);
+	}
+	AFontMatcher_destroy(matcher);
+#endif
+	// We can fall back to a plausible default.
+	if (!found_font)
+		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
+
 #elif defined(SK_OS_LINUX)
-	return "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 #else
-	return "C:/Windows/Fonts/segoeui.ttf";
+	snprintf(fontname_buffer, buffer_size, "C:/Windows/Fonts/segoeui.ttf");
 #endif
 }
 
