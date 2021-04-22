@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 class App
 {
-	string     startTest = "geo";
+	string     startTest = "welcome";
 	SKSettings settings  = new SKSettings {
 		appName           = "StereoKit C#",
 		assetsFolder      = "Assets",
@@ -46,10 +46,10 @@ class App
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
 
-		floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
-		floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
+		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
+		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
 
-		demoSelectPose.position    = new Vec3(0, 0, -0.4f);
+		demoSelectPose.position    = new Vec3(0, 0, -0.6f);
 		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
 
 		Tests.FindTests();
@@ -71,7 +71,7 @@ class App
 
 		// If we can't see the world, we'll draw a floor!
 		if (SK.System.displayType == Display.Opaque)
-			Renderer.Add(floorMesh, floorTr, Color.White);
+			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
 
 		// Skip selection window if we're in test mode
 		if (Tests.IsTesting)
