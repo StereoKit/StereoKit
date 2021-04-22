@@ -1263,7 +1263,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		}
 
 		if (skui_hand[i].focused_prev == id || skui_hand[i].active_prev == id) {
-
+			color = 1.5f;
 			if (hand->pinch_state & button_state_just_active) {
 				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
@@ -1274,7 +1274,6 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				start_palm_rot  [i] = matrix_mul_rotation( to_local, hand->palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
-				color = 1.5f;
 				result = true;
 				skui_hand[i].active = id;
 				skui_hand[i].focused = id;
@@ -1446,7 +1445,10 @@ void ui_window_end() {
 
 	float line_height = ui_line_height();
 	if (layer.window->type & ui_win_head) {
-		ui_box(start + vec3{0,line_height,0}, { size.x, line_height, size.z }, skui_mat_quad, skui_palette[0]);
+		float glow = 1;
+		if (skui_hand[0].focused_prev == layer.window->hash || skui_hand[1].focused_prev == layer.window->hash)
+			glow = 1.5f;
+		ui_box(start + vec3{0,line_height,0}, { size.x, line_height, size.z }, skui_mat_quad, skui_palette[0] * glow);
 	}
 	if (layer.window->type & ui_win_body) {
 		ui_box(start, size, skui_mat_quad, skui_palette[1]);
