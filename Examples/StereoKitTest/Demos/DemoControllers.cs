@@ -1,12 +1,14 @@
-﻿
-using StereoKit;
-using StereoKit.Framework;
-using System;
+﻿using StereoKit;
 
 namespace StereoKitTest
 {
-	class DemoController : ITest
+	class DemoControllers : ITest
 	{
+		Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
+		string description = "While StereoKit prioritizes hand input, sometimes a controller has more precision! StereoKit provides access to any controllers via the Input.Controller function. This is a debug visualization of the controller data provided there.\n\nStereoKit will simulate hands if only controllers are present, but it will not simulate controllers if only hands are present.";
+		Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
+		string title       = "Controllers";
+
 		public void Initialize()
 		{
 			Default.MaterialHand[MatParamName.ColorTint] = new Color(1,1,1,0.4f);
@@ -21,6 +23,9 @@ namespace StereoKitTest
 		{
 			ShowController(Handed.Right);
 			ShowController(Handed.Left);
+
+			Text.Add(title,       titlePose);
+			Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.XCenter | TextAlign.YTop, TextAlign.XLeft | TextAlign.YTop);
 		}
 
 		/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose
