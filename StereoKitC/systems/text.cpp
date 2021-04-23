@@ -387,9 +387,8 @@ float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
 	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	*/
-
+	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);*/
+	
 	// Ensure scale is right for our fit
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
 		vec2 txt_size = text_size(text, style == -1 ? 0 : style);
@@ -406,6 +405,13 @@ float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit
 		step.bounds = step.bounds / scale;
 	}
 
+	// Calculate the strlen and text height for verical centering
+	int32_t text_length = 0;
+	float   text_height = text_step_height(text, &text_length, step);
+	// if the size is still zero, then lets use the calculated height
+	if (step.bounds.y == 0)
+		step.bounds.y = text_height;
+
 	// Align the start based on the size of the bounds
 	if      (position & text_align_x_center) step.start.x += step.bounds.x / 2.f;
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
@@ -414,8 +420,6 @@ float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit
 	step.pos = step.start;
 
 	// Figure out the vertical align of the text
-	int32_t text_length = 0;
-	float   text_height = text_step_height(text, &text_length, step);
 	if      (align & text_align_y_center) step.pos.y -= (step.bounds.y-text_height) / 2.f;
 	else if (align & text_align_y_bottom) step.pos.y -=  step.bounds.y-text_height;
 
