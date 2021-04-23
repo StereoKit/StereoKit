@@ -22,6 +22,7 @@ class DemoPhysics : ITest
 		floorSolid.AddBox(new Vec3(20, .01f, 20));
 
 		Input.HandSolid(Handed.Max, false);
+		Default.MaterialHand[MatParamName.ColorTint] = new Color(1, 1, 1, 0.4f);
 	}
 
 	public void Update()
@@ -36,9 +37,15 @@ class DemoPhysics : ITest
 		{
 			Hand h = Input.Hand((Handed)i);
 			if (h.IsJustGripped)
+			{
 				Input.HandSolid((Handed)i, true);
+				Default.MaterialHand[MatParamName.ColorTint] = new Color(1, 1, 1, 1);
+			}
 			if (h.IsJustUngripped)
+			{
 				Input.HandSolid((Handed)i, false);
+				Default.MaterialHand[MatParamName.ColorTint] = new Color(1, 1, 1, 0.4f);
+			}
 		}
 
 		UI.WindowBegin("Objects", ref optionsPose);
@@ -59,5 +66,6 @@ class DemoPhysics : ITest
 	public void Shutdown()
 	{
 		Input.HandSolid(Handed.Max, true);
+		Default.MaterialHand[MatParamName.ColorTint] = new Color(1, 1, 1, 1);
 	}
 }
