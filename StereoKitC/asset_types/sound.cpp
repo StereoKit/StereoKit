@@ -101,12 +101,7 @@ void sound_write_samples(sound_t sound, float *samples, size_t sample_count) {
 
 ///////////////////////////////////////////
 
-void sound_write(sound_t sound, float (*function)(float), float duration) {
-}
-
-///////////////////////////////////////////
-
-size_t sound_read_s(sound_t sound, float *out_buffer, size_t buffer_size) {
+size_t sound_read_samples(sound_t sound, float *out_buffer, size_t buffer_size) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
 
 	mtx_lock(&sound->data_lock);
@@ -120,7 +115,7 @@ size_t sound_read_s(sound_t sound, float *out_buffer, size_t buffer_size) {
 
 ///////////////////////////////////////////
 
-size_t sound_unread_s(sound_t sound) {
+size_t sound_unread_samples(sound_t sound) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
 	return sound->buffer.cursor >= sound->buffer.start
 		? sound->buffer.count - (sound->buffer.cursor - sound->buffer.start)
@@ -148,6 +143,16 @@ void sound_play(sound_t sound, vec3 at, float volume) {
 		}
 	}
 }
+///////////////////////////////////////////
+
+size_t sound_total_samples(sound_t sound) {
+	switch (sound->type) {
+	case sound_type_decode: return ma_decoder_get_length_in_pcm_frames(&sound->decoder);
+	case sound_type_buffer:
+	case sound_type_stream: return sound->buffer.count;
+	default: return 0;
+	}
+}
 
 ///////////////////////////////////////////
 
@@ -156,17 +161,6 @@ float sound_duration(sound_t sound) {
 	case sound_type_decode: return (float)ma_decoder_get_length_in_pcm_frames(&sound->decoder) / (float)sound->decoder.outputSampleRate;
 	case sound_type_buffer:
 	case sound_type_stream: return (float)sound->buffer.count / (float)AU_SAMPLE_RATE;
-	default: return 0;
-	}
-}
-
-///////////////////////////////////////////
-
-size_t sound_samples(sound_t sound) {
-	switch (sound->type) {
-	case sound_type_decode: return ma_decoder_get_length_in_pcm_frames(&sound->decoder);
-	case sound_type_buffer:
-	case sound_type_stream: return sound->buffer.count;
 	default: return 0;
 	}
 }

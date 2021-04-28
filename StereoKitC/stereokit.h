@@ -721,19 +721,18 @@ SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat) local_orien
 
 SK_DeclarePrivateType(sound_t);
 
-SK_API sound_t sound_find         (const char *id);
-SK_API void    sound_set_id       (sound_t sound, const char *id);
-SK_API sound_t sound_create       (const char *filename);
-SK_API sound_t sound_create_stream(float buffer_duration);
-SK_API sound_t sound_generate     (float (*function)(float), float duration);
-SK_API void    sound_write_samples(sound_t sound, float *samples, size_t sample_count);
-SK_API void    sound_write        (sound_t sound, float (*function)(float), float duration);
-SK_API size_t  sound_read_s       (sound_t sound, float *out_buffer, size_t buffer_size);
-SK_API size_t  sound_unread_s     (sound_t sound);
-SK_API void    sound_play         (sound_t sound, vec3 at, float volume);
-SK_API float   sound_duration     (sound_t sound);
-SK_API size_t  sound_samples      (sound_t sound);
-SK_API void    sound_release      (sound_t sound);
+SK_API sound_t sound_find          (const char *id);
+SK_API void    sound_set_id        (sound_t sound, const char *id);
+SK_API sound_t sound_create        (const char *filename);
+SK_API sound_t sound_create_stream (float buffer_duration);
+SK_API sound_t sound_generate      (float (*function)(float), float duration);
+SK_API void    sound_write_samples (sound_t sound, float *samples, size_t sample_count);
+SK_API size_t  sound_read_samples  (sound_t sound, float *out_buffer, size_t buffer_size);
+SK_API size_t  sound_unread_samples(sound_t sound);
+SK_API size_t  sound_total_samples (sound_t sound);
+SK_API void    sound_play          (sound_t sound, vec3 at, float volume);
+SK_API float   sound_duration      (sound_t sound);
+SK_API void    sound_release       (sound_t sound);
 
 ///////////////////////////////////////////
 
