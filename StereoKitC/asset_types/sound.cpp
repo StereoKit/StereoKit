@@ -59,7 +59,7 @@ sound_t sound_create_stream(float buffer_duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
 	result->type = sound_type_stream;
-	result->buffer.capacity = (size_t)((double)buffer_duration * AU_SAMPLE_RATE);
+	result->buffer.capacity = (uint64_t)((double)buffer_duration * AU_SAMPLE_RATE);
 	result->buffer.data     = sk_malloc_t<float>(result->buffer.capacity);
 	memset(result->buffer.data, 0, result->buffer.capacity * sizeof(float));
 	mtx_init(&result->data_lock, mtx_plain);
@@ -73,10 +73,10 @@ sound_t sound_generate(float (*function)(float), float duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
 	result->type = sound_type_buffer;
-	result->buffer.capacity = (size_t)((double)duration * AU_SAMPLE_RATE);
+	result->buffer.capacity = (uint64_t)((double)duration * AU_SAMPLE_RATE);
 	result->buffer.count    = result->buffer.capacity;
 	result->buffer.data     = sk_malloc_t<float>(result->buffer.capacity);
-	for (size_t i = 0, s = result->buffer.capacity; i < s; i += 1) {
+	for (uint64_t i = 0, s = result->buffer.capacity; i < s; i += 1) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}
 
@@ -91,7 +91,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
 
 ///////////////////////////////////////////
 
-void sound_write_samples(sound_t sound, float *samples, size_t sample_count) {
+void sound_write_samples(sound_t sound, float *samples, uint64_t sample_count) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return; }
 
 	mtx_lock(&sound->data_lock);
@@ -101,11 +101,11 @@ void sound_write_samples(sound_t sound, float *samples, size_t sample_count) {
 
 ///////////////////////////////////////////
 
-size_t sound_read_samples(sound_t sound, float *out_buffer, size_t buffer_size) {
+uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_count) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
 
 	mtx_lock(&sound->data_lock);
-	size_t result = ring_buffer_read(&sound->buffer, out_buffer, buffer_size);
+	uint64_t result = ring_buffer_read(&sound->buffer, out_samples, sample_count);
 	mtx_unlock(&sound->data_lock);
 
 	return result == 1
@@ -115,10 +115,10 @@ size_t sound_read_samples(sound_t sound, float *out_buffer, size_t buffer_size) 
 
 ///////////////////////////////////////////
 
-size_t sound_unread_samples(sound_t sound) {
+uint64_t sound_unread_samples(sound_t sound) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
 	return sound->buffer.cursor >= sound->buffer.start
-		? sound->buffer.count - (sound->buffer.cursor - sound->buffer.start)
+		? sound->buffer.count - ( sound->buffer.cursor - sound->buffer.start)
 		: sound->buffer.count - ((sound->buffer.capacity-sound->buffer.start) + sound->buffer.cursor);
 }
 
@@ -145,7 +145,7 @@ void sound_play(sound_t sound, vec3 at, float volume) {
 }
 ///////////////////////////////////////////
 
-size_t sound_total_samples(sound_t sound) {
+uint64_t sound_total_samples(sound_t sound) {
 	switch (sound->type) {
 	case sound_type_decode: return ma_decoder_get_length_in_pcm_frames(&sound->decoder);
 	case sound_type_buffer:
@@ -187,7 +187,7 @@ void sound_destroy(sound_t sound) {
 
 ///////////////////////////////////////////
 
-void ring_buffer_write(ring_buffer_t *buffer, const float *data, size_t data_size) {
+void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_size) {
 	// Special case, if the input is larger than the entire ring buffer, just
 	// reset the whole thing.
 	if (data_size >= buffer->capacity) {
@@ -199,14 +199,14 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, size_t data_siz
 		return;
 	}
 
-	size_t write_at = (buffer->start + buffer->count) % buffer->capacity;
+	uint64_t write_at = (buffer->start + buffer->count) % buffer->capacity;
 	buffer->count = mini(buffer->capacity, buffer->count+data_size);
 
 	if (write_at + data_size > buffer->capacity) {
 		// If the write loops around the end of the ring, we need to do the
 		// copy as two pieces.
-		size_t first_copy_size  = buffer->capacity - write_at;
-		size_t second_copy_size = data_size - first_copy_size;
+		uint64_t first_copy_size  = buffer->capacity - write_at;
+		uint64_t second_copy_size = data_size - first_copy_size;
 		memcpy(buffer->data + write_at, data,                   first_copy_size  * sizeof(float));
 		memcpy(buffer->data,            data + first_copy_size, second_copy_size * sizeof(float));
 
@@ -220,7 +220,7 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, size_t data_siz
 
 		// Update the starting point and the cursor if we copied over the
 		// area where they were.
-		size_t write_end = write_at + data_size;
+		uint64_t write_end = write_at + data_size;
 		if (buffer->start  >= write_at && buffer->start  < write_end) buffer->start  = write_end % buffer->count;
 		if (buffer->cursor >= write_at && buffer->cursor < write_end) buffer->cursor = write_end % buffer->count;
 	}
@@ -228,20 +228,20 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, size_t data_siz
 
 ///////////////////////////////////////////
 
-size_t ring_buffer_read(ring_buffer_t *buffer, float *out_data, size_t out_data_size) {
+uint64_t ring_buffer_read(ring_buffer_t *buffer, float *out_data, uint64_t out_data_size) {
 	if (out_data_size == 0) return 0;
-	size_t cursor_relative = buffer->cursor < buffer->start
+	uint64_t cursor_relative = buffer->cursor < buffer->start
 		? buffer->cursor + (buffer->capacity-buffer->start)
 		: buffer->cursor - buffer->start;
-	size_t frames_read = mini(out_data_size, buffer->count - cursor_relative);
-	size_t read_start = buffer->cursor;
-	size_t read_end   = buffer->cursor + frames_read;
+	uint64_t frames_read = mini(out_data_size, buffer->count - cursor_relative);
+	uint64_t read_start  = buffer->cursor;
+	uint64_t read_end    = buffer->cursor + frames_read;
 
-	size_t cursor_start = buffer->cursor;
+	uint64_t cursor_start = buffer->cursor;
 	if (buffer->cursor + frames_read > buffer->capacity) {
 		// if the frames_read wraps past the end of the ring buffer,
 		// then we'll need two copies
-		size_t first_half = buffer->capacity - buffer->cursor;
+		uint64_t first_half = buffer->capacity - buffer->cursor;
 		memcpy(out_data,            buffer->data + buffer->cursor, sizeof(float) *  first_half);
 		memcpy(out_data+first_half, buffer->data,                  sizeof(float) * (frames_read-first_half));
 		buffer->cursor = mini(frames_read-first_half, buffer->start-1);

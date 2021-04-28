@@ -31,26 +31,26 @@ IsacAdapter*      isac_adapter      = nullptr;
 
 ///////////////////////////////////////////
 
-ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint32 frame_count) {
+ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint64 frame_count) {
 	// The way mixing works is that we just read into a temporary buffer, 
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
 	vec3      head_pos          = input_head()->position;
-	ma_uint32 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
-	ma_uint32 total_frames_read = 0;
+	ma_uint64 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
+	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
-		ma_uint32 frames_remaining = frame_count - total_frames_read;
-		ma_uint32 frames_to_read   = frame_cap;
+		ma_uint64 frames_remaining = frame_count - total_frames_read;
+		ma_uint64 frames_to_read   = frame_cap;
 		if (frames_to_read > frames_remaining) {
 			frames_to_read = frames_remaining;
 		}
 
 		// Grab sound samples!
-		ma_uint32 frames_read = 0;
+		ma_uint64 frames_read = 0;
 		switch (inst.sound->type) {
 		case sound_type_decode: {
-			frames_read = (ma_uint32)ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
+			frames_read = ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_stream: {
 			mtx_lock(&inst.sound->data_lock);
@@ -58,7 +58,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint
 			mtx_unlock(&inst.sound->data_lock);
 		} break;
 		case sound_type_buffer: {
-			frames_read = mini(frames_to_read, (uint32_t)(inst.sound->buffer.count - inst.sound->buffer.cursor));
+			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
 			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
 		} break;
@@ -70,9 +70,9 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint
 		float volume = fminf(1,(1.f / dist) * inst.volume);
 
 		// Mix the frames together.
-		for (ma_uint32 sample = 0; sample < frames_read*AU_CHANNEL_COUNT; ++sample) {
-			int   i = total_frames_read * AU_CHANNEL_COUNT + sample;
-			float s = au_mix_temp[sample] * volume;
+		for (ma_uint64 sample = 0; sample < frames_read*AU_CHANNEL_COUNT; ++sample) {
+			ma_uint64 i = total_frames_read * AU_CHANNEL_COUNT + sample;
+			float     s = au_mix_temp[sample] * volume;
 			output[i] = fmaxf(-1, fminf(1, output[i] + s));
 		}
 
@@ -82,7 +82,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint
 		}
 	}
 
-	return total_frames_read;
+	return (ma_uint32)total_frames_read;
 }
 
 ///////////////////////////////////////////
@@ -106,25 +106,25 @@ void data_callback(ma_device* device, void* output, const void* input, ma_uint32
 
 ///////////////////////////////////////////
 
-ma_uint32 readDataForIsac(sound_inst_t& inst, float* output, ma_uint32 frame_count, vec3* position, float* volume) {
+ma_uint64 read_data_for_isac(sound_inst_t& inst, float* output, ma_uint64 frame_count, vec3* position, float* volume) {
 	// Set the position and volume for this object. ISAC applies this directly for us
 	*position = matrix_mul_point(au_head_transform, inst.position);
 	*volume   = inst.volume;
 
-	ma_uint32 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
-	ma_uint32 total_frames_read = 0;
+	ma_uint64 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
+	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
-		ma_uint32 frames_remaining = frame_count - total_frames_read;
-		ma_uint32 frames_to_read = frame_cap;
+		ma_uint64 frames_remaining = frame_count - total_frames_read;
+		ma_uint64 frames_to_read = frame_cap;
 		if (frames_to_read > frames_remaining) {
 			frames_to_read = frames_remaining;
 		}
 
-		ma_uint32 frames_read = 0;
+		ma_uint64 frames_read = 0;
 		switch (inst.sound->type) {
 		case sound_type_decode: {
-			frames_read = (ma_uint32)ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
+			frames_read = ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_stream: {
 			mtx_lock(&inst.sound->data_lock);
@@ -132,7 +132,7 @@ ma_uint32 readDataForIsac(sound_inst_t& inst, float* output, ma_uint32 frame_cou
 			mtx_unlock(&inst.sound->data_lock);
 		} break;
 		case sound_type_buffer: {
-			frames_read = mini(frames_to_read, (uint32_t)(inst.sound->buffer.count - inst.sound->buffer.cursor));
+			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
 			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
 		} break;
@@ -162,7 +162,7 @@ void isac_data_callback(float** sourceBuffers, uint32_t numSources, uint32_t num
 		if (au_active_sounds[i].sound == nullptr)
 			continue;
 
-		ma_uint32 framesRead = readDataForIsac(au_active_sounds[i], sourceBuffers[i], numFrames, &positions[i], &volumes[i]);
+		ma_uint64 framesRead = read_data_for_isac(au_active_sounds[i], sourceBuffers[i], numFrames, &positions[i], &volumes[i]);
 		if (framesRead < numFrames && au_active_sounds[i].sound->type != sound_type_stream) {
 			sound_release(au_active_sounds[i].sound);
 			au_active_sounds[i].sound = nullptr;

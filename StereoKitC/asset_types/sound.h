@@ -7,11 +7,11 @@
 namespace sk {
 
 struct ring_buffer_t {
-	float  *data;
-	size_t  capacity;
-	size_t  cursor;
-	size_t  start;
-	size_t  count;
+	float   *data;
+	uint64_t capacity;
+	uint64_t cursor;
+	uint64_t start;
+	uint64_t count;
 };
 
 typedef enum sound_type_ {
@@ -31,7 +31,7 @@ struct _sound_t {
 
 void sound_destroy(sound_t sound);
 
-void   ring_buffer_write(ring_buffer_t *buffer, const float *data, size_t data_size);
-size_t ring_buffer_read (ring_buffer_t *buffer, float *out_data, size_t out_data_size);
+void     ring_buffer_write(ring_buffer_t *buffer, const float *data,     uint64_t data_size);
+uint64_t ring_buffer_read (ring_buffer_t *buffer, float       *out_data, uint64_t out_data_size);
 
 }
