@@ -8,9 +8,7 @@ class DemoMicrophone : ITest
 	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Microphone";
 
-	Pose     windowPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
-	string[] devices;
-	string   activeDevice;
+	
 	Sprite   micSprite;
 	Material micMaterial;
 	float[]  micBuffer = new float[400];
@@ -19,12 +17,14 @@ class DemoMicrophone : ITest
 
 	public void Initialize()
 	{
-		micSprite = Sprite.FromFile("mic_icon.png", SpriteType.Single);
+		micSprite   = Sprite.FromFile("mic_icon.png", SpriteType.Single);
 		micMaterial = Default.MaterialUnlit.Copy();
 		micMaterial.Transparency = Transparency.Blend;
 
-		devices = Microphone.GetDevices();
+		string[] micDevices = Microphone.GetDevices();
 		Microphone.Start();
+
+		Tests.RunForFrames(2);
 	}
 
 	public void Shutdown()
@@ -32,20 +32,58 @@ class DemoMicrophone : ITest
 		Microphone.Stop();
 	}
 
-	void SetMic(string name)
+	/// :CodeSample: Microphone Microphone.GetDevices Microphone.Start
+	/// ### Choosing a microphone device
+	/// While generally you'll prefer to use the default device, it can be
+	/// nice to allow users to pick which mic they're using! This is
+	/// especially important on PC, where users may have complicated or
+	/// interesting setups.
+	/// 
+	/// ![Microphone device selection window]({{site.screen_url}}/MicrophoneSelector.jpg)
+	/// 
+	/// This sample is a very simple window that allows users to start
+	/// recording with a device other than the default. NOTE: this example
+	/// is designed with the assumption that Microphone.Start() has been
+	/// called already.
+	Pose     micSelectPose   = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+	string[] micDevices      = null;
+	string   micDeviceActive = null;
+	void ShowMicDeviceWindow()
 	{
-		activeDevice = name;
-		Microphone.Start(name);
+		// Let the user choose a microphone device
+		UI.WindowBegin("Available Microphones:", ref micSelectPose);
+
+		// User may plug or unplug a mic device, so it's nice to be able to
+		// refresh this list.
+		if (UI.Button("Refresh") || micDevices == null)
+			micDevices = Microphone.GetDevices();
+		UI.HSeparator();
+
+		// Display the list of potential microphones. Some systems may only
+		// have the default (null) device available.
+		Vec2 size = V.XY(0.25f, UI.LineHeight);
+		if (UI.Radio("Default", micDeviceActive == null, size))
+		{
+			micDeviceActive = null;
+			Microphone.Start(micDeviceActive);
+		}
+		foreach (string device in micDevices)
+		{
+			if (UI.Radio(device, micDeviceActive == device, size))
+			{
+				micDeviceActive = device;
+				Microphone.Start(micDeviceActive);
+			}
+		}
+
+		UI.WindowEnd();
 	}
+	/// :End:
+
 	public void Update()
 	{
-		Vec2 size = V.XY(0.25f, UI.LineHeight);
-
-		UI.WindowBegin("Available Microphones:", ref windowPose);
-		if (UI.Radio("Default", activeDevice == null, size)) SetMic(null);
-		foreach(string device in devices)
-			if (UI.Radio(device, activeDevice == device, size)) SetMic(device);
-		UI.WindowEnd();
+		ShowMicDeviceWindow();
+		Tests.Screenshot(1, 400, 400, "MicrophoneSelector.jpg", micSelectPose.position+V.XYZ(-0.15f, -0.02f, 0.15f), micSelectPose.position-V.XYZ(0,0.12f,0));
 
 		if (Microphone.IsRecording)
 		{
@@ -62,8 +100,6 @@ class DemoMicrophone : ITest
 				micIntensityDest = 1 - (avg * avg);
 			}
 
-
-			Log.Info(micIntensity.ToString());
 			micIntensity = SKMath.Lerp(micIntensity, micIntensityDest, 16 * Time.Elapsedf);
 			float scale = 0.1f + 0.1f * micIntensity;
 			Color color = new Color(1,1,1, Math.Max(0.1f, micIntensity));
