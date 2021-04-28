@@ -21,10 +21,12 @@
       <uap:VisualElements DisplayName="StereoKitCTest_UWP" Description="A project for a C++/WinRT Universal Windows Platform (UWP) app directly implementing CoreApplication"
         Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" BackgroundColor="#464646">
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        <uap:DefaultTile/>
       </uap:VisualElements>
     </Application>
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
+    <DeviceCapability Name="microphone"/>
   </Capabilities>
 </Package>

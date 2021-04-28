@@ -6,6 +6,7 @@ using namespace sk;
 #include "scene.h"
 #include "demo_basics.h"
 #include "demo_ui.h"
+#include "demo_mic.h"
 #include "demo_sprites.h"
 #include "demo_lines.h"
 
@@ -30,6 +31,11 @@ scene_t demos[] = {
 		demo_ui_init,
 		demo_ui_update,
 		demo_ui_shutdown,
+	}, {
+		"Microphone",
+		demo_mic_init,
+		demo_mic_update,
+		demo_mic_shutdown,
 	}, {
 		"Sprites",
 		demo_sprites_init,

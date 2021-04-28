@@ -140,6 +140,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
+    <ClCompile Include="libraries\miniaudio.cpp" />
     <ClCompile Include="libraries\miniz.cpp" />
     <ClCompile Include="libraries\ofbx.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />

@@ -175,6 +175,9 @@
     <ClCompile Include="systems\audio.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\miniaudio.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
