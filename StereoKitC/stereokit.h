@@ -740,6 +740,7 @@ SK_API int32_t     mic_device_count();
 SK_API const char *mic_device_name (int32_t index);
 SK_API sound_t     mic_start       (const char *device_name sk_default(nullptr));
 SK_API void        mic_stop        ();
+SK_API bool32_t    mic_is_recording();
 
 ///////////////////////////////////////////
 

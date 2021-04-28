@@ -116,7 +116,7 @@ uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_c
 ///////////////////////////////////////////
 
 uint64_t sound_unread_samples(sound_t sound) {
-	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
+	if (sound->type != sound_type_stream) { return 0; }
 	return sound->buffer.cursor >= sound->buffer.start
 		? sound->buffer.count - ( sound->buffer.cursor - sound->buffer.start)
 		: sound->buffer.count - ((sound->buffer.capacity-sound->buffer.start) + sound->buffer.cursor);

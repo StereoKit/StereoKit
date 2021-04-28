@@ -84,7 +84,7 @@ void demo_mic_update() {
 				avg += fabsf(sample_buffer[i]);
 			}
 			avg = avg / sample_count;
-			avg = 1 - avg;
+			avg = fmaxf(0, 1 - avg);
 			mic_intensity_dest = 1-(avg*avg);
 		}
 

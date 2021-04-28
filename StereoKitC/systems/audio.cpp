@@ -272,6 +272,12 @@ void mic_stop() {
 
 ///////////////////////////////////////////
 
+bool32_t mic_is_recording() {
+	return au_recording;
+}
+
+///////////////////////////////////////////
+
 bool audio_init() {
 
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {

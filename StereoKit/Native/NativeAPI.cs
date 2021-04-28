@@ -310,12 +310,26 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_find    (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_set_id  (IntPtr sound, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_create  (string filename);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_generate([MarshalAs(UnmanagedType.FunctionPtr)] AudioGenerator function, float duration);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_play    (IntPtr sound, Vec3 at, float volume);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_release (IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_find          (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_set_id        (IntPtr sound, string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_create        (string filename);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_create_stream (float buffer_duration);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sound_generate      ([MarshalAs(UnmanagedType.FunctionPtr)] AudioGenerator function, float duration);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_write_samples (IntPtr sound, [In ] float[] samples,     ulong sample_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong  sound_read_samples  (IntPtr sound, [Out] float[] out_samples, ulong sample_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong  sound_unread_samples(IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong  sound_total_samples (IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_play          (IntPtr sound, Vec3 at, float volume);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  sound_duration      (IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sound_release       (IntPtr sound);
+
+		///////////////////////////////////////////
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mic_device_count();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mic_device_name (int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mic_start       (string device_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mic_stop        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mic_is_recording();
 
 		///////////////////////////////////////////
 
