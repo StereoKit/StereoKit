@@ -334,8 +334,9 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mic_device_count();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mic_device_name (int index);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mic_start       (string device_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mic_start       (string device_name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mic_stop        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mic_get_stream  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mic_is_recording();
 
 		///////////////////////////////////////////

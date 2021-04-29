@@ -29,7 +29,8 @@ size_t sample_count    = 0;
 ///////////////////////////////////////////
 
 void demo_mic_init() {
-	mic_input = mic_start();
+	mic_start();
+	mic_input = mic_get_stream();
 
 	for (int32_t i = 0; i < mic_device_count(); i++) {
 		mic_device_names.push_back(mic_device_name(i));
@@ -47,9 +48,8 @@ void demo_mic_init() {
 
 void switch_mic(string mic) {
 	mic_active = mic;
-	if (mic == "") mic_input = mic_start(nullptr);
-	else           mic_input = mic_start(mic.c_str());
-	if (mic_input == nullptr) log_warn("Failed to set mic!");
+	if (mic == "") mic_start(nullptr);
+	else           mic_start(mic.c_str());
 }
 
 ///////////////////////////////////////////
@@ -68,7 +68,7 @@ void demo_mic_update() {
 	ui_window_end();
 
 	// Show a mic intensity bubble
-	if (mic_input != nullptr) {
+	if (mic_is_recording()) {
 		// Allocate a buffer to hold the audio samples from the mic
 		size_t unread = sound_unread_samples(mic_input);
 		if (unread > sample_capacity) {
@@ -103,6 +103,7 @@ void demo_mic_update() {
 ///////////////////////////////////////////
 
 void demo_mic_shutdown() {
+	sound_release(mic_input);
 	mic_stop();
 
 	sprite_release  (mic_sprite);

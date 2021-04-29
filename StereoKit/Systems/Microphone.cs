@@ -12,15 +12,18 @@ namespace StereoKit
 		private static Sound micSound;
 
 		/// <summary>This is the sound stream of the Microphone when it is
-		/// recording. If the Microphone is not recording, this will be null.
-		/// The sound asset does not exist until the first call to Start, and
-		/// is re-used when starting a recording. It will not be deleted 
-		/// until shutdown, so it's safe to store a reference to this if you
-		/// really want.</summary>
-		public static Sound Sound       { get => micSound; }
+		/// recording. This Asset is created the first time it is accessed 
+		/// via this property, or during Start, and will persist. It is 
+		/// re-used for the Microphone stream if you start/stop/switch 
+		/// devices.</summary>
+		public static Sound Sound { get { 
+			if (micSound == null) 
+				micSound = new Sound(NativeAPI.mic_get_stream()); 
+			return micSound; 
+		} }
 		/// <summary>Tells if the Microphone is currently recording audio.
 		/// </summary>
-		public static bool  IsRecording { get => NativeAPI.mic_is_recording(); }
+		public static bool IsRecording { get => NativeAPI.mic_is_recording(); }
 
 		/// <summary>Constructs a list of valid Microphone devices attached
 		/// to the system. These names can be passed into Start to select
@@ -58,20 +61,11 @@ namespace StereoKit
 		/// or if the deviceName is for a mic that has since been unplugged.
 		/// </returns>
 		public static bool Start(string deviceName = null)
-		{
-			IntPtr ptr = NativeAPI.mic_start(deviceName);
-			if (ptr != IntPtr.Zero && micSound == null)
-				micSound = new Sound(ptr);
-			if (ptr == IntPtr.Zero)
-				micSound = null;
-			return micSound == null;
-		}
+			=> NativeAPI.mic_start(deviceName);
+
 		/// <summary>If the Microphone is recording, this will stop it.
 		/// </summary>
 		public static void Stop()
-		{
-			NativeAPI.mic_stop();
-			micSound = null;
-		}
+			=> NativeAPI.mic_stop();
 	}
 }

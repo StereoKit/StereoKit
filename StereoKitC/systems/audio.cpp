@@ -203,14 +203,14 @@ void mic_callback(ma_device* device, void* output, const void* input, ma_uint32 
 
 ///////////////////////////////////////////
 
-sound_t mic_start(const char *device_name) {
+bool32_t mic_start(const char *device_name) {
 	// Make sure we're not starting up an already recording mic
 	if (au_recording) {
 		if (device_name == nullptr) {
 			if (au_mic_name == nullptr)
-				return au_mic_sound;
+				return true;
 		} else if (au_mic_name != nullptr && strcmp(device_name, au_mic_name) == 0) {
-			return au_mic_sound;
+			return true;
 		}
 		mic_stop();
 	}
@@ -224,7 +224,7 @@ sound_t mic_start(const char *device_name) {
 		ma_device_info *capture_devices = nullptr;
 		ma_uint32       capture_count   = 0;
 		if (ma_context_get_devices(&au_context, nullptr, nullptr, &capture_devices, &capture_count) != MA_SUCCESS) {
-			return nullptr;
+			return false;
 		}
 		for (ma_uint32 i = 0; i < capture_count; i++) {
 			if (strcmp(capture_devices[i].name, au_mic_name) == 0) {
@@ -245,29 +245,40 @@ sound_t mic_start(const char *device_name) {
 	ma_result result = ma_device_init(&au_context, &config, &au_mic_device);
 	if (result != MA_SUCCESS) {
 		log_warnf("mic_start has failed: %d", result);
-		return nullptr;
+		return false;
 	}
 	ma_device_start(&au_mic_device);
 
 	// And make sure we have a streaming sound to store mic data in
-	if (au_mic_sound == nullptr) {
-		au_mic_sound = sound_create_stream(0.5f);
-		sound_set_id(au_mic_sound, "sk/mic_sound");
-	}
+	mic_get_stream();
 
 	au_recording = true;
-	return au_mic_sound;
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void mic_stop() {
+	if (!au_recording) return;
+
 	free(au_mic_name);
 	au_mic_name = nullptr;
 	ma_device_stop  (&au_mic_device);
 	ma_device_uninit(&au_mic_device);
 	memset(&au_mic_device, 0, sizeof(au_mic_device));
 	au_recording = false;
+	sound_release(au_mic_sound);
+}
+
+///////////////////////////////////////////
+
+sound_t mic_get_stream() {
+	if (au_mic_sound == nullptr) {
+		au_mic_sound = sound_create_stream(0.5f);
+		sound_set_id(au_mic_sound, "sk/mic_sound");
+	}
+	assets_addref(au_mic_sound->header);
+	return au_mic_sound;
 }
 
 ///////////////////////////////////////////
@@ -341,7 +352,9 @@ void audio_shutdown() {
 #endif
 	ma_device_uninit (&au_device);
 	ma_context_uninit(&au_context);
+
 	sound_release(au_mic_sound);
+	au_mic_sound = nullptr;
 }
 
 }
