@@ -124,24 +124,35 @@ uint64_t sound_unread_samples(sound_t sound) {
 
 ///////////////////////////////////////////
 
-void sound_play(sound_t sound, vec3 at, float volume) {
+sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 	ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
 	sound->buffer.cursor = sound->buffer.start;
 
+	sound_inst_t result;
+	result._id   = 0;
+	result._slot = -1;
+
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == sound) {
-			au_active_sounds[i] = {sound, at, volume };
-			return;
+			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, volume };
+
+			result._id   = au_active_sounds[i].id;
+			result._slot = i;
+			return result;
 		}
 	}
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == nullptr) {
 			assets_addref(sound->header);
-			au_active_sounds[i] = { sound, at, volume };
-			return;
+			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
+
+			result._id   = au_active_sounds[i].id;
+			result._slot = i;
+			return result;
 		}
 	}
+	return result;
 }
 ///////////////////////////////////////////
 
@@ -183,6 +194,50 @@ void sound_destroy(sound_t sound) {
 		mtx_destroy(&sound->data_lock);
 	}
 	memset(sound, 0, sizeof(_sound_t));
+}
+
+///////////////////////////////////////////
+
+void sound_inst_stop(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
+
+	sound_t sound = au_active_sounds[sound_inst._slot].sound;
+	au_active_sounds[sound_inst._slot].sound = nullptr;
+	sound_release(sound);
+}
+
+///////////////////////////////////////////
+
+bool32_t sound_inst_is_playing(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return false;
+	return au_active_sounds[sound_inst._slot].sound != nullptr;
+}
+
+///////////////////////////////////////////
+void sound_inst_set_pos(sound_inst_t sound_inst, vec3 pos) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
+	au_active_sounds[sound_inst._slot].position = pos;
+}
+
+///////////////////////////////////////////
+
+vec3 sound_inst_get_pos(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return vec3_zero;
+	return au_active_sounds[sound_inst._slot].position;
+}
+
+///////////////////////////////////////////
+
+void sound_inst_set_volume(sound_inst_t sound_inst, float volume) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
+	au_active_sounds[sound_inst._slot].volume = volume;
+}
+
+///////////////////////////////////////////
+
+float sound_inst_get_volume(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
+	return au_active_sounds[sound_inst._slot].volume;
 }
 
 ///////////////////////////////////////////
