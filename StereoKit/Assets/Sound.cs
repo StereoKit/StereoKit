@@ -61,7 +61,10 @@ namespace StereoKit
 		/// </param>
 		/// <param name="volume">Volume modifier for the effect! 1 means full
 		/// volume, and 0 means completely silent.</param>
-		public void Play(Vec3 at, float volume = 1)
+		/// <returns>Returns a link to the Sound's play instance, which you
+		/// can use to track and modify how the sound plays after the initial
+		/// conditions are set.</returns>
+		public SoundInst Play(Vec3 at, float volume = 1)
 			=> NativeAPI.sound_play(_inst, at, volume);
 
 		/// <summary>Only works if this Sound is a stream type! This writes

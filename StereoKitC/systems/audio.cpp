@@ -13,7 +13,7 @@
 
 namespace sk {
 
-sound_inst_t      au_active_sounds[8];
+_sound_inst_t     au_active_sounds[8] = {};
 float             au_mix_temp[4096];
 matrix            au_head_transform;
 
@@ -31,7 +31,7 @@ IsacAdapter*      isac_adapter      = nullptr;
 
 ///////////////////////////////////////////
 
-ma_uint32 read_and_mix_pcm_frames_f32(sound_inst_t &inst, float *output, ma_uint64 frame_count) {
+ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
 	// The way mixing works is that we just read into a temporary buffer, 
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
@@ -106,7 +106,7 @@ void data_callback(ma_device* device, void* output, const void* input, ma_uint32
 
 ///////////////////////////////////////////
 
-ma_uint64 read_data_for_isac(sound_inst_t& inst, float* output, ma_uint64 frame_count, vec3* position, float* volume) {
+ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame_count, vec3* position, float* volume) {
 	// Set the position and volume for this object. ISAC applies this directly for us
 	*position = matrix_mul_point(au_head_transform, inst.position);
 	*volume   = inst.volume;
