@@ -8,16 +8,17 @@ namespace sk {
 #define AU_SAMPLE_FORMAT ma_format_f32
 #define AU_CHANNEL_COUNT 1
 
-struct sound_inst_t {
-	sound_t sound;
-	vec3    position;
-	float   volume;
+struct _sound_inst_t {
+	sound_t  sound;
+	uint16_t id;
+	vec3     position;
+	float    volume;
 };
 
 bool audio_init     ();
 void audio_update   ();
 void audio_shutdown ();
 
-extern sound_inst_t au_active_sounds[8];
+extern _sound_inst_t au_active_sounds[8];
 
 } // namespace sk

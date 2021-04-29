@@ -721,12 +721,39 @@ SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat) local_orien
 
 SK_DeclarePrivateType(sound_t);
 
-SK_API sound_t sound_find    (const char *id);
-SK_API void    sound_set_id  (sound_t sound, const char *id);
-SK_API sound_t sound_create  (const char *filename);
-SK_API sound_t sound_generate(float (*function)(float), float duration);
-SK_API void    sound_play    (sound_t sound, vec3 at, float volume);
-SK_API void    sound_release (sound_t sound);
+typedef struct sound_inst_t {
+	uint16_t _id;
+	int16_t  _slot;
+} sound_inst_t;
+
+SK_API sound_t      sound_find          (const char *id);
+SK_API void         sound_set_id        (sound_t sound, const char *id);
+SK_API sound_t      sound_create        (const char *filename);
+SK_API sound_t      sound_create_stream (float buffer_duration);
+SK_API sound_t      sound_generate      (float (*function)(float), float duration);
+SK_API void         sound_write_samples (sound_t sound, float *samples,     uint64_t sample_count);
+SK_API uint64_t     sound_read_samples  (sound_t sound, float *out_samples, uint64_t sample_count);
+SK_API uint64_t     sound_unread_samples(sound_t sound);
+SK_API uint64_t     sound_total_samples (sound_t sound);
+SK_API sound_inst_t sound_play          (sound_t sound, vec3 at, float volume);
+SK_API float        sound_duration      (sound_t sound);
+SK_API void         sound_release       (sound_t sound);
+
+SK_API void         sound_inst_stop      (sound_inst_t sound_inst);
+SK_API bool32_t     sound_inst_is_playing(sound_inst_t sound_inst);
+SK_API void         sound_inst_set_pos   (sound_inst_t sound_inst, vec3 pos);
+SK_API vec3         sound_inst_get_pos   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_volume(sound_inst_t sound_inst, float volume);
+SK_API float        sound_inst_get_volume(sound_inst_t sound_inst);
+
+///////////////////////////////////////////
+
+SK_API int32_t     mic_device_count();
+SK_API const char *mic_device_name (int32_t index);
+SK_API bool32_t    mic_start       (const char *device_name sk_default(nullptr));
+SK_API void        mic_stop        ();
+SK_API sound_t     mic_get_stream  ();
+SK_API bool32_t    mic_is_recording();
 
 ///////////////////////////////////////////
 
