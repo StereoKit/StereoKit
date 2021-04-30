@@ -66,7 +66,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 		if (frames_read <= 1) break;
 
 		// Mix the sound samples in
-		float dist   = vec3_magnitude(inst.position - head_pos);
+		float dist   = vec3_magnitude_sq(inst.position - head_pos);
 		float volume = fminf(1,(1.f / dist) * inst.volume);
 
 		// Mix the frames together.

@@ -36,7 +36,7 @@ namespace StereoKit
 		/// 
 		/// This is only really valid for Stream sounds, all other sound 
 		/// types will just return 0.</summary>
-		public int UnreadSamples { get => (int)NativeAPI.sound_total_samples(_inst); }
+		public int UnreadSamples { get => (int)NativeAPI.sound_unread_samples(_inst); }
 
 		public int CursorSamples { get => (int)NativeAPI.sound_cursor_samples(_inst); }
 
