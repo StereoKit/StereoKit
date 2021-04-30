@@ -38,6 +38,8 @@ namespace StereoKit
 		/// types will just return 0.</summary>
 		public int UnreadSamples { get => (int)NativeAPI.sound_total_samples(_inst); }
 
+		public int CursorSamples { get => (int)NativeAPI.sound_cursor_samples(_inst); }
+
 		internal Sound(IntPtr sound)
 		{
 			_inst = sound;

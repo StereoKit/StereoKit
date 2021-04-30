@@ -167,6 +167,14 @@ uint64_t sound_total_samples(sound_t sound) {
 
 ///////////////////////////////////////////
 
+uint64_t sound_cursor_samples(sound_t sound) {
+	return sound->buffer.cursor >= sound->buffer.start
+		? sound->buffer.cursor - sound->buffer.start
+		: (sound->buffer.capacity - sound->buffer.start) + sound->buffer.cursor;
+}
+
+///////////////////////////////////////////
+
 float sound_duration(sound_t sound) {
 	switch (sound->type) {
 	case sound_type_decode: return (float)ma_decoder_get_length_in_pcm_frames(&sound->decoder) / (float)sound->decoder.outputSampleRate;

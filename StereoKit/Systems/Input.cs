@@ -379,7 +379,7 @@ namespace StereoKit
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
-		/// <param name="hand">>If Handed.Max, this will set the value for 
+		/// <param name="hand">If Handed.Max, this will set the value for 
 		/// both hands.</param>
 		/// <param name="material">The new Material!</param>
 		public static void HandMaterial(Handed hand, Material material)

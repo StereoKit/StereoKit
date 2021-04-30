@@ -15,8 +15,50 @@ namespace StereoKitTest
 		bool       genPrevContains = false;
 		List<LinePoint> genPath = new List<LinePoint>();
 
-		public void Initialize() {
+		Sound   wandStream;
+		SoundInst wandStreamInst;
+		Pose    wandPose = Pose.Identity;
+		Mesh    wandMesh;
+		Vec3    wandTipPrev;
+		LinePoint[] wandFollow = null;
+		float[] wandSamples = new float[0];
+		double  wandTime = 0;
+		float   wandIntensity;
+		void StepWand()
+		{
+			if (wandStream == null) { wandStream = Sound.CreateStream(5f); wandStreamInst = wandStream.Play(wandTipPrev); }
+			if (wandMesh   == null) wandMesh = Mesh.GenerateCylinder(0.015f, 0.25f, Vec3.Forward);
+			if (wandFollow == null) { wandFollow = new LinePoint[10]; for (int i=0;i<wandFollow.Length;i+=1) wandFollow[i] = new LinePoint(Vec3.Zero, new Color(1,1,1,i/(float)wandFollow.Length), (i / (float)wandFollow.Length)*0.01f+0.001f); }
 
+			UI.HandleBegin("wand", ref wandPose, wandMesh.Bounds);
+			wandMesh.Draw(Default.MaterialUI, Matrix.Identity, Color.HSV(0.6f, 0.5f, 0.6f));
+			Vec3 wandTip = Hierarchy.ToWorld(Vec3.Forward*0.125f);
+			UI.HandleEnd();
+
+			Vec3  wandVel   = (wandTip - wandTipPrev) * Time.Elapsedf;
+			float wandSpeed = wandVel.Magnitude*100;
+			
+			int count = Math.Max(0, (int)(0.1f*48000) - (wandStream.TotalSamples - wandStream.CursorSamples));
+			if (wandSamples.Length < count)
+				wandSamples = new float[count];
+			for (int i = 0; i < count; i++)
+			{
+				wandIntensity = Math.Min(1, SKMath.Lerp(wandIntensity, wandSpeed, 0.001f));
+				wandTime += (1 / 48000.0) * (30000 * wandIntensity + 2000);
+				wandSamples[i] = (float)Math.Sin(wandTime) * wandIntensity;
+			}
+
+			wandStreamInst.Position = wandTip;
+			wandStream.WriteSamples(wandSamples, count);
+
+			for (int i = 0; i < wandFollow.Length-1; i++)
+				wandFollow[i].pt = wandFollow[i+1].pt;
+			wandFollow[wandFollow.Length-1].pt = wandTip;
+			Lines.Add(wandFollow);
+			wandTipPrev = wandTip;
+		}
+
+		public void Initialize() {
 			/// :CodeSample: Sound Sound.FromFile Sound.Play
 			/// ### Basic usage
 			Sound sound = Sound.FromFile("BlipNoise.wav");
@@ -42,6 +84,8 @@ namespace StereoKitTest
 
 		public void Update()
 		{
+			StepWand();
+
 			UI.WindowBegin("Sound", ref windowPose, new Vec2(20, 0) * U.cm);
 			if (UI.Button("BlipNoise.wav"))
 				fileSound.Play(windowPose.position);

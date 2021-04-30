@@ -735,6 +735,7 @@ SK_API void         sound_write_samples (sound_t sound, float *samples,     uint
 SK_API uint64_t     sound_read_samples  (sound_t sound, float *out_samples, uint64_t sample_count);
 SK_API uint64_t     sound_unread_samples(sound_t sound);
 SK_API uint64_t     sound_total_samples (sound_t sound);
+SK_API uint64_t     sound_cursor_samples(sound_t sound);
 SK_API sound_inst_t sound_play          (sound_t sound, vec3 at, float volume);
 SK_API float        sound_duration      (sound_t sound);
 SK_API void         sound_release       (sound_t sound);
