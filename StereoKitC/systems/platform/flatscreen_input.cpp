@@ -96,11 +96,13 @@ void flatscreen_input_update() {
 void flatscreen_mouse_update() {
 	vec2  mouse_pos            = {};
 	float mouse_scroll         = platform_get_scroll();
-	input_mouse_data.available = platform_get_cursor(mouse_pos);
+	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_focused;
 
 	// Mouse scroll
-	input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
-	input_mouse_data.scroll        = mouse_scroll;
+	if (sk_focused) {
+		input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
+		input_mouse_data.scroll        = mouse_scroll;
+	}
 
 	// Mouse position and on-screen
 	if (input_mouse_data.available) {
