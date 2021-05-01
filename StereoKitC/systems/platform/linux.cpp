@@ -188,23 +188,27 @@ void linux_events() {
 				}
 			} break;
 			case ButtonPress: {
-				switch (event.xbutton.button) {
-				case (1): input_keyboard_inject_press(key_mouse_left);    break;
-				case (2): input_keyboard_inject_press(key_mouse_center);  break;
-				case (3): input_keyboard_inject_press(key_mouse_right);   break;
-				case (9): input_keyboard_inject_press(key_mouse_forward); break;
-				case (8): input_keyboard_inject_press(key_mouse_back);    break;
-				case (4): linux_scroll += 120; break; // scroll up
-				case (5): linux_scroll -= 120; break; // scroll down
+				if (sk_focused) {
+					switch (event.xbutton.button) {
+					case (1): input_keyboard_inject_press(key_mouse_left);    break;
+					case (2): input_keyboard_inject_press(key_mouse_center);  break;
+					case (3): input_keyboard_inject_press(key_mouse_right);   break;
+					case (9): input_keyboard_inject_press(key_mouse_forward); break;
+					case (8): input_keyboard_inject_press(key_mouse_back);    break;
+					case (4): linux_scroll += 120; break; // scroll up
+					case (5): linux_scroll -= 120; break; // scroll down
+					}
 				}
 			} break;
 			case ButtonRelease: {
-				switch (event.xbutton.button) {
-				case (1): input_keyboard_inject_release(key_mouse_left);    break;
-				case (2): input_keyboard_inject_release(key_mouse_center);  break;
-				case (3): input_keyboard_inject_release(key_mouse_right);   break;
-				case (9): input_keyboard_inject_release(key_mouse_forward); break;
-				case (8): input_keyboard_inject_release(key_mouse_back);    break;
+				if (sk_focused) {
+					switch (event.xbutton.button) {
+					case (1): input_keyboard_inject_release(key_mouse_left);    break;
+					case (2): input_keyboard_inject_release(key_mouse_center);  break;
+					case (3): input_keyboard_inject_release(key_mouse_right);   break;
+					case (9): input_keyboard_inject_release(key_mouse_forward); break;
+					case (8): input_keyboard_inject_release(key_mouse_back);    break;
+					}
 				}
 			} break;
 			case MotionNotify: {

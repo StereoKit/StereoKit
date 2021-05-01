@@ -46,18 +46,18 @@ void win32_resize(int width, int height) {
 
 bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
-	case WM_LBUTTONDOWN: input_keyboard_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   input_keyboard_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: input_keyboard_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   input_keyboard_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: input_keyboard_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   input_keyboard_inject_release(key_mouse_center); return true;
+	case WM_LBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     return true;
 	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     return true;
 	case WM_CHAR:        input_keyboard_inject_char(wParam); return true;
-	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
+	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
 	}
 }
@@ -133,7 +133,7 @@ bool win32_start_flat() {
 			case WM_CLOSE:      sk_run     = false; PostQuitMessage(0); break;
 			case WM_SETFOCUS:   sk_focused = true;  break;
 			case WM_KILLFOCUS:  sk_focused = false; break;
-			case WM_MOUSEWHEEL: win32_scroll += (short)HIWORD(wParam); break;
+			case WM_MOUSEWHEEL: if (sk_focused) win32_scroll += (short)HIWORD(wParam); break;
 			case WM_SYSCOMMAND: {
 				// Has the user pressed the restore/'un-maximize' button?
 				// WM_SIZE happens -after- this event, and contains the new size.

@@ -244,6 +244,7 @@ protected:
 	}
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		if (!sk_focused) return;
 		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
 		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
 		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
@@ -251,6 +252,7 @@ protected:
 		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
+		if (!sk_focused) return;
 		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
 		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
 		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
@@ -266,7 +268,7 @@ protected:
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
+		if (sk_focused) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
 
 	void OnVisibilityChanged(CoreWindow const & /*sender*/, VisibilityChangedEventArgs const & args) {
