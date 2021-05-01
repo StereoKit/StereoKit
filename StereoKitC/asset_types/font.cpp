@@ -47,7 +47,7 @@ font_t font_create(const char *file) {
 	stbtt_packedchar chars[256];
 	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
 	bitmap = sk_malloc_t<uint8_t>(w * h);
-	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
+	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 2, NULL);
 	stbtt_PackFontRange(&pc, data, 0, size, start_char, 254, chars);
 	stbtt_PackEnd(&pc);
 	free(data);
