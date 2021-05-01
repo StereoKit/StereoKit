@@ -1153,7 +1153,7 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
 	float line_y      = window_relative_pos.y - size.y / 2.f + rule_size / 2.f;
-	float slide_x_rel = ((value - min) / (max - min)) * size.x;
+	float slide_x_rel = (value / (max - min)) * size.x;
 	float slide_y     = window_relative_pos.y - size.y / 4;
 	// Slide line
 	ui_box(
