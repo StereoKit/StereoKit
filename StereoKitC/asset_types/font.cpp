@@ -33,8 +33,10 @@ font_t font_create(const char *file) {
 
 	unsigned char *data;
 	size_t length;
-	if (!platform_read_file(file, (void**)&data, &length))
+	if (!platform_read_file(file, (void **)&data, &length)) {
+		log_warnf("Font file failed to load: %s", file);
 		return nullptr;
+	}
 
 	// Load and pack font data
 	const int w = 1024;

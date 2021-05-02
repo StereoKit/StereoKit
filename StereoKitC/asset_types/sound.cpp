@@ -37,8 +37,10 @@ sound_t sound_create(const char *filename) {
 	const char *sound_file = assets_file(filename);
 	void       *data;
 	size_t      length;
-	if (!platform_read_file(sound_file, &data, &length))
+	if (!platform_read_file(sound_file, &data, &length)) {
+		log_warnf("Sound file failed to load: %s", filename);
 		return nullptr;
+	}
 
 	result = (_sound_t*)assets_allocate(asset_type_sound);
 	result->type = sound_type_decode;
