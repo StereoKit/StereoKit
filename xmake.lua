@@ -64,9 +64,8 @@ target("StereoKitC")
         set_languages("cxx11")
     end
 
-    -- 2.5.3 is needed for utils.install.pkgconfig_importfiles, use `xmake update -s master`
-    -- to get access to required functionality in the meantime
-    set_xmakever("2.5.2") 
+    -- 2.5.3 is needed for utils.install.pkgconfig_importfiles
+    set_xmakever("2.5.3") 
     add_rules("utils.install.pkgconfig_importfiles")
     add_headerfiles("StereoKitC/stereokit*.h")
 
