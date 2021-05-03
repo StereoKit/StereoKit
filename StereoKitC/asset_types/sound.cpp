@@ -46,7 +46,7 @@ sound_t sound_create(const char *filename) {
 	result->type = sound_type_decode;
 	sound_set_id(result, filename);
 
-	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, AU_CHANNEL_COUNT, AU_SAMPLE_RATE);
+	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
 	if (ma_decoder_init_memory(data, length, &config, &result->decoder) != MA_SUCCESS) {
 		log_errf("Failed to parse sound '%s'.", sound_file);
 		assets_releaseref(result->header);
@@ -82,7 +82,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}
 
-	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, AU_CHANNEL_COUNT, AU_SAMPLE_RATE);
+	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
 	if (ma_decoder_init_memory_raw(result->buffer.data, sizeof(float) * result->buffer.capacity, &config, &config, &result->decoder) != MA_SUCCESS) {
 		log_err("Failed to generate sound!");
 		free(result->buffer.data);

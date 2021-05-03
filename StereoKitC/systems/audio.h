@@ -6,7 +6,6 @@ namespace sk {
 
 #define AU_SAMPLE_RATE   48000
 #define AU_SAMPLE_FORMAT ma_format_f32
-#define AU_CHANNEL_COUNT 1
 
 struct _sound_inst_t {
 	sound_t  sound;

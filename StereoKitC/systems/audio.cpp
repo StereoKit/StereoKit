@@ -32,11 +32,14 @@ IsacAdapter*      isac_adapter      = nullptr;
 ///////////////////////////////////////////
 
 ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
+	const uint64_t channel_count = 2;
+
 	// The way mixing works is that we just read into a temporary buffer, 
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
 	vec3      head_pos          = input_head()->position;
-	ma_uint64 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
+	vec3      head_right        = vec3_normalize(input_head()->orientation * vec3_right);
+	ma_uint64 frame_cap         = _countof(au_mix_temp) / channel_count;
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -65,15 +68,43 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 		}
 		if (frames_read <= 1) break;
 
-		// Mix the sound samples in
-		float dist   = vec3_magnitude_sq(inst.position - head_pos);
-		float volume = fminf(1,(1.f / dist) * inst.volume);
+		//// Mix the sound samples in
+
+		// Calculate the volume based on distance using the 1/d^2 law
+		vec3  dir    = head_pos - inst.position;
+		float dist2  = vec3_magnitude_sq(dir);
+		float volume = fminf(1,(1.f / dist2) * inst.volume);
+
+		// Find the direction of the sound in relation to the head
+		dir = dir / sqrtf(dist2);
+		float dot = vec3_dot(dir, head_right);
+
+		// Calculate a panning volume where a sound source directly in front
+		// will have a volume of 1 for both ears, and a sound directly to 
+		// either side will have a volume of zero opposite it
+		float channel[2] = { fminf(1,dot+1), fminf(1,2-(dot+1)) };
+
+		// Create a sample offset to simulate sound arrival time difference
+		// between left and right ears.
+		// NOTE: This needs a buffer of 10 samples before and after the
+		// relevant range, otherwise it sparkles!!
+		// The speed of sound is 343 m/s, and average head width is .15m
+		// (head_width/speed_of_sound)*48,000 samples/s = 21 audio samples wide
+		//int64_t offset[2] = { (int64_t)(10 * dot), (int64_t)(-10 * dot) };
 
 		// Mix the frames together.
-		for (ma_uint64 sample = 0; sample < frames_read*AU_CHANNEL_COUNT; ++sample) {
-			ma_uint64 i = total_frames_read * AU_CHANNEL_COUNT + sample;
+		for (ma_int64 sample = 0; sample < frames_read; ++sample) {
+			ma_uint64 i = total_frames_read * channel_count + sample*channel_count;
 			float     s = au_mix_temp[sample] * volume;
-			output[i] = fmaxf(-1, fminf(1, output[i] + s));
+
+			// Right channel
+			//float     s = au_mix_temp[mini((int64_t)_countof(au_mix_temp)-1,maxi((int64_t)0,sample+offset[c]))] * volume *  channel[0];
+			output[i] = fmaxf(-1, fminf(1, output[i] + s*channel[0]));
+
+			// Left channel
+			//s = au_mix_temp[mini((int64_t)_countof(au_mix_temp)-1,maxi((int64_t)0,sample+offset[c]))] * volume *  channel[1];
+			i += 1;
+			output[i] = fmaxf(-1, fminf(1, output[i] + s*channel[1]));
 		}
 
 		total_frames_read += frames_read;
@@ -111,7 +142,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 	*position = matrix_mul_point(au_head_transform, inst.position);
 	*volume   = inst.volume;
 
-	ma_uint64 frame_cap         = _countof(au_mix_temp) / AU_CHANNEL_COUNT;
+	ma_uint64 frame_cap         = _countof(au_mix_temp);
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -140,7 +171,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 		if (frames_read <= 1) break;
 
 		// Read the data into the buffer provided by ISAC
-		memcpy(&output[total_frames_read * AU_CHANNEL_COUNT], au_mix_temp, frames_read * AU_CHANNEL_COUNT * sizeof(float));
+		memcpy(&output[total_frames_read], au_mix_temp, frames_read * sizeof(float));
 
 		total_frames_read += frames_read;
 		if (frames_read < frames_to_read) {
@@ -238,7 +269,7 @@ bool32_t mic_start(const char *device_name) {
 	ma_device_config config   = ma_device_config_init(ma_device_type_capture);
 	config.capture.pDeviceID  = id;
 	config.capture.format     = AU_SAMPLE_FORMAT;
-	config.capture.channels   = AU_CHANNEL_COUNT;
+	config.capture.channels   = 1;
 	config.sampleRate         = AU_SAMPLE_RATE;
 	config.dataCallback       = mic_callback;
 	config.pUserData          = nullptr;
@@ -313,7 +344,7 @@ bool audio_init() {
 
 	au_config = ma_device_config_init(ma_device_type_playback);
 	au_config.playback.format   = AU_SAMPLE_FORMAT;
-	au_config.playback.channels = AU_CHANNEL_COUNT;
+	au_config.playback.channels = 2;
 	au_config.sampleRate        = AU_SAMPLE_RATE;
 	au_config.dataCallback      = data_callback;
 	au_config.pUserData         = nullptr;
