@@ -56,8 +56,8 @@ void platform_msgbox_err(const char *text, const char *header) {
 		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [src_text,src_title]() {
 		size_t   size_text  = strlen(src_text)+1;
 		size_t   size_title = strlen(src_title)+1;
-		wchar_t *w_text  = sk_malloc_t<wchar_t>(size_text);
-		wchar_t *w_title = sk_malloc_t<wchar_t>(size_title);
+		wchar_t *w_text  = sk_malloc_t(wchar_t, size_text);
+		wchar_t *w_title = sk_malloc_t(wchar_t, size_title);
 		mbstowcs_s(nullptr, w_text,  size_text,  src_text,   size_text);
 		mbstowcs_s(nullptr, w_title, size_title, src_title, size_title);
 

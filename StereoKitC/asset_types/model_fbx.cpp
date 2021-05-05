@@ -86,7 +86,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 
 	// Assemble vertex data
 	int32_t vert_count = geo->getVertexCount();
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
 	const ofbx::Vec3 *source_verts  = geo->getVertices();
 	const ofbx::Vec3 *source_norms  = geo->getNormals();
 	const ofbx::Vec2 *source_uvs    = geo->getUVs();
@@ -117,7 +117,7 @@ mesh_t modelfmt_fbx_geometry(const char *filename, const char *folder, const cha
 
 	// Assemble face data
 	int32_t ind_count = geo->getIndexCount();
-	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
+	vind_t *inds      = sk_malloc_t(vind_t, ind_count);
 	const int32_t *source_inds = geo->getFaceIndices();
 	for (int32_t i = 0; i < ind_count; i++) {
 		inds[i] = (vind_t)(source_inds[i] < 0 ? -source_inds[i]-1 : source_inds[i]);

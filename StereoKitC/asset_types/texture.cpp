@@ -183,7 +183,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	}
 
 	// Load all files
-	uint8_t **data = sk_malloc_t<uint8_t*>(file_count);
+	uint8_t **data = sk_malloc_t(uint8_t*, file_count);
 	int  final_width  = 0;
 	int  final_height = 0;
 	bool loaded       = true;
@@ -191,6 +191,8 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		int channels = 0;
 		int width    = 0;
 		int height   = 0;
+
+		// TODO: this will fail on weird file systems! Also support HDRs
 		data[i] = stbi_load(assets_file(files[i]), &width, &height, &channels, 4);
 
 		// Check if there were issues, or one of the images is the wrong size!
@@ -220,7 +222,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	tex_set_id       (result, file_id);
 
 	if (sh_lighting_info) {
-		result->light_info = sk_malloc_t<spherical_harmonics_t>(1);
+		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
 		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
 	}
 
@@ -287,7 +289,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_set_id       (result, equirectangular_file);
 
 	if (sh_lighting_info) {
-		result->light_info = sk_malloc_t<spherical_harmonics_t>(1);
+		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
 		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
 	}
 
@@ -513,7 +515,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	int32_t  size2 = size * size;
 	color128*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t<color128>(size2);
+		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -572,7 +574,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 	int32_t  size2 = size * size;
 	color128 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t<color128>(size2);
+		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);

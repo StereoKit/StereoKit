@@ -64,8 +64,8 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	}
 	if (meta->texture_count > 0) {
 		material->args.texture_count = meta->texture_count;
-		material->args.textures      = sk_malloc_t<tex_t     >(meta->texture_count);
-		material->args.texture_binds = sk_malloc_t<skg_bind_t>(meta->texture_count);
+		material->args.textures      = sk_malloc_t(tex_t     , meta->texture_count);
+		material->args.texture_binds = sk_malloc_t(skg_bind_t, meta->texture_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
 		for (size_t i = 0; i < meta->texture_count; i++) {
 			material->args.texture_binds[i] = meta->textures[i].bind;

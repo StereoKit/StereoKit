@@ -62,7 +62,7 @@ sound_t sound_create_stream(float buffer_duration) {
 
 	result->type = sound_type_stream;
 	result->buffer.capacity = (uint64_t)((double)buffer_duration * AU_SAMPLE_RATE);
-	result->buffer.data     = sk_malloc_t<float>(result->buffer.capacity);
+	result->buffer.data     = sk_malloc_t(float, result->buffer.capacity);
 	memset(result->buffer.data, 0, result->buffer.capacity * sizeof(float));
 	mtx_init(&result->data_lock, mtx_plain);
 
@@ -77,7 +77,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
 	result->type = sound_type_buffer;
 	result->buffer.capacity = (uint64_t)((double)duration * AU_SAMPLE_RATE);
 	result->buffer.count    = result->buffer.capacity;
-	result->buffer.data     = sk_malloc_t<float>(result->buffer.capacity);
+	result->buffer.data     = sk_malloc_t(float, result->buffer.capacity);
 	for (uint64_t i = 0, s = result->buffer.capacity; i < s; i += 1) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}

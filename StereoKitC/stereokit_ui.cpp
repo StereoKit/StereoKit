@@ -164,8 +164,8 @@ void ui_quadrant_mesh(float padding) {
 	vind_t  subd       = (vind_t)3*4;
 	int     vert_count = subd * 5 + 2;
 	int     ind_count  = subd * 18;
-	vert_t *verts      = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds       = sk_malloc_t<vind_t>(ind_count );
+	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
 
 	vind_t ind = 0;
 

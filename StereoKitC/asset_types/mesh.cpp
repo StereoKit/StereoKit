@@ -35,7 +35,7 @@ void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data) {
 		if (mesh->vert_capacity < vertex_count)
-			mesh->verts = sk_realloc_t<vert_t>(mesh->verts, vertex_count);
+			mesh->verts = sk_realloc_t(vert_t, mesh->verts, vertex_count);
 		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
 	}
 
@@ -100,7 +100,7 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 	// Keep track of index data for use on CPU side
 	if (!mesh->discard_data) {
 		if (mesh->ind_capacity < index_count)
-			mesh->inds = sk_realloc_t<vind_t>(mesh->inds, index_count);
+			mesh->inds = sk_realloc_t(vind_t, mesh->inds, index_count);
 		memcpy(mesh->inds, indices, sizeof(vind_t) * index_count);
 	}
 
@@ -195,8 +195,8 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 		return nullptr;
 
 	mesh_collision_t &coll = mesh->collision_data;
-	coll.pts    = sk_malloc_t<vec3   >(mesh->ind_count);
-	coll.planes = sk_malloc_t<plane_t>(mesh->ind_count/3);
+	coll.pts    = sk_malloc_t(vec3   , mesh->ind_count);
+	coll.planes = sk_malloc_t(plane_t, mesh->ind_count/3);
 
 	for (int32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
 
@@ -311,8 +311,8 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds  = sk_malloc_t<vind_t>(ind_count );
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
 	vec3 right = vec3_cross(plane_top_direction, plane_normal);
 	vec3 up    = vec3_cross(right,               plane_normal);
@@ -360,8 +360,8 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds  = sk_malloc_t<vind_t>(ind_count);
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
 
 	vec3   size   = dimensions / 2;
 	int    ind    = 0;
@@ -431,8 +431,8 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	int vert_count = 6*subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1)*6;
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds  = sk_malloc_t<vind_t>(ind_count);
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
 
 	vec3   size = vec3_one;
 	float  radius = diameter / 2;
@@ -501,8 +501,8 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	vind_t subd = (vind_t)subdivisions;
 	int vert_count = (subdivisions+1) * 4 + 2;
 	int ind_count  = subdivisions * 12;
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds  = sk_malloc_t<vind_t>(ind_count);
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
 
 	// Calculate any perpendicular vector
 	vec3 perp = vec3{dir.z, dir.z, -dir.x-dir.y};
@@ -573,8 +573,8 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 
 	vind_t  vert_count = 6*subd*subd;
 	vind_t  ind_count  = 6*(subd-1)*(subd-1)*6;
-	vert_t *verts = sk_malloc_t<vert_t>(vert_count);
-	vind_t *inds  = sk_malloc_t<vind_t>(ind_count );
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
 	vec3   off = (dimensions / 2) - vec3_one*edge_radius;
 	vec3   size = vec3_one;

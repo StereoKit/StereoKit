@@ -186,7 +186,7 @@ bool openxr_init() {
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);
-	const char **layers = sk_malloc_t<const char *>(layer_count);
+	const char **layers = sk_malloc_t(const char *, layer_count);
 	openxr_preferred_layers(layer_count, layers);
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
@@ -392,7 +392,7 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 	// Find what extensions are available on this system!
 	uint32_t layer_count = 0;
 	xrEnumerateApiLayerProperties(0, &layer_count, nullptr);
-	XrApiLayerProperties *layers = sk_malloc_t<XrApiLayerProperties>(layer_count);
+	XrApiLayerProperties *layers = sk_malloc_t(XrApiLayerProperties, layer_count);
 	for (uint32_t i = 0; i < layer_count; i++) layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
 	xrEnumerateApiLayerProperties(layer_count, &layer_count, layers);
 
@@ -435,7 +435,7 @@ XrReferenceSpaceType openxr_preferred_space() {
 	// Find the spaces OpenXR has access to on this device
 	uint32_t refspace_count = 0;
 	xrEnumerateReferenceSpaces(xr_session, 0, &refspace_count, nullptr);
-	XrReferenceSpaceType *refspace_types = sk_malloc_t<XrReferenceSpaceType>(refspace_count);
+	XrReferenceSpaceType *refspace_types = sk_malloc_t(XrReferenceSpaceType, refspace_count);
 	xrEnumerateReferenceSpaces(xr_session, refspace_count, &refspace_count, refspace_types);
 
 	// Find which one we prefer!

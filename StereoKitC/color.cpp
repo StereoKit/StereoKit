@@ -126,7 +126,7 @@ color128 color_to_gamma(color128 srgb_linear) {
 ///////////////////////////////////////////
 
 gradient_t gradient_create() {
-	gradient_t result = sk_malloc_t<_gradient_t>(1);
+	gradient_t result = sk_malloc_t(_gradient_t, 1);
 	*result = {};
 	return result;
 }
@@ -136,7 +136,7 @@ gradient_t gradient_create() {
 gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count) {
 	gradient_t result = gradient_create();
 	result->capacity = count;
-	result->keys     = sk_malloc_t<gradient_key_t>(count);
+	result->keys     = sk_malloc_t(gradient_key_t, count);
 	for (int32_t i = 0; i < count; i++) {
 		gradient_add(result, keys[i].color, keys[i].position);
 	}
@@ -148,7 +148,7 @@ gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count) {
 void gradient_add(gradient_t gradient, color128 color, float position) {
 	if (gradient->count + 1 >= gradient->capacity) {
 		gradient->capacity += 1;
-		gradient->keys = sk_realloc_t<gradient_key_t>(gradient->keys, gradient->capacity);
+		gradient->keys = sk_realloc_t(gradient_key_t, gradient->keys, gradient->capacity);
 	}
 
 	int index = gradient->count;

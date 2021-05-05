@@ -51,7 +51,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		// Make sure we have memory for our verts
 		if (vert_count < attr->data->count) {
 			vert_count = (int)attr->data->count;
-			verts      = sk_realloc_t<vert_t>(verts, vert_count);
+			verts      = sk_realloc_t(vert_t, verts, vert_count);
 			for (size_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
 			}
@@ -68,7 +68,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else {
 				// For everything else, we'll convert to floats, and use that
 				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
 				if (attr->data->type == cgltf_type_vec3) {
@@ -91,7 +91,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else {
 				// For everything else, we'll convert to floats, and use that
 				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
 				if (attr->data->type == cgltf_type_vec3) {
@@ -114,7 +114,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else {
 				// For everything else, we'll convert to floats, and use that
 				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
 				if (attr->data->type == cgltf_type_vec2) {
@@ -144,7 +144,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				// For everything else, we'll just load them as floats, and
 				// then convert down to color32
 				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t<cgltf_float>(count);
+				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
 				if (attr->data->type == cgltf_type_vec4) {
@@ -167,7 +167,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 
 	// Now grab the mesh indices
 	int     ind_count = (int)p->indices->count;
-	vind_t *inds      = sk_malloc_t<vind_t>(ind_count);
+	vind_t *inds      = sk_malloc_t(vind_t, ind_count);
 	if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;

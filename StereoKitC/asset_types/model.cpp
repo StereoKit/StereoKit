@@ -197,7 +197,7 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
-	model->subsets                      = sk_realloc_t<model_subset_t>(model->subsets, model->subset_count + 1);
+	model->subsets                      = sk_realloc_t(model_subset_t, model->subsets, model->subset_count + 1);
 	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
 	assets_addref(mesh->header);
 	assets_addref(material->header);
