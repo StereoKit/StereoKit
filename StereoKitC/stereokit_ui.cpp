@@ -1118,9 +1118,10 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	bool     result = false;
 
 	// Find sizes of slider elements
-	float rule_size = fmaxf(skui_settings.padding, size.y / 6.f);
-	vec3  box_start = window_relative_pos + vec3{ 0, 0, skui_settings.depth };
-	vec3  box_size  = vec3{ size.x, size.y, skui_settings.depth*2 };
+	float rule_size   = fmaxf(skui_settings.padding, size.y / 6.f);
+	vec3  box_start   = window_relative_pos + vec3{ 0, 0, skui_settings.depth };
+	vec3  box_size    = vec3{ size.x, size.y, skui_settings.depth*2 };
+	float button_size = size.y / 2;
 
 	button_state_ focus_state;
 	int32_t hand = -1;
@@ -1131,9 +1132,9 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 		&focus_state, hand);
 
 	if (focus_state & button_state_active) {
-		float new_val = min + fminf(1, fmaxf(0, (fabsf(skui_hand[hand].finger.x - window_relative_pos.x) / size.x))) * (max - min);
+		float new_val = min + fminf(1, fmaxf(0, ((window_relative_pos.x-button_size/2)-skui_hand[hand].finger.x) / (size.x-button_size)))*(max-min);
 		if (step != 0) {
-			new_val = ((int)(((new_val - min) / step) + 0.5f)) * step;
+			new_val = min + ((int)(((new_val - min) / step) + 0.5f)) * step;
 		}
 		result = value != new_val;
 		value = new_val;
@@ -1152,8 +1153,8 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	// Draw the UI
 	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
-	float line_y      = window_relative_pos.y - size.y / 2.f + rule_size / 2.f;
-	float slide_x_rel = (value / (max - min)) * size.x;
+	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
+	float slide_x_rel = ((value-min) / (max-min)) * (size.x-button_size);
 	float slide_y     = window_relative_pos.y - size.y / 4;
 	// Slide line
 	ui_box(
@@ -1161,11 +1162,11 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 		vec3{ size.x, rule_size, rule_size*skui_settings.backplate_depth+mm2m+mm2m }, 
 		skui_mat_quad, skui_palette[2] * color_blend);
 	ui_cylinder(
-		vec3{ x - slide_x_rel + size.y/4.f, slide_y, window_relative_pos.z}, 
-		size.y/2.f, rule_size+mm2m, skui_mat, skui_palette[0]);
+		vec3{ x - slide_x_rel, slide_y, window_relative_pos.z}, 
+		button_size, rule_size+mm2m, skui_mat, skui_palette[0]);
 	ui_cylinder(
-		vec3{ x+back_size - slide_x_rel + size.y/4.f, slide_y + back_size, window_relative_pos.z}, 
-		size.y/2.f+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border);
+		vec3{ x+back_size - slide_x_rel, slide_y + back_size, window_relative_pos.z}, 
+		button_size+back_size*2, rule_size*skui_settings.backplate_depth+mm2m, skui_mat, skui_color_border);
 	
 
 	if (focus_state & button_state_just_active)
