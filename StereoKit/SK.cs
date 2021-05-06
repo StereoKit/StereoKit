@@ -52,8 +52,11 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
-			if (!NativeLib.LoadLib())
+			if (!NativeLib.LoadLib()) {
+				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
+				Console.WriteLine                         ("[SK error] Failed to load StereoKitC!");
 				return false;
+			}
 
 			IsInitialized = InitializeCall(settings);
 			return IsInitialized;
