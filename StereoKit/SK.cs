@@ -52,6 +52,9 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
+			if (!NativeLib.LoadLib("StereoKitC"))
+				return false;
+
 			IsInitialized = InitializeCall(settings);
 			return IsInitialized;
 		}
