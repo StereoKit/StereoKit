@@ -7,7 +7,9 @@ namespace StereoKit
 	{
 		public static bool LoadLib(string name)
 		{
-			return true;
+			// Mono uses a different strategy for linking the DLL
+			if (RuntimeInformation.FrameworkDescription.StartsWith("Mono "))
+				return true;
 
 			return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 				? LoadWindows(name)
