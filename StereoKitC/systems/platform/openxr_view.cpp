@@ -224,7 +224,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	}
 
 	if (!openxr_update_swapchains(out_view)) {
-		log_fail_reason(80, "Couldn't create OpenXR view swapchains!");
+		log_fail_reason(80, log_error, "Couldn't create OpenXR view swapchains!");
 		return false;
 	}
 

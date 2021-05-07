@@ -265,8 +265,8 @@ void log_set_colors(log_colors_ colors) {
 
 ///////////////////////////////////////////
 
-void log_fail_reason(int32_t confidence, const char *fail_reason) {
-	log_err(fail_reason);
+void log_fail_reason(int32_t confidence, log_ log_as, const char *fail_reason) {
+	log_write(log_as, fail_reason);
 
 	if (confidence <= log_fail_confidence)
 		return;
@@ -278,14 +278,14 @@ void log_fail_reason(int32_t confidence, const char *fail_reason) {
 
 ///////////////////////////////////////////
 
-void log_fail_reasonf(int32_t confidence, const char *fail_reason, ...) {
+void log_fail_reasonf(int32_t confidence, log_ log_as, const char *fail_reason, ...) {
 	va_list args;
 	va_start(args, fail_reason);
 	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
 	char*  buffer = sk_malloc_t(char, length + 2);
 	vsnprintf(buffer, length + 2, fail_reason, args);
 
-	log_fail_reason(confidence, buffer);
+	log_fail_reason(confidence, log_as, buffer);
 	free(buffer);
 	va_end(args);
 }
