@@ -161,7 +161,7 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
 		// Create pointers for the hands
-		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1 : -1);
+		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
 		vec3 ray_joint = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 		pose_t point_pose = {
 			ray_joint,

@@ -78,6 +78,8 @@ void platform_shutdown() {
 void platform_set_window(void *window) {
 #if defined(SK_OS_ANDROID)
 	android_set_window(window);
+#else
+	(void)window;
 #endif
 }
 
@@ -86,6 +88,8 @@ void platform_set_window(void *window) {
 void platform_set_window_xam(void *window) {
 #if defined(SK_OS_ANDROID)
 	android_set_window_xam(window);
+#else
+	(void)window;
 #endif
 }
 

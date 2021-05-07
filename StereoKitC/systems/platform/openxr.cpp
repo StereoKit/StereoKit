@@ -190,7 +190,7 @@ bool openxr_init() {
 	openxr_preferred_layers(layer_count, layers);
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount = extensions.count;
+	create_info.enabledExtensionCount = (uint32_t)extensions.count;
 	create_info.enabledExtensionNames = extensions.data;
 	create_info.enabledApiLayerCount  = layer_count;
 	create_info.enabledApiLayerNames  = layers;

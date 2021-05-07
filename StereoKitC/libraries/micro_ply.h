@@ -155,7 +155,7 @@ void _ply_convert(uint8_t *dest, uint8_t dest_size, uint8_t dest_type, const uin
 		double val = src_size == 4
 			? *(float  *)src
 			: *(double *)src;
-		if (dest_size == 4) *(float  *)dest = val;
+		if (dest_size == 4) *(float  *)dest = (float)val;
 		else                *(double *)dest = val;
 	} else {
 		int64_t val=0;
@@ -174,21 +174,21 @@ void _ply_convert(uint8_t *dest, uint8_t dest_size, uint8_t dest_type, const uin
 		}
 		if (dest_type == ply_prop_int) {
 			switch (dest_size) {
-			case 1: *(int8_t  *)dest = val; break;
-			case 2: *(int16_t *)dest = val; break;
-			case 4: *(int32_t *)dest = val; break;}
+			case 1: *(int8_t  *)dest = (int8_t )val; break;
+			case 2: *(int16_t *)dest = (int16_t)val; break;
+			case 4: *(int32_t *)dest = (int32_t)val; break;}
 		} else {
 			switch (dest_size) {
-			case 1: *(uint8_t *)dest = val; break;
-			case 2: *(uint16_t*)dest = val; break;
-			case 4: *(uint32_t*)dest = val; break;}
+			case 1: *(uint8_t *)dest = (uint8_t )val; break;
+			case 2: *(uint16_t*)dest = (uint16_t)val; break;
+			case 4: *(uint32_t*)dest = (uint32_t)val; break;}
 		}
 	}
 }
 
 ///////////////////////////////////////////
 
-bool ply_read(const void *data, size_t data_size, ply_file_t *out_file) {
+bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 	// Support function, if string starts with
 	bool (*starts_with)(const char *, const char *) = [](const char *str, const char *prefix) {
 		while (*prefix) {
@@ -218,14 +218,12 @@ bool ply_read(const void *data, size_t data_size, ply_file_t *out_file) {
 	};
 
 	// Check file signature
-	char *file = (char*)data;
+	char *file = (char*)file_data;
 	if (!starts_with(file, "ply"))
 		return false;
 
 	// File data
 	int32_t format     = 0;
-	int32_t vert_count = 0;
-	int32_t face_count = 0;
 	out_file->count    = 0;
 	out_file->elements = nullptr;
 
@@ -317,7 +315,7 @@ bool ply_read(const void *data, size_t data_size, ply_file_t *out_file) {
 					list_data  += el->properties[0].list_bytes;
 					list_count += 1;
 					if (list_count >= list_cap) {
-						list_cap = list_cap * 1.25f;
+						list_cap = (int32_t)(list_cap * 1.25f);
 						el->list_data = realloc(el->list_data, el->properties[0].list_bytes * list_cap);
 						list_data = ((uint8_t*)el->list_data) + (list_count * el->properties[0].list_bytes);
 					}
@@ -408,12 +406,12 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 		uint8_t src_ind_size = elements->properties[0].list_bytes;
 		uint8_t src_ind_type = elements->properties[0].list_type;
 		// Count how many total indices there will be
-		int64_t count = 0;
+		int32_t count = 0;
 		uint8_t *src = (uint8_t *)elements->data;
 		for (int32_t i = 0; i < elements->count; i++) {
-			uint32_t ct = 0;
-			_ply_convert((uint8_t *)&ct, sizeof(uint32_t), ply_prop_uint, src, src_size, src_type);
-			count += 3 + ((int64_t)ct-3)*3;
+			int32_t ct = 0;
+			_ply_convert((uint8_t *)&ct, sizeof(int32_t), ply_prop_int, src, src_size, src_type);
+			count += 3 + (ct-3)*3;
 			src   += src_size;
 		}
 
@@ -423,8 +421,8 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 		uint8_t *src_ind = (uint8_t*)elements->list_data;
 		uint8_t *dest    = (uint8_t*)*out_data;
 		for (int32_t i = 0; i < elements->count; i++) {
-			uint32_t ct = 0;
-			_ply_convert((uint8_t *)&ct, sizeof(uint32_t), ply_prop_uint, src, src_size, src_type);
+			int32_t ct = 0;
+			_ply_convert((uint8_t *)&ct, sizeof(int32_t), ply_prop_int, src, src_size, src_type);
 			for (int32_t x = 0; x < ct-2; x++) {
 				_ply_convert(
 					dest+(x*3*to_format[0].to_size), to_format[0].to_size, to_format[0].to_type,

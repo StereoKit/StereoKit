@@ -93,7 +93,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 		//int64_t offset[2] = { (int64_t)(10 * dot), (int64_t)(-10 * dot) };
 
 		// Mix the frames together.
-		for (ma_int64 sample = 0; sample < frames_read; ++sample) {
+		for (ma_uint64 sample = 0; sample < frames_read; ++sample) {
 			ma_uint64 i = total_frames_read * channel_count + sample*channel_count;
 			float     s = au_mix_temp[sample] * volume;
 
@@ -118,7 +118,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 
 ///////////////////////////////////////////
 
-void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frame_count) {
+void data_callback(ma_device*, void* output, const void*, ma_uint32 frame_count) {
 	float* output_f = (float*)output;
 
 	for (uint32_t i = 0; i < _countof(au_active_sounds); i++) {
@@ -131,8 +131,6 @@ void data_callback(ma_device* device, void* output, const void* input, ma_uint32
 			au_active_sounds[i].sound = nullptr;
 		}
 	}
-
-	(void)input;
 }
 
 ///////////////////////////////////////////
@@ -226,7 +224,7 @@ const char *mic_device_name(int32_t index) {
 
 ///////////////////////////////////////////
 
-void mic_callback(ma_device* device, void* output, const void* input, ma_uint32 frame_count) {
+void mic_callback(ma_device*, void*, const void* input, ma_uint32 frame_count) {
 	if (input == nullptr || au_mic_sound == nullptr) return;
 
 	sound_write_samples(au_mic_sound, (float*)input, frame_count);

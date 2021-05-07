@@ -22,8 +22,8 @@ struct swapchain_t {
 	XrSwapchain handle;
 	int32_t     width;
 	int32_t     height;
-	int32_t     surface_count;
-	int32_t     surface_layers;
+	uint32_t    surface_count;
+	uint32_t    surface_layers;
 	XrSwapchainImage *images;
 	tex_t            *textures;
 };
@@ -264,13 +264,13 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// Create texture objects if we don't have 'em
 	if (display.swapchain_color.textures == nullptr) {
-		display.swapchain_color.textures = sk_malloc_t(tex_t, display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
-		display.swapchain_depth.textures = sk_malloc_t(tex_t, display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
+		display.swapchain_color.textures = sk_malloc_t(tex_t, (size_t)display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
+		display.swapchain_depth.textures = sk_malloc_t(tex_t, (size_t)display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
 		memset(display.swapchain_color.textures, 0, sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
 		memset(display.swapchain_depth.textures, 0, sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
 
-		for (int32_t s = 0; s < display.swapchain_color.surface_count; s++) {
-			for (int32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
+		for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+			for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
 				int32_t index = layer*display.swapchain_color.surface_count + s;
 
 				display.swapchain_color.textures[index] = tex_create(tex_type_rendertarget, tex_get_tex_format(display.color_format));
@@ -288,8 +288,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 	}
 
 	// Update or set the native textures
-	for (int32_t s = 0; s < display.swapchain_color.surface_count; s++) {
-		for (int32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
+	for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+		for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
 			int32_t index = layer*display.swapchain_color.surface_count + s;
 
 			// Update our textures with the new swapchain display surfaces
@@ -413,7 +413,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 		// for Oculus, we'll pick -our- preference instead.
 		// TODO: monitor for if Oculus ever fixes this
 		for (uint32_t i=0; i<_countof(pixel_formats); i++) {
-			for (int32_t f=0; out_color_dx == 0 && f<count; f++) {
+			for (uint32_t f=0; out_color_dx == 0 && f<count; f++) {
 				if (formats[f] == pixel_formats[i]) {
 					out_color_dx = pixel_formats[i];
 					break;
@@ -514,8 +514,8 @@ bool openxr_render_frame() {
 
 	// Check each secondary display to see if it's active or not
 	for (uint32_t i = 1; i < xr_displays.count; i++) {
-		if (xr_displays[i].active != xr_display_2nd_states[i - 1].active) {
-			xr_displays[i].active  = xr_display_2nd_states[i - 1].active;
+		if (xr_displays[i].active != (bool32_t)xr_display_2nd_states[i - 1].active) {
+			xr_displays[i].active  = (bool32_t)xr_display_2nd_states[i - 1].active;
 
 			if (xr_displays[i].active) {
 				openxr_update_swapchains(xr_displays[i]);
@@ -659,7 +659,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		matrix_inverse(view_tr, layer.view_transforms[i]);
 	}
 
-	for (int32_t s_layer = 0; s_layer < layer.swapchain_color.surface_layers; s_layer++) {
+	for (uint32_t s_layer = 0; s_layer < layer.swapchain_color.surface_layers; s_layer++) {
 		int32_t index = s_layer*layer.swapchain_color.surface_count + color_id;
 
 		// Call the rendering callback with our view and swapchain info

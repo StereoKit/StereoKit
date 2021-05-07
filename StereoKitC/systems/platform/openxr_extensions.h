@@ -8,6 +8,9 @@
 
 namespace sk {
 
+#pragma warning( push )
+#pragma warning( disable: 4127 ) // conditional expression is constant
+
 ///////////////////////////////////////////
 
 #if defined(SK_OS_WINDOWS_UWP)
@@ -161,4 +164,5 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 #undef FOR_EACH_EXT_ANDROID
 #undef FOR_EACH_EXT_DEBUG
 
+#pragma warning( pop )
 }

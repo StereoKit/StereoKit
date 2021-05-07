@@ -12,6 +12,9 @@
 #include "../libraries/stb_image.h"
 #pragma warning( default : 26451 6011 6262 6308 6387 28182 )
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -172,7 +175,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "tex_arr/%lu", hash);
+	snprintf(file_id, sizeof(file_id), "tex_arr/%" PRIu64, hash);
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);

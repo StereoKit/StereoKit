@@ -44,11 +44,11 @@ struct ui_hand_t {
 	bool     ray_enabled;
 	bool     ray_discard;
 	float    ray_visibility;
-	uint64_t focused_prev = {};
-	uint64_t focused = {};
+	uint64_t focused_prev;
+	uint64_t focused;
 	float    focus_priority;
-	uint64_t active_prev = {};
-	uint64_t active = {};
+	uint64_t active_prev;
+	uint64_t active;
 	button_state_ pinch_state;
 };
 
@@ -385,8 +385,8 @@ void ui_update() {
 
 		// draw hand rays
 		skui_hand[i].ray_visibility = math_lerp(skui_hand[i].ray_visibility,
-			was_ray_enabled && skui_enable_far_interact && skui_hand[i].ray_enabled && !skui_hand[i].ray_discard ? 1 : 0,
-			20 * time_elapsedf_unscaled());
+			was_ray_enabled && skui_enable_far_interact && skui_hand[i].ray_enabled && !skui_hand[i].ray_discard ? 1.0f : 0.0f,
+			20.0f * time_elapsedf_unscaled());
 		if (skui_hand[i].focused_prev != 0) skui_hand[i].ray_visibility = 0;
 		if (skui_hand[i].ray_visibility > 0.004f) {
 			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
@@ -1060,9 +1060,9 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 	// If focused, acquire any input in the keyboard's queue
 	if (skui_input_target == id_hash) {
-		uint16_t curr = input_keyboard_char_consume();
+		uint32_t curr = input_keyboard_char_consume();
 		while (curr != 0) {
-			char add = '\0';
+			uint32_t add = '\0';
 
 			if (curr == key_backspace) {
 				size_t len = strlen(buffer);

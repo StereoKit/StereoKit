@@ -31,13 +31,13 @@ tex_t modelfmt_fbx_texture(const char *filename, const char *folder, const ofbx:
 	snprintf(tex_file, sizeof(tex_file), "%s/%s", folder, tex_name);
 	asset_filename = assets_file(tex_file);
 	if (stat(asset_filename, &check) == 0)
-		result = tex_create_file(tex_file);
+		result = tex_create_file(tex_file, color_data);
 
 	if (result == nullptr) {
 		snprintf(tex_file, sizeof(tex_file), "%s/textures/%s", folder, tex_name);
 		asset_filename = assets_file(tex_file);
 		if (stat(asset_filename, &check) == 0)
-			result = tex_create_file(tex_file);
+			result = tex_create_file(tex_file, color_data);
 	}
 
 	if (result == nullptr)

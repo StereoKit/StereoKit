@@ -170,6 +170,7 @@ const char *render_fmt_name(tex_format_ format) {
 	case tex_format_depthstencil:  return "depth24_stencil8";
 	case tex_format_depth32:       return "depth32";
 	case tex_format_depth16:       return "depth16";
+	case tex_format_none:          return "none";
 	default:                       return "Unknown";
 	}
 }
@@ -302,7 +303,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	item.material = material;
 	item.color    = color;
 	item.sort_id  = render_queue_id(material, mesh);
-	item.layer    = layer;
+	item.layer    = (uint16_t)layer;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, item.transform);
 	} else {
@@ -328,7 +329,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		item.material = model->subsets[i].material;
 		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
-		item.layer    = layer;
+		item.layer    = (uint16_t)layer;
 		matrix_mul(model->subsets[i].offset, root, item.transform);
 		render_list_add(&item);
 	}

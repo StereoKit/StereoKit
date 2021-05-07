@@ -3795,9 +3795,10 @@ bool skg_read_file(const char *filename, void **out_data, size_t *out_size) {
 
 uint64_t skg_hash(const char *string) {
 	uint64_t hash = 14695981039346656037UL;
-	uint8_t  c;
-	while ((c = *string++))
-		hash = (hash ^ c) * 1099511628211;
+	while (*string != '\0') {
+		hash = (hash ^ *string) * 1099511628211;
+		string++;
+	}
 	return hash;
 }
 

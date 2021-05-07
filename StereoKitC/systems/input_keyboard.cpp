@@ -9,8 +9,8 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct keyboard_event_t {
-	uint16_t key;
-	int16_t  down;
+	key_    key;
+	int16_t down;
 };
 
 struct keyboard_t {

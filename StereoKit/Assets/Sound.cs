@@ -38,6 +38,8 @@ namespace StereoKit
 		/// types will just return 0.</summary>
 		public int UnreadSamples { get => (int)NativeAPI.sound_unread_samples(_inst); }
 
+		/// <summary>This is the current position of the playback cursor, 
+		/// measured in samples from the start of the audio data.</summary>
 		public int CursorSamples { get => (int)NativeAPI.sound_cursor_samples(_inst); }
 
 		internal Sound(IntPtr sound)

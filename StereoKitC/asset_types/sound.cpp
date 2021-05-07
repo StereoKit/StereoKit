@@ -139,7 +139,7 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, volume };
 
 			result._id   = au_active_sounds[i].id;
-			result._slot = i;
+			result._slot = (int16_t)i;
 			return result;
 		}
 	}
@@ -150,7 +150,7 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
 
 			result._id   = au_active_sounds[i].id;
-			result._slot = i;
+			result._slot = (int16_t)i;
 			return result;
 		}
 	}
@@ -299,8 +299,6 @@ uint64_t ring_buffer_read(ring_buffer_t *buffer, float *out_data, uint64_t out_d
 		? buffer->cursor + (buffer->capacity-buffer->start)
 		: buffer->cursor - buffer->start;
 	uint64_t frames_read = mini(out_data_size, buffer->count - cursor_relative);
-	uint64_t read_start  = buffer->cursor;
-	uint64_t read_end    = buffer->cursor + frames_read;
 
 	uint64_t cursor_start = buffer->cursor;
 	if (buffer->cursor + frames_read > buffer->capacity) {

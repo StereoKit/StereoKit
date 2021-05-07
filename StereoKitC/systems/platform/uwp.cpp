@@ -87,9 +87,9 @@ inline float pixels_to_dips(float pixels, float DPI) {
 class ViewProvider : public winrt::implements<ViewProvider, IFrameworkView> {
 public:
 	static ViewProvider *inst;
-	bool initialized = false;
-	bool valid       = false;
-	vec2  mouse_point;
+	bool  initialized  = false;
+	bool  valid        = false;
+	vec2  mouse_point  = {};
 	float mouse_scroll = 0;
 	
 	float m_DPI;
@@ -421,9 +421,8 @@ float uwp_get_scroll() {
 
 void uwp_show_keyboard(bool show) {
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
-		bool result = show 
-			? InputPane::GetForCurrentView().TryShow()
-			: InputPane::GetForCurrentView().TryHide();
+		if (show) InputPane::GetForCurrentView().TryShow();
+		else      InputPane::GetForCurrentView().TryHide();
 	});
 }
 

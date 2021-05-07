@@ -186,6 +186,7 @@ float platform_get_scroll() {
 void platform_debug_output(log_ level, const char *text) {
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	OutputDebugStringA(text);
+	(void)level;
 #elif defined(SK_OS_ANDROID)
 	int32_t priority = ANDROID_LOG_INFO;
 	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
@@ -193,6 +194,9 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
+#else
+	(void)level;
+	(void)text;
 #endif
 }
 
