@@ -79,7 +79,7 @@ skg_buffer_t            render_shader_blit;
 matrix                  render_camera_root     = matrix_identity;
 matrix                  render_camera_root_inv = matrix_identity;
 matrix                  render_default_camera_proj;
-vec2                    render_clip_planes     = {0.08f, 50};
+vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
 render_global_buffer_t  render_global_buffer;
 mesh_t                  render_blit_quad;
