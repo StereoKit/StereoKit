@@ -17,6 +17,10 @@ namespace sk {
 HWND            uwp_window    = nullptr;
 skg_swapchain_t uwp_swapchain = {};
 
+bool uwp_mouse_set;
+vec2 uwp_mouse_set_delta;
+vec2 uwp_mouse_frame_get;
+
 }
 
 // The WinRT/UWP mess comes from:
@@ -132,7 +136,6 @@ public:
 #endif
 		window.PointerPressed                         ({ this, &ViewProvider::OnMouseButtonDown    });
 		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonUp      });
-		window.PointerMoved                           ({ this, &ViewProvider::OnMouseChanged       });
 		window.PointerWheelChanged                    ({ this, &ViewProvider::OnWheelChanged       });
 		window.VisibilityChanged                      ({ this, &ViewProvider::OnVisibilityChanged  });
 		window.CharacterReceived                      (uwp_on_corewindow_character);
@@ -187,7 +190,30 @@ public:
 			} else {
 				CoreWindow::GetForCurrentThread().Dispatcher().ProcessEvents(CoreProcessEventsOption::ProcessOneAndAllPending);
 			}
-			Sleep(10);
+
+			if (uwp_mouse_set) {
+				Point pos = CoreWindow::GetForCurrentThread().PointerPosition();
+				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
+
+				vec2 new_point = uwp_mouse_set_delta + vec2{ 
+					dips_to_pixels(pos.X, m_DPI) - win.X,
+					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+
+				CoreWindow::GetForCurrentThread().PointerPosition(Point(
+					pixels_to_dips(new_point.x, ViewProvider::inst->m_DPI) + win.X,
+					pixels_to_dips(new_point.y, ViewProvider::inst->m_DPI) + win.Y));
+
+				ViewProvider::inst->mouse_point = new_point;
+				uwp_mouse_set = false;
+			} else {
+				Point pos = CoreWindow::GetForCurrentThread().PointerPosition();
+				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
+				mouse_point = { 
+					dips_to_pixels(pos.X, m_DPI) - win.X,
+					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+			}
+
+			Sleep(1);
 		}
 	}
 
@@ -258,13 +284,6 @@ protected:
 		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
 		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_keyboard_inject_release(key_mouse_back);
 		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_keyboard_inject_release(key_mouse_forward);
-	}
-
-	void OnMouseChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		Point p = args.CurrentPoint().RawPosition();
-		mouse_point = { 
-			dips_to_pixels(p.X, m_DPI),
-			dips_to_pixels(p.Y, m_DPI) };
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
@@ -380,21 +399,16 @@ void window_thread(void *) {
 }
 
 bool uwp_get_mouse(vec2 &out_pos) {
-	out_pos = ViewProvider::inst->mouse_point;
+	out_pos = uwp_mouse_frame_get;
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void uwp_set_mouse(vec2 window_pos) {
-	ViewProvider::inst->mouse_point = window_pos;
-
-	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::High, [window_pos]() {
-		Rect pos = CoreWindow::GetForCurrentThread().Bounds();
-		CoreWindow::GetForCurrentThread().PointerPosition(Point(
-			pixels_to_dips(window_pos.x, ViewProvider::inst->m_DPI) + pos.X,
-			pixels_to_dips(window_pos.y, ViewProvider::inst->m_DPI) + pos.Y));
-	});
+	uwp_mouse_set_delta = window_pos - uwp_mouse_frame_get;
+	uwp_mouse_frame_get = window_pos;
+	uwp_mouse_set       = true;
 }
 
 ///////////////////////////////////////////
@@ -472,6 +486,7 @@ void uwp_step_begin_xr() {
 ///////////////////////////////////////////
 
 void uwp_step_begin_flat() {
+	uwp_mouse_frame_get = ViewProvider::inst->mouse_point;
 	flatscreen_input_update();
 }
 
