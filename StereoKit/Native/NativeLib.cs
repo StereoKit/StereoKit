@@ -11,13 +11,9 @@ namespace StereoKit
 			if (RuntimeInformation.FrameworkDescription.StartsWith("Mono "))
 				return true;
 
-			string arch = "";
-			switch (RuntimeInformation.OSArchitecture)
-			{
-				case Architecture.X86:   arch = "x86";   break;
-				case Architecture.X64:   arch = "x64";   break;
-				case Architecture.Arm64: arch = "arm64"; break;
-			}
+			string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64
+				? "arm64"
+				: "x64";
 			return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 				? LoadWindows(arch)
 				: LoadUnix   (arch);

@@ -15,6 +15,15 @@
 			SourceFiles        = "@(SKSourceFolder)"
 			DestinationFolder  = "$(BaseIntermediateOutputPath)lib/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
+
+		<!-- .Net Core 2.x behaves fine using the above for publishing, but
+		not for development. So! This is a manual copy that happens by default
+		on other versions of .Net Core.-->
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFrameworkVersion.StartsWith('v2.'))"
+			SourceFiles        = "@(SKSourceFolder)"
+			DestinationFolder  = "$(OutputPath)runtimes/%(RecursiveDir)"
+			SkipUnchangedFiles = "true"/>
 	</Target>
 
 	<!-- Link libraries to Xamarin projects.  -->

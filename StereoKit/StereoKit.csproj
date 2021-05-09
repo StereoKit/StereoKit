@@ -3,25 +3,19 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
 		<Platforms>x64;ARM64</Platforms>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<OutputPath>..\bin\</OutputPath>
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-		<OutputPath>..\bin</OutputPath>
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
+		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
+	</ItemGroup>
 
 	<!-- NuGet package -->
 	<PropertyGroup>
@@ -36,23 +30,6 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
 		<FileVersion>0.1.0.0</FileVersion>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|x64'">
-		<PlatformTarget>AnyCPU</PlatformTarget>
-		<OutputPath>..\bin</OutputPath>
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|x64'">
-		<PlatformTarget>AnyCPU</PlatformTarget>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|ARM64'">
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-		<OutputPath>..\bin</OutputPath>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|ARM64'">
-		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
-		<OutputPath>..\bin</OutputPath>
 	</PropertyGroup>
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
@@ -90,16 +67,5 @@
 		<Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
 		<Content Pack="true" Include="SKShaders.targets" PackagePath="build\" />
 		<Content Pack="true" Include="SKShader.xml" PackagePath="build\" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
-		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
 	</ItemGroup>
 </Project>
