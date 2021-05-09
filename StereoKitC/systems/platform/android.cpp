@@ -44,7 +44,7 @@ bool android_init() {
 		android_vm = (JavaVM*)sk_settings.android_java_vm;
 
 	if (android_vm == nullptr || android_activity == nullptr) {
-		log_fail_reason(95,  "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
+		log_fail_reason(95, log_error, "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
 		return false;
 	}
 
@@ -53,11 +53,11 @@ bool android_init() {
 	int result = android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6);
 	if (result == JNI_EDETACHED) {
 		if (android_vm->AttachCurrentThread(&android_env, nullptr) != JNI_OK) {
-			log_fail_reason(95, "Couldn't attach the Java Environment to the current thread!");
+			log_fail_reason(95, log_error, "Couldn't attach the Java Environment to the current thread!");
 			return false;
 		}
 	} else if (result != JNI_OK) {
-		log_fail_reason(95, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
+		log_fail_reason(95, log_error, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
 		return false;
 	}
 
@@ -85,7 +85,7 @@ bool android_init() {
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
 	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
 	if (android_asset_manager == nullptr) {
-		log_fail_reason(95,  "Couldn't get the Android asset manager!");
+		log_fail_reason(95, log_error, "Couldn't get the Android asset manager!");
 		return false;
 	}
 

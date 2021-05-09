@@ -242,7 +242,7 @@ bool linux_init() {
 
 	dpy = XOpenDisplay(0);
 	if (dpy == nullptr) {
-		log_fail_reason(90, "Cannot connect to X server");
+		log_fail_reason(90, log_error, "Cannot connect to X server");
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool linux_init() {
 	vi = glXGetVisualFromFBConfig(dpy, fbconfig);
 
 	if (vi == nullptr) {
-		log_fail_reason(90, "No appropriate GLX visual found");
+		log_fail_reason(90, log_error, "No appropriate GLX visual found");
 		return false;
 	}
 

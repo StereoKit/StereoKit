@@ -176,7 +176,7 @@ bool openxr_init() {
 	init_android.applicationVM      = android_vm;
 	init_android.applicationContext = android_activity;
 	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
-		log_fail_reasonf(90, "Failed to initialize OpenXR loader");
+		log_fail_reasonf(90, log_warning, "Failed to initialize OpenXR loader");
 		return false;
 	}
 #endif

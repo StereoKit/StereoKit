@@ -29,7 +29,7 @@
 		<Description>A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
-		<FileVersion>0.1.0.0</FileVersion>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
