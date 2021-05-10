@@ -17,11 +17,7 @@ namespace sk {
 typedef void(*log_listener_t)(log_, const char *);
 array_t<log_listener_t> log_listeners = {};
 
-#if _DEBUG
 log_        log_filter = log_diagnostic;
-#else
-log_        log_filter = log_inform;
-#endif
 log_colors_ log_colors = log_colors_ansi;
 
 char       *log_fail_reason_str = nullptr;
@@ -165,6 +161,7 @@ void log_write(log_ level, const char *text) {
 
 	const char *tag = "";
 	switch (level) {
+	case log_none:                                       return;
 	case log_diagnostic: tag = "<~blu>diagnostic<~clr>"; break;
 	case log_inform:     tag = "<~cyn>info<~clr>";       break;
 	case log_warning:    tag = "<~ylw>warning<~clr>";    break;

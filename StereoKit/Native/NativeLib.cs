@@ -5,8 +5,12 @@ namespace StereoKit
 {
 	static class NativeLib
 	{
-		public static bool LoadLib()
+		static bool _loaded = false;
+		internal static bool Load()
 		{
+			if (_loaded)
+				return true;
+
 			// Mono uses a different strategy for linking the DLL
 			if (RuntimeInformation.FrameworkDescription.StartsWith("Mono "))
 				return true;
@@ -14,9 +18,10 @@ namespace StereoKit
 			string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64
 				? "arm64"
 				: "x64";
-			return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+			_loaded = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 				? LoadWindows(arch)
 				: LoadUnix   (arch);
+			return _loaded;
 		}
 
 		[DllImport("kernel32")]

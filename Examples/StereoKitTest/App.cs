@@ -9,7 +9,8 @@ class App
 		appName           = "StereoKit C#",
 		assetsFolder      = "Assets",
 		blendPreference   = Display.AnyTransparent,
-		displayPreference = DisplayMode.MixedReality };
+		displayPreference = DisplayMode.MixedReality,
+		logFilter         = LogLevel.Diagnostic};
 
 	public SKSettings Settings => settings;
 
@@ -27,6 +28,9 @@ class App
 		if (Tests.IsTesting)
 			settings.displayPreference = DisplayMode.Flatscreen;
 
+		// Preload the StereoKit library for access to Time.Scale before
+		// initialization occurs.
+		SK.PreLoadLibrary();
 		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		/// :CodeSample: Log.Subscribe Log
@@ -34,7 +38,6 @@ class App
 		/// your initialization code!
 		Log.Subscribe(OnLog);
 		/// :End:
-		Log.Filter = LogLevel.Diagnostic;
 	}
 
 	//////////////////////

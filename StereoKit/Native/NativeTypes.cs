@@ -76,6 +76,11 @@ namespace StereoKit
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
 		/// speed but opening up when there's headroom.</summary>
 		public DepthMode   depthMode;
+		/// <summary> The default log filtering level. This can be changed at
+		/// runtime, but this allows you to set the log filter before 
+		/// Initialization occurs, so you can choose to get information from
+		/// that. Default is LogLevel.Info.</summary>
+		public LogLevel    logFilter;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -745,9 +750,10 @@ namespace StereoKit
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel
 	{
+		None,
 		/// <summary>This is for diagnostic information, where you need to know details about what -exactly-
 		/// is going on in the system. This info doesn't surface by default.</summary>
-		Diagnostic = 0,
+		Diagnostic = 1,
 		/// <summary>This is non-critical information, just to let you know what's going on.</summary>
 		Info,
 		/// <summary>Something bad has happened, but it's still within the realm of what's expected.</summary>

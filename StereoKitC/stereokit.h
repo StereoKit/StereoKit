@@ -73,6 +73,14 @@ typedef enum display_ {
 	display_any_transparent = display_additive | display_blend,
 } display_;
 
+typedef enum log_ {
+	log_none = 0,
+	log_diagnostic,
+	log_inform,
+	log_warning,
+	log_error
+} log_;
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -80,6 +88,7 @@ typedef struct sk_settings_t {
 	display_       blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
+	log_           log_filter;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
@@ -894,12 +903,6 @@ SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
 
 ///////////////////////////////////////////
 
-typedef enum log_{
-	log_diagnostic = 0,
-	log_inform,
-	log_warning,
-	log_error
-} log_;
 typedef enum log_colors_ {
 	log_colors_ansi = 0,
 	log_colors_none

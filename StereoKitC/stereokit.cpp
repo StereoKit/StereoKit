@@ -86,6 +86,13 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_display_mode           = sk_settings.display_preference;
 	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
 	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+	log_set_filter(sk_settings.log_filter == log_none
+#if _DEBUG
+		? log_diagnostic
+#else
+		? log_inform
+#endif
+		: sk_settings.log_filter);
 
 	// Set some default values
 	if (sk_settings.flatscreen_width  == 0)
