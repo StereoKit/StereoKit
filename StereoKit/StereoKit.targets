@@ -24,6 +24,14 @@
 			SourceFiles        = "@(SKSourceFolder)"
 			DestinationFolder  = "$(OutputPath)runtimes/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
+
+		<!-- .NET Framework projects also seem to have the same issue. This
+		doesn't work for Publish, however. -->
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETFramework'"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
 	</Target>
 
 	<!-- Link libraries to Xamarin projects.  -->
