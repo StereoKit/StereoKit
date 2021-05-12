@@ -501,7 +501,7 @@ void uwp_step_end_flat() {
 
 	input_update_predicted();
 
-	matrix view = render_get_cam_root  ();
+	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
