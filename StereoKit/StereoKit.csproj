@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
-		<Platforms>x64;ARM64</Platforms>
+		<Platforms>x64;ARM64;Any CPU</Platforms>
 		<OutputPath>..\bin\</OutputPath>
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
 	</PropertyGroup>
