@@ -3,6 +3,7 @@
 #include "openxr_input.h"
 #include "../hand/hand_oxr_controller.h"
 #include "../input.h"
+#include "../render.h"
 #include "../hand/input_hand.h"
 
 #include "platform_utils.h"
@@ -529,7 +530,8 @@ void oxri_update_frame() {
 
 	// Get input from whatever controllers may be present
 	bool   menu_button = false;
-	matrix root        = render_get_cam_root();
+	matrix root        = render_get_cam_final();
+	quat   root_q      = matrix_extract_rotation(root);
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
@@ -550,8 +552,16 @@ void oxri_update_frame() {
 			bool tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
 			bool valid_pos   = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)      != 0;
 			bool valid_rot   = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)   != 0;
-			if (valid_pos) memcpy(&input_controllers[hand].pose.position,    &space_location.pose.position,    sizeof(vec3));
-			if (valid_rot) memcpy(&input_controllers[hand].pose.orientation, &space_location.pose.orientation, sizeof(quat));
+			if (valid_pos) {
+				vec3 local_pos;
+				memcpy(&local_pos, &space_location.pose.position, sizeof(vec3));
+				input_controllers[hand].pose.position = matrix_mul_point(root, local_pos);
+			}
+			if (valid_rot) {
+				quat local_rot;
+				memcpy(&local_rot, &space_location.pose.orientation, sizeof(quat));
+				input_controllers[hand].pose.orientation = local_rot * root_q;
+			}
 			input_controllers[hand].tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
 			input_controllers[hand].tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
 		}
@@ -561,7 +571,9 @@ void oxri_update_frame() {
 		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };
 		get_info.action = xrc_action_pose_aim;
 		xrGetActionStatePose(xr_session, &get_info, &state_aim);
-		openxr_get_space(xrc_space_aim[hand], &input_controllers[hand].aim);
+		pose_t local_aim;
+		openxr_get_space(xrc_space_aim[hand], &local_aim);
+		input_controllers[hand].aim = { matrix_mul_point(root, local_aim.position), local_aim.orientation * root_q };
 
 		//// Float actions
 
@@ -614,8 +626,8 @@ void oxri_update_frame() {
 	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
 	// eye input
-	pointer_t* pointer = input_get_pointer(xr_eyes_pointer);
 	if (sk_info.eye_tracking_present) {
+		pointer_t           *pointer     = input_get_pointer(xr_eyes_pointer);
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
 		action_info.action = xrc_action_eyes;
@@ -624,10 +636,13 @@ void oxri_update_frame() {
 		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, action_pose.isActive);
 		pointer->tracked = input_eyes_track_state;
 
-		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose)) {
-			pointer->ray.pos     = input_eyes_pose.position;
-			pointer->ray.dir     = input_eyes_pose.orientation * vec3_forward;
-			pointer->orientation = input_eyes_pose.orientation;
+		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose_local)) {
+			input_eyes_pose_world.position    = matrix_mul_point( root, input_eyes_pose_local.position );
+			input_eyes_pose_world.orientation = input_eyes_pose_local.orientation * root_q;
+
+			pointer->ray.pos     = input_eyes_pose_world.position;
+			pointer->ray.dir     = input_eyes_pose_world.orientation * vec3_forward;
+			pointer->orientation = input_eyes_pose_world.orientation;
 		}
 	}
 }

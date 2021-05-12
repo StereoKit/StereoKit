@@ -655,7 +655,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		openxr_projection(view.fov, clip_planes.x, clip_planes.y, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
 		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
-		view_tr = view_tr * render_get_cam_root();
+		view_tr = view_tr * render_get_cam_final();
 		matrix_inverse(view_tr, layer.view_transforms[i]);
 	}
 

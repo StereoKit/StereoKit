@@ -7,4 +7,6 @@ void flatscreen_input_update();
 
 bool flatscreen_is_simulating_movement();
 
+extern matrix fltscr_transform;
+
 } // namespace sk

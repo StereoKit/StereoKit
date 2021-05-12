@@ -21,8 +21,10 @@ mouse_t               input_mouse_data     = {};
 controller_t          input_controllers[2] = {};
 button_state_         input_controller_menubtn = {};
 
-pose_t                input_head_pose  = { vec3_zero, quat_identity };
-pose_t                input_eyes_pose  = { vec3_zero, quat_identity };
+pose_t                input_head_pose_local  = { vec3_zero, quat_identity };
+pose_t                input_head_pose_world  = { vec3_zero, quat_identity };
+pose_t                input_eyes_pose_local  = { vec3_zero, quat_identity };
+pose_t                input_eyes_pose_world  = { vec3_zero, quat_identity };
 button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
@@ -136,13 +138,13 @@ button_state_ input_key(key_ key) {
 ///////////////////////////////////////////
 
 const pose_t *input_head() {
-	return &input_head_pose;
+	return &input_head_pose_world;
 }
 
 ///////////////////////////////////////////
 
 const pose_t *input_eyes() {
-	return &input_eyes_pose;
+	return &input_eyes_pose_world;
 }
 
 ///////////////////////////////////////////

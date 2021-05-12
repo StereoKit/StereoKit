@@ -1,5 +1,6 @@
 #include "render.h"
 #include "render_sort.h"
+#include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math.h"
@@ -13,6 +14,7 @@
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
 #include "../systems/input.h"
+#include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -76,8 +78,9 @@ render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, {
 
 material_buffer_t       render_shader_globals;
 skg_buffer_t            render_shader_blit;
-matrix                  render_camera_root     = matrix_identity;
-matrix                  render_camera_root_inv = matrix_identity;
+matrix                  render_camera_root           = matrix_identity;
+matrix                  render_camera_root_final     = matrix_identity;
+matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
@@ -214,9 +217,29 @@ matrix render_get_cam_root() {
 
 ///////////////////////////////////////////
 
+matrix render_get_cam_final() {
+	return render_camera_root_final;
+}
+
+///////////////////////////////////////////
+
+matrix render_get_cam_final_inv() {
+	return render_camera_root_final_inv;
+}
+
+///////////////////////////////////////////
+
 void render_set_cam_root(const matrix &cam_root) {
-	render_camera_root = cam_root;
-	matrix_inverse(render_camera_root, render_camera_root_inv);
+	render_camera_root       = cam_root;
+	render_camera_root_final = fltscr_transform * cam_root;
+	matrix_inverse(render_camera_root_final, render_camera_root_final_inv);
+
+	// TODO: May want to also update controllers/hands?
+	quat rot = matrix_extract_rotation(render_camera_root_final);
+	input_head_pose_world.position    = matrix_mul_point( render_camera_root_final, input_head_pose_local.position );
+	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
+	input_eyes_pose_world.position    = matrix_mul_point( render_camera_root_final, input_eyes_pose_local.position );
+	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
 }
 
 ///////////////////////////////////////////
@@ -696,7 +719,7 @@ skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, 
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	XMMATRIX fast_proj, fast_view;
 	math_matrix_to_fast(render_get_projection(), &fast_proj);
-	math_matrix_to_fast(render_camera_root_inv,  &fast_view);
+	math_matrix_to_fast(render_camera_root_final_inv,  &fast_view);
 	XMVECTOR result = XMVector3Unproject(math_vec3_to_fast(normalized_screen_pt),
 		0, 0, (float)sk_system_info().display_width, (float)sk_system_info().display_height,
 		0, 1,

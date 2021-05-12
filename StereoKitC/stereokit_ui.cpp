@@ -1242,7 +1242,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				                  hierarchy_to_local_direction(ptr->ray.dir)};
 				if (bounds_ray_intersect(box, far_ray, &at)) {
 					vec3  window_world = hierarchy_to_world_point(vec3_zero);
-					float curr_mag     = vec3_magnitude_sq(input_head_pose.position - window_world);
+					float curr_mag     = vec3_magnitude_sq(input_head_pose_world.position - window_world);
 
 					if (curr_mag < 0.75f * 0.75f) {
 						// Reset id to zero if we found a window that's within touching distance

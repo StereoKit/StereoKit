@@ -50,19 +50,21 @@ struct _render_list_t {
 
 typedef int64_t render_list_t;
 
-matrix render_get_projection();
-color128 render_get_clear_color();
-vec2 render_get_clip();
-void render_draw_matrix (const matrix *views, const matrix *projs, int32_t view_count);
-void render_clear       ();
-vec3 render_unproject_pt(vec3 normalized_screen_pt);
-void render_update_projection();
-const char *render_fmt_name(tex_format_ format);
-skg_tex_fmt_ render_preferred_depth_fmt();
+matrix        render_get_projection       ();
+matrix        render_get_cam_final        ();
+matrix        render_get_cam_final_inv    ();
+color128      render_get_clear_color      ();
+vec2          render_get_clip             ();
+void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count);
+void          render_clear                ();
+vec3          render_unproject_pt         (vec3 normalized_screen_pt);
+void          render_update_projection    ();
+const char   *render_fmt_name             (tex_format_ format);
+skg_tex_fmt_  render_preferred_depth_fmt  ();
 
-bool render_init    ();
-void render_update  ();
-void render_shutdown();
+bool          render_init                 ();
+void          render_update               ();
+void          render_shutdown             ();
 
 render_list_t render_list_create          ();
 void          render_list_release         (render_list_t list);

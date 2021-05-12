@@ -2,6 +2,7 @@
 #include "../../_stereokit.h"
 #include "../platform/openxr.h"
 #include "../input.h"
+#include "../render.h"
 #include "input_hand.h"
 
 #include <openxr/openxr.h>
@@ -141,14 +142,14 @@ void hand_oxra_update_joints() {
 		}
 
 		// Get joint poses from OpenXR
-		matrix root   = render_get_cam_root();
+		matrix root   = render_get_cam_final();
 		quat   root_q = matrix_extract_rotation(root);
 		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
 			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
 			oxra_hand_joints[h][j].position    = matrix_mul_point(root, oxra_hand_joints[h][j].position);
-			oxra_hand_joints[h][j].orientation = root_q * oxra_hand_joints[h][j].orientation;
+			oxra_hand_joints[h][j].orientation = oxra_hand_joints[h][j].orientation * root_q;
 		}
 
 		// Copy the pose data into our hand

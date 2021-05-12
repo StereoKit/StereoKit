@@ -9,9 +9,12 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int   fltscr_gaze_pointer;
-float fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
-vec2  fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
+int    fltscr_gaze_pointer;
+float  fltscr_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed
+vec2   fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to rotation
+matrix fltscr_transform  = matrix_identity;
+vec3   fltscr_head_rot   = { -21, 0.0001f, 0 };
+vec3   fltscr_head_pos   = {  0, 0.2f, 0.0f };
 
 ///////////////////////////////////////////
 
@@ -21,9 +24,8 @@ void flatscreen_mouse_update();
 
 void flatscreen_input_init() {
 	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
-
-	input_head_pose = { vec3{ 0,0.2f,0.4f }, quat_from_angles(-21, 0.0001f, 0) };
-	render_set_cam_root(pose_matrix(input_head_pose));
+	fltscr_transform    = matrix_trs( fltscr_head_pos, quat_from_angles( fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z ));
+	render_set_cam_root(render_get_cam_root());
 }
 
 ///////////////////////////////////////////
@@ -50,27 +52,24 @@ void flatscreen_input_update() {
 			movement = vec3_normalize(movement);
 
 		// head rotation
-		vec3 head_rot = matrix_to_angles(render_get_cam_root());
-		vec3 head_pos = matrix_mul_point(render_get_cam_root(), vec3_zero);
 		quat orientation;
 		if (input_key(key_mouse_right) & button_state_active) {
 			const mouse_t *mouse = input_mouse();
-			head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
-			head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
-			head_rot.x = fmaxf(-89.9f, fminf(head_rot.x, 89.9f));
-			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
+			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
+			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			fltscr_head_rot.x = fmaxf(-89.9f, fminf(fltscr_head_rot.x, 89.9f));
+			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
 			vec2 prev_pt = mouse->pos - mouse->pos_change;
 			input_mouse_data.pos = prev_pt;
 			platform_set_cursor(prev_pt);
 		} else {
-			orientation = quat_from_angles(head_rot.x, head_rot.y, head_rot.z);
+			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 		}
 		// Apply movement to the camera
-		head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
-		input_head_pose = { head_pos, orientation };
-
-		render_set_cam_root(pose_matrix(input_head_pose));
+		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
+		fltscr_transform = matrix_trs(fltscr_head_pos, orientation);
+		render_set_cam_root(render_get_cam_root());
 	}
 
 	if (sk_settings.disable_flatscreen_mr_sim) {
@@ -80,15 +79,17 @@ void flatscreen_input_update() {
 		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
 		ray_t ray = {};
 		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
-			input_eyes_pose.position = ray.pos;
-			input_eyes_pose.orientation = quat_lookat(vec3_zero, ray.dir);
+			input_eyes_pose_world.position    = ray.pos;
+			input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
+			input_eyes_pose_local.position    = matrix_mul_point(render_get_cam_final_inv(), ray.pos);
+			input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_mul_direction(render_get_cam_final_inv(), ray.dir));
 		}
 	}
 
 	pointer_t *pointer_head = input_get_pointer(fltscr_gaze_pointer);
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = input_eyes_pose.position;
-	pointer_head->ray.dir = input_eyes_pose.orientation * vec3_forward;
+	pointer_head->ray.pos = input_eyes_pose_world.position;
+	pointer_head->ray.dir = input_eyes_pose_world.orientation * vec3_forward;
 }
 
 ///////////////////////////////////////////

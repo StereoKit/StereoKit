@@ -3,6 +3,7 @@
 #include "../platform/openxr.h"
 #include "../platform/openxr_input.h"
 #include "../input.h"
+#include "../render.h"
 #include "input_hand.h"
 
 #include <string.h>
@@ -38,70 +39,48 @@ void hand_oxrc_update_frame() {
 	if (xr_time == 0) return;
 
 	// Now we'll get the current states of our actions, and store them for later use
-	matrix root   = render_get_cam_root();
-	quat   root_q = matrix_extract_rotation(root);
-	for (uint32_t hand = 0; hand < handed_max; hand++) {
+	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
+		const controller_t *controller = input_controller ((handed_)hand_id);
+		const hand_t       *hand       = input_hand       ((handed_)hand_id);
+		pointer_t          *pointer    = input_get_pointer(input_hand_pointer_id[hand_id]);
 
 		// Update the hand point pose
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[hand]);
-		pointer->tracked = input_controllers[hand].tracked;
-
+		pointer->tracked = controller->tracked;
 		if (pointer->tracked > 0) {
-			pose_t point_pose = {
-				matrix_mul_point   (root, input_controllers[hand].aim.position),
-				matrix_mul_rotation(root, input_controllers[hand].aim.orientation) };
-
-			pointer->ray.pos     = point_pose.position;
-			pointer->ray.dir     = point_pose.orientation * vec3_forward;
-			pointer->orientation = point_pose.orientation;
+			pointer->ray.pos     = controller->aim.position;
+			pointer->ray.dir     = controller->aim.orientation * vec3_forward;
+			pointer->orientation = controller->aim.orientation;
 		}
 
 		// Simulate the hand based on the state of the controller
-		bool tracked = input_controllers[hand].tracked & button_state_active;
-		
-		pose_t hand_pose = input_hand((handed_)hand)->palm;
+		bool   tracked   = controller->tracked & button_state_active;
+		pose_t hand_pose = input_hand((handed_)hand_id)->palm;
 		if (tracked) {
-			
-			hand_pose.position    = matrix_mul_point   (root, input_controllers[hand].pose.position);
-			hand_pose.orientation = root_q * input_controllers[hand].pose.orientation;
-
-			hand_pose.orientation = xrc_offset_rot[hand] * hand_pose.orientation;
-			hand_pose.position   += hand_pose.orientation * xrc_offset_pos[hand];	
+			hand_pose.orientation = xrc_offset_rot[hand_id] * controller->pose.orientation;
+			hand_pose.position    = controller->pose.position + hand_pose.orientation * xrc_offset_pos[hand_id];
 		}
-		input_hand_sim((handed_)hand, false, hand_pose.position, hand_pose.orientation, tracked, input_controllers[hand].trigger > 0.5f, input_controllers[hand].grip > 0.5f);
+		input_hand_sim((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
 
 		// Get event poses, and fire our own events for them
-		pointer->state = button_make_state(pointer->state & button_state_active, input_controllers[hand].trigger > 0.5f);
+		pointer->state = button_make_state(pointer->state & button_state_active, controller->trigger > 0.5f);
 
-		const hand_t *curr_hand = input_hand((handed_)hand);
-		
-		if (curr_hand->pinch_state & button_state_changed && tracked) {
-			pose_t pose      = {};
-			pose.position    = matrix_mul_point(root, input_controllers[hand].aim.position);
-			pose.orientation = root_q * input_controllers[hand].aim.orientation;
-
+		if (hand->pinch_state & button_state_changed && tracked) {
 			pointer_t event_pointer = *pointer;
-			event_pointer.ray.pos     = pose.position;
-			event_pointer.ray.dir     = pose.orientation * vec3_forward;
-			event_pointer.orientation = pose.orientation;
+			event_pointer.ray.pos     = controller->aim.position;
+			event_pointer.ray.dir     = controller->aim.orientation * vec3_forward;
+			event_pointer.orientation = controller->aim.orientation;
 
-			input_fire_event(event_pointer.source, curr_hand->pinch_state & ~button_state_active, event_pointer);
-
+			input_fire_event(event_pointer.source, hand->pinch_state & ~button_state_active, event_pointer);
 		}
-		if (curr_hand->grip_state & button_state_changed && tracked) {
-			pose_t pose      = {};
-			pose.position    = matrix_mul_point(root, input_controllers[hand].aim.position);
-			pose.orientation = root_q * input_controllers[hand].aim.orientation;
-
+		if (hand->grip_state & button_state_changed && tracked) {
 			pointer_t event_pointer = *pointer;
-			event_pointer.ray.pos = pose.position;
-			event_pointer.ray.dir = pose.orientation * vec3_forward;
-			event_pointer.orientation = pose.orientation;
+			event_pointer.ray.pos     = controller->aim.position;
+			event_pointer.ray.dir     = controller->aim.orientation * vec3_forward;
+			event_pointer.orientation = controller->aim.orientation;
 
-			input_fire_event(event_pointer.source, curr_hand->grip_state & ~button_state_active, event_pointer);
-
+			input_fire_event(event_pointer.source, hand->grip_state & ~button_state_active, event_pointer);
 		}
-		if (curr_hand->tracked_state & button_state_changed) {
+		if (hand->tracked_state & button_state_changed) {
 			input_fire_event(pointer->source, pointer->tracked & ~button_state_active, *pointer);
 		}
 	}
