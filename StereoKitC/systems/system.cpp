@@ -24,8 +24,8 @@ bool              systems_initialized = false;
 
 ///////////////////////////////////////////
 
-int32_t systems_find(const char *name);
-bool    systems_sort();
+int32_t systems_find_id(const char *name);
+bool    systems_sort   ();
 
 void    array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order);
 int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t **out_order);
@@ -39,12 +39,22 @@ void systems_add(const system_t *system) {
 
 ///////////////////////////////////////////
 
-int32_t systems_find(const char *name) {
+int32_t systems_find_id(const char *name) {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
 			return i;
 	}
 	return -1;
+}
+
+///////////////////////////////////////////
+
+system_t *systems_find(const char *name) {
+	for (int32_t i = 0; i < systems.count; i++) {
+		if (string_eq(name, systems[i].name))
+			return &systems[i];
+	}
+	return nullptr;
 }
 
 ///////////////////////////////////////////
@@ -60,7 +70,7 @@ bool systems_sort() {
 		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].update_dependency_count);
 
 		for (size_t d = 0; d < systems[i].update_dependency_count; d++) {
-			update_ids[i].ids[d] = systems_find(systems[i].update_dependencies[d]);
+			update_ids[i].ids[d] = systems_find_id(systems[i].update_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
 				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
 				result = 1;
@@ -86,7 +96,7 @@ bool systems_sort() {
 		init_ids[i].ids   = sk_malloc_t(int32_t, systems[i].init_dependency_count);
 
 		for (size_t d = 0; d < systems[i].init_dependency_count; d++) {
-			init_ids[i].ids[d] = systems_find(systems[i].init_dependencies[d]);
+			init_ids[i].ids[d] = systems_find_id(systems[i].init_dependencies[d]);
 			if (init_ids[i].ids[d] == -1) {
 				log_errf("Can't find system init dependency by the name of %s!", systems[i].init_dependencies[d]);
 				result = 1;
@@ -144,14 +154,16 @@ void systems_update() {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
-			uint64_t start = stm_now();
+			systems[i].profile_frame_start = stm_now();
 
 			systems[i].func_update();
 
 			// end timing
-			systems[i].profile_frame_duration   = stm_since(start);
+			if (systems[i].profile_frame_duration == 0)
+				systems[i].profile_frame_duration = stm_since(systems[i].profile_frame_start);
 			systems[i].profile_update_duration += systems[i].profile_frame_duration;
 			systems[i].profile_update_count    += 1;
+			systems[i].profile_frame_duration   = 0;
 		}
 	}
 }

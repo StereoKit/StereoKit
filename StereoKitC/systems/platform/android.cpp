@@ -6,8 +6,10 @@
 #include "flatscreen_input.h"
 #include "../render.h"
 #include "../input.h"
+#include "../system.h"
 #include "../../_stereokit.h"
 #include "../../libraries/sk_gpu.h"
+#include "../../libraries/sokol_time.h"
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
@@ -25,6 +27,7 @@ ANativeWindow    *android_next_window     = nullptr;
 jobject           android_next_window_xam = nullptr;
 bool              android_next_win_ready  = false;
 skg_swapchain_t   android_swapchain       = {};
+system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
 
@@ -39,6 +42,7 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 ///////////////////////////////////////////
 
 bool android_init() {
+	android_render_sys = systems_find("FrameRender");
 	android_activity = (jobject)sk_settings.android_activity;
 	if (android_vm == nullptr)
 		android_vm = (JavaVM*)sk_settings.android_java_vm;
@@ -226,14 +230,8 @@ void android_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
-}
-
-///////////////////////////////////////////
-
-void android_vsync() {
-	if (!android_window)
-		return;
-
+	
+	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
 	skg_swapchain_present(&android_swapchain);
 }
 

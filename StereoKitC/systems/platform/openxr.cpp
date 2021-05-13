@@ -164,7 +164,6 @@ int64_t openxr_get_time() {
 ///////////////////////////////////////////
 
 bool openxr_init() {
-
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
 	xrGetInstanceProcAddr(

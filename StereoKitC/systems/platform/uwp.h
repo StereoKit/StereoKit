@@ -9,7 +9,6 @@ bool uwp_start_flat     ();
 void uwp_step_begin_xr  ();
 void uwp_step_begin_flat();
 void uwp_step_end_flat  ();
-void uwp_vsync          ();
 void uwp_stop_flat      ();
 void uwp_shutdown       ();
 

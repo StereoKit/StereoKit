@@ -8,6 +8,8 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
+#include "../../libraries/sokol_time.h"
+#include "../system.h"
 #include "../render.h"
 #include "../input.h"
 #include "../input_keyboard.h"
@@ -18,10 +20,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-HWND            win32_window    = nullptr;
-skg_swapchain_t win32_swapchain = {};
-float           win32_scroll    = 0;
+HWND            win32_window              = nullptr;
+skg_swapchain_t win32_swapchain           = {};
+float           win32_scroll              = 0;
 LONG_PTR        win32_openxr_base_winproc = 0;
+system_t       *win32_render_sys          = nullptr;
 
 // For managing window resizing
 bool win32_check_resize = true;
@@ -111,6 +114,7 @@ bool win32_start_post_xr() {
 ///////////////////////////////////////////
 
 bool win32_init() {
+	win32_render_sys = systems_find("FrameRender");
 	return true;
 }
 
@@ -248,11 +252,8 @@ void win32_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
-}
 
-///////////////////////////////////////////
-
-void win32_vsync() {
+	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
 	skg_swapchain_present(&win32_swapchain);
 }
 

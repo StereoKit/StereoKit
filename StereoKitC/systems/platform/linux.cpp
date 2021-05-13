@@ -10,15 +10,18 @@
 #include "../render.h"
 #include "../input.h"
 #include "../input_keyboard.h"
+#include "../system.h"
 #include "../../_stereokit.h"
 #include "../../log.h"
 #include "../../libraries/sk_gpu.h"
+#include "../../libraries/sokol_time.h"
 
 namespace sk {
 
 ///////////////////////////////////////////
 
 skg_swapchain_t         linux_swapchain;
+system_t               *linux_render_sys = nullptr;
 
 Display                *dpy;
 Window                  root;
@@ -238,6 +241,7 @@ bool window_closed_because_openxr = false;
 ///////////////////////////////////////////
 
 bool linux_init() {
+	linux_render_sys = systems_find("FrameRender");
 	linux_init_key_lookups();
 
 	dpy = XOpenDisplay(0);
@@ -446,11 +450,8 @@ void linux_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
-}
 
-///////////////////////////////////////////
-
-void linux_vsync() {
+	linux_render_sys->profile_frame_duration = stm_since(linux_render_sys->profile_frame_start);
 	skg_swapchain_present(&linux_swapchain);
 }
 

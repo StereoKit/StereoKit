@@ -7,6 +7,8 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
+#include "../../libraries/sokol_time.h"
+#include "../system.h"
 #include "../render.h"
 #include "../input.h"
 #include "../input_keyboard.h"
@@ -14,8 +16,9 @@
 
 namespace sk {
 
-HWND            uwp_window    = nullptr;
-skg_swapchain_t uwp_swapchain = {};
+HWND            uwp_window     = nullptr;
+skg_swapchain_t uwp_swapchain  = {};
+system_t       *uwp_render_sys = nullptr;
 
 bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
@@ -429,6 +432,7 @@ void uwp_show_keyboard(bool show) {
 ///////////////////////////////////////////
 
 bool uwp_init() {
+	uwp_render_sys = systems_find("FrameRender");
 	return true;
 }
 
@@ -506,11 +510,8 @@ void uwp_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
-}
 
-///////////////////////////////////////////
-
-void uwp_vsync() {
+	uwp_render_sys->profile_frame_duration = stm_since(uwp_render_sys->profile_frame_start);
 	skg_swapchain_present(&uwp_swapchain);
 }
 

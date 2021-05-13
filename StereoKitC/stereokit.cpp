@@ -48,6 +48,9 @@ double  sk_timev_elapsed_us  = 0;
 float   sk_timev_elapsedf_us = 0;
 uint64_t sk_timev_raw        = 0;
 
+uint64_t  app_init_time = 0;
+system_t *app_system    = nullptr;
+
 ///////////////////////////////////////////
 
 sk_settings_t sk_get_settings() {
@@ -106,28 +109,22 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_update_timer();
 
 	// Platform related systems
-	system_t sys_platform         = { "Platform"     };
-	system_t sys_platform_begin   = { "FrameBegin"   };
-	system_t sys_platform_render  = { "FrameRender"  };
-	system_t sys_platform_present = { "FramePresent" };
+	system_t sys_platform         = { "Platform"    };
+	system_t sys_platform_begin   = { "FrameBegin"  };
+	system_t sys_platform_render  = { "FrameRender" };
 
 	sys_platform        .func_initialize = platform_init;
 	sys_platform        .func_shutdown   = platform_shutdown;
 	sys_platform_begin  .func_update     = platform_step_begin;
 	sys_platform_render .func_update     = platform_step_end;
-	sys_platform_present.func_update     = platform_present;
 
-	const char *frame_present_update_deps[] = {"FrameRender"};
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
-	sys_platform_present.update_dependencies     = frame_present_update_deps;
-	sys_platform_present.update_dependency_count = _countof(frame_present_update_deps);
 
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);
 	systems_add(&sys_platform_render);
-	systems_add(&sys_platform_present);
 
 	// Rest of the systems
 	system_t sys_defaults = { "Defaults" };
@@ -243,6 +240,9 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_initialized = systems_initialize();
 	if (!sk_initialized) log_show_any_fail_reason();
 	else                 log_clear_any_fail_reason();
+
+	app_system    = systems_find("App");
+	app_init_time = stm_now();
 	return sk_initialized;
 }
 
@@ -276,6 +276,9 @@ void sk_quit() {
 ///////////////////////////////////////////
 
 bool32_t sk_step(void (*app_update)(void)) {
+	if (app_system->profile_start_duration == 0)
+		app_system->profile_start_duration = stm_since(app_init_time);
+
 	sk_app_update_func = app_update;
 	sk_update_timer();
 

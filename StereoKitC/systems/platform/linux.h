@@ -14,7 +14,6 @@ bool  linux_start_flat     ();
 void  linux_step_begin_xr  ();
 void  linux_step_begin_flat();
 void  linux_step_end_flat  ();
-void  linux_vsync          ();
 void  linux_stop_flat      ();
 void  linux_shutdown       ();
 

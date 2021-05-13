@@ -21,7 +21,6 @@ bool android_start_flat     ();
 void android_step_begin_xr  ();
 void android_step_begin_flat();
 void android_step_end_flat  ();
-void android_vsync          ();
 void android_stop_flat      ();
 void android_shutdown       ();
 

@@ -14,7 +14,6 @@ bool win32_start_flat     ();
 void win32_step_begin_xr  ();
 void win32_step_begin_flat();
 void win32_step_end_flat  ();
-void win32_vsync          ();
 void win32_stop_flat      ();
 void win32_shutdown       ();
 

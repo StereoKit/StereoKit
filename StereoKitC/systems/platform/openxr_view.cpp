@@ -9,6 +9,8 @@
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
+#include "../../libraries/sokol_time.h"
+#include "../system.h"
 #include "platform_utils.h"
 
 #include <openxr/openxr.h>
@@ -78,6 +80,7 @@ XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
 XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+system_t               *xr_render_sys      = nullptr;
 
 array_t<device_display_t>                          xr_displays           = {};
 array_t<XrViewConfigurationType>                   xr_display_types      = {};
@@ -108,6 +111,8 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 ///////////////////////////////////////////
 
 bool openxr_views_create() {
+	xr_render_sys = systems_find("FrameRender");
+
 	// Find all the valid view configurations
 	uint32_t count = 0;
 	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, 0, &count, nullptr),
@@ -505,6 +510,9 @@ bool openxr_render_frame() {
 	}
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
 		"xrWaitFrame [%s]");
+
+	// Don't track sync time, start the frame timer after xrWaitFrame
+	xr_render_sys->profile_frame_start = stm_now();
 
 	// Check active for the primary display
 	bool session_active =

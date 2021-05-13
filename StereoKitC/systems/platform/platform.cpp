@@ -210,26 +210,6 @@ void platform_step_end() {
 
 ///////////////////////////////////////////
 
-void platform_present() {
-	switch (platform_mode) {
-	case display_mode_none: break;
-	case display_mode_mixedreality: break;
-	case display_mode_flatscreen: {
-#if   defined(SK_OS_ANDROID)
-		android_vsync();
-#elif defined(SK_OS_LINUX)
-		linux_vsync  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_vsync    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_vsync  ();
-#endif
-	} break;
-	}
-}
-
-///////////////////////////////////////////
-
 void platform_stop_mode() {
 	switch (platform_mode) {
 	case display_mode_none: break;
