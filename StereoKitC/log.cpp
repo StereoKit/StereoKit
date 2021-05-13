@@ -17,7 +17,11 @@ namespace sk {
 typedef void(*log_listener_t)(log_, const char *);
 array_t<log_listener_t> log_listeners = {};
 
+#if _DEBUG
 log_        log_filter = log_diagnostic;
+#else
+log_        log_filter = log_inform;
+#endif
 log_colors_ log_colors = log_colors_ansi;
 
 char       *log_fail_reason_str = nullptr;
@@ -197,15 +201,15 @@ void log_write(log_ level, const char *text) {
 ///////////////////////////////////////////
 
 void _log_writef(log_ level, const char* text, va_list args) {
-    va_list copy;
-    va_copy(copy, args);
-    size_t length = vsnprintf(nullptr, 0, text, args);
-    char*  buffer = sk_malloc_t(char, length + 2);
-    vsnprintf(buffer, length + 2, text, copy);
+	va_list copy;
+	va_copy(copy, args);
+	size_t length = vsnprintf(nullptr, 0, text, args);
+	char*  buffer = sk_malloc_t(char, length + 2);
+	vsnprintf(buffer, length + 2, text, copy);
 
-    log_write(level, buffer);
-    free(buffer);
-    va_end(copy);
+	log_write(level, buffer);
+	free(buffer);
+	va_end(copy);
 }
 
 ///////////////////////////////////////////
