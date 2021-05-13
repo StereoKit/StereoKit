@@ -281,7 +281,7 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
 	skui_settings = settings; 
 
-	ui_quadrant_mesh(settings.padding);
+	ui_quadrant_mesh(settings.padding*0.75f);
 }
 
 ///////////////////////////////////////////
@@ -317,7 +317,7 @@ void ui_pop_text_style() {
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.8f, 1));
 
-	ui_quadrant_mesh(skui_settings.padding);
+	ui_quadrant_mesh(skui_settings.padding*0.75f);
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find(default_id_material_ui);

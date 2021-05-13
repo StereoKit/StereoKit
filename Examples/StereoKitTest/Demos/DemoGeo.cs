@@ -136,7 +136,7 @@ class DemoGeo : ITest
 		Model cubeModel = demoCubeModel;
 
 		Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vec3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
-		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.222f), new Vec3(1.012f, -0.682f, -0.131f));
+		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.358f), new Vec3(1.012f, -0.682f, 0));
 
 		/// :CodeSample: Mesh.GenerateCube
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 

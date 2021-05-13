@@ -116,7 +116,10 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id) {
-	tex_t    image  = tex_create_file(filename);
+	tex_t image = tex_create_file(filename);
+	if (image == nullptr) return nullptr;
+
+	tex_set_address(image, tex_address_clamp);
 	sprite_t result = sprite_create(image, type, atlas_id);
 	tex_release(image);
 	return result;
