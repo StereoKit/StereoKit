@@ -705,6 +705,9 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	desc_depthstate.BackFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
 	d3d_device->CreateDepthStencilState(&desc_depthstate, &d3d_depthstate);
 
+	// This sets the default rasterize, depth_stencil, topology mode, etc.
+	skg_draw_begin();
+
 	return 1;
 }
 
