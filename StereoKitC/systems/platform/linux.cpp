@@ -443,6 +443,8 @@ void linux_step_end_flat() {
 	skg_swapchain_bind(&linux_swapchain);
 	skg_target_clear(true, &col.r);
 
+	linux_render_sys->profile_frame_start = stm_now();
+
 	input_update_predicted();
 
 	matrix view = render_get_cam_final ();
@@ -451,7 +453,6 @@ void linux_step_end_flat() {
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
 
-	linux_render_sys->profile_frame_duration = stm_since(linux_render_sys->profile_frame_start);
 	skg_swapchain_present(&linux_swapchain);
 }
 
