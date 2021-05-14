@@ -330,9 +330,15 @@ namespace StereoKit
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
 
+		/// <summary>This pushes a Text Style onto the style stack! All text
+		/// elements rendered by the GUI system will now use this styling.
+		/// </summary>
+		/// <param name="style">A valid TextStyle to use.</param>
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
+		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
 
