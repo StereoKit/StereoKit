@@ -15,22 +15,29 @@
 			SourceFiles        = "@(SKSourceFolder)"
 			DestinationFolder  = "$(BaseIntermediateOutputPath)lib/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
+
+		<!-- .Net Core 2.x behaves fine using the above for publishing, but
+		not for development. So! This is a manual copy that happens by default
+		on other versions of .Net Core.-->
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFrameworkVersion.StartsWith('v2.'))"
+			SourceFiles        = "@(SKSourceFolder)"
+			DestinationFolder  = "$(OutputPath)runtimes/%(RecursiveDir)"
+			SkipUnchangedFiles = "true"/>
+
+		<!-- .NET Framework projects also seem to have the same issue. This
+		doesn't work for Publish, however. -->
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETFramework'"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
 	</Target>
 
 	<!-- Link libraries to Xamarin projects.  -->
 	<ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'">
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so"/>
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so" />
-	</ItemGroup>
-
-	<!-- Win32 projects -->
-	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Windows'">
-		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="$(BaseIntermediateOutputPath)lib/win-x64/native/StereoKitC.dll" />
-	</ItemGroup>
-
-	<!-- Linux projects -->
-	<ItemGroup Condition="'$(OutputType)'!='Library' and '$(TargetPlatformIdentifier)'=='Linux'">
-		<None CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(BaseIntermediateOutputPath)lib/linux-x64/native/libStereoKitC.so" />
 	</ItemGroup>
 
 </Project>

@@ -28,5 +28,6 @@ void systems_add       (const system_t *system);
 bool systems_initialize();
 void systems_update    ();
 void systems_shutdown  ();
+system_t *systems_find (const char *name);
 
 } // namespace sk

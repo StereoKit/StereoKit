@@ -59,6 +59,13 @@ namespace StereoKit
 		public void Draw(in Matrix transform, Color32 color) 
 			=> NativeAPI.sprite_draw(_inst, transform, color);
 
+		/// <summary>Draw the sprite on a quad with the provided transform!
+		/// </summary>
+		/// <param name="transform">A Matrix describing a transform from 
+		/// model space to world space.</param>
+		public void Draw(in Matrix transform)
+			=> NativeAPI.sprite_draw(_inst, transform, Color32.White);
+
 		/// <summary>Create a sprite from an image file! This loads a Texture
 		/// from file, and then uses that Texture as the source for the 
 		/// Sprite.</summary>

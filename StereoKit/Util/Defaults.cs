@@ -47,6 +47,23 @@
 		/// that creates a 'finger shadow' that shows how close the finger is 
 		/// to the UI.</summary>
 		public static Material MaterialUI       { get; private set; }
+		/// <summary> A material for indicating interaction volumes! It
+		/// renders a border around the edges of the UV coordinates that will
+		/// 'grow' on proximity to the user's finger. It will discard pixels
+		/// outside of that border, but will also show the finger shadow.
+		/// This is meant to be an opaque material, so it works well for
+		/// depth LSR.
+		/// 
+		/// This material works best on cube-like meshes where each face has
+		/// UV coordinates from 0-1.
+		/// 
+		/// Shader Parameters:
+		/// ```color                - color
+		/// border_size          - meters
+		/// border_size_grow     - meters
+		/// border_affect_radius - meters```
+		/// </summary>
+		public static Material MaterialUIBox { get; private set; }
 
 		/// <summary>Default 2x2 white opaque texture, this is the texture 
 		/// referred to as 'white' in the shader texture defaults.</summary>
@@ -72,11 +89,17 @@
 		/// lighting.</summary>
 		public static Tex Cubemap  { get; private set; }
 
-		/// <summary>A default quad mesh, 2 triangles, 4 verts, from (-1,-1,0) 
-		/// to (1,1,0) and facing forward on the Z axis (0,0,-1). White 
-		/// vertex colors, and UVs from (0,0) at vertex (-1,-1,0) to (1,1) at 
-		/// vertex (1,1,0).</summary>
+		/// <summary>A default quad mesh, 2 triangles, 4 verts, from 
+		/// (-.5,-.5,0) to (.5,.5,0) and facing forward on the Z axis 
+		/// (0,0,-1). White vertex colors, and UVs from (0,0) at vertex 
+		/// (-1,-1,0) to (1,1) at vertex (1,1,0).</summary>
 		public static Mesh MeshQuad   { get; private set; }
+		/// <summary>A default quad mesh designed for full-screen rendering.
+		/// 2 triangles, 4 verts, from (-1,-1,0) to (1,1,0) and facing
+		/// backwards on the Z axis (0,0,1). White vertex colors, and UVs
+		/// from (0,0) at vertex (-1,-1,0) to (1,1) at vertex (1,1,0).
+		/// </summary>
+		public static Mesh MeshScreenQuad { get; private set; }
 		/// <summary>A cube with dimensions of (1,1,1), this is equivalent to
 		/// Mesh.GenerateCube(Vec3.One).</summary>
 		public static Mesh MeshCube   { get; private set; }
@@ -112,6 +135,21 @@
 		/// distance circle effect that helps indicate finger distance from 
 		/// the surface of the object.</summary>
 		public static Shader ShaderUI       { get; private set; }
+		/// <summary>A shader for indicating interaction volumes! It renders
+		/// a border around the edges of the UV coordinates that will 'grow'
+		/// on proximity to the user's finger. It will discard pixels outside
+		/// of that border, but will also show the finger shadow. This is
+		/// meant to be an opaque shader, so it works well for depth LSR.
+		/// 
+		/// This shader works best on cube-like meshes where each face has
+		/// UV coordinates from 0-1.
+		/// 
+		/// Shader Parameters:
+		/// ```color                - color
+		/// border_size          - meters
+		/// border_size_grow     - meters
+		/// border_affect_radius - meters```</summary>
+		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a 
 		/// procedurally generated sound based on a mouse press, with extra 
@@ -122,6 +160,11 @@
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
+		/// <summary>The default font used by StereoKit's text. This varies
+		/// from platform to platform, but is typically a sans-serif general
+		/// purpose font, such as Segoe UI.</summary>
+		public static Font Font { get; private set; }
+
 		internal static void Initialize()
 		{
 			Material         = Material.Find(DefaultIds.material);
@@ -131,6 +174,7 @@
 			MaterialFont     = Material.Find(DefaultIds.materialFont);
 			MaterialHand     = Material.Find(DefaultIds.materialHand);
 			MaterialUI       = Material.Find(DefaultIds.materialUI);
+			MaterialUIBox    = Material.Find(DefaultIds.materialUIBox);
 
 			Tex      = Tex.Find(DefaultIds.tex);
 			TexBlack = Tex.Find(DefaultIds.texBlack);
@@ -139,9 +183,12 @@
 			TexRough = Tex.Find(DefaultIds.texRough);
 			Cubemap  = Tex.Find(DefaultIds.cubemap);
 
-			MeshQuad   = Mesh.Find(DefaultIds.meshQuad);
-			MeshCube   = Mesh.Find(DefaultIds.meshCube);
-			MeshSphere = Mesh.Find(DefaultIds.meshSphere);
+			Font = Font.Find(DefaultIds.font);
+
+			MeshQuad       = Mesh.Find(DefaultIds.meshQuad);
+			MeshScreenQuad = Mesh.Find(DefaultIds.meshScreenQuad);
+			MeshCube       = Mesh.Find(DefaultIds.meshCube);
+			MeshSphere     = Mesh.Find(DefaultIds.meshSphere);
 
 			Shader         = Shader.Find(DefaultIds.shader);
 			ShaderPbr      = Shader.Find(DefaultIds.shaderPbr);
@@ -149,6 +196,7 @@
 			ShaderFont     = Shader.Find(DefaultIds.shaderFont);
 			ShaderEquirect = Shader.Find(DefaultIds.shaderEquirect);
 			ShaderUI       = Shader.Find(DefaultIds.shaderUI);
+			ShaderUIBox    = Shader.Find(DefaultIds.shaderUIBox);
 
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
@@ -161,6 +209,7 @@
 			MaterialFont     = null;
 			MaterialHand     = null;
 			MaterialUI       = null;
+			MaterialUIBox    = null;
 
 			Tex      = null;
 			TexBlack = null;
@@ -168,6 +217,8 @@
 			TexFlat  = null;
 			TexRough = null;
 			Cubemap  = null;
+
+			Font = null;
 
 			MeshQuad   = null;
 			MeshCube   = null;
@@ -179,6 +230,7 @@
 			ShaderFont     = null;
 			ShaderEquirect = null;
 			ShaderUI       = null;
+			ShaderUIBox    = null;
 
 			SoundClick   = null;
 			SoundUnclick = null;

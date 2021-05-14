@@ -33,8 +33,10 @@ font_t font_create(const char *file) {
 
 	unsigned char *data;
 	size_t length;
-	if (!platform_read_file(file, (void**)&data, &length))
+	if (!platform_read_file(file, (void **)&data, &length)) {
+		log_warnf("Font file failed to load: %s", file);
 		return nullptr;
+	}
 
 	// Load and pack font data
 	const int w = 1024;
@@ -46,8 +48,8 @@ font_t font_create(const char *file) {
 	stbtt_pack_context pc;
 	stbtt_packedchar chars[256];
 	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
-	bitmap = sk_malloc_t<uint8_t>(w * h);
-	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 1, NULL);
+	bitmap = sk_malloc_t(uint8_t, w * h);
+	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 2, NULL);
 	stbtt_PackFontRange(&pc, data, 0, size, start_char, 254, chars);
 	stbtt_PackEnd(&pc);
 	free(data);
@@ -68,7 +70,7 @@ font_t font_create(const char *file) {
 	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
 
 	// Convert to color data
-	color32 *colors = sk_malloc_t<color32>(w * h);
+	color32 *colors = sk_malloc_t(color32, w * h);
 	for (size_t i = 0; i < w*h; i++) {
 		colors[i] = color32{ bitmap[i], 0, 0, 0 };
 	}

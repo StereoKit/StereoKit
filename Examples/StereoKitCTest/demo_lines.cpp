@@ -97,9 +97,9 @@ void demo_lines_draw() {
 		}
 	}
 
-	line_add_listv(&line_draw[0], line_draw.size());
-	for (int i = 0; i < line_list.size(); i++)
-		line_add_listv(&line_list[i][0], line_list[i].size());
+	line_add_listv(line_draw.data(), (int32_t)line_draw.size());
+	for (size_t i = 0; i < line_list.size(); i++)
+		line_add_listv(&line_list[i][0], (int32_t)line_list[i].size());
 	line_prev_tip = tip;
 }
 

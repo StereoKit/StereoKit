@@ -52,9 +52,22 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
+			if (!NativeLib.Load()) {
+				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
+				Console.WriteLine                         ("[SK error] Failed to load StereoKitC!");
+				return false;
+			}
+
 			IsInitialized = InitializeCall(settings);
 			return IsInitialized;
 		}
+
+		/// <summary>If you need to call StereoKit code before calling
+		/// SK.Initialize, you may need to explicitly load the library first.
+		/// This can be useful for setting up a few things, but should
+		/// probably be a pretty rare case.</summary>
+		public static void PreLoadLibrary()
+			=> NativeLib.Load();
 
 		public static void SetWindow(IntPtr window)
 			=> NativeAPI.sk_set_window_xam(window);

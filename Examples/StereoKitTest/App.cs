@@ -1,13 +1,16 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System.Collections.Generic;
 
 class App
 {
-	string     startTest = "geo";
+	string     startTest = "welcome";
 	SKSettings settings  = new SKSettings {
 		appName           = "StereoKit C#",
 		assetsFolder      = "Assets",
-		displayPreference = DisplayMode.MixedReality };
+		blendPreference   = DisplayBlend.AnyTransparent,
+		displayPreference = DisplayMode.MixedReality,
+		logFilter         = LogLevel.Diagnostic};
 
 	public SKSettings Settings => settings;
 
@@ -25,6 +28,9 @@ class App
 		if (Tests.IsTesting)
 			settings.displayPreference = DisplayMode.Flatscreen;
 
+		// Preload the StereoKit library for access to Time.Scale before
+		// initialization occurs.
+		SK.PreLoadLibrary();
 		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		/// :CodeSample: Log.Subscribe Log
@@ -32,7 +38,6 @@ class App
 		/// your initialization code!
 		Log.Subscribe(OnLog);
 		/// :End:
-		Log.Filter = LogLevel.Diagnostic;
 	}
 
 	//////////////////////
@@ -44,15 +49,18 @@ class App
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
 
-		floorMesh = Model.FromMesh(Mesh.GenerateCube(Vec3.One), floorMat);
-		floorTr   = Matrix.TRS(new Vec3(0, -1.5f, 0), Quat.Identity, new Vec3(40, .01f, 40));
+		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
+		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
 
-		demoSelectPose.position    = new Vec3(0, 0, -0.4f);
+		demoSelectPose.position    = new Vec3(0, 0, -0.6f);
 		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
 
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+
+		if (!Tests.IsTesting)
+			SK.AddStepper(new RenderCamera(new Pose(0.3f, 0, .5f, Quat.FromAngles(0,-90,0)), 1000, 1000));
 	}
 
 	//////////////////////
@@ -66,7 +74,7 @@ class App
 
 		// If we can't see the world, we'll draw a floor!
 		if (SK.System.displayType == Display.Opaque)
-			Renderer.Add(floorMesh, floorTr, Color.White);
+			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
 
 		// Skip selection window if we're in test mode
 		if (Tests.IsTesting)
@@ -100,6 +108,10 @@ class App
 				Tests.SetDemoActive(i);
 			UI.SameLine();
 		}
+		UI.NextLine();
+		UI.HSeparator();
+		if (UI.Button("Exit"))
+			SK.Quit();
 		UI.WindowEnd();
 
 		RulerWindow();
@@ -118,14 +130,14 @@ class App
 	static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
 	static void RulerWindow()
 	{
-		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(30,4,1)*U.cm), true);
+		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(31,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
 		Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
 		for (int d = 0; d <= 60; d+=1)
 		{
 			float x = d/2.0f;
 			float size = d%2==0?1f:0.15f;
-			Lines.Add(new Vec3(15-x,2,-.6f)*U.cm, new Vec3(15-x,2-size, -.6f)*U.cm, color, U.mm*0.5f);
+			Lines.Add(new Vec3(15-x,1.8f,-.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
 			if (d%2==0 && d/2 != 30)
 				Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
 		}

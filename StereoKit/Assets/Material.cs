@@ -89,7 +89,8 @@ namespace StereoKit
 			set => NativeAPI.material_set_cull(_inst, value); }
 		/// <summary>Should this material draw only the edges/wires of the 
 		/// mesh? This can be useful for debugging, and even some kinds of
-		/// visualization work.</summary>
+		/// visualization work. Note that this may not work on some mobile
+		/// OpenGL systems like Quest.</summary>
 		public bool Wireframe {
 			get => NativeAPI.material_get_wireframe(_inst)>0;
 			set => NativeAPI.material_set_wireframe(_inst, value); }

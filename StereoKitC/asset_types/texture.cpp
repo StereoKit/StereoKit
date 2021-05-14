@@ -12,6 +12,9 @@
 #include "../libraries/stb_image.h"
 #pragma warning( default : 26451 6011 6262 6308 6387 28182 )
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -146,14 +149,16 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 	void  *file_data;
 	size_t file_size;
-	if (!platform_read_file(assets_file(file), &file_data, &file_size))
+	if (!platform_read_file(assets_file(file), &file_data, &file_size)) {
+		log_warnf("Texture file failed to load: %s", file);
 		return nullptr;
+	}
 
 	result = tex_create_mem(file_data, file_size, srgb_data);
 	free(file_data);
 
 	if (result == nullptr) {
-		log_warnf("Issue loading file [%s]", file);
+		log_warnf("Texture file failed to load: %s", file);
 		return nullptr;
 	}
 	tex_set_id(result, file);
@@ -163,16 +168,103 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
+tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+	// Hash the names of all of the files together
+	uint64_t hash = HASH_FNV64_START;
+	for (size_t i = 0; i < file_count; i++) {
+		hash_fnv64_string(files[i], hash);
+	}
+	char file_id[64];
+	snprintf(file_id, sizeof(file_id), "tex_arr/%" PRIu64, hash);
+
+	// And see if it's already been loaded
+	tex_t result = tex_find(file_id);
+	if (result != nullptr) {
+		if (result->light_info && sh_lighting_info)
+			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
+		return result;
+	}
+
+	// Load all files
+	uint8_t **data = sk_malloc_t(uint8_t*, file_count);
+	int  final_width  = 0;
+	int  final_height = 0;
+	bool loaded       = true;
+	for (size_t i = 0; i < file_count; i++) {
+		int channels = 0;
+		int width    = 0;
+		int height   = 0;
+
+		// TODO: this will fail on weird file systems! Also support HDRs
+		data[i] = stbi_load(assets_file(files[i]), &width, &height, &channels, 4);
+
+		// Check if there were issues, or one of the images is the wrong size!
+		if (data[i] == nullptr || 
+			(final_width  != 0 && final_width  != width ) ||
+			(final_height != 0 && final_height != height)) {
+			loaded = false;
+			log_errf("Issue loading image array '%s', file not found, invalid image format, or images of different sizes?", files[i]);
+			break;
+		}
+		final_width  = width;
+		final_height = height;
+	}
+
+	// free memory if we failed
+	if (!loaded) {
+		for (size_t i = 0; i < file_count; i++) {
+			free(data[i]);
+		}
+		free(data);
+		return nullptr;
+	}
+
+	// Create with the data we have
+	result = tex_create(type, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, sh_lighting_info);
+	tex_set_id       (result, file_id);
+
+	if (sh_lighting_info) {
+		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+	}
+
+	for (size_t i = 0; i < file_count; i++) {
+		free(data[i]);
+	}
+	free(data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_data) {
+	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, nullptr);
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, sh_lighting_info);
+}
+
+///////////////////////////////////////////
+
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
 	tex_t result = tex_find(equirectangular_file);
-	if (result != nullptr)
+	if (result != nullptr) {
+		if (result->light_info && sh_lighting_info)
+			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
+	}
 
 	const vec3 up   [6] = { -vec3_up, -vec3_up, vec3_forward, -vec3_forward, -vec3_up, -vec3_up };
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
 	tex_t equirect = tex_create_file(equirectangular_file, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_address(equirect, tex_address_clamp);
 	if (equirect == nullptr)
 		return nullptr;
 	equirect->header.id = hash_fnv64_string("temp/equirectid");
@@ -200,59 +292,15 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_set_color_arr(result, width, height, (void**)&data, 6, sh_lighting_info);
 	tex_set_id       (result, equirectangular_file);
 
+	if (sh_lighting_info) {
+		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+	}
+
 	material_release(convert_material);
 	tex_release(equirect);
 	tex_release(face);
 
-	for (size_t i = 0; i < 6; i++) {
-		free(data[i]);
-	}
-
-	return result;
-}
-
-///////////////////////////////////////////
-
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
-	tex_t result = tex_find(cube_face_file_xxyyzz[0]);
-	if (result != nullptr)
-		return result;
-
-	// Load all 6 faces
-	uint8_t *data[6] = {};
-	int  final_width  = 0;
-	int  final_height = 0;
-	bool loaded       = true;
-	for (size_t i = 0; i < 6; i++) {
-		int channels = 0;
-		int width    = 0;
-		int height   = 0;
-		data[i] = stbi_load(assets_file(cube_face_file_xxyyzz[i]), &width, &height, &channels, 4);
-
-		// Check if there were issues, or one of the images is the wrong size!
-		if (data[i] == nullptr || 
-			(final_width  != 0 && final_width  != width ) ||
-			(final_height != 0 && final_height != height)) {
-			loaded = false;
-			log_errf("Issue loading cubemap image '%s', file not found, invalid image format, or faces of different sizes?", cube_face_file_xxyyzz[i]);
-			break;
-		}
-		final_width  = width;
-		final_height = height;
-	}
-
-	// free memory if we failed
-	if (!loaded) {
-		for (size_t i = 0; i < 6; i++) {
-			free(data[i]);
-		}
-		return nullptr;
-	}
-
-	// Create with the data we have
-	result = tex_create(tex_type_image | tex_type_cubemap, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-	tex_set_color_arr(result, final_width, final_height, (void**)&data, 6, sh_lighting_info);
-	tex_set_id       (result, cube_face_file_xxyyzz[0]);
 	for (size_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -271,6 +319,7 @@ void tex_release(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_destroy(tex_t tex) {
+	free(tex->light_info);
 	skg_tex_destroy(&tex->tex);
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
@@ -470,7 +519,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	int32_t  size2 = size * size;
 	color128*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t<color128>(size2);
+		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -529,7 +578,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 	int32_t  size2 = size * size;
 	color128 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t<color128>(size2);
+		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);

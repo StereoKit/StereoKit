@@ -26,6 +26,9 @@
 
 #include  "miniz.h"
 
+#pragma warning( push )
+#pragma warning( disable: 4127 4334 4244 )
+
 typedef unsigned char mz_validate_uint16[sizeof(mz_uint16) == 2 ? 1 : -1];
 typedef unsigned char mz_validate_uint32[sizeof(mz_uint32) == 4 ? 1 : -1];
 typedef unsigned char mz_validate_uint64[sizeof(mz_uint64) == 8 ? 1 : -1];
@@ -7239,3 +7242,4 @@ mz_bool mz_zip_end(mz_zip_archive *pZip)
 
 #endif /*#ifndef MINIZ_NO_ARCHIVE_APIS*/
 
+#pragma warning( pop )

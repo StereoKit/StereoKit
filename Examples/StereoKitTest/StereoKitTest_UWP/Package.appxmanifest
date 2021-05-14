@@ -49,5 +49,6 @@
     <uap2:Capability Name="spatialPerception"/>
     <DeviceCapability Name="webcam"/>
     <DeviceCapability Name="gazeInput"/>
+    <DeviceCapability Name="microphone"/>
   </Capabilities>
 </Package>

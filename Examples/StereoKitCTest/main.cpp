@@ -6,6 +6,7 @@ using namespace sk;
 #include "scene.h"
 #include "demo_basics.h"
 #include "demo_ui.h"
+#include "demo_mic.h"
 #include "demo_sprites.h"
 #include "demo_lines.h"
 
@@ -31,6 +32,11 @@ scene_t demos[] = {
 		demo_ui_update,
 		demo_ui_shutdown,
 	}, {
+		"Microphone",
+		demo_mic_init,
+		demo_mic_update,
+		demo_mic_shutdown,
+	}, {
 		"Sprites",
 		demo_sprites_init,
 		demo_sprites_update,
@@ -55,13 +61,6 @@ void common_init();
 void common_update();
 void common_shutdown();
 void ruler_window();
-
-#if defined(_WIN32)
-const char* assets_folder = "Assets";
-#else
-// Assume running on Linux from repository root
-const char* assets_folder = "Examples/Assets";
-#endif
 
 pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forward)};
 std::list<std::string> log_list;
@@ -96,7 +95,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	sk_settings_t settings = {};
 	settings.app_name           = "StereoKit C";
-	settings.assets_folder      = assets_folder;
+	settings.assets_folder      = "Assets";
 	settings.display_preference = display_mode_mixedreality;
 	if (!sk_init(settings))
 		return 1;

@@ -42,6 +42,10 @@
 		Up = 0x26,
 		/// <summary>Down arrow key</summary>
 		Down = 0x28,
+		/// <summary>Page Up key</summary>
+		PageUp = 0x21,
+		/// <summary>Page Down key</summary>
+		PageDown = 0x22,
 		/// <summary>Printscreen</summary>
 		Printscreen = 0x2A,
 		/// <summary>Any Insert key</summary>
@@ -143,6 +147,29 @@
 		Y = 0x59,
 		/// <summary>z/Z</summary>
 		Z = 0x5A,
+
+		/// <summary>,/<</summary>
+		Comma = 0xBC,
+		/// <summary>./></summary>
+		Period = 0xBE,
+		/// <summary>/</summary>
+		SlashFwd = 0xBF,
+		/// <summary>\</summary>
+		SlashBack = 0xDC,
+		/// <summary>;/:</summary>
+		Semicolon = 0xBA,
+		/// <summary>'/"</summary>
+		Apostrophe = 0xDE,
+		/// <summary>[/{</summary>
+		BracketOpen = 0xDB,
+		/// <summary>]/}</summary>
+		BracketClose = 0xDD,
+		/// <summary>-/_</summary>
+		Minus = 0xBD,
+		/// <summary>=/+</summary>
+		Equals = 0xBB,
+		/// <summary>`/~</summary>
+		Backtick = 0xC0,
 
 		/// <summary>The Windows/Mac Command button on the left side of the keyboard</summary>
 		LCmd = 0x5B,

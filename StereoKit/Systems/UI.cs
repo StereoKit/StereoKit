@@ -20,9 +20,17 @@ namespace StereoKit
 		/// space color, and use it to skin the UI!</summary>
 		public static Color      ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
-		/// <summary>Shows or hides the collision volumes of the UI! This is for debug purposes,
-		/// and can help identify visible and invisible collision issues.</summary>
+		/// <summary>Shows or hides the collision volumes of the UI! This is
+		/// for debug purposes, and can help identify visible and invisible
+		/// collision issues.</summary>
 		public static bool       ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
+
+		/// <summary>Enables or disables the far ray grab interaction for 
+		/// Handle elements like the Windows. It can be enabled and disabled
+		/// for individual UI elements, and if this remains disabled at the
+		/// start of the next frame, then the hand ray indicators will not be
+		/// visible. This is enabled by default. </summary>
+		public static bool       EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
 
 		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
 		public static float      LineHeight => NativeAPI.ui_line_height();
@@ -108,6 +116,9 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
+		public static void HSeparator()
+			=> NativeAPI.ui_hseparator();
+
 		/// <summary>Adds some text to the layout! Text uses the UI's current
 		/// font settings (which are currently not exposed). Can contain
 		/// newlines! May have trouble with non-latin characters. Will
@@ -124,6 +135,9 @@ namespace StereoKit
 		public static void Label(string text, Vec2 size)
 			=> NativeAPI.ui_label_sz(text, size);
 
+		public static void Text(string text)
+			=> NativeAPI.ui_text(text);
+
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the components is 0, 
@@ -131,7 +145,7 @@ namespace StereoKit
 		/// ratio.</param>
 		public static void Image (Sprite image, Vec2 size) 
 			=> NativeAPI.ui_image(image._inst, size);
-        
+
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
 		/// vertically and horizontally. Text is re-used as the id. Will return true only on 
 		/// the first frame it is pressed!</summary>
@@ -315,5 +329,23 @@ namespace StereoKit
 		/// the one before it!</summary>
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
+
+		/// <summary>This pushes a Text Style onto the style stack! All text
+		/// elements rendered by the GUI system will now use this styling.
+		/// </summary>
+		/// <param name="style">A valid TextStyle to use.</param>
+		public static void PushTextStyle(TextStyle style) 
+			=> NativeAPI.ui_push_text_style(style);
+
+		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// below will then be used as the GUI's primary font.</summary>
+		public static void PopTextStyle() 
+			=> NativeAPI.ui_pop_text_style();
+
+		public static ulong StackHash(string id)
+			=> NativeAPI.ui_stack_hash(id);
+
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash(id), out fingerOffset, out buttonState, out focusState);
 	}
 }

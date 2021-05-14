@@ -37,19 +37,9 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.color.rgb *= Lighting(o.normal);
 	return o;
 }
-float4 ps(psIn input) : SV_TARGET{
-	float dist = 1;
-	float ring = 0;
-	for	(int i=0;i<2;i++) {
-		float3 delta = sk_fingertip[i].xyz - input.world.xyz;
-		float3 norm  = normalize(delta);
-		float  d     = dot(delta,delta) / (0.08 * 0.08);
-		ring = max( ring, min(1, 1 - abs(max(0,dot(input.normal, norm))-0.9)*200*d) );
-		dist = min( dist, d );
-	}
+float4 ps(psIn input) : SV_TARGET {
+	float  glow = FingerGlow(input.world.xyz, input.normal);
+	float4 col  = float4(lerp(input.color.rgb, float3(1,1,1), glow), input.color.a);
 
-	float  pct = pow(1-dist, 5);
-	float4 col = float4(lerp(input.color.rgb, float3(1,1,1), pct*0.6 + (ring*pct)), input.color.a);
-
-	return diffuse.Sample(diffuse_s, input.uv) * col; 
+	return diffuse.Sample(diffuse_s, input.uv) * col;
 }

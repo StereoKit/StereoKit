@@ -182,7 +182,7 @@ namespace StereoKit.Framework
 				ShowOpenFile();
 			else if (_mode == FilePickerMode.Save)
 				ShowSaveFile();
-            
+
 			ShowFolderItems();
 
 			UI.WindowEnd();
@@ -192,7 +192,7 @@ namespace StereoKit.Framework
 		{
 			UI.Label("...\\");
 			UI.SameLine();
-			float width = UI.AreaRemaining.x;
+			float width = UI.AreaRemaining.x*0.8f;
 			for (int i = Math.Max(0, _separatedPath.Length - 3); i < _separatedPath.Length; i++)
 			{
 				if (UI.Button(_separatedPath[i], new Vec2(width/3, UI.LineHeight)))
@@ -211,19 +211,19 @@ namespace StereoKit.Framework
 		{
 			if (_resultName != null)
 			{
-				if (UI.Button("Open", new Vec2(.04f, UI.LineHeight)))
+				if (UI.Button("Open"))
 				{
 					_onFileSelect?.Invoke(Path.Combine(_resultFolder, _resultName));
 					Hide();
 				}
 				UI.SameLine();
 				UI.Label(_resultName, new Vec2(UI.AreaRemaining.x, UI.LineHeight) );
-				UI.Space(U.cm * 1.5f);
 			}
 			else
 			{
-				UI.Space(UI.LineHeight + 0.02f);
+				UI.Label(" ");
 			}
+			UI.HSeparator();
 		}
 
 		void ShowSaveFile()

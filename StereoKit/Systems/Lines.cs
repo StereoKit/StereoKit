@@ -55,11 +55,24 @@
 		/// this axis widget at?</param>
 		/// <param name="size">How long should the widget lines be, in
 		/// meters?</param>
-		public static void AddAxis(Pose atPose, float size = U.cm)
+		/// /// <param name="thickness">How thick should the lines be, in
+		/// meters?</param>
+		public static void AddAxis(Pose atPose, float size, float thickness)
 		{
-			Add(atPose.position, atPose.position + Vec3.Forward * atPose.orientation * size, new Color32(0, 0, 255, 255), size*0.1f);
-			Add(atPose.position, atPose.position + Vec3.Right   * atPose.orientation * size, new Color32(255, 0, 0, 255), size*0.1f);
-			Add(atPose.position, atPose.position + Vec3.Up      * atPose.orientation * size, new Color32(0, 255, 0, 255), size*0.1f);
+			Add(atPose.position, atPose.position + Vec3.Forward * atPose.orientation * size, new Color32(0, 0, 255, 255), thickness);
+			Add(atPose.position, atPose.position + Vec3.Right   * atPose.orientation * size, new Color32(255, 0, 0, 255), thickness);
+			Add(atPose.position, atPose.position + Vec3.Up      * atPose.orientation * size, new Color32(0, 255, 0, 255), thickness);
 		}
+
+		/// <summary>Displays an RGB/XYZ axis widget at the pose! Note that
+		/// this draws lines along 'Right/Up/Forward' vectors, rather than
+		/// 'UnitX/UnitY/UnitZ'. Notably, Forward is (0,0,-1), and UnitZ is
+		/// (0,0,1)</summary>
+		/// <param name="atPose">What position and orientation do we want
+		/// this axis widget at?</param>
+		/// <param name="size">How long should the widget lines be, in
+		/// meters?</param>
+		public static void AddAxis(Pose atPose, float size = U.cm)
+			=> AddAxis(atPose, size, size * 0.1f);
 	}
 }

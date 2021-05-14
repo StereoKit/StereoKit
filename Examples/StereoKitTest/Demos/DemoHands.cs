@@ -23,6 +23,7 @@ namespace StereoKitTest
 		bool showAxes      = true;
 		bool showPointers  = true;
 		bool showHandMenus = true;
+		bool showHandSize  = true;
 
 		Mesh jointMesh = Mesh.GenerateSphere(1);
 		HandMenuRadial handMenu;
@@ -112,6 +113,8 @@ namespace StereoKitTest
 			UI.SameLine();
 			UI.Toggle("Axes", ref showAxes);
 			UI.SameLine();
+			UI.Toggle("Hand Size", ref showHandSize);
+			UI.SameLine();
 			UI.Toggle("Pointers", ref showPointers);
 			UI.SameLine();
 			UI.Toggle("Menu", ref showHandMenus);
@@ -126,7 +129,7 @@ namespace StereoKitTest
 						new GradientKey(Color.HSV(0.8f,1,1), 0.9f)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.2f),
+						new GradientKey(new Color(1,1,1,0), 0.4f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
 			if (UI.Button("Black"))
@@ -138,18 +141,27 @@ namespace StereoKitTest
 						new GradientKey(new Color(1,1,1,1), 0.6f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.SameLine();
+			if (UI.Button("Full Black"))
+				ColorizeFingers(16,
+					new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
+					new Gradient(
+						new GradientKey(new Color(1, 1, 1, 0), 0),
+						new GradientKey(new Color(1, 1, 1, 1), 0.05f),
+						new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
+			UI.SameLine();
 			if (UI.Button("Normal"))
 				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 					new Gradient(
 						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.2f),
+						new GradientKey(new Color(1,1,1,0), 0.4f),
 						new GradientKey(new Color(1,1,1,1), 0.9f)));
 			UI.WindowEnd();
 
 			if (showJoints)   DrawJoints(jointMesh, Default.Material);
 			if (showAxes)     DrawAxes();
 			if (showPointers) DrawPointers();
+			if (showHandSize) DrawHandSize();
 			if (showHandMenus) 
 			{ 
 				DrawHandMenu(Handed.Right);
@@ -167,7 +179,7 @@ namespace StereoKitTest
 			Color32[] pixels = new Color32[size*size];
 			for (int y = 0; y < size; y++)
 			{
-				Color v = vertical.Get(y / (size-1.0f));
+				Color v = vertical.Get(1 - y / (size-1.0f));
 				for (int x = 0; x < size; x++)
 				{
 					Color h = horizontal.Get(x / (size-1.0f));
@@ -276,6 +288,26 @@ namespace StereoKitTest
 			}
 		}
 		/// :End:
+
+		public static void DrawHandSize()
+		{
+			for (int h = 0; h < (int)Handed.Max; h++)
+			{
+				Hand hand = Input.Hand((Handed)h);
+				if (!hand.IsTracked)
+					continue;
+
+				HandJoint at = hand[FingerId.Middle, JointId.Tip];
+				Vec3 pos = at.position + at.Pose.Forward * at.radius;
+				Quat rot = at.orientation * Quat.FromAngles(-90, 0, 0);
+				if (!HandFacingHead((Handed)h)) rot = rot * Quat.FromAngles(0,180,0);
+
+				Text.Add(
+					(hand.size * 100).ToString(".0")+"cm", 
+					Matrix.TRS(pos, rot, 0.3f),
+					TextAlign.XCenter|TextAlign.YBottom);
+			}
+		}
 	}
 }
 

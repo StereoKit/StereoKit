@@ -4,7 +4,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 0
+#define SK_VERSION_PATCH 1
 #define SK_VERSION_PRERELEASE 0
 
 #ifdef __GNUC__
@@ -64,12 +64,40 @@ typedef enum depth_mode_ {
 	depth_mode_stencil,
 } depth_mode_;
 
+// TODO: remove this in v0.4
+typedef enum display_ {
+	display_none            = 0,
+	display_opaque          = 1 << 0,
+	display_additive        = 1 << 1,
+	display_blend           = 1 << 2,
+	display_passthrough     = 1 << 2,
+	display_any_transparent = display_additive | display_blend,
+} display_;
+
+typedef enum display_blend_ {
+	display_blend_none            = 0,
+	display_blend_opaque          = 1 << 0,
+	display_blend_additive        = 1 << 1,
+	display_blend_blend           = 1 << 2,
+	display_blend_any_transparent = display_blend_additive | display_blend_blend,
+} display_blend_;
+
+typedef enum log_ {
+	log_none = 0,
+	log_diagnostic,
+	log_inform,
+	log_warning,
+	log_error
+} log_;
+
 typedef struct sk_settings_t {
-	const char   *app_name;
-	const char   *assets_folder;
-	display_mode_ display_preference;
-	bool32_t      no_flatscreen_fallback;
-	depth_mode_   depth_mode;
+	const char    *app_name;
+	const char    *assets_folder;
+	display_mode_  display_preference;
+	display_blend_ blend_preference;
+	bool32_t       no_flatscreen_fallback;
+	depth_mode_    depth_mode;
+	log_           log_filter;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
@@ -79,12 +107,6 @@ typedef struct sk_settings_t {
 	void    *android_java_vm;  // JavaVM*
 	void    *android_activity; // jobject
 } sk_settings_t;
-
-typedef enum display_ {
-	display_opaque = 0,
-	display_additive,
-	display_passthrough,
-} display_;
 
 typedef struct system_info_t {
 	display_ display_type;
@@ -177,15 +199,22 @@ SK_API vec3 quat_mul_vec    (const sk_ref(quat) a, const sk_ref(vec3) b);
 SK_API matrix pose_matrix    (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
 SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
-SK_API void   matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
-SK_API void   matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
-SK_API vec3   matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
-SK_API vec3   matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-SK_API quat   matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
-SK_API void   matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
-SK_API vec3   matrix_to_angles    (const sk_ref(matrix) transform);
-SK_API matrix matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
-SK_API void   matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API void     matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
+SK_API void     matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
+SK_API vec3     matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
+SK_API vec3     matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
+SK_API quat     matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
+SK_API pose_t   matrix_mul_pose     (const sk_ref(matrix) transform, const sk_ref(pose_t) pose);
+SK_API vec3     matrix_to_angles    (const sk_ref(matrix) transform);
+SK_API matrix   matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API void     matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API matrix   matrix_perspective  (float fov_degrees, float aspect_ratio, float near_clip, float far_clip);
+SK_API matrix   matrix_orthographic (float width, float height, float near_clip, float far_clip);
+SK_API bool32_t matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
+SK_API vec3     matrix_extract_translation(const sk_ref(matrix) transform);
+SK_API vec3     matrix_extract_scale      (const sk_ref(matrix) transform);
+SK_API quat     matrix_extract_rotation   (const sk_ref(matrix) transform);
+SK_API pose_t   matrix_extract_pose       (const sk_ref(matrix) transform);
 
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, sk_ref(float) out_t);
 SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, sk_ref(ray_t) out_ray);
@@ -253,6 +282,7 @@ static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
 static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
+static const pose_t pose_identity   = { vec3_zero, quat_identity };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -260,15 +290,16 @@ static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,
 
 ///////////////////////////////////////////
 
-SK_API bool32_t plane_ray_intersect  (plane_t plane, ray_t ray, vec3 *out_pt);
-SK_API bool32_t plane_line_intersect (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt);
-SK_API vec3     plane_point_closest  (plane_t plane, vec3 pt);
-SK_API bool32_t sphere_ray_intersect (sphere_t sphere, ray_t ray, vec3 *out_pt);
-SK_API bool32_t sphere_point_contains(sphere_t sphere, vec3 pt);
-SK_API bool32_t bounds_ray_intersect (bounds_t bounds, ray_t ray, vec3 *out_pt);
-SK_API bool32_t bounds_point_contains(bounds_t bounds, vec3 pt);
-SK_API bool32_t bounds_line_contains (bounds_t bounds, vec3 pt1, vec3 pt2);
-SK_API vec3     ray_point_closest    (ray_t ray, vec3 pt);
+SK_API bool32_t plane_ray_intersect    (plane_t plane, ray_t ray, vec3 *out_pt);
+SK_API bool32_t plane_line_intersect   (plane_t plane, vec3 p1, vec3 p2, vec3 *out_pt);
+SK_API vec3     plane_point_closest    (plane_t plane, vec3 pt);
+SK_API bool32_t sphere_ray_intersect   (sphere_t sphere, ray_t ray, vec3 *out_pt);
+SK_API bool32_t sphere_point_contains  (sphere_t sphere, vec3 pt);
+SK_API bool32_t bounds_ray_intersect   (bounds_t bounds, ray_t ray, vec3 *out_pt);
+SK_API bool32_t bounds_point_contains  (bounds_t bounds, vec3 pt);
+SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
+SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
+SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////
 
@@ -324,8 +355,10 @@ typedef struct sh_light_t {
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count);
-SK_API color128              sh_lookup(const sk_ref(spherical_harmonics_t)  lookup, vec3 normal);
+SK_API spherical_harmonics_t sh_create    (const sh_light_t* lights, int32_t light_count);
+SK_API void                  sh_brightness(sk_ref(spherical_harmonics_t) harmonics, float scale);
+SK_API void                  sh_add       (sk_ref(spherical_harmonics_t) harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup    (const sk_ref(spherical_harmonics_t)  lookup, vec3 normal);
 
 ///////////////////////////////////////////
 
@@ -384,7 +417,11 @@ typedef enum tex_format_ {
 	tex_format_rgba32_linear,
 	tex_format_bgra32,
 	tex_format_bgra32_linear,
-	tex_format_rgba64,
+	tex_format_rg11b10,
+	tex_format_rgb10a2,
+	tex_format_rgba64, // TODO: remove during major version update
+	tex_format_rgba64s,
+	tex_format_rgba64f,
 	tex_format_rgba128,
 	tex_format_r8,
 	tex_format_r16,
@@ -392,6 +429,8 @@ typedef enum tex_format_ {
 	tex_format_depthstencil,
 	tex_format_depth32,
 	tex_format_depth16,
+
+	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
 
 typedef enum tex_sample_ {
@@ -412,6 +451,7 @@ SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_create_mem          (void *data, size_t data_size,       bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_file         (const char *file,                   bool32_t srgb_data sk_default(true));
+SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_count, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,   bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data sk_default(true), spherical_harmonics_t *sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
@@ -551,10 +591,11 @@ SK_API text_style_t text_make_style       (font_t font, float character_height, 
 SK_API text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader,     color128 color_gamma);
 SK_API text_style_t text_make_style_mat   (font_t font, float character_height, material_t material, color128 color_gamma);
 SK_API void         text_add_at           (const char *text, const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API void         text_add_in           (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API float        text_add_in           (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_x_center | text_align_y_center), text_align_ align sk_default(text_align_x_center | text_align_y_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
 SK_API vec2         text_size             (const char *text, text_style_t style sk_default(-1));
 
-SK_API material_t   text_style_get_material(text_style_t style);
+SK_API material_t   text_style_get_material   (text_style_t style);
+SK_API float        text_style_get_char_height(text_style_t style);
 
 ///////////////////////////////////////////
 
@@ -637,6 +678,30 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
+typedef enum render_layer_ {
+	render_layer_0 = 1 << 0,
+	render_layer_1 = 1 << 1,
+	render_layer_2 = 1 << 2,
+	render_layer_3 = 1 << 3,
+	render_layer_4 = 1 << 4,
+	render_layer_5 = 1 << 5,
+	render_layer_6 = 1 << 6,
+	render_layer_7 = 1 << 7,
+	render_layer_8 = 1 << 8,
+	render_layer_9 = 1 << 9,
+	render_layer_vfx         = 1 << 10,
+	render_layer_all         = 0xFFFF,
+	render_layer_all_regular = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
+} render_layer_;
+SK_MakeFlag(render_layer_);
+
+typedef enum render_clear_ {
+	render_clear_none  = 0,
+	render_clear_color = 1 << 0,
+	render_clear_depth = 1 << 1,
+	render_clear_all   = render_clear_color | render_clear_depth,
+} render_clear_;
+
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
 SK_API matrix                render_get_cam_root   ();
@@ -645,13 +710,16 @@ SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     ();
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   ();
+SK_API void                  render_set_filter     (render_layer_ layer_filter);
+SK_API render_layer_         render_get_filter     ();
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}));
+SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear = render_clear_all, rect_t viewport = {});
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////
@@ -673,12 +741,40 @@ SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat) local_orien
 
 SK_DeclarePrivateType(sound_t);
 
-SK_API sound_t sound_find    (const char *id);
-SK_API void    sound_set_id  (sound_t sound, const char *id);
-SK_API sound_t sound_create  (const char *filename);
-SK_API sound_t sound_generate(float (*function)(float), float duration);
-SK_API void    sound_play    (sound_t sound, vec3 at, float volume);
-SK_API void    sound_release (sound_t sound);
+typedef struct sound_inst_t {
+	uint16_t _id;
+	int16_t  _slot;
+} sound_inst_t;
+
+SK_API sound_t      sound_find          (const char *id);
+SK_API void         sound_set_id        (sound_t sound, const char *id);
+SK_API sound_t      sound_create        (const char *filename);
+SK_API sound_t      sound_create_stream (float buffer_duration);
+SK_API sound_t      sound_generate      (float (*function)(float), float duration);
+SK_API void         sound_write_samples (sound_t sound, float *samples,     uint64_t sample_count);
+SK_API uint64_t     sound_read_samples  (sound_t sound, float *out_samples, uint64_t sample_count);
+SK_API uint64_t     sound_unread_samples(sound_t sound);
+SK_API uint64_t     sound_total_samples (sound_t sound);
+SK_API uint64_t     sound_cursor_samples(sound_t sound);
+SK_API sound_inst_t sound_play          (sound_t sound, vec3 at, float volume);
+SK_API float        sound_duration      (sound_t sound);
+SK_API void         sound_release       (sound_t sound);
+
+SK_API void         sound_inst_stop      (sound_inst_t sound_inst);
+SK_API bool32_t     sound_inst_is_playing(sound_inst_t sound_inst);
+SK_API void         sound_inst_set_pos   (sound_inst_t sound_inst, vec3 pos);
+SK_API vec3         sound_inst_get_pos   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_volume(sound_inst_t sound_inst, float volume);
+SK_API float        sound_inst_get_volume(sound_inst_t sound_inst);
+
+///////////////////////////////////////////
+
+SK_API int32_t     mic_device_count();
+SK_API const char *mic_device_name (int32_t index);
+SK_API bool32_t    mic_start       (const char *device_name sk_default(nullptr));
+SK_API void        mic_stop        ();
+SK_API sound_t     mic_get_stream  ();
+SK_API bool32_t    mic_is_recording();
 
 ///////////////////////////////////////////
 
@@ -710,6 +806,12 @@ typedef enum button_state_ {
 } button_state_;
 SK_MakeFlag(button_state_);
 
+typedef enum track_state_ {
+	track_state_lost     = 0,
+	track_state_inferred = 1,
+	track_state_known    = 2,
+} track_state_;
+
 typedef struct pointer_t {
 	input_source_ source;
 	button_state_ tracked;
@@ -725,16 +827,31 @@ typedef struct hand_joint_t {
 } hand_joint_t;
 
 typedef struct hand_t {
-	hand_joint_t fingers[5][5];
-	pose_t  wrist;
-	pose_t  palm;
-	handed_ handedness;
+	hand_joint_t  fingers[5][5];
+	pose_t        wrist;
+	pose_t        palm;
+	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
-	float pinch_activation;
-	float grip_activation;
+	float         size;
+	float         pinch_activation;
+	float         grip_activation;
 } hand_t;
+
+typedef struct controller_t {
+	pose_t        pose;
+	pose_t        aim;
+	button_state_ tracked;
+	track_state_  tracked_pos;
+	track_state_  tracked_rot;
+	button_state_ stick_click;
+	button_state_ x1;
+	button_state_ x2;
+	float         trigger;
+	float         grip;
+	vec2          stick;
+} controller_t;
 
 typedef struct mouse_t {
 	bool32_t available;
@@ -746,6 +863,7 @@ typedef struct mouse_t {
 
 // Based on VK codes
 typedef enum key_ {
+	key_none      = 0x00,
 	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04, key_mouse_forward = 0x05, key_mouse_back = 0x06,
 	key_backspace = 0x08, key_tab       = 0x09,
 	key_return    = 0x0D, key_shift     = 0x10,
@@ -755,9 +873,11 @@ typedef enum key_ {
 	key_end       = 0x23, key_home      = 0x24,
 	key_left      = 0x25, key_right     = 0x27,
 	key_up        = 0x26, key_down      = 0x28,
+	key_page_up   = 0x21, key_page_down = 0x22,
 	key_printscreen=0x2A, key_insert    = 0x2D, key_del = 0x2E,
 	key_0 = 0x30, key_1 = 0x31, key_2 = 0x32, key_3 = 0x33, key_4 = 0x34, key_5 = 0x35, key_6 = 0x36, key_7 = 0x37, key_8 = 0x38, key_9 = 0x39, 
 	key_a = 0x41, key_b = 0x42, key_c = 0x43, key_d = 0x44, key_e = 0x45, key_f = 0x46, key_g = 0x47, key_h = 0x48, key_i = 0x49, key_j = 0x4A, key_k = 0x4B, key_l = 0x4C, key_m = 0x4D, key_n = 0x4E, key_o = 0x4F, key_p = 0x50, key_q = 0x51, key_r = 0x52, key_s = 0x53, key_t = 0x54, key_u = 0x55, key_v = 0x56, key_w = 0x57, key_x = 0x58, key_y = 0x59, key_z = 0x5A,
+	key_comma = 0xBC, key_period = 0xBE, key_slash_fwd = 0xBF, key_slash_back = 0xDC, key_semicolon = 0xBA, key_apostrophe = 0xDE, key_bracket_open = 0xDB, key_bracket_close = 0xDD, key_minus = 0xBD, key_equals = 0xBB, key_backtick = 0xc0,
 	key_lcmd = 0x5B, key_rcmd = 0x5C,
 	key_num0 = 0x60, key_num1 = 0x61, key_num2 = 0x62, key_num3 = 0x63, key_num4 = 0x64, key_num5 = 0x65, key_num6 = 0x66, key_num7 = 0x67, key_num8 = 0x68, key_num9 = 0x69,
 	key_multiply = 0x6A, key_add = 0x6B, key_subtract = 0x6D, key_decimal = 0x6E, key_divide = 0x6F,
@@ -765,18 +885,20 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
-SK_API int                   input_pointer_count(input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer      (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t         *input_hand         (handed_ hand);
-SK_API void                  input_hand_override(handed_ hand, hand_joint_t *hand_joints);
-SK_API const pose_t         *input_head         ();
-SK_API const pose_t         *input_eyes         ();
-SK_API button_state_         input_eyes_tracked ();
-SK_API const mouse_t        *input_mouse        ();
-SK_API button_state_         input_key          (key_ key);
-SK_API void                  input_hand_visible (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid   (handed_ hand, bool32_t solid);
-SK_API void                  input_hand_material(handed_ hand, material_t material);
+SK_API int                   input_pointer_count  (input_source_ filter sk_default(input_source_any));
+SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
+SK_API const hand_t         *input_hand           (handed_ hand);
+SK_API void                  input_hand_override  (handed_ hand, hand_joint_t *hand_joints);
+SK_API const controller_t   *input_controller     (handed_ hand);
+SK_API button_state_         input_controller_menu();
+SK_API const pose_t         *input_head           ();
+SK_API const pose_t         *input_eyes           ();
+SK_API button_state_         input_eyes_tracked   ();
+SK_API const mouse_t        *input_mouse          ();
+SK_API button_state_         input_key            (key_ key);
+SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
+SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
+SK_API void                  input_hand_material  (handed_ hand, material_t material);
 
 SK_API void input_subscribe  (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
@@ -792,12 +914,6 @@ SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
 
 ///////////////////////////////////////////
 
-typedef enum log_{
-	log_diagnostic = 0,
-	log_inform,
-	log_warning,
-	log_error
-} log_;
 typedef enum log_colors_ {
 	log_colors_ansi = 0,
 	log_colors_none
@@ -827,6 +943,7 @@ static const char *default_id_material_equirect    = "default/equirect_convert";
 static const char *default_id_material_font        = "default/material_font";
 static const char *default_id_material_hand        = "default/material_hand";
 static const char *default_id_material_ui          = "default/material_ui";
+static const char *default_id_material_ui_box      = "default/material_ui_box";
 static const char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
 static const char *default_id_tex                  = "default/tex";
 static const char *default_id_tex_black            = "default/tex_black";
@@ -836,6 +953,7 @@ static const char *default_id_tex_rough            = "default/tex_rough";
 static const char *default_id_cubemap              = "default/cubemap";
 static const char *default_id_font                 = "default/font";
 static const char *default_id_mesh_quad            = "default/mesh_quad";
+static const char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";
 static const char *default_id_mesh_cube            = "default/mesh_cube";
 static const char *default_id_mesh_sphere          = "default/mesh_sphere";
 static const char *default_id_mesh_lefthand        = "default/mesh_lefthand";
@@ -847,6 +965,7 @@ static const char *default_id_shader_unlit         = "default/shader_unlit";
 static const char *default_id_shader_font          = "default/shader_font";
 static const char *default_id_shader_equirect      = "default/shader_equirect";
 static const char *default_id_shader_ui            = "default/shader_ui";
+static const char *default_id_shader_ui_box        = "default/shader_ui_box";
 static const char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
 static const char *default_id_shader_sky           = "default/shader_sky";
 static const char *default_id_shader_lines         = "default/shader_lines";

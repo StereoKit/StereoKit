@@ -35,6 +35,15 @@ namespace StereoKit
 			set => NativeAPI.render_enable_skytex(value);
 		}
 
+		/// <summary>By default, StereoKit renders all layers. This is a bit
+		/// flag that allows you to change which layers StereoKit renders for
+		/// the primary viewpoint. To change what layers a visual is on, use
+		/// a Draw method that includes a RenderLayer as a parameter.</summary>
+		public static RenderLayer LayerFilter {
+			set => NativeAPI.render_set_filter(value);
+			get => NativeAPI.render_get_filter();
+		}
+
 		/// <summary>This is the gamma space color the renderer will clear
 		/// the screen to when beginning to draw a new frame. This is ignored
 		/// on displays with transparent screens</summary>
@@ -62,7 +71,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the mesh
 		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Mesh mesh, Material material, Matrix transform)
-			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, Color.White);
+			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, Color.White, RenderLayer.Layer0);
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
 		/// the Matrix provided here.</summary>
@@ -75,8 +84,14 @@ namespace StereoKit
 		/// tint. If you're  adventurous and don't need per-instance colors,
 		/// this is a great spot to pack in extra per-instance data for the
 		/// shader!</param>
-		public static void Add(Mesh mesh, Material material, Matrix transform, Color colorLinear)
-			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, colorLinear);
+		/// <param name="layer">All visuals are rendered using a layer 
+		/// bit-flag. By default, all layers are rendered, but this can be 
+		/// useful for filtering out objects for different rendering 
+		/// purposes! For example: rendering a mesh over the user's head from
+		/// a 3rd person perspective, but filtering it out from the 1st
+		/// person perspective.</param>
+		public static void Add(Mesh mesh, Material material, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, colorLinear, layer);
 
 		/// <summary>Adds a Model to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -85,7 +100,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the Model
 		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Model model, Matrix transform)
-			=> NativeAPI.render_add_model(model._inst, transform, Color.White);
+			=> NativeAPI.render_add_model(model._inst, transform, Color.White, RenderLayer.Layer0);
 		/// <summary>Adds a Model to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
 		/// the Matrix provided here.</summary>
@@ -97,8 +112,14 @@ namespace StereoKit
 		/// tint. If you're  adventurous and don't need per-instance colors,
 		/// this is a great spot to pack in extra per-instance data for the
 		/// shader!</param>
-		public static void Add(Model model, Matrix transform, Color colorLinear)
-			=> NativeAPI.render_add_model(model._inst, transform, colorLinear);
+		/// <param name="layer">All visuals are rendered using a layer 
+		/// bit-flag. By default, all layers are rendered, but this can be 
+		/// useful for filtering out objects for different rendering 
+		/// purposes! For example: rendering a mesh over the user's head from
+		/// a 3rd person perspective, but filtering it out from the 1st
+		/// person perspective.</param>
+		public static void Add(Model model, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_add_model(model._inst, transform, colorLinear, layer);
 
 		/// <summary>Set the near and far clipping planes of the camera!
 		/// These are important to z-buffer quality, especially when using
@@ -146,6 +167,34 @@ namespace StereoKit
 		/// .jpg regardless of what file extension you use right now.</param>
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
 			=> NativeAPI.render_screenshot(from, at, width, height, filename);
+
+		/// <summary>This renders the current scene to the indicated 
+		/// rendertarget texture, from the specified viewpoint. This call 
+		/// enqueues a render that occurs immediately before the screen 
+		/// itself is rendered.</summary>
+		/// <param name="toRendertarget">The texture to which the scene will
+		/// be rendered to. This must be a Rendertarget type texture.</param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use 
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		/// <param name="layerFilter">This is a bit flag that allows you to
+		/// change which layers StereoKit renders for this particular render
+		/// viewpoint. To change what layers a visual is on, use a Draw
+		/// method that includes a RenderLayer as a parameter.</param>
+		/// <param name="clear">Describes if an how the rendertarget should
+		/// be cleared before rendering. Note that clearing the target is
+		/// unaffected by the viewport, so this will clean the entire 
+		/// surface!</param>
+		/// <param name="viewport">Allows you to specify a region of the
+		/// rendertarget to draw to! This is in normalized coordinates, 0-1.
+		/// If the width of this value is zero, then this will render to the
+		/// entire texture.</param>
+		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+			=> NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
 
 	}
 }

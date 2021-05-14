@@ -19,7 +19,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
 	o.view_id = id % sk_view_count;
 	id        = id / sk_view_count;
-	o.pos     = float4(input.pos.xyz,1);
+	o.pos     = float4(input.pos.xyz, 1);
 
 	float4 proj_inv = mul(o.pos, sk_proj_inv[o.view_id]);
 	o.norm = mul(float4(proj_inv.xyz, 0), transpose(sk_view[o.view_id])).xyz;

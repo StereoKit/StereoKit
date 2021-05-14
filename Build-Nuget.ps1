@@ -7,6 +7,10 @@ param(
 $vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
 $vsExe = [io.path]::ChangeExtension($vsExe, '.com')
 
+###########################################
+## Functions                             ##
+###########################################
+
 function Get-Version {
     $fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
 
@@ -26,19 +30,31 @@ function Get-Version {
 
     return $result
 }
+
+###########################################
+
 function Replace-In-File {
     param($file, $text, $with)
 
     ((Get-Content -path $file) -replace $text,$with) | Set-Content -path $file
 }
+
+###########################################
+
 function Clean {
     & $vsExe 'StereoKit.sln' '/Clean' | Out-Null
 }
+
+###########################################
+
 function Build {
-    param([parameter(Mandatory)][string] $mode)
-    & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' 'StereoKit' | Write-Host
+    param([parameter(Mandatory)][string] $mode, [parameter(Mandatory)][string] $project)
+    & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' $project | Write-Host
     return $LASTEXITCODE
 }
+
+###########################################
+
 function Test {
     & $vsExe 'StereoKit.sln' '/Build' 'Debug|X64' '/Project' 'StereoKitDocumenter' | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -49,6 +65,9 @@ function Test {
     & 'cd' '../../../';
     return $LASTEXITCODE
 }
+
+###########################################
+
 function Get-Key {
     if ($key -ne '') {
         Set-Content -path '.nugetkey' -value $key.Trim()
@@ -65,13 +84,15 @@ function Get-Key {
     return $key.Trim()
 }
 
+###########################################
+## Main                                  ##
+###########################################
+
 # Notify about our upload flag status 
 if ($fast -eq $true -and $upload -eq $true) {
     Write-Host "Let's not upload a fast build, just in case! Try again without the fast flag :)" -ForegroundColor yellow
     exit
 }
-
-# Notify about our upload flag status 
 if ($upload -eq $false) {
     Write-Host 'Local package build only.'
 } else {
@@ -81,9 +102,17 @@ if ($fast -eq $true) {
     Write-Host 'Making a "fast" build, incremental build issues may be present.'
 }
 
+#### Update Version #######################
+
 # Print version, so we know we're building the right version right away
 $version = Get-Version
 Write-Host "v$version"
+
+# Ensure the version string for the package matches the StereoKit version
+Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
+Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
+
+#### Execute Tests ########################
 
 # Run tests before anything else!
 if ($fast -eq $false) {
@@ -97,6 +126,8 @@ if ($fast -eq $false) {
     Write-Host 'Skipping tests for fast build!' -ForegroundColor yellow
 }
 
+#### Clean Project ########################
+
 # Notify of build, and output the version
 Write-Host 'Beginning a full build!'
 
@@ -106,6 +137,8 @@ if ($fast -eq $false) {
     Clean
 }
 Write-Host 'Cleaned'
+
+#### Build Android ########################
 
 # Do cross platform build code first
 Write-Host 'Beginning Android build!'
@@ -120,6 +153,8 @@ if ($LASTEXITCODE -ne 0) {
     exit
 }
 
+#### Build Linux ##########################
+
 # Linux, via WSL
 Write-Host 'Beginning Linux build via WSL!'
 if ($fast -eq $false) {
@@ -132,28 +167,51 @@ if ($LASTEXITCODE -ne 0) {
     exit
 }
 
-# Ensure the version string for the package matches the StereoKit version
-Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
+#### Build Windows ########################
 
 # Build ARM first
-$result = Build -mode "Release|ARM64"
+$result = Build -mode "Release|ARM64" -project "StereoKitC"
 if ($result -ne 0) {
-    Write-Host '--- ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
     exit
 }
-Write-Host "Finished building: ARM64" -ForegroundColor green
+Write-Host "Finished building: Win32 ARM64" -ForegroundColor green
+$result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: UWP ARM64" -ForegroundColor green
 
-# Turn on NuGet package generation, build x64, then turn it off again
+# Build x64 next
+$result = Build -mode "Release|X64" -project "StereoKitC"
+if ($result -ne 0) {
+    Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: Win32 X64" -ForegroundColor green
+$result = Build -mode "Release|X64" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: UWP X64" -ForegroundColor green
+
+#### Assemble NuGet Package ###############
+
+# Turn on NuGet package generation, build, then turn it off again
 $packageOff = '<GeneratePackageOnBuild>false</GeneratePackageOnBuild>'
 $packageOn  = '<GeneratePackageOnBuild>true</GeneratePackageOnBuild>'
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOff -with $packageOn
-$result = Build -mode "Release|X64"
+$result = Build -mode "Release|Any CPU" -project "StereoKit"
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packageOff
 if ($result -ne 0) {
-    Write-Host '--- x64 build failed! Stopping build! ---' -ForegroundColor red
+    Write-Host '--- NuGet build failed! Stopping build! ---' -ForegroundColor red
     exit
 }
-Write-Host "Finished building: X64" -ForegroundColor green
+Write-Host "Finished building: NuGet package" -ForegroundColor green
+
+#### Upload NuGet Package #################
 
 if ($upload) {
     $key = Get-Key

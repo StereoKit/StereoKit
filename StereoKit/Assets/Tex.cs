@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -201,6 +202,36 @@ namespace StereoKit
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
+
+		public void GetColors(ref Color32[] colorData)
+		{
+			if (colorData == null)
+				colorData = new Color32[Width*Height];
+
+			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
+			IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+			NativeAPI.tex_get_data(_inst, pointer, (ulong)(colorData.Length * 4));
+			pinnedArray.Free();
+		}
+
+		/// <summary>Set the texture's size without providing any color data.
+		/// In most cases, you should probably just call SetColors instead,
+		/// but this can be useful if you're adding color data some other
+		/// way, such as when blitting or rendering to it.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two 
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		public void SetSize(int width, int height)
+			=> NativeAPI.tex_set_colors(_inst, width, height, IntPtr.Zero);
+
+		/// <summary>Only applicable if this texture is a rendertarget! 
+		/// This creates and attaches a zbuffer surface to the texture for
+		/// use when rendering to it.</summary>
+		/// <param name="depthFormat">The format of the depth texture, must
+		/// be a depth format type!</param>
+		public void AddZBuffer(TexFormat depthFormat)
+			=> NativeAPI.tex_add_zbuffer(_inst, depthFormat);
 		#endregion
 
 		#region Static Methods
@@ -271,6 +302,12 @@ namespace StereoKit
 		public static Tex FromFile(string file, bool sRGBData = true)
 		{
 			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData);
+			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
+		public static Tex FromFiles(string[] files, bool sRGBData = true)
+		{
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 

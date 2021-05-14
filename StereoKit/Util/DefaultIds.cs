@@ -8,6 +8,7 @@
 		internal const string materialFont     = "default/material_font";
 		internal const string materialHand     = "default/material_hand";
 		internal const string materialUI       = "default/material_ui";
+		internal const string materialUIBox    = "default/material_ui_box";
 
 		internal const string tex      = "default/tex";
 		internal const string texBlack = "default/tex_black";
@@ -18,9 +19,10 @@
 
 		internal const string font = "default/font";
 
-		internal const string meshQuad   = "default/mesh_quad";
-		internal const string meshCube   = "default/mesh_cube";
-		internal const string meshSphere = "default/mesh_sphere";
+		internal const string meshQuad       = "default/mesh_quad";
+		internal const string meshScreenQuad = "default/mesh_screen_quad";
+		internal const string meshCube       = "default/mesh_cube";
+		internal const string meshSphere     = "default/mesh_sphere";
 
 		internal const string shader         = "default/shader";
 		internal const string shaderPbr      = "default/shader_pbr";
@@ -28,6 +30,7 @@
 		internal const string shaderFont     = "default/shader_font";
 		internal const string shaderEquirect = "default/shader_equirect";
 		internal const string shaderUI       = "default/shader_ui";
+		internal const string shaderUIBox    = "default/shader_ui_box";
 		internal const string soundClick     = "default/sound_click";
 		internal const string soundUnclick   = "default/sound_unclick";
 	}

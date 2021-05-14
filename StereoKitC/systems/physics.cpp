@@ -6,7 +6,7 @@
 #include "../libraries/array.h"
 
 #pragma warning(push)
-#pragma warning( disable: 4244 4267 4100 )
+#pragma warning( disable: 4244 4267 4100 4099 4189 )
 #include <reactphysics3d/reactphysics3d.h>
 using namespace reactphysics3d;
 #pragma warning(pop)
@@ -115,8 +115,8 @@ void solid_release(solid_t solid) {
 	if (solid == nullptr)
 		return;
 
-	RigidBody *body  = (RigidBody*)solid;
-	/*for (int i = body->getNbColliders()-1; i >= 0; i--) {
+	/*RigidBody *body  = (RigidBody*)solid;
+	for (int i = body->getNbColliders()-1; i >= 0; i--) {
 		const Collider *c = body->getCollider(i);
 		switch (c->getCollisionShape()->getName()) {
 		case CollisionShapeName::BOX:     physics_common.destroyBoxShape    ((BoxShape     *)c); break;

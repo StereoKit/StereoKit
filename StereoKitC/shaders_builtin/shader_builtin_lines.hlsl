@@ -40,5 +40,5 @@ float4 ps(psIn input) : SV_TARGET {
 
 	col = col * input.color;
 
-	return col; 
+	return col;
 }

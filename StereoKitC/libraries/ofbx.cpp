@@ -14,6 +14,8 @@
 namespace ofbx
 {
 
+#pragma warning( push )
+#pragma warning( disable: 4244 4458 4100 4389 4505 )
 
 struct Error
 {
@@ -3187,4 +3189,5 @@ const char* getError()
 }
 
 
+#pragma warning( pop )
 } // namespace ofbx

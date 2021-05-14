@@ -89,7 +89,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		if (map == nullptr) {
 			index             = sprite_map_count;
 			sprite_map_count += 1;
-			sprite_maps       = sk_realloc_t<spritemap_t>(sprite_maps, sprite_map_count);
+			sprite_maps       = sk_realloc_t(spritemap_t, sprite_maps, sprite_map_count);
 			map               = &sprite_maps[sprite_map_count-1];
 
 			*map = {};
@@ -101,7 +101,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		// Add a sprite to the list
 		if (map->sprite_count + 1 > map->sprite_cap) {
 			map->sprite_cap = maxi(1, map->sprite_cap * 2);
-			map->sprites    = sk_realloc_t<sprite_t>(map->sprites, map->sprite_cap);
+			map->sprites    = sk_realloc_t(sprite_t, map->sprites, map->sprite_cap);
 		}
 		map->sprites[map->sprite_count] = result;
 		map->sprite_count += 1;
@@ -116,7 +116,10 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id) {
-	tex_t    image  = tex_create_file(filename);
+	tex_t image = tex_create_file(filename);
+	if (image == nullptr) return nullptr;
+
+	tex_set_address(image, tex_address_clamp);
 	sprite_t result = sprite_create(image, type, atlas_id);
 	tex_release(image);
 	return result;

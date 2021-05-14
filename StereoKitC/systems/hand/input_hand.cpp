@@ -47,48 +47,54 @@ struct hand_state_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
-	bool         initialized;
 	bool (*available)();
 	void (*init)();
 	void (*shutdown)();
+	void (*update_inactive)();
 	void (*update_frame)();
 	void (*update_predicted)();
 } hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
-	{ hand_system_override, false,
+	{ hand_system_override,
 		hand_override_available,
 		hand_override_init,
 		hand_override_shutdown,
+		nullptr,
 		hand_override_update_frame,
 		hand_override_update_predicted },
-	{ hand_system_oxr_articulated, false,
+	{ hand_system_oxr_articulated,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
+		hand_oxra_update_inactive,
 		hand_oxra_update_frame,
 		hand_oxra_update_predicted },
-	{ hand_system_oxr_controllers, false,
+	{ hand_system_oxr_controllers,
 		hand_oxrc_available,
 		hand_oxrc_init,
 		hand_oxrc_shutdown,
+		nullptr,
 		hand_oxrc_update_frame,
 		hand_oxrc_update_predicted },
-	{ hand_system_mouse, false,
+	{ hand_system_mouse,
 		hand_mouse_available,
 		hand_mouse_init,
 		hand_mouse_shutdown,
+		nullptr,
 		hand_mouse_update_frame,
 		hand_mouse_update_predicted },
-	{ hand_system_none, false,
+	{ hand_system_none,
 		[]() {return true;},
 		[]() {},
 		[]() {},
+		nullptr,
 		[]() {},
 		[]() {} },
 };
 int32_t      hand_system = -1;
 hand_state_t hand_state[2] = {};
+float        hand_size_update = 0;
 int32_t      input_hand_pointer_id[handed_max] = {-1, -1};
 
 void input_hand_update_mesh(handed_ hand);
@@ -97,6 +103,16 @@ void input_hand_update_mesh(handed_ hand);
 
 const hand_t *input_hand(handed_ hand) {
 	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
+const controller_t *input_controller(handed_ hand) {
+	return &input_controllers[hand];
+}
+
+button_state_ input_controller_menu() {
+	return input_controller_menubtn;
 }
 
 ///////////////////////////////////////////
@@ -116,11 +132,6 @@ void input_hand_refresh_system() {
 		}
 	}
 	if (available_source != hand_system) {
-		// TODO: Only really necessary for oxrc -> mirage transition, when mirage dies, this can go away
-		if (hand_system >= 0) {
-			hand_sources[hand_system].shutdown();
-			hand_sources[hand_system].initialized = false;
-		}
 		hand_system = available_source;
 
 		const char *source_name = "N/A";
@@ -133,10 +144,9 @@ void input_hand_refresh_system() {
 		}
 
 		log_diagf("Switched to input source: %s", source_name);
-		if (!hand_sources[hand_system].initialized) {
-			hand_sources [hand_system].init();
-			hand_sources [hand_system].initialized = true;
-		}
+
+		// Force the hand size to recalculate next update
+		hand_size_update = 0;
 	}
 }
 
@@ -167,12 +177,12 @@ void input_hand_init() {
 
 	gradient_t color_grad = gradient_create();
 	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0f);
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.2f);
+	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.4f);
 	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
-		color32 col = gradient_get32(color_grad, y/15.f);
+		color32 col = gradient_get32(color_grad, 1-y/15.f);
 	for (int32_t x = 0; x < 16; x++) {
 		gradient[x + y * 16] = col;
 	} }
@@ -221,6 +231,10 @@ void input_hand_init() {
 	tex_release(gradient_tex);
 	material_release(hand_mat);
 
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		hand_sources[i].init();
+	}
+
 	input_hand_refresh_system();
 }
 
@@ -228,9 +242,7 @@ void input_hand_init() {
 
 void input_hand_shutdown() {
 	for (size_t i = 0; i < _countof(hand_sources); i++) {
-		if (hand_sources[i].initialized)
-			hand_sources[i].shutdown();
-		hand_sources[i].initialized = false;
+		hand_sources[i].shutdown();
 	}
 
 	for (size_t i = 0; i < handed_max; i++) {
@@ -247,8 +259,27 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	
 	hand_sources[hand_system].update_frame();
+
+	// Update the hand size every second
+	hand_size_update -= time_elapsedf();
+	if (hand_size_update <= 0) {
+		hand_size_update = 1;
+
+		for (size_t h = 0; h < handed_max; h++) {
+			if (!(hand_state[h].info.tracked_state & button_state_active))
+				continue;
+
+			hand_state[h].info.size = 0;
+			for (size_t j = 0; j < hand_joint_tip-1; j++) {
+				hand_state[h].info.size += vec3_magnitude(
+					hand_state[h].info.fingers[hand_finger_middle][j  ].position -
+					hand_state[h].info.fingers[hand_finger_middle][j+1].position);
+			}
+			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_root].radius;
+			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_tip].radius;
+		}
+	}
 
 	for (size_t i = 0; i < handed_max; i++) {
 		// Update hand states
@@ -267,6 +298,11 @@ void input_hand_update() {
 				solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
 			}
 		}
+	}
+
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
+			hand_sources[i].update_inactive();
 	}
 }
 
@@ -335,7 +371,7 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_
 		0,
 		handedness == handed_right ?  90.f : -90.f, 
 		handedness == handed_right ? -90.f :  90.f) * orientation;
-	
+
 	// Update hand state based on inputs
 	bool was_tracked = hand.tracked_state & button_state_active;
 	hand.tracked_state = button_make_state(was_tracked, tracked);
@@ -378,6 +414,9 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, const vec3 &hand_
 			hand.fingers[f][j].orientation = rot * orientation;
 			hand.fingers[f][j].radius      = hand_finger_size[f] * hand_joint_size[j] * 0.35f;
 		} }
+
+		hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
+		hand.wrist.orientation = hand.palm.orientation;
 	}
 }
 
@@ -401,22 +440,25 @@ const vec3 sincos_norm[] = {
 	{cosf(234*deg2rad), sinf(234*deg2rad), 0},
 	{cosf(162*deg2rad), sinf(162*deg2rad), 0},};
 
+const float texcoord_v[SK_FINGERJOINTS + 1] = { 1, 1-0.44f, 1-0.69f, 1-0.85f, 1-0.96f, 1-0.99f };
+
 void input_hand_update_mesh(handed_ hand) {
 	hand_mesh_t &data = hand_state[hand].mesh;
 
-	const int32_t ring_count = _countof(sincos);
+	const int32_t ring_count  = _countof(sincos);
+	const int32_t slice_count = SK_FINGERJOINTS + 1;
 
 	// if this mesh hasn't been initialized yet
 	if (data.verts == nullptr) {
-		data.vert_count = (_countof(sincos) * SK_FINGERJOINTS + 1) * SK_FINGERS ; // verts: per joint, per finger 
-		data.ind_count  = (3 * 5 * 2 * (SK_FINGERJOINTS-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
-		data.verts      = sk_malloc_t<vert_t>(data.vert_count);
-		data.inds       = sk_malloc_t<vind_t>(data.ind_count );
+		data.vert_count = (_countof(sincos) * slice_count + 1) * SK_FINGERS ; // verts: per joint, per finger 
+		data.ind_count  = (3 * 5 * 2 * (slice_count-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
+		data.verts      = sk_malloc_t(vert_t, data.vert_count);
+		data.inds       = sk_malloc_t(vind_t, data.ind_count );
 
 		int32_t ind = 0;
 		for (vind_t f = 0; f < SK_FINGERS; f++) {
-			vind_t start_vert =  f    * (ring_count * SK_FINGERJOINTS + 1);
-			vind_t end_vert   = (f+1) * (ring_count * SK_FINGERJOINTS + 1) - (ring_count + 1);
+			vind_t start_vert =  f    * (ring_count * slice_count + 1);
+			vind_t end_vert   = (f+1) * (ring_count * slice_count + 1) - (ring_count + 1);
 
 			// start cap
 			data.inds[ind++] = start_vert+2;
@@ -432,7 +474,7 @@ void input_hand_update_mesh(handed_ hand) {
 			data.inds[ind++] = start_vert+6;
 		
 			// tube faces
-			for (vind_t j = 0; j < SK_FINGERJOINTS-1; j++) {
+			for (vind_t j = 0; j < slice_count-1; j++) {
 			for (vind_t c = 0; c < ring_count-1; c++) {
 				if (c == 2) c++;
 				vind_t curr1 = start_vert +  j    * ring_count + c;
@@ -472,12 +514,10 @@ void input_hand_update_mesh(handed_ hand) {
 
 		// Generate uvs and colors for the mesh
 		int v = 0;
-		for (int f = 0; f < SK_FINGERS;      f++) {
-			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERJOINTS);
-		for (int j = 0; j < SK_FINGERJOINTS; j++) {
-			float y = f == 0 
-				? (fmaxf(0,(float)j-1) / (float)(SK_FINGERJOINTS-2)) 
-				: (j / (float)(SK_FINGERJOINTS-1));
+		for (int f = 0; f < SK_FINGERS; f++) {
+			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERS);
+		for (int j = 0; j < slice_count; j++) {
+			float y = texcoord_v[f==0 ? maxi(0,j-1) : j];
 			
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 255,255,255,255 };
@@ -494,7 +534,7 @@ void input_hand_update_mesh(handed_ hand) {
 			data.verts[v  ].uv  = { x,y };
 			data.verts[v++].col = { 200,200,200,255 };
 		} 
-		data.verts[v  ].uv  = { x,1.0f };
+		data.verts[v  ].uv  = { x,0 };
 		data.verts[v++].col = { 255,255,255,255 };
 		}
 
@@ -507,31 +547,43 @@ void input_hand_update_mesh(handed_ hand) {
 
 	int v = 0;
 	for (int f = 0; f < SK_FINGERS;      f++) {
-	for (int j = 0; j < SK_FINGERJOINTS; j++) {
-		const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
-		const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
-		quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
+		const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
+		vec3 tip_fwd = pose_last.orientation * vec3_forward;
+		vec3 tip_up  = pose_last.orientation * vec3_up;
+		for (int j = 0; j < SK_FINGERJOINTS; j++) {
+			const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
+			const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
+			quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
-		// Make local right and up axis vectors
-		vec3  right = orientation * vec3_right;
-		vec3  up    = orientation * vec3_up;
+			// Make local right and up axis vectors
+			vec3  right = orientation * vec3_right;
+			vec3  up    = orientation * vec3_up;
 
-		// Find the scale for this joint
-		float scale = pose.radius;
-		if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
+			// Find the scale for this joint
+			float scale = pose.radius;
+			if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
 
-		// Use the local axis to create a ring of verts
-		for (size_t i = 0; i < ring_count; i++) {
-			data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-			data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
-			v++;
+			// Use the local axis to create a ring of verts
+			for (size_t i = 0; i < ring_count; i++) {
+				data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+				data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
+				v++;
+			}
+
+			// Last ring to blunt the fingertip
+			if (j == SK_FINGERJOINTS - 1) {
+				scale = scale * 0.75f;
+				for (size_t i = 0; i < ring_count; i++) {
+					vec3 at = pose.position + tip_fwd * pose.radius * 0.65f;
+					data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+					data.verts[v].pos  = at + (up*sincos[i].y + right*sincos[i].x)*scale + tip_up * pose.radius*0.25f;
+					v++;
+				}
+			}
 		}
-	}
-	const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-2];
-	const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
-	data.verts[v].norm = vec3_normalize(pose_last.position - pose_prev.position);
-	data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius;
-	v++;
+		data.verts[v].norm = tip_fwd;
+		data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius + tip_up * pose_last.radius * 0.9f;
+		v++;
 	}
 
 	// And update the mesh vertices!

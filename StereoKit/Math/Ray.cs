@@ -81,6 +81,16 @@ namespace StereoKit
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
 
+		/// <summary>Calculates the point on the Ray that's closest to the
+		/// given point! This can be in front of, or behind the ray's
+		/// starting position.</summary>
+		/// <param name="to">Any point in the same coordinate space as the 
+		/// Ray.</param>
+		/// <returns>The point on the ray that's closest to the given point.
+		/// </returns>
+		public Vec3 Closest(Vec3 to)
+			=> NativeAPI.ray_point_closest(this, to);
+
 		/// <summary>A convenience function that creates a ray from point a, 
 		/// towards point b. Resulting direction is not normalized.</summary>
 		/// <param name="a">Ray starting point.</param>
@@ -99,5 +109,8 @@ namespace StereoKit
 		/// </param>
 		/// <returns>The point at position + direction*percent.</returns>
 		public Vec3 At(float percent) => position + direction*percent;
+
+		public override string ToString()
+			=> string.Format("{0}, {1}", position, direction);
 	}
 }

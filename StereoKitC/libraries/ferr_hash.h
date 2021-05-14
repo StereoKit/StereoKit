@@ -53,7 +53,7 @@ Example usage:
 // for details about FNV-1a
 
 #define HASH_FNV32_START 2166136261
-#define HASH_FNV64_START 14695981039346656037UL // needs to be unsigned long or else Linux compiler gives warning because this big number wouldn't fit in a normal signed int 
+#define HASH_FNV64_START 14695981039346656037UL
 
 uint64_t hash_fnv64_string(const char *string,                 uint64_t start_hash FERR_HASH_DEFAULT( HASH_FNV64_START ));
 uint64_t hash_fnv64_data  (const void *data, size_t data_size, uint64_t start_hash FERR_HASH_DEFAULT( HASH_FNV64_START ));
@@ -84,7 +84,7 @@ uint32_t hash_fnv32_data  (const void *data, size_t data_size, uint32_t start_ha
 #define hashc_constfnv32_string(str) ((uint32_t)(_h32_H64(str,0,HASH_FNV32_START)))
 #define hashc_constfnv32_type(type) hash32c_constfnv_string(#type)
 
-#define _h64_H1(s,i,x)  (((x)^s[(i)<sizeof(s)?(i):sizeof(s)-1])*1099511628211Ui64)
+#define _h64_H1(s,i,x)  (((x)^s[(i)<sizeof(s)?(i):sizeof(s)-1])*1099511628211UL)
 #define _h64_H4(s,i,x)  _h64_H1 (s,i+3, _h64_H1 (s,i+2, _h64_H1 (s,i+1, _h64_H1 (s,i,x))))
 #define _h64_H16(s,i,x) _h64_H4 (s,i+12,_h64_H4 (s,i+8, _h64_H4 (s,i+4, _h64_H4 (s,i,x))))
 #define _h64_H64(s,i,x) _h64_H16(s,i+48,_h64_H16(s,i+32,_h64_H16(s,i+16,_h64_H16(s,i,x))))
@@ -101,7 +101,8 @@ uint32_t hash_constfnv32_string(const char *string);
 
 ///////////////////////////////////////////
 
-// Creates a 64 bit hash from a string. Use start_hash with a previous hash if you want to chain hashes together.
+// Creates a 64 bit hash from a string. Use start_hash with a previous hash
+// if you want to chain hashes together.
 uint64_t  hash_fnv64_string(const char* string, uint64_t start_hash) {
 	uint64_t hash = start_hash;
 	while (*string != '\0') {
@@ -113,7 +114,8 @@ uint64_t  hash_fnv64_string(const char* string, uint64_t start_hash) {
 
 ///////////////////////////////////////////
 
-// Creates a 64 bit hash from a chunk of bytes. Use start_hash with a previous hash if you want to chain hashes together.
+// Creates a 64 bit hash from a chunk of bytes. Use start_hash with a
+// previous hash if you want to chain hashes together.
 uint64_t hash_fnv64_data(const void *data, size_t data_size, uint64_t start_hash) {
 	uint64_t hash = start_hash;
 	uint8_t *bytes = (uint8_t *)data;
@@ -124,7 +126,8 @@ uint64_t hash_fnv64_data(const void *data, size_t data_size, uint64_t start_hash
 
 ///////////////////////////////////////////
 
-// Creates a 32 bit hash from a string. Use start_hash with a previous hash if you want to chain hashes together.
+// Creates a 32 bit hash from a string. Use start_hash with a previous hash
+// if you want to chain hashes together.
 uint32_t hash_fnv32_string(const char* string, uint32_t start_hash) {
 	uint32_t hash = start_hash;
 	while (*string != '\0') {
@@ -136,7 +139,8 @@ uint32_t hash_fnv32_string(const char* string, uint32_t start_hash) {
 
 ///////////////////////////////////////////
 
-// Creates a 32 bit hash from a chunk of bytes. Use start_hash with a previous hash if you want to chain hashes together.
+// Creates a 32 bit hash from a chunk of bytes. Use start_hash with a
+// previous hash if you want to chain hashes together.
 uint32_t hash_fnv32_data(const void *data, size_t data_size, uint32_t start_hash) {
 	uint32_t hash = start_hash;
 	uint8_t *bytes = (uint8_t *)data;

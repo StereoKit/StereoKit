@@ -116,7 +116,7 @@ char *log_replace_colors(const char *text, const char **color_keys, const char *
 		return nullptr;
 
 	// New string with new color values
-	char *result = sk_malloc_t<char>((len - remove) + (add * code_size));
+	char *result = sk_malloc_t(char, (len - remove) + (add * code_size));
 	char *at     = result;
 	ch   = text;
 	curr = 0;
@@ -165,6 +165,7 @@ void log_write(log_ level, const char *text) {
 
 	const char *tag = "";
 	switch (level) {
+	case log_none:                                       return;
 	case log_diagnostic: tag = "<~blu>diagnostic<~clr>"; break;
 	case log_inform:     tag = "<~cyn>info<~clr>";       break;
 	case log_warning:    tag = "<~ylw>warning<~clr>";    break;
@@ -174,11 +175,13 @@ void log_write(log_ level, const char *text) {
 	}
 
 	size_t len       = strlen(tag) + strlen(text) + 10;
-	char  *full_text = sk_malloc_t<char>(len);
+	char  *full_text = sk_malloc_t(char, len);
 	snprintf(full_text, len, "[SK %s] %s\n", tag, text);
 
 	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX)
 	printf("%s", colored_text);
+#endif
 
 	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
 	if (log_colors != log_colors_none) {
@@ -198,15 +201,15 @@ void log_write(log_ level, const char *text) {
 ///////////////////////////////////////////
 
 void _log_writef(log_ level, const char* text, va_list args) {
-    va_list copy;
-    va_copy(copy, args);
-    size_t length = vsnprintf(nullptr, 0, text, args);
-    char*  buffer = sk_malloc_t<char>(length + 2);
-    vsnprintf(buffer, length + 2, text, copy);
+	va_list copy;
+	va_copy(copy, args);
+	size_t length = vsnprintf(nullptr, 0, text, args);
+	char*  buffer = sk_malloc_t(char, length + 2);
+	vsnprintf(buffer, length + 2, text, copy);
 
-    log_write(level, buffer);
-    free(buffer);
-    va_end(copy);
+	log_write(level, buffer);
+	free(buffer);
+	va_end(copy);
 }
 
 ///////////////////////////////////////////
@@ -263,8 +266,8 @@ void log_set_colors(log_colors_ colors) {
 
 ///////////////////////////////////////////
 
-void log_fail_reason(int32_t confidence, const char *fail_reason) {
-	log_err(fail_reason);
+void log_fail_reason(int32_t confidence, log_ log_as, const char *fail_reason) {
+	log_write(log_as, fail_reason);
 
 	if (confidence <= log_fail_confidence)
 		return;
@@ -276,14 +279,14 @@ void log_fail_reason(int32_t confidence, const char *fail_reason) {
 
 ///////////////////////////////////////////
 
-void log_fail_reasonf(int32_t confidence, const char *fail_reason, ...) {
+void log_fail_reasonf(int32_t confidence, log_ log_as, const char *fail_reason, ...) {
 	va_list args;
 	va_start(args, fail_reason);
 	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
-	char*  buffer = sk_malloc_t<char>(length + 2);
+	char*  buffer = sk_malloc_t(char, length + 2);
 	vsnprintf(buffer, length + 2, fail_reason, args);
 
-	log_fail_reason(confidence, buffer);
+	log_fail_reason(confidence, log_as, buffer);
 	free(buffer);
 	va_end(args);
 }

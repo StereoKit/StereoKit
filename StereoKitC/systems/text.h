@@ -10,6 +10,7 @@ struct _text_style_t {
 	uint32_t    buffer_index;
 	color32     color;
 	float       size;
+	float       char_height;
 	float       line_spacing;
 };
 struct text_buffer_t {

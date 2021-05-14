@@ -8,14 +8,14 @@
 namespace sk {
 
 struct stl_header_t {
-	uint8_t header[80];
+	uint8_t  header[80];
 	uint32_t tri_count;
 };
 
 #pragma pack(1) 
 struct stl_triangle_t {
-	vec3 normal;
-	vec3 verts[3];
+	vec3     normal;
+	vec3     verts[3];
 	uint16_t attribute;
 };
 

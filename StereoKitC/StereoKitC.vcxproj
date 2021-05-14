@@ -64,6 +64,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>26812</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -96,6 +97,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26812</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -129,6 +131,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="asset_types\model_fbx.cpp" />
     <ClCompile Include="asset_types\model_gltf.cpp" />
     <ClCompile Include="asset_types\model_obj.cpp" />
+    <ClCompile Include="asset_types\model_ply.cpp" />
     <ClCompile Include="asset_types\model_stl.cpp" />
     <ClCompile Include="asset_types\shader.cpp" />
     <ClCompile Include="asset_types\sound.cpp" />
@@ -139,17 +142,20 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
+    <ClCompile Include="libraries\miniaudio.cpp" />
     <ClCompile Include="libraries\miniz.cpp" />
     <ClCompile Include="libraries\ofbx.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
+    <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="sk_math.cpp" />
     <ClCompile Include="sk_memory.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stereokit_ui.cpp" />
+    <ClCompile Include="systems\audio.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
     <ClCompile Include="systems\hand\hand_override.cpp" />
@@ -157,6 +163,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\hand\hand_oxr_controller.cpp" />
     <ClCompile Include="systems\hand\input_hand.cpp" />
     <ClCompile Include="systems\input.cpp" />
+    <ClCompile Include="systems\input_keyboard.cpp" />
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\platform\android.cpp" />
@@ -192,6 +199,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\dr_wav.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
+    <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\miniz.h" />
     <ClInclude Include="libraries\ofbx.h" />
@@ -202,7 +210,9 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\stb_rect_pack.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
+    <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
@@ -218,6 +228,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stereokit_ui.h" />
+    <ClInclude Include="systems\audio.h" />
     <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\hand\hand_mouse.h" />
     <ClInclude Include="systems\hand\hand_override.h" />
@@ -226,6 +237,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\hand\input_hand.h" />
     <ClInclude Include="systems\hand\hand_poses.h" />
     <ClInclude Include="systems\input.h" />
+    <ClInclude Include="systems\input_keyboard.h" />
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\platform\android.h" />
@@ -257,6 +269,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <None Include="shaders_builtin\shader_builtin_pbr.hlsl" />
     <None Include="shaders_builtin\shader_builtin_skybox.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
   </ItemGroup>

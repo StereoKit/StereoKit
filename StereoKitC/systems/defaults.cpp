@@ -16,6 +16,7 @@ tex_t        sk_default_tex_flat;
 tex_t        sk_default_tex_rough;
 tex_t        sk_default_cubemap;
 mesh_t       sk_default_quad;
+mesh_t       sk_default_screen_quad;
 mesh_t       sk_default_sphere;
 mesh_t       sk_default_cube;
 shader_t     sk_default_shader;
@@ -24,6 +25,7 @@ shader_t     sk_default_shader_unlit;
 shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
+shader_t     sk_default_shader_ui_box;
 shader_t     sk_default_shader_ui_quadrant;
 shader_t     sk_default_shader_sky;
 shader_t     sk_default_shader_lines;
@@ -33,6 +35,7 @@ material_t   sk_default_material_unlit;
 material_t   sk_default_material_equirect;
 material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
+material_t   sk_default_material_ui_box;
 material_t   sk_default_material_ui_quadrant;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
@@ -76,38 +79,52 @@ bool defaults_init() {
 
 	// Cubemap
 	spherical_harmonics_t lighting = { {
-		{ 0.27f,  0.26f,  0.25f},
-		{ 0.07f,  0.09f,  0.11f},
-		{-0.06f, -0.06f, -0.04f},
-		{-0.06f, -0.04f, -0.01f},
-		{-0.04f, -0.05f, -0.06f},
-		{ 0.15f,  0.16f,  0.16f},
-		{-0.04f, -0.05f, -0.05f},
-		{ 0.05f,  0.05f,  0.04f},
-		{-0.11f, -0.13f, -0.13f},
+		{ 0.74f,  0.74f,  0.73f}, 
+		{ 0.24f,  0.25f,  0.26f}, 
+		{ 0.09f,  0.09f,  0.09f}, 
+		{ 0.05f,  0.05f,  0.06f}, 
+		{-0.01f, -0.01f, -0.01f}, 
+		{-0.03f, -0.03f, -0.03f}, 
+		{ 0.00f,  0.00f,  0.00f}, 
+		{-0.02f, -0.02f, -0.02f}, 
+		{ 0.04f,  0.04f,  0.04f}, 
 	} };
+	render_set_skylight(lighting);
+	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 	render_set_skytex(sk_default_cubemap);
-	render_set_skylight(lighting);
 	render_enable_skytex(true);
 
-	// Default rendering quad
+	// Default quad mesh
 	sk_default_quad = mesh_create();
 	vert_t verts[4] = {
-		{ vec3{-1,-1,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
-		{ vec3{ 1,-1,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
-		{ vec3{ 1, 1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
-		{ vec3{-1, 1,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} }, };
-	vind_t inds[6] = { 0,1,2, 0,2,3 };
+		{ vec3{-0.5f,-0.5f,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
+		{ vec3{ 0.5f,-0.5f,0}, vec3{0,0,-1}, vec2{0,1}, color32{255,255,255,255} },
+		{ vec3{ 0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{-0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} }, };
+	vind_t inds[6] = { 2,1,0, 3,2,0 };
 	mesh_set_verts(sk_default_quad, verts, 4);
 	mesh_set_inds (sk_default_quad, inds,  6);
-	mesh_set_id   (sk_default_quad, default_id_mesh_quad);
+	
+	// Default rendering quad
+	sk_default_screen_quad = mesh_create();
+	vert_t sq_verts[4] = {
+		{ vec3{-1,-1,0}, vec3{0,0,1}, vec2{0,0}, color32{255,255,255,255} },
+		{ vec3{ 1,-1,0}, vec3{0,0,1}, vec2{1,0}, color32{255,255,255,255} },
+		{ vec3{ 1, 1,0}, vec3{0,0,1}, vec2{1,1}, color32{255,255,255,255} },
+		{ vec3{-1, 1,0}, vec3{0,0,1}, vec2{0,1}, color32{255,255,255,255} }, };
+	vind_t sq_inds[6] = { 0,1,2, 0,2,3 };
+	mesh_set_verts(sk_default_screen_quad, sq_verts, 4);
+	mesh_set_inds (sk_default_screen_quad, sq_inds,  6);
+	
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
 
-	mesh_set_id(sk_default_cube,   default_id_mesh_cube);
-	mesh_set_id(sk_default_sphere, default_id_mesh_sphere);
+	mesh_set_id(sk_default_quad,        default_id_mesh_quad);
+	mesh_set_id(sk_default_screen_quad, default_id_mesh_screen_quad);
+	mesh_set_id(sk_default_cube,        default_id_mesh_cube);
+	mesh_set_id(sk_default_sphere,      default_id_mesh_sphere);
 
 	// Shaders
 	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
@@ -115,20 +132,16 @@ bool defaults_init() {
 	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
 	sk_default_shader_equirect    = shader_create_mem((void*)sks_shader_builtin_equirect_hlsl,    sizeof(sks_shader_builtin_equirect_hlsl));
 	sk_default_shader_ui          = shader_create_mem((void*)sks_shader_builtin_ui_hlsl,          sizeof(sks_shader_builtin_ui_hlsl));
+	sk_default_shader_ui_box      = shader_create_mem((void*)sks_shader_builtin_ui_box_hlsl,      sizeof(sks_shader_builtin_ui_box_hlsl));
 	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
 	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
 	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
-
-	// Android has issues with this shader, and I haven't figured out why 
-	// yet. For now, we'll just drop back to the default shader, but we'll 
-	// work this out completely later.
-#if defined(SK_OS_ANDROID)
-	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
-#else
 	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
-#endif
+
+	// Android seems to give us a hard time about this one, so let's fall
+	// back at least somewhat gently.
 	if (!sk_default_shader_pbr)
-		sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+		sk_default_shader_pbr = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_pbr         == nullptr ||
@@ -136,6 +149,7 @@ bool defaults_init() {
 		sk_default_shader_font        == nullptr ||
 		sk_default_shader_equirect    == nullptr ||
 		sk_default_shader_ui          == nullptr ||
+		sk_default_shader_ui_box      == nullptr ||
 		sk_default_shader_ui_quadrant == nullptr ||
 		sk_default_shader_sky         == nullptr ||
 		sk_default_shader_lines       == nullptr)
@@ -147,6 +161,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_font,        default_id_shader_font);
 	shader_set_id(sk_default_shader_equirect,    default_id_shader_equirect);
 	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
+	shader_set_id(sk_default_shader_ui_box,      default_id_shader_ui_box);
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
@@ -158,6 +173,7 @@ bool defaults_init() {
 	sk_default_material_equirect = material_create(sk_default_shader_equirect);
 	sk_default_material_font     = material_create(sk_default_shader_font);
 	sk_default_material_ui       = material_create(sk_default_shader_ui);
+	sk_default_material_ui_box   = material_create(sk_default_shader_ui_box);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
 
 	if (sk_default_material          == nullptr ||
@@ -166,6 +182,7 @@ bool defaults_init() {
 		sk_default_material_equirect == nullptr ||
 		sk_default_material_font     == nullptr ||
 		sk_default_material_ui       == nullptr ||
+		sk_default_material_ui_box   == nullptr ||
 		sk_default_material_ui_quadrant == nullptr)
 		return false;
 
@@ -175,12 +192,16 @@ bool defaults_init() {
 	material_set_id(sk_default_material_equirect, default_id_material_equirect);
 	material_set_id(sk_default_material_font,     default_id_material_font);
 	material_set_id(sk_default_material_ui,       default_id_material_ui);
+	material_set_id(sk_default_material_ui_box,   default_id_material_ui_box);
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
+	material_set_cull(sk_default_material_ui_box, cull_none);
 
 	// Text!
-	sk_default_font = font_create(platform_default_font());
+	char font_name[512];
+	platform_default_font(font_name, sizeof(font_name));
+	sk_default_font = font_create(font_name);
 	if (sk_default_font == nullptr)
 		return false;
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
@@ -245,6 +266,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_unlit);
 	material_release(sk_default_material_font);
 	material_release(sk_default_material_ui);
+	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_font);
@@ -252,9 +274,13 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_ui);
+	shader_release  (sk_default_shader_ui_box);
 	shader_release  (sk_default_shader_ui_quadrant);
 	shader_release  (sk_default_shader_sky);
+	mesh_release    (sk_default_cube);
+	mesh_release    (sk_default_sphere);
 	mesh_release    (sk_default_quad);
+	mesh_release    (sk_default_screen_quad);
 	tex_release     (sk_default_tex);
 	tex_release     (sk_default_tex_black);
 	tex_release     (sk_default_tex_gray);

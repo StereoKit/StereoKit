@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "input.h"
+#include "input_keyboard.h"
 #include "hand/input_hand.h"
 #include "../libraries/array.h"
 #include "platform/openxr.h"
@@ -14,12 +15,16 @@ struct input_event_t {
 	void (*event_callback)(input_source_ source, button_state_ evt, const pointer_t &pointer);
 };
 
-array_t<input_event_t>input_listeners  = {};
-array_t<pointer_t>    input_pointers   = {};
-mouse_t               input_mouse_data = {};
-keyboard_t            input_key_data   = {};
-pose_t                input_head_pose  = { vec3_zero, quat_identity };
-pose_t                input_eyes_pose  = { vec3_zero, quat_identity };
+array_t<input_event_t>input_listeners      = {};
+array_t<pointer_t>    input_pointers       = {};
+mouse_t               input_mouse_data     = {};
+controller_t          input_controllers[2] = {};
+button_state_         input_controller_menubtn = {};
+
+pose_t                input_head_pose_local  = { vec3_zero, quat_identity };
+pose_t                input_head_pose_world  = { vec3_zero, quat_identity };
+pose_t                input_eyes_pose_local  = { vec3_zero, quat_identity };
+pose_t                input_eyes_pose_world  = { vec3_zero, quat_identity };
 button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
@@ -90,6 +95,7 @@ void input_fire_event(input_source_ source, button_state_ event, const pointer_t
 ///////////////////////////////////////////
 
 bool input_init() {
+	input_keyboard_initialize();
 	input_hand_init();
 	return true;
 }
@@ -97,6 +103,7 @@ bool input_init() {
 ///////////////////////////////////////////
 
 void input_shutdown() {
+	input_keyboard_shutdown();
 	input_pointers .free();
 	input_listeners.free();
 	input_hand_shutdown();
@@ -105,6 +112,8 @@ void input_shutdown() {
 ///////////////////////////////////////////
 
 void input_update() {
+	
+	input_keyboard_update();
 	input_hand_update();
 }
 
@@ -123,19 +132,19 @@ const mouse_t *input_mouse() {
 ///////////////////////////////////////////
 
 button_state_ input_key(key_ key) {
-	return (button_state_)input_key_data.keys[key];
+	return input_keyboard_get(key);
 }
 
 ///////////////////////////////////////////
 
 const pose_t *input_head() {
-	return &input_head_pose;
+	return &input_head_pose_world;
 }
 
 ///////////////////////////////////////////
 
 const pose_t *input_eyes() {
-	return &input_eyes_pose;
+	return &input_eyes_pose_world;
 }
 
 ///////////////////////////////////////////

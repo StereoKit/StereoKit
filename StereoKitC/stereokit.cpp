@@ -10,6 +10,7 @@
 #include "systems/physics.h"
 #include "systems/system.h"
 #include "systems/text.h"
+#include "systems/audio.h"
 #include "systems/sprite_drawer.h"
 #include "systems/line_drawer.h"
 #include "systems/defaults.h"
@@ -19,7 +20,6 @@
 #include "systems/platform/openxr.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
-#include "asset_types/sound.h"
 
 namespace sk {
 
@@ -47,6 +47,9 @@ float   sk_timev_elapsedf    = 0;
 double  sk_timev_elapsed_us  = 0;
 float   sk_timev_elapsedf_us = 0;
 uint64_t sk_timev_raw        = 0;
+
+uint64_t  app_init_time = 0;
+system_t *app_system    = nullptr;
 
 ///////////////////////////////////////////
 
@@ -86,6 +89,8 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_display_mode           = sk_settings.display_preference;
 	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
 	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+	if (sk_settings.log_filter != log_none)
+		log_set_filter(sk_settings.log_filter);
 
 	// Set some default values
 	if (sk_settings.flatscreen_width  == 0)
@@ -99,28 +104,22 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_update_timer();
 
 	// Platform related systems
-	system_t sys_platform         = { "Platform"     };
-	system_t sys_platform_begin   = { "FrameBegin"   };
-	system_t sys_platform_render  = { "FrameRender"  };
-	system_t sys_platform_present = { "FramePresent" };
+	system_t sys_platform         = { "Platform"    };
+	system_t sys_platform_begin   = { "FrameBegin"  };
+	system_t sys_platform_render  = { "FrameRender" };
 
 	sys_platform        .func_initialize = platform_init;
 	sys_platform        .func_shutdown   = platform_shutdown;
 	sys_platform_begin  .func_update     = platform_step_begin;
 	sys_platform_render .func_update     = platform_step_end;
-	sys_platform_present.func_update     = platform_present;
 
-	const char *frame_present_update_deps[] = {"FrameRender"};
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
-	sys_platform_present.update_dependencies     = frame_present_update_deps;
-	sys_platform_present.update_dependency_count = _countof(frame_present_update_deps);
 
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);
 	systems_add(&sys_platform_render);
-	systems_add(&sys_platform_present);
 
 	// Rest of the systems
 	system_t sys_defaults = { "Defaults" };
@@ -167,17 +166,17 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_renderer.func_shutdown           = render_shutdown;
 	systems_add(&sys_renderer);
 
-	system_t sys_sound = { "Sound" };
-	const char *sound_deps       [] = {"Platform"};
-	const char *sound_update_deps[] = {"Platform"};
-	sys_sound.init_dependencies       = sound_deps;
-	sys_sound.init_dependency_count   = _countof(sound_deps);
-	sys_sound.update_dependencies     = sound_update_deps;
-	sys_sound.update_dependency_count = _countof(sound_update_deps);
-	sys_sound.func_initialize         = sound_init;
-	sys_sound.func_update             = sound_update;
-	sys_sound.func_shutdown           = sound_shutdown;
-	systems_add(&sys_sound);
+	system_t sys_audio = { "Audio" };
+	const char *audio_deps       [] = {"Platform"};
+	const char *audio_update_deps[] = {"Platform"};
+	sys_audio.init_dependencies       = audio_deps;
+	sys_audio.init_dependency_count   = _countof(audio_deps);
+	sys_audio.update_dependencies     = audio_update_deps;
+	sys_audio.update_dependency_count = _countof(audio_update_deps);
+	sys_audio.func_initialize         = audio_init;
+	sys_audio.func_update             = audio_update;
+	sys_audio.func_shutdown           = audio_shutdown;
+	systems_add(&sys_audio);
 
 	system_t sys_input = { "Input" };
 	const char *input_deps       [] = {"Platform", "Defaults"};
@@ -236,6 +235,9 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_initialized = systems_initialize();
 	if (!sk_initialized) log_show_any_fail_reason();
 	else                 log_clear_any_fail_reason();
+
+	app_system    = systems_find("App");
+	app_init_time = stm_now();
 	return sk_initialized;
 }
 
@@ -269,6 +271,9 @@ void sk_quit() {
 ///////////////////////////////////////////
 
 bool32_t sk_step(void (*app_update)(void)) {
+	if (app_system->profile_start_duration == 0)
+		app_system->profile_start_duration = stm_since(app_init_time);
+
 	sk_app_update_func = app_update;
 	sk_update_timer();
 

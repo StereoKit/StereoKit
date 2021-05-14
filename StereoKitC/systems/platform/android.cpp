@@ -6,8 +6,10 @@
 #include "flatscreen_input.h"
 #include "../render.h"
 #include "../input.h"
+#include "../system.h"
 #include "../../_stereokit.h"
 #include "../../libraries/sk_gpu.h"
+#include "../../libraries/sokol_time.h"
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
@@ -25,6 +27,7 @@ ANativeWindow    *android_next_window     = nullptr;
 jobject           android_next_window_xam = nullptr;
 bool              android_next_win_ready  = false;
 skg_swapchain_t   android_swapchain       = {};
+system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
 
@@ -39,12 +42,13 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 ///////////////////////////////////////////
 
 bool android_init() {
+	android_render_sys = systems_find("FrameRender");
 	android_activity = (jobject)sk_settings.android_activity;
 	if (android_vm == nullptr)
 		android_vm = (JavaVM*)sk_settings.android_java_vm;
 
 	if (android_vm == nullptr || android_activity == nullptr) {
-		log_fail_reason(95,  "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
+		log_fail_reason(95, log_error, "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
 		return false;
 	}
 
@@ -53,11 +57,11 @@ bool android_init() {
 	int result = android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6);
 	if (result == JNI_EDETACHED) {
 		if (android_vm->AttachCurrentThread(&android_env, nullptr) != JNI_OK) {
-			log_fail_reason(95, "Couldn't attach the Java Environment to the current thread!");
+			log_fail_reason(95, log_error, "Couldn't attach the Java Environment to the current thread!");
 			return false;
 		}
 	} else if (result != JNI_OK) {
-		log_fail_reason(95, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
+		log_fail_reason(95, log_error, "Couldn't get the Java Environment from the VM, this needs to be called from the main thread.");
 		return false;
 	}
 
@@ -85,7 +89,7 @@ bool android_init() {
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
 	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
 	if (android_asset_manager == nullptr) {
-		log_fail_reason(95,  "Couldn't get the Android asset manager!");
+		log_fail_reason(95, log_error, "Couldn't get the Android asset manager!");
 		return false;
 	}
 
@@ -133,7 +137,19 @@ void android_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
-bool android_start() {
+bool android_start_pre_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool android_start_post_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool android_start_flat() {
 	if (android_window) {
 		android_create_swapchain();
 	}
@@ -143,7 +159,7 @@ bool android_start() {
 
 ///////////////////////////////////////////
 
-void android_stop() {
+void android_stop_flat() {
 	flatscreen_input_shutdown();
 	if (android_window) {
 		skg_swapchain_destroy(&android_swapchain);
@@ -160,7 +176,12 @@ void android_shutdown() {
 
 ///////////////////////////////////////////
 
-void android_step_begin() {
+void android_step_begin_xr() {
+}
+
+///////////////////////////////////////////
+
+void android_step_begin_flat() {
 	flatscreen_input_update();
 
 	if (android_next_win_ready) {
@@ -193,7 +214,7 @@ void android_step_begin() {
 
 ///////////////////////////////////////////
 
-void android_step_end() {
+void android_step_end_flat() {
 	input_update_predicted();
 
 	if (!android_window)
@@ -201,21 +222,16 @@ void android_step_end() {
 
 	skg_draw_begin();
 	color128 color = render_get_clear_color();
-	skg_swapchain_bind(&android_swapchain, true, &color.r);
+	skg_swapchain_bind(&android_swapchain);
+	skg_target_clear(true, &color.r);
 
-	matrix view = render_get_cam_root  ();
+	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
-}
-
-///////////////////////////////////////////
-
-void android_vsync() {
-	if (!android_window)
-		return;
-
+	
+	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
 	skg_swapchain_present(&android_swapchain);
 }
 

@@ -22,7 +22,11 @@ package("openxr_loader")
     
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
-    add_deps("cmake")
+    add_deps("cmake", "jsoncpp")
+
+    if is_plat("linux") then
+        add_syslinks("stdc++fs", "jsoncpp")
+    end
     
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF"})
@@ -46,7 +50,7 @@ option("uwp")
     
 target("StereoKitC")
     add_options("uwp")
-    set_version("0.3.0")
+    set_version("0.3.1")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
@@ -59,7 +63,12 @@ target("StereoKitC")
     else
         set_languages("cxx11")
     end
-    
+
+    -- 2.5.3 is needed for utils.install.pkgconfig_importfiles
+    set_xmakever("2.5.3") 
+    add_rules("utils.install.pkgconfig_importfiles")
+    add_headerfiles("StereoKitC/stereokit*.h")
+
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
@@ -81,11 +90,6 @@ target("StereoKitC")
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
         add_links("GL", "GLEW", "GLX", "X11", "pthread")
-        -- stdc++fs needs to be added at the -end- of the list, but 
-        -- xmake's add_packages adds links after all the add_links links.
-        -- Fortunately, this one adds even after that, so we're all
-        -- good :)
-        add_shflags("-lstdc++fs")
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end

@@ -73,6 +73,12 @@ namespace StereoKit
 		/// <summary>Is the hand making a grip gesture right now? Fingers
 		/// next to the palm.</summary>
 		public  BtnState    grip;
+		/// <summary>This is the size of the hand, calculated by measuring 
+		/// the length of the middle finger! This is calculated by adding the 
+		/// distances between each joint, then adding the joint radius of the
+		/// root and tip. This value is recalculated at relatively frequent 
+		/// intervals, and can vary by as much as a centimeter.</summary>
+		public float size;
 		/// <summary>What percentage of activation is the pinch gesture right
 		/// now? Where 0 is a hand in an outstretched resting position, and 1
 		/// is fingers touching, within a device error tolerant threshold.
@@ -152,6 +158,126 @@ namespace StereoKit
 		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
+	/// <summary>This represents a physical controller input device! Tracking
+	/// information, buttons, analog sticks and triggers! There's also a Menu
+	/// button that's tracked separately at Input.ContollerMenu.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Controller
+	{
+		/// <summary>The grip pose of the controller. This approximately
+		/// represents the center of the hand's position. Check `trackedPos`
+		/// and `trackedRot` for the current state of the pose data.</summary>
+		public Pose pose;
+		/// <summary>The aim pose of a controller is where the controller
+		/// 'points' from and to. This is great for pointer rays and far
+		/// interactions.</summary>
+		public Pose aim;
+		/// <summary>This tells the current tracking state of this controller
+		/// overall. If either position or rotation are trackable, then this
+		/// will report tracked. Typically, positional tracking will be lost
+		/// first, when the controller goes out of view, and rotational 
+		/// tracking will often remain as long as the controller is still 
+		/// connected. This is a good way to check if the controller is
+		/// connected to the system at all.</summary>
+		public BtnState tracked;
+		/// <summary>This tells the current tracking state of the 
+		/// controller's position information. This is often the first part
+		/// of tracking data to go, so it can often be good to account for 
+		/// this on occasions.</summary>
+		public TrackState trackedPos;
+		/// <summary>This tells the current tracking state of the
+		/// controller's rotational information.</summary>
+		public TrackState trackedRot;
+		/// <summary>This represents the click state of the controller's
+		/// analog stick or directional controller.</summary>
+		public BtnState stickClick;
+		/// <summary>The current state of the controller's X1 button.
+		/// Depending on the specific hardware, this is the first general
+		/// purpose button on the controller. For example, on an Oculus Quest
+		/// Touch controller this would represent 'X' on the left controller,
+		/// and 'A' on the right controller.</summary>
+		public BtnState x1;
+		/// <summary>The current state of the controller's X2 button.
+		/// Depending on the specific hardware, this is the second general
+		/// purpose button on the controller. For example, on an Oculus Quest
+		/// Touch controller this would represent 'Y' on the left controller,
+		/// and 'B' on the right controller.</summary>
+		public BtnState x2;
+		/// <summary>The trigger button at the user's index finger. These
+		/// buttons typically have a wide range of activation, so this is
+		/// provided as a value from 0.0 -> 1.0, where 0 is no interaction,
+		/// and 1 is full interaction. If a controller has binary activation,
+		/// this will jump straight from 0 to 1.</summary>
+		public float trigger;
+		/// <summary>The grip button typically sits under the user's middle
+		/// finger. These buttons occasionally have a wide range of
+		/// activation, so this is provided as a value from 0.0 -> 1.0, where
+		/// 0 is no interaction, and 1 is full interaction. If a controller
+		/// has binary activation, this will jump straight from 0 to 1.</summary>
+		public float grip;
+		/// <summary>This is the current 2-axis position of the analog stick
+		/// or equivalent directional controller. This generally ranges from 
+		/// -1 to +1 on each axis. This is a raw input, so dead-zones and
+		/// similar issues are not accounted for here, unless modified by the
+		/// OpenXR platform itself.</summary>
+		public Vec2 stick;
+
+		/// <summary>Is the controller's X1 button currently pressed? 
+		/// Depending on the specific hardware, this is the first general
+		/// purpose button on the controller. For example, on an Oculus Quest
+		/// Touch controller this would represent 'X' on the left controller,
+		/// and 'A' on the right controller.</summary>
+		public bool IsX1Pressed => (x1 & BtnState.Active) > 0;
+		/// <summary>Has the controller's X1 button just been pressed this
+		/// frame? Depending on the specific hardware, this is the first
+		/// general purpose button on the controller. For example, on an
+		/// Oculus Quest Touch controller this would represent 'X' on the
+		/// left controller, and 'A' on the right controller.</summary>
+		public bool IsX1JustPressed => (x1 & BtnState.JustActive) > 0;
+		/// <summary>Has the controller's X1 button just been released this
+		/// frame? Depending on the specific hardware, this is the first
+		/// general purpose button on the controller. For example, on an
+		/// Oculus Quest Touch controller this would represent 'X' on the
+		/// left controller, and 'A' on the right controller.</summary>
+		public bool IsX1JustUnPressed => (x1 & BtnState.JustInactive) > 0;
+
+		/// <summary>Is the controller's X2 button currently pressed? 
+		/// Depending on the specific hardware, this is the second general
+		/// purpose button on the controller. For example, on an Oculus Quest
+		/// Touch controller this would represent 'X' on the left controller,
+		/// and 'A' on the right controller.</summary>
+		public bool IsX2Pressed => (x2 & BtnState.Active) > 0;
+		/// <summary>Has the controller's X2 button just been pressed this
+		/// frame? Depending on the specific hardware, this is the second
+		/// general purpose button on the controller. For example, on an
+		/// Oculus Quest Touch controller this would represent 'X' on the
+		/// left controller, and 'A' on the right controller.</summary>
+		public bool IsX2JustPressed => (x2 & BtnState.JustActive) > 0;
+		/// <summary>Has the controller's X2 button just been released this
+		/// frame? Depending on the specific hardware, this is the second
+		/// general purpose button on the controller. For example, on an
+		/// Oculus Quest Touch controller this would represent 'X' on the
+		/// left controller, and 'A' on the right controller.</summary>
+		public bool IsX2JustUnPressed => (x2 & BtnState.JustInactive) > 0;
+
+		/// <summary>Is the analog stick/directional controller button 
+		/// currently being actively pressed?</summary>
+		public bool IsStickClicked       => (stickClick & BtnState.Active) > 0;
+		/// <summary>Has the analog stick/directional controller button 
+		/// just been pressed this frame?</summary>
+		public bool IsStickJustClicked   => (stickClick & BtnState.JustActive) > 0;
+		/// <summary>Has the analog stick/directional controller button 
+		/// just been released this frame?</summary>
+		public bool IsStickJustUnclicked => (stickClick & BtnState.JustInactive) > 0;
+
+		/// <summary>Is the controller being tracked by the sensors right now?</summary>
+		public bool IsTracked       => (tracked & BtnState.Active)       > 0;
+		/// <summary>Has the controller just started being tracked this frame?</summary>
+		public bool IsJustTracked   => (tracked & BtnState.JustActive)   > 0;
+		/// <summary>Has the controller just stopped being tracked this frame?</summary>
+		public bool IsJustUntracked => (tracked & BtnState.JustInactive) > 0;
+	}
+
 	/// <summary>Input from the system come from this class! Hands, eyes,
 	/// heads, mice and pointers!</summary>
 	public static class Input
@@ -195,6 +321,11 @@ namespace StereoKit
 		/// <summary>Information about this system's mouse, or lack thereof!
 		/// </summary>
 		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
+
+		public static Controller Controller(Handed handed)
+			=> Marshal.PtrToStructure<Controller>(NativeAPI.input_controller(handed));
+		public static BtnState ControllerMenuButton
+			=> NativeAPI.input_controller_menu();
 
 		/// <summary>Retreives all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
@@ -248,7 +379,7 @@ namespace StereoKit
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
-		/// <param name="hand">>If Handed.Max, this will set the value for 
+		/// <param name="hand">If Handed.Max, this will set the value for 
 		/// both hands.</param>
 		/// <param name="material">The new Material!</param>
 		public static void HandMaterial(Handed hand, Material material)

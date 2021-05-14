@@ -28,7 +28,6 @@ namespace StereoKitTest_Android
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
-			
 			JavaSystem.LoadLibrary("openxr_loader");
 			JavaSystem.LoadLibrary("StereoKitC");
 
@@ -79,6 +78,8 @@ namespace StereoKitTest_Android
 				// Now loop until finished, and then shut down
 				while (SK.Step(app.Step)) { }
 				SK.Shutdown();
+
+				Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
 			});
 		}
 

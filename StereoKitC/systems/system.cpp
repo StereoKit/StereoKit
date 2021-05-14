@@ -24,8 +24,8 @@ bool              systems_initialized = false;
 
 ///////////////////////////////////////////
 
-int32_t systems_find(const char *name);
-bool    systems_sort();
+int32_t systems_find_id(const char *name);
+bool    systems_sort   ();
 
 void    array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order);
 int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t **out_order);
@@ -39,7 +39,7 @@ void systems_add(const system_t *system) {
 
 ///////////////////////////////////////////
 
-int32_t systems_find(const char *name) {
+int32_t systems_find_id(const char *name) {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
 			return i;
@@ -49,18 +49,28 @@ int32_t systems_find(const char *name) {
 
 ///////////////////////////////////////////
 
+system_t *systems_find(const char *name) {
+	for (int32_t i = 0; i < systems.count; i++) {
+		if (string_eq(name, systems[i].name))
+			return &systems[i];
+	}
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 bool systems_sort() {
 	
 	int32_t result = 0;
 	
 	// Turn dependency names into indices for update
-	sort_dependency_t *update_ids = sk_malloc_t<sort_dependency_t>(systems.count);
+	sort_dependency_t *update_ids = sk_malloc_t(sort_dependency_t, systems.count);
 	for (size_t i = 0; i < systems.count; i++) {
 		update_ids[i].count = systems[i].update_dependency_count;
-		update_ids[i].ids   = sk_malloc_t<int32_t>(systems[i].update_dependency_count);
+		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].update_dependency_count);
 
 		for (size_t d = 0; d < systems[i].update_dependency_count; d++) {
-			update_ids[i].ids[d] = systems_find(systems[i].update_dependencies[d]);
+			update_ids[i].ids[d] = systems_find_id(systems[i].update_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
 				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
 				result = 1;
@@ -80,13 +90,13 @@ bool systems_sort() {
 	}
 
 	// Turn dependency names into indices for init
-	sort_dependency_t *init_ids = sk_malloc_t<sort_dependency_t>(systems.count);
+	sort_dependency_t *init_ids = sk_malloc_t(sort_dependency_t, systems.count);
 	for (size_t i = 0; i < systems.count; i++) {
 		init_ids[i].count = systems[i].init_dependency_count;
-		init_ids[i].ids   = sk_malloc_t<int32_t>(systems[i].init_dependency_count);
+		init_ids[i].ids   = sk_malloc_t(int32_t, systems[i].init_dependency_count);
 
 		for (size_t d = 0; d < systems[i].init_dependency_count; d++) {
-			init_ids[i].ids[d] = systems_find(systems[i].init_dependencies[d]);
+			init_ids[i].ids[d] = systems_find_id(systems[i].init_dependencies[d]);
 			if (init_ids[i].ids[d] == -1) {
 				log_errf("Can't find system init dependency by the name of %s!", systems[i].init_dependencies[d]);
 				result = 1;
@@ -144,14 +154,16 @@ void systems_update() {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
-			uint64_t start = stm_now();
+			systems[i].profile_frame_start = stm_now();
 
 			systems[i].func_update();
 
 			// end timing
-			systems[i].profile_frame_duration   = stm_since(start);
+			if (systems[i].profile_frame_duration == 0)
+				systems[i].profile_frame_duration = stm_since(systems[i].profile_frame_start);
 			systems[i].profile_update_duration += systems[i].profile_frame_duration;
 			systems[i].profile_update_count    += 1;
+			systems[i].profile_frame_duration   = 0;
 		}
 	}
 }
@@ -173,9 +185,9 @@ void systems_shutdown() {
 	}
 
 	log_info("Session Performance Report:");
-	log_info("<~BLK>\xDA\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC2\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xBF<~clr>");
-	log_info("<~BLK>\xB3<~clr>         <~YLW>System <~BLK>\xB3<~clr> <~YLW>Initialize <~BLK>\xB3<~clr>   <~YLW>Update <~BLK>\xB3<~clr>  <~YLW>Shutdown <~BLK>\xB3<~clr>");
-	log_info("<~BLK>\xC3\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC5\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xB4<~clr>");
+	log_info("<~BLK>______________________________________________________<~clr>");
+	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < systems.count; i++) {
 		int32_t index = i;
 
@@ -199,10 +211,10 @@ void systems_shutdown() {
 			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
 		
-		log_infof("<~BLK>\xB3<~CYN>%15s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr> %s <~BLK>\xB3<~clr>", systems[index].name, start_time, update_time, shutdown_time);
+		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_info("<~BLK>\xC0\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC1\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xD9<~clr>");
-
+	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
+	
 	systems.free();
 	free(system_init_order);
 }
@@ -213,8 +225,8 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 	// Topological sort, Depth-first algorithm:
 	// https://en.wikipedia.org/wiki/Topological_sorting
 
-	*out_order           = sk_malloc_t<int32_t>(count);
-	uint8_t *marks       = sk_malloc_t<uint8_t>(count);
+	*out_order           = sk_malloc_t(int32_t, count);
+	uint8_t *marks       = sk_malloc_t(uint8_t, count);
 	int32_t  sorted_curr = count-1;
 	memset(marks, 0, sizeof(uint8_t) * count);
 

@@ -10,7 +10,7 @@ class DemoPBR : ITest
 	Tex oldSkyTex;
 	SphericalHarmonics oldSkyLight;
 
-	Pose modelPose = new Pose(Vec3.Zero, Quat.Identity);
+	Pose modelPose = Pose.Identity;
 
 	public void Initialize()
 	{

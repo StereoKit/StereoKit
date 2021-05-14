@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <android/font_matcher.h>
+#include <android/font.h>
 #include <errno.h>
 #endif
 
@@ -54,8 +56,8 @@ void platform_msgbox_err(const char *text, const char *header) {
 		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [src_text,src_title]() {
 		size_t   size_text  = strlen(src_text)+1;
 		size_t   size_title = strlen(src_title)+1;
-		wchar_t *w_text  = sk_malloc_t<wchar_t>(size_text);
-		wchar_t *w_title = sk_malloc_t<wchar_t>(size_title);
+		wchar_t *w_text  = sk_malloc_t(wchar_t, size_text);
+		wchar_t *w_title = sk_malloc_t(wchar_t, size_title);
 		mbstowcs_s(nullptr, w_text,  size_text,  src_text,   size_text);
 		mbstowcs_s(nullptr, w_title, size_title, src_title, size_title);
 
@@ -181,23 +183,10 @@ float platform_get_scroll() {
 
 ///////////////////////////////////////////
 
-bool platform_key_down(key_ key) {
-#if defined(SK_OS_WINDOWS_UWP)
-	return uwp_key_down(key);
-#elif defined(SK_OS_WINDOWS)
-	return GetKeyState(key) & (key == key_caps_lock ? 0x1 : 0x8000);
-#elif defined(SK_OS_LINUX)
-	return linux_key_down(key);
-#else
-	return false;
-#endif
-}
-
-///////////////////////////////////////////
-
 void platform_debug_output(log_ level, const char *text) {
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	OutputDebugStringA(text);
+	(void)level;
 #elif defined(SK_OS_ANDROID)
 	int32_t priority = ANDROID_LOG_INFO;
 	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
@@ -205,6 +194,9 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
+#else
+	(void)level;
+	(void)text;
 #endif
 }
 
@@ -222,13 +214,55 @@ void platform_sleep(int ms) {
 
 ///////////////////////////////////////////
 
-const char *platform_default_font() {
-#if   defined(SK_OS_ANDROID)
-	return "/system/fonts/DroidSans.ttf";
-#elif defined(SK_OS_LINUX)
-	return "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+bool platform_keyboard_available() {
+#if defined(SK_OS_WINDOWS_UWP)
+	return true;
 #else
-	return "C:/Windows/Fonts/segoeui.ttf";
+	return false;
+#endif
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show(bool visible) {
+#if defined(SK_OS_WINDOWS_UWP)
+	uwp_show_keyboard(visible);
+#else
+#endif
+}
+
+///////////////////////////////////////////
+
+bool platform_keyboard_visible() {
+	return false;
+}
+
+///////////////////////////////////////////
+
+void platform_default_font(char *fontname_buffer, size_t buffer_size) {
+#if defined(SK_OS_ANDROID)
+
+	// If we're using Android API 29+, we can just look up the system font!
+	bool found_font = false;
+#if __ANDROID_API__ >= 29
+	AFontMatcher *matcher = AFontMatcher_create();
+	uint16_t      text[2] = {'A', 0};
+	AFont        *font    = AFontMatcher_match(matcher, "sans-serif", text, 2, nullptr);
+	if (font) {
+		const char *result = AFont_getFontFilePath(font);
+		snprintf(fontname_buffer, buffer_size, result);
+		AFont_close(font);
+	}
+	AFontMatcher_destroy(matcher);
+#endif
+	// We can fall back to a plausible default.
+	if (!found_font)
+		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
+
+#elif defined(SK_OS_LINUX)
+	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+#else
+	snprintf(fontname_buffer, buffer_size, "C:/Windows/Fonts/segoeui.ttf");
 #endif
 }
 

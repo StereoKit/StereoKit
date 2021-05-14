@@ -26,12 +26,14 @@ bool platform_init() {
 	bool result = win32_init  ();
 #endif
 	if (!result) {
-		log_fail_reason(80, "Platform initialization failed!");
+		log_fail_reason(80, log_error, "Platform initialization failed!");
 		return false;
 	}
 
 	// Initialize graphics
-	void *luid = openxr_get_luid(); // TODO: find a LUID without OpenXR? This takes like 500ms
+	void *luid = sk_display_mode == display_mode_mixedreality 
+		? openxr_get_luid() 
+		: nullptr;
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
 		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
@@ -40,17 +42,18 @@ bool platform_init() {
 		}
 	});
 	if (!skg_init(sk_app_name, luid)) {
-		log_fail_reason(95, "Failed to initialize sk_gpu!");
+		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
 		return false;
 	}
 
 	// Start up the current mode!
 	if (!platform_set_mode(sk_display_mode)) {
 		if (!sk_no_flatscreen_fallback && sk_display_mode != display_mode_flatscreen) {
-			log_infof("Runtime falling back to Flatscreen");
+			log_infof("MixedReality display mode failed, falling back to Flatscreen");
 			sk_display_mode = display_mode_flatscreen;
 			return platform_set_mode(sk_display_mode);
 		}
+		log_errf("Couldn't initialize StereoKit in %s mode!", sk_display_mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
 		return false;
 	}
 	return true;
@@ -78,6 +81,8 @@ void platform_shutdown() {
 void platform_set_window(void *window) {
 #if defined(SK_OS_ANDROID)
 	android_set_window(window);
+#else
+	(void)window;
 #endif
 }
 
@@ -86,6 +91,8 @@ void platform_set_window(void *window) {
 void platform_set_window_xam(void *window) {
 #if defined(SK_OS_ANDROID)
 	android_set_window_xam(window);
+#else
+	(void)window;
 #endif
 }
 
@@ -104,22 +111,47 @@ bool platform_set_mode(display_mode_ mode) {
 	platform_stop_mode();
 
 	bool result = true;
-	if        (mode == display_mode_mixedreality) {
-		result = openxr_init ();
+	if (mode == display_mode_mixedreality) {
+
+		// Platform init before OpenXR
+#if defined(SK_OS_ANDROID)
+			result = android_start_pre_xr();
+#elif defined(SK_OS_LINUX)
+			result = linux_start_pre_xr();
+#elif defined(SK_OS_WINDOWS_UWP)
+			result = uwp_start_pre_xr();
+#elif defined(SK_OS_WINDOWS)
+			result = win32_start_pre_xr();
+#endif
+
+		// Init OpenXR
+		if (result) {
+			result = openxr_init ();
+		}
+
+		// Platform init after OpenXR
+		if (result) {
+#if defined(SK_OS_ANDROID)
+			result = android_start_post_xr();
+#elif defined(SK_OS_LINUX)
+			result = linux_start_post_xr();
+#elif defined(SK_OS_WINDOWS_UWP)
+			result = uwp_start_post_xr();
+#elif defined(SK_OS_WINDOWS)
+			result = win32_start_post_xr();
+#endif
+		}
 	} else if (mode == display_mode_flatscreen) {
 #if   defined(SK_OS_ANDROID)
-		result = android_start();
+		result = android_start_flat();
 #elif defined(SK_OS_LINUX)
-		result = linux_start  ();
+		result = linux_start_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		result = uwp_start    ();
+		result = uwp_start_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		result = win32_start  ();
+		result = win32_start_flat  ();
 #endif
 	}
-
-	if (!result)
-		log_warnf("Couldn't create StereoKit in %s mode!", mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
 
 	platform_mode = mode;
 	return result;
@@ -130,16 +162,27 @@ bool platform_set_mode(display_mode_ mode) {
 void platform_step_begin() {
 	switch (platform_mode) {
 	case display_mode_none: break;
-	case display_mode_mixedreality: openxr_step_begin(); break;
+	case display_mode_mixedreality: {
+#if   defined(SK_OS_ANDROID)
+		android_step_begin_xr();
+#elif defined(SK_OS_LINUX)
+		linux_step_begin_xr  ();
+#elif defined(SK_OS_WINDOWS_UWP)
+		uwp_step_begin_xr    ();
+#elif defined(SK_OS_WINDOWS)
+		win32_step_begin_xr  ();
+#endif
+		openxr_step_begin();
+	} break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_step_begin();
+		android_step_begin_flat();
 #elif defined(SK_OS_LINUX)
-		linux_step_begin  ();
+		linux_step_begin_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_begin    ();
+		uwp_step_begin_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_step_begin  ();
+		win32_step_begin_flat  ();
 #endif
 	} break;
 	}
@@ -153,33 +196,13 @@ void platform_step_end() {
 	case display_mode_mixedreality: openxr_step_end(); break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_step_end();
+		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
-		linux_step_end    ();
+		linux_step_end_flat    ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_end    ();
+		uwp_step_end_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_step_end  ();
-#endif
-	} break;
-	}
-}
-
-///////////////////////////////////////////
-
-void platform_present() {
-	switch (platform_mode) {
-	case display_mode_none: break;
-	case display_mode_mixedreality: break;
-	case display_mode_flatscreen: {
-#if   defined(SK_OS_ANDROID)
-		android_vsync();
-#elif defined(SK_OS_LINUX)
-		linux_vsync  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_vsync    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_vsync  ();
+		win32_step_end_flat  ();
 #endif
 	} break;
 	}
@@ -193,13 +216,13 @@ void platform_stop_mode() {
 	case display_mode_mixedreality: openxr_shutdown(); break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
-		android_stop();
+		android_stop_flat();
 #elif defined(SK_OS_LINUX)
-		linux_stop  ();
+		linux_stop_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-		uwp_stop    ();
+		uwp_stop_flat    ();
 #elif defined(SK_OS_WINDOWS)
-		win32_stop  ();
+		win32_stop_flat  ();
 #endif
 	} break;
 	}

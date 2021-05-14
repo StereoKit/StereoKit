@@ -66,6 +66,9 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	} else if (string_endswith(filename, ".stl", false)) {
 		if (!modelfmt_stl (result, filename, data, data_size, shader))
 			log_errf("Issue loading STL file: %s!", filename);
+	} else if (string_endswith(filename, ".ply", false)) {
+		if (!modelfmt_ply (result, filename, data, data_size, shader))
+			log_errf("Issue loading PLY file: %s!", filename);
 	} else {
 		log_errf("Issue loading %s! Unrecognized file extension.", filename);
 	}
@@ -82,8 +85,10 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 	void  *data;
 	size_t length;
-	if (!platform_read_file(assets_file(filename), &data, &length))
+	if (!platform_read_file(assets_file(filename), &data, &length)) {
+		log_warnf("Model file failed to load: %s", filename);
 		return nullptr;
+	}
 
 	result = model_create_mem(filename, data, length, shader);
 	if (result != nullptr) {
@@ -192,7 +197,7 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
-	model->subsets                      = sk_realloc_t<model_subset_t>(model->subsets, model->subset_count + 1);
+	model->subsets                      = sk_realloc_t(model_subset_t, model->subsets, model->subset_count + 1);
 	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
 	assets_addref(mesh->header);
 	assets_addref(material->header);

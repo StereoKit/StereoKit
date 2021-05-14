@@ -78,7 +78,8 @@ class DemoGeo : ITest
 		/// 
 		/// Note: x+y*gridSize is the formula for 2D (x,y) access of a 1D array that represents
 		/// a grid.
-		const int gridSize = 8;
+		const int   gridSize = 8;
+		const float gridMaxF = gridSize-1;
 		Vertex[] verts = new Vertex[gridSize*gridSize];
 		uint  [] inds  = new uint  [gridSize*gridSize*6];
 
@@ -92,13 +93,16 @@ class DemoGeo : ITest
 			// value!
 			verts[x+y*gridSize] = new Vertex(
 				new Vec3(
-					x/(float)gridSize-0.5f, 
+					x/gridMaxF-0.5f, 
 					SKMath.Sin((x+y) * 0.7f)*0.1f, 
-					y/(float)gridSize-0.5f),
+					y/gridMaxF-0.5f),
 				new Vec3(
 					-SKMath.Cos((x+y) * 0.7f), 
 					1, 
-					-SKMath.Cos((x+y) * 0.7f)).Normalized);
+					-SKMath.Cos((x+y) * 0.7f)).Normalized,
+				new Vec2(
+					x / gridMaxF,
+					y / gridMaxF));
 
 			// Create triangle face indices from the current vertex, and the vertices
 			// on the next row and column! Since there is no 'next' row and column on
@@ -132,7 +136,7 @@ class DemoGeo : ITest
 		Model cubeModel = demoCubeModel;
 
 		Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vec3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
-		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.222f), new Vec3(1.012f, -0.682f, -0.131f));
+		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.358f), new Vec3(1.012f, -0.682f, 0));
 
 		/// :CodeSample: Mesh.GenerateCube
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 

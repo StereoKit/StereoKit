@@ -25,9 +25,13 @@ struct ui_settings_t {
 	float backplate_border;
 };
 
-SK_API void     ui_show_volumes(bool32_t      show);
-SK_API void     ui_settings    (ui_settings_t settings);
-SK_API void     ui_set_color   (color128      color);
+SK_API void     ui_show_volumes        (bool32_t      show);
+SK_API void     ui_enable_far_interact (bool32_t      enable);
+SK_API bool32_t ui_far_interact_enabled();
+SK_API void     ui_settings            (ui_settings_t settings);
+SK_API void     ui_set_color           (color128      color);
+SK_API void     ui_push_text_style     (text_style_t  style);
+SK_API void     ui_pop_text_style      ();
 
 SK_API void     ui_layout_area   (vec3 start, vec2 dimensions);
 SK_API vec2     ui_area_remaining();
@@ -38,8 +42,10 @@ SK_API void     ui_reserve_box   (vec2 size);
 SK_API void     ui_space         (float space);
 SK_API uint64_t ui_push_id       (const char *id);
 SK_API void     ui_pop_id        ();
+SK_API uint64_t ui_stack_hash    (const char *string);
 
-SK_API bool32_t ui_is_interacting(handed_ hand);
+SK_API bool32_t ui_is_interacting (handed_ hand);
+SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float &finger_offset, button_state_ &button_state, button_state_ &focus_state);
 
 SK_API void     ui_model_at       (model_t model, vec3 start, vec3 size, color128 color);
 SK_API bool32_t ui_volume_at      (const char *id, bounds_t bounds);
@@ -49,8 +55,10 @@ SK_API bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window
 SK_API bool32_t ui_toggle_at      (const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t ui_hslider_at     (const char *id,   float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size);
 
+SK_API void     ui_hseparator  ();
 SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
 SK_API void     ui_label_sz    (const char *text, vec2 size);
+SK_API void     ui_text        (const char *text);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
 SK_API bool32_t ui_button_sz   (const char *text, vec2 size);

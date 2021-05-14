@@ -33,11 +33,11 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 		return;
 
 	buffer.vert_cap = buffer.vert_count + (int)characters * 4;
-	buffer.verts    = sk_realloc_t<vert_t>(buffer.verts, buffer.vert_cap);
+	buffer.verts    = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = sk_malloc_t<vind_t>(quads * 6);
+	vind_t *inds  = sk_malloc_t(vind_t, quads * 6);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;
@@ -121,6 +121,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	style.color           = color_to_32( color_to_linear( color ) );
 	style.size            = character_height/font->character_height;
 	style.line_spacing    = font->character_height * 0.5f;
+	style.char_height     = character_height;
 	
 	return (text_style_t)text_styles.add(style);
 }
@@ -129,6 +130,12 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 
 material_t text_style_get_material(text_style_t style) {
 	return text_buffers[text_styles[style].buffer_index].material;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_char_height(text_style_t style) {
+	return text_styles[style].char_height;
 }
 
 ///////////////////////////////////////////
@@ -351,8 +358,8 @@ void text_add_at(const char* text, const matrix &transform, text_style_t style, 
 
 ///////////////////////////////////////////
 
-void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	if (text == nullptr) return;
+float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+	if (text == nullptr) return 0;
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
@@ -380,9 +387,8 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
 	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	*/
-
+	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);*/
+	
 	// Ensure scale is right for our fit
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
 		vec2 txt_size = text_size(text, style == -1 ? 0 : style);
@@ -399,6 +405,13 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 		step.bounds = step.bounds / scale;
 	}
 
+	// Calculate the strlen and text height for verical centering
+	int32_t text_length = 0;
+	float   text_height = text_step_height(text, &text_length, step);
+	// if the size is still zero, then lets use the calculated height
+	if (step.bounds.y == 0)
+		step.bounds.y = text_height;
+
 	// Align the start based on the size of the bounds
 	if      (position & text_align_x_center) step.start.x += step.bounds.x / 2.f;
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
@@ -407,8 +420,6 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 	step.pos = step.start;
 
 	// Figure out the vertical align of the text
-	int32_t text_length = 0;
-	float   text_height = text_step_height(text, &text_length, step);
 	if      (align & text_align_y_center) step.pos.y -= (step.bounds.y-text_height) / 2.f;
 	else if (align & text_align_y_bottom) step.pos.y -=  step.bounds.y-text_height;
 
@@ -430,6 +441,7 @@ void text_add_in(const char* text, const matrix& transform, vec2 size, text_fit_
 		}
 		text_step_position(text[i], &text[i], step);
 	}
+	return (step.start.y - step.pos.y) + step.style->size * step.style->font->character_height;
 }
 
 ///////////////////////////////////////////

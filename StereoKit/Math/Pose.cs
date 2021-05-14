@@ -3,7 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	/// <summary>Pose represents a location and orientation in space, excluding scale!</summary>
+	/// <summary>Pose represents a location and orientation in space, 
+	/// excluding scale! CAUTION: the default value of a Pose includes a 
+	/// completely zero Quat, which can cause problems. Use `Pose.Identity` 
+	/// instead of `new Pose()` for creating a default pose.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Pose
 	{
@@ -29,6 +32,11 @@ namespace StereoKit
 		/// pointing in the 'Forward' direction. The Ray direction is a unit
 		/// vector/normalized. </summary>
 		public Ray Ray => new Ray(position, Forward);
+
+		/// <summary>A default, empty pose. Positioned at zero, and using
+		/// Quat.Identity for orientation.</summary>
+		public static Pose Identity
+			=> new Pose(Vec3.Zero, Quat.Identity);
 
 		/// <summary>Basic initialization constructor! Just copies in the provided values directly.</summary>
 		/// <param name="position">Location of the pose.</param>

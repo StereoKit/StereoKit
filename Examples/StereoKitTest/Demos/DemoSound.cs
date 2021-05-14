@@ -11,17 +11,54 @@ namespace StereoKitTest
 
 		float      genDuration = 0.5f;
 		Sound      genSound;
-		Bounds     genVolume = new Bounds(new Vec3(0.25f, 0.25f, 0.25f));
+		Bounds     genVolume = new Bounds(new Vec3(.5f, 0, 0), new Vec3(0.25f, 0.25f, 0.25f));
 		bool       genPrevContains = false;
 		List<LinePoint> genPath = new List<LinePoint>();
 
-		Mesh boundsMesh = Mesh.GenerateCube(Vec3.One);
-		Material boundsMat = Default.MaterialUI.Copy();
+		Sound       wandStream;
+		SoundInst   wandStreamInst;
+		Pose        wandPose = new Pose(.5f, 0, -0.3f, Quat.LookDir(0,1,0));
+		Mesh        wandMesh;
+		Vec3        wandTipPrev;
+		LinePoint[] wandFollow = null;
+		float[]     wandSamples = new float[0];
+		double      wandTime = 0;
+		float       wandIntensity;
+		void StepWand()
+		{
+			if (wandStream == null) { wandStream = Sound.CreateStream(5f); wandStreamInst = wandStream.Play(wandTipPrev); }
+			if (wandMesh   == null) wandMesh = Mesh.GenerateCylinder(0.015f, 0.25f, Vec3.Forward);
+			if (wandFollow == null) { wandFollow = new LinePoint[10]; for (int i=0;i<wandFollow.Length;i+=1) wandFollow[i] = new LinePoint(Vec3.Zero, new Color(1,1,1,i/(float)wandFollow.Length), (i / (float)wandFollow.Length)*0.01f+0.001f); }
+
+			UI.HandleBegin("wand", ref wandPose, wandMesh.Bounds);
+			wandMesh.Draw(Default.MaterialUI, Matrix.Identity, Color.HSV(0.6f, 0.5f, 0.6f));
+			Vec3 wandTip = Hierarchy.ToWorld(Vec3.Forward*0.125f);
+			UI.HandleEnd();
+
+			Vec3  wandVel   = (wandTip - wandTipPrev) * Time.Elapsedf;
+			float wandSpeed = wandVel.Magnitude*100;
+			
+			int count = Math.Max(0, (int)(0.1f*48000) - (wandStream.TotalSamples - wandStream.CursorSamples));
+			if (wandSamples.Length < count)
+				wandSamples = new float[count];
+			for (int i = 0; i < count; i++)
+			{
+				wandIntensity = Math.Min(1, SKMath.Lerp(wandIntensity, wandSpeed, 0.001f));
+				wandTime += (1 / 48000.0) * (30000 * wandIntensity + 2000);
+				wandSamples[i] = (float)Math.Sin(wandTime) * wandIntensity;
+			}
+
+			wandStreamInst.Position = wandTip;
+			wandStream.WriteSamples(wandSamples, count);
+
+			for (int i = 0; i < wandFollow.Length-1; i++)
+				wandFollow[i].pt = wandFollow[i+1].pt;
+			wandFollow[wandFollow.Length-1].pt = wandTip;
+			Lines.Add(wandFollow);
+			wandTipPrev = wandTip;
+		}
 
 		public void Initialize() {
-			boundsMat.Transparency = Transparency.Blend;
-			boundsMat[MatParamName.ColorTint] = new Color(1, 1, 1, 0.25f);
-
 			/// :CodeSample: Sound Sound.FromFile Sound.Play
 			/// ### Basic usage
 			Sound sound = Sound.FromFile("BlipNoise.wav");
@@ -47,6 +84,8 @@ namespace StereoKitTest
 
 		public void Update()
 		{
+			StepWand();
+
 			UI.WindowBegin("Sound", ref windowPose, new Vec2(20, 0) * U.cm);
 			if (UI.Button("BlipNoise.wav"))
 				fileSound.Play(windowPose.position);
@@ -57,19 +96,22 @@ namespace StereoKitTest
 				genSound.Play(windowPose.position);
 			UI.WindowEnd();
 
-			boundsMesh.Draw(boundsMat, Matrix.TS(genVolume.center, genVolume.dimensions));
+			Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(genVolume.center, genVolume.dimensions));
 
 			Hand hand     = Input.Hand(Handed.Right);
 			bool contains = genVolume.Contains(hand[FingerId.Index, JointId.Tip].position);
 			if (contains && !genPrevContains)
 				genPath.Clear();
 			if (contains) {
-				Vec3 pt = hand[FingerId.Index, JointId.Tip].position - genVolume.center;
+				Vec3 pt = hand[FingerId.Index, JointId.Tip].position;
 				if (genPath.Count == 0 || Vec3.DistanceSq(pt, genPath[genPath.Count-1].pt) > 0.0001f) {
 					Vec3 rgb = (pt + (genVolume.dimensions / 2)) / genVolume.dimensions.x;
 					genPath.Add(new LinePoint(pt, new Color(rgb.x, rgb.y, rgb.z), 0.01f));
 				}
 			}
+
+			if (Input.Key(Key.Space).IsJustActive())
+				fileSound.Play(hand[FingerId.Index,JointId.Tip].position);
 
 			if (!contains && genPrevContains)
 			{
@@ -83,12 +125,12 @@ namespace StereoKitTest
 					float pct      = sampleAt - (int)sampleAt;
 					int   s1       = (int)sampleAt;
 					int   s2       = (int)Math.Ceiling(sampleAt);
-					Vec3  sample   = (Vec3.Lerp(genPath[s1].pt, genPath[s2].pt, pct) + genVolume.dimensions / 2) / genVolume.dimensions.x;
+					Vec3  sample   = (Vec3.Lerp(genPath[s1].pt, genPath[s2].pt, pct)-genVolume.center + genVolume.dimensions / 2) / genVolume.dimensions.x;
 
 					band1 += e * (600 + sample.x * 4000) * 6.28f;
 					band2 += e * (100 + sample.z * 600 ) * 6.28f;
 
-					return (float)(Math.Sin(band1)*0.3 + Math.Sin(band2)*0.3) * sample.y;
+					return (float)(Math.Sin(band1)*0.3 + Math.Sin(band2)*0.3) * sample.y * 0.5f;
 				}, genDuration);
 				genSound.Play(genVolume.center);
 			}

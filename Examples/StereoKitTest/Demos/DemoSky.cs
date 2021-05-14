@@ -66,6 +66,16 @@ namespace StereoKitTest
 					ShowPicker();
 			}
 
+			if (UI.Button("Print SH"))
+			{
+				Vec3[] c = Renderer.SkyLight.ToArray();
+				string shStr = "new SphericalHarmonics(new Vec3[]{";
+				for (int i = 0; i < c.Length; i++)
+					shStr += $"new Vec3({c[i].x:F2}f, {c[i].y:F2}f, {c[i].z:F2}f),";
+				shStr += "});";
+				Log.Info(shStr);
+			}
+
 			UI.WindowEnd();
 
 			lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));

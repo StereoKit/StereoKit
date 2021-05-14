@@ -1,5 +1,27 @@
-﻿namespace StereoKit
+﻿using System.Runtime.InteropServices;
+
+namespace StereoKit
 {
+	/// <summary>A text style is a font plus size/color/material parameters, and are 
+	/// used to keep text looking more consistent through the application by encouraging 
+	/// devs to re-use styles throughout the project. See Text.MakeStyle for making a 
+	/// TextStyle object.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct TextStyle
+	{
+		internal int id;
+
+		/// <summary>This provides a reference to the Material used by this
+		/// style, so you can override certain features! Note that if you're
+		/// creating TextStyles with manually provided Materials, this 
+		/// Material may not be unique to this style.</summary>
+		public Material Material  => new Material(NativeAPI.text_style_get_material(this));
+
+		/// <summary>Returns the maximum height of a text character using
+		/// this style, in meters.</summary>
+		public float CharHeight => NativeAPI.text_style_get_char_height(this);
+	}
+
 	/// <summary>A collection of functions for rendering and working with text.</summary>
 	public class Text
 	{
@@ -94,10 +116,10 @@
 		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at(text, transform, -1, position, align, offX, offY, offZ);
 
-		public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
 
-		public static void Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in(text, transform, size, fit, -1, position, align, offX, offY, offZ);
 
 		/// <summary>Sometimes you just need to know how much room some text takes up! This finds

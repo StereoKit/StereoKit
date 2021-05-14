@@ -76,6 +76,7 @@ shader_t shader_create_file(const char *filename) {
 	void  *data;
 	size_t size;
 	bool   loaded = platform_read_file(assets_file(final_file), &data, &size);
+	if (!loaded) log_warnf("Shader file failed to load: %s", filename);
 	free(with_ext);
 
 	return loaded 

@@ -40,7 +40,7 @@ void line_drawer_update() {
 	mesh_set_verts    (line_mesh, line_verts, line_vert_cap, false);
 	mesh_set_inds     (line_mesh, line_inds,  line_ind_cap);
 	mesh_set_draw_inds(line_mesh, line_ind_ct);
-	render_add_mesh   (line_mesh, line_material, matrix_identity);
+	render_add_mesh   (line_mesh, line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 
 	line_ind_ct  = 0;
 	line_vert_ct = 0;
@@ -58,12 +58,12 @@ void line_drawer_shutdown() {
 void line_ensure_cap(int32_t verts, int32_t inds) {
 	if (line_vert_ct + verts >= line_vert_cap) {
 		line_vert_cap = maxi(line_vert_ct + verts, line_vert_cap * 2);
-		line_verts    = sk_realloc_t<vert_t>(line_verts, line_vert_cap);
+		line_verts    = sk_realloc_t(vert_t, line_verts, line_vert_cap);
 	}
 
 	if (line_ind_ct + inds >= line_ind_cap) {
 		line_ind_cap = maxi(line_ind_ct + inds, line_ind_cap * 2);
-		line_inds    = sk_realloc_t<vind_t>(line_inds, line_ind_cap);
+		line_inds    = sk_realloc_t(vind_t, line_inds, line_ind_cap);
 	}
 }
 

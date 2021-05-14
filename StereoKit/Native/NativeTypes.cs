@@ -58,15 +58,29 @@ namespace StereoKit
 
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
-		public DisplayMode displayPreference;
+		public DisplayMode  displayPreference;
+		/// <summary>What type of backgroud blend mode do we prefer for this
+		/// application? Are you trying to build an Opaque/Immersive/VR app,
+		/// or would you like the display to be AnyTransparent, so the world 
+		/// will show up behind your content, if that's an option? Note that
+		/// this is a preference only, and if it's not available on this 
+		/// device, the app will fall back to the runtime's preference 
+		/// instead! By default, (DisplayBlend.None) this uses the runtime's
+		/// preference.</summary>
+		public DisplayBlend blendPreference;
 		/// <summary>If the preferred display fails, should we avoid falling
 		/// back to flatscreen and just crash out? Default is false.</summary>
-		public bool        noFlatscreenFallback;
+		public bool         noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
 		/// speed but opening up when there's headroom.</summary>
-		public DepthMode   depthMode;
+		public DepthMode    depthMode;
+		/// <summary> The default log filtering level. This can be changed at
+		/// runtime, but this allows you to set the log filter before 
+		/// Initialization occurs, so you can choose to get information from
+		/// that. Default is LogLevel.Info.</summary>
+		public LogLevel     logFilter;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -119,16 +133,53 @@ namespace StereoKit
 	/// Reality device.</summary>
 	public enum Display
 	{
+		/// <summary>Default value, when using this as a search type, it will
+		/// fall back to default behavior which defers to platform
+		/// preference.</summary>
+		None = 0,
 		/// <summary>This display is opaque, with no view into the real world!
 		/// This is equivalent to a VR headset, or a PC screen.</summary>
-		Opaque = 0,
+		Opaque      = 1 << 0,
 		/// <summary>This display is transparent, and adds light on top of
 		/// the real world. This is equivalent to a HoloLens type of device.</summary>
-		Additive,
+		Additive    = 1 << 1,
 		/// <summary>This is a physically opaque display, but with a camera
 		/// passthrough displaying the world behind it anyhow. This would be
 		/// like a Varjo XR-1, or phone-camera based AR.</summary>
-		Passthrough,
+		Blend       = 1 << 2,
+		[Obsolete("Use Display.Blend instead, to be removed in v0.4")]
+		Passthrough = 1 << 2,
+		/// <summary>This matches either transparent display type! Additive
+		/// or Blend. For use when you just want to see the world behind your
+		/// application.</summary>
+		AnyTransparent = Additive | Blend,
+	}
+
+	/// <summary>This describes the way the display's content blends with
+	/// whatever is behind it. VR headsets are normally Opaque, but some VR
+	/// headsets provide passthrough video, and can support Opaque as well as
+	/// Blend, like the Varjo. Transparent AR displays like the HoloLens
+	/// would be Additive.</summary>
+	public enum DisplayBlend
+	{
+		/// <summary>Default value, when using this as a search type, it will
+		/// fall back to default behavior which defers to platform
+		/// preference.</summary>
+		None = 0,
+		/// <summary>This display is opaque, with no view into the real world!
+		/// This is equivalent to a VR headset, or a PC screen.</summary>
+		Opaque      = 1 << 0,
+		/// <summary>This display is transparent, and adds light on top of
+		/// the real world. This is equivalent to a HoloLens type of device.</summary>
+		Additive    = 1 << 1,
+		/// <summary>This is a physically opaque display, but with a camera
+		/// passthrough displaying the world behind it anyhow. This would be
+		/// like a Varjo XR-1, or phone-camera based AR.</summary>
+		Blend       = 1 << 2,
+		/// <summary>This matches either transparent display type! Additive
+		/// or Blend. For use when you just want to see the world behind your
+		/// application.</summary>
+		AnyTransparent = Additive | Blend,
 	}
 
 	/// <summary>Information about a system's capabilities and properties!</summary>
@@ -217,6 +268,13 @@ namespace StereoKit
 	public struct Rect
 	{
 		public float x, y, width, height;
+		public Rect(float x, float y, float width, float height)
+		{
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.height = height;
+		}
 	}
 
 	/// <summary>Textures come in various types and flavors! These are bit-flags
@@ -272,10 +330,14 @@ namespace StereoKit
 		Rgba32Linear,
 		Bgra32,
 		Bgra32Linear,
+		Rg11b10,
+		Rgb10a2,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
 		/// per-channel! This is not common, but you might encounter it with
 		/// raw photos, or HDR images.</summary>
 		Rgba64,
+		Rgba64s,
+		Rgba64f,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
 		/// expensive. Don't use this unless you know -exactly- what you're
@@ -380,10 +442,11 @@ namespace StereoKit
 	public enum Cull
 	{
 		/// <summary>Discard if the back of the triangle face is pointing 
-		/// towards the camera.</summary>
+		/// towards the camera. This is the default behavior.</summary>
 		Back = 0,
 		/// <summary>Discard if the front of the triangle face is pointing 
-		/// towards the camera.</summary>
+		/// towards the camera. This is opposite the default behavior.
+		/// </summary>
 		Front,
 		/// <summary>No culling at all! Draw the triangle regardless of which
 		/// way it's pointing.</summary>
@@ -486,22 +549,6 @@ namespace StereoKit
 		Overflow = 1 << 4
 	}
 
-	/// <summary>A text style is a font plus size/color/material parameters, and are 
-	/// used to keep text looking more consistent through the application by encouraging 
-	/// devs to re-use styles throughout the project. See Text.MakeStyle for making a 
-	/// TextStyle object.</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public struct TextStyle
-	{
-		internal int id;
-
-		/// <summary>This provides a reference to the Material used by this
-		/// style, so you can override certain features! Note that if you're
-		/// creating TextStyles with manually provided Materials, this 
-		/// Material may not be unique to this style.</summary>
-		public Material Material { get => new Material(NativeAPI.text_style_get_material(this)); }
-	}
-
 	/// <summary>This describes the behavior of a 'Solid' physics object! the physics 
 	/// engine will apply forces differently </summary>
 	public enum SolidType
@@ -556,6 +603,31 @@ namespace StereoKit
 		}
 	}
 
+	public enum RenderLayer
+	{
+		Layer0 = 1 << 0,
+		Layer1 = 1 << 1,
+		Layer2 = 1 << 2,
+		Layer3 = 1 << 3,
+		Layer4 = 1 << 4,
+		Layer5 = 1 << 5,
+		Layer6 = 1 << 6,
+		Layer7 = 1 << 7,
+		Layer8 = 1 << 8,
+		Layer9 = 1 << 9,
+		Vfx    = 1 << 10,
+		All    = 0xFFFF,
+		AllRegular = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
+	}
+
+	public enum RenderClear
+	{
+		None  = 0,
+		Color = 1 << 0,
+		Depth = 1 << 1,
+		All   = Color|Depth
+	}
+
 	/// <summary>What type of device is the source of the pointer? This is a bit-flag that can 
 	/// contain some input source family information.</summary>
 	[Flags]
@@ -598,6 +670,27 @@ namespace StereoKit
 		/// <summary>Matches with all states!</summary>
 		Any          = 0x7FFFFFFF,
 
+	}
+
+	/// <summary>This is the tracking state of a sensory input in the world,
+	/// like a controller's position sensor, or a QR code identified by a 
+	/// tracking system.</summary>
+	public enum TrackState
+	{
+		/// <summary>The system has no current knowledge about the state of
+		/// this input. It may be out of visibility, or possibly just
+		/// disconnected.</summary>
+		Lost     = 0,
+		/// <summary>The system doesn't know for sure where this is, but it
+		/// has an educated guess that may be inferred from previous data at
+		/// a lower quality. For example, a controller may still have 
+		/// accelerometer data after going out of view, which can still be
+		/// accurate for a short time after losing optical tracking.</summary>
+		Inferred = 1,
+		/// <summary>The system actively knows where this input is. Within
+		/// the constraints of the relevant hardware's capabilities, this is
+		/// as accurate as it gets!</summary>
+		Known    = 2
 	}
 
 	/// <summary>A collection of extension methods for the BtnState enum that makes
@@ -684,9 +777,10 @@ namespace StereoKit
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel
 	{
+		None,
 		/// <summary>This is for diagnostic information, where you need to know details about what -exactly-
 		/// is going on in the system. This info doesn't surface by default.</summary>
-		Diagnostic = 0,
+		Diagnostic = 1,
 		/// <summary>This is non-critical information, just to let you know what's going on.</summary>
 		Info,
 		/// <summary>Something bad has happened, but it's still within the realm of what's expected.</summary>
