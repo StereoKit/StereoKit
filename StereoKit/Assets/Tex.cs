@@ -305,6 +305,21 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
+		/// <summary>Loads an array of image files directly into a single
+		/// array texture! Array textures are often useful for shader 
+		/// effects, layering, material merging, weird stuff, and will 
+		/// generally need a specific shader to support it. Supported formats
+		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the
+		/// hash of all the filenames merged consecutively.</summary>
+		/// <param name="files">Absolute filenames, or a filenames relative 
+		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
+		/// pic</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset from the given files, or null if it failed
+		/// to load.</returns>
 		public static Tex FromFiles(string[] files, bool sRGBData = true)
 		{
 			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData);

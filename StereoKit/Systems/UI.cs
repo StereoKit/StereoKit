@@ -104,18 +104,8 @@ namespace StereoKit
 		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
 			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
 
-		public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_button_at(text, windowRelativeCorner, size);
-
-		public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
-			=> NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
-
-		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
-
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
-
+		/// <summary>This draws a line horizontally across the current
+		/// layout. Makes a good separator between sections of UI!</summary>
 		public static void HSeparator()
 			=> NativeAPI.ui_hseparator();
 
@@ -135,6 +125,12 @@ namespace StereoKit
 		public static void Label(string text, Vec2 size)
 			=> NativeAPI.ui_label_sz(text, size);
 
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout!</summary>
+		/// <param name="text">The text you wish to display, there's no 
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
 		public static void Text(string text)
 			=> NativeAPI.ui_text(text);
 
@@ -157,6 +153,9 @@ namespace StereoKit
 
 		public static bool Button(string text, Vec2 size)
 			=> NativeAPI.ui_button_sz(text, size);
+
+		public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
+			=> NativeAPI.ui_button_at(text, windowRelativeCorner, size);
 
 		/// <summary>A Radio is similar to a button, except you can specify if it looks pressed
 		/// or not regardless of interaction. This can be useful for radio-like behavior! Check
@@ -181,7 +180,10 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
 			=> NativeAPI.ui_button_round(id, image._inst, diameter);
-        
+
+		public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
+			=> NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
+
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
 		/// as the id. Will return true any time the toggle value changes!
@@ -198,6 +200,21 @@ namespace StereoKit
 		public static bool Toggle(string text, ref bool value, Vec2 size)
 			=> NativeAPI.ui_toggle_sz(text, ref value, size);
 
+		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
+			=> NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
+
+		/// <summary>This is an input field where users can input text to the
+		/// app! Selecting it will spawn a virtual keyboard, or act as the
+		/// keyboard focus. Hitting escape or enter, or focusing another UI
+		/// element will remove focus from this Input.</summary>
+		/// <param name="id">A per-window unique id for tracking element 
+		/// state.</param>
+		/// <param name="value">The string that will store the Input's 
+		/// content in.</param>
+		/// <param name="size">Size of the Input in Hierarchy local meters.
+		/// </param>
+		/// <returns>Returns true every time the contents of 'value' change.
+		/// </returns>
 		public static bool Input(string id, ref string value, Vec2 size) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 4) :
@@ -227,6 +244,9 @@ namespace StereoKit
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0) 
 			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width);
+
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
+			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
