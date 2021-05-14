@@ -264,6 +264,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
 	tex_t equirect = tex_create_file(equirectangular_file, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_address(equirect, tex_address_clamp);
 	if (equirect == nullptr)
 		return nullptr;
 	equirect->header.id = hash_fnv64_string("temp/equirectid");
