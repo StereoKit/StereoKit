@@ -46,6 +46,13 @@ spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 
 ///////////////////////////////////////////
 
+void sh_brightness(spherical_harmonics_t &harmonics, float scale) {
+	for (int32_t i = 0; i < 9; i++)
+		harmonics.coefficients[i] *= scale;
+}
+
+///////////////////////////////////////////
+
 void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	light_dir = { -light_dir.x, -light_dir.y, light_dir.z };
 

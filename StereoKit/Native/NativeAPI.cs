@@ -87,8 +87,10 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics sh_create([In] SHLight[] lights, int light_count);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color              sh_lookup(in SphericalHarmonics lookup, Vec3 normal);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics sh_create    ([In] SHLight[] lights, int light_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_brightness(ref SphericalHarmonics harmonics, float scale);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_add       (ref SphericalHarmonics harmonics, Vec3 light_dir, Vec3 light_color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color              sh_lookup    (in  SphericalHarmonics lookup, Vec3 normal);
 
 
 		///////////////////////////////////////////

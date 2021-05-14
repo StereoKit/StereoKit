@@ -346,8 +346,10 @@ typedef struct sh_light_t {
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count);
-SK_API color128              sh_lookup(const sk_ref(spherical_harmonics_t)  lookup, vec3 normal);
+SK_API spherical_harmonics_t sh_create    (const sh_light_t* lights, int32_t light_count);
+SK_API void                  sh_brightness(sk_ref(spherical_harmonics_t) harmonics, float scale);
+SK_API void                  sh_add       (sk_ref(spherical_harmonics_t) harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup    (const sk_ref(spherical_harmonics_t)  lookup, vec3 normal);
 
 ///////////////////////////////////////////
 
