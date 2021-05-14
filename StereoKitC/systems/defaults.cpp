@@ -79,20 +79,21 @@ bool defaults_init() {
 
 	// Cubemap
 	spherical_harmonics_t lighting = { {
-		{ 0.27f,  0.26f,  0.25f},
-		{ 0.07f,  0.09f,  0.11f},
-		{-0.06f, -0.06f, -0.04f},
-		{-0.06f, -0.04f, -0.01f},
-		{-0.04f, -0.05f, -0.06f},
-		{ 0.15f,  0.16f,  0.16f},
-		{-0.04f, -0.05f, -0.05f},
-		{ 0.05f,  0.05f,  0.04f},
-		{-0.11f, -0.13f, -0.13f},
+		{ 0.74f,  0.74f,  0.73f}, 
+		{ 0.24f,  0.25f,  0.26f}, 
+		{ 0.09f,  0.09f,  0.09f}, 
+		{ 0.05f,  0.05f,  0.06f}, 
+		{-0.01f, -0.01f, -0.01f}, 
+		{-0.03f, -0.03f, -0.03f}, 
+		{ 0.00f,  0.00f,  0.00f}, 
+		{-0.02f, -0.02f, -0.02f}, 
+		{ 0.04f,  0.04f,  0.04f}, 
 	} };
+	render_set_skylight(lighting);
+	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 	render_set_skytex(sk_default_cubemap);
-	render_set_skylight(lighting);
 	render_enable_skytex(true);
 
 	// Default quad mesh
