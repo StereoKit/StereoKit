@@ -41,4 +41,11 @@ Renderer.Add(cubeMesh, Default.Material, cubeTransform);
 cubeTransform = Matrix.T(-1.0f, 0, -1);
 Renderer.Add(cubeModel, cubeTransform);
 ```
+## UV and Face layout
+Here's a test image that illustrates how this mesh's geometry is
+laid out.
+![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCube.jpg)
+```csharp
+meshCube = Mesh.GenerateCube(Vec3.One);
+```
 

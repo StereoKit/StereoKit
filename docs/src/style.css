@@ -8,6 +8,19 @@ body {
         "search crumbs"
         "nav    main";
 }
+@media screen and (max-width: 750px) {
+    body {
+        display: grid;
+        grid-template-columns: 100%;
+        grid-template-rows: 100px 3em auto;
+        grid-template-areas: 
+            "head"
+            "crumbs"
+            "main"
+            "search"
+            "nav";
+    }
+}
 header {
     grid-area: head;
 }
@@ -76,6 +89,7 @@ ul {
     max-width: 30em;
 }
 video {
+    width: 100%;
     max-width: 30em;
     padding-left: 2em;
     padding-top: 2em;

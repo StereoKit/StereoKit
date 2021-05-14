@@ -11,7 +11,7 @@ static void HandMaterial([Handed]({{site.url}}/Pages/Reference/Handed.html) hand
 
 |  |  |
 |--|--|
-|[Handed]({{site.url}}/Pages/Reference/Handed.html) hand|>If Handed.Max, this will set the value for              both hands.|
+|[Handed]({{site.url}}/Pages/Reference/Handed.html) hand|If Handed.Max, this will set the value for              both hands.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|The new Material!|
 
 Set the Material used to render the hand! The default

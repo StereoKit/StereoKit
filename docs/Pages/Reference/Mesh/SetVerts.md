@@ -36,7 +36,8 @@ formula!
 Note: x+y*gridSize is the formula for 2D (x,y) access of a 1D array that represents
 a grid.
 ```csharp
-const int gridSize = 8;
+const int   gridSize = 8;
+const float gridMaxF = gridSize-1;
 Vertex[] verts = new Vertex[gridSize*gridSize];
 uint  [] inds  = new uint  [gridSize*gridSize*6];
 
@@ -50,13 +51,16 @@ for (int x = 0; x < gridSize; x++) {
 	// value!
 	verts[x+y*gridSize] = new Vertex(
 		new Vec3(
-			x/(float)gridSize-0.5f, 
+			x/gridMaxF-0.5f, 
 			SKMath.Sin((x+y) * 0.7f)*0.1f, 
-			y/(float)gridSize-0.5f),
+			y/gridMaxF-0.5f),
 		new Vec3(
 			-SKMath.Cos((x+y) * 0.7f), 
 			1, 
-			-SKMath.Cos((x+y) * 0.7f)).Normalized);
+			-SKMath.Cos((x+y) * 0.7f)).Normalized,
+		new Vec2(
+			x / gridMaxF,
+			y / gridMaxF));
 
 	// Create triangle face indices from the current vertex, and the vertices
 	// on the next row and column! Since there is no 'next' row and column on

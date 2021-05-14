@@ -17,7 +17,9 @@ plus more later on, and you can also create textures procedurally.
 |  |  |
 |--|--|
 |[Tex]({{site.url}}/Pages/Reference/Tex/Tex.html)|Sets up an empty texture container! Fill it with data using SetColors next! Creates a default unique asset Id.|
+|[AddZBuffer]({{site.url}}/Pages/Reference/Tex/AddZBuffer.html)|Only applicable if this texture is a rendertarget! This creates and attaches a zbuffer surface to the texture for use when rendering to it.|
 |[SetColors]({{site.url}}/Pages/Reference/Tex/SetColors.html)|Set the texture's pixels using a pointer to a chunk of memory! This is great if you're pulling in some color data from native code, and don't want to pay the cost of trying to marshal that data around.|
+|[SetSize]({{site.url}}/Pages/Reference/Tex/SetSize.html)|Set the texture's size without providing any color data. In most cases, you should probably just call SetColors instead, but this can be useful if you're adding color data some other way, such as when blitting or rendering to it.|
 
 
 ## Static Fields and Properties

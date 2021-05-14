@@ -19,6 +19,7 @@ Information about a hand!
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the flat of the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [pinch]({{site.url}}/Pages/Reference/Hand/pinch.html)|Is the hand making a pinch gesture right now? Finger and thumb together.|
 |float [pinchActivation]({{site.url}}/Pages/Reference/Hand/pinchActivation.html)|What percentage of activation is the pinch gesture right now? Where 0 is a hand in an outstretched resting position, and 1 is fingers touching, within a device error tolerant threshold.|
+|float [size]({{site.url}}/Pages/Reference/Hand/size.html)|This is the size of the hand, calculated by measuring the length of the middle finger! This is calculated by adding the distances between each joint, then adding the joint radius of the root and tip. This value is recalculated at relatively frequent intervals, and can vary by as much as a centimeter.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [tracked]({{site.url}}/Pages/Reference/Hand/tracked.html)|Is the hand being tracked by the sensors right now?|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [wrist]({{site.url}}/Pages/Reference/Hand/wrist.html)|Pose of the wrist. TODO: Not populated right now.|
 

@@ -15,6 +15,15 @@ void Draw(Matrix& transform, [Color32]({{site.url}}/Pages/Reference/Color32.html
 |[Color32]({{site.url}}/Pages/Reference/Color32.html) color|Per-instance color data for this render item.|
 
 Draw the sprite on a quad with the provided transform!
+<div class='signature' markdown='1'>
+void Draw(Matrix& transform)
+</div>
+
+|  |  |
+|--|--|
+|Matrix& transform|A Matrix describing a transform from              model space to world space.|
+
+Draw the sprite on a quad with the provided transform!
 
 
 

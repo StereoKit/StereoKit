@@ -5,12 +5,12 @@ description: A class for logging errors, warnings and information! Different lev
 ---
 # Log
 
-A class for logging errors, warnings and information! Different levels
-of information can be filtered out, and supports coloration via <~[colorCode]> and
-<~clr> tags.
+A class for logging errors, warnings and information!
+Different levels of information can be filtered out, and supports
+coloration via <~[colorCode]> and <~clr> tags.
 
-Text colors can be set with a tag, and reset back to default with <~clr>. Color
-codes are as follows:
+Text colors can be set with a tag, and reset back to default with
+<~clr>. Color codes are as follows:
 
 | Dark | Bright | Decription  |
 |------|--------|-------------|
@@ -32,7 +32,7 @@ codes are as follows:
 
 |  |  |
 |--|--|
-|[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info.|
+|[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info. This property can safely be set before SK initialization.|
 
 
 ## Static Methods
@@ -41,8 +41,8 @@ codes are as follows:
 |--|--|
 |[Err]({{site.url}}/Pages/Reference/Log/Err.html)|Writes a formatted line to the log using a LogLevel.Error severity level!|
 |[Info]({{site.url}}/Pages/Reference/Log/Info.html)|Writes a formatted line to the log using a LogLevel.Info severity level!|
-|[Subscribe]({{site.url}}/Pages/Reference/Log/Subscribe.html)|Allows you to listen in on log events! Any callback subscribed here will be called when something is logged. This does honor the Log.Filter, so filtered logs will not be received here.|
-|[Unsubscribe]({{site.url}}/Pages/Reference/Log/Unsubscribe.html)|If you subscribed to the log callback, you can unsubscribe that callback here!|
+|[Subscribe]({{site.url}}/Pages/Reference/Log/Subscribe.html)|Allows you to listen in on log events! Any callback subscribed here will be called when something is logged. This does honor the Log.Filter, so filtered logs will not be received here. This method can safely be called before SK initialization.|
+|[Unsubscribe]({{site.url}}/Pages/Reference/Log/Unsubscribe.html)|If you subscribed to the log callback, you can unsubscribe that callback here! This method can safely be called before initialization.|
 |[Warn]({{site.url}}/Pages/Reference/Log/Warn.html)|Writes a formatted line to the log using a LogLevel.Warn severity level!|
 |[Write]({{site.url}}/Pages/Reference/Log/Write.html)|Writes a formatted line to the log with the specified severity level!|
 

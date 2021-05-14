@@ -13,3 +13,12 @@ characteristics, so it can be great to copy this one when
 creating your own materials! Or if you want to override
 StereoKit's default unlit behavior, here's where you do it!
 
+
+## Examples
+
+```csharp
+matUnlit = Default.MaterialUnlit.Copy();
+matUnlit[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
+```
+![Unlit material example]({{site.screen_url}}/MaterialUnlit.jpg)
+

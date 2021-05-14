@@ -14,8 +14,8 @@ static [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html
 |SHLight[] directional_lights|A list of directional lights!|
 |RETURNS: [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html)|A SphericalHarmonics approximation of the irradiance given from a set of directional lights!|
 
-Creates a SphericalHarmonics approximation of the irradiance given
-from a set of directional lights!
+Creates a SphericalHarmonics approximation of the
+irradiance given from a set of directional lights!
 
 
 

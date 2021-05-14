@@ -30,6 +30,21 @@ properly transforms the position with the point transform method,
 and the direction with the direction transform method. Does not
 normalize, nor does it preserve a normalized direction if the
 Matrix contains scale data.
+<div class='signature' markdown='1'>
+[Pose]({{site.url}}/Pages/Reference/Pose.html) Transform([Pose]({{site.url}}/Pages/Reference/Pose.html) pose)
+</div>
+
+|  |  |
+|--|--|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) pose|The original pose.|
+|RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|The transformed pose.|
+
+Shorthand for transforming a Pose! This will transform
+the position of the Pose with the matrix, extract a rotation Quat
+from the matrix and apply that to the Pose's orientation. Note
+that extracting a rotation Quat is an expensive operation, so if
+you're doing it more than once, you should cache the rotation
+Quat and do this transform manually.
 
 
 
