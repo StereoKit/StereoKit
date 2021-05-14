@@ -64,14 +64,23 @@ typedef enum depth_mode_ {
 	depth_mode_stencil,
 } depth_mode_;
 
+// TODO: remove this in v0.4
 typedef enum display_ {
 	display_none            = 0,
 	display_opaque          = 1 << 0,
 	display_additive        = 1 << 1,
 	display_blend           = 1 << 2,
-	display_passthrough     = 1 << 2, // TODO: remove this in v0.4
+	display_passthrough     = 1 << 2,
 	display_any_transparent = display_additive | display_blend,
 } display_;
+
+typedef enum display_blend_ {
+	display_blend_none            = 0,
+	display_blend_opaque          = 1 << 0,
+	display_blend_additive        = 1 << 1,
+	display_blend_blend           = 1 << 2,
+	display_blend_any_transparent = display_blend_additive | display_blend_blend,
+} display_blend_;
 
 typedef enum log_ {
 	log_none = 0,
@@ -85,7 +94,7 @@ typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
 	display_mode_  display_preference;
-	display_       blend_preference;
+	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
 	log_           log_filter;

@@ -58,29 +58,29 @@ namespace StereoKit
 
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
-		public DisplayMode displayPreference;
+		public DisplayMode  displayPreference;
 		/// <summary>What type of backgroud blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
 		/// will show up behind your content, if that's an option? Note that
 		/// this is a preference only, and if it's not available on this 
 		/// device, the app will fall back to the runtime's preference 
-		/// instead! By default, (Display.None) this uses the runtime's
+		/// instead! By default, (DisplayBlend.None) this uses the runtime's
 		/// preference.</summary>
-		public Display     blendPreference;
+		public DisplayBlend blendPreference;
 		/// <summary>If the preferred display fails, should we avoid falling
 		/// back to flatscreen and just crash out? Default is false.</summary>
-		public bool        noFlatscreenFallback;
+		public bool         noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
 		/// speed but opening up when there's headroom.</summary>
-		public DepthMode   depthMode;
+		public DepthMode    depthMode;
 		/// <summary> The default log filtering level. This can be changed at
 		/// runtime, but this allows you to set the log filter before 
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
-		public LogLevel    logFilter;
+		public LogLevel     logFilter;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -149,6 +149,33 @@ namespace StereoKit
 		Blend       = 1 << 2,
 		[Obsolete("Use Display.Blend instead, to be removed in v0.4")]
 		Passthrough = 1 << 2,
+		/// <summary>This matches either transparent display type! Additive
+		/// or Blend. For use when you just want to see the world behind your
+		/// application.</summary>
+		AnyTransparent = Additive | Blend,
+	}
+
+	/// <summary>This describes the way the display's content blends with
+	/// whatever is behind it. VR headsets are normally Opaque, but some VR
+	/// headsets provide passthrough video, and can support Opaque as well as
+	/// Blend, like the Varjo. Transparent AR displays like the HoloLens
+	/// would be Additive.</summary>
+	public enum DisplayBlend
+	{
+		/// <summary>Default value, when using this as a search type, it will
+		/// fall back to default behavior which defers to platform
+		/// preference.</summary>
+		None = 0,
+		/// <summary>This display is opaque, with no view into the real world!
+		/// This is equivalent to a VR headset, or a PC screen.</summary>
+		Opaque      = 1 << 0,
+		/// <summary>This display is transparent, and adds light on top of
+		/// the real world. This is equivalent to a HoloLens type of device.</summary>
+		Additive    = 1 << 1,
+		/// <summary>This is a physically opaque display, but with a camera
+		/// passthrough displaying the world behind it anyhow. This would be
+		/// like a Varjo XR-1, or phone-camera based AR.</summary>
+		Blend       = 1 << 2,
 		/// <summary>This matches either transparent display type! Additive
 		/// or Blend. For use when you just want to see the world behind your
 		/// application.</summary>

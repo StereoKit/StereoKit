@@ -457,9 +457,9 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 
 	// Add any preferences from the user
 	array_t<XrEnvironmentBlendMode> blend_search = {};
-	if (sk_settings.blend_preference & display_blend   ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND);
-	if (sk_settings.blend_preference & display_additive) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ADDITIVE);
-	if (sk_settings.blend_preference & display_opaque  ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_OPAQUE);
+	if (sk_settings.blend_preference & display_blend_blend   ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND);
+	if (sk_settings.blend_preference & display_blend_additive) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_ADDITIVE);
+	if (sk_settings.blend_preference & display_blend_opaque  ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_OPAQUE);
 
 	// Search for the first user preference
 	for (size_t s = 0; s < blend_search.count; s++) {
