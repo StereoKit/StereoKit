@@ -27,6 +27,19 @@ bool Contains([Vec3]({{site.url}}/Pages/Reference/Vec3.html) linePt1, [Vec3]({{s
 |RETURNS: bool|True if the line is in, or intersects with the bounds.|
 
 Does the Bounds contain or intersects with the given line?
+<div class='signature' markdown='1'>
+bool Contains([Vec3]({{site.url}}/Pages/Reference/Vec3.html) linePt1, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) linePt2, float radius)
+</div>
+
+|  |  |
+|--|--|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) linePt1|Start of the capsule.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) linePt2|End of the capsule|
+|float radius|Radius of the capsule.|
+|RETURNS: bool|True if the capsule is in, or intersects with the bounds.|
+
+Does the bounds contain or intersect with the given
+capsule?
 
 
 

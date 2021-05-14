@@ -44,4 +44,11 @@ Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 cylinderTransform = Matrix.T(0.5f, 0, -1);
 Renderer.Add(cylinderModel, cylinderTransform);
 ```
+## UV and Face layout
+Here's a test image that illustrates how this mesh's geometry is
+laid out.
+![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCylinder.jpg)
+```csharp
+meshCylinder = Mesh.GenerateCylinder(1, 1, Vec3.Up);
+```
 

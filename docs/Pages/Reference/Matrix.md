@@ -23,6 +23,7 @@ Matrices are prominently used within shaders for mesh transforms!
 
 |  |  |
 |--|--|
+|[Decompose]({{site.url}}/Pages/Reference/Matrix/Decompose.html)|Returns this transformation matrix to its original translation, rotation and scale components. Not exactly a cheap function. If this is not a transform matrix, there's a chance this call will fail, and return false.|
 |[Invert]({{site.url}}/Pages/Reference/Matrix/Invert.html)|Inverts this Matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
 |[Transform]({{site.url}}/Pages/Reference/Matrix/Transform.html)|Transforms a point through the Matrix! This is basically just multiplying a vector (x,y,z,1) with the Matrix.|
 |[TransformNormal]({{site.url}}/Pages/Reference/Matrix/TransformNormal.html)|Transforms a point through the Matrix, but excluding translation! This is great for transforming vectors that are -directions- rather than points in space. Use this to transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.|
@@ -34,12 +35,18 @@ Matrices are prominently used within shaders for mesh transforms!
 |--|--|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Identity]({{site.url}}/Pages/Reference/Matrix/Identity.html)|An identity Matrix is the matrix equivalent of '1'! Transforming anything by this will leave it at the exact same place.|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) [Pose]({{site.url}}/Pages/Reference/Matrix/Pose.html)|Extracts translation and rotation information from the transform matrix, and makes a Pose from it! Not exactly fast. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Rotation]({{site.url}}/Pages/Reference/Matrix/Rotation.html)|A slow function that returns the rotation quaternion embedded in this transform matrix. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
+|Vector3 [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
+|Vector3 [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
 
 
 ## Static Methods
 
 |  |  |
 |--|--|
+|[Orthographic]({{site.url}}/Pages/Reference/Matrix/Orthographic.html)|This creates a matrix used for projecting 3D geometry onto a 2D surface for rasterization. Orthographic projection matrices will preserve parallel lines. This is great for 2D scenes or content.|
+|[Perspective]({{site.url}}/Pages/Reference/Matrix/Perspective.html)|This creates a matrix used for projecting 3D geometry onto a 2D surface for rasterization. Perspective projection matrices will cause parallel lines to converge at the horizon. This is great for normal looking content.|
 |[R]({{site.url}}/Pages/Reference/Matrix/R.html)|Create a rotation matrix from a Quaternion.|
 |[S]({{site.url}}/Pages/Reference/Matrix/S.html)|Creates a scaling Matrix, where scale can be different on each axis (non-uniform).|
 |[T]({{site.url}}/Pages/Reference/Matrix/T.html)|Translate. Creates a translation Matrix!|

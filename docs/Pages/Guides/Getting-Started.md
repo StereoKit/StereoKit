@@ -17,7 +17,7 @@ this already, but here's the list!
   - Mobile development with .Net (for Quest)
 - [StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates) - The fastest way to set up a StereoKit project!
   - You can also directly install the [NuGet package](https://www.nuget.org/packages/StereoKit) into your project of choice.
-- Any OpenXR runtime: Windows MR, Oculus, SteamVR, Monado, a HoloLens, or an Oculus Quest
+- Any OpenXR runtime: Windows MR, Oculus, SteamVR, Varjo, Monado, a HoloLens, or an Oculus Quest
 - Enable Developer Mode (for UWP/HoloLens)
   - Windows Settings->Update and Security->For Developers->Developer Mode
 

@@ -36,9 +36,9 @@ the user pinches while inside an InteractVolume.
 
 ```csharp
 // Draw a transparent volume so the user can see this space
-Vec3 volumeAt   = new Vec3(0,0.2f,-0.4f);
+Vec3  volumeAt   = new Vec3(0,0.2f,-0.4f);
 float volumeSize = 0.2f;
-Default.MeshCube.Draw(volumeMat, Matrix.TS(volumeAt, volumeSize));
+Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(volumeAt, volumeSize));
 
 BtnState volumeState = UI.InteractVolume(new Bounds(volumeAt, Vec3.One*volumeSize), out Handed hand);
 if (volumeState != BtnState.Inactive)

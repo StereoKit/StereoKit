@@ -41,4 +41,11 @@ Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 sphereTransform = Matrix.T(0.0f, 0, -1);
 Renderer.Add(sphereModel, sphereTransform);
 ```
+## UV and Face layout
+Here's a test image that illustrates how this mesh's geometry is
+laid out.
+![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoSphere.jpg)
+```csharp
+meshSphere = Mesh.GenerateSphere(1);
+```
 

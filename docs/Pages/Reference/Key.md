@@ -18,8 +18,12 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [A]({{site.url}}/Pages/Reference/Key/A.html)|a/A|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Add]({{site.url}}/Pages/Reference/Key/Add.html)|Numpad '+', NOT the same as number row '+'|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Alt]({{site.url}}/Pages/Reference/Key/Alt.html)|Left or right Alt key|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Apostrophe]({{site.url}}/Pages/Reference/Key/Apostrophe.html)|'/"|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [B]({{site.url}}/Pages/Reference/Key/B.html)|b/B|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Backspace]({{site.url}}/Pages/Reference/Key/Backspace.html)|Backspace|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Backtick]({{site.url}}/Pages/Reference/Key/Backtick.html)|`/~|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [BracketClose]({{site.url}}/Pages/Reference/Key/BracketClose.html)|]/}|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [BracketOpen]({{site.url}}/Pages/Reference/Key/BracketOpen.html)|[/{|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [C]({{site.url}}/Pages/Reference/Key/C.html)|c/C|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [CapsLock]({{site.url}}/Pages/Reference/Key/CapsLock.html)|This behaves a little differently! This tells the toggle state of caps lock, rather than the key state itself.|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Ctrl]({{site.url}}/Pages/Reference/Key/Ctrl.html)|Left or right Control key|
@@ -30,6 +34,7 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Down]({{site.url}}/Pages/Reference/Key/Down.html)|Down arrow key|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [E]({{site.url}}/Pages/Reference/Key/E.html)|e/E|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [End]({{site.url}}/Pages/Reference/Key/End.html)|End|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Equals]({{site.url}}/Pages/Reference/Key/Equals.html)|=/+|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Esc]({{site.url}}/Pages/Reference/Key/Esc.html)|Escape|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [F]({{site.url}}/Pages/Reference/Key/F.html)|f/F|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [F1]({{site.url}}/Pages/Reference/Key/F1.html)|Function key F1|
@@ -56,6 +61,7 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Left]({{site.url}}/Pages/Reference/Key/Left.html)|Left arrow key|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [M]({{site.url}}/Pages/Reference/Key/M.html)|m/M|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [MAX]({{site.url}}/Pages/Reference/Key/MAX.html)|Maximum value for key codes|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Minus]({{site.url}}/Pages/Reference/Key/Minus.html)|-/_|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [MouseCenter]({{site.url}}/Pages/Reference/Key/MouseCenter.html)|Center mouse button|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [MouseLeft]({{site.url}}/Pages/Reference/Key/MouseLeft.html)|Left mouse button|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [MouseRight]({{site.url}}/Pages/Reference/Key/MouseRight.html)|Right mouse button|
@@ -83,6 +89,9 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Num9]({{site.url}}/Pages/Reference/Key/Num9.html)|9 on the numpad, when numlock is on|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [O]({{site.url}}/Pages/Reference/Key/O.html)|o/O|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [P]({{site.url}}/Pages/Reference/Key/P.html)|p/P|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [PageDown]({{site.url}}/Pages/Reference/Key/PageDown.html)|Page Down key|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [PageUp]({{site.url}}/Pages/Reference/Key/PageUp.html)|Page Up key|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Period]({{site.url}}/Pages/Reference/Key/Period.html)|./>|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Printscreen]({{site.url}}/Pages/Reference/Key/Printscreen.html)|Printscreen|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Q]({{site.url}}/Pages/Reference/Key/Q.html)|q/Q|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [R]({{site.url}}/Pages/Reference/Key/R.html)|r/R|
@@ -90,7 +99,10 @@ characters and mouse buttons.
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Return]({{site.url}}/Pages/Reference/Key/Return.html)|Return, or Enter|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Right]({{site.url}}/Pages/Reference/Key/Right.html)|Right arrow key|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [S]({{site.url}}/Pages/Reference/Key/S.html)|s/S|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [Semicolon]({{site.url}}/Pages/Reference/Key/Semicolon.html)|;/:|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Shift]({{site.url}}/Pages/Reference/Key/Shift.html)|Left or right Shift|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [SlashBack]({{site.url}}/Pages/Reference/Key/SlashBack.html)|\|
+|[Key]({{site.url}}/Pages/Reference/Key.html) [SlashFwd]({{site.url}}/Pages/Reference/Key/SlashFwd.html)|/|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Space]({{site.url}}/Pages/Reference/Key/Space.html)|Space|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [Subtract]({{site.url}}/Pages/Reference/Key/Subtract.html)|Numpad '-', NOT the same as number row '-'|
 |[Key]({{site.url}}/Pages/Reference/Key.html) [T]({{site.url}}/Pages/Reference/Key/T.html)|t/T|

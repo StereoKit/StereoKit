@@ -6,6 +6,20 @@ description: Displays an RGB/XYZ axis widget at the pose! Note that this draws l
 # [Lines]({{site.url}}/Pages/Reference/Lines.html).AddAxis
 
 <div class='signature' markdown='1'>
+static void AddAxis([Pose]({{site.url}}/Pages/Reference/Pose.html) atPose, float size, float thickness)
+</div>
+
+|  |  |
+|--|--|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) atPose|What position and orientation do we want             this axis widget at?|
+|float size|How long should the widget lines be, in             meters?|
+|float thickness|How thick should the lines be, in             meters?|
+
+Displays an RGB/XYZ axis widget at the pose! Note that
+this draws lines along 'Right/Up/Forward' vectors, rather than
+'UnitX/UnitY/UnitZ'. Notably, Forward is (0,0,-1), and UnitZ is
+(0,0,1)
+<div class='signature' markdown='1'>
 static void AddAxis([Pose]({{site.url}}/Pages/Reference/Pose.html) atPose, float size)
 </div>
 

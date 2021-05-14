@@ -13,6 +13,7 @@ your data before calling SK.Initialize.
 
 |  |  |
 |--|--|
+|[DisplayBlend]({{site.url}}/Pages/Reference/DisplayBlend.html) [blendPreference]({{site.url}}/Pages/Reference/SKSettings/blendPreference.html)|What type of backgroud blend mode do we prefer for this application? Are you trying to build an Opaque/Immersive/VR app, or would you like the display to be AnyTransparent, so the world will show up behind your content, if that's an option? Note that this is a preference only, and if it's not available on this device, the app will fall back to the runtime's preference instead! By default, (DisplayBlend.None) this uses the runtime's preference.|
 |[DepthMode]({{site.url}}/Pages/Reference/DepthMode.html) [depthMode]({{site.url}}/Pages/Reference/SKSettings/depthMode.html)|What kind of depth buffer should StereoKit use? A fast one, a detailed one, one that uses stencils? By default, StereoKit uses a balanced mix depending on platform, prioritizing speed but opening up when there's headroom.|
 |bool [disableFlatscreenMRSim]({{site.url}}/Pages/Reference/SKSettings/disableFlatscreenMRSim.html)|By default, StereoKit will simulate Mixed Reality input so developers can test MR spaces without being in a headeset. If You don't want this, you can disable it with this setting!|
 |[DisplayMode]({{site.url}}/Pages/Reference/DisplayMode.html) [displayPreference]({{site.url}}/Pages/Reference/SKSettings/displayPreference.html)|Which display type should we try to load? Default is `DisplayMode.MixedReality`.|
@@ -20,6 +21,7 @@ your data before calling SK.Initialize.
 |int [flatscreenPosX]({{site.url}}/Pages/Reference/SKSettings/flatscreenPosX.html)|If using Runtime.Flatscreen, the pixel position of the window on the screen.|
 |int [flatscreenPosY]({{site.url}}/Pages/Reference/SKSettings/flatscreenPosY.html)|If using Runtime.Flatscreen, the pixel position of the window on the screen.|
 |int [flatscreenWidth]({{site.url}}/Pages/Reference/SKSettings/flatscreenWidth.html)|If using Runtime.Flatscreen, the pixel size of the window on the screen.|
+|[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [logFilter]({{site.url}}/Pages/Reference/SKSettings/logFilter.html)|The default log filtering level. This can be changed at runtime, but this allows you to set the log filter before Initialization occurs, so you can choose to get information from that. Default is LogLevel.Info.|
 |bool [noFlatscreenFallback]({{site.url}}/Pages/Reference/SKSettings/noFlatscreenFallback.html)|If the preferred display fails, should we avoid falling back to flatscreen and just crash out? Default is false.|
 
 

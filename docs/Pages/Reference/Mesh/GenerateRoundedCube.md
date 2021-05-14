@@ -42,4 +42,11 @@ Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
 Renderer.Add(roundedCubeModel, roundedCubeTransform);
 ```
+## UV and Face layout
+Here's a test image that illustrates how this mesh's geometry is
+laid out.
+![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoRoundedCube.jpg)
+```csharp
+meshRoundedCube = Mesh.GenerateRoundedCube(Vec3.One, 0.05f);
+```
 

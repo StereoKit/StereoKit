@@ -58,4 +58,11 @@ Renderer.Add(planeMesh, Default.Material, planeTransform);
 planeTransform = Matrix.T(1.0f, 0, -1);
 Renderer.Add(planeModel, planeTransform);
 ```
+## UV and Face layout
+Here's a test image that illustrates how this mesh's geometry is
+laid out.
+![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoPlane.jpg)
+```csharp
+meshPlane = Mesh.GeneratePlane(Vec2.One);
+```
 
