@@ -75,13 +75,13 @@ namespace StereoKit.Framework
 			if (_previewing)
 			{
 				Hierarchy.Push(Matrix.TR(previewAt, Quat.LookAt(previewAt, Input.Head.position)));
-				Default.MeshQuad.Draw(_frameMaterial, Matrix.S(0.08f));
+				Default.MeshQuad.Draw(_frameMaterial, Matrix.S(V.XYZ(0.08f * ((float)Width / Height), 0.08f, 1)));
 				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), TextAlign.XLeft|TextAlign.YCenter);
 				Hierarchy.Pop();
 
 				Renderer.RenderTo(_frameSurface, 
 					_renderFrom.ToMatrix(), 
-					Matrix.Perspective(fov, 1, 0.01f, 100));
+					Matrix.Perspective(fov, (float)Width/Height, 0.01f, 100));
 			}
 			if (_recording)
 				SaveFrame(FrameRate);
