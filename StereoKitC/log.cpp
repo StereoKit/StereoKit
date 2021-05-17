@@ -17,11 +17,7 @@ namespace sk {
 typedef void(*log_listener_t)(log_, const char *);
 array_t<log_listener_t> log_listeners = {};
 
-#if _DEBUG
 log_        log_filter = log_diagnostic;
-#else
-log_        log_filter = log_inform;
-#endif
 log_colors_ log_colors = log_colors_ansi;
 
 char       *log_fail_reason_str = nullptr;
