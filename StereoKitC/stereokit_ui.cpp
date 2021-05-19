@@ -850,9 +850,9 @@ void ui_label(const char *text, bool32_t use_padding) {
 
 void ui_text(const char *text) {
 	vec3  offset   = skui_layers.last().offset;
-	vec2  size     = { ui_area_remaining().x-skui_settings.gutter*2, 0 };
+	vec2  size     = { ui_area_remaining().x, 0 };
 
-	vec3 at = offset - vec3{ skui_settings.gutter, 0, skui_settings.depth / 2 };
+	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 2 };
 	size.y = text_add_in(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_top, at.x, at.y, at.z);
 
 	ui_reserve_box(size);

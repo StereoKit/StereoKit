@@ -441,7 +441,7 @@ float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit
 		}
 		text_step_position(text[i], &text[i], step);
 	}
-	return (step.start.y - step.pos.y) + step.style->size * step.style->font->character_height;
+	return (step.start.y - step.pos.y) - step.style->size * step.style->font->character_height;
 }
 
 ///////////////////////////////////////////
