@@ -13,6 +13,7 @@
 #include "systems/audio.h"
 #include "systems/sprite_drawer.h"
 #include "systems/line_drawer.h"
+#include "systems/world.h"
 #include "systems/defaults.h"
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
@@ -224,6 +225,18 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_lines.func_update             = line_drawer_update;
 	sys_lines.func_shutdown           = line_drawer_shutdown;
 	systems_add(&sys_lines);
+
+	system_t sys_world = { "World" };
+	const char *world_deps       [] = {"Platform"};
+	const char *world_update_deps[] = {"Platform"};
+	sys_world.init_dependencies       = world_deps;
+	sys_world.init_dependency_count   = _countof(world_deps);
+	sys_world.update_dependencies     = world_update_deps;
+	sys_world.update_dependency_count = _countof(world_update_deps);
+	sys_world.func_initialize         = world_init;
+	sys_world.func_update             = world_update;
+	sys_world.func_shutdown           = world_shutdown;
+	systems_add(&sys_world);
 
 	system_t sys_app = { "App" };
 	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};

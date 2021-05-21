@@ -398,6 +398,9 @@
     <ClInclude Include="systems\audio.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="systems\world.h">
+      <Filter>systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

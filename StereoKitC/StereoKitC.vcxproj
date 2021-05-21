@@ -256,6 +256,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
+    <ClInclude Include="systems\world.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
