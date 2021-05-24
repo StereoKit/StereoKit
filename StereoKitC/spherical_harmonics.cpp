@@ -173,6 +173,8 @@ color128 sh_lookup(const spherical_harmonics_t &harmonics, vec3 normal) {
 ///////////////////////////////////////////
 
 vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
+	// Reference from here:
+	// https://seblagarde.wordpress.com/2011/10/09/dive-in-sh-buffer-idea/
 	vec3 dir = vec3_normalize({
 		harmonics.coefficients[3].x * 0.3f + harmonics.coefficients[3].y * 0.59f + harmonics.coefficients[3].z,
 		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z,
