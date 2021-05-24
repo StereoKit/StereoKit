@@ -30,7 +30,7 @@ inline enumType &operator&=(enumType& a, const enumType& b) { a = a & b; return 
 inline enumType  operator~ (const enumType& a)              { return static_cast<enumType>(~static_cast<int>(a)); }
 #else
 #define SK_EXTERN
-#define sk_default(__VA_ARGS__)
+#define sk_default(...)
 #define sk_ref(x) x*
 #define sk_ref_arr(x) x**
 #define SK_MakeFlag(enumType)
@@ -282,7 +282,7 @@ static const vec3 vec3_forward  = { 0,0,-1 };
 static const vec3 vec3_right    = { 1,0, 0 };
 static const quat quat_identity = { 0,0, 0,1 };
 static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
-static const pose_t pose_identity   = { vec3_zero, quat_identity };
+static const pose_t pose_identity   = { {0,0,0}, {0,0,0,1} };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -719,7 +719,7 @@ SK_API void                  render_add_mesh       (mesh_t mesh, material_t mate
 SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (vec3 from_viewpt, vec3 at, int width, int height, const char *file);
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear = render_clear_all, rect_t viewport = {});
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////
