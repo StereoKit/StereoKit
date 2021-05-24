@@ -323,6 +323,21 @@ pose_t matrix_extract_pose(const matrix &transform) {
 
 ///////////////////////////////////////////
 
+plane_t plane_from_points(vec3 p1, vec3 p2, vec3 p3) {
+	vec3 dir1   = p2 - p1;
+	vec3 dir2   = p2 - p3;
+	vec3 normal = vec3_cross(dir1, dir2);
+	return { normal, -vec3_dot(p2, normal) };
+}
+
+///////////////////////////////////////////
+
+plane_t plane_from_ray(ray_t ray) {
+	return { ray.dir, -vec3_dot(ray.pos, ray.dir) };
+}
+
+///////////////////////////////////////////
+
 vec3 bounds_corner(const bounds_t &bounds, int32_t index8) {
 	// Sign generates a pattern like this:
 	// -1, -1, -1

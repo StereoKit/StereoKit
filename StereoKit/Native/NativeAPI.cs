@@ -87,10 +87,11 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics sh_create    ([In] SHLight[] lights, int light_count);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_brightness(ref SphericalHarmonics harmonics, float scale);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_add       (ref SphericalHarmonics harmonics, Vec3 light_dir, Vec3 light_color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color              sh_lookup    (in  SphericalHarmonics lookup, Vec3 normal);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics sh_create      ([In] SHLight[] lights, int light_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_brightness  (ref SphericalHarmonics harmonics, float scale);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               sh_add         (ref SphericalHarmonics harmonics, Vec3 light_dir, Vec3 light_color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color              sh_lookup      (in  SphericalHarmonics harmonics, Vec3 normal);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3               sh_dominant_dir(in  SphericalHarmonics harmonics);
 
 
 		///////////////////////////////////////////
@@ -139,7 +140,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, ulong out_data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution, float light_spot_size_pct, float light_spot_intensity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat  tex_get_format      (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        tex_get_width       (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        tex_get_height      (IntPtr texture);

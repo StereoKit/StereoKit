@@ -219,6 +219,9 @@ SK_API pose_t   matrix_extract_pose       (const sk_ref(matrix) transform);
 SK_API bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, sk_ref(float) out_t);
 SK_API bool32_t ray_from_mouse     (vec2 screen_pixel_pos, sk_ref(ray_t) out_ray);
 
+SK_API plane_t plane_from_points(vec3 p1, vec3 p2, vec3 p3);
+SK_API plane_t plane_from_ray   (ray_t ray);
+
 #ifdef __cplusplus
 static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
 static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
@@ -355,10 +358,11 @@ typedef struct sh_light_t {
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create    (const sh_light_t* lights, int32_t light_count);
-SK_API void                  sh_brightness(sk_ref(spherical_harmonics_t) harmonics, float scale);
-SK_API void                  sh_add       (sk_ref(spherical_harmonics_t) harmonics, vec3 light_dir, vec3 light_color);
-SK_API color128              sh_lookup    (const sk_ref(spherical_harmonics_t)  lookup, vec3 normal);
+SK_API spherical_harmonics_t sh_create      (const sh_light_t* lights, int32_t light_count);
+SK_API void                  sh_brightness  (      sk_ref(spherical_harmonics_t) harmonics, float scale);
+SK_API void                  sh_add         (      sk_ref(spherical_harmonics_t) harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup      (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
+SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics);
 
 ///////////////////////////////////////////
 
@@ -461,7 +465,7 @@ SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
-SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)  lookup, int32_t face_size);
+SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);

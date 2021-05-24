@@ -144,7 +144,7 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 
 ///////////////////////////////////////////
 
-color128 sh_lookup(const spherical_harmonics_t &lookup, vec3 normal) {
+color128 sh_lookup(const spherical_harmonics_t &harmonics, vec3 normal) {
 	vec3 result = {};
 
 	static const float Pi = 3.141592654f;
@@ -153,21 +153,31 @@ color128 sh_lookup(const spherical_harmonics_t &lookup, vec3 normal) {
 	static const float CosineA2 = Pi * 0.25f;
 
 	// Band 0
-	result += lookup.coefficients[0] * (0.282095f * CosineA0);
+	result += harmonics.coefficients[0] * (0.282095f * CosineA0);
 
 	// Band 1
-	result += lookup.coefficients[1] * (0.488603f * normal.y * CosineA1);
-	result += lookup.coefficients[2] * (0.488603f * normal.z * CosineA1);
-	result += lookup.coefficients[3] * (0.488603f * normal.x * CosineA1);
+	result += harmonics.coefficients[1] * (0.488603f * normal.y * CosineA1);
+	result += harmonics.coefficients[2] * (0.488603f * normal.z * CosineA1);
+	result += harmonics.coefficients[3] * (0.488603f * normal.x * CosineA1);
 
 	// Band 2
-	result += lookup.coefficients[4] * (1.092548f * normal.x * normal.y * CosineA2);
-	result += lookup.coefficients[5] * (1.092548f * normal.y * normal.z * CosineA2);
-	result += lookup.coefficients[6] * (0.315392f * (3.0f * normal.z * normal.z - 1.0f) * CosineA2);
-	result += lookup.coefficients[7] * (1.092548f * normal.x * normal.z * CosineA2);
-	result += lookup.coefficients[8] * (0.546274f * (normal.x * normal.x - normal.y * normal.y) * CosineA2);
+	result += harmonics.coefficients[4] * (1.092548f * normal.x * normal.y * CosineA2);
+	result += harmonics.coefficients[5] * (1.092548f * normal.y * normal.z * CosineA2);
+	result += harmonics.coefficients[6] * (0.315392f * (3.0f * normal.z * normal.z - 1.0f) * CosineA2);
+	result += harmonics.coefficients[7] * (1.092548f * normal.x * normal.z * CosineA2);
+	result += harmonics.coefficients[8] * (0.546274f * (normal.x * normal.x - normal.y * normal.y) * CosineA2);
 
 	return { result.x, result.y, result.z, 1 };
+}
+
+///////////////////////////////////////////
+
+vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
+	vec3 dir = vec3_normalize({
+		harmonics.coefficients[3].x * 0.3f + harmonics.coefficients[3].y * 0.59f + harmonics.coefficients[3].z,
+		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z,
+		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z });
+	return -dir;
 }
 
 ///////////////////////////////////////////
