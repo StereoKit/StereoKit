@@ -1,4 +1,5 @@
 #include "platform.h"
+#include "platform_utils.h"
 
 #include "../../_stereokit.h"
 #include "../../log.h"
@@ -56,12 +57,13 @@ bool platform_init() {
 		log_errf("Couldn't initialize StereoKit in %s mode!", sk_display_mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
 		return false;
 	}
-	return true;
+	return platform_utils_init();
 }
 
 ///////////////////////////////////////////
 
 void platform_shutdown() {
+	platform_utils_shutdown();
 	platform_stop_mode();
 	skg_shutdown();
 
@@ -186,6 +188,7 @@ void platform_step_begin() {
 #endif
 	} break;
 	}
+	platform_utils_update();
 }
 
 ///////////////////////////////////////////

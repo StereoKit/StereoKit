@@ -33,4 +33,8 @@ bool  platform_keyboard_available();
 void  platform_keyboard_show     (bool visible);
 bool  platform_keyboard_visible  ();
 
+bool platform_utils_init();
+void platform_utils_update();
+void platform_utils_shutdown();
+
 }

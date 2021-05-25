@@ -119,12 +119,12 @@ namespace StereoKitTest
 
 		void ShowPicker()
 		{
-			FilePicker.Show(
+			/*FilePicker.Show(
 				FilePickerMode.Open,
 				Path.GetFullPath(SK.Settings.assetsFolder),
 				LoadSkyImage,
 				new FileFilter("HDR", "*.hdr"),
-				new FileFilter("Jpg", "*.jpg"));
+				new FileFilter("Jpg", "*.jpg"));*/
 		}
 
 		void LoadSkyImage(string file)

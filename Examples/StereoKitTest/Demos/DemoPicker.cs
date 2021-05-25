@@ -1,5 +1,4 @@
 using StereoKit;
-using StereoKit.Framework;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -22,7 +21,7 @@ namespace StereoKitTest
 
 			ShowPicker();
 		}
-		public void Shutdown() => FilePicker.Hide();
+		public void Shutdown() => Platform.FilePickerHide();
 
 		public void Update() {
 			UI.WindowBegin("Settings", ref menuPose, new Vec2(20,0) * U.cm);
@@ -45,16 +44,15 @@ namespace StereoKitTest
 
 		void ShowPicker()
 		{
-			FilePicker.Show(
-				FilePickerMode.Open,
-				Path.GetFullPath(SK.Settings.assetsFolder),
-				LoadModel,
-				new FileFilter("GLTF", "*.gltf"),
-				new FileFilter("GLB", "*.glb"),
-				new FileFilter("OBJ", "*.obj"),
-				new FileFilter("STL", "*.stl"),
-				new FileFilter("FBX", "*.fbx"),
-				new FileFilter("PLY", "*.ply"));
+			Platform.FilePicker(PickerMode.Open,
+				new FileFilter[] {
+				new FileFilter("GLTF", ".gltf"),
+				new FileFilter("GLB", ".glb"),
+				new FileFilter("OBJ", ".obj"),
+				new FileFilter("STL", ".stl"),
+				new FileFilter("FBX", ".fbx"),
+				new FileFilter("PLY", ".ply")},
+				LoadModel, null);
 		}
 
 		private void LoadModel(string filename)

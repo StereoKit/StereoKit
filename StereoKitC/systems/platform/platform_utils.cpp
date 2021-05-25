@@ -7,6 +7,7 @@
 #include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/ferr_hash.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +15,30 @@
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Storage.Pickers.h>
+#include <winrt/Windows.Storage.Streams.h>
+
+#include <vector>
+
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::ApplicationModel::Core;
+using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Streams;
+
+struct uwp_file_cache_t {
+public:
+	uint64_t    name_hash;
+	StorageFile file = nullptr;
+};
+std::vector<uwp_file_cache_t> uwp_file_cache    = {};
+int32_t                       uwp_file_cache_id = 0;
+
 #endif
 
 #ifdef SK_OS_WINDOWS
@@ -26,6 +46,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <commdlg.h>
 #endif
 
 #ifdef SK_OS_ANDROID
@@ -102,14 +123,37 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
-		*out_data = sk_malloc(*out_size+1);
+		*out_data = sk_malloc(*out_size + 1);
 		AAsset_read(asset, *out_data, *out_size);
 		AAsset_close(asset);
 		((uint8_t *)*out_data)[*out_size] = 0;
 		return true;
-	} 
+	}
 
 	// Fall back to standard file io functions, they -can- work on Android
+#elif defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	uint64_t hash = hash_fnv64_string(filename);
+	for (size_t i = 0; i < uwp_file_cache.size(); i++) {
+		if (uwp_file_cache[i].name_hash == hash) {
+			IRandomAccessStreamWithContentType stream = uwp_file_cache[i].file.OpenReadAsync().get();
+			Buffer buffer(stream.Size());
+			winrt::Windows::Foundation::IAsyncOperationWithProgress<IBuffer, uint32_t> progress = stream.ReadAsync(buffer, stream.Size(), InputStreamOptions::None);
+			IBuffer result = progress.get();
+
+			*out_size = result.Length();
+			*out_data = sk_malloc(*out_size + 1);
+			memcpy(*out_data, result.data(), *out_size);
+
+			stream.Close();
+			uwp_file_cache[i].file = nullptr;
+			uwp_file_cache.erase(uwp_file_cache.begin() + i);
+			i--;
+
+			return true;
+		}
+	}
 #endif
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
@@ -262,8 +306,102 @@ void platform_default_font(char *fontname_buffer, size_t buffer_size) {
 #elif defined(SK_OS_LINUX)
 	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 #else
-	snprintf(fontname_buffer, buffer_size, "C:/Windows/Fonts/segoeui.ttf");
+	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
 #endif
+}
+
+///////////////////////////////////////////
+
+char   file_picker_filename[1024];
+bool   file_picker_call      = false;
+void  *file_picker_call_data = nullptr;
+void (*file_picker_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
+
+void platform_file_picker(picker_mode_ mode, file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename)) {
+#if defined(SK_OS_WINDOWS)
+	if (sk_active_display_mode() == display_mode_flatscreen) {
+		file_picker_filename[0] = '\0';
+
+		// Build a filter string
+		char filter[1024];
+		filter[0] = '\0';
+		snprintf(filter, sizeof(filter), "(");
+		for (int32_t i = 0; i < filter_count; i++)
+			snprintf(filter, sizeof(filter), "%s%s%s", filter, filters[i].ext, i == filter_count-1?"":", ");
+		snprintf(filter, sizeof(filter), "%s)\1", filter);
+		for (int32_t i = 0; i < filter_count; i++)
+			snprintf(filter, sizeof(filter), "%s*%s%s", filter, filters[i].ext, i == filter_count-1?"":";");
+		snprintf(filter, sizeof(filter), "%s\1", filter);
+		int32_t len = strlen(filter);
+		for (int32_t i = 0; i < len; i++) {
+			if (filter[i] == '\1') filter[i] = '\0';
+		}
+
+		OPENFILENAMEA settings = {};
+		settings.lStructSize  = sizeof(settings);
+		settings.nMaxFile     = sizeof(file_picker_filename);
+		settings.hwndOwner    = (HWND)win32_hwnd();
+		settings.lpstrFile    = file_picker_filename;
+		settings.lpstrFilter  = filter;
+		settings.nFilterIndex = 1;
+		settings.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+		if (GetOpenFileName(&settings) == true) {
+			if (on_confirm) on_confirm(callback_data, true, file_picker_filename);
+		} else {
+			if (on_confirm) on_confirm(callback_data, false, nullptr);
+		}
+	} else {
+	}
+#elif defined(SK_OS_WINDOWS_UWP)
+	file_picker_callback  = on_confirm;
+	file_picker_call_data = callback_data;
+
+	Pickers::FileOpenPicker picker;
+	for (int32_t i = 0; i < filter_count; i++) {
+		wchar_t wext[32];
+		MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
+		picker.FileTypeFilter().Append(wext);
+	}
+	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [picker, on_confirm, callback_data]() {
+		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
+		picker.PickSingleFileAsync().Completed([on_confirm, callback_data](auto &&result_info, auto && status) {
+			auto result = result_info.get();
+			
+			file_picker_filename[0] = '\0';
+			uwp_file_cache_id += 1;
+			snprintf(file_picker_filename, sizeof(file_picker_filename), "stereokit_cache_file:\\%d", uwp_file_cache_id);
+			WideCharToMultiByte(CP_UTF8, 0, result.Path().c_str(), result.Path().size()+1, file_picker_filename, sizeof(file_picker_filename), nullptr, nullptr);
+
+			uwp_file_cache_t item;
+			item.file      = result;
+			item.name_hash = hash_fnv64_string(file_picker_filename);
+			uwp_file_cache.push_back(item);
+			file_picker_call = true;
+		});
+	});
+#endif
+}
+
+///////////////////////////////////////////
+
+bool platform_utils_init() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+void platform_utils_update() {
+	if (file_picker_call) {
+		if (file_picker_callback) file_picker_callback(file_picker_call_data, true, file_picker_filename);
+		file_picker_callback  = nullptr;
+		file_picker_call_data = nullptr;
+		file_picker_call      = false;
+	}
+}
+
+///////////////////////////////////////////
+
+void platform_utils_shutdown() {
 }
 
 }

@@ -628,6 +628,23 @@ namespace StereoKit
 		All   = Color|Depth
 	}
 
+	public enum PickerMode
+	{
+		Open,
+		Save,
+		Folder,
+	}
+
+	public struct FileFilter
+	{
+		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32) ] public string ext;
+
+		public FileFilter(string description, string extension)
+		{
+			ext  = extension;
+		}
+	}
+
 	/// <summary>What type of device is the source of the pointer? This is a bit-flag that can 
 	/// contain some input source family information.</summary>
 	[Flags]
@@ -795,6 +812,8 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, string filename);
 
 	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
 	public enum FingerId
