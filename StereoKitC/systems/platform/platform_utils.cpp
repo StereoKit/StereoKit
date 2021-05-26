@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
@@ -399,8 +400,6 @@ char *platform_push_path_new(const char *path, const char *directory) {
 	else 
 		result = string_append(nullptr, 2, path, directory);
 
-	while (result)
-
 	return result;
 }
 
@@ -416,7 +415,11 @@ char *platform_pop_path_new(const char *path) {
 	if (last != -1) {
 		src_path = stref_substr(src_path, 0, last);
 	} else {
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 		return string_copy("");
+#else
+		return string_copy(platform_path_separator);
+#endif
 	}
 
 	last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
