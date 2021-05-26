@@ -2,7 +2,6 @@
 #include "../_stereokit.h"
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
-#include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -226,11 +225,6 @@ void file_picker_open_folder(const char *folder) {
 	if (folder == nullptr) {
 		folder = platform_working_dir();
 	}
-#if !defined(SK_OS_WINDOWS) && !defined(SK_OS_WINDOWS_UWP)
-	if (folder[0] == '\0') {
-		folder = platform_path_separator;
-	}
-#endif
 
 	fp_items.each([](fp_item_t &item) { free(item.name); });
 	fp_items.clear();
@@ -281,14 +275,9 @@ void file_picker_update() {
 
 		// Show the current directory
 		if (ui_button("Up")) {
-			stref_t path = stref_make(fp_folder);
-			int32_t last = maxi( stref_lastof(path, '\\'), stref_lastof(path, '/') );
-			if (last != -1) {
-				path = stref_substr(path, 0, last);
-				char *new_path = stref_copy(path);
-				file_picker_open_folder(new_path);
-				free(new_path);
-			}
+			char *path = platform_pop_path_new(fp_folder);
+			file_picker_open_folder(path);
+			free(path);
 		}
 		ui_sameline();
 		ui_label_sz(fp_folder, {ui_area_remaining().x, ui_line_height()});
@@ -324,11 +313,7 @@ void file_picker_update() {
 				if (fp_items[i].file)
 					fp_active = fp_items[i].name;
 				else {
-					char *path = nullptr;
-					if (string_endswith(fp_folder, platform_path_separator))
-						path = string_append(nullptr, 2, fp_folder, fp_items[i].name);
-					else
-						path = string_append(nullptr, 3, fp_folder, platform_path_separator, fp_items[i].name);
+					char *path = platform_push_path_new(fp_folder, fp_items[i].name);
 					file_picker_open_folder(path);
 					free(path);
 				}

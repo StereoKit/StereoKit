@@ -38,6 +38,10 @@ void  platform_sleep       (int ms);
 void  platform_default_font(char *fontname_buffer, size_t buffer_size);
 char *platform_working_dir ();
 void  platform_iterate_dir (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file));
+char *platform_push_path_ref(char *path, const char *directory);
+char *platform_pop_path_ref (char *path);
+char *platform_push_path_new(const char *path, const char *directory);
+char *platform_pop_path_new (const char *path);
 
 bool  platform_keyboard_available();
 void  platform_keyboard_show     (bool visible);

@@ -5,6 +5,7 @@
 
 #include "../../stereokit.h"
 #include "../../sk_memory.h"
+#include "../../sk_math.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
 #include "../../tools/file_picker.h"
@@ -299,6 +300,17 @@ char *platform_working_dir() {
 
 void  platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
 #if defined(SK_OS_WINDOWS)
+	if (string_eq(directory_path, "")) {
+		char drive_names[256];
+		GetLogicalDriveStrings(sizeof(drive_names), drive_names);
+		char *curr = drive_names;
+		while (*curr != '\0') {
+			on_item(callback_data, curr, false);
+			curr = curr + strlen(curr)+1;
+		}
+		return;
+	}
+
 	WIN32_FIND_DATA info;
 	HANDLE          handle = nullptr;
 
@@ -324,6 +336,10 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 		}
 	}
 #elif defined(SK_OS_LINUX)
+	if (string_eq(directory_path, "")) {
+		directory_path = platform_path_separator;
+	}
+
 	DIR           *dir;
 	struct dirent *dir_info;
 	dir = opendir(directory_path);
@@ -339,6 +355,76 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 		closedir(dir);
 	}
 #endif
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_ref(char *path, const char *directory) {
+	char *result = platform_push_path_new(path, directory);
+	free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_pop_path_ref(char *path) {
+	char *result = platform_pop_path_new(path);
+	free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_new(const char *path, const char *directory) {
+	if (path == nullptr || directory == nullptr) return nullptr;
+	if (directory[0] == '\0') return string_copy(path);
+
+	int32_t len = strlen(path);
+	if (len == 0) {
+		bool trailing_cslash = string_endswith(directory, ":\\") || string_endswith(directory, ":/");
+		bool trailing_c      = string_endswith(directory, ":");
+		if      (trailing_cslash) return string_copy  (directory);
+		else if (trailing_c)      return string_append(nullptr, 2, directory, platform_path_separator);
+		else return nullptr;
+	}
+
+	bool ends_with   = path     [len-1] == '\\' || path     [len-1] == '/';
+	bool starts_with = directory[0]     == '\\' || directory[0]     == '/';
+
+	char *result = nullptr;
+	if (!ends_with && !starts_with)
+		result = string_append(nullptr, 3, path, platform_path_separator, directory);
+	else if (ends_with && starts_with)
+		result = string_append(nullptr, 2, path, directory[1]);
+	else 
+		result = string_append(nullptr, 2, path, directory);
+
+	while (result)
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_pop_path_new(const char *path) {
+	stref_t src_path  = stref_make(path);
+	// Trim off trailing slashes
+	while (src_path.length > 0 && (path[src_path.length-1] == '\\' || path[src_path.length-1] == '/'))
+		src_path.length -= 1;
+
+	int32_t last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last != -1) {
+		src_path = stref_substr(src_path, 0, last);
+	} else {
+		return string_copy("");
+	}
+
+	last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last == -1) {
+		return string_append(stref_copy(src_path), 1, platform_path_separator);
+	} else {
+		return stref_copy(src_path);
+	}
 }
 
 ///////////////////////////////////////////
