@@ -78,7 +78,7 @@ void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus st
 
 void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
-	if (sk_active_display_mode() != display_mode_flatscreen) {
+	if (sk_active_display_mode() == display_mode_flatscreen) {
 		fp_filename[0] = '\0';
 
 		// Build a filter string
