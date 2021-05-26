@@ -78,15 +78,15 @@ void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus st
 
 void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename)) {
 #if defined(SK_OS_WINDOWS)
-	if (sk_active_display_mode() != display_mode_flatscreen) {
+	if (sk_active_display_mode() == display_mode_flatscreen) {
 		fp_filename[0] = '\0';
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
 		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?1:2, filters[e].ext, ", ");
 		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?1:2, filters[e].ext, ";");
-		filter = string_append(filter, 1, "\1");
+		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
+		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		int32_t len = strlen(filter);
 		for (int32_t i = 0; i < len; i++) if (filter[i] == '\1') filter[i] = '\0'; 
 
@@ -97,11 +97,23 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 		settings.lpstrFile    = fp_filename;
 		settings.lpstrFilter  = filter;
 		settings.nFilterIndex = 1;
-		settings.Flags        = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-		if (GetOpenFileName(&settings) == true) {
-			if (on_confirm) on_confirm(callback_data, true, fp_filename);
-		} else {
-			if (on_confirm) on_confirm(callback_data, false, nullptr);
+
+		if (mode == picker_mode_open) {
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+			settings.lpstrTitle = "Open";
+			if (GetOpenFileName(&settings) == true) {
+				if (on_confirm) on_confirm(callback_data, true, fp_filename);
+			} else {
+				if (on_confirm) on_confirm(callback_data, false, nullptr);
+			}
+		} else if (mode == picker_mode_save) {
+			settings.Flags = OFN_PATHMUSTEXIST;
+			settings.lpstrTitle = "Save As";
+			if (GetSaveFileNameA(&settings) == true) {
+				if (on_confirm) on_confirm(callback_data, true, fp_filename);
+			} else {
+				if (on_confirm) on_confirm(callback_data, false, nullptr);
+			}
 		}
 
 		free(filter);
@@ -113,7 +125,7 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 
 	CoreDispatcher dispatcher = CoreApplication::MainView().CoreWindow().Dispatcher();
 	wchar_t        wext[32];
-	if (mode == picker_mode_open || mode == picker_mode_folder) {
+	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
 			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
@@ -145,8 +157,7 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 	free(fp_title); 
 	fp_title = nullptr;
 	switch (mode) {
-	case picker_mode_save:   fp_title = string_append(fp_title, 1, "Save"); break;
-	case picker_mode_folder: fp_title = string_append(fp_title, 1, "Select Folder"); break;
+	case picker_mode_save:   fp_title = string_append(fp_title, 1, "Save As"); break;
 	case picker_mode_open: {
 		fp_title = string_append(fp_title, 1, "Open (");
 		for (int32_t e = 0; e < filter_count; e++)
@@ -161,6 +172,10 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 	memcpy(fp_filters, filters, sizeof(file_filter_t) * fp_filter_count);
 
 	file_picker_open_folder(fp_folder);
+
+	const pose_t *head = input_head();
+	vec3          pos  = head->position + head->orientation*vec3_forward*.5f + head->orientation*vec3_up*0.2f;
+	fp_win_pose = { pos, quat_lookat(pos, head->position) };
 
 	fp_call_data = callback_data;
 	fp_callback  = on_confirm;
@@ -249,15 +264,16 @@ void file_picker_update() {
 
 		// Show the active item
 		switch (fp_mode) {
-		case picker_mode_folder: {
-			if (ui_button("Select Folder")) { stref_copy_to(stref_make(fp_folder), fp_filename, sizeof(fp_filename)); fp_call = true; fp_call_status = true; }
-		} break;
 		case picker_mode_save: {
+			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
+			ui_sameline();
 			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; fp_call_status = true; }
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
+			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
+			ui_sameline();
 			if (fp_active) {
 				if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 				ui_sameline();

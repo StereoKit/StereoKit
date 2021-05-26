@@ -789,7 +789,6 @@ typedef struct file_filter_t {
 typedef enum picker_mode_ {
 	picker_mode_open,
 	picker_mode_save,
-	picker_mode_folder,
 } picker_mode_;
 
 SK_API void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename));
