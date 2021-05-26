@@ -14,6 +14,14 @@
 	#define SK_OS_WINDOWS
 #endif
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#define platform_path_separator "\\"
+#define platform_path_separator_c '\\'
+#else
+#define platform_path_separator "/"
+#define platform_path_separator_c '/'
+#endif
+
 #ifndef _countof
 #define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
@@ -28,9 +36,15 @@ float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
 void  platform_sleep       (int ms);
 void  platform_default_font(char *fontname_buffer, size_t buffer_size);
+char *platform_working_dir ();
+void  platform_iterate_dir (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file));
 
 bool  platform_keyboard_available();
 void  platform_keyboard_show     (bool visible);
 bool  platform_keyboard_visible  ();
+
+bool platform_utils_init();
+void platform_utils_update();
+void platform_utils_shutdown();
 
 }

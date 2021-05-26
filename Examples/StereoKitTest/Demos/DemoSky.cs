@@ -31,7 +31,7 @@ namespace StereoKitTest
 		Material   lightSrcMat   = new Material(Default.ShaderUnlit);
 
 		public void Initialize() { }
-		public void Shutdown() => FilePicker.Hide();
+		public void Shutdown() => Platform.FilePickerClose();
 		public void Update()
 		{
 			UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
@@ -62,7 +62,7 @@ namespace StereoKitTest
 			if (mode == LightMode.Image)
 			{
 				UI.Label("Image");
-				if (!FilePicker.Active && UI.Button("Open"))
+				if (!Platform.FilePickerVisible && UI.Button("Open"))
 					ShowPicker();
 			}
 
@@ -119,12 +119,8 @@ namespace StereoKitTest
 
 		void ShowPicker()
 		{
-			FilePicker.Show(
-				FilePickerMode.Open,
-				Path.GetFullPath(SK.Settings.assetsFolder),
-				LoadSkyImage,
-				new FileFilter("HDR", "*.hdr"),
-				new FileFilter("Jpg", "*.jpg"));
+			Platform.FilePicker(PickerMode.Open, LoadSkyImage, null,
+				".hdr", ".jpg", ".png");
 		}
 
 		void LoadSkyImage(string file)
