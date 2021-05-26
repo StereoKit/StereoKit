@@ -2,6 +2,7 @@
 #include "../_stereokit.h"
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
+#include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -35,7 +36,6 @@ namespace sk {
 
 struct fp_item_t {
 	char *name;
-	char  ext[32];
 	bool  file;
 };
 
@@ -55,6 +55,7 @@ void                        *fp_call_data     = nullptr;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
 
 bool                         fp_show          = false;
+picker_mode_                 fp_mode;
 file_filter_t               *fp_filters       = nullptr;
 int32_t                      fp_filter_count  = 0;
 char                        *fp_title         = nullptr;
@@ -145,8 +146,16 @@ void platform_file_picker(picker_mode_ mode, file_filter_t *filters, int32_t fil
 	} break;
 	}
 
+	fp_filter_count = filter_count;
+	free(fp_filters);
+	fp_filters = sk_malloc_t(file_filter_t, fp_filter_count);
+	memcpy(fp_filters, filters, sizeof(file_filter_t) * fp_filter_count);
+
 	file_picker_open_folder(fp_folder);
 
+	fp_call_data = callback_data;
+	fp_callback = on_confirm;
+	fp_mode = mode;
 	fp_show = true;
 }
 
@@ -157,41 +166,104 @@ void file_picker_open_folder(const char *folder) {
 		folder = platform_working_dir();
 	}
 
+	fp_items.each([](fp_item_t &item) { free(item.name); });
+	fp_items.clear();
+	platform_iterate_dir(folder, nullptr, [](void *callback_data, const char *name, bool file) {
+		bool valid = fp_filter_count == 0;
+		// If the extention matches our filter, add it
+		if (file) {
+			for (size_t e = 0; e < fp_filter_count; e++) {
+				if (string_endswith(name, fp_filters[e].ext, false)) {
+					valid = true;
+					break;
+				}
+			}
+		} else valid = true;
+
+		if (valid) {
+			fp_item_t item;
+			item.file = file;
+			item.name = string_copy(name);
+			fp_items.add(item);
+		}
+	});
+	fp_items.sort([](const fp_item_t &a, const fp_item_t &b) { return a.file != b.file ? a.file-b.file : strcmp(a.name, b.name); });
+
 	char *new_folder = string_copy(folder);
 	free(fp_folder);
-	fp_folder = new_folder;
+	fp_folder      = new_folder;
+	fp_filename[0] = '\0';
 }
 
 ///////////////////////////////////////////
 
 void file_picker_update() {
+	if (fp_show) {
+		ui_push_id("_skp");
+		ui_window_begin(fp_title, fp_win_pose, { .4f,0 });
+
+		// Show the current directory
+		if (ui_button("Up")) {
+			stref_t path = stref_make(fp_folder);
+			int32_t last = maxi( stref_lastof(path, '\\'), stref_lastof(path, '/') );
+			if (last != -1) {
+				path = stref_substr(path, 0, last);
+				char *new_path = stref_copy(path);
+				file_picker_open_folder(new_path);
+				free(new_path);
+			}
+		}
+		ui_sameline();
+		ui_label_sz(fp_folder, {ui_area_remaining().x, ui_line_height()});
+
+		// Show the active item
+		switch (fp_mode) {
+		case picker_mode_folder: {
+			if (ui_button("Select Folder")) { stref_copy_to(stref_make(fp_folder), fp_filename, sizeof(fp_filename)); fp_call = true; }
+		} break;
+		case picker_mode_save: {
+			if (ui_button("Save")) { fp_call = true; }
+			ui_sameline();
+			ui_input("SaveFile", fp_filename, sizeof(fp_filename), vec2{ ui_area_remaining().x, ui_line_height() });
+		} break;
+		case picker_mode_open: {
+			if (fp_filename[0] != '\0') {
+				if (ui_button("Open")) { fp_call = true; }
+				ui_sameline();
+				ui_label(fp_filename);
+			} else {
+				ui_label("");
+			}
+		} break;
+		}
+
+		ui_hseparator();
+
+		// List the files
+		vec2 size = { .085f, ui_line_height() * 1.5f };
+		for (size_t i = 0; i < fp_items.count; i++) {
+			if (ui_button_sz(fp_items[i].name, size)) {
+				if (fp_items[i].file)
+					stref_copy_to(stref_make(fp_items[i].name), fp_filename, sizeof(fp_filename));
+				else {
+					char *path = string_append(nullptr, 3, fp_folder, platform_path_separator, fp_items[i].name);
+					file_picker_open_folder(path);
+					free(path);
+				}
+			}
+			ui_sameline();
+		}
+
+		ui_window_end();
+		ui_pop_id();
+	}
+
 	if (fp_call) {
 		if (fp_callback) fp_callback(fp_call_data, true, fp_filename);
 		fp_callback  = nullptr;
 		fp_call_data = nullptr;
 		fp_call      = false;
-	}
-
-	if (fp_show) {
-		ui_push_id("_skp");
-		ui_window_begin(fp_title, fp_win_pose, { .4f,0 });
-
-		if (ui_button("Up")) {}
-		ui_sameline();
-		ui_label_sz(fp_folder, {ui_area_remaining().x, ui_line_height()});
-
-		if (fp_filename[0] != '\0') {
-			if (ui_button("Open")) {}
-			ui_sameline();
-			ui_label(fp_filename);
-		} else {
-			ui_label("");
-		}
-
-		ui_hseparator();
-
-		ui_window_end();
-		ui_pop_id();
+		fp_show      = false;
 	}
 }
 

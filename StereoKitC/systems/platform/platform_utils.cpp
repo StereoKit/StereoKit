@@ -41,6 +41,7 @@
 
 #ifdef SK_OS_LINUX
 #include <unistd.h>
+#include <dirent.h> 
 #include "linux.h"
 #endif
 
@@ -292,6 +293,52 @@ char *platform_working_dir() {
 	}
 #endif
 	return result;
+}
+
+///////////////////////////////////////////
+
+void  platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+#if defined(SK_OS_WINDOWS)
+	WIN32_FIND_DATA info;
+	HANDLE          handle = nullptr;
+
+	char *filter = string_copy(directory_path);
+	if (string_endswith(filter, "\\"))
+		filter = string_append(filter, 1, "*.*");
+	else filter = string_append(filter, 1, "\\*.*");
+
+	handle = FindFirstFile(filter, &info);
+	if (handle == INVALID_HANDLE_VALUE) return;
+
+	while (handle) {
+		if (!string_eq(info.cFileName, ".") && !string_eq(info.cFileName, "..")) {
+			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				on_item(callback_data, info.cFileName, false);
+			else
+				on_item(callback_data, info.cFileName, true);
+		}
+
+		if (!FindNextFile(handle, &info)) {
+			FindClose(handle);
+			handle = nullptr;
+		}
+	}
+#elif defined(SK_OS_LINUX)
+	DIR           *dir;
+	struct dirent *dir_info;
+	dir = opendir(directory_path);
+	if (dir) {
+		while ((dir_info = readdir(dir)) != nullptr) {
+			if (string_eq(dir_info->d_name, ".") || string_eq(dir_info->d_name, "..")) continue;
+
+			if (dir_info->d_type == DT_DIR)
+				on_item(callback_data, dir_info->d_name, false);
+			else if (dir->d_type == DT_REG)
+				on_item(callback_data, dir_info->d_name, true);
+		}
+		closedir(dir);
+	}
+#endif
 }
 
 ///////////////////////////////////////////
