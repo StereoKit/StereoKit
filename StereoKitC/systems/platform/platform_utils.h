@@ -28,6 +28,7 @@ float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
 void  platform_sleep       (int ms);
 void  platform_default_font(char *fontname_buffer, size_t buffer_size);
+char *platform_working_dir ();
 
 bool  platform_keyboard_available();
 void  platform_keyboard_show     (bool visible);
