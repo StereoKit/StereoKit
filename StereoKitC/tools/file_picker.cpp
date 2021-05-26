@@ -69,6 +69,7 @@ pose_t                       fp_win_pose      = pose_identity;
 
 ///////////////////////////////////////////
 
+void file_picker_finish     ();
 void file_picker_open_folder(const char *folder);
 #if defined(SK_OS_WINDOWS_UWP)
 void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus status);
@@ -78,7 +79,7 @@ void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus st
 
 void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename)) {
 #if defined(SK_OS_WINDOWS)
-	if (sk_active_display_mode() == display_mode_flatscreen) {
+	if (sk_active_display_mode() != display_mode_flatscreen) {
 		fp_filename[0] = '\0';
 
 		// Build a filter string
@@ -185,6 +186,20 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 
 ///////////////////////////////////////////
 
+void platform_file_picker_close() {
+	if (fp_show) {
+		file_picker_finish();
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_file_picker_visible() {
+	return fp_show;
+}
+
+///////////////////////////////////////////
+
 #if defined(SK_OS_WINDOWS_UWP)
 void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus status) {
 	StorageFile file = result.get();
@@ -239,6 +254,17 @@ void file_picker_open_folder(const char *folder) {
 	free(fp_folder);
 	fp_folder = new_folder;
 	fp_active = nullptr;
+}
+
+///////////////////////////////////////////
+
+void file_picker_finish() {
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename);
+	fp_call_status = false;
+	fp_callback    = nullptr;
+	fp_call_data   = nullptr;
+	fp_call        = false;
+	fp_show        = false;
 }
 
 ///////////////////////////////////////////
@@ -306,12 +332,7 @@ void file_picker_update() {
 	}
 
 	if (fp_call) {
-		if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename);
-		fp_call_status = false;
-		fp_callback    = nullptr;
-		fp_call_data   = nullptr;
-		fp_call        = false;
-		fp_show        = false;
+		file_picker_finish();
 	}
 }
 
