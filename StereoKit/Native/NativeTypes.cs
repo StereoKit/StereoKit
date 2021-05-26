@@ -628,23 +628,6 @@ namespace StereoKit
 		All   = Color|Depth
 	}
 
-	public enum PickerMode
-	{
-		Open,
-		Save,
-		Folder,
-	}
-
-	public struct FileFilter
-	{
-		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32) ] public string ext;
-
-		public FileFilter(string description, string extension)
-		{
-			ext  = extension;
-		}
-	}
-
 	/// <summary>What type of device is the source of the pointer? This is a bit-flag that can 
 	/// contain some input source family information.</summary>
 	[Flags]
