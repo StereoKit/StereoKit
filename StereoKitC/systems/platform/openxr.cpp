@@ -280,12 +280,14 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
-	xr_has_articulated_hands     = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
-	sk_info.eye_tracking_present = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
-	xr_has_depth_lsr             = xr_ext_available.KHR_composition_layer_depth;
+	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
+	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
+	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
+	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
 
-	if (xr_has_articulated_hands) log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_has_depth_lsr)         log_diag("OpenXR depth LSR ext enabled!");
+	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_has_depth_lsr)                  log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
 	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
 	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
