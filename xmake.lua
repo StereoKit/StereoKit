@@ -71,6 +71,7 @@ target("StereoKitC")
 
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
+    add_files("StereoKitC/tools/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
     add_files("StereoKitC/systems/hand/*.cpp") 
     add_files("StereoKitC/systems/platform/*.cpp") 

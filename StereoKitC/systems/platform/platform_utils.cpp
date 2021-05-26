@@ -333,7 +333,7 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 
 			if (dir_info->d_type == DT_DIR)
 				on_item(callback_data, dir_info->d_name, false);
-			else if (dir->d_type == DT_REG)
+			else if (dir_info->d_type == DT_REG)
 				on_item(callback_data, dir_info->d_name, true);
 		}
 		closedir(dir);
