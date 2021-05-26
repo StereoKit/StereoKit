@@ -226,6 +226,11 @@ void file_picker_open_folder(const char *folder) {
 	if (folder == nullptr) {
 		folder = platform_working_dir();
 	}
+#if !defined(SK_OS_WINDOWS) && !defined(SK_OS_WINDOWS_UWP)
+	if (folder[0] == '\0') {
+		folder = platform_path_separator;
+	}
+#endif
 
 	fp_items.each([](fp_item_t &item) { free(item.name); });
 	fp_items.clear();
@@ -319,7 +324,11 @@ void file_picker_update() {
 				if (fp_items[i].file)
 					fp_active = fp_items[i].name;
 				else {
-					char *path = string_append(nullptr, 3, fp_folder, platform_path_separator, fp_items[i].name);
+					char *path = nullptr;
+					if (string_endswith(fp_folder, platform_path_separator))
+						path = string_append(nullptr, 2, fp_folder, fp_items[i].name);
+					else
+						path = string_append(nullptr, 3, fp_folder, platform_path_separator, fp_items[i].name);
 					file_picker_open_folder(path);
 					free(path);
 				}
