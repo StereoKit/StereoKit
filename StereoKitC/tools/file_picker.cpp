@@ -13,6 +13,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commdlg.h>
+#include <stdio.h>
 #elif defined(SK_OS_WINDOWS_UWP)
 
 #define WIN32_LEAN_AND_MEAN
@@ -50,6 +51,7 @@ int32_t                      fp_file_cache_id = 0;
 #endif
 
 char                         fp_filename[1024];
+char                         fp_buffer[1024];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
@@ -60,6 +62,7 @@ file_filter_t               *fp_filters       = nullptr;
 int32_t                      fp_filter_count  = 0;
 char                        *fp_title         = nullptr;
 char                        *fp_folder        = nullptr;
+char                        *fp_active        = nullptr;
 array_t<fp_item_t>           fp_items         = {};
 pose_t                       fp_win_pose      = pose_identity;
 
@@ -69,7 +72,7 @@ void file_picker_open_folder(const char *folder);
 
 ///////////////////////////////////////////
 
-void platform_file_picker(picker_mode_ mode, file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename)) {
+void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32_t filter_count, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename)) {
 #if defined(SK_OS_WINDOWS)
 	if (sk_active_display_mode() != display_mode_flatscreen) {
 		fp_filename[0] = '\0';
@@ -154,7 +157,7 @@ void platform_file_picker(picker_mode_ mode, file_filter_t *filters, int32_t fil
 	file_picker_open_folder(fp_folder);
 
 	fp_call_data = callback_data;
-	fp_callback = on_confirm;
+	fp_callback  = on_confirm;
 	fp_mode = mode;
 	fp_show = true;
 }
@@ -191,8 +194,8 @@ void file_picker_open_folder(const char *folder) {
 
 	char *new_folder = string_copy(folder);
 	free(fp_folder);
-	fp_folder      = new_folder;
-	fp_filename[0] = '\0';
+	fp_folder = new_folder;
+	fp_active = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -222,15 +225,15 @@ void file_picker_update() {
 			if (ui_button("Select Folder")) { stref_copy_to(stref_make(fp_folder), fp_filename, sizeof(fp_filename)); fp_call = true; }
 		} break;
 		case picker_mode_save: {
-			if (ui_button("Save")) { fp_call = true; }
+			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; }
 			ui_sameline();
-			ui_input("SaveFile", fp_filename, sizeof(fp_filename), vec2{ ui_area_remaining().x, ui_line_height() });
+			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
-			if (fp_filename[0] != '\0') {
-				if (ui_button("Open")) { fp_call = true; }
+			if (fp_active) {
+				if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_active); fp_call = true; }
 				ui_sameline();
-				ui_label(fp_filename);
+				ui_label(fp_active);
 			} else {
 				ui_label("");
 			}
@@ -244,7 +247,7 @@ void file_picker_update() {
 		for (size_t i = 0; i < fp_items.count; i++) {
 			if (ui_button_sz(fp_items[i].name, size)) {
 				if (fp_items[i].file)
-					stref_copy_to(stref_make(fp_items[i].name), fp_filename, sizeof(fp_filename));
+					fp_active = fp_items[i].name;
 				else {
 					char *path = string_append(nullptr, 3, fp_folder, platform_path_separator, fp_items[i].name);
 					file_picker_open_folder(path);
