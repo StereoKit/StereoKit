@@ -28,6 +28,7 @@
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage::Streams;
 #endif
 
@@ -46,14 +47,14 @@ public:
 	uint64_t    name_hash;
 	StorageFile file = nullptr;
 };
-std::vector<fp_file_cache_t> fp_file_cache    = {};
-int32_t                      fp_file_cache_id = 0;
+std::vector<fp_file_cache_t> fp_file_cache = {};
 #endif
 
 char                         fp_filename[1024];
 char                         fp_buffer[1024];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
+bool                         fp_call_status   = false;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
 
 bool                         fp_show          = false;
@@ -69,6 +70,9 @@ pose_t                       fp_win_pose      = pose_identity;
 ///////////////////////////////////////////
 
 void file_picker_open_folder(const char *folder);
+#if defined(SK_OS_WINDOWS_UWP)
+void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus status);
+#endif
 
 ///////////////////////////////////////////
 
@@ -107,29 +111,31 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 	fp_callback  = on_confirm;
 	fp_call_data = callback_data;
 
-	Pickers::FileOpenPicker picker;
-	for (int32_t i = 0; i < filter_count; i++) {
-		wchar_t wext[32];
-		MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
-		picker.FileTypeFilter().Append(wext);
-	}
-	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [picker, on_confirm, callback_data]() {
+	CoreDispatcher dispatcher = CoreApplication::MainView().CoreWindow().Dispatcher();
+	wchar_t        wext[32];
+	if (mode == picker_mode_open || mode == picker_mode_folder) {
+		Pickers::FileOpenPicker picker;
+		for (int32_t i = 0; i < filter_count; i++) {
+			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
+			picker.FileTypeFilter().Append(wext);
+		}
 		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
-		picker.PickSingleFileAsync().Completed([on_confirm, callback_data](auto &&result_info, auto && status) {
-			auto result = result_info.get();
-			
-			fp_filename[0] = '\0';
-			fp_file_cache_id += 1;
-			snprintf(fp_filename, sizeof(fp_filename), "stereokit_cache_file:\\%d", fp_file_cache_id);
-			WideCharToMultiByte(CP_UTF8, 0, result.Path().c_str(), result.Path().size()+1, fp_filename, sizeof(fp_filename), nullptr, nullptr);
-
-			fp_file_cache_t item;
-			item.file      = result;
-			item.name_hash = hash_fnv64_string(fp_filename);
-			fp_file_cache.push_back(item);
-			fp_call = true;
+		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
+			picker.PickSingleFileAsync().Completed(file_picker_uwp_picked);
 		});
-	});
+	} else if (mode == picker_mode_save) {
+		Pickers::FileSavePicker picker;
+		auto exts{ winrt::single_threaded_vector<winrt::hstring>() };
+		for (int32_t i = 0; i < filter_count; i++) {
+			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
+			exts.Append(wext);
+		}
+		picker.FileTypeChoices().Insert(L"File Type", exts);
+		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
+		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
+			picker.PickSaveFileAsync().Completed(file_picker_uwp_picked);
+		});
+	}
 	return;
 #endif
 
@@ -161,6 +167,28 @@ void platform_file_picker(picker_mode_ mode, const file_filter_t *filters, int32
 	fp_mode = mode;
 	fp_show = true;
 }
+
+///////////////////////////////////////////
+
+#if defined(SK_OS_WINDOWS_UWP)
+void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus status) {
+	StorageFile file = result.get();
+
+	if (status == AsyncStatus::Completed && file != nullptr) {
+		WideCharToMultiByte(CP_UTF8, 0, file.Path().c_str(), file.Path().size()+1, fp_filename, sizeof(fp_filename), nullptr, nullptr);
+
+		fp_file_cache_t item;
+		item.file      = file;
+		item.name_hash = hash_fnv64_string(fp_filename);
+		fp_file_cache.push_back(item);
+		fp_call        = true;
+		fp_call_status = true;
+	} else {
+		fp_call        = true;
+		fp_call_status = false;
+	}
+}
+#endif
 
 ///////////////////////////////////////////
 
@@ -222,16 +250,16 @@ void file_picker_update() {
 		// Show the active item
 		switch (fp_mode) {
 		case picker_mode_folder: {
-			if (ui_button("Select Folder")) { stref_copy_to(stref_make(fp_folder), fp_filename, sizeof(fp_filename)); fp_call = true; }
+			if (ui_button("Select Folder")) { stref_copy_to(stref_make(fp_folder), fp_filename, sizeof(fp_filename)); fp_call = true; fp_call_status = true; }
 		} break;
 		case picker_mode_save: {
-			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; }
+			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; fp_call_status = true; }
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
 			if (fp_active) {
-				if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_active); fp_call = true; }
+				if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 				ui_sameline();
 				ui_label(fp_active);
 			} else {
@@ -262,11 +290,12 @@ void file_picker_update() {
 	}
 
 	if (fp_call) {
-		if (fp_callback) fp_callback(fp_call_data, true, fp_filename);
-		fp_callback  = nullptr;
-		fp_call_data = nullptr;
-		fp_call      = false;
-		fp_show      = false;
+		if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename);
+		fp_call_status = false;
+		fp_callback    = nullptr;
+		fp_call_data   = nullptr;
+		fp_call        = false;
+		fp_show        = false;
 	}
 }
 
