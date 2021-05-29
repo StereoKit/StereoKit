@@ -98,6 +98,8 @@ typedef struct sk_settings_t {
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
 	log_           log_filter;
+	bool32_t       overlay_app;
+	uint32_t       overlay_priority;
 	int32_t  flatscreen_pos_x;
 	int32_t  flatscreen_pos_y;
 	int32_t  flatscreen_width;
@@ -115,6 +117,7 @@ typedef struct system_info_t {
 	bool32_t spatial_bridge_present;
 	bool32_t perception_bridge_present;
 	bool32_t eye_tracking_present;
+	bool32_t overlay_app;
 } system_info_t;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);

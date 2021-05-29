@@ -328,12 +328,13 @@ bool openxr_init() {
 	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
 	session_info.next     = &gfx_binding;
 	session_info.systemId = xr_system_id;
-	if (xr_ext_available.EXTX_overlay) {
+	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
 		XrSessionCreateInfoOverlayEXTX overlay_info = { XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX };
-		overlay_info.sessionLayersPlacement = 0;
+		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
 		gfx_binding.next = &overlay_info;
+		sk_info.overlay_app = true;
 	}
-	xrCreateSession(xr_instance, &session_info, &xr_session);
+	result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
@@ -379,6 +380,11 @@ bool openxr_init() {
 	if (!openxr_views_create() || !oxri_init()) {
 		openxr_shutdown();
 		return false;
+	}
+
+	if (sk_info.overlay_app) {
+		log_diag("Starting as an overlay app, display blend mode switched to blend.");
+		sk_info.display_type = display_blend;
 	}
 
 	return true;
