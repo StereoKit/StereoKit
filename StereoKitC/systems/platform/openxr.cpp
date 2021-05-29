@@ -325,10 +325,15 @@ bool openxr_init() {
 #elif defined(XR_USE_GRAPHICS_API_D3D11)
 	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
 #endif
-	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-	sessionInfo.next     = &gfx_binding;
-	sessionInfo.systemId = xr_system_id;
-	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
+	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
+	session_info.next     = &gfx_binding;
+	session_info.systemId = xr_system_id;
+	if (xr_ext_available.EXTX_overlay) {
+		XrSessionCreateInfoOverlayEXTX overlay_info = { XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX };
+		overlay_info.sessionLayersPlacement = 0;
+		gfx_binding.next = &overlay_info;
+	}
+	xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
