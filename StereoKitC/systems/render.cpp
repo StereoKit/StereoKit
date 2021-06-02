@@ -353,7 +353,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		item.color    = color;
 		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
 		item.layer    = (uint16_t)layer;
-		matrix_mul(model->subsets[i].offset, root, item.transform);
+		matrix_mul(model->subsets[i].transform, root, item.transform);
 		render_list_add(&item);
 	}
 }

@@ -415,16 +415,35 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		gltf_build_node_matrix(n, transform);
 		matrix offset = transform * orientation_correction;
 
+
 		for (int32_t p = 0; p < n->mesh->primitives_count; p++) {
 			mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, p, filename);
 			material_t material = gltf_parsematerial(data, n->mesh->primitives[p].material, filename, shader);
 
-			model_add_subset(model, mesh, material, offset);
+			model_add_subset_n(model, n->name, mesh, material, offset);
 
 			mesh_release    (mesh);
 			material_release(material);
 		}
 	}
+
+	// Load each animation
+	for (int32_t i = 0; i < data->animations_count; i++) {
+		for (size_t c = 0; c < data->animations[i].channels_count; c++) {
+			cgltf_animation_channel *ch = &data->animations[i].channels[c];
+			log_info(ch->target_node->name);
+			ch->target_path
+		}
+		for (size_t s = 0; s < data->animations[i].samplers_count; s++) {
+			cgltf_animation_sampler *sm = &data->animations[i].samplers[s];
+			cgltf_size size = cgltf_accessor_unpack_floats(sm->output, nullptr, 0);
+			float *flts = sk_malloc_t(float, size);
+			cgltf_accessor_unpack_floats(sm->output, flts, size);
+			log_infof("%d", sm->interpolation);
+			free(flts);
+		}
+	}
+
 	cgltf_free(data);
 	return true;
 }

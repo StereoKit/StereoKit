@@ -110,13 +110,13 @@ void model_recalculate_bounds(model_t model) {
 	// Get an initial size
 	vec3 first_corner = bounds_corner(model->subsets[0].mesh->bounds, 0);
 	vec3 min, max;
-	min = max = matrix_mul_point( model->subsets[0].offset, first_corner);
+	min = max = matrix_mul_point( model->subsets[0].transform, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
 	for (int32_t m = 0; m < model->subset_count; m += 1) {
 		for (int32_t i = 0; i < 8; i += 1) {
 			vec3 corner = bounds_corner   (model->subsets[m].mesh->bounds, i);
-			vec3 pt     = matrix_mul_point(model->subsets[m].offset, corner);
+			vec3 pt     = matrix_mul_point(model->subsets[m].transform, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
 			min.z = fminf(pt.z, min.z);
@@ -151,7 +151,7 @@ mesh_t model_get_mesh(model_t model, int32_t subset) {
 
 matrix model_get_transform(model_t model, int32_t subset) {
 	assert(subset < model->subset_count);
-	return model->subsets[subset].offset;
+	return model->subsets[subset].transform;
 }
 
 ///////////////////////////////////////////
@@ -182,7 +182,7 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 
 void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
 	assert(subset < model->subset_count);
-	model->subsets[subset].offset = transform;
+	model->subsets[subset].transform = transform;
 }
 ///////////////////////////////////////////
 
@@ -193,12 +193,18 @@ int32_t model_subset_count(model_t model) {
 ///////////////////////////////////////////
 
 int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const matrix &transform) {
+	return model_add_subset_n(model, "default", mesh, material, transform);
+}
+
+///////////////////////////////////////////
+
+int32_t model_add_subset_n(model_t model, const char *name, mesh_t mesh, material_t material, const matrix &transform) {
 	assert(model    != nullptr);
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
 	model->subsets                      = sk_realloc_t(model_subset_t, model->subsets, model->subset_count + 1);
-	model->subsets[model->subset_count] = model_subset_t{ mesh, material, transform };
+	model->subsets[model->subset_count] = model_subset_t{ string_copy(name), mesh, material, transform };
 	assets_addref(mesh->header);
 	assets_addref(material->header);
 
@@ -213,6 +219,7 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 void model_remove_subset(model_t model, int32_t subset) {
 	assert(subset < model->subset_count);
 
+	free            (model->subsets[subset].name);
 	mesh_release    (model->subsets[subset].mesh);
 	material_release(model->subsets[subset].material);
 	if (subset < model->subset_count - 1) {
