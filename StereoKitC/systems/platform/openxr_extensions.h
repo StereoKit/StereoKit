@@ -47,6 +47,7 @@ namespace sk {
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
+	_(EXTX_overlay,                      true)
 
 // UWP platform only
 #define FOR_EACH_EXT_UWP(_) \

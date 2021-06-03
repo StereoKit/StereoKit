@@ -70,7 +70,8 @@ namespace StereoKit
 		public DisplayBlend blendPreference;
 		/// <summary>If the preferred display fails, should we avoid falling
 		/// back to flatscreen and just crash out? Default is false.</summary>
-		public bool         noFlatscreenFallback;
+		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
+		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
@@ -81,6 +82,17 @@ namespace StereoKit
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
 		public LogLevel     logFilter;
+		/// <summary>If the runtime supports it, should this application run
+		/// as an overlay above existing applications? Check 
+		/// SK.System.overlayApp after initialization to see if the runtime
+		/// could comply with this flag. This will always force StereoKit to
+		/// work in a blend compositing mode.</summary>
+		public  bool        overlayApp { get { return _overlayApp > 0; } set { _overlayApp = value?1:0; } }
+		private int        _overlayApp;
+		/// <summary>For overlay applications, this is the order in which
+		/// apps should be composited together. 0 means first, bottom of the
+		/// stack, and uint.MaxValue is last, on top of the stack.</summary>
+		public uint         overlayPriority;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -96,7 +108,8 @@ namespace StereoKit
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
-		public bool disableFlatscreenMRSim;
+		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
+		private int _disableFlatscreenMRSim;
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
@@ -215,6 +228,12 @@ namespace StereoKit
 		/// `Input.Gaze` for how to use this data.</summary>
 		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
 		private int _eyeTrackingPresent;
+
+		/// <summary>This tells if the app was successfully started as an
+		/// overlay application. If this is true, then expect this
+		/// application to be composited with other content below it!</summary>
+		public bool overlayApp { get => _overlayApp > 0; }
+		private int _overlayApp;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
