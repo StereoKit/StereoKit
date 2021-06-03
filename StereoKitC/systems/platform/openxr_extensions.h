@@ -41,6 +41,7 @@ namespace sk {
 	_(FB_color_space,                    true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_interaction,             true) \
+	_(MSFT_hand_tracking_mesh,           true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
@@ -71,6 +72,8 @@ namespace sk {
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
 	_(xrLocateHandJointsEXT)                     \
+	_(xrCreateHandMeshSpaceMSFT)                 \
+	_(xrUpdateHandMeshMSFT)                      \
 	_(xrEnumerateColorSpacesFB)                  \
 	_(xrSetColorSpaceFB)                         \
 	_(xrCreateSpatialGraphNodeSpaceMSFT)         \

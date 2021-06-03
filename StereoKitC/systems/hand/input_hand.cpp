@@ -26,14 +26,6 @@ namespace sk {
 #define SK_SQRT2 1.41421356237f
 #define SK_FINGER_SOLIDS 1
 
-struct hand_mesh_t {
-	mesh_t  mesh;
-	vert_t *verts;
-	int     vert_count;
-	vind_t *inds;
-	int     ind_count;
-};
-
 struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
@@ -288,7 +280,7 @@ void input_hand_update() {
 		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
-			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
+			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
 		}
 
 		// Update hand physics
@@ -360,6 +352,12 @@ void input_hand_state_update(handed_ handedness) {
 
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
+}
+
+///////////////////////////////////////////
+
+hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
+	return &hand_state[handedness].mesh;
 }
 
 ///////////////////////////////////////////
@@ -450,6 +448,7 @@ void input_hand_update_mesh(handed_ hand) {
 
 	// if this mesh hasn't been initialized yet
 	if (data.verts == nullptr) {
+		data.root_transform = matrix_identity;
 		data.vert_count = (_countof(sincos) * slice_count + 1) * SK_FINGERS ; // verts: per joint, per finger 
 		data.ind_count  = (3 * 5 * 2 * (slice_count-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 		data.verts      = sk_malloc_t(vert_t, data.vert_count);
@@ -539,6 +538,7 @@ void input_hand_update_mesh(handed_ hand) {
 		}
 
 		data.mesh = mesh_create();
+		mesh_set_keep_data(data.mesh, false);
 		mesh_set_id(data.mesh, hand == handed_left
 			? default_id_mesh_lefthand
 			: default_id_mesh_righthand);
