@@ -22,7 +22,7 @@ package("openxr_loader")
     
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
-    add_deps("cmake", "jsoncpp")
+    add_deps("cmake")
 
     if is_plat("linux") then
         add_syslinks("stdc++fs", "jsoncpp")
