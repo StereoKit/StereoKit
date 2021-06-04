@@ -76,7 +76,7 @@ namespace StereoKit.Framework
 			{
 				Hierarchy.Push(Matrix.TR(previewAt, Quat.LookAt(previewAt, Input.Head.position)));
 				Default.MeshQuad.Draw(_frameMaterial, Matrix.S(V.XYZ(0.08f * ((float)Width / Height), 0.08f, 1)));
-				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), TextAlign.XLeft|TextAlign.YCenter);
+				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), TextAlign.CenterLeft);
 				Hierarchy.Pop();
 
 				Renderer.RenderTo(_frameSurface, 

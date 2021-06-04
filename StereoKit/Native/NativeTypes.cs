@@ -532,13 +532,15 @@ namespace StereoKit
 		Texture,
 	}
 
-	/// <summary>A bit-flag enum for describing alignment or positioning. Items can be
-	/// combined using the '|' operator, like so:
+	/// <summary>A bit-flag enum for describing alignment or positioning. 
+	/// Items can be combined using the '|' operator, like so:
 	/// 
-	/// `TextAlign alignment = TextAlign.XLeft | TextAlign.YTop;`
+	/// `TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
 	/// 
-	/// Avoid combining multiple items of the same axis, and note that a few items, 
-	/// like `Center` are already a combination of multiple flags.</summary>
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter', 
+	/// etc.</summary>
 	[Flags]
 	public enum TextAlign
 	{
@@ -554,17 +556,55 @@ namespace StereoKit
 		XRight  = 1 << 4,
 		/// <summary>On the y axis, this item should start on the bottom.</summary>
 		YBottom = 1 << 5,
-		/// <summary>A combination of XCenter and YCenter.</summary>
-		Center  = XCenter | YCenter,
+		/// <summary>Center on both X and Y axes. This is a combination of 
+		/// XCenter and YCenter.</summary>
+		Center      = XCenter | YCenter,
+		/// <summary>Start on the left of the X axis, center on the Y axis. 
+		/// This is a combination of XLeft and YCenter.</summary>
+		CenterLeft  = XLeft   | YCenter,
+		/// <summary>Start on the right of the X axis, center on the Y axis. 
+		/// This is a combination of XRight and YCenter.</summary>
+		CenterRight = XRight  | YCenter,
+		/// <summary>Start on the left of the X axis, and top on the Y axis.
+		/// This is a combination of XLeft and YTop.</summary>
+		TopLeft     = XLeft   | YTop,
+		/// <summary>Start on the right of the X axis, and top on the Y axis.
+		/// This is a combination of XRight and YTop.</summary>
+		TopRight    = XRight  | YTop,
+		/// <summary>Center on the X axis, and top on the Y axis. This is a
+		/// combination of XCenter and YTop.</summary>
+		TopCenter   = XCenter | YTop,
+		/// <summary>Start on the left of the X axis, and bottom on the Y
+		/// axis. This is a combination of XLeft and YBottom.</summary>
+		BottomLeft  = XLeft   | YBottom,
+		/// <summary>Start on the right of the X axis, and bottom on the Y
+		/// axis.This is a combination of XRight and YBottom.</summary>
+		BottomRight = XRight  | YBottom,
+		/// <summary>Center on the X axis, and bottom on the Y axis. This is
+		/// a combination of XCenter and YBottom.</summary>
+		BottomCenter= XCenter | YBottom,
 	}
 
+	/// <summary>This enum describes how text layout behaves within the space
+	/// it is given.</summary>
 	[Flags]
 	public enum TextFit
 	{
+		/// <summary>The text will wrap around to the next line down when it
+		/// reaches the end of the space on the X axis.</summary>
 		Wrap     = 1 << 0,
+		/// <summary>When the text reaches the end, it is simply truncated
+		/// and no longer visible.</summary>
 		Clip     = 1 << 1,
+		/// <summary>If the text is too large to fit in the space provided,
+		/// it will be scaled down to fit inside. This will not scale up.
+		/// </summary>
 		Squeeze  = 1 << 2,
+		/// <summary>If the text is larger, or smaller than the space 
+		/// provided, it will scale down or up to fill the space.</summary>
 		Exact    = 1 << 3,
+		/// <summary>The text will ignore the containing space, and just keep
+		/// on going.</summary>
 		Overflow = 1 << 4
 	}
 

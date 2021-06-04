@@ -42,9 +42,9 @@ class DemoText : ITest
 		UI.WindowEnd();
 
 		Hierarchy.Push(Matrix.T(0.1f,0,0));
-		Text.Add("X Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.XCenter|TextAlign.YCenter, alignX | alignY);
-		Text.Add("X Left",   Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.XLeft  |TextAlign.YCenter, alignX | alignY);
-		Text.Add("X Right",  Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.XRight |TextAlign.YCenter, alignX | alignY);
+		Text.Add("X Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.Center,      alignX | alignY);
+		Text.Add("X Left",   Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.CenterLeft,  alignX | alignY);
+		Text.Add("X Right",  Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.CenterRight, alignX | alignY);
 		Lines.Add(new Vec3(0,.05f,0), new Vec3(0,.25f,0), Color32.White, 0.001f);
 		Hierarchy.Pop();
 

@@ -829,7 +829,7 @@ void ui_label_sz(const char *text, vec2 size) {
 	ui_reserve_box(size);
 	ui_nextline();
 
-	ui_text(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	ui_text(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_top_left, text_align_center_left);
 }
 
 ///////////////////////////////////////////
@@ -843,7 +843,7 @@ void ui_label(const char *text, bool32_t use_padding) {
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
 	ui_nextline();
-	ui_text(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	ui_text(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_top_left, text_align_center_left);
 }
 
 ///////////////////////////////////////////
@@ -853,7 +853,7 @@ void ui_text(const char *text) {
 	vec2  size     = { ui_area_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 2 };
-	size.y = text_add_in(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_top, at.x, at.y, at.z);
+	size.y = text_add_in(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
 
 	ui_reserve_box(size);
 	ui_nextline();
@@ -1098,7 +1098,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	// Render the input UI
 	ui_reserve_box(size);
 	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * color_blend );
-	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
@@ -1425,7 +1425,7 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 	if (window.type & ui_win_head) {
 		vec2 size = text_size(text, skui_font_stack.last());
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
-		ui_text(at, size, text, text_align_x_left | text_align_y_top, text_align_x_left | text_align_y_center);
+		ui_text(at, size, text, text_align_top_left, text_align_center_left);
 
 		if (skui_layers.last().max_x > at.x - size.x - skui_settings.padding)
 			skui_layers.last().max_x = at.x - size.x - skui_settings.padding;

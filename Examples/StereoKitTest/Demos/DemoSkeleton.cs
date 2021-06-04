@@ -17,7 +17,7 @@ class DemoSkeleton : ITest
 	public void Update()
 	{
 		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.XCenter | TextAlign.YTop, TextAlign.XLeft | TextAlign.YTop);
+		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 	}
 
 	public void Shutdown()

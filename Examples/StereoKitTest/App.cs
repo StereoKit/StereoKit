@@ -132,14 +132,14 @@ class App
 	{
 		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(31,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
-		Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), TextAlign.BottomLeft);
 		for (int d = 0; d <= 60; d+=1)
 		{
-			float x = d/2.0f;
+			float x    = d/2.0f;
 			float size = d%2==0?1f:0.15f;
 			Lines.Add(new Vec3(15-x,1.8f,-.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
 			if (d%2==0 && d/2 != 30)
-				Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+				Text.Add((d/2).ToString(), Matrix.TS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, .2f), TextAlign.BottomLeft);
 		}
 		UI.HandleEnd();
 	}
