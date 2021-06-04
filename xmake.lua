@@ -50,7 +50,7 @@ option("uwp")
     
 target("StereoKitC")
     add_options("uwp")
-    set_version("0.3.1")
+    set_version("0.3.2-preview.1")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
