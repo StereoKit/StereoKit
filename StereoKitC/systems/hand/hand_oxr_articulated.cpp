@@ -264,6 +264,35 @@ void hand_oxra_update_predicted() {
 
 ///////////////////////////////////////////
 
+struct hand_tri_t {
+	vind_t a, b, c;
+
+	static int32_t compare_r(const void *a, const void *b) {
+		const hand_tri_t *t1 = (hand_tri_t *)a;
+		const hand_tri_t *t2 = (hand_tri_t *)b;
+		XrVector3f a1 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->a].position;
+		XrVector3f a2 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->b].position;
+		XrVector3f a3 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->c].position;
+		XrVector3f b1 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->a].position;
+		XrVector3f b2 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->b].position;
+		XrVector3f b3 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->c].position;
+		return ((b1.x+b2.x+b3.x)*2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		     - ((a1.x+a2.x+a3.x)*2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000);
+	}
+	static int32_t compare_l(const void *a, const void *b) {
+		const hand_tri_t *t1 = (hand_tri_t *)a;
+		const hand_tri_t *t2 = (hand_tri_t *)b;
+		XrVector3f a1 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->a].position;
+		XrVector3f a2 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->b].position;
+		XrVector3f a3 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->c].position;
+		XrVector3f b1 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->a].position;
+		XrVector3f b2 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->b].position;
+		XrVector3f b3 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->c].position;
+		return ((b1.x+b2.x+b3.x)*-2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		     - ((a1.x+a2.x+a3.x)*-2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000);
+	}
+};
+
 void hand_oxra_update_system_meshes() {
 	for (int32_t h = 0; h < handed_max; h++) {
 		hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
@@ -288,9 +317,11 @@ void hand_oxra_update_system_meshes() {
 					hand_mesh->inds[i+1] = oxra_mesh_src[h].indexBuffer.indices[i+1];
 					hand_mesh->inds[i+2] = oxra_mesh_src[h].indexBuffer.indices[i];
 				}
+				// Sort the faces better rendering with transparency
+				hand_tri_t *tris = (hand_tri_t*)hand_mesh->inds;
+				qsort(tris, oxra_mesh_src[h].indexBuffer.indexCountOutput / 3, sizeof(hand_tri_t), h == handed_left ? hand_tri_t::compare_l : hand_tri_t::compare_r);
+
 				mesh_set_inds(hand_mesh->mesh, hand_mesh->inds, oxra_mesh_src[h].indexBuffer.indexCountOutput);
-				// TODO: Could be nice to sort the faces on the X axis for 
-				// better rendering with transparency
 			}
 
 			// Update hand mesh vertices when they've changed, or when we've
