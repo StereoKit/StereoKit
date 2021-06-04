@@ -333,8 +333,8 @@ bool openxr_init() {
 	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
 	session_info.next     = &gfx_binding;
 	session_info.systemId = xr_system_id;
+	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
 	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
-		XrSessionCreateInfoOverlayEXTX overlay_info = { XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX };
 		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
 		gfx_binding.next = &overlay_info;
 		sk_info.overlay_app = true;
