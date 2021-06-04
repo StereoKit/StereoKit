@@ -11,7 +11,6 @@
 
 using StereoKit;
 using StereoKit.Framework;
-using System;
 
 namespace StereoKitTest
 {
@@ -153,9 +152,10 @@ namespace StereoKitTest
 				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 					new Gradient(
-						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.4f),
-						new GradientKey(new Color(1,1,1,1), 0.9f)));
+						new GradientKey(new Color(.4f,.4f,.4f,0), 0),
+						new GradientKey(new Color(.6f,.6f,.6f,0), 0.4f),
+						new GradientKey(new Color(.8f,.8f,.8f,1), 0.55f),
+						new GradientKey(new Color(1,1,1,1),       1)));
 			UI.WindowEnd();
 
 			if (showJoints)   DrawJoints(jointMesh, Default.Material);

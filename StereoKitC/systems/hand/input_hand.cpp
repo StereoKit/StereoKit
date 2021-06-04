@@ -168,9 +168,10 @@ void input_hand_init() {
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0f);
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.4f);
-	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
+	gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
+	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
+	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
+	gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
