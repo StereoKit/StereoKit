@@ -148,23 +148,35 @@ SK_API void   time_set_time(double total_seconds, double frame_elapsed_seconds s
 ///////////////////////////////////////////
 
 typedef struct vec2 {
-	float x, y;
+	float x;
+	float y;
 } vec2;
 typedef struct vec3 {
-	float x, y, z;
+	float x;
+	float y;
+	float z;
 } vec3;
 typedef struct vec4 {
-	float x, y, z, w;
+	float x;
+	float y;
+	float z;
+	float w;
 } vec4;
 typedef struct quat {
-	float x, y, z, w;
+	float x;
+	float y;
+	float z; 
+	float w;
 } quat;
 typedef union matrix {
 	vec4 row[4];
 	float m[16];
 } matrix;
 typedef struct rect_t {
-	float x, y, w, h;
+	float x;
+	float y;
+	float w;
+	float h;
 } rect_t;
 typedef struct ray_t {
 	vec3 pos;
@@ -310,10 +322,16 @@ SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 ///////////////////////////////////////////
 
 typedef struct color32 {
-	uint8_t r, g, b, a;
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
 } color32;
 typedef struct color128 {
-	float r, g, b, a;
+	float r;
+	float g;
+	float b;
+	float a;
 } color128;
 
 SK_API color128 color_hsv      (float hue, float saturation, float value, float transparency);
@@ -561,7 +579,7 @@ SK_API void          material_set_param       (material_t material, const char *
 SK_API void          material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
 SK_API bool32_t      material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
 SK_API bool32_t      material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
-SK_API void          material_get_param_info  (material_t material, int index, char **out_name, material_param_ *out_type);
+SK_API void          material_get_param_info  (material_t material, int32_t index, char **out_name, material_param_ *out_type);
 SK_API int           material_get_param_count (material_t material);
 SK_API void          material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t      material_get_shader      (material_t material);
