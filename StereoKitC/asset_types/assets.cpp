@@ -1,5 +1,6 @@
 #include "assets.h"
 #include "../_stereokit.h"
+#include "../systems/platform/platform_utils.h"
 #include "../sk_memory.h"
 
 #include "mesh.h"
@@ -162,6 +163,7 @@ const char *assets_file(const char *file_name) {
 	if (file_name == nullptr || sk_settings.assets_folder == nullptr || sk_settings.assets_folder[0] == '\0')
 		return file_name;
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	const char *ch = file_name;
 	while (*ch != '\0') {
 		if (*ch == ':') {
@@ -169,6 +171,10 @@ const char *assets_file(const char *file_name) {
 		}
 		ch++;
 	}
+#else
+	if (file_name[0] == platform_path_separator_c)
+		return file_name;
+#endif
 
 	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
