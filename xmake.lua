@@ -7,7 +7,7 @@ package("reactphysics3d")
     set_description("Open source C++ physics engine library in 3D")
 
     add_urls("https://github.com/DanielChappuis/reactphysics3d/releases/download/v$(version)/reactphysics3d-$(version).tar.gz")
-    
+
     add_deps("cmake")
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package, {"-DCMAKE_POSITION_INDEPENDENT_CODE=ON"})
@@ -19,15 +19,15 @@ package_end()
 package("openxr_loader")
     set_homepage("https://github.com/KhronosGroup/OpenXR-SDK")
     set_description("Generated headers and sources for OpenXR loader.")
-    
+
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
-    
+
     add_deps("cmake")
 
     if is_plat("linux") then
         add_syslinks("stdc++fs", "jsoncpp")
     end
-    
+
     on_install("linux", "windows", "android", function (package)
         import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF"})
     end)
@@ -47,7 +47,7 @@ option("uwp")
     set_description("Build for UWP")
     set_values(true, false)
     add_defines("WINDOWS_UWP", "WINAPI_FAMILY=WINAPI_FAMILY_APP")
-    
+
 target("StereoKitC")
     add_options("uwp")
     set_version("0.3.2-preview.1")
@@ -65,16 +65,16 @@ target("StereoKitC")
     end
 
     -- 2.5.3 is needed for utils.install.pkgconfig_importfiles
-    set_xmakever("2.5.3") 
+    set_xmakever("2.5.3")
     add_rules("utils.install.pkgconfig_importfiles")
     add_headerfiles("StereoKitC/stereokit*.h")
 
-    add_files("StereoKitC/*.cpp") 
-    add_files("StereoKitC/libraries/*.cpp") 
-    add_files("StereoKitC/tools/*.cpp") 
-    add_files("StereoKitC/systems/*.cpp") 
-    add_files("StereoKitC/systems/hand/*.cpp") 
-    add_files("StereoKitC/systems/platform/*.cpp") 
+    add_files("StereoKitC/*.cpp")
+    add_files("StereoKitC/libraries/*.cpp")
+    add_files("StereoKitC/tools/*.cpp")
+    add_files("StereoKitC/systems/*.cpp")
+    add_files("StereoKitC/systems/hand/*.cpp")
+    add_files("StereoKitC/systems/platform/*.cpp")
     add_files("StereoKitC/asset_types/*.cpp")
     add_includedirs("StereoKitC/lib/include")
     add_includedirs("StereoKitC/lib/include_no_win")
@@ -90,7 +90,7 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-        add_links("GL", "GLEW", "GLX", "X11", "pthread")
+        add_links("EGL", "GLX", "pthread")
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end

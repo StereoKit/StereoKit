@@ -5,10 +5,10 @@
 sk_gpu.h
 
 	Docs are not yet here as the project is still somewhat in flight, but check
-	out some of the example projects in the repository for reference! They're 
+	out some of the example projects in the repository for reference! They're
 	pretty clean as is :)
 
-	Note: this is currently an amalgamated file, so it's best to modify the 
+	Note: this is currently an amalgamated file, so it's best to modify the
 	individual files in the repository if making modifications.
 */
 
@@ -41,8 +41,9 @@ sk_gpu.h
 		#define _SKG_GL_LOAD_EGL
 		#define _SKG_GL_MAKE_FUNCTIONS
 	#elif defined(__linux__)
-		#define _SKG_GL_DESKTOP
-		#define _SKG_GL_LOAD_GLX
+		#define _SKG_GL_ES
+		#define _SKG_GL_LOAD_EGL
+		#define _SKG_GL_MAKE_FUNCTIONS
 	#elif defined(_WIN32)
 		#define _SKG_GL_DESKTOP
 		#define _SKG_GL_LOAD_WGL
@@ -388,8 +389,6 @@ typedef struct skg_swapchain_t {
 	void *_hwnd;
 #elif defined(_SKG_GL_LOAD_EGL)
 	void *_egl_surface;
-#elif defined(_SKG_GL_LOAD_GLX)
-	void *_x_window;
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	skg_tex_t      _surface;
 	skg_tex_t      _surface_depth;
@@ -409,12 +408,6 @@ typedef struct skg_platform_data_t {
 #elif defined(_SKG_GL_LOAD_WGL)
 	void *_gl_hdc;
 	void *_gl_hrc;
-#elif defined(_SKG_GL_LOAD_GLX)
-	void *_x_display;
-	void *_visual_id;
-	void *_glx_fb_config;
-	void *_glx_drawable;
-	void *_glx_context;
 #endif
 } skg_platform_data_t;
 #endif
@@ -666,7 +659,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		d3d_info = nullptr;
 		if (SUCCEEDED(d3d_debug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3d_info))) {
 			D3D11_MESSAGE_ID hide[] = {
-				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS, 
+				D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
 				(D3D11_MESSAGE_ID)351,
 				(D3D11_MESSAGE_ID)49, // TODO: Figure out the Flip model for backbuffers!
 									  // Add more message IDs here as needed
@@ -687,7 +680,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	desc_rasterizer.FrontCounterClockwise = true;
 	desc_rasterizer.DepthClipEnable       = true;
 	d3d_device->CreateRasterizerState(&desc_rasterizer, &d3d_rasterstate);
-	
+
 	D3D11_DEPTH_STENCIL_DESC desc_depthstate = {};
 	desc_depthstate.DepthEnable    = true;
 	desc_depthstate.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -843,8 +836,8 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	case skg_buffer_type_index:    buffer_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;    break;
 	case skg_buffer_type_constant: buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; break;
 	case skg_buffer_type_compute:  {
-		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; 
-		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED; 
+		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		buffer_desc.Usage     = D3D11_USAGE_DEFAULT;
 	} break;
 	}
@@ -1330,7 +1323,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		return result;
 	}
 
-	// Set the target view to an sRGB format for proper presentation of 
+	// Set the target view to an sRGB format for proper presentation of
 	// linear color data.
 	skg_tex_fmt_ target_fmt = format;
 	switch (format) {
@@ -1504,7 +1497,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	desc_sampler.MaxLOD         = D3D11_FLOAT32_MAX;
 	desc_sampler.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
-	// D3D will already return the same sampler when provided the same 
+	// D3D will already return the same sampler when provided the same
 	// settings, so we can just lean on that to prevent sampler duplicates :)
 	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &tex->_sampler)))
 		skg_log(skg_log_critical, "Failed to create sampler state!");
@@ -1520,8 +1513,8 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 		tex_mem[m] = {};
 		switch (format) {
 		case skg_tex_fmt_rgba32:
-		case skg_tex_fmt_rgba32_linear: 
-			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+		case skg_tex_fmt_rgba32_linear:
+			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba64u:
 			skg_downsample_4((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
@@ -1534,14 +1527,14 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 			break;
 		case skg_tex_fmt_depth32:
 		case skg_tex_fmt_r32:
-			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_depth16:
 		case skg_tex_fmt_r16:
-			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_r8:
-			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		}
 		mip_data = (void*)tex_mem[m].pSysMem;
@@ -1675,7 +1668,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 			for (int32_t i = 0; i < data_frame_count; i++) {
 				for (uint32_t m = 1; m < mip_levels; m++) {
 					free((void*)tex_mem[i*mip_levels + m].pSysMem);
-				} 
+				}
 			}
 			free(tex_mem);
 		}
@@ -1938,18 +1931,10 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #elif defined(_SKG_GL_LOAD_EGL)
 	#include <EGL/egl.h>
 	#include <EGL/eglext.h>
-
+	
 	EGLDisplay egl_display;
 	EGLContext egl_context;
 	EGLConfig  egl_config;
-#elif defined(_SKG_GL_LOAD_GLX)
-	#include <GL/glxew.h>
-
-	Display     *xDisplay;
-	XVisualInfo *visualInfo;
-	GLXFBConfig  glxFBConfig;
-	GLXDrawable  glxDrawable;
-	GLXContext   glxContext;
 #elif defined(_SKG_GL_LOAD_WGL)
 	#pragma comment(lib, "opengl32.lib")
 	#define WIN32_LEAN_AND_MEAN
@@ -2008,7 +1993,7 @@ wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
 #define GL_CONSTANT_ALPHA           0x8003
 #define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
 
-#define GL_NEVER                    0x0200 
+#define GL_NEVER                    0x0200
 #define GL_LESS                     0x0201
 #define GL_EQUAL                    0x0202
 #define GL_LEQUAL                   0x0203
@@ -2397,7 +2382,7 @@ int32_t gl_init_wgl() {
 
 	// Create an OpenGL context
 	int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3, 
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
 		WGL_CONTEXT_MINOR_VERSION_ARB, 3,
 #ifdef _DEBUG
 		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
@@ -2450,7 +2435,7 @@ int32_t gl_init_egl() {
 		EGL_DEPTH_SIZE, 16,
 		EGL_NONE
 	};
-	EGLint context_attribs[] = { 
+	EGLint context_attribs[] = {
 		EGL_CONTEXT_CLIENT_VERSION, 3,
 		EGL_NONE };
 	EGLint format;
@@ -2484,55 +2469,11 @@ int32_t gl_init_egl() {
 
 ///////////////////////////////////////////
 
-int32_t gl_init_glx() {
-#ifdef _SKG_GL_LOAD_GLX
-	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
-	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
-
-	glewExperimental=true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		skg_log(skg_log_critical, "Failed to initialize GLEW");
-		return -1;
-	}
-
-	int ctx_attribute_list[] = {
-		GLX_RENDER_TYPE,               GLX_RGBA_TYPE,
-		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
-#ifdef _DEBUG
-		GLX_CONTEXT_FLAGS_ARB,         GLX_CONTEXT_DEBUG_BIT_ARB,
-#endif
-		GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
-		0
-	};
-	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, GL_TRUE, ctx_attribute_list);
-	glXDestroyContext(xDisplay, old_ctx);
-	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
-
-#endif // _SKG_GL_LOAD_GLX
-	return 1;
-}
-
-///////////////////////////////////////////
-
-void skg_setup_xlib(void *dpy, void *vi, void *fbconfig, void *drawable) {
-#ifdef _SKG_GL_LOAD_GLX
-	xDisplay    =  (Display    *) dpy;
-	visualInfo  =  (XVisualInfo*) vi;
-	glxFBConfig = *(GLXFBConfig*) fbconfig;
-	glxDrawable = *(Drawable   *) drawable;
-#endif
-}
-
-///////////////////////////////////////////
-
 int32_t skg_init(const char *app_name, void *adapter_id) {
 #if   defined(_SKG_GL_LOAD_WGL)
 	int32_t result = gl_init_wgl();
 #elif defined(_SKG_GL_LOAD_EGL)
 	int32_t result = gl_init_egl();
-#elif defined(_SKG_GL_LOAD_GLX)
-	int32_t result = gl_init_glx();
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN)
 	int32_t result = gl_init_emscripten();
 #endif
@@ -2585,16 +2526,16 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 		}
 	}, nullptr);
 #endif // _DEBUG && !defined(_SKG_GL_WEB)
-	
+
 	// Some default behavior
-	glEnable   (GL_DEPTH_TEST);  
+	glEnable   (GL_DEPTH_TEST);
 	glEnable   (GL_CULL_FACE);
 	glCullFace (GL_BACK);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 #ifdef _SKG_GL_DESKTOP
 	glEnable   (GL_TEXTURE_CUBE_MAP_SEAMLESS);
 #endif
-	
+
 	return 1;
 }
 
@@ -2677,12 +2618,6 @@ skg_platform_data_t skg_get_platform_data() {
 	result._egl_display = egl_display;
 	result._egl_config  = egl_config;
 	result._egl_context = egl_context;
-#elif defined(_SKG_GL_LOAD_GLX)
-	result._x_display     = xDisplay;
-	result._visual_id     = &visualInfo->visualid;
-	result._glx_fb_config = glxFBConfig;
-	result._glx_drawable  = &glxDrawable;
-	result._glx_context   = glxContext;
 #endif
 	return result;
 }
@@ -2864,7 +2799,7 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
 	const char *file_chars = (const char *)file_data;
 
-	skg_shader_stage_t result = {}; 
+	skg_shader_stage_t result = {};
 	result.type = type;
 
 	// Include terminating character
@@ -3031,7 +2966,7 @@ skg_pipeline_t skg_pipeline_create(skg_shader_t *shader) {
 
 void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	glUseProgram(pipeline->_shader._program);
-	
+
 	switch (pipeline->transparency) {
 	case skg_transparency_blend:
 		glEnable(GL_BLEND);
@@ -3077,7 +3012,7 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	case skg_depth_test_less_or_eq:    glDepthFunc(GL_LEQUAL);   break;
 	case skg_depth_test_never:         glDepthFunc(GL_NEVER);    break;
 	case skg_depth_test_not_equal:     glDepthFunc(GL_NOTEQUAL); break; }
-	
+
 #ifdef _SKG_GL_DESKTOP
 	if (pipeline->wireframe) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -3208,7 +3143,7 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		return result;
 	}
 #elif defined(_SKG_GL_LOAD_EGL)
-	EGLint attribs[] = { 
+	EGLint attribs[] = {
 		EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
 		EGL_NONE };
 	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, attribs);
@@ -3216,10 +3151,6 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
-#elif defined(_SKG_GL_LOAD_GLX)
-	result._x_window = hwnd;
-	result.width  = requested_width;
-	result.height = requested_height;
 #else
 	int32_t viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
@@ -3274,7 +3205,7 @@ void main() {
 	skg_tex_set_contents(&result._surface_depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
 
-	skg_vert_t quad_verts[] = { 
+	skg_vert_t quad_verts[] = {
 		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
 		{ { 1, 1,0}, {0,0,1}, {1,1}, {255,255,255,255} },
 		{ { 1,-1,0}, {0,0,1}, {1,0}, {255,255,255,255} },
@@ -3319,8 +3250,6 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 	SwapBuffers((HDC)swapchain->_hdc);
 #elif defined(_SKG_GL_LOAD_EGL)
 	eglSwapBuffers(egl_display, swapchain->_egl_surface);
-#elif defined(_SKG_GL_LOAD_GLX)
-	glXSwapBuffers(xDisplay, *(Drawable *) swapchain->_x_window);
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
 	skg_tex_target_bind(nullptr);
@@ -3344,9 +3273,6 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
-	skg_tex_target_bind(nullptr);
-#elif defined(_SKG_GL_LOAD_GLX)
-	glXMakeCurrent(xDisplay, *(Drawable *) swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr);
 #endif
 }
@@ -3380,9 +3306,9 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 	result.height      = height;
 	result.array_count = array_count;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
-		: array_count > 1 
+	result._target     = type == skg_tex_type_cubemap
+		? GL_TEXTURE_CUBE_MAP
+		: array_count > 1
 			? GL_TEXTURE_2D_ARRAY
 			: GL_TEXTURE_2D;
 
@@ -3401,7 +3327,7 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
-	
+
 	return result;
 }
 
@@ -3418,7 +3344,7 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	result.array_count = 1;
 	result.array_start = array_layer;
 	result._texture    = (uint32_t)(uint64_t)native_tex;
-	result._target     = type == skg_tex_type_cubemap 
+	result._target     = type == skg_tex_type_cubemap
 		? GL_TEXTURE_CUBE_MAP
 		: GL_TEXTURE_2D_ARRAY;
 
@@ -3440,8 +3366,8 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	result.use     = use;
 	result.format  = format;
 	result.mips    = mip_maps;
-	result._target = type == skg_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
+	result._target = type == skg_tex_type_cubemap
+		? GL_TEXTURE_CUBE_MAP
 		: GL_TEXTURE_2D;
 
 	glGenTextures(1, &result._texture);
@@ -3450,7 +3376,7 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	if (type == skg_tex_type_rendertarget) {
 		glGenFramebuffers(1, &result._framebuffer);
 	}
-	
+
 	return result;
 }
 
@@ -3464,8 +3390,8 @@ bool skg_tex_is_valid(const skg_tex_t *tex) {
 
 void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 	if (tex->type == skg_tex_type_rendertarget) {
-		uint32_t attach = depth->format == skg_tex_fmt_depthstencil 
-			? GL_DEPTH_STENCIL_ATTACHMENT 
+		uint32_t attach = depth->format == skg_tex_fmt_depthstencil
+			? GL_DEPTH_STENCIL_ATTACHMENT
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		if (tex->_target == GL_TEXTURE_2D_ARRAY) {
@@ -3508,7 +3434,7 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	default: filter = GL_LINEAR; min_filter = GL_LINEAR;
 	}
 
-	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);	
+	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);
 	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_T, mode);
 	if (tex->type == skg_tex_type_cubemap) {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, mode);
@@ -3579,7 +3505,7 @@ bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
 	// Referenced from here:
 	// https://stackoverflow.com/questions/53993820/opengl-es-2-0-android-c-glgetteximage-alternative
 	uint32_t fbo = 0;
-	glGenFramebuffers     (1, &fbo); 
+	glGenFramebuffers     (1, &fbo);
 	glBindFramebuffer     (GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, 0);
 
@@ -3632,7 +3558,7 @@ void skg_tex_destroy(skg_tex_t *tex) {
 	uint32_t tex_list[] = { tex->_texture     };
 	uint32_t fb_list [] = { tex->_framebuffer };
 	if (tex->_texture    ) glDeleteTextures    (1, tex_list);
-	if (tex->_framebuffer) glDeleteFramebuffers(1, fb_list );  
+	if (tex->_framebuffer) glDeleteFramebuffers(1, fb_list );
 	*tex = {};
 }
 
@@ -3900,7 +3826,7 @@ skg_color128_t skg_col_hcy128(float h, float c, float y, float a) {
 	} else if (Z < 1) {
 		c *= (1 - y) / (1 - Z);
 	}
-	return skg_color128_t { 
+	return skg_color128_t {
 		(r - Z) * c + y,
 		(g - Z) * c + y,
 		(b - Z) * c + y,
@@ -3927,7 +3853,7 @@ skg_color128_t skg_col_lch128(float h, float c, float l, float alpha) {
 	l = l * 100;
 	float a = cosf( h*tau ) * c;
 	float b = sinf( h*tau ) * c;
-	
+
 	float
 		y = (l + 16.f) / 116.f,
 		x = (a / 500.f) + y,
@@ -3945,7 +3871,7 @@ skg_color128_t skg_col_lch128(float h, float c, float l, float alpha) {
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
 	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
 
-	return skg_color128_t { 
+	return skg_color128_t {
 		fmaxf(0, fminf(1, r)),
 		fmaxf(0, fminf(1, g)),
 		fmaxf(0, fminf(1, b)), alpha };
@@ -3969,9 +3895,9 @@ skg_color128_t skg_col_helix128(float h, float s, float l, float alpha) {
 	const float tau = 6.28318f;
 	l = fminf(1,l);
 	float angle = tau * (h+(1/3.f));
-	float amp   = s * l * (1.f - l); // Helix in some implementations will 
-	// divide this by 2.0f and go at half s, but if we clamp rgb at the end, 
-	// we can get full s at the cost of a bit of artifacting at high 
+	float amp   = s * l * (1.f - l); // Helix in some implementations will
+	// divide this by 2.0f and go at half s, but if we clamp rgb at the end,
+	// we can get full s at the cost of a bit of artifacting at high
 	// s+lightness values.
 
 	float a_cos = cosf(angle);
@@ -4046,7 +3972,7 @@ float pqi(float x) {
 	x = powf(x, .007460772656268214f);
 	return x <= 0 ? 0 : powf(
 		(0.8359375f - x) / (18.6875f*x - 18.8515625f),
-		6.277394636015326f); 
+		6.277394636015326f);
 };
 skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 	// JAB to XYZ
@@ -4074,7 +4000,7 @@ skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
 	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
 
-	return skg_color128_t { 
+	return skg_color128_t {
 		fmaxf(0, fminf(1, r)),
 		fmaxf(0, fminf(1, g)),
 		fmaxf(0, fminf(1, b)), alpha };
@@ -4127,7 +4053,7 @@ skg_color128_t skg_col_lab128(float l, float a, float b, float alpha) {
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
 	b = (b > 0.0031308f) ? (1.055f * powf(b, 1/2.4f) - 0.055f) : 12.92f * b;
 
-	return skg_color128_t { 
+	return skg_color128_t {
 		fmaxf(0, fminf(1, r)),
 		fmaxf(0, fminf(1, g)),
 		fmaxf(0, fminf(1, b)), alpha };
@@ -4200,7 +4126,7 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 	if (!skg_shader_file_verify(data, size, &file_version, nullptr, 0) || file_version != 1) {
 		return false;
 	}
-	
+
 	const uint8_t *bytes = (uint8_t*)data;
 	size_t at = 10;
 	memcpy(&out_file->stage_count, &bytes[at], sizeof(out_file->stage_count)); at += sizeof(out_file->stage_count);
@@ -4452,7 +4378,7 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rgba32_linear:
 	case skg_tex_fmt_bgra32:
 	case skg_tex_fmt_bgra32_linear:
-	case skg_tex_fmt_rg11b10: 
+	case skg_tex_fmt_rg11b10:
 	case skg_tex_fmt_rgb10a2:       return sizeof(uint8_t )*4;
 	case skg_tex_fmt_rgba64u:
 	case skg_tex_fmt_rgba64s:
