@@ -273,7 +273,6 @@ bool setup_x_window() {
 	}
 
 	x_root = DefaultRootWindow(x_dpy);
-	printf("%p\n", glXChooseFBConfig);
 	int fbConfigNumber = 0;
 	x_fb_config = glXChooseFBConfig((Display *) x_dpy, 0, fb_att, &fbConfigNumber);
 	x_vi = glXGetVisualFromFBConfig(x_dpy, *x_fb_config);
@@ -419,7 +418,7 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
-	linux_events();
+	// linux_events();
 
 	static char text[256] = "";
 	text_add_at(text, matrix_trs({0,0,-0.2f}, quat_lookat(vec3_zero, {0,0,1})));
