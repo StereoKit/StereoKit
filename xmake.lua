@@ -36,7 +36,7 @@ package_end()
 --------------------------------------------------
 
 -- On Android, we have a precompiled binary provided by Oculus
-if not is_plat("android") then
+if not (is_plat("android") or is_plat("linux")) then
     add_requires("openxr_loader 1.0.14", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
 add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
@@ -83,6 +83,8 @@ target("StereoKitC")
     -- On Android, we have a precompiled binary provided by Oculus
     if is_plat("android") then
         add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
+        add_links("openxr_loader")
+    elseif is_plat("linux") then
         add_links("openxr_loader")
     else
         add_packages("openxr_loader")
