@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <dirent.h> 
 #include "linux.h"
+#include <fontconfig/fontconfig.h>
 #endif
 
 namespace sk {
@@ -270,7 +271,23 @@ void platform_default_font(char *fontname_buffer, size_t buffer_size) {
 		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
 
 #elif defined(SK_OS_LINUX)
-	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+	FcConfig* config = FcInitLoadConfigAndFonts();
+	FcPattern* pat = FcNameParse((const FcChar8*)("sans-serif"));
+	FcConfigSubstitute(config, pat, FcMatchPattern);
+	FcDefaultSubstitute(pat);
+
+	FcResult res;
+	FcPattern* font = FcFontMatch(config, pat, &res);
+	if (font) {
+		FcChar8* file = nullptr;
+		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
+			// Put the font file path in the proper string
+			snprintf(fontname_buffer, buffer_size, (char*) file);
+		}
+		FcPatternDestroy(font);
+	}
+
+	FcPatternDestroy(pat);
 #else
 	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
 #endif
