@@ -215,6 +215,7 @@ SK_API matrix pose_matrix    (const sk_ref(pose_t) pose, vec3 scale sk_default({
 SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void     matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
+SK_API matrix   matrix_invert       (const sk_ref(matrix) a);
 SK_API void     matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
 SK_API vec3     matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
 SK_API vec3     matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
@@ -959,6 +960,7 @@ SK_API vec2     world_get_bounds_size       ();
 SK_API pose_t   world_get_bounds_pose       ();
 SK_API pose_t   world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
 SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
+SK_API bool32_t world_raycast               (ray_t ray, sk_ref(ray_t) out_intersection);
 
 ///////////////////////////////////////////
 

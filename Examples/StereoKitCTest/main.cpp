@@ -10,6 +10,7 @@ using namespace sk;
 #include "demo_sprites.h"
 #include "demo_lines.h"
 #include "demo_picker.h"
+#include "demo_world.h"
 
 #include <stdio.h>
 
@@ -52,6 +53,11 @@ scene_t demos[] = {
 		demo_picker_init,
 		demo_picker_update,
 		demo_picker_shutdown,
+	}, {
+		"World",
+		demo_world_init,
+		demo_world_update,
+		demo_world_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
@@ -108,7 +114,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[0]);
+	scene_set_active(demos[6]);
 
 	while (sk_step( []() {
 		scene_update();
@@ -153,7 +159,8 @@ void common_init() {
 
 void common_update() {
 	// Render floor
-	render_add_model(floor_model, floor_tr);
+	if (sk_system_info().display_type == display_opaque)
+		render_add_model(floor_model, floor_tr);
 
 	ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
 	for (int i = 0; i < sizeof(demos) / sizeof(scene_t); i++) {

@@ -9,6 +9,7 @@
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
     <ClCompile Include="demo_picker.cpp" />
+    <ClCompile Include="demo_world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -18,5 +19,6 @@
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
+    <ClInclude Include="demo_world.h" />
   </ItemGroup>
 </Project>
