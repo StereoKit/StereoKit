@@ -262,9 +262,9 @@ bool openxr_init() {
 #endif
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
-	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
-	systemInfo.formFactor = xr_config_form;
-	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	XrSystemGetInfo system_info = { XR_TYPE_SYSTEM_GET_INFO };
+	system_info.formFactor = xr_config_form;
+	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_warning, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
 		openxr_shutdown();

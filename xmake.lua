@@ -92,7 +92,7 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-        add_links("EGL", "GLX", "fontconfig", "pthread")
+        add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end
