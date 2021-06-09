@@ -561,10 +561,24 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size) {
+tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size, float light_spot_size_pct, float light_spot_intensity) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {
 		return nullptr;
+	}
+
+	// Calculate information used to create the light spot
+	vec3     light_dir = sh_dominant_dir(lookup);
+	color128 light_col = sh_lookup      (lookup, -light_dir) * light_spot_intensity;
+	vec3     light_pt  = { 100000,100000,100000 };
+	for (int32_t i = 0; i < 6; i++) {
+		vec3 p1 = math_cubemap_corner(i * 4);
+		vec3 p2 = math_cubemap_corner(i * 4 + 1);
+		vec3 p3 = math_cubemap_corner(i * 4 + 2);
+		plane_t plane = plane_from_points(p1, p2, p3);
+		vec3    pt;
+		if (!plane_ray_intersect(plane, { vec3_zero, light_dir }, &pt) && vec3_magnitude_sq(pt) < vec3_magnitude_sq(light_pt))
+			light_pt = pt;
 	}
 
 	int32_t size  = face_size;
@@ -574,15 +588,15 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 		power += 1;
 	size = (int32_t)pow(2, power);
 
-	float    half_px = 0.5f / size;
-	int32_t  size2 = size * size;
+	float     half_px = 0.5f / size;
+	int32_t   size2 = size * size;
 	color128 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
 		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
-		vec3 p4 = math_cubemap_corner(i * 4+3); 
+		vec3 p4 = math_cubemap_corner(i * 4+3);
 
 		for (int32_t y = 0; y < size; y++) {
 			float py = 1 - (y / (float)size + half_px);
@@ -602,9 +616,14 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 				vec3 pl = vec3_lerp(p1, p4, py);
 				vec3 pr = vec3_lerp(p2, p3, py);
 				vec3 pt = vec3_lerp(pl, pr, px);
+				float dist = fmaxf(fmaxf(fabsf(pt.x-light_pt.x), fabsf(pt.y-light_pt.y)), fabsf(pt.z-light_pt.z));
 				pt = vec3_normalize(pt);
 
-				data[i][x + y * size] = sh_lookup(lookup, pt);
+				if (dist < light_spot_size_pct) {
+					data[i][x + y * size] = light_col;
+				} else {
+					data[i][x + y * size] = sh_lookup(lookup, pt);
+				}
 			}
 		}
 	}

@@ -149,9 +149,9 @@ class DemoMath : ITest
 		Lines.Add(crossStart, crossStart + Vec3.Up*0.1f,      new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + Vec3.Forward*0.1f, new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + right * 0.1f,      new Color32(0, 255, 0, 255),  2*Units.mm2m);
-		Text.Add("Up",  Matrix.TR(crossStart + Vec3.Up      * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.XCenter | TextAlign.YBottom);
-		Text.Add("Fwd", Matrix.TR(crossStart + Vec3.Forward * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.XCenter | TextAlign.YBottom);
-		Text.Add("Vec3.Cross(Fwd,Up)", Matrix.TR(crossStart + right * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.XCenter | TextAlign.YBottom);
+		Text.Add("Up",  Matrix.TR(crossStart + Vec3.Up      * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.BottomCenter);
+		Text.Add("Fwd", Matrix.TR(crossStart + Vec3.Forward * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.BottomCenter);
+		Text.Add("Vec3.Cross(Fwd,Up)", Matrix.TR(crossStart + right * 0.1f, Quat.LookDir(-Vec3.Forward)), TextAlign.BottomCenter);
 
 		UI.HandleEnd();
 

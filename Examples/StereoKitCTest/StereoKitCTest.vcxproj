@@ -83,6 +83,7 @@
   <ItemGroup>
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
+    <ClCompile Include="demo_picker.cpp" />
     <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="demo_sprites.cpp" />
     <ClCompile Include="scene.cpp" />
@@ -92,6 +93,7 @@
   <ItemGroup>
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />
+    <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_ui.h" />
     <ClInclude Include="demo_sprites.h" />
     <ClInclude Include="scene.h" />

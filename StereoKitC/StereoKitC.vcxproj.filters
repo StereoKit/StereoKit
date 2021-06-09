@@ -178,6 +178,9 @@
     <ClCompile Include="libraries\miniaudio.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="tools\file_picker.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -398,6 +401,9 @@
     <ClInclude Include="systems\audio.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="tools\file_picker.h">
+      <Filter>tools</Filter>
+    </ClInclude>
     <ClInclude Include="systems\world.h">
       <Filter>systems</Filter>
     </ClInclude>
@@ -423,6 +429,9 @@
     </Filter>
     <Filter Include="systems\hand">
       <UniqueIdentifier>{7e9a2597-f32e-49c0-8322-9259b2bfed54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tools">
+      <UniqueIdentifier>{670092e3-dca4-4cbc-b5ae-316a003e386c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

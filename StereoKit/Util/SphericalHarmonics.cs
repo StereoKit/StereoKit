@@ -40,6 +40,15 @@ namespace StereoKit
 		public Vec3 coefficient8;
 		public Vec3 coefficient9;
 
+		/// <summary>Returns the dominant direction of the light represented
+		/// by this spherical harmonics data. The direction value is 
+		/// normalized.
+		/// 
+		/// You can get the color of the light in this direction by using the
+		/// struct's Sample method: 
+		/// `light.Sample(-light.DominantLightDirection)`. </summary>
+		public Vec3 DominantLightDirection => NativeAPI.sh_dominant_dir(this);
+
 		/// <summary>Creates a SphericalHarmonic from an array of
 		/// coefficients. Useful for loading stored data!</summary>
 		/// <param name="coefficients">Must be an array with a length of 9!

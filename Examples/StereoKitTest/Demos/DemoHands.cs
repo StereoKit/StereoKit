@@ -11,7 +11,6 @@
 
 using StereoKit;
 using StereoKit.Framework;
-using System;
 
 namespace StereoKitTest
 {
@@ -153,9 +152,10 @@ namespace StereoKitTest
 				ColorizeFingers(16,
 					new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 					new Gradient(
-						new GradientKey(new Color(1,1,1,0), 0),
-						new GradientKey(new Color(1,1,1,0), 0.4f),
-						new GradientKey(new Color(1,1,1,1), 0.9f)));
+						new GradientKey(new Color(.4f,.4f,.4f,0), 0),
+						new GradientKey(new Color(.6f,.6f,.6f,0), 0.4f),
+						new GradientKey(new Color(.8f,.8f,.8f,1), 0.55f),
+						new GradientKey(new Color(1,1,1,1),       1)));
 			UI.WindowEnd();
 
 			if (showJoints)   DrawJoints(jointMesh, Default.Material);
@@ -223,10 +223,14 @@ namespace StereoKitTest
 			float offset = handed == Handed.Left ? -2-size.x : 2+size.x;
 
 			// Position the menu relative to the side of the hand
-			Hand hand     = Input.Hand(handed);
+			Hand hand   = Input.Hand(handed);
+			Vec3 at     = hand[FingerId.Little, JointId.KnuckleMajor].position;
+			Vec3 down   = hand[FingerId.Little, JointId.Root        ].position;
+			Vec3 across = hand[FingerId.Index,  JointId.KnuckleMajor].position;
+
 			Pose menuPose = new Pose(
-				hand[FingerId.Little, JointId.KnuckleMajor].position,
-				hand[FingerId.Little, JointId.Root].orientation * Quat.FromAngles(-90,0,0));
+				at,
+				Quat.LookAt(at, across, at-down) * Quat.FromAngles(0, handed == Handed.Left ? 90 : -90, 0));
 			menuPose.position += menuPose.Right * offset * U.cm;
 			menuPose.position += menuPose.Up * (size.y/2) * U.cm;
 

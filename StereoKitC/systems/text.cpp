@@ -28,6 +28,12 @@ inline bool text_is_space(char c) {
 
 //////////////////////////////////////////
 
+inline bool text_is_breakable(char c) {
+	return c==' ' || c=='-' || c=='/' || c=='\\' || c=='|' || c=='\n' || c == '\r' || c== '\t';
+}
+
+//////////////////////////////////////////
+
 void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
 		return;
@@ -112,6 +118,8 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 		material_set_texture     (material, "diffuse", font_get_tex(font));
 		material_set_cull        (material, cull_none);
 		material_set_transparency(material, transparency_blend);
+
+		mesh_set_keep_data(buffer->mesh, false);
 	}
 
 	// Create the style
@@ -163,11 +171,11 @@ vec2 text_line_size(text_style_t style, const char *text) {
 vec2 text_size(const char *text, text_style_t style) {
 	if (text == nullptr) return {};
 
-	font_t font = text_styles[style == -1 ? 0 : style].font;
-	const char *curr = text;
-	float x = 0;
-	int   y = 1;
-	float max_x = 0;
+	font_t      font  = text_styles[style == -1 ? 0 : style].font;
+	const char *curr  = text;
+	float       x     = 0;
+	int         y     = 1;
+	float       max_x = 0;
 	while (*curr != '\0') {
 		char currch = *curr;
 		curr += 1;
@@ -189,8 +197,8 @@ vec2 text_size(const char *text, text_style_t style) {
 float text_step_line_length(const char *start, int32_t *out_char_count, const text_stepper_t &step) {
 	// If we're not wrapping, this is really simple
 	if (!step.wrap) {
-		const char *curr = start;
-		float width = 0;
+		const char *curr  = start;
+		float       width = 0;
 		while (*curr != '\n' && *curr != '\0') {
 			width += step.style->font->characters[(uint8_t)*curr].xadvance;
 			curr++;
@@ -201,19 +209,20 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 	}
 
 	// Otherwise, we gotta do it the tricky way
-	float curr_width = 0;
-	float last_width = 0;
-	const char *last_at = start;
-	const char *ch = start;
-	bool was_space = false;
+	float       curr_width = 0;
+	float       last_width = 0;
+	const char *last_at    = start;
+	const char *ch         = start;
+	bool        was_break  = false;
 
 	while (true) {
-		char curr = *ch;
-		bool is_space = text_is_space(curr);
+		char curr     = *ch;
+		bool is_break = text_is_breakable(curr);
 
-		// We prefer to line break at spaces, rather than in the middle of words
-		if (is_space || curr == '\0') {
-			if (!was_space)
+		// We prefer to line break at spaces and other breakable characters, 
+		// rather than in the middle of words
+		if (is_break || curr == '\0') {
+			if (!was_break)
 				last_width = curr_width;
 			last_at = curr != '\0' ? ch+1 : ch;
 		}
@@ -222,15 +231,15 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 			break;
 
 		// Advance by character width
-		font_char_t &char_info = step.style->font->characters[(uint8_t)curr];
-		float next_width = char_info.xadvance*step.style->size + curr_width;
+		font_char_t &char_info  = step.style->font->characters[(uint8_t)curr];
+		float        next_width = char_info.xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
-		if (!is_space && next_width > step.bounds.x) {
-			// If there were no spaces in this line, set to the previous character
+		if (!is_break && next_width > step.bounds.x) {
+			// If there were no breaks in this line, set to the previous character
 			if (last_width == 0) {
 				last_width = curr_width;
-				last_at = ch;
+				last_at    = ch;
 			}
 			// Exit the line
 			break;
@@ -238,7 +247,7 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		
 		// Next character!
 		curr_width = next_width;
-		was_space = is_space;
+		was_break  = is_break;
 		ch++;
 	}
 

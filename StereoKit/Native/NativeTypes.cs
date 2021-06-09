@@ -70,7 +70,8 @@ namespace StereoKit
 		public DisplayBlend blendPreference;
 		/// <summary>If the preferred display fails, should we avoid falling
 		/// back to flatscreen and just crash out? Default is false.</summary>
-		public bool         noFlatscreenFallback;
+		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
+		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
@@ -81,6 +82,17 @@ namespace StereoKit
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
 		public LogLevel     logFilter;
+		/// <summary>If the runtime supports it, should this application run
+		/// as an overlay above existing applications? Check 
+		/// SK.System.overlayApp after initialization to see if the runtime
+		/// could comply with this flag. This will always force StereoKit to
+		/// work in a blend compositing mode.</summary>
+		public  bool        overlayApp { get { return _overlayApp > 0; } set { _overlayApp = value?1:0; } }
+		private int        _overlayApp;
+		/// <summary>For overlay applications, this is the order in which
+		/// apps should be composited together. 0 means first, bottom of the
+		/// stack, and uint.MaxValue is last, on top of the stack.</summary>
+		public uint         overlayPriority;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -96,7 +108,8 @@ namespace StereoKit
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
-		public bool disableFlatscreenMRSim;
+		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
+		private int _disableFlatscreenMRSim;
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
@@ -215,6 +228,12 @@ namespace StereoKit
 		/// `Input.Gaze` for how to use this data.</summary>
 		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
 		private int _eyeTrackingPresent;
+
+		/// <summary>This tells if the app was successfully started as an
+		/// overlay application. If this is true, then expect this
+		/// application to be composited with other content below it!</summary>
+		public bool overlayApp { get => _overlayApp > 0; }
+		private int _overlayApp;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
@@ -513,13 +532,15 @@ namespace StereoKit
 		Texture,
 	}
 
-	/// <summary>A bit-flag enum for describing alignment or positioning. Items can be
-	/// combined using the '|' operator, like so:
+	/// <summary>A bit-flag enum for describing alignment or positioning. 
+	/// Items can be combined using the '|' operator, like so:
 	/// 
-	/// `TextAlign alignment = TextAlign.XLeft | TextAlign.YTop;`
+	/// `TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
 	/// 
-	/// Avoid combining multiple items of the same axis, and note that a few items, 
-	/// like `Center` are already a combination of multiple flags.</summary>
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter', 
+	/// etc.</summary>
 	[Flags]
 	public enum TextAlign
 	{
@@ -535,17 +556,55 @@ namespace StereoKit
 		XRight  = 1 << 4,
 		/// <summary>On the y axis, this item should start on the bottom.</summary>
 		YBottom = 1 << 5,
-		/// <summary>A combination of XCenter and YCenter.</summary>
-		Center  = XCenter | YCenter,
+		/// <summary>Center on both X and Y axes. This is a combination of 
+		/// XCenter and YCenter.</summary>
+		Center      = XCenter | YCenter,
+		/// <summary>Start on the left of the X axis, center on the Y axis. 
+		/// This is a combination of XLeft and YCenter.</summary>
+		CenterLeft  = XLeft   | YCenter,
+		/// <summary>Start on the right of the X axis, center on the Y axis. 
+		/// This is a combination of XRight and YCenter.</summary>
+		CenterRight = XRight  | YCenter,
+		/// <summary>Start on the left of the X axis, and top on the Y axis.
+		/// This is a combination of XLeft and YTop.</summary>
+		TopLeft     = XLeft   | YTop,
+		/// <summary>Start on the right of the X axis, and top on the Y axis.
+		/// This is a combination of XRight and YTop.</summary>
+		TopRight    = XRight  | YTop,
+		/// <summary>Center on the X axis, and top on the Y axis. This is a
+		/// combination of XCenter and YTop.</summary>
+		TopCenter   = XCenter | YTop,
+		/// <summary>Start on the left of the X axis, and bottom on the Y
+		/// axis. This is a combination of XLeft and YBottom.</summary>
+		BottomLeft  = XLeft   | YBottom,
+		/// <summary>Start on the right of the X axis, and bottom on the Y
+		/// axis.This is a combination of XRight and YBottom.</summary>
+		BottomRight = XRight  | YBottom,
+		/// <summary>Center on the X axis, and bottom on the Y axis. This is
+		/// a combination of XCenter and YBottom.</summary>
+		BottomCenter= XCenter | YBottom,
 	}
 
+	/// <summary>This enum describes how text layout behaves within the space
+	/// it is given.</summary>
 	[Flags]
 	public enum TextFit
 	{
+		/// <summary>The text will wrap around to the next line down when it
+		/// reaches the end of the space on the X axis.</summary>
 		Wrap     = 1 << 0,
+		/// <summary>When the text reaches the end, it is simply truncated
+		/// and no longer visible.</summary>
 		Clip     = 1 << 1,
+		/// <summary>If the text is too large to fit in the space provided,
+		/// it will be scaled down to fit inside. This will not scale up.
+		/// </summary>
 		Squeeze  = 1 << 2,
+		/// <summary>If the text is larger, or smaller than the space 
+		/// provided, it will scale down or up to fill the space.</summary>
 		Exact    = 1 << 3,
+		/// <summary>The text will ignore the containing space, and just keep
+		/// on going.</summary>
 		Overflow = 1 << 4
 	}
 
@@ -795,6 +854,8 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, string filename);
 
 	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
 	public enum FingerId

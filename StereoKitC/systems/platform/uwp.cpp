@@ -141,6 +141,7 @@ public:
 		window.PointerReleased                        ({ this, &ViewProvider::OnMouseButtonUp      });
 		window.PointerWheelChanged                    ({ this, &ViewProvider::OnWheelChanged       });
 		window.VisibilityChanged                      ({ this, &ViewProvider::OnVisibilityChanged  });
+		window.Activated                              ({ this, &ViewProvider::OnActivation         });
 		window.CharacterReceived                      (uwp_on_corewindow_character);
 		dispatcher.AcceleratorKeyActivated            (uwp_on_corewindow_keypress);
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
@@ -296,6 +297,10 @@ protected:
 	void OnVisibilityChanged(CoreWindow const & /*sender*/, VisibilityChangedEventArgs const & args) {
 		m_visible = args.Visible();
 		sk_focused = m_visible;
+	}
+
+	void OnActivation(CoreWindow const & /*sender*/, WindowActivatedEventArgs const & args) {
+		sk_focused = args.WindowActivationState() != CoreWindowActivationState::Deactivated;
 	}
 
 	void OnAcceleratorKeyActivated(CoreDispatcher const &, AcceleratorKeyEventArgs const & args)

@@ -91,7 +91,7 @@ bool defaults_init() {
 	} };
 	render_set_skylight(lighting);
 	sh_brightness(lighting, 0.75f);
-	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16);
+	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 	render_set_skytex(sk_default_cubemap);
 	render_enable_skytex(true);

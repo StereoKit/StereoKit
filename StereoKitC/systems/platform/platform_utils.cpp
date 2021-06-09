@@ -5,15 +5,19 @@
 
 #include "../../stereokit.h"
 #include "../../sk_memory.h"
+#include "../../sk_math.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
+#include "../../tools/file_picker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h>
@@ -39,6 +43,7 @@
 
 #ifdef SK_OS_LINUX
 #include <unistd.h>
+#include <dirent.h> 
 #include "linux.h"
 #endif
 
@@ -102,14 +107,19 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	AAsset *asset = AAssetManager_open(android_asset_manager, filename, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
-		*out_data = sk_malloc(*out_size+1);
+		*out_data = sk_malloc(*out_size + 1);
 		AAsset_read(asset, *out_data, *out_size);
 		AAsset_close(asset);
 		((uint8_t *)*out_data)[*out_size] = 0;
 		return true;
-	} 
+	}
 
 	// Fall back to standard file io functions, they -can- work on Android
+#elif defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	if (file_picker_cache(filename, out_data, out_size))
+		return true;
 #endif
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
@@ -262,8 +272,180 @@ void platform_default_font(char *fontname_buffer, size_t buffer_size) {
 #elif defined(SK_OS_LINUX)
 	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 #else
-	snprintf(fontname_buffer, buffer_size, "C:/Windows/Fonts/segoeui.ttf");
+	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
 #endif
+}
+
+///////////////////////////////////////////
+
+char *platform_working_dir() {
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	int32_t len    = GetCurrentDirectoryA(0, nullptr);
+	char   *result = sk_malloc_t(char, len);
+	GetCurrentDirectoryA(len, result);
+#else
+	int32_t len    = 260;
+	char   *result = sk_malloc_t(char, len);
+	result[0] = '\0';
+	while (len < 5000 && getcwd(result, len) == nullptr) {
+		free(result);
+		len       = len * 2;
+		result    = sk_malloc_t(char, len);
+		result[0] = '\0';
+	}
+#endif
+	return result;
+}
+
+///////////////////////////////////////////
+
+void  platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+#if defined(SK_OS_WINDOWS)
+	if (string_eq(directory_path, "")) {
+		char drive_names[256];
+		GetLogicalDriveStrings(sizeof(drive_names), drive_names);
+		char *curr = drive_names;
+		while (*curr != '\0') {
+			on_item(callback_data, curr, false);
+			curr = curr + strlen(curr)+1;
+		}
+		return;
+	}
+
+	WIN32_FIND_DATA info;
+	HANDLE          handle = nullptr;
+
+	char *filter = string_copy(directory_path);
+	if (string_endswith(filter, "\\"))
+		filter = string_append(filter, 1, "*.*");
+	else filter = string_append(filter, 1, "\\*.*");
+
+	handle = FindFirstFile(filter, &info);
+	if (handle == INVALID_HANDLE_VALUE) return;
+
+	while (handle) {
+		if (!string_eq(info.cFileName, ".") && !string_eq(info.cFileName, "..")) {
+			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				on_item(callback_data, info.cFileName, false);
+			else
+				on_item(callback_data, info.cFileName, true);
+		}
+
+		if (!FindNextFile(handle, &info)) {
+			FindClose(handle);
+			handle = nullptr;
+		}
+	}
+#elif defined(SK_OS_LINUX)
+	if (string_eq(directory_path, "")) {
+		directory_path = platform_path_separator;
+	}
+
+	DIR           *dir;
+	struct dirent *dir_info;
+	dir = opendir(directory_path);
+	if (dir) {
+		while ((dir_info = readdir(dir)) != nullptr) {
+			if (string_eq(dir_info->d_name, ".") || string_eq(dir_info->d_name, "..")) continue;
+
+			if (dir_info->d_type == DT_DIR)
+				on_item(callback_data, dir_info->d_name, false);
+			else if (dir_info->d_type == DT_REG)
+				on_item(callback_data, dir_info->d_name, true);
+		}
+		closedir(dir);
+	}
+#endif
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_ref(char *path, const char *directory) {
+	char *result = platform_push_path_new(path, directory);
+	free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_pop_path_ref(char *path) {
+	char *result = platform_pop_path_new(path);
+	free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_new(const char *path, const char *directory) {
+	if (path == nullptr || directory == nullptr) return nullptr;
+	if (directory[0] == '\0') return string_copy(path);
+
+	int32_t len = strlen(path);
+	if (len == 0) {
+		bool trailing_cslash = string_endswith(directory, ":\\") || string_endswith(directory, ":/");
+		bool trailing_c      = string_endswith(directory, ":");
+		if      (trailing_cslash) return string_copy  (directory);
+		else if (trailing_c)      return string_append(nullptr, 2, directory, platform_path_separator);
+		else return nullptr;
+	}
+
+	bool ends_with   = path     [len-1] == '\\' || path     [len-1] == '/';
+	bool starts_with = directory[0]     == '\\' || directory[0]     == '/';
+
+	char *result = nullptr;
+	if (!ends_with && !starts_with)
+		result = string_append(nullptr, 3, path, platform_path_separator, directory);
+	else if (ends_with && starts_with)
+		result = string_append(nullptr, 2, path, directory[1]);
+	else 
+		result = string_append(nullptr, 2, path, directory);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_pop_path_new(const char *path) {
+	stref_t src_path  = stref_make(path);
+	// Trim off trailing slashes
+	while (src_path.length > 0 && (path[src_path.length-1] == '\\' || path[src_path.length-1] == '/'))
+		src_path.length -= 1;
+
+	int32_t last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last != -1) {
+		src_path = stref_substr(src_path, 0, last);
+	} else {
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+		return string_copy("");
+#else
+		return string_copy(platform_path_separator);
+#endif
+	}
+
+	last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last == -1) {
+		return string_append(stref_copy(src_path), 1, platform_path_separator);
+	} else {
+		return stref_copy(src_path);
+	}
+}
+
+///////////////////////////////////////////
+
+bool platform_utils_init() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+void platform_utils_update() {
+	file_picker_update();
+}
+
+///////////////////////////////////////////
+
+void platform_utils_shutdown() {
+	file_picker_shutdown();
 }
 
 }

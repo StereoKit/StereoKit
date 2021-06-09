@@ -22,7 +22,7 @@ package("openxr_loader")
     
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
-    add_deps("cmake", "jsoncpp")
+    add_deps("cmake")
 
     if is_plat("linux") then
         add_syslinks("stdc++fs", "jsoncpp")
@@ -50,7 +50,7 @@ option("uwp")
     
 target("StereoKitC")
     add_options("uwp")
-    set_version("0.3.1")
+    set_version("0.3.2-preview.1")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
@@ -71,6 +71,7 @@ target("StereoKitC")
 
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
+    add_files("StereoKitC/tools/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
     add_files("StereoKitC/systems/hand/*.cpp") 
     add_files("StereoKitC/systems/platform/*.cpp") 

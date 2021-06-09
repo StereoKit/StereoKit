@@ -435,10 +435,19 @@ namespace StereoKit
 		/// <param name="resolution">The square size in pixels of each cubemap 
 		/// face! This generally doesn't need to be large, as SphericalHarmonics 
 		/// typically contain pretty low frequency information.</param>
+		/// <param name="lightSpotSizePct">The size of the glowing spot added
+		/// in the primary light direction. You can kinda thinl of the unit 
+		/// as a percentage of the cubemap face's size, but it's technically
+		/// a Chebyshev distance from the light's point on a 2m cube.</param>
+		/// <param name="lightSpotIntensity">The glowing spot's color is the
+		/// primary light direction's color, but multiplied by this value.
+		/// Since this method generates a 128bpp texture, this is not clamped
+		/// between 0-1, so feel free to go nuts here! Remember that 
+		/// reflections will often cut down some reflection intensity.</param>
 		/// <returns>A procedurally generated cubemap texture!</returns>
-		public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16)
+		public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16, float lightSpotSizePct = 0, float lightSpotIntensity = 6)
 		{
-			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution);
+			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution, lightSpotSizePct, lightSpotIntensity);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 

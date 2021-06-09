@@ -182,6 +182,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
     <ClCompile Include="systems\world.cpp" />
+    <ClCompile Include="tools\file_picker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\assets.h" />
@@ -256,6 +257,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
+    <ClInclude Include="tools\file_picker.h" />
     <ClInclude Include="systems\world.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
