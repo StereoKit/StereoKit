@@ -141,6 +141,25 @@ void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) 
 
 ///////////////////////////////////////////
 
+void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count) {
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
+	for (size_t i = 0; i < ind_count; i+=3) {
+		vert_t *v1 = &verts[inds[i  ]];
+		vert_t *v2 = &verts[inds[i+1]];
+		vert_t *v3 = &verts[inds[i+2]];
+		// Length of cross product is twice the area of the triangle it's 
+		// from, so if we don't 'normalize' it, then we get trangle area
+		// weighting on our normals for free!
+		vec3 normal = vec3_cross(v3->pos - v2->pos, v1->pos - v2->pos);
+		v1->norm += normal;
+		v2->norm += normal;
+		v3->norm += normal;
+	}
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+}
+
+///////////////////////////////////////////
+
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 	if (index_count > mesh->ind_count) {
 		index_count = mesh->ind_count;

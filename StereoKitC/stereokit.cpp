@@ -227,7 +227,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_lines);
 
 	system_t sys_world = { "World" };
-	const char *world_deps       [] = {"Platform"};
+	const char *world_deps       [] = {"Platform", "Defaults"};
 	const char *world_update_deps[] = {"Platform"};
 	sys_world.init_dependencies       = world_deps;
 	sys_world.init_dependency_count   = _countof(world_deps);
@@ -239,7 +239,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_world);
 
 	system_t sys_app = { "App" };
-	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
+	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI", "World"};
 	sys_app.update_dependencies     = app_update_deps;
 	sys_app.update_dependency_count = _countof(app_update_deps);
 	sys_app.func_update             = sk_app_update;
