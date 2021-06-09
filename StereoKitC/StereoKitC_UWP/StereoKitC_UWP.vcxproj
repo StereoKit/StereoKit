@@ -130,6 +130,14 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
@@ -152,6 +160,14 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\*.cpp" />

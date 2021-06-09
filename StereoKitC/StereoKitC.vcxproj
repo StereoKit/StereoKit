@@ -84,7 +84,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -119,7 +120,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
