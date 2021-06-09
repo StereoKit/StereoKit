@@ -49,15 +49,14 @@ function Build-Config {
     #copy files into the project
     Copy-Item -Path "src\loader\Release\openxr_loader.lib" -Destination "..\..\..\..\StereoKitC\lib\bin\$config\Release\openxr_loader.lib" -Force -Confirm:$false
     Copy-Item -Path "src\loader\Debug\openxr_loaderd.lib" -Destination "..\..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.lib" -Force -Confirm:$false
-    Copy-Item -Path "src\loader\openxr_loader.dir\Debug\openxr_loader.pdb" -Destination "..\..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.pdb" -Force -Confirm:$false
 
     Pop-Location
 }
 
 # Clone the repository
 & git clone "https://github.com/KhronosGroup/OpenXR-SDK.git"
-& git checkout "release-$openxrDesired"
 Push-Location -Path "OpenXR-SDK"
+& git checkout release-$openxrDesired
 
 # Create build folders
 New-Item -Path . -Name "build" -ItemType "directory" | Out-Null

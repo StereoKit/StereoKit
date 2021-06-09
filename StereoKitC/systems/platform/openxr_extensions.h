@@ -4,7 +4,6 @@
 #include "../../stereokit.h"
 #include "../../libraries/array.h"
 #include <openxr/openxr.h>
-#include <openxr/openxr_su.h>
 #include <openxr/openxr_platform.h>
 
 namespace sk {
