@@ -118,6 +118,8 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 		material_set_texture     (material, "diffuse", font_get_tex(font));
 		material_set_cull        (material, cull_none);
 		material_set_transparency(material, transparency_blend);
+
+		mesh_set_keep_data(buffer->mesh, false);
 	}
 
 	// Create the style
