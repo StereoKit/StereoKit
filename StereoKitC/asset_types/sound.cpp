@@ -93,7 +93,7 @@ sound_t sound_generate(float (*function)(float), float duration) {
 
 ///////////////////////////////////////////
 
-void sound_write_samples(sound_t sound, float *samples, uint64_t sample_count) {
+void sound_write_samples(sound_t sound, const float *samples, uint64_t sample_count) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return; }
 
 	mtx_lock(&sound->data_lock);

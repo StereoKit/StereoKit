@@ -31,7 +31,7 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data) {
 		if (mesh->vert_capacity < vertex_count)
@@ -91,7 +91,7 @@ void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_coun
 
 ///////////////////////////////////////////
 
-void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
+void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
