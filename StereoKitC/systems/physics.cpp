@@ -1,4 +1,5 @@
-#pragma comment(lib, "reactphysics3d.lib")
+// #pragma comment(lib, "reactphysics3d.lib")
+// Windows thing? ^^
 
 #include "physics.h"
 #include "../stereokit.h"

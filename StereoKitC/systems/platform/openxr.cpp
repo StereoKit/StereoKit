@@ -1,4 +1,5 @@
-#pragma comment(lib,"openxr_loader.lib")
+// #pragma comment(lib,"openxr_loader.lib")
+// Windows thing? ^^
 
 #include "openxr.h"
 #include "openxr_input.h"
