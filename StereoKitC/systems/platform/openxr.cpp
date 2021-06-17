@@ -324,6 +324,9 @@ bool openxr_init() {
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
 	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	#if defined (SK_OS_LINUX)
+		gfx_binding.getProcAddress = eglGetProcAddress;
+	#endif
 	gfx_binding.display = (EGLDisplay)platform._egl_display;
 	gfx_binding.config  = (EGLConfig )platform._egl_config;
 	gfx_binding.context = (EGLContext)platform._egl_context;
