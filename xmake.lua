@@ -48,6 +48,12 @@ option("uwp")
     set_values(true, false)
     add_defines("WINDOWS_UWP", "WINAPI_FAMILY=WINAPI_FAMILY_APP")
     
+option("linux-graphics-backend")
+    set_default("GLX")
+    set_showmenu("true")
+    set_description("Graphics backend on Linux")
+    set_values("GLX", "EGL")
+
 target("StereoKitC")
     add_options("uwp")
     set_version("0.3.2-preview.1")
@@ -90,7 +96,11 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-        add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+		if(is_config("linux-graphics-backend", "EGL") then
+        	add_links("EGL", "GLX", "fontconfig", "pthread")
+		elseif is_config("linux-graphics-backend", "GLX") then
+        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+		end
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end
