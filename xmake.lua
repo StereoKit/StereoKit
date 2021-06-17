@@ -56,6 +56,7 @@ option("linux-graphics-backend")
 
 target("StereoKitC")
     add_options("uwp")
+    add_options("linux-graphics-backend")
     set_version("0.3.2-preview.1")
     set_kind("shared")
     set_symbols("debug")
@@ -96,10 +97,12 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-		if(is_config("linux-graphics-backend", "EGL") then
+		if is_config("linux-graphics-backend", "EGL") then
         	add_links("EGL", "GLX", "fontconfig", "pthread")
+			add_defines("SKG_LINUX_EGL")
 		elseif is_config("linux-graphics-backend", "GLX") then
         	add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+			add_defines("SKG_LINUX_GLX")
 		end
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
