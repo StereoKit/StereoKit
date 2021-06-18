@@ -370,7 +370,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
 
-		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+		XMVECTOR cam_pos = XMVector3Transform      (DirectX::g_XMIdentityR3,    view_inv);
 		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos[i], cam_pos);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir[i], cam_dir);

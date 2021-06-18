@@ -39,8 +39,8 @@ void line_drawer_update() {
 	if (line_ind_ct <= 0)
 		return;
 
-	mesh_set_verts    (line_mesh, line_verts, line_vert_cap, false);
-	mesh_set_inds     (line_mesh, line_inds,  line_ind_cap);
+	mesh_set_verts    (line_mesh, line_verts, line_vert_ct, false);
+	mesh_set_inds     (line_mesh, line_inds,  line_ind_ct);
 	mesh_set_draw_inds(line_mesh, line_ind_ct);
 	render_add_mesh   (line_mesh, line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 
@@ -117,6 +117,7 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 	vec3 next = hierarchy_to_world_point(points[1]);
 	vec3 prev_dir = vec3_normalize(next - curr);
 	vec3 curr_dir = prev_dir;
+	vec3 prev     = curr - curr_dir;
 	for (int32_t i = 0; i < count; i++) {
 		if (i < count-1) {
 			next     = hierarchy_to_world_point(points[i+1]);
@@ -128,12 +129,14 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 			line_inds[line_ind_ct++] = line_vert_ct + 0;
 			line_inds[line_ind_ct++] = line_vert_ct + 3;
 			line_inds[line_ind_ct++] = line_vert_ct + 1;
+		} else {
+			next = curr + (curr - prev);
 		}
-		vec3 tangent = curr_dir + prev_dir;
-		line_verts[line_vert_ct + 0] = vert_t{ curr, tangent, { thickness,0}, color };
-		line_verts[line_vert_ct + 1] = vert_t{ curr, tangent, {-thickness,1}, color };
+		line_verts[line_vert_ct + 0] = vert_t{ curr, next, { thickness,0}, color };
+		line_verts[line_vert_ct + 1] = vert_t{ curr, next, {-thickness,1}, color };
 
 		line_vert_ct += 2;
+		prev          = curr;
 		curr          = next;
 		prev_dir      = curr_dir;
 	}
@@ -145,10 +148,12 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 	if (count < 2) return;
 	line_ensure_cap(count*2, (count-1)*6);
 	
+	
 	vec3 curr = hierarchy_to_world_point(points[0].pt);
 	vec3 next = hierarchy_to_world_point(points[1].pt);
 	vec3 prev_dir = vec3_normalize(next - curr);
 	vec3 curr_dir = prev_dir;
+	vec3 prev     = curr - curr_dir;
 	for (int32_t i = 0; i < count; i++) {
 		if (i < count-1) {
 			next     = hierarchy_to_world_point(points[i+1].pt);
@@ -160,12 +165,14 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 			line_inds[line_ind_ct++] = line_vert_ct + 0;
 			line_inds[line_ind_ct++] = line_vert_ct + 3;
 			line_inds[line_ind_ct++] = line_vert_ct + 1;
+		} else {
+			next = curr + (curr - prev);
 		}
-		vec3 tangent = curr_dir + prev_dir;
-		line_verts[line_vert_ct + 0] = vert_t{ curr, tangent, { points[i].thickness * 0.5f,0}, points[i].color };
-		line_verts[line_vert_ct + 1] = vert_t{ curr, tangent, {-points[i].thickness * 0.5f,1}, points[i].color };
+		line_verts[line_vert_ct + 0] = vert_t{ curr, next, { points[i].thickness * 0.5f,0}, points[i].color };
+		line_verts[line_vert_ct + 1] = vert_t{ curr, next, {-points[i].thickness * 0.5f,1}, points[i].color };
 
 		line_vert_ct += 2;
+		prev          = curr;
 		curr          = next;
 		prev_dir      = curr_dir;
 	} 
