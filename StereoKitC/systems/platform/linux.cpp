@@ -256,7 +256,6 @@ bool setup_x_window() {
 	}
 
 	x_root = DefaultRootWindow(x_dpy);
-	printf("%p\n", glXChooseFBConfig);
 	int fbConfigNumber = 0;
 	x_fb_config = glXChooseFBConfig((Display *) x_dpy, 0, fb_att, &fbConfigNumber);
 	x_vi = glXGetVisualFromFBConfig(x_dpy, *x_fb_config);
@@ -345,7 +344,7 @@ bool linux_init() {
 
 	if (!setup_x_window())
 		return false;
-	skg_setup_xlib(x_dpy, x_vi, &x_fb_config, &x_win);
+	skg_setup_xlib(x_dpy, x_vi, x_fb_config, &x_win);
 
 	#endif
 
