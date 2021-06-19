@@ -257,7 +257,7 @@ bool setup_x_window() {
 
 	x_root = DefaultRootWindow(x_dpy);
 	int fbConfigNumber = 0;
-	x_fb_config = glXChooseFBConfig((Display *) x_dpy, 0, fb_att, &fbConfigNumber);
+	x_fb_config = glXChooseFBConfig(x_dpy, 0, fb_att, &fbConfigNumber);
 	x_vi = glXGetVisualFromFBConfig(x_dpy, *x_fb_config);
 
 	if (x_vi == nullptr) {
