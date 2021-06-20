@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -83,6 +84,22 @@ namespace StereoKit
 		#endregion
 
 		#region Methods
+
+		/// <summary>Returns the name of the specific subset! This will be 
+		/// the node name of your model asset. If no node name is available,
+		/// SteroKit will generate a name in the format of "subsetX", where
+		/// X would be the subset index. Note that names are not guaranteed
+		/// to be unique (users may assign the same name to multiple nodes).
+		/// Some nodes may also produce multiple subsets with the same name,
+		/// such as when a node contains a Mesh with multiple Materials, each
+		/// Mesh/Material combination will receive a subset with the same
+		/// name.</summary>
+		/// <param name="subsetIndex">Index of the model subset to get the 
+		/// Material for, should be less than SubsetCount.</param>
+		/// <returns>See summary for details.</returns>
+		public string GetName(int subsetIndex)
+			=> Marshal.PtrToStringAnsi(NativeAPI.model_get_name(_inst, subsetIndex));
+
 		/// <summary>Gets a link to the Material asset used by the model 
 		/// subset! Note that this is not necessarily a unique material, and 
 		/// could be shared in a number of other places. Consider copying and
@@ -139,7 +156,8 @@ namespace StereoKit
 			=> NativeAPI.model_set_transform(_inst, subsetIndex, transform);
 
 		/// <summary>Adds a new subset to the Model, and recalculates the 
-		/// bounds.</summary>
+		/// bounds. A default subset name of "subsetX" will be used, where X
+		/// is the subset's index.</summary>
 		/// <param name="mesh">The Mesh for the subset, may not be null.
 		/// </param>
 		/// <param name="material">The Material for the subset, may not be 
@@ -149,6 +167,21 @@ namespace StereoKit
 		/// <returns>The index of the subset that was just added.</returns>
 		public int AddSubset(Mesh mesh, Material material, in Matrix transform)
 			=> NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
+
+		/// <summary>Adds a new subset to the Model, and recalculates the 
+		/// bounds.</summary>
+		/// <param name="name">The text name of the subset. If this is null,
+		/// then a default name of "subsetX" will be used, where X is the 
+		/// subset's index.</param>
+		/// <param name="mesh">The Mesh for the subset, may not be null.
+		/// </param>
+		/// <param name="material">The Material for the subset, may not be 
+		/// null.</param>
+		/// <param name="transform">A transform Matrix representing the 
+		/// Mesh's location relative to the origin of the Model.</param>
+		/// <returns>The index of the subset that was just added.</returns>
+		public int AddSubset(string name, Mesh mesh, Material material, in Matrix transform)
+			=> NativeAPI.model_add_named_subset(_inst, name, mesh._inst, material._inst, transform);
 
 		/// <summary>Removes and dereferences a subset from the model.
 		/// </summary>

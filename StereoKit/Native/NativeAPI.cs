@@ -164,7 +164,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file (string filename);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, ulong data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string shader_get_name    (IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_get_name    (IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_release     (IntPtr shader);
 
 		///////////////////////////////////////////
@@ -235,25 +235,27 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find         (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh  (IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem   (string filename, [In] byte[] data, int data_size, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file  (string filename, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id       (IntPtr model, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release      (IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_material (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_mesh     (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_get_transform(IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_material (IntPtr model, int subset, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_mesh     (IntPtr model, int subset, IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_transform(IntPtr model, int subset, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_remove_subset(IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_subset   (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find              (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh       (IntPtr mesh, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, int data_size, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file       (string filename, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id            (IntPtr model, string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release           (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_name          (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_material      (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_mesh          (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_get_transform     (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_material      (IntPtr model, int subset, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_mesh          (IntPtr model, int subset, IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_transform     (IntPtr model, int subset, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_remove_subset     (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_subset        (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_named_subset  (IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count      (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds(IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds   (IntPtr model, in Bounds bounds);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds   (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 
 		///////////////////////////////////////////
 

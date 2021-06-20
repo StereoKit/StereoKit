@@ -664,6 +664,7 @@ SK_API model_t    model_create_mem        (const char *filename, void *data, siz
 SK_API model_t    model_create_file       (const char *filename, shader_t shader sk_default(nullptr));
 SK_API void       model_set_id            (model_t model, const char *id);
 SK_API void       model_release           (model_t model);
+SK_API const char*model_get_name          (model_t model, int32_t subset);
 SK_API material_t model_get_material      (model_t model, int32_t subset);
 SK_API mesh_t     model_get_mesh          (model_t model, int32_t subset);
 SK_API matrix     model_get_transform     (model_t model, int32_t subset);
@@ -671,6 +672,7 @@ SK_API void       model_set_material      (model_t model, int32_t subset, materi
 SK_API void       model_set_mesh          (model_t model, int32_t subset, mesh_t mesh);
 SK_API void       model_set_transform     (model_t model, int32_t subset, const sk_ref(matrix) transform);
 SK_API void       model_remove_subset     (model_t model, int32_t subset);
+SK_API int32_t    model_add_named_subset  (model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t    model_add_subset        (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t    model_subset_count      (model_t model);
 SK_API void       model_recalculate_bounds(model_t model);

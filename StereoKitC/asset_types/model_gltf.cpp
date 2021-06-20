@@ -419,7 +419,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 			mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, p, filename);
 			material_t material = gltf_parsematerial(data, n->mesh->primitives[p].material, filename, shader);
 
-			model_add_subset(model, mesh, material, offset);
+			model_add_named_subset(model, n->name, mesh, material, offset);
 
 			mesh_release    (mesh);
 			material_release(material);
