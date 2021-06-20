@@ -125,7 +125,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           ();
 SK_API void          sk_quit               ();
-SK_API bool32_t      sk_step               (void (*app_update)(void));
+SK_API bool32_t      sk_step               (void (*app_update)());
 SK_API display_mode_ sk_active_display_mode();
 SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
@@ -783,7 +783,7 @@ SK_API sound_t      sound_find          (const char *id);
 SK_API void         sound_set_id        (sound_t sound, const char *id);
 SK_API sound_t      sound_create        (const char *filename);
 SK_API sound_t      sound_create_stream (float buffer_duration);
-SK_API sound_t      sound_generate      (float (*function)(float), float duration);
+SK_API sound_t      sound_generate      (float (*function)(float sample_time), float duration);
 SK_API void         sound_write_samples (sound_t sound, const float *samples,     uint64_t sample_count);
 SK_API uint64_t     sound_read_samples  (sound_t sound, float       *out_samples, uint64_t sample_count);
 SK_API uint64_t     sound_unread_samples(sound_t sound);
@@ -979,8 +979,8 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*on_log)(log_, const char*));
-SK_API void log_unsubscribe(void (*on_log)(log_, const char*));
+SK_API void log_subscribe  (void (*on_log)(log_ level, const char *text));
+SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 
 ///////////////////////////////////////////
 
