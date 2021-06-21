@@ -69,6 +69,7 @@ key_  linux_xk_map_lower[255] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
+bool  linux_mouse_avail = true;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -230,6 +231,12 @@ void linux_events() {
 				linux_mouse_x = event.xmotion.x;
 				linux_mouse_y = event.xmotion.y;
 			} break;
+			case EnterNotify: {
+				linux_mouse_avail = true;
+			} break;
+			case LeaveNotify: {
+				linux_mouse_avail = false;
+			} break;
 			case ConfigureNotify: {
 				//Todo: only call this when the user is done resizing
 				linux_resize(event.xconfigure.width, event.xconfigure.height);
@@ -306,7 +313,7 @@ bool setup_x_window() {
 	XSetICFocus(x_linux_input_context);
 
 	// Setup for window events
-	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
+	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask );
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
@@ -369,8 +376,8 @@ bool linux_start_flat() {
 	#if defined(SKG_LINUX_EGL)
 	if (!setup_x_window())
 		return false;
-		if (!setup_egl_flat())
-			return false;
+	if (!setup_egl_flat())
+		return false;
 	#endif
 	
 	flatscreen_input_init();
@@ -396,7 +403,7 @@ void linux_resize(int width, int height) {
 bool linux_get_cursor(vec2 &out_pos) {
 	out_pos.x = (float)linux_mouse_x;
 	out_pos.y = (float)linux_mouse_y;
-	return true;
+	return linux_mouse_avail;
 }
 
 ///////////////////////////////////////////
@@ -436,20 +443,7 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
-	// linux_events();
-
-	static char text[256] = "";
-	text_add_at(text, matrix_trs({0,0,-0.2f}, quat_lookat(vec3_zero, {0,0,1})));
-
-	input_keyboard_char_reset();
-	int32_t ch = input_keyboard_char_consume();
-	while (ch) {
-		size_t len = strlen(text);
-		text[len] = (char)ch;
-		text[len+1] = 0;
-		ch = input_keyboard_char_consume();
-	}
-	input_keyboard_char_reset();
+	//linux_events();
 }
 
 ///////////////////////////////////////////
