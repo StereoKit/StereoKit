@@ -71,7 +71,7 @@ sound_t sound_create_stream(float buffer_duration) {
 
 ///////////////////////////////////////////
 
-sound_t sound_generate(float (*function)(float), float duration) {
+sound_t sound_generate(float (*function)(float sample_time), float duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
 	result->type = sound_type_buffer;
