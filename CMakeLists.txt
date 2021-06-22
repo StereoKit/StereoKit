@@ -152,7 +152,7 @@ target_link_libraries(
   fontconfig
   X11
   openxr_loader
-  CMAKE_DL_LIBS
+  ${CMAKE_DL_LIBS}
   PRIVATE
   sk-pthreads
 )
