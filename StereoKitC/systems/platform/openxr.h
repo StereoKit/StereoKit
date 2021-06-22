@@ -14,13 +14,14 @@
 #elif defined(SK_OS_LINUX)
 	#include <time.h>
 
-	#if defined(SKG_LINUX_GLX)
-		#define XR_USE_PLATFORM_XLIB
-		#define XR_USE_GRAPHICS_API_OPENGL
-	#elif defined(SKG_LINUX_EGL)
+	#if defined(SKG_LINUX_EGL)
 		#define XR_USE_PLATFORM_EGL
 		#define XR_USE_GRAPHICS_API_OPENGL_ES
+	#else
+		#define XR_USE_PLATFORM_XLIB
+		#define XR_USE_GRAPHICS_API_OPENGL
 	#endif
+
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 #elif defined(SK_OS_WEB)

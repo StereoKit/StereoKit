@@ -347,7 +347,7 @@ bool linux_init() {
 	linux_render_sys = systems_find("FrameRender");
 	linux_init_key_lookups();
 
-	#if defined(SKG_LINUX_GLX)
+	#if !defined(SKG_LINUX_EGL)
 
 	if (!setup_x_window())
 		return false;
