@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "model.h"
+#include "mesh.h"
 #include "texture.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -49,6 +50,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	vert_t *verts = nullptr;
 	int     vert_count = 0;
 
+	bool has_normals = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
@@ -88,6 +90,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
+			has_normals = true;
 			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
@@ -201,6 +204,10 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		}
 	} else {
 		log_errf("[%s] Unimplemented vertex index format", filename);
+	}
+
+	if (!has_normals) {
+		mesh_calculate_normals(verts, vert_count, inds, ind_count);
 	}
 
 	result = mesh_create();
