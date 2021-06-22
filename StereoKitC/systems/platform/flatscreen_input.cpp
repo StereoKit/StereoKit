@@ -109,7 +109,6 @@ void flatscreen_mouse_update() {
 	if (input_mouse_data.available) {
 		input_mouse_data.pos_change = mouse_pos - input_mouse_data.pos;
 		input_mouse_data.pos        = mouse_pos;
-		input_mouse_data.available  = true;
 	}
 }
 

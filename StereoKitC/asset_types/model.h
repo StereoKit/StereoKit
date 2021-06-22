@@ -6,6 +6,7 @@
 namespace sk {
 
 struct model_subset_t {
+	char       *name;
 	mesh_t      mesh;
 	material_t  material;
 	matrix      offset;

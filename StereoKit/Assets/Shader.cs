@@ -17,7 +17,7 @@ namespace StereoKit
 
 		/// <summary>The name of the shader, provided in the shader file 
 		/// itself. Not the filename or id.</summary>
-		public string Name => NativeAPI.shader_get_name(_inst);
+		public string Name => Marshal.PtrToStringAnsi(NativeAPI.shader_get_name(_inst));
 
 		internal Shader(IntPtr shader)
 		{

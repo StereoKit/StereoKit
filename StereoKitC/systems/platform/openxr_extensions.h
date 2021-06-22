@@ -28,6 +28,11 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_ANDROID false
 #endif
+#if defined(SK_OS_LINUX)
+#define EXT_AVAILABLE_LINUX true
+#else
+#define EXT_AVAILABLE_LINUX false
+#endif
 
 ///////////////////////////////////////////
 // Extension availability
@@ -57,6 +62,10 @@ namespace sk {
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
 	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
+
+// Linux platform only
+#define FOR_EACH_EXT_LINUX(_) \
+	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
 
 // Debug builds only
 #define FOR_EACH_EXT_DEBUG(_) \
@@ -136,6 +145,7 @@ typedef struct XrExtInfo {
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_UWP    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
+	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_DEBUG  (DEFINE_EXT_INFO);
 } XrExtInfo;
 extern XrExtInfo xr_ext_available;
@@ -160,6 +170,7 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 		FOR_EACH_EXT_ALL    (CHECK_EXT)
 		FOR_EACH_EXT_UWP    (CHECK_EXT)
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
+		FOR_EACH_EXT_LINUX  (CHECK_EXT)
 		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
 		else if (on_available != nullptr) { on_available(exts[i].extensionName); }
 	}
@@ -176,6 +187,7 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 #undef FOR_EACH_EXT_ALL
 #undef FOR_EACH_EXT_UWP
 #undef FOR_EACH_EXT_ANDROID
+#undef FOR_EACH_EXT_LINUX
 #undef FOR_EACH_EXT_DEBUG
 
 #pragma warning( pop )
