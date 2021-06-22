@@ -41,13 +41,13 @@ sk_gpu.h
 		#define _SKG_GL_LOAD_EGL
 		#define _SKG_GL_MAKE_FUNCTIONS
 	#elif defined(__linux__)
-		#if defined(SKG_LINUX_GLX)
-			#define _SKG_GL_DESKTOP
-			#define _SKG_GL_LOAD_GLX
-		#elif defined(SKG_LINUX_EGL)
+		#if defined(SKG_LINUX_EGL)
 			#define _SKG_GL_ES
 			#define _SKG_GL_LOAD_EGL
 			#define _SKG_GL_MAKE_FUNCTIONS
+		#else
+			#define _SKG_GL_DESKTOP
+			#define _SKG_GL_LOAD_GLX
 		#endif
 	#elif defined(_WIN32)
 		#define _SKG_GL_DESKTOP
@@ -56,7 +56,21 @@ sk_gpu.h
 	#endif
 #endif
 
+// Add definitions for how/if we want the functions exported
+#ifdef __GNUC__
+	#define SKG_API
+#else
+	#if defined(SKG_LIB_EXPORT)
+		#define SKG_API __declspec(dllexport)
+	#elif defined(SKG_LIB_IMPORT)
+		#define SKG_API __declspec(dllimport)
+	#else
+		#define SKG_API
+	#endif
+#endif
+
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 ///////////////////////////////////////////
@@ -427,87 +441,87 @@ typedef struct skg_platform_data_t {
 
 ///////////////////////////////////////////
 
-void                skg_setup_xlib               (void *dpy, void *vi, void *fbconfig, void *drawable);
-int32_t             skg_init                     (const char *app_name, void *adapter_id);
-void                skg_shutdown                 ();
-void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
-void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
-skg_platform_data_t skg_get_platform_data        ();
-bool                skg_capability               (skg_cap_ capability);
+SKG_API void                skg_setup_xlib               (void *dpy, void *vi, void *fbconfig, void *drawable);
+SKG_API int32_t             skg_init                     (const char *app_name, void *adapter_id);
+SKG_API void                skg_shutdown                 ();
+SKG_API void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
+SKG_API void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
+SKG_API skg_platform_data_t skg_get_platform_data        ();
+SKG_API bool                skg_capability               (skg_cap_ capability);
 
-void                skg_draw_begin               ();
-void                skg_draw                     (int32_t index_start, int32_t index_base, int32_t index_count, int32_t instance_count);
-void                skg_viewport                 (const int32_t *xywh);
-void                skg_viewport_get             (int32_t *out_xywh);
-void                skg_scissor                  (const int32_t *xywh);
-void                skg_target_clear             (bool depth, const float *clear_color_4);
+SKG_API void                skg_draw_begin               ();
+SKG_API void                skg_draw                     (int32_t index_start, int32_t index_base, int32_t index_count, int32_t instance_count);
+SKG_API void                skg_viewport                 (const int32_t *xywh);
+SKG_API void                skg_viewport_get             (int32_t *out_xywh);
+SKG_API void                skg_scissor                  (const int32_t *xywh);
+SKG_API void                skg_target_clear             (bool depth, const float *clear_color_4);
 
-skg_buffer_t        skg_buffer_create            (const void *data, uint32_t size_count, uint32_t size_stride, skg_buffer_type_ type, skg_use_ use);
-bool                skg_buffer_is_valid          (const skg_buffer_t *buffer);
-void                skg_buffer_set_contents      (      skg_buffer_t *buffer, const void *data, uint32_t size_bytes);
-void                skg_buffer_get_contents      (const skg_buffer_t *buffer, void *ref_buffer, uint32_t buffer_size);
-void                skg_buffer_bind              (const skg_buffer_t *buffer, skg_bind_t slot_vc, uint32_t offset_vi);
-void                skg_buffer_destroy           (      skg_buffer_t *buffer);
+SKG_API skg_buffer_t        skg_buffer_create            (const void *data, uint32_t size_count, uint32_t size_stride, skg_buffer_type_ type, skg_use_ use);
+SKG_API bool                skg_buffer_is_valid          (const skg_buffer_t *buffer);
+SKG_API void                skg_buffer_set_contents      (      skg_buffer_t *buffer, const void *data, uint32_t size_bytes);
+SKG_API void                skg_buffer_get_contents      (const skg_buffer_t *buffer, void *ref_buffer, uint32_t buffer_size);
+SKG_API void                skg_buffer_bind              (const skg_buffer_t *buffer, skg_bind_t slot_vc, uint32_t offset_vi);
+SKG_API void                skg_buffer_destroy           (      skg_buffer_t *buffer);
 
-skg_mesh_t          skg_mesh_create              (const skg_buffer_t *vert_buffer, const skg_buffer_t *ind_buffer);
-void                skg_mesh_set_verts           (      skg_mesh_t *mesh, const skg_buffer_t *vert_buffer);
-void                skg_mesh_set_inds            (      skg_mesh_t *mesh, const skg_buffer_t *ind_buffer);
-void                skg_mesh_bind                (const skg_mesh_t *mesh);
-void                skg_mesh_destroy             (      skg_mesh_t *mesh);
+SKG_API skg_mesh_t          skg_mesh_create              (const skg_buffer_t *vert_buffer, const skg_buffer_t *ind_buffer);
+SKG_API void                skg_mesh_set_verts           (      skg_mesh_t *mesh, const skg_buffer_t *vert_buffer);
+SKG_API void                skg_mesh_set_inds            (      skg_mesh_t *mesh, const skg_buffer_t *ind_buffer);
+SKG_API void                skg_mesh_bind                (const skg_mesh_t *mesh);
+SKG_API void                skg_mesh_destroy             (      skg_mesh_t *mesh);
 
-skg_shader_stage_t  skg_shader_stage_create      (const void *shader_data, size_t shader_size, skg_stage_ type);
-void                skg_shader_stage_destroy     (skg_shader_stage_t *stage);
+SKG_API skg_shader_stage_t  skg_shader_stage_create      (const void *shader_data, size_t shader_size, skg_stage_ type);
+SKG_API void                skg_shader_stage_destroy     (skg_shader_stage_t *stage);
 
-skg_shader_t        skg_shader_create_file       (const char *sks_filename);
-skg_shader_t        skg_shader_create_memory     (const void *sks_memory, size_t sks_memory_size);
-skg_shader_t        skg_shader_create_manual     (skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader);
-bool                skg_shader_is_valid          (const skg_shader_t *shader);
-skg_bind_t          skg_shader_get_tex_bind      (const skg_shader_t *shader, const char *name);
-skg_bind_t          skg_shader_get_buffer_bind   (const skg_shader_t *shader, const char *name);
-int32_t             skg_shader_get_var_count     (const skg_shader_t *shader);
-int32_t             skg_shader_get_var_index     (const skg_shader_t *shader, const char *name);
-int32_t             skg_shader_get_var_index_h   (const skg_shader_t *shader, uint64_t name_hash);
-const skg_shader_var_t *skg_shader_get_var_info  (const skg_shader_t *shader, int32_t var_index);
-void                skg_shader_destroy           (      skg_shader_t *shader);
+SKG_API skg_shader_t        skg_shader_create_file       (const char *sks_filename);
+SKG_API skg_shader_t        skg_shader_create_memory     (const void *sks_memory, size_t sks_memory_size);
+SKG_API skg_shader_t        skg_shader_create_manual     (skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader);
+SKG_API bool                skg_shader_is_valid          (const skg_shader_t *shader);
+SKG_API skg_bind_t          skg_shader_get_tex_bind      (const skg_shader_t *shader, const char *name);
+SKG_API skg_bind_t          skg_shader_get_buffer_bind   (const skg_shader_t *shader, const char *name);
+SKG_API int32_t             skg_shader_get_var_count     (const skg_shader_t *shader);
+SKG_API int32_t             skg_shader_get_var_index     (const skg_shader_t *shader, const char *name);
+SKG_API int32_t             skg_shader_get_var_index_h   (const skg_shader_t *shader, uint64_t name_hash);
+SKG_API const skg_shader_var_t *skg_shader_get_var_info  (const skg_shader_t *shader, int32_t var_index);
+SKG_API void                skg_shader_destroy           (      skg_shader_t *shader);
 
-skg_pipeline_t      skg_pipeline_create          (skg_shader_t *shader);
-void                skg_pipeline_bind            (const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_transparency(      skg_pipeline_t *pipeline, skg_transparency_ transparency);
-skg_transparency_   skg_pipeline_get_transparency(const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_cull        (      skg_pipeline_t *pipeline, skg_cull_ cull);
-skg_cull_           skg_pipeline_get_cull        (const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_wireframe   (      skg_pipeline_t *pipeline, bool wireframe);
-bool                skg_pipeline_get_wireframe   (const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_depth_write (      skg_pipeline_t *pipeline, bool write);
-bool                skg_pipeline_get_depth_write (const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_depth_test  (      skg_pipeline_t *pipeline, skg_depth_test_ test);
-skg_depth_test_     skg_pipeline_get_depth_test  (const skg_pipeline_t *pipeline);
-void                skg_pipeline_set_scissor     (      skg_pipeline_t *pipeline, bool enable);
-bool                skg_pipeline_get_scissor     (const skg_pipeline_t *pipeline);
-void                skg_pipeline_destroy         (      skg_pipeline_t *pipeline);
+SKG_API skg_pipeline_t      skg_pipeline_create          (skg_shader_t *shader);
+SKG_API void                skg_pipeline_bind            (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_transparency(      skg_pipeline_t *pipeline, skg_transparency_ transparency);
+SKG_API skg_transparency_   skg_pipeline_get_transparency(const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_cull        (      skg_pipeline_t *pipeline, skg_cull_ cull);
+SKG_API skg_cull_           skg_pipeline_get_cull        (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_wireframe   (      skg_pipeline_t *pipeline, bool wireframe);
+SKG_API bool                skg_pipeline_get_wireframe   (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_depth_write (      skg_pipeline_t *pipeline, bool write);
+SKG_API bool                skg_pipeline_get_depth_write (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_depth_test  (      skg_pipeline_t *pipeline, skg_depth_test_ test);
+SKG_API skg_depth_test_     skg_pipeline_get_depth_test  (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_set_scissor     (      skg_pipeline_t *pipeline, bool enable);
+SKG_API bool                skg_pipeline_get_scissor     (const skg_pipeline_t *pipeline);
+SKG_API void                skg_pipeline_destroy         (      skg_pipeline_t *pipeline);
 
-skg_swapchain_t     skg_swapchain_create         (void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height);
-void                skg_swapchain_resize         (      skg_swapchain_t *swapchain, int32_t width, int32_t height);
-void                skg_swapchain_present        (      skg_swapchain_t *swapchain);
-void                skg_swapchain_bind           (      skg_swapchain_t *swapchain);
-void                skg_swapchain_destroy        (      skg_swapchain_t *swapchain);
+SKG_API skg_swapchain_t     skg_swapchain_create         (void *hwnd, skg_tex_fmt_ format, skg_tex_fmt_ depth_format, int32_t requested_width, int32_t requested_height);
+SKG_API void                skg_swapchain_resize         (      skg_swapchain_t *swapchain, int32_t width, int32_t height);
+SKG_API void                skg_swapchain_present        (      skg_swapchain_t *swapchain);
+SKG_API void                skg_swapchain_bind           (      skg_swapchain_t *swapchain);
+SKG_API void                skg_swapchain_destroy        (      skg_swapchain_t *swapchain);
 
-skg_tex_t           skg_tex_create_from_existing (void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_count);
-skg_tex_t           skg_tex_create_from_layer    (void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_layer);
-skg_tex_t           skg_tex_create               (skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, skg_mip_ mip_maps);
-bool                skg_tex_is_valid             (const skg_tex_t *tex);
-void                skg_tex_attach_depth         (      skg_tex_t *tex, skg_tex_t *depth);
-void                skg_tex_settings             (      skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy);
-void                skg_tex_set_contents         (      skg_tex_t *tex, const void *data, int32_t width, int32_t height);
-void                skg_tex_set_contents_arr     (      skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
-bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
-void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
-void                skg_tex_target_bind          (      skg_tex_t *render_target);
-skg_tex_t          *skg_tex_target_get           ();
-void                skg_tex_destroy              (      skg_tex_t *tex);
-int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
-skg_tex_fmt_        skg_tex_fmt_from_native      (int64_t      format);
-uint32_t            skg_tex_fmt_size             (skg_tex_fmt_ format);
+SKG_API skg_tex_t           skg_tex_create_from_existing (void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_count);
+SKG_API skg_tex_t           skg_tex_create_from_layer    (void *native_tex, skg_tex_type_ type, skg_tex_fmt_ format, int32_t width, int32_t height, int32_t array_layer);
+SKG_API skg_tex_t           skg_tex_create               (skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, skg_mip_ mip_maps);
+SKG_API bool                skg_tex_is_valid             (const skg_tex_t *tex);
+SKG_API void                skg_tex_attach_depth         (      skg_tex_t *tex, skg_tex_t *depth);
+SKG_API void                skg_tex_settings             (      skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy);
+SKG_API void                skg_tex_set_contents         (      skg_tex_t *tex, const void *data, int32_t width, int32_t height);
+SKG_API void                skg_tex_set_contents_arr     (      skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height);
+SKG_API bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
+SKG_API void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
+SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target);
+SKG_API skg_tex_t          *skg_tex_target_get           ();
+SKG_API void                skg_tex_destroy              (      skg_tex_t *tex);
+SKG_API int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
+SKG_API skg_tex_fmt_        skg_tex_fmt_from_native      (int64_t      format);
+SKG_API uint32_t            skg_tex_fmt_size             (skg_tex_fmt_ format);
 
 
 ///////////////////////////////////////////
@@ -537,37 +551,45 @@ typedef struct {
 
 ///////////////////////////////////////////
 
-void               skg_log                     (skg_log_ level, const char *text);
-bool               skg_read_file               (const char *filename, void **out_data, size_t *out_size);
-uint64_t           skg_hash                    (const char *string);
-uint32_t           skg_mip_count               (int32_t width, int32_t height);
+SKG_API void                    skg_log                        (skg_log_ level, const char *text);
+SKG_API bool                    skg_read_file                  (const char *filename, void **out_data, size_t *out_size);
+SKG_API uint64_t                skg_hash                       (const char *string);
+SKG_API uint32_t                skg_mip_count                  (int32_t width, int32_t height);
 
-skg_color32_t      skg_col_hsv32               (float hue, float saturation, float value, float alpha);
-skg_color128_t     skg_col_hsv128              (float hue, float saturation, float value, float alpha);
-skg_color32_t      skg_col_hsl32               (float hue, float saturation, float lightness, float alpha);
-skg_color128_t     skg_col_hsl128              (float hue, float saturation, float lightness, float alpha);
-skg_color32_t      skg_col_hcy32               (float hue, float chroma, float lightness, float alpha);
-skg_color128_t     skg_col_hcy128              (float hue, float chroma, float lightness, float alpha);
-skg_color32_t      skg_col_lch32               (float hue, float chroma, float lightness, float alpha);
-skg_color128_t     skg_col_lch128              (float hue, float chroma, float lightness, float alpha);
-skg_color32_t      skg_col_helix32             (float hue, float saturation, float lightness, float alpha);
-skg_color128_t     skg_col_helix128            (float hue, float saturation, float lightness, float alpha);
-skg_color32_t      skg_col_jab32               (float j, float a, float b, float alpha);
-skg_color128_t     skg_col_jab128              (float j, float a, float b, float alpha);
-skg_color32_t      skg_col_jsl32               (float hue, float saturation, float lightness, float alpha);
-skg_color128_t     skg_col_jsl128              (float hue, float saturation, float lightness, float alpha);
-skg_color32_t      skg_col_lab32               (float l, float a, float b, float alpha);
-skg_color128_t     skg_col_lab128              (float l, float a, float b, float alpha);
-skg_color128_t     skg_col_rgb_to_lab128       (skg_color128_t rgb);
+SKG_API skg_color32_t           skg_col_hsv32                  (float hue, float saturation, float value, float alpha);
+SKG_API skg_color128_t          skg_col_hsv128                 (float hue, float saturation, float value, float alpha);
+SKG_API skg_color32_t           skg_col_hsl32                  (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color128_t          skg_col_hsl128                 (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color32_t           skg_col_hcy32                  (float hue, float chroma, float lightness, float alpha);
+SKG_API skg_color128_t          skg_col_hcy128                 (float hue, float chroma, float lightness, float alpha);
+SKG_API skg_color32_t           skg_col_lch32                  (float hue, float chroma, float lightness, float alpha);
+SKG_API skg_color128_t          skg_col_lch128                 (float hue, float chroma, float lightness, float alpha);
+SKG_API skg_color32_t           skg_col_helix32                (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color128_t          skg_col_helix128               (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color32_t           skg_col_jab32                  (float j, float a, float b, float alpha);
+SKG_API skg_color128_t          skg_col_jab128                 (float j, float a, float b, float alpha);
+SKG_API skg_color32_t           skg_col_jsl32                  (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color128_t          skg_col_jsl128                 (float hue, float saturation, float lightness, float alpha);
+SKG_API skg_color32_t           skg_col_lab32                  (float l, float a, float b, float alpha);
+SKG_API skg_color128_t          skg_col_lab128                 (float l, float a, float b, float alpha);
+SKG_API skg_color128_t          skg_col_rgb_to_lab128          (skg_color128_t rgb);
+SKG_API skg_color128_t          skg_col_to_srgb                (skg_color128_t rgb_linear);
+SKG_API skg_color128_t          skg_col_to_linear              (skg_color128_t srgb);
 
-bool               skg_shader_file_verify      (const void *file_memory, size_t file_size, uint16_t *out_version, char *out_name, size_t out_name_size);
-bool               skg_shader_file_load_memory (const void *file_memory, size_t file_size, skg_shader_file_t *out_file);
-bool               skg_shader_file_load        (const char *file, skg_shader_file_t *out_file);
-skg_shader_stage_t skg_shader_file_create_stage(const skg_shader_file_t *file, skg_stage_ stage);
-void               skg_shader_file_destroy     (      skg_shader_file_t *file);
+SKG_API bool                    skg_shader_file_verify         (const void *file_memory, size_t file_size, uint16_t *out_version, char *out_name, size_t out_name_size);
+SKG_API bool                    skg_shader_file_load_memory    (const void *file_memory, size_t file_size, skg_shader_file_t *out_file);
+SKG_API bool                    skg_shader_file_load           (const char *file, skg_shader_file_t *out_file);
+SKG_API skg_shader_stage_t      skg_shader_file_create_stage   (const skg_shader_file_t *file, skg_stage_ stage);
+SKG_API void                    skg_shader_file_destroy        (      skg_shader_file_t *file);
 
-void               skg_shader_meta_reference   (skg_shader_meta_t *meta);
-void               skg_shader_meta_release     (skg_shader_meta_t *meta);
+SKG_API skg_bind_t              skg_shader_meta_get_tex_bind   (const skg_shader_meta_t *meta, const char *name);
+SKG_API skg_bind_t              skg_shader_meta_get_buffer_bind(const skg_shader_meta_t *meta, const char *name);
+SKG_API int32_t                 skg_shader_meta_get_var_count  (const skg_shader_meta_t *meta);
+SKG_API int32_t                 skg_shader_meta_get_var_index  (const skg_shader_meta_t *meta, const char *name);
+SKG_API int32_t                 skg_shader_meta_get_var_index_h(const skg_shader_meta_t *meta, uint64_t name_hash);
+SKG_API const skg_shader_var_t *skg_shader_meta_get_var_info   (const skg_shader_meta_t *meta, int32_t var_index);
+SKG_API void                    skg_shader_meta_reference      (skg_shader_meta_t *meta);
+SKG_API void                    skg_shader_meta_release        (skg_shader_meta_t *meta);
 ///////////////////////////////////////////
 // Implementations!                      //
 ///////////////////////////////////////////
@@ -3352,7 +3374,7 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_GLX)
-	glXMakeCurrent(xDisplay, (Drawable) swapchain->_x_window, glxContext);
+	glXMakeCurrent(xDisplay, (Drawable)swapchain->_x_window, glxContext);
 	skg_tex_target_bind(nullptr);
 #endif
 }
@@ -4163,6 +4185,36 @@ skg_color128_t skg_col_rgb_to_lab128(skg_color128_t rgb) {
 
 ///////////////////////////////////////////
 
+inline float _skg_to_srgb(float x) {
+	return x < 0.0031308f
+		? x * 12.92f
+		: 1.055f * powf(x, 1 / 2.4f) - 0.055f;
+}
+skg_color128_t skg_col_to_srgb(skg_color128_t rgb_linear) {
+	return {
+		_skg_to_srgb(rgb_linear.r),
+		_skg_to_srgb(rgb_linear.g),
+		_skg_to_srgb(rgb_linear.b),
+		rgb_linear.a };
+}
+
+///////////////////////////////////////////
+
+inline float _skg_to_linear(float x) {
+	return x < 0.04045f
+		? x / 12.92f
+		: powf((x + 0.055f) / 1.055f, 2.4f);
+}
+skg_color128_t skg_col_to_linear(skg_color128_t srgb) {
+	return {
+		_skg_to_linear(srgb.r),
+		_skg_to_linear(srgb.g),
+		_skg_to_linear(srgb.b),
+		srgb.a };
+}
+
+///////////////////////////////////////////
+
 bool skg_shader_file_load(const char *file, skg_shader_file_t *out_file) {
 	void  *data = nullptr;
 	size_t size = 0;
@@ -4324,6 +4376,67 @@ void skg_shader_file_destroy(skg_shader_file_t *file) {
 }
 
 ///////////////////////////////////////////
+// skg_shader_meta_t                     //
+///////////////////////////////////////////
+
+skg_bind_t skg_shader_meta_get_tex_bind(const skg_shader_meta_t *meta, const char *name) {
+	for (uint32_t i = 0; i < meta->texture_count; i++) {
+		if (strcmp(name, meta->textures[i].name) == 0)
+			return meta->textures[i].bind;
+	}
+	skg_bind_t empty = {};
+	return empty;
+}
+
+///////////////////////////////////////////
+
+skg_bind_t skg_shader_meta_get_buffer_bind(const skg_shader_meta_t *meta, const char *name) {
+	for (uint32_t i = 0; i < meta->buffer_count; i++) {
+		if (strcmp(name, meta->buffers[i].name) == 0)
+			return meta->buffers[i].bind;
+	}
+	skg_bind_t empty = {};
+	return empty;
+}
+
+///////////////////////////////////////////
+
+int32_t skg_shader_meta_get_var_count(const skg_shader_meta_t *meta) {
+	return meta->global_buffer_id != -1
+		? meta->buffers[meta->global_buffer_id].var_count
+		: 0;
+}
+
+///////////////////////////////////////////
+
+int32_t skg_shader_meta_get_var_index(const skg_shader_meta_t *meta, const char *name) {
+	return skg_shader_meta_get_var_index_h(meta, skg_hash(name));
+}
+
+///////////////////////////////////////////
+
+int32_t skg_shader_meta_get_var_index_h(const skg_shader_meta_t *meta, uint64_t name_hash) {
+	if (meta->global_buffer_id == -1) return -1;
+
+	skg_shader_buffer_t *buffer = &meta->buffers[meta->global_buffer_id];
+	for (uint32_t i = 0; i < buffer->var_count; i++) {
+		if (buffer->vars[i].name_hash == name_hash) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+///////////////////////////////////////////
+
+const skg_shader_var_t *skg_shader_meta_get_var_info(const skg_shader_meta_t *meta, int32_t var_index) {
+	if (meta->global_buffer_id == -1 || var_index == -1) return nullptr;
+
+	skg_shader_buffer_t *buffer = &meta->buffers[meta->global_buffer_id];
+	return &buffer->vars[var_index];
+}
+
+///////////////////////////////////////////
 
 void skg_shader_meta_reference(skg_shader_meta_t *meta) {
 	meta->references += 1;
@@ -4394,60 +4507,37 @@ skg_shader_t skg_shader_create_memory(const void *sks_data, size_t sks_data_size
 ///////////////////////////////////////////
 
 skg_bind_t skg_shader_get_tex_bind(const skg_shader_t *shader, const char *name) {
-	for (uint32_t i = 0; i < shader->meta->texture_count; i++) {
-		if (strcmp(name, shader->meta->textures[i].name) == 0)
-			return shader->meta->textures[i].bind;
-	}
-	skg_bind_t empty = {};
-	return empty;
+	return skg_shader_meta_get_tex_bind(shader->meta, name);
 }
 
 ///////////////////////////////////////////
 
 skg_bind_t skg_shader_get_buffer_bind(const skg_shader_t *shader, const char *name) {
-	for (uint32_t i = 0; i < shader->meta->buffer_count; i++) {
-		if (strcmp(name, shader->meta->buffers[i].name) == 0)
-			return shader->meta->buffers[i].bind;
-	}
-	skg_bind_t empty = {};
-	return empty;
+	return skg_shader_meta_get_buffer_bind(shader->meta, name);
 }
 
 ///////////////////////////////////////////
 
 int32_t skg_shader_get_var_count(const skg_shader_t *shader) {
-	return shader->meta->global_buffer_id != -1
-		? shader->meta->buffers[shader->meta->global_buffer_id].var_count
-		: 0;
+	return skg_shader_meta_get_var_count(shader->meta);
 }
 
 ///////////////////////////////////////////
 
 int32_t skg_shader_get_var_index(const skg_shader_t *shader, const char *name) {
-	return skg_shader_get_var_index_h(shader, skg_hash(name));
+	return skg_shader_meta_get_var_index_h(shader->meta, skg_hash(name));
 }
 
 ///////////////////////////////////////////
 
 int32_t skg_shader_get_var_index_h(const skg_shader_t *shader, uint64_t name_hash) {
-	if (shader->meta->global_buffer_id == -1) return -1;
-
-	skg_shader_buffer_t *buffer = &shader->meta->buffers[shader->meta->global_buffer_id];
-	for (uint32_t i = 0; i < buffer->var_count; i++) {
-		if (buffer->vars[i].name_hash == name_hash) {
-			return i;
-		}
-	}
-	return -1;
+	return skg_shader_meta_get_var_index_h(shader->meta, name_hash);
 }
 
 ///////////////////////////////////////////
 
-const skg_shader_var_t *skg_shader_get_var_info(const skg_shader_t *shader, int32_t var_id) {
-	if (shader->meta->global_buffer_id == -1 || var_id == -1) return nullptr;
-
-	skg_shader_buffer_t *buffer = &shader->meta->buffers[shader->meta->global_buffer_id];
-	return &buffer->vars[var_id];
+const skg_shader_var_t *skg_shader_get_var_info(const skg_shader_t *shader, int32_t var_index) {
+	return skg_shader_meta_get_var_info(shader->meta, var_index);
 }
 
 ///////////////////////////////////////////
