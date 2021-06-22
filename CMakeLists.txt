@@ -41,14 +41,17 @@ else()
 endif()
 
 # Linux system packages
-# Linux OpenGL function pointer thing
+# Linux OpenGL function pointer loader thing - on Windows, SK has its own function pointer loader thing
 find_package(GLEW REQUIRED)
-# Old Linux window manager
+
+# "Old" Linux window manager
 find_package(X11 REQUIRED)
+
 # OpenXR
-find_package(OpenXR REQUIRED)
+# find_package(OpenXR REQUIRED)
+
 # For installing on Linux
-find_package(PkgConfig)
+# find_package(PkgConfig)
 
 set(FILE_CONTENTS "#define SKG_LINUX_GLX")
 
@@ -130,21 +133,28 @@ target_include_directories(StereoKitC
   $<INSTALL_INTERFACE:include>
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
+  # openxr_loader
+  # ${OPENXR_INCLUDE_DIRS}  
   StereoKitC/lib/include_no_win/
   StereoKitC/lib/include/
 )
 
 target_link_libraries(
   StereoKitC
+  # PUBLIC
+  # openxr_loader
+  # PRIVATE
+  PUBLIC
   ReactPhysics3D::ReactPhysics3D
   GL
   GLEW
   GLX
   fontconfig
   X11
-  sk-pthreads
-  OpenXR::loader
+  openxr_loader
   CMAKE_DL_LIBS
+  PRIVATE
+  sk-pthreads
 )
 
 add_executable(StereoKitCTest
