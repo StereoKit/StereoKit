@@ -1,4 +1,6 @@
+# Copyright 2021, Collabora, Ltd.
 # Copyright Moses Turner, 2021.
+# Many thanks to Ryan Pavlik for showing the way
 # SPDX-License-Identifier: MIT
 cmake_minimum_required(VERSION 3.10)
 
@@ -27,11 +29,24 @@ endif()
 hunter_add_package(ReactPhysics3D)
 find_package(ReactPhysics3D CONFIG REQUIRED)
 
+# Stolen from Monado
+add_library(sk-pthreads INTERFACE)
+if(WIN32)
+	find_package(pthreads_windows REQUIRED)
+	target_link_libraries(sk-pthreads INTERFACE PThreads4W::PThreads4W_CXXEXC)
+else()
+	set(CMAKE_THREAD_PREFER_PTHREAD ON)
+	find_package(Threads)
+	target_link_libraries(sk-pthreads INTERFACE Threads::Threads)
+endif()
+
 # Linux system packages
 # Linux OpenGL function pointer thing
 find_package(GLEW REQUIRED)
 # Old Linux window manager
 find_package(X11 REQUIRED)
+# OpenXR
+find_package(OpenXR REQUIRED)
 # For installing on Linux
 find_package(PkgConfig)
 
@@ -42,6 +57,7 @@ configure_file(
 	${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/sk_config.h
 	@ONLY
 )
+
 
 
 add_library(StereoKitC
@@ -126,9 +142,9 @@ target_link_libraries(
   GLX
   fontconfig
   X11
-  pthread
-  openxr_loader
-  dl
+  sk-pthreads
+  OpenXR::loader
+  CMAKE_DL_LIBS
 )
 
 add_executable(StereoKitCTest
