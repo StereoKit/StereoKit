@@ -35,6 +35,14 @@ find_package(X11 REQUIRED)
 # For installing on Linux
 find_package(PkgConfig)
 
+set(FILE_CONTENTS "#define SKG_LINUX_GLX")
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/sk_config.h.cmake_in
+	${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/sk_config.h
+	@ONLY
+)
+
 
 add_library(StereoKitC
 SHARED
@@ -105,7 +113,9 @@ target_include_directories(StereoKitC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC>
   $<INSTALL_INTERFACE:include>
   PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
   StereoKitC/lib/include_no_win/
+  StereoKitC/lib/include/
 )
 
 target_link_libraries(
