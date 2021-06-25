@@ -99,7 +99,8 @@ void world_request_update() {
 	XrSceneComputeFeatureMSFT features[] = {
 		XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT,
 		XR_SCENE_COMPUTE_FEATURE_PLANE_MSFT,
-		XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT 
+		XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT,
+		XR_SCENE_COMPUTE_FEATURE_PLANE_MESH_MSFT
 	};
 
 	XrNewSceneComputeInfoMSFT compute_info = { XR_TYPE_NEW_SCENE_COMPUTE_INFO_MSFT };
@@ -248,6 +249,7 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 			xr_meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;
 			xr_meshes[mesh_idx].buffer_dirty    = true;
 		}
+		mesh_list->add(inst);
 	}
 
 	free(locations.locations);
@@ -276,38 +278,37 @@ bool world_init() {
 ///////////////////////////////////////////
 
 void world_update() {
-	if (xr_ext_available.MSFT_scene_understanding) {
+	if (!xr_ext_available.MSFT_scene_understanding) return;
 
-		if (xr_time > 0 && !xr_scene_updating && vec3_magnitude_sq(input_head()->position - xr_scene_last_center) > xr_scene_radius * xr_scene_radius) {
-			xr_scene_last_center = input_head()->position;
-			world_request_update();
+	if (xr_time > 0 && !xr_scene_updating && vec3_magnitude_sq(input_head()->position - xr_scene_last_center) > xr_scene_radius * xr_scene_radius) {
+		xr_scene_last_center = input_head()->position;
+		world_request_update();
+	}
+
+	if (xr_scene_updating) {
+		XrSceneComputeStateMSFT state;
+		if (XR_FAILED(xr_extensions.xrGetSceneComputeStateMSFT(xr_scene_observer, &state))) {
+			log_warn("xrGetSceneComputeStateMSFT failed");
 		}
 
-		if (xr_scene_updating) {
-			XrSceneComputeStateMSFT state;
-			if (XR_FAILED(xr_extensions.xrGetSceneComputeStateMSFT(xr_scene_observer, &state))) {
-				log_warn("xrGetSceneComputeStateMSFT failed");
-			}
+		if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_MSFT) {
+			log_info("Scene computed!");
 
-			if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_MSFT) {
-				log_info("Scene computed!");
-
-				xr_scene_updating = false;
-				XrSceneCreateInfoMSFT info = { (XrStructureType)XR_TYPE_SCENE_CREATE_INFO_MSFT };
-				if (xr_scene != XR_NULL_HANDLE)
-					xr_extensions.xrDestroySceneMSFT(xr_scene);
-				if (XR_FAILED(xr_extensions.xrCreateSceneMSFT(xr_scene_observer, &info, &xr_scene))) {
-					log_warn("xrCreateSceneMSFT failed");
-				} else {
-					world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_VISUAL_MESH_MSFT,   &xr_scene_visuals);
-					world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_COLLIDER_MESH_MSFT, &xr_scene_colliders);
-					world_update_meshes    (&xr_meshes);
-				}
-			} else if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_WITH_ERROR_MSFT) {
-				log_warn("Scene computed failed with an error!");
-				xr_scene_updating = false;
+			xr_scene_updating = false;
+			XrSceneCreateInfoMSFT info = { (XrStructureType)XR_TYPE_SCENE_CREATE_INFO_MSFT };
+			if (xr_scene != XR_NULL_HANDLE)
+				xr_extensions.xrDestroySceneMSFT(xr_scene);
+			if (XR_FAILED(xr_extensions.xrCreateSceneMSFT(xr_scene_observer, &info, &xr_scene))) {
+				log_warn("xrCreateSceneMSFT failed");
 			} else {
+				world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_VISUAL_MESH_MSFT,   &xr_scene_visuals);
+				world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_COLLIDER_MESH_MSFT, &xr_scene_colliders);
+				world_update_meshes    (&xr_meshes);
 			}
+		} else if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_WITH_ERROR_MSFT) {
+			log_warn("Scene computed failed with an error!");
+			xr_scene_updating = false;
+		} else {
 		}
 	}
 
