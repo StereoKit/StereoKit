@@ -27,6 +27,8 @@ void demo_world_update() {
 
 	for (size_t h = 0; h < handed_max; h++) {
 		const hand_t *hand = input_hand((handed_)h);
+		if (!(hand->tracked_state & button_state_active)) continue;
+
 		ray_t hand_ray = {hand->palm.position, hand->palm.orientation * vec3_forward};
 		ray_t intersection;
 		if (world_raycast(hand_ray, intersection)) {
