@@ -87,6 +87,10 @@ Example usage:
 #include <malloc.h>
 #define ARRAY_FREE ::free
 #endif
+#ifndef ARRAY_REALLOC
+#include <malloc.h>
+#define ARRAY_REALLOC realloc
+#endif
 
 #ifndef ARRAY_MEMCPY
 #include <string.h>
@@ -270,17 +274,10 @@ int64_t array_t<T>::binary_search(const T &item) const {
 
 template <typename T>
 void array_t<T>::resize(size_t to_capacity) {
-	if (count > to_capacity) 
-		count = to_capacity;
-
-	void  *old_memory = data;
-	void  *new_memory = ARRAY_MALLOC(sizeof(T) * to_capacity); 
-	memcpy(new_memory, old_memory, sizeof(T) * count);
-
-	data = (T*)new_memory;
-	ARRAY_FREE(old_memory);
-
+	data     = (T*)ARRAY_REALLOC(data, sizeof(T) * to_capacity);
 	capacity = to_capacity;
+	if (count > to_capacity)
+		count = to_capacity;
 }
 
 //////////////////////////////////////
