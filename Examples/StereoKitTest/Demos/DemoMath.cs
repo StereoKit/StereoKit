@@ -127,9 +127,9 @@ class DemoMath : ITest
 
 		Vec3 meshDir = Vec3.AngleXZ(Time.Totalf * 90, SKMath.Cos(Time.Totalf * 3) * 1.5f).Normalized;
 		Ray  meshRay = new Ray(bounds.center+Vec3.Up*0.1f - meshDir * 0.35f, meshDir);
-		if (meshRay.Intersect(suzanne, out Vec3 meshAt)) {
-			Lines.Add(meshRay.position, meshAt, colTest, 2 * Units.mm2m);
-			sphereMesh.Draw(material, Matrix.TS(meshAt, 0.02f), colIntersect);
+		if (meshRay.Intersect(suzanne, out Ray meshAt)) {
+			Lines.Add(meshRay.position, meshAt.position, colTest, 2 * Units.mm2m);
+			sphereMesh.Draw(material, Matrix.TS(meshAt.position, 0.02f), colIntersect);
 		} else {
 			Lines.Add(meshRay.position, meshRay.At(0.4f), colTest, 2 * Units.mm2m);
 		}
