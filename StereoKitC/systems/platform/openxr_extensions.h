@@ -87,6 +87,7 @@ namespace sk {
 	_(xrGetSceneComputeStateMSFT)                \
 	_(xrGetSceneComponentsMSFT)                  \
 	_(xrLocateSceneComponentsMSFT)               \
+	_(xrEnumerateSceneComputeFeaturesMSFT)       \
 	_(xrGetSceneMeshBuffersMSFT)                 \
 	_(xrGetVisibilityMaskKHR)                    \
 	_(xrCreateHandTrackerEXT)                    \

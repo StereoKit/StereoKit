@@ -2,6 +2,7 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
+#include "../asset_types/material.h"
 #include "platform/openxr.h"
 
 #include <float.h>
@@ -10,12 +11,12 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-XrSceneObserverMSFT xr_scene_observer    = {};
-XrSceneMSFT         xr_scene             = {};
-bool                xr_scene_updating    = false;
-mesh_t              xr_scene_mesh        = nullptr;
-vec3                xr_scene_last_center = { 1000000,1000000,100000 };
-float               xr_scene_radius      = 4;
+struct scene_request_info_t {
+	bool  occlusion;
+	bool  raycast;
+	vec3  center;
+	float radius;
+};
 
 struct scene_mesh_t {
 	uint64_t buffer_id;
@@ -31,6 +32,13 @@ struct su_mesh_inst_t {
 	matrix   inv_transform;
 };
 
+XrSceneObserverMSFT  xr_scene_observer    = {};
+bool                 xr_scene_updating    = false;
+bool                 xr_scene_update_requested = false;
+XrSceneMSFT          xr_scene;
+scene_request_info_t xr_scene_last_req    = {};
+scene_request_info_t xr_scene_next_req    = {};
+
 array_t<scene_mesh_t>   xr_meshes         = {};
 array_t<su_mesh_inst_t> xr_scene_colliders= {};
 array_t<su_mesh_inst_t> xr_scene_visuals  = {};
@@ -42,7 +50,15 @@ array_t<uint32_t>   world_ibuffer_tmp = {};
 
 ///////////////////////////////////////////
 
+bool world_is_su_needed(scene_request_info_t info);
+void world_scene_shutdown();
 void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<scene_mesh_t> *mesh_list);
+
+///////////////////////////////////////////
+
+bool world_is_su_needed(scene_request_info_t info) {
+	return info.occlusion || info.raycast;
+}
 
 ///////////////////////////////////////////
 
@@ -58,13 +74,15 @@ vec2 world_get_bounds_size() {
 
 ///////////////////////////////////////////
 
-pose_t world_get_bounds_pose() { 
-	return xr_bounds_pose; 
+pose_t world_get_bounds_pose() {
+	return xr_bounds_pose;
 }
 
 ///////////////////////////////////////////
 
-bool32_t world_raycast(ray_t ray, ray_t &out_intersection) {
+bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
+	if (!xr_scene_next_req.raycast) return false;
+
 	ray_t   result     = {};
 	float   result_mag = FLT_MAX;
 	int32_t result_id  = -1;
@@ -73,18 +91,18 @@ bool32_t world_raycast(ray_t ray, ray_t &out_intersection) {
 		ray_t local_ray;
 		local_ray.pos = matrix_mul_point    (xr_scene_colliders[i].inv_transform, ray.pos);
 		local_ray.dir = matrix_mul_direction(xr_scene_colliders[i].inv_transform, ray.dir);
-		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, &intersection.pos)) {
+		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, &intersection)) {
 			float intersection_mag = vec3_magnitude_sq(intersection.pos - local_ray.pos);
 			if (result_mag > intersection_mag) {
-				result_mag       = intersection_mag;
-				out_intersection = intersection;
-				result_id        = i;
+				result_mag        = intersection_mag;
+				*out_intersection = intersection;
+				result_id         = i;
 			}
 		}
 	}
 	if (result_id != -1) {
-		out_intersection.pos = matrix_mul_point    (xr_scene_colliders[result_id].transform, out_intersection.pos);
-		out_intersection.dir = matrix_mul_direction(xr_scene_colliders[result_id].transform, out_intersection.dir);
+		out_intersection->pos = matrix_mul_point    (xr_scene_colliders[result_id].transform, out_intersection->pos);
+		out_intersection->dir = matrix_mul_direction(xr_scene_colliders[result_id].transform, out_intersection->dir);
 		return true;
 	} else {
 		return false;
@@ -93,21 +111,82 @@ bool32_t world_raycast(ray_t ray, ray_t &out_intersection) {
 
 ///////////////////////////////////////////
 
-void world_request_update() {
-	log_info("Requesting scene update...");
+void world_set_occlusion_enabled(bool32_t enabled) {
+	enabled = sk_info.world_occlusion_present && enabled;
+	if (xr_scene_next_req.occlusion == enabled) return;
 
-	XrSceneComputeFeatureMSFT features[] = {
-		XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT,
-		XR_SCENE_COMPUTE_FEATURE_PLANE_MSFT,
-		XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT,
-		XR_SCENE_COMPUTE_FEATURE_PLANE_MESH_MSFT
-	};
+	xr_scene_next_req.occlusion = enabled;
+	if (enabled && xr_scene_next_req.occlusion != xr_scene_last_req.occlusion)
+		xr_scene_update_requested = true;
+}
+
+///////////////////////////////////////////
+
+bool32_t world_get_occlusion_enabled() {
+	return xr_scene_next_req.occlusion;
+}
+
+///////////////////////////////////////////
+
+void world_set_raycast_enabled(bool32_t enabled) {
+	enabled = sk_info.world_raycast_present && enabled;
+	if (xr_scene_next_req.raycast == enabled) return;
+
+	xr_scene_next_req.raycast = enabled;
+	if (enabled && xr_scene_next_req.raycast != xr_scene_last_req.raycast)
+		xr_scene_update_requested = true;
+}
+
+///////////////////////////////////////////
+
+bool32_t world_get_raycast_enabled() {
+	return xr_scene_next_req.raycast;
+}
+
+///////////////////////////////////////////
+
+void world_set_occlusion_material(material_t material) {
+	material_release(xr_scene_material);
+	xr_scene_material = material;
+	if (xr_scene_material)
+		assets_addref(xr_scene_material->header);
+}
+
+///////////////////////////////////////////
+
+material_t world_get_occlusion_material() {
+	if (xr_scene_material)
+		assets_addref(xr_scene_material->header);
+	return xr_scene_material;
+}
+
+///////////////////////////////////////////
+
+void world_request_update(scene_request_info_t info) {
+	xr_scene_last_req = info;
+	if (!world_is_su_needed(info))
+		return;
+
+	if (xr_scene_observer == XR_NULL_HANDLE) {
+		XrSceneObserverCreateInfoMSFT create_info = { (XrStructureType)XR_TYPE_SCENE_OBSERVER_CREATE_INFO_MSFT };
+		if (XR_FAILED(xr_extensions.xrCreateSceneObserverMSFT(xr_session, &create_info, &xr_scene_observer))) {
+			log_err("xrCreateSceneObserverMSFT failed");
+			return;
+		}
+	}
+	array_t<XrSceneComputeFeatureMSFT> features = {};
+	if (info.occlusion) {
+		features.add(XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT);
+	}
+	if (info.raycast) {
+		features.add(XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT);
+	}
 
 	XrNewSceneComputeInfoMSFT compute_info = { XR_TYPE_NEW_SCENE_COMPUTE_INFO_MSFT };
-	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&input_head()->position, xr_scene_radius };
+	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&input_head()->position, info.radius };
 	compute_info.consistency           = XR_SCENE_COMPUTE_CONSISTENCY_SNAPSHOT_COMPLETE_MSFT;
-	compute_info.requestedFeatures     = features;
-	compute_info.requestedFeatureCount = _countof(features);
+	compute_info.requestedFeatures     = features.data;
+	compute_info.requestedFeatureCount = features.count;
 	compute_info.bounds.space       = xr_app_space;
 	compute_info.bounds.time        = xr_time;
 	compute_info.bounds.sphereCount = 1;
@@ -118,12 +197,11 @@ void world_request_update() {
 	compute_info.next = &lod_info;
 
 	XrResult result = xr_extensions.xrComputeNewSceneMSFT(xr_scene_observer, &compute_info);
+	features.free();
 	if (XR_FAILED(result)) {
 		log_warnf("xrComputeNewSceneMSFT failed [%s]", openxr_string(result));
 		return;
 	}
-
-	log_info("Requested scene update!");
 	xr_scene_updating = true;
 }
 
@@ -260,17 +338,11 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 ///////////////////////////////////////////
 
 bool world_init() {
-	if (xr_ext_available.MSFT_scene_understanding) {
-		XrSceneObserverCreateInfoMSFT create_info = { (XrStructureType)XR_TYPE_SCENE_OBSERVER_CREATE_INFO_MSFT };
-		if (XR_FAILED(xr_extensions.xrCreateSceneObserverMSFT(xr_session, &create_info, &xr_scene_observer))) {
-			log_err("xrCreateSceneObserverMSFT failed");
-			return false;
-		}
-		log_info("Scene observer created!");
-	}
+	xr_scene_material = material_copy_id(default_id_material_unlit);
+	material_set_color(xr_scene_material, "color", { 0,0,0,0 });
 
-	xr_scene_material = material_copy_id(default_id_material);
-	material_set_wireframe(xr_scene_material, true);
+	xr_scene_next_req.center = { 10000,10000,10000 };
+	xr_scene_next_req.radius = 4;
 
 	return true;
 }
@@ -278,57 +350,79 @@ bool world_init() {
 ///////////////////////////////////////////
 
 void world_update() {
-	if (!xr_ext_available.MSFT_scene_understanding) return;
+	if (world_is_su_needed(xr_scene_next_req) || world_is_su_needed(xr_scene_last_req)) {
+		xr_scene_next_req.center = input_head()->position;
 
-	if (xr_time > 0 && !xr_scene_updating && vec3_magnitude_sq(input_head()->position - xr_scene_last_center) > xr_scene_radius * xr_scene_radius) {
-		xr_scene_last_center = input_head()->position;
-		world_request_update();
-	}
+		// Check if we've walked away from the current scene's center
+		if (!vec3_in_radius(xr_scene_next_req.center, xr_scene_last_req.center, xr_scene_next_req.radius * 0.5f))
+			xr_scene_update_requested = true;
 
-	if (xr_scene_updating) {
-		XrSceneComputeStateMSFT state;
-		if (XR_FAILED(xr_extensions.xrGetSceneComputeStateMSFT(xr_scene_observer, &state))) {
-			log_warn("xrGetSceneComputeStateMSFT failed");
+		// Check if we need to request a new scene
+		if (xr_time > 0 && !xr_scene_updating && xr_scene_update_requested) {
+			xr_scene_update_requested = false;
+			world_request_update(xr_scene_next_req);
 		}
 
-		if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_MSFT) {
-			log_info("Scene computed!");
-
-			xr_scene_updating = false;
-			XrSceneCreateInfoMSFT info = { (XrStructureType)XR_TYPE_SCENE_CREATE_INFO_MSFT };
-			if (xr_scene != XR_NULL_HANDLE)
-				xr_extensions.xrDestroySceneMSFT(xr_scene);
-			if (XR_FAILED(xr_extensions.xrCreateSceneMSFT(xr_scene_observer, &info, &xr_scene))) {
-				log_warn("xrCreateSceneMSFT failed");
-			} else {
-				world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_VISUAL_MESH_MSFT,   &xr_scene_visuals);
-				world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_COLLIDER_MESH_MSFT, &xr_scene_colliders);
-				world_update_meshes    (&xr_meshes);
+		// If we requested a scene, check on the status
+		if (xr_scene_updating) {
+			XrSceneComputeStateMSFT state;
+			if (XR_FAILED(xr_extensions.xrGetSceneComputeStateMSFT(xr_scene_observer, &state))) {
+				log_warn("xrGetSceneComputeStateMSFT failed");
 			}
-		} else if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_WITH_ERROR_MSFT) {
-			log_warn("Scene computed failed with an error!");
-			xr_scene_updating = false;
-		} else {
+
+			if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_MSFT) {
+				xr_scene_updating = false;
+				XrSceneCreateInfoMSFT info = { (XrStructureType)XR_TYPE_SCENE_CREATE_INFO_MSFT };
+				if (xr_scene != XR_NULL_HANDLE)
+					xr_extensions.xrDestroySceneMSFT(xr_scene);
+				if (XR_FAILED(xr_extensions.xrCreateSceneMSFT(xr_scene_observer, &info, &xr_scene))) {
+					log_warn("xrCreateSceneMSFT failed");
+				} else {
+					if (xr_scene_last_req.occlusion) world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_VISUAL_MESH_MSFT,   &xr_scene_visuals);
+					if (xr_scene_last_req.raycast)   world_load_scene_meshes(XR_SCENE_COMPONENT_TYPE_COLLIDER_MESH_MSFT, &xr_scene_colliders);
+					world_update_meshes(&xr_meshes);
+				}
+			} else if (state == XR_SCENE_COMPUTE_STATE_COMPLETED_WITH_ERROR_MSFT) {
+				log_warn("Scene computed failed with an error!");
+				xr_scene_updating = false;
+			} else {
+			}
 		}
 	}
 
-	for (size_t i = 0; i < xr_scene_visuals.count; i++) {
-		render_add_mesh(xr_scene_visuals[i].mesh_ref, xr_scene_material, xr_scene_visuals[i].transform, color_hsv((i % 8) / 8.0f, 0.8f, 0.8f, 1));
-	}
-	for (size_t i = 0; i < xr_scene_colliders.count; i++) {
-		render_add_mesh(xr_scene_colliders[i].mesh_ref, xr_scene_material, xr_scene_colliders[i].transform, color_hsv(((i+4) % 8) / 8.0f, 0.4f, 0.8f, 1));
+	if (xr_scene_next_req.occlusion && xr_scene_material != nullptr) {
+		for (size_t i = 0; i < xr_scene_visuals.count; i++) {
+			render_add_mesh(xr_scene_visuals[i].mesh_ref, xr_scene_material, xr_scene_visuals[i].transform);
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
+void world_scene_shutdown() {
+	if (xr_scene          != XR_NULL_HANDLE) xr_extensions.xrDestroySceneMSFT        (xr_scene);
+	if (xr_scene_observer != XR_NULL_HANDLE) xr_extensions.xrDestroySceneObserverMSFT(xr_scene_observer);
+
+	xr_meshes.each([](scene_mesh_t &m) { mesh_release(m.mesh); });
+	xr_meshes         .clear();
+	xr_scene_colliders.clear();
+	xr_scene_visuals  .clear();
+
+	xr_scene_updating = false;
+}
+
+///////////////////////////////////////////
+
 void world_shutdown() {
-	if (xr_ext_available.MSFT_scene_understanding) {
-		xr_extensions.xrDestroySceneObserverMSFT(xr_scene_observer);
-	}
+	world_scene_shutdown();
+
 	world_verts_tmp  .free();
 	world_vbuffer_tmp.free();
 	world_ibuffer_tmp.free();
+
+	xr_meshes         .free();
+	xr_scene_colliders.free();
+	xr_scene_visuals  .free();
 }
 
 } // namespace sk

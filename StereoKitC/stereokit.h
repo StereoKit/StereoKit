@@ -118,6 +118,8 @@ typedef struct system_info_t {
 	bool32_t perception_bridge_present;
 	bool32_t eye_tracking_present;
 	bool32_t overlay_app;
+	bool32_t world_occlusion_present;
+	bool32_t world_raycast_present;
 } system_info_t;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
@@ -958,12 +960,19 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 
 ///////////////////////////////////////////
 
-SK_API bool32_t world_has_bounds            ();
-SK_API vec2     world_get_bounds_size       ();
-SK_API pose_t   world_get_bounds_pose       ();
-SK_API pose_t   world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
-SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
-SK_API bool32_t world_raycast               (ray_t ray, sk_ref(ray_t) out_intersection);
+SK_API bool32_t   world_has_bounds            ();
+SK_API vec2       world_get_bounds_size       ();
+SK_API pose_t     world_get_bounds_pose       ();
+SK_API pose_t     world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
+SK_API pose_t     world_from_perception_anchor(void *perception_spatial_anchor);
+SK_API bool32_t   world_raycast               (ray_t ray, ray_t *out_intersection);
+SK_API void       world_set_occlusion_enabled (bool32_t enabled);
+SK_API bool32_t   world_get_occlusion_enabled ();
+SK_API void       world_set_raycast_enabled   (bool32_t enabled);
+SK_API bool32_t   world_get_raycast_enabled   ();
+SK_API void       world_set_occlusion_material(material_t material);
+SK_API material_t world_get_occlusion_material();
+
 
 ///////////////////////////////////////////
 
