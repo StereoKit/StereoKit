@@ -216,6 +216,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
@@ -277,6 +278,11 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
