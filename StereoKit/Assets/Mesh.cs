@@ -264,5 +264,12 @@ namespace StereoKit
 			IntPtr mesh = NativeAPI.mesh_find(meshId);
 			return mesh == IntPtr.Zero ? null : new Mesh(mesh);
 		}
+
+		/// <inheritdoc cref="Default.MeshSphere" />
+		public static Mesh Sphere => Default.MeshSphere;
+		/// <inheritdoc cref="Default.MeshCube" />
+		public static Mesh Cube => Default.MeshCube;
+		/// <inheritdoc cref="Default.MeshQuad" />
+		public static Mesh Quad => Default.MeshQuad;
 	}
 }

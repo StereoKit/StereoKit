@@ -450,7 +450,19 @@ namespace StereoKit
 			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution, lightSpotSizePct, lightSpotIntensity);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
+		#endregion
 
+		#region Static Properties
+		/// <inheritdoc cref="Default.Tex" />
+		public static Tex White => Default.Tex;
+		/// <inheritdoc cref="Default.TexBlack" />
+		public static Tex Black => Default.TexBlack;
+		/// <inheritdoc cref="Default.TexFlat" />
+		public static Tex Flat => Default.TexFlat;
+		/// <inheritdoc cref="Default.TexGray" />
+		public static Tex Gray => Default.TexGray;
+		/// <inheritdoc cref="Default.TexRough" />
+		public static Tex Rough => Default.TexRough;
 		#endregion
 	}
 }

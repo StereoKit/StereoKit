@@ -22,7 +22,7 @@ namespace StereoKit {
 			if (_fontInst != IntPtr.Zero)
 				SK.ExecuteOnMain(()=>NativeAPI.font_release(_fontInst));
 		}
-        
+
 		/// <summary>Searches the asset list for a font with the given Id, returning null if
 		/// none is found.</summary>
 		/// <param name="fontId">Id of the font you're looking for.</param>
@@ -46,5 +46,8 @@ namespace StereoKit {
 			IntPtr inst = NativeAPI.font_create(fontFile);
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
+
+		/// <inheritdoc cref="StereoKit.Default.Font" />
+		public static Font Default => StereoKit.Default.Font;
 	}
 }
