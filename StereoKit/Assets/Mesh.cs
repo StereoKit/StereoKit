@@ -128,6 +128,15 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
 
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+		{
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection);
+			modelSpaceAt = intersection.position;
+			return result;
+		}
+
 		/// <summary>Adds a mesh to the render queue for this frame! If the 
 		/// Hierarchy has a transform on it, that transform is combined with
 		/// the Matrix provided here.</summary>

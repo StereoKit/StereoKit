@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -83,6 +84,15 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
+
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Ray.Intersect overload with a Ray output.")]
+		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
+		{
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection);
+			modelSpaceAt = intersection.position;
+			return result;
+		}
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's
