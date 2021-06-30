@@ -16,7 +16,7 @@ class DemoTestLines : ITest
 		}
 
 		// A Circle
-		c = new Color32(255, 100, 100, 255);
+		c = new Color(1, .5f, .5f, 1).ToLinear();
 		LinePoint[] points = new LinePoint[17];
 		for (int i = 0; i < points.Length; i++)
 		{
@@ -27,7 +27,7 @@ class DemoTestLines : ITest
 		Lines.Add(points);
 
 		// A square, worst case for this system
-		c = new Color32(100, 255, 100, 255);
+		c = new Color(.5f, 1, .5f, 1).ToLinear();
 		Lines.Add(new LinePoint[] { 
 			new LinePoint(V.XY0(-0.25f, 0.25f), c, 0.01f),
 			new LinePoint(V.XY0( 0.25f, 0.25f), c, 0.01f),
@@ -37,7 +37,7 @@ class DemoTestLines : ITest
 		});
 
 		// A beveled square
-		c = new Color32(100, 100, 255, 255);
+		c = new Color(.5f, .5f, 1, 1).ToLinear();
 		Lines.Add(new LinePoint[] {
 			new LinePoint(V.XY0(-0.2f, 0.19f), c, 0.01f),
 			new LinePoint(V.XY0(-0.19f, 0.2f), c, 0.01f),
@@ -58,18 +58,18 @@ class DemoTestLines : ITest
 		Vec3  v;
 
 		Hierarchy.Push(Matrix.R(Quat.FromAngles(10,10,10)));
-		v = V.XYZ(-1,  t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 1,  t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ(-1, -t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 1, -t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 0, -1,  t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 0,  1,  t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 0, -1, -t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( 0,  1, -t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( t,  0, -1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ( t,  0,  1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ(-t,  0, -1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
-		v = V.XYZ(-t,  0,  1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f), 0.01f);
+		v = V.XYZ(-1,  t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 1,  t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ(-1, -t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 1, -t,  0) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 0, -1,  t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 0,  1,  t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 0, -1, -t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( 0,  1, -t) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( t,  0, -1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ( t,  0,  1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ(-t,  0, -1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
+		v = V.XYZ(-t,  0,  1) * s; Lines.Add(v, v*s2, Color.HSV((h++) / 12.0f, 0.8f, 0.8f).ToLinear(), 0.01f);
 		Hierarchy.Pop();
 	}
 }
