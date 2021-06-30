@@ -132,7 +132,7 @@ namespace StereoKitDocumenter
 			string nameSignature = segs[0];
 			string paramSignature = segs.Length > 1 ? segs[1] : "";
 			segs = nameSignature.Split('.');
-            
+
 			DocField result = new DocField(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
 
 			// Read properties
@@ -141,6 +141,12 @@ namespace StereoKitDocumenter
 				switch (reader.Name.ToLower())
 				{
 					case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+					case "inheritdoc": {
+						string reference = reader.GetAttribute("cref").Trim();
+						int    start     = reference.IndexOf('.');
+						start = start == -1 ? 0 : start+1;
+						result.summary = $"See `{reference.Substring(start)}`";
+					} break;
 				}
 			}
 
