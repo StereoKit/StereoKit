@@ -153,6 +153,8 @@ struct array_t {
 	array_t<T>  copy       () const;
 	void        each       (void (*e)(T &))          { for (size_t i=0; i<count; i++) e(data[i]); }
 	void        each       (void (*e)(void *))       { for (size_t i=0; i<count; i++) e(data[i]); }
+	template <typename U>
+	array_t<U>  each_new   (U    (*e)(const T &))    { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
 
 	//////////////////////////////////////

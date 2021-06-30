@@ -848,6 +848,12 @@ namespace StereoKit
 		Error
 	}
 
+	enum LogColors
+	{
+		Ansi,
+		None
+	}
+
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
 
