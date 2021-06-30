@@ -241,32 +241,32 @@ SK_API plane_t plane_from_points(vec3 p1, vec3 p2, vec3 p3);
 SK_API plane_t plane_from_ray   (ray_t ray);
 
 #ifdef __cplusplus
-static inline vec2  operator*(const vec2 &a, const float b) { return { a.x * b, a.y * b }; }
-static inline vec2  operator/(const vec2 &a, const float b) { return { a.x / b, a.y / b }; }
-static inline vec2  operator+(const vec2 &a, const vec2 &b) { return { a.x + b.x, a.y + b.y }; }
-static inline vec2  operator-(const vec2 &a, const vec2 &b) { return { a.x - b.x, a.y - b.y }; }
-static inline vec2  operator*(const vec2 &a, const vec2 &b) { return { a.x * b.x, a.y * b.y }; }
-static inline vec2  operator/(const vec2 &a, const vec2 &b) { return { a.x / b.x, a.y / b.y }; }
-static inline vec2& operator+=(vec2& a, const vec2& b)     { a.x += b.x; a.y += b.y; return a; }
-static inline vec2& operator-=(vec2& a, const vec2& b)     { a.x -= b.x; a.y -= b.y; return a; }
-static inline vec2& operator*=(vec2& a, const float b)     { a.x *= b; a.y *= b; return a; }
-static inline vec2& operator/=(vec2& a, const float b)     { a.x /= b; a.y /= b; return a; }
+static inline vec2  operator* (vec2 a, float b) { return { a.x * b, a.y * b }; }
+static inline vec2  operator/ (vec2 a, float b) { return { a.x / b, a.y / b }; }
+static inline vec2  operator+ (vec2 a, vec2  b) { return { a.x + b.x, a.y + b.y }; }
+static inline vec2  operator- (vec2 a, vec2  b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2  operator* (vec2 a, vec2  b) { return { a.x * b.x, a.y * b.y }; }
+static inline vec2  operator/ (vec2 a, vec2  b) { return { a.x / b.x, a.y / b.y }; }
+static inline vec2 &operator+=(vec2 &a, vec2  b) { a.x += b.x; a.y += b.y; return a; }
+static inline vec2 &operator-=(vec2 &a, vec2  b) { a.x -= b.x; a.y -= b.y; return a; }
+static inline vec2 &operator*=(vec2 &a, float b) { a.x *= b; a.y *= b; return a; }
+static inline vec2 &operator/=(vec2 &a, float b) { a.x /= b; a.y /= b; return a; }
 
-static inline vec3  operator*(const vec3 &a, const float b) { return { a.x * b, a.y * b, a.z * b }; }
-static inline vec3  operator/(const vec3 &a, const float b) { return { a.x / b, a.y / b, a.z / b }; }
-static inline vec3  operator+(const vec3 &a, const vec3 &b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
-static inline vec3  operator-(const vec3 &a, const vec3 &b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
-static inline vec3  operator-(const vec3 &a)                { return { -a.x, -a.y, -a.z }; }
-static inline vec3  operator*(const vec3 &a, const vec3 &b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
-static inline vec3  operator/(const vec3 &a, const vec3 &b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
-static inline vec3& operator+=(vec3& a, const vec3& b)     { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
-static inline vec3& operator-=(vec3& a, const vec3& b)     { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
-static inline vec3& operator*=(vec3& a, const float b)     { a.x *= b; a.y *= b; a.z *= b; return a; }
-static inline vec3& operator/=(vec3& a, const float b)     { a.x /= b; a.y /= b; a.z /= b; return a; }
+static inline vec3  operator* (vec3 a, float b) { return { a.x * b, a.y * b, a.z * b }; }
+static inline vec3  operator/ (vec3 a, float b) { return { a.x / b, a.y / b, a.z / b }; }
+static inline vec3  operator+ (vec3 a, vec3  b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
+static inline vec3  operator- (vec3 a, vec3  b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3  operator- (vec3 a)          { return { -a.x, -a.y, -a.z }; }
+static inline vec3  operator* (vec3 a, vec3  b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
+static inline vec3  operator/ (vec3 a, vec3  b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
+static inline vec3 &operator+=(vec3 &a, vec3  b) { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
+static inline vec3 &operator-=(vec3 &a, vec3  b) { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
+static inline vec3 &operator*=(vec3 &a, float b) { a.x *= b; a.y *= b; a.z *= b; return a; }
+static inline vec3 &operator/=(vec3 &a, float b) { a.x /= b; a.y /= b; a.z /= b; return a; }
 
-static inline vec3   operator*(const quat &a, const vec3 &b) { return quat_mul_vec(a, b); }
-static inline quat   operator*(const quat &a, const quat &b) { return quat_mul(a, b); }
-static inline matrix operator*(const sk_ref(matrix) a, const sk_ref(matrix) b) { matrix result; matrix_mul(a, b, result); return result; }
+static inline vec3   operator*(quat a, vec3 b) { return quat_mul_vec(a, b); }
+static inline quat   operator*(quat a, quat b) { return quat_mul(a, b); }
+static inline matrix operator*(matrix a, matrix b) { matrix result; matrix_mul(a, b, result); return result; }
 #endif
 
 static inline float    vec3_magnitude   (vec3 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); }
