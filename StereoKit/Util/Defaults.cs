@@ -30,6 +30,16 @@
 		/// StereoKit's default unlit behavior, here's where you do it!
 		/// </summary>
 		public static Material MaterialUnlit    { get; private set; }
+		/// <summary>The default unlit material with alpha clipping! This is
+		/// used by StereoKit for unlit content with transparency, where
+		/// completely transparent pixels are discarded. This means less
+		/// alpha blending, and fewer visible alpha blending issues! In
+		/// particular, this is how Sprites are drawn. Its shader may change
+		/// based on system performance characteristics, so it can be great
+		/// to copy this one when creating your own materials! Or if you want
+		/// to override StereoKit's default unlit clipped behavior, here's
+		/// where you do it! </summary>
+		public static Material MaterialUnlitClip{ get; private set; }
 		/// <summary>This material is used for projecting equirectangular 
 		/// textures into cubemap faces. It's probably not a great idea to 
 		/// change this one much!</summary>
@@ -120,6 +130,12 @@
 		/// and a 'color' tint property to draw a model without any lighting
 		/// at all!</summary>
 		public static Shader ShaderUnlit    { get; private set; }
+		/// <summary>Sometimes lighting just gets in the way! This is an
+		/// extremely simple and fast shader that uses a 'diffuse' texture 
+		/// and a 'color' tint property to draw a model without any lighting
+		/// at all! This shader will also discard pixels with an alpha of 
+		/// zero.</summary>
+		public static Shader ShaderUnlitClip{ get; private set; }
 		/// <summary>A shader for text! Right now, this will render a font
 		/// atlas texture, and perform alpha-testing for transparency, and 
 		/// super-sampling for better readability. It also flips normals of
@@ -170,6 +186,7 @@
 			Material         = Material.Find(DefaultIds.material);
 			MaterialPBR      = Material.Find(DefaultIds.materialPBR);
 			MaterialUnlit    = Material.Find(DefaultIds.materialUnlit);
+			MaterialUnlitClip= Material.Find(DefaultIds.materialUnlitClip);
 			MaterialEquirect = Material.Find(DefaultIds.materialEquirect);
 			MaterialFont     = Material.Find(DefaultIds.materialFont);
 			MaterialHand     = Material.Find(DefaultIds.materialHand);
@@ -193,6 +210,7 @@
 			Shader         = Shader.Find(DefaultIds.shader);
 			ShaderPbr      = Shader.Find(DefaultIds.shaderPbr);
 			ShaderUnlit    = Shader.Find(DefaultIds.shaderUnlit);
+			ShaderUnlitClip= Shader.Find(DefaultIds.shaderUnlitClip);
 			ShaderFont     = Shader.Find(DefaultIds.shaderFont);
 			ShaderEquirect = Shader.Find(DefaultIds.shaderEquirect);
 			ShaderUI       = Shader.Find(DefaultIds.shaderUI);
@@ -205,6 +223,9 @@
 		internal static void Shutdown()
 		{
 			Material         = null;
+			MaterialPBR      = null;
+			MaterialUnlit    = null;
+			MaterialUnlitClip= null;
 			MaterialEquirect = null;
 			MaterialFont     = null;
 			MaterialHand     = null;
@@ -227,6 +248,7 @@
 			Shader         = null;
 			ShaderPbr      = null;
 			ShaderUnlit    = null;
+			ShaderUnlitClip= null;
 			ShaderFont     = null;
 			ShaderEquirect = null;
 			ShaderUI       = null;

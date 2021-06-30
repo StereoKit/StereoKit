@@ -132,6 +132,17 @@ void matrix_inverse(const matrix &a, matrix &out_matrix) {
 
 ///////////////////////////////////////////
 
+matrix matrix_invert(const matrix &a) {
+	XMMATRIX mat_a, mat_result;
+	math_matrix_to_fast(a, &mat_a);
+	mat_result = XMMatrixInverse(nullptr, mat_a);
+	matrix result;
+	math_fast_to_matrix(mat_result, &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
 void matrix_mul(const matrix &a, const matrix &b, matrix &out_matrix) {
 	XMMATRIX mat_a, mat_b, mat_result;
 	math_matrix_to_fast(a, &mat_a);

@@ -109,7 +109,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_draw_inds(IntPtr mesh, int index_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_bounds   (IntPtr mesh, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds mesh_get_bounds   (IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Ray out_pt);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_plane       (Vec2 dimensions, Vec3 plane_normal, Vec3 plane_top_direction, int subdivisions = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_cube        (Vec3 dimensions, int subdivisions = 0);
@@ -371,11 +371,17 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool world_has_bounds            ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2 world_get_bounds_size       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_get_bounds_pose       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_from_perception_anchor(IntPtr perception_spatial_anchor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_has_bounds            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   world_get_bounds_size       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_get_bounds_pose       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_perception_anchor(IntPtr perception_spatial_anchor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_enabled (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_occlusion_enabled ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_raycast_enabled   (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_raycast_enabled   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_material(IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr world_get_occlusion_material();
 
 		///////////////////////////////////////////
 

@@ -117,12 +117,15 @@ namespace StereoKit
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</param>
-		/// <param name="modelSpaceAt">The intersection point of the ray and
-		/// the mesh, if an intersection occurs. This is in model space, and
-		/// must be transformed back into world space later.</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the 

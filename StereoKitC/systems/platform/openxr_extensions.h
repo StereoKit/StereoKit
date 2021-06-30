@@ -51,6 +51,7 @@ namespace sk {
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
+	_(MSFT_scene_understanding,          true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
 	_(EXTX_overlay,                      true)
 
@@ -78,6 +79,16 @@ namespace sk {
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSceneObserverMSFT)                 \
+	_(xrDestroySceneObserverMSFT)                \
+	_(xrCreateSceneMSFT)                         \
+	_(xrDestroySceneMSFT)                        \
+	_(xrComputeNewSceneMSFT)                     \
+	_(xrGetSceneComputeStateMSFT)                \
+	_(xrGetSceneComponentsMSFT)                  \
+	_(xrLocateSceneComponentsMSFT)               \
+	_(xrEnumerateSceneComputeFeaturesMSFT)       \
+	_(xrGetSceneMeshBuffersMSFT)                 \
 	_(xrGetVisibilityMaskKHR)                    \
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
@@ -157,11 +168,11 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 	for (uint32_t i = 0; i < ext_count; i++) {
 		if      (strcmp(XR_GFX_EXTENSION,  exts[i].extensionName) == 0) { xr_ext_available.gfx_extension  = true; result.add(XR_GFX_EXTENSION);  }
 		else if (strcmp(XR_TIME_EXTENSION, exts[i].extensionName) == 0) { xr_ext_available.time_extension = true; result.add(XR_TIME_EXTENSION); }
-		FOR_EACH_EXT_ALL(CHECK_EXT)
-		FOR_EACH_EXT_UWP(CHECK_EXT)
+		FOR_EACH_EXT_ALL    (CHECK_EXT)
+		FOR_EACH_EXT_UWP    (CHECK_EXT)
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
-		FOR_EACH_EXT_LINUX(CHECK_EXT)
-		FOR_EACH_EXT_DEBUG(CHECK_EXT)
+		FOR_EACH_EXT_LINUX  (CHECK_EXT)
+		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
 		else if (on_available != nullptr) { on_available(exts[i].extensionName); }
 	}
 

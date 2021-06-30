@@ -118,6 +118,8 @@ typedef struct system_info_t {
 	bool32_t perception_bridge_present;
 	bool32_t eye_tracking_present;
 	bool32_t overlay_app;
+	bool32_t world_occlusion_present;
+	bool32_t world_raycast_present;
 } system_info_t;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
@@ -215,6 +217,7 @@ SK_API matrix pose_matrix    (const sk_ref(pose_t) pose, vec3 scale sk_default({
 SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void     matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
+SK_API matrix   matrix_invert       (const sk_ref(matrix) a);
 SK_API void     matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
 SK_API vec3     matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
 SK_API vec3     matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
@@ -264,25 +267,26 @@ static inline vec3& operator/=(vec3& a, const float b)     { a.x /= b; a.y /= b;
 static inline vec3   operator*(const quat &a, const vec3 &b) { return quat_mul_vec(a, b); }
 static inline quat   operator*(const quat &a, const quat &b) { return quat_mul(a, b); }
 static inline matrix operator*(const sk_ref(matrix) a, const sk_ref(matrix) b) { matrix result; matrix_mul(a, b, result); return result; }
-
-static inline float vec3_magnitude_sq(const sk_ref(vec3) a) { return a.x * a.x + a.y * a.y + a.z * a.z; }
-static inline float vec3_magnitude   (const sk_ref(vec3) a) { return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z); }
-static inline vec3  vec3_normalize   (const sk_ref(vec3) a) { return a / vec3_magnitude(a); }
-static inline vec3  vec3_lerp        (const sk_ref(vec3) a, const sk_ref(vec3) b, float t) { return a + (b - a)*t; }
-static inline float vec3_dot         (const sk_ref(vec3) a, const sk_ref(vec3) b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
-static inline vec3  vec3_abs         (const sk_ref(vec3) a) { return { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; }
-
-static inline vec2  vec2_lerp        (const sk_ref(vec2) a, const sk_ref(vec2) b, float t) { return a + (b - a)*t; }
-#else
-static inline float vec3_magnitude_sq(const sk_ref(vec3) a) { return a->x * a->x + a->y * a->y + a->z * a->z; }
-static inline float vec3_magnitude   (const sk_ref(vec3) a) { return sqrtf(a->x * a->x + a->y * a->y + a->z * a->z); }
-static inline vec3  vec3_normalize   (const sk_ref(vec3) a) { float mag = 1.0f/vec3_magnitude(a); vec3 result = {a->x*mag, a->y*mag, a->z*mag}; return result; }
-static inline vec3  vec3_lerp        (const sk_ref(vec3) a, const sk_ref(vec3) b, float t) { vec3 result = { a->x + (b->x - a->x)*t, a->y + (b->y - a->y)*t, a->z + (b->z - a->z)*t }; return result; }
-static inline float vec3_dot         (const sk_ref(vec3) a, const sk_ref(vec3) b) { return a->x*b->x + a->y*b->y + a->z*b->z; }
-static inline vec3  vec3_abs         (const sk_ref(vec3) a) { vec3 result = { fabsf(a->x), fabsf(a->y), fabsf(a->z) }; return result; }
-
-static inline vec2  vec2_lerp        (const sk_ref(vec2) a, const sk_ref(vec2) b, float t) { vec2 result = {a->x + (b->x - a->x)*t, a->y + (b->y - a->y)*t}; return result; }
 #endif
+
+static inline float    vec3_magnitude   (vec3 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); }
+static inline float    vec2_magnitude   (vec2 a) { return sqrtf(a.x*a.x + a.y*a.y); }
+static inline float    vec3_magnitude_sq(vec3 a) { return a.x*a.x + a.y*a.y + a.z*a.z; }
+static inline float    vec2_magnitude_sq(vec2 a) { return a.x*a.x + a.y*a.y; }
+static inline float    vec3_dot         (vec3 a, vec3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+static inline float    vec2_dot         (vec2 a, vec2 b) { return a.x*b.x + a.y*b.y; }
+static inline float    vec3_distance_sq (vec3 a, vec3 b) { return vec3_magnitude_sq({a.x-b.x, a.y-b.y, a.z-b.z}); }
+static inline float    vec2_distance_sq (vec2 a, vec2 b) { return vec2_magnitude_sq({a.x-b.x, a.y-b.y}); }
+static inline float    vec3_distance    (vec3 a, vec3 b) { return vec3_magnitude({a.x-b.x, a.y-b.y, a.z-b.z}); }
+static inline float    vec2_distance    (vec2 a, vec2 b) { return vec2_magnitude({a.x-b.x, a.y-b.y}); }
+static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); return {a.x*imag, a.y*imag, a.z*imag}; }
+static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); return {a.x*imag, a.y*imag}; }
+static inline vec3     vec3_abs         (vec3 a) { return { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; }
+static inline vec2     vec2_abs         (vec2 a) { return { fabsf(a.x), fabsf(a.y) }; }
+static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { return { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; }
+static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { return { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; }
+static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
+static inline bool32_t vec2_in_radius   (vec2 pt, vec2 center, float radius) { return vec2_distance_sq(center, pt) < radius*radius; }
 
 static const float deg2rad = 0.01745329252f;
 static const float rad2deg = 57.295779513f;
@@ -415,7 +419,7 @@ SK_API void     mesh_get_inds     (mesh_t mesh, sk_ref_arr(vind_t) out_indices, 
 SK_API void     mesh_set_draw_inds(mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds   (mesh_t mesh, const sk_ref(bounds_t) bounds);
 SK_API bounds_t mesh_get_bounds   (mesh_t mesh);
-SK_API bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt);
+SK_API bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt);
 
 SK_API mesh_t mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
 SK_API mesh_t mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
@@ -956,11 +960,19 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 
 ///////////////////////////////////////////
 
-SK_API bool32_t world_has_bounds            ();
-SK_API vec2     world_get_bounds_size       ();
-SK_API pose_t   world_get_bounds_pose       ();
-SK_API pose_t   world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
-SK_API pose_t   world_from_perception_anchor(void *perception_spatial_anchor);
+SK_API bool32_t   world_has_bounds            ();
+SK_API vec2       world_get_bounds_size       ();
+SK_API pose_t     world_get_bounds_pose       ();
+SK_API pose_t     world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
+SK_API pose_t     world_from_perception_anchor(void *perception_spatial_anchor);
+SK_API bool32_t   world_raycast               (ray_t ray, ray_t *out_intersection);
+SK_API void       world_set_occlusion_enabled (bool32_t enabled);
+SK_API bool32_t   world_get_occlusion_enabled ();
+SK_API void       world_set_raycast_enabled   (bool32_t enabled);
+SK_API bool32_t   world_get_raycast_enabled   ();
+SK_API void       world_set_occlusion_material(material_t material);
+SK_API material_t world_get_occlusion_material();
+
 
 ///////////////////////////////////////////
 
@@ -989,6 +1001,7 @@ SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 static const char *default_id_material             = "default/material";
 static const char *default_id_material_pbr         = "default/material_pbr";
 static const char *default_id_material_unlit       = "default/material_unlit";
+static const char *default_id_material_unlit_clip  = "default/material_unlit_clip";
 static const char *default_id_material_equirect    = "default/equirect_convert";
 static const char *default_id_material_font        = "default/material_font";
 static const char *default_id_material_hand        = "default/material_hand";
@@ -1012,6 +1025,7 @@ static const char *default_id_mesh_ui_button       = "default/mesh_ui_button";
 static const char *default_id_shader               = "default/shader";
 static const char *default_id_shader_pbr           = "default/shader_pbr";
 static const char *default_id_shader_unlit         = "default/shader_unlit";
+static const char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
 static const char *default_id_shader_font          = "default/shader_font";
 static const char *default_id_shader_equirect      = "default/shader_equirect";
 static const char *default_id_shader_ui            = "default/shader_ui";

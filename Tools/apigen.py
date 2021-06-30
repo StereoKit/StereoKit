@@ -312,11 +312,13 @@ class BindCSharp:
         self.types     = types
         self.functions = functions
 
-    def typeName(param):
+    def typeName(param, isReturn):
         name = param.type
-        if   name == "char" and param.array == 1: name = "string"
+
+        if isReturn and param.array == 1: name = "IntPtr"
+        elif name == "char" and param.array == 1: name = "string"
         elif name == "char" and param.array == 2: name = "string[]"
-        elif name == "void" and (param.array == 1 or param.isRef == True): name = "IntPtr"
+        elif name == "void" and (param.array > 0 or param.isRef == True): name = "IntPtr"
         elif name == "float": name = "float"
         elif name == "double": name = "double"
         elif name == "void": name = "void"
@@ -324,6 +326,7 @@ class BindCSharp:
         elif name == "uint": name = "uint"
         elif name == "long": name = "long"
         elif name == "ulong": name = "ulong"
+        elif name == "size_t": name = "ulong"
         elif name == "int32_t": name = "int"
         elif name == "uint32_t": name = "uint"
         elif name == "int64_t": name = "long"
@@ -341,54 +344,102 @@ class BindCSharp:
         elif name == "vind_t": name = "uint"
         elif name == "button_state_": name = "BtnState"
         elif name == "log_": name = "LogLevel"
+        elif name == "gradient_t": name = "IntPtr"
+        elif name == "mesh_t": name = "IntPtr"
+        elif name == "tex_t": name = "IntPtr"
+        elif name == "font_t": name = "IntPtr"
+        elif name == "shader_t": name = "IntPtr"
+        elif name == "material_t": name = "IntPtr"
+        elif name == "solid_t": name = "IntPtr"
+        elif name == "model_t": name = "IntPtr"
+        elif name == "sprite_t": name = "IntPtr"
+        elif name == "sound_t": name = "IntPtr"
+        elif name == "material_buffer_t": name = "IntPtr"
         else: name = tocamel(name, True)
         return name
 
-    def paramString(param):
+    def paramString(param, isReturn):
         prefix = ""
         postfix = ""
         if param.fnPtr is not None:
+            return "{} {}".format(BindCSharp.delegateName(param.fnPtr), param.fnPtr.name)
             ptrType = ""
             ptrArgs = ""
             if param.fnPtr.ret.type == "void":
                 ptrType = "Action"
             else:
                 ptrType = "Func"
-                ptrArgs = BindCSharp.typeName(param.fnPtr.ret)
+                ptrArgs = BindCSharp.typeName(param.fnPtr.ret, True)
             
             for p in param.fnPtr.params:
                 if ptrArgs is not "":
                     ptrArgs += ", "
-                ptrArgs += BindCSharp.typeName(p)
+                ptrArgs += BindCSharp.typeName(p, False)
 
             if ptrArgs == "":
                 return "{} {}".format(ptrType, param.fnPtr.name)
             else:
                 return "{}<{}> {}".format(ptrType, ptrArgs, param.fnPtr.name)
         else:
-            if param.isRef:
-                if param.name.startswith("out_") and not param.isConst:
-                    prefix = "out "
-                elif param.name.startswith("ref_") and not param.isConst:
-                    prefix = "ref "
-                elif param.isConst:
-                    prefix = "in "
-                else:
-                    prefix = "ref "
-            if param.array == 1 and param.type != "char" and param.type != "void":
-                if param.isConst:
-                    prefix = "[In] "
-                    postfix = "[]"
-                elif param.name.startswith("out_"):
-                    prefix = "[Out] "
-                    postfix = "[]"
-                else:
-                    print("Not sure about this parameter: '{}'".format(param.srcText))
+            if not isReturn:
+                if param.isRef:
+                    if param.name.startswith("out_") and not param.isConst:
+                        prefix = "out "
+                    elif param.name.startswith("ref_") and not param.isConst:
+                        prefix = "ref "
+                    elif param.isConst:
+                        prefix = "in "
+                    else:
+                        prefix = "ref "
+                if param.array == 1 and param.type != "char" and param.type != "void":
+                    if param.isConst:
+                        prefix = "[In] "
+                        postfix = "[]"
+                    elif param.name.startswith("out_"):
+                        prefix = "[Out] "
+                        postfix = "[]"
+                    else:
+                        print("Not sure about this parameter: '{}'".format(param.srcText))
             name = param.name
             if name == "event":
                 name = "evt"
 
-            return "{}{}{} {}".format(prefix, BindCSharp.typeName(param), postfix, name)
+            return "{}{}{} {}".format(prefix, BindCSharp.typeName(param, isReturn), postfix, name)
+
+    def delegateName(fn):
+        ptrType = ""
+        ptrArgs = ""
+        if fn.ret.type == "void":
+            ptrType = "Del"
+        else:
+            ptrType = "DelRet"
+            ptrArgs = BindCSharp.typeName(fn.ret, True)
+        
+        for p in fn.params:
+            if ptrArgs is not "":
+                ptrArgs += "_"
+            ptrArgs += tocamel(p.name, True)
+
+        if ptrArgs == "":
+            return "{}".format(ptrType)
+        else:
+            return "{}_{}".format(ptrType, ptrArgs)
+
+    def makeDelegate(param):
+        params = ""
+        valid  = True
+        for p in param.fnPtr.params:
+            if p.fnPtr is not None or p.variadic:
+                valid = False # Don't really want to deal with variadic bindings, or recursive function pointers
+            if params != "":
+                params += ", "
+            params += BindCSharp.paramString(p, False)
+
+        delName = BindCSharp.delegateName(param.fnPtr)
+        if valid:
+            return (delName, "\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate {} {}({});\n".format(BindCSharp.typeName(param.fnPtr.ret, True), delName, params))
+        else:
+            return ("", "")
 
     def __str__(self):
         result = """// This file is generated by StereoKitRoot/tools/apigen.py, please don't 
@@ -407,21 +458,26 @@ namespace StereoKit
 		const CallingConvention call = CallingConvention.Cdecl;
 
 """
-
+        delegates = {}
         # Types next
         for f in self.functions:
             params = ""
             valid = True
             for p in f.params:
+                if p.fnPtr is not None:
+                    delegate = BindCSharp.makeDelegate(p)
+                    delegates[delegate[0]] = delegate[1]
                 if p.variadic:
                     valid = False # Don't really want to deal with variadic bindings
                 if params != "":
                     params += ", "
-                params += BindCSharp.paramString(p)
+                params += BindCSharp.paramString(p, False)
 
             if valid:
                 result += "\t\t[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern "
-                result += "{}({});\n".format(BindCSharp.paramString(f.ret), params)
+                result += "{}({});\n".format(BindCSharp.paramString(f.ret, True), params)
+        for d in delegates.values():
+            result += d
         result += "\t}\n}\n"
         return result
 

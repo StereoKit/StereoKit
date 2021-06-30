@@ -1,6 +1,6 @@
 #include "stereokit.hlsli"
 
-//--name = sk/unlit
+//--name = sk/unlit_clip
 //--color:color = 1, 1, 1, 1
 //--diffuse     = white
 float4       color;
@@ -34,6 +34,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = diffuse.Sample(diffuse_s, input.uv);
+	clip(col.a-0.01);
 
 	col = col * input.color;
 

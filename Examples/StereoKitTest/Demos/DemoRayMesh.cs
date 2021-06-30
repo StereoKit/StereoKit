@@ -32,9 +32,9 @@ class DemoRayMesh : ITest
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Vec3 at))
+		if (ray.Intersect(boxMesh, out Ray at))
 		{
-			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at), 0.02f));
+			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
 		}
 	}
 	/// :End:

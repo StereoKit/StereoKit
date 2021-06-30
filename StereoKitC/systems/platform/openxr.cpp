@@ -285,10 +285,10 @@ bool openxr_init() {
 	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
+	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
 	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
-	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
@@ -296,6 +296,21 @@ bool openxr_init() {
 	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
 	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
 	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+
+	// Check scene understanding features
+	if (xr_ext_available.MSFT_scene_understanding) {
+		uint32_t count = 0;
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
+		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, count, &count, features);
+		for (uint32_t i = 0; i < count; i++) {
+			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
+			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
+		}
+		free(features);
+	}
+	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
+	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };

@@ -84,7 +84,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -119,7 +120,8 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl</Command>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -214,6 +216,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
@@ -258,6 +261,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
     <ClInclude Include="tools\file_picker.h" />
+    <ClInclude Include="systems\world.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
@@ -274,6 +278,11 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

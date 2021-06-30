@@ -73,12 +73,15 @@ namespace StereoKit
 		/// into model space, see the example in the docs!</summary>
 		/// <param name="mesh">A mesh containing collision data on the CPU.
 		/// You can check this with Mesh.KeepData.</param>
-		/// <param name="modelSpaceAt">The intersection point of the ray and
-		/// the mesh, if an intersection occurs. This is in model space, and
-		/// must be transformed back into world space later.</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
 
 		/// <summary>Calculates the point on the Ray that's closest to the

@@ -141,6 +141,25 @@ void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) 
 
 ///////////////////////////////////////////
 
+void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count) {
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
+	for (size_t i = 0; i < ind_count; i+=3) {
+		vert_t *v1 = &verts[inds[i  ]];
+		vert_t *v2 = &verts[inds[i+1]];
+		vert_t *v3 = &verts[inds[i+2]];
+		// Length of cross product is twice the area of the triangle it's 
+		// from, so if we don't 'normalize' it, then we get trangle area
+		// weighting on our normals for free!
+		vec3 normal = vec3_cross(v3->pos - v2->pos, v1->pos - v2->pos);
+		v1->norm += normal;
+		v2->norm += normal;
+		v3->norm += normal;
+	}
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+}
+
+///////////////////////////////////////////
+
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 	if (index_count > mesh->ind_count) {
 		index_count = mesh->ind_count;
@@ -234,7 +253,7 @@ void mesh_destroy(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -274,7 +293,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
 			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
 			if (dist < nearest_dist) {
 				nearest_dist = dist;
-				*out_pt      = pt;
+				*out_pt = {pt, data->planes[i / 3].normal};
 			}
 		}
 	}

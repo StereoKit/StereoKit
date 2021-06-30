@@ -36,6 +36,18 @@ namespace StereoKit
 		public static Pose FromSpatialNode(Guid spatialNodeGuid)
 			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray());
 
+		public static bool OcclusionEnabled { 
+			get => NativeAPI.world_get_occlusion_enabled();
+			set => NativeAPI.world_set_occlusion_enabled(value); }
+
+		public static bool RaycastEnabled { 
+			get => NativeAPI.world_get_raycast_enabled();
+			set => NativeAPI.world_set_raycast_enabled(value); }
+
+		public static Material OcclusionMaterial {
+			get => new Material(NativeAPI.world_get_occlusion_material());
+			set => NativeAPI.world_set_occlusion_material(value._inst); }
+
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);

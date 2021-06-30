@@ -126,17 +126,6 @@ void input_hand_refresh_system() {
 	if (available_source != hand_system) {
 		hand_system = available_source;
 
-		const char *source_name = "N/A";
-		switch (hand_sources[hand_system].system) {
-		case hand_system_mouse:           source_name = "Mouse"; break;
-		case hand_system_none:            source_name = "None"; break;
-		case hand_system_override:        source_name = "Override"; break;
-		case hand_system_oxr_articulated: source_name = "OpenXR Articulated"; break;
-		case hand_system_oxr_controllers: source_name = "OpenXR Controllers"; break;
-		}
-
-		log_diagf("Switched to input source: %s", source_name);
-
 		// Force the hand size to recalculate next update
 		hand_size_update = 0;
 	}
