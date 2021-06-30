@@ -342,6 +342,9 @@ namespace StereoKit
 		/// <returns>A copy of the entire set of hand data!</returns>
 		public static Hand Hand(Handed handed)
 			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+		public static Hand Hand(int handed)
+			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand((Handed)handed));
+
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is
 		/// great for simulating input for testing purposes. It will remain

@@ -234,6 +234,18 @@ namespace StereoKit
 		/// application to be composited with other content below it!</summary>
 		public bool overlayApp { get => _overlayApp > 0; }
 		private int _overlayApp;
+
+		/// <summary>Does this device support world occlusion of digital 
+		/// objects? If this is true, then World.OcclusionEnabled can be set
+		/// to true, and World.OcclusionMaterial can be modified. </summary>
+		public bool worldOcclusionPresent { get => _worldOcclusionPresent > 0; }
+		private int _worldOcclusionPresent;
+
+		/// <summary>Can this device get ray intersections from the 
+		/// environment? If this is true, then World.RaycastEnabled can be
+		/// set to true, and World.Raycast can be used.</summary>
+		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
+		private int _worldRaycastPresent;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
