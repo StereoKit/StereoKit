@@ -142,8 +142,10 @@ namespace StereoKit
 		}
 	}
 
+	// TODO: Remove in v0.4
 	/// <summary>This describes the type of display tech used on a Mixed
-	/// Reality device.</summary>
+	/// Reality device. This will be replaced by `DisplayBlend` in v0.4.
+	/// </summary>
 	public enum Display
 	{
 		/// <summary>Default value, when using this as a search type, it will
