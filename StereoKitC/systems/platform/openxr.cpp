@@ -592,8 +592,7 @@ void openxr_poll_actions() {
 	// Track the head location
 	openxr_get_space(xr_head_space, &input_head_pose_local);
 	matrix root = render_get_cam_final();
-	input_head_pose_world.position    = matrix_mul_point   (root, input_head_pose_local.position);
-	input_head_pose_world.orientation = matrix_mul_rotation(root, input_head_pose_local.orientation);
+	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	oxri_update_frame();
 }

@@ -81,8 +81,8 @@ void flatscreen_input_update() {
 		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
 			input_eyes_pose_world.position    = ray.pos;
 			input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
-			input_eyes_pose_local.position    = matrix_mul_point(render_get_cam_final_inv(), ray.pos);
-			input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_mul_direction(render_get_cam_final_inv(), ray.dir));
+			input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
+			input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
 		}
 	}
 

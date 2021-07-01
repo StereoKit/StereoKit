@@ -368,8 +368,8 @@ void ui_update() {
 		skui_hand[i].focus_priority = FLT_MAX;
 		skui_hand[i].focused = 0;
 		skui_hand[i].active  = 0;
-		skui_hand[i].finger       = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
-		skui_hand[i].finger_prev  = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
+		skui_hand[i].finger       = matrix_transform_pt(*hierarchy_to_local(), skui_hand[i].finger_world);
+		skui_hand[i].finger_prev  = matrix_transform_pt(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
 		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
 		skui_hand[i].ray_enabled  = pointer->tracked > 0 && skui_hand[i].tracked && (vec3_dot(hand->palm.orientation * vec3_forward, input_head()->position - hand->palm.position) < 0);
 
@@ -469,8 +469,8 @@ void ui_push_pose(pose_t &pose, vec3 offset) {
 
 	layer_t &layer = skui_layers.last();
 	for (size_t i = 0; i < handed_max; i++) {
-		layer.finger_pos [i] = skui_hand[i].finger      = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world);
-		layer.finger_prev[i] = skui_hand[i].finger_prev = matrix_mul_point(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
+		layer.finger_pos [i] = skui_hand[i].finger      = matrix_transform_pt(*hierarchy_to_local(), skui_hand[i].finger_world);
+		layer.finger_prev[i] = skui_hand[i].finger_prev = matrix_transform_pt(*hierarchy_to_local(), skui_hand[i].finger_world_prev);
 	}
 }
 
@@ -1228,7 +1228,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		vec3 finger_pos_world = vec3_lerp(
 			hand->fingers[0][4].position,
 			hand->fingers[1][4].position, 0.3f);
-		finger_pos[i] = matrix_mul_point( to_local, finger_pos_world );
+		finger_pos[i] = matrix_transform_pt( to_local, finger_pos_world );
 
 		vec3 from_pt = finger_pos[i];
 		if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
@@ -1254,9 +1254,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 						// If it was the item that won focus last frame, lets go with it!
 						if (skui_hand[i].focused_prev == id) {
-							matrix_mul_point(to_local, window_world);
+							matrix_transform_pt(to_local, window_world);
 							line_add(far_ray.pos*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
-							from_pt = matrix_mul_point(to_local, hierarchy_to_world_point(vec3_zero));
+							from_pt = matrix_transform_pt(to_local, hierarchy_to_world_point(vec3_zero));
 						}
 					}
 				}
@@ -1272,7 +1272,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				start_handle_pos[i] = movement.position;
 				start_handle_rot[i] = movement.orientation;
 				start_palm_pos  [i] = from_pt;
-				start_palm_rot  [i] = matrix_mul_rotation( to_local, hand->palm.orientation);
+				start_palm_rot  [i] = matrix_transform_quat( to_local, hand->palm.orientation);
 			}
 			if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 				result = true;
@@ -1312,8 +1312,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						}
 
 						hierarchy_set_enabled(false);
-						line_add(matrix_mul_point(to_world, finger_pos[0]), matrix_mul_point(to_world, dest_pos), { 255,255,255,0 }, {255,255,255,128}, 0.001f);
-						line_add(matrix_mul_point(to_world, dest_pos), matrix_mul_point(to_world, finger_pos[1]), { 255,255,255,128 }, {255,255,255,0}, 0.001f);
+						line_add(matrix_transform_pt(to_world, finger_pos[0]), matrix_transform_pt(to_world, dest_pos), { 255,255,255,0 }, {255,255,255,128}, 0.001f);
+						line_add(matrix_transform_pt(to_world, dest_pos), matrix_transform_pt(to_world, finger_pos[1]), { 255,255,255,128 }, {255,255,255,0}, 0.001f);
 						hierarchy_set_enabled(true);
 
 						dest_pos = dest_pos + dest_rot * (start_2h_handle_pos - start_2h_pos);
@@ -1330,16 +1330,16 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						start_handle_pos[i] = movement.position;
 						start_handle_rot[i] = movement.orientation;
 						start_palm_pos  [i] = from_pt;
-						start_palm_rot  [i] = matrix_mul_rotation( to_local, hand->palm.orientation);
+						start_palm_rot  [i] = matrix_transform_quat( to_local, hand->palm.orientation);
 					}
 				} else {
 					switch (move_type) {
 					case ui_move_exact: {
-						dest_rot = matrix_mul_rotation(to_local, hand->palm.orientation);
+						dest_rot = matrix_transform_quat(to_local, hand->palm.orientation);
 						dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 					} break;
 					case ui_move_face_user: {
-						dest_rot = quat_lookat(vec3{movement.position.x, finger_pos[i].y, movement.position.z }, matrix_mul_point(to_local, input_head()->position));
+						dest_rot = quat_lookat(vec3{movement.position.x, finger_pos[i].y, movement.position.z }, matrix_transform_pt(to_local, input_head()->position));
 						dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 					} break;
 					case ui_move_pos_only: {

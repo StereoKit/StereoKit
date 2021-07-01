@@ -7,9 +7,11 @@
 #define SK_VERSION_PATCH 2
 #define SK_VERSION_PRERELEASE 2
 
-#ifdef __GNUC__
-#define SK_EXIMPORT
-#else
+#if defined(__GNUC__) || defined(__clang__)
+	#define SK_DEPRECATED __attribute__((deprecated))
+	#define SK_EXIMPORT
+#elif defined(_MSC_VER)
+	#define SK_DEPRECATED __declspec(deprecated)
 	#if defined(_DLL) || defined(BUILDING_DLL)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
@@ -216,19 +218,31 @@ SK_API vec3 quat_mul_vec    (const sk_ref(quat) a, const sk_ref(vec3) b);
 SK_API matrix pose_matrix    (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
 SK_API void   pose_matrix_out(const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
-SK_API void     matrix_inverse      (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
-SK_API matrix   matrix_invert       (const sk_ref(matrix) a);
-SK_API void     matrix_mul          (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
-SK_API vec3     matrix_mul_point    (const sk_ref(matrix) transform, const sk_ref(vec3) point);
-SK_API vec3     matrix_mul_direction(const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-SK_API quat     matrix_mul_rotation (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
-SK_API pose_t   matrix_mul_pose     (const sk_ref(matrix) transform, const sk_ref(pose_t) pose);
-SK_API vec3     matrix_to_angles    (const sk_ref(matrix) transform);
-SK_API matrix   matrix_trs          (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
-SK_API void     matrix_trs_out      (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
-SK_API matrix   matrix_perspective  (float fov_degrees, float aspect_ratio, float near_clip, float far_clip);
-SK_API matrix   matrix_orthographic (float width, float height, float near_clip, float far_clip);
-SK_API bool32_t matrix_decompose    (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
+SK_API void     matrix_inverse       (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
+SK_API matrix   matrix_invert        (const sk_ref(matrix) a);
+SK_API void     matrix_mul           (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
+// Deprecated, use matrix_transform_pt. Removing in v0.4
+SK_API SK_DEPRECATED vec3     matrix_mul_point     (const sk_ref(matrix) transform, const sk_ref(vec3) point);
+// Deprecated, use matrix_transform_pt4. Removing in v0.4
+SK_API SK_DEPRECATED vec4     matrix_mul_point4    (const sk_ref(matrix) transform, const sk_ref(vec4) point);
+// Deprecated, use matrix_transform_dir. Removing in v0.4
+SK_API SK_DEPRECATED vec3     matrix_mul_direction (const sk_ref(matrix) transform, const sk_ref(vec3) direction);
+// Deprecated, use matrix_transform_quat. Removing in v0.4
+SK_API SK_DEPRECATED quat     matrix_mul_rotation  (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
+// Deprecated, use matrix_transform_pose. Removing in v0.4
+SK_API SK_DEPRECATED pose_t   matrix_mul_pose      (const sk_ref(matrix) transform, const sk_ref(pose_t) pose);
+SK_API vec3     matrix_transform_pt  (matrix transform, vec3 point);
+SK_API vec4     matrix_transform_pt4 (matrix transform, vec4 point);
+SK_API vec3     matrix_transform_dir (matrix transform, vec3 direction);
+SK_API ray_t    matrix_transform_ray (matrix transform, ray_t ray);
+SK_API quat     matrix_transform_quat(matrix transform, quat rotation);
+SK_API pose_t   matrix_transform_pose(matrix transform, pose_t pose);
+SK_API vec3     matrix_to_angles     (const sk_ref(matrix) transform);
+SK_API matrix   matrix_trs           (const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API void     matrix_trs_out       (sk_ref(matrix) out_result, const sk_ref(vec3) position, const sk_ref(quat) orientation sk_default({0,0,0,1}), const sk_ref(vec3) scale sk_default({1,1,1}));
+SK_API matrix   matrix_perspective   (float fov_degrees, float aspect_ratio, float near_clip, float far_clip);
+SK_API matrix   matrix_orthographic  (float width, float height, float near_clip, float far_clip);
+SK_API bool32_t matrix_decompose     (const sk_ref(matrix) transform, sk_ref(vec3) out_position, sk_ref(vec3) out_scale, sk_ref(quat) out_orientation);
 SK_API vec3     matrix_extract_translation(const sk_ref(matrix) transform);
 SK_API vec3     matrix_extract_scale      (const sk_ref(matrix) transform);
 SK_API quat     matrix_extract_rotation   (const sk_ref(matrix) transform);
@@ -267,6 +281,8 @@ static inline vec3 &operator/=(vec3 &a, float b) { a.x /= b; a.y /= b; a.z /= b;
 static inline vec3   operator*(quat a, vec3 b) { return quat_mul_vec(a, b); }
 static inline quat   operator*(quat a, quat b) { return quat_mul(a, b); }
 static inline matrix operator*(matrix a, matrix b) { matrix result; matrix_mul(a, b, result); return result; }
+static inline vec3   operator*(matrix a, vec3 b) { return matrix_transform_pt(a, b); }
+static inline vec4   operator*(matrix a, vec4 b) { return matrix_transform_pt4(a, b); }
 #endif
 
 static inline float    vec3_magnitude   (vec3 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); }

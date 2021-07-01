@@ -236,9 +236,9 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	// TODO: May want to also update controllers/hands?
 	quat rot = matrix_extract_rotation(render_camera_root_final);
-	input_head_pose_world.position    = matrix_mul_point( render_camera_root_final, input_head_pose_local.position );
+	input_head_pose_world.position    = render_camera_root_final * input_head_pose_local.position;
 	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
-	input_eyes_pose_world.position    = matrix_mul_point( render_camera_root_final, input_eyes_pose_local.position );
+	input_eyes_pose_world.position    = render_camera_root_final * input_eyes_pose_local.position;
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
 }
 

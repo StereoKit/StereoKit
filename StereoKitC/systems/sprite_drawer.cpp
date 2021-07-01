@@ -84,7 +84,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	
 	// Add a sprite quad
 	size_t offset = buffer.vert_count;
-	vec3   normal = vec3_normalize( matrix_mul_direction(at, vec3_forward) );
+	vec3   normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
 	buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
 	buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
 	buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };

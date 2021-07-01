@@ -100,7 +100,7 @@ namespace StereoKit
 		/// <param name="pose">The original pose.</param>
 		/// <returns>The transformed pose.</returns>
 		public Pose Transform(Pose pose)
-			=> NativeAPI.matrix_mul_pose(m, pose);
+			=> NativeAPI.matrix_transform_pose(m, pose);
 
 		/// <summary>Returns this transformation matrix to its original 
 		/// translation, rotation and scale components. Not exactly a cheap

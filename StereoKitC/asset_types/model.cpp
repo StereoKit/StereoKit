@@ -110,13 +110,13 @@ void model_recalculate_bounds(model_t model) {
 	// Get an initial size
 	vec3 first_corner = bounds_corner(model->subsets[0].mesh->bounds, 0);
 	vec3 min, max;
-	min = max = matrix_mul_point( model->subsets[0].offset, first_corner);
+	min = max = matrix_transform_pt( model->subsets[0].offset, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
 	for (int32_t m = 0; m < model->subset_count; m += 1) {
 		for (int32_t i = 0; i < 8; i += 1) {
-			vec3 corner = bounds_corner   (model->subsets[m].mesh->bounds, i);
-			vec3 pt     = matrix_mul_point(model->subsets[m].offset, corner);
+			vec3 corner = bounds_corner      (model->subsets[m].mesh->bounds, i);
+			vec3 pt     = matrix_transform_pt(model->subsets[m].offset, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
 			min.z = fminf(pt.z, min.z);

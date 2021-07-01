@@ -88,9 +88,7 @@ bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
 	int32_t result_id  = -1;
 	for (size_t i = 0; i < xr_scene_colliders.count; i++) {
 		ray_t intersection = {};
-		ray_t local_ray;
-		local_ray.pos = matrix_mul_point    (xr_scene_colliders[i].inv_transform, ray.pos);
-		local_ray.dir = matrix_mul_direction(xr_scene_colliders[i].inv_transform, ray.dir);
+		ray_t local_ray    = matrix_transform_ray(xr_scene_colliders[i].inv_transform, ray);
 		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, &intersection)) {
 			float intersection_mag = vec3_magnitude_sq(intersection.pos - local_ray.pos);
 			if (result_mag > intersection_mag) {
@@ -101,8 +99,7 @@ bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
 		}
 	}
 	if (result_id != -1) {
-		out_intersection->pos = matrix_mul_point    (xr_scene_colliders[result_id].transform, out_intersection->pos);
-		out_intersection->dir = matrix_mul_direction(xr_scene_colliders[result_id].transform, out_intersection->dir);
+		*out_intersection = matrix_transform_ray(xr_scene_colliders[result_id].transform, *out_intersection);
 		return true;
 	} else {
 		return false;

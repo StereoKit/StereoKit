@@ -84,8 +84,8 @@ void line_addv(line_point_t start, line_point_t end) {
 
 	if (hierarchy_enabled) {
 		matrix &transform = hierarchy_stack.last().transform;
-		start.pt = matrix_mul_point(transform, start.pt);
-		end  .pt = matrix_mul_point(transform, end.pt);
+		start.pt = matrix_transform_pt(transform, start.pt);
+		end  .pt = matrix_transform_pt(transform, end.pt);
 	}
 
 	vind_t start_vert = (vind_t)line_vert_ct;

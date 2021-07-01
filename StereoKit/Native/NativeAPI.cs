@@ -40,18 +40,11 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat     (in Vec3 from, in Vec3 at);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat_up  (in Vec3 from, in Vec3 at, in Vec3 up);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_inverse      (in Matrix a, out Matrix out_matrix);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_mul          (in Matrix a, in Matrix b, out Matrix out_matrix);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_mul_point    (in Matrix transform, in Vec3 point);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_mul_direction(in Matrix transform, in Vec3 direction);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_mul_pose     (in Matrix transform, in Pose pose);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix matrix_trs          (in Vec3 position, in Quat orientation, in Vec3 scale);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_trs_out      (out Matrix out_result, in Vec3 position, in Quat orientation, in Vec3 scale);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_translation(in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_scale      (in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat   matrix_extract_rotation   (in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_extract_pose       (in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_transform_pose  (Matrix transform, Pose pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix matrix_trs             (in Vec3 position, in Quat orientation, in Vec3 scale);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_scale   (in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat   matrix_extract_rotation(in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_extract_pose    (in Matrix transform);
 
 		///////////////////////////////////////////
 
