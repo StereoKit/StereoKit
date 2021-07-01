@@ -1308,7 +1308,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						case ui_move_pos_only: {
 							dest_rot = quat_identity;
 						} break;
-						default: log_err("Unimplemented move type!"); break;
+						default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 						}
 
 						hierarchy_set_enabled(false);
@@ -1345,7 +1345,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 					case ui_move_pos_only: {
 						dest_rot = quat_identity;
 					} break;
-					default: log_err("Unimplemented move type!"); break;
+					default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 					}
 
 					vec3 curr_pos = finger_pos[i];

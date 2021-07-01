@@ -12,10 +12,10 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct scene_request_info_t {
-	bool  occlusion;
-	bool  raycast;
-	vec3  center;
-	float radius;
+	bool32_t occlusion;
+	bool32_t raycast;
+	vec3     center;
+	float    radius;
 };
 
 struct scene_mesh_t {
@@ -94,7 +94,7 @@ bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
 			if (result_mag > intersection_mag) {
 				result_mag        = intersection_mag;
 				*out_intersection = intersection;
-				result_id         = i;
+				result_id         = (int32_t)i;
 			}
 		}
 	}
@@ -183,7 +183,7 @@ void world_request_update(scene_request_info_t info) {
 	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&input_head()->position, info.radius };
 	compute_info.consistency           = XR_SCENE_COMPUTE_CONSISTENCY_SNAPSHOT_COMPLETE_MSFT;
 	compute_info.requestedFeatures     = features.data;
-	compute_info.requestedFeatureCount = features.count;
+	compute_info.requestedFeatureCount = (uint32_t)features.count;
 	compute_info.bounds.space       = xr_app_space;
 	compute_info.bounds.time        = xr_time;
 	compute_info.bounds.sphereCount = 1;
@@ -259,10 +259,10 @@ int32_t world_mesh_get_or_add(uint64_t buffer_id) {
 	for (size_t i = 0; i < xr_meshes.count; i++) {
 		if (xr_meshes[i].buffer_id == buffer_id) {
 			xr_meshes[i].references += 1;
-			return i;
+			return (int32_t)i;
 		}
 	}
-	return xr_meshes.add(scene_mesh_t{ buffer_id, mesh_create(), 1 });
+	return (int32_t)xr_meshes.add(scene_mesh_t{ buffer_id, mesh_create(), 1 });
 }
 
 ///////////////////////////////////////////

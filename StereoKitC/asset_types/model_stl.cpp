@@ -105,9 +105,9 @@ bool modelfmt_stl_binary_flat(void *file_data, size_t, array_t<vert_t> *verts, a
 	verts->resize(header->tri_count * 3);
 	faces->resize(header->tri_count * 3);
 	for (uint32_t i = 0; i < header->tri_count; i++) {
-		size_t ind1 = verts->add(vert_t{ tris[i].verts[0], tris[i].normal, {}, {255,255,255,255} });
-		size_t ind2 = verts->add(vert_t{ tris[i].verts[1], tris[i].normal, {}, {255,255,255,255} });
-		size_t ind3 = verts->add(vert_t{ tris[i].verts[2], tris[i].normal, {}, {255,255,255,255} });
+		vind_t ind1 = (vind_t)verts->add(vert_t{ tris[i].verts[0], tris[i].normal, {}, {255,255,255,255} });
+		vind_t ind2 = (vind_t)verts->add(vert_t{ tris[i].verts[1], tris[i].normal, {}, {255,255,255,255} });
+		vind_t ind3 = (vind_t)verts->add(vert_t{ tris[i].verts[2], tris[i].normal, {}, {255,255,255,255} });
 		
 		faces->add(ind1);
 		faces->add(ind2);
@@ -138,13 +138,13 @@ bool modelfmt_stl_text_flat(void *file_data, size_t, array_t<vert_t> *verts, arr
 				if (stref_nextword(line, word)) normal.z = stref_to_f(word);
 			}
 		} else if (stref_equals(word, "endfacet")) {
-			size_t ind1 = verts->add(vert_t{ curr[0], normal, {}, {255,255,255,255} });
-			size_t ind2 = verts->add(vert_t{ curr[1], normal, {}, {255,255,255,255} });
-			size_t ind3 = verts->add(vert_t{ curr[2], normal, {}, {255,255,255,255} });
+			vind_t ind1 = (vind_t)verts->add(vert_t{ curr[0], normal, {}, {255,255,255,255} });
+			vind_t ind2 = (vind_t)verts->add(vert_t{ curr[1], normal, {}, {255,255,255,255} });
+			vind_t ind3 = (vind_t)verts->add(vert_t{ curr[2], normal, {}, {255,255,255,255} });
 
 			faces->add(ind1); faces->add(ind2); faces->add(ind3);
 			if (curr_count == 4) {
-				size_t ind4 = verts->add(vert_t{ curr[3], normal, {}, {255,255,255,255} });
+				vind_t ind4 = (vind_t)verts->add(vert_t{ curr[3], normal, {}, {255,255,255,255} });
 				faces->add(ind1); faces->add(ind3); faces->add(ind4);
 			}
 			curr_count = 0;

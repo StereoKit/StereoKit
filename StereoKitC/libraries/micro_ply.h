@@ -268,7 +268,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 			}
 
 			ply_element_t *el   = &out_file->elements[out_file->count-1];
-			prop.offset = el->data_stride;
+			prop.offset = (uint16_t)el->data_stride;
 			el->data_stride    += prop.bytes;
 			el->property_count += 1;
 			el->properties      = (ply_prop_t*)realloc(el->properties, sizeof(ply_prop_t) * el->property_count);

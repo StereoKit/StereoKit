@@ -116,7 +116,7 @@ void hand_oxra_init() {
 				free(hand_mesh->verts);
 				hand_mesh->verts      = sk_malloc_t(vert_t, properties_handmesh.maxHandMeshVertexCount);
 				hand_mesh->vert_count = properties_handmesh.maxHandMeshVertexCount;
-				for (int i = 0; i < hand_mesh->vert_count; i++)
+				for (uint32_t i = 0; i < hand_mesh->vert_count; i++)
 					hand_mesh->verts[i] = { vec3_zero, vec3_zero, {0.5f,0.5f}, {255,255,255,255} };
 			}
 
@@ -276,8 +276,8 @@ struct hand_tri_t {
 		XrVector3f b1 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->a].position;
 		XrVector3f b2 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->b].position;
 		XrVector3f b3 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->c].position;
-		return ((b1.x+b2.x+b3.x)*2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
-		     - ((a1.x+a2.x+a3.x)*2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000);
+		return (int32_t) (((b1.x+b2.x+b3.x)*2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		                - ((a1.x+a2.x+a3.x)*2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000));
 	}
 	static int32_t compare_l(const void *a, const void *b) {
 		const hand_tri_t *t1 = (hand_tri_t *)a;
@@ -288,8 +288,8 @@ struct hand_tri_t {
 		XrVector3f b1 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->a].position;
 		XrVector3f b2 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->b].position;
 		XrVector3f b3 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->c].position;
-		return ((b1.x+b2.x+b3.x)*-2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
-		     - ((a1.x+a2.x+a3.x)*-2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000);
+		return (int32_t) (((b1.x+b2.x+b3.x)*-2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		                - ((a1.x+a2.x+a3.x)*-2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000));
 	}
 };
 
@@ -339,12 +339,12 @@ void hand_oxra_update_system_meshes() {
 				XrHandMeshUpdateInfoMSFT mesh_info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
 				mesh_info.handPoseType = XR_HAND_POSE_TYPE_REFERENCE_OPEN_PALM_MSFT;
 				mesh_info.time         = xr_time;
-				XrResult result = xr_extensions.xrUpdateHandMeshMSFT(oxra_hand_tracker[h], &mesh_info, &oxra_mesh_src[h]);
+				xr_extensions.xrUpdateHandMeshMSFT(oxra_hand_tracker[h], &mesh_info, &oxra_mesh_src[h]);
 
 				// Calculate UVs roughly by using their polar coordinates,
 				// Y axis is distance from the origin, and X axis is based on
 				// the angle from one side to the other.
-				for (int i = 0; i < oxra_mesh_src[h].vertexBuffer.vertexCountOutput; i++) {
+				for (uint32_t i = 0; i < oxra_mesh_src[h].vertexBuffer.vertexCountOutput; i++) {
 					vec2 pt = {
 						oxra_mesh_src[h].vertexBuffer.vertices[i].position.x,
 						oxra_mesh_src[h].vertexBuffer.vertices[i].position.y };

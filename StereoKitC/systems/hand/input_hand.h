@@ -27,12 +27,12 @@ enum hand_system_ {
 };
 
 struct hand_mesh_t {
-	matrix  root_transform;
-	mesh_t  mesh;
-	vert_t *verts;
-	int32_t vert_count;
-	vind_t *inds;
-	int32_t ind_count;
+	matrix   root_transform;
+	mesh_t   mesh;
+	vert_t  *verts;
+	uint32_t vert_count;
+	vind_t  *inds;
+	uint32_t ind_count;
 };
 
 extern int32_t input_hand_pointer_id[handed_max];

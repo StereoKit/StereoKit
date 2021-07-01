@@ -372,6 +372,11 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 		}
 		closedir(dir);
 	}
+#elif defined(SK_OS_WINDOWS_UWP)
+	(void)on_item;
+	(void)callback_data;
+	(void)directory_path;
+	log_err("platform_iterate_dir is not valid for UWP.");
 #endif
 }
 
@@ -397,7 +402,7 @@ char *platform_push_path_new(const char *path, const char *directory) {
 	if (path == nullptr || directory == nullptr) return nullptr;
 	if (directory[0] == '\0') return string_copy(path);
 
-	int32_t len = strlen(path);
+	size_t len = strlen(path);
 	if (len == 0) {
 		bool trailing_cslash = string_endswith(directory, ":\\") || string_endswith(directory, ":/");
 		bool trailing_c      = string_endswith(directory, ":");
