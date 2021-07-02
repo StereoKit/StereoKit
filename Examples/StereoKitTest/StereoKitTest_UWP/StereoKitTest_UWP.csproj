@@ -76,6 +76,7 @@
     <Compile Include="..\Demos\*.cs" />
     <Compile Include="..\Tools\*.cs" />
     <Compile Include="..\Tests\*.cs" />
+    <Compile Include="..\Docs\*.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -343,6 +343,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker        (PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallback on_callback, [In] FileFilter[] filters, int filter_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker_close  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_file_picker_visible();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out ulong out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, ulong size);
 
 		///////////////////////////////////////////
 

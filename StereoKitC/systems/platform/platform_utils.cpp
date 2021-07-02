@@ -96,7 +96,7 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-bool platform_read_file(const char *filename, void **out_data, size_t *out_size) {
+bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
 
@@ -119,7 +119,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 #elif defined(SK_OS_WINDOWS_UWP)
 	// See if we have a Handle cached from the FilePicker that matches this
 	// file name.
-	if (file_picker_cache(filename, out_data, out_size))
+	if (file_picker_cache_read(filename, out_data, out_size))
 		return true;
 #endif
 	FILE *fp = fopen(filename, "rb");
@@ -141,6 +141,28 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
 	((uint8_t *)*out_data)[*out_size] = 0;
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_write_file(const char *filename, void *data, size_t size) {
+#if defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	if (file_picker_cache_save(filename, data, size))
+		return true;
+#endif
+
+	FILE *fp = fopen(filename, "wb");
+	if (fp == nullptr) {
+		log_diagf("platform_read_file can't write %s", filename);
+		return false;
+	}
+
+	fwrite(data, 1, size, fp);
+	fclose(fp);
 
 	return true;
 }

@@ -342,7 +342,7 @@ void file_picker_shutdown() {
 
 ///////////////////////////////////////////
 
-bool file_picker_cache(const char *filename, void **out_data, size_t *out_size) {
+bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_size) {
 #if defined(SK_OS_WINDOWS_UWP)
 	uint64_t hash = hash_fnv64_string(filename);
 	for (size_t i = 0; i < fp_file_cache.size(); i++) {
@@ -357,6 +357,27 @@ bool file_picker_cache(const char *filename, void **out_data, size_t *out_size) 
 			memcpy(*out_data, result.data(), *out_size);
 
 			stream.Close();
+			fp_file_cache[i].file = nullptr;
+			fp_file_cache.erase(fp_file_cache.begin() + i);
+			i--;
+
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool file_picker_cache_save(const char *filename, void *data, size_t size) {
+#if defined(SK_OS_WINDOWS_UWP)
+	uint64_t hash = hash_fnv64_string(filename);
+	for (size_t i = 0; i < fp_file_cache.size(); i++) {
+		if (fp_file_cache[i].name_hash == hash) {
+			winrt::array_view<uint8_t const> view{ (uint8_t *)data, (uint8_t *)data + size };
+			FileIO::WriteBytesAsync(fp_file_cache[i].file, view);
+
 			fp_file_cache[i].file = nullptr;
 			fp_file_cache.erase(fp_file_cache.begin() + i);
 			i--;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -58,7 +59,9 @@ namespace StereoKit
 		/// access random files, unless the user has chosen them with the 
 		/// picker! This picker properly handles permissions for individual
 		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures.</summary>
+		/// files, such as .gltf files with external textures. See 
+		/// Platform.WriteFile and Platform.ReadFile for manually reading and
+		/// writing files in a cross-platfom manner.</summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>
@@ -94,7 +97,9 @@ namespace StereoKit
 		/// access random files, unless the user has chosen them with the 
 		/// picker! This picker properly handles permissions for individual
 		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures.</summary>
+		/// files, such as .gltf files with external textures. See 
+		/// Platform.WriteFile and Platform.ReadFile for manually reading and
+		/// writing files in a cross-platfom manner.</summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>
@@ -121,6 +126,70 @@ namespace StereoKit
 		/// currently visible. Some pickers will never show this, as they
 		/// block the application until the picker has completed.</summary>
 		public static bool FilePickerVisible => NativeAPI.platform_file_picker_visible();
+		#endregion
+
+		#region File Save & Load
+		/// <summary>Writes a text file to the filesystem, taking advantage
+		/// of any permissions that may have been granted by
+		/// Platform.FilePicker.</summary>
+		/// <param name="filename">Path to the new file. Not affected by
+		/// Assets folder path.</param>
+		/// <param name="data">A UTF-8 string to write to the file.</param>
+		/// <returns>True on success, False on failure.</returns>
+		public static bool WriteFile(string filename, string data)
+		{ 
+			byte[] bytes = Encoding.UTF8.GetBytes(data); 
+			return NativeAPI.platform_write_file(filename, bytes, (ulong)bytes.Length);
+		}
+
+		/// <summary>Writes an array of bytes to the filesystem, taking
+		/// advantage of any permissions that may have been granted by
+		/// Platform.FilePicker.</summary>
+		/// <param name="filename">Path to the new file. Not affected by
+		/// Assets folder path.</param>
+		/// <param name="data">An array of bytes to write to the file.</param>
+		/// <returns>True on success, False on failure.</returns>
+		public static bool WriteFile(string filename, byte[] data)
+			=> NativeAPI.platform_write_file(filename, data, (ulong)data.Length);
+
+		/// <summary>Reads the entire contents of the file as a UTF-8 string,
+		/// taking advantage of any permissions that may have been granted by
+		/// Platform.FilePicker.</summary>
+		/// <param name="filename">Path to the file. Not affected by Assets
+		/// folder path.</param>
+		/// <param name="data">A UTF-8 encoded string representing the
+		/// contents of the file. Will be null on failure.</param>
+		/// <returns>True on success, False on failure.</returns>
+		public static bool ReadFile (string filename, out string data) {
+			data = null;
+			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out ulong length))
+				return false;
+
+			byte[] bytes = new byte[length];
+			Marshal.Copy(fileData, bytes, 0, bytes.Length);
+
+			data = Encoding.UTF8.GetString(bytes);
+			return true;
+		}
+
+		/// <summary>Reads the entire contents of the file as a byte array,
+		/// taking advantage of any permissions that may have been granted by
+		/// Platform.FilePicker.</summary>
+		/// <param name="filename">Path to the file. Not affected by Assets
+		/// folder path.</param>
+		/// <param name="data">A UTF-8 encoded string representing the
+		/// contents of the file. Will be null on failure.</param>
+		/// <returns>True on success, False on failure.</returns>
+		public static bool ReadFile (string filename, out byte[] data)
+		{
+			data = null;
+			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out ulong length))
+				return false;
+
+			data = new byte[length];
+			Marshal.Copy(fileData, data, 0, data.Length);
+			return true;
+		}
 		#endregion
 	}
 }
