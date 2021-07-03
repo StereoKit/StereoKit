@@ -172,6 +172,18 @@ namespace StereoKit
 			return true;
 		}
 
+		/// <summary>Reads the entire contents of the file as a UTF-8 string,
+		/// taking advantage of any permissions that may have been granted by
+		/// Platform.FilePicker. Returns null on failure.</summary>
+		/// <param name="filename">Path to the file. Not affected by Assets
+		/// folder path.</param>
+		/// <returns>A UTF-8 encoded string if successful, null if not.</returns>
+		public static string ReadFileText(string filename)
+		{
+			ReadFile(filename, out string data);
+			return data;
+		}
+
 		/// <summary>Reads the entire contents of the file as a byte array,
 		/// taking advantage of any permissions that may have been granted by
 		/// Platform.FilePicker.</summary>
@@ -189,6 +201,18 @@ namespace StereoKit
 			data = new byte[length];
 			Marshal.Copy(fileData, data, 0, data.Length);
 			return true;
+		}
+
+		/// <summary>Reads the entire contents of the file as a byte array,
+		/// taking advantage of any permissions that may have been granted by
+		/// Platform.FilePicker. Returns null on failure.</summary>
+		/// <param name="filename">Path to the file. Not affected by Assets
+		/// folder path.</param>
+		/// <returns>A byte array if successful, null if not.</returns>
+		public static byte[] ReadFileBytes(string filename)
+		{
+			ReadFile(filename, out byte[] data);
+			return data;
 		}
 		#endregion
 	}
