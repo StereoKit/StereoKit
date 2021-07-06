@@ -21,13 +21,9 @@ namespace StereoKitDocumenter
 			parent.fields.Add(this);
 		}
 
-		public string Name { get { return $"{parent.name}.{name}"; } }
-		public string FileName { get {
-			return Path.Combine(Program.referenceOut, parent.name + "/" + name + ".md");
-		} }
-		public string UrlName { get {
-			return $"{{{{site.url}}}}/Pages/Reference/{parent.name}/{name}.html";
-		} }
+		public string Name     => $"{parent.Name}.{name}";
+		public string FileName => Path.Combine(Program.referenceOut, parent.Name + "/" + name + ".md");
+		public string UrlName  => $"{{{{site.url}}}}/Pages/Reference/{parent.Name}/{name}.html";
 
 		public Type GetFieldType(Type classType) {
 			Type result = classType.GetField(name)?.FieldType;
@@ -48,10 +44,12 @@ namespace StereoKitDocumenter
 			return false;
 		}
 
-		public void AddExample(DocExample aExample) { examples.Add(aExample); }
+		public void AddExample(DocExample aExample) => examples.Add(aExample);
 
 		public override string ToString()
 		{
+			Type   classType   = parent.ClassType;
+			Type   fieldType   = GetFieldType(classType);
 			string exampleText = "";
 			if (examples.Count > 0) {
 				exampleText = "\n\n## Examples\n\n";
@@ -59,12 +57,20 @@ namespace StereoKitDocumenter
 					exampleText += examples[i].data;
 				}
 			}
+
+			string signature = (GetStatic(classType) ? "static " : "") + $"{StringHelper.TypeName(fieldType.Name)} {name}";
+			PropertyInfo pInfo = classType.GetProperty(name);
+			if (pInfo != null)
+				signature += $"{{ {(pInfo.CanRead?"get ":"")}{(pInfo.CanWrite ? "set " : "")}}}";
+
 			return $@"---
 layout: default
-title: {parent.name}.{name}
+title: {parent.Name}.{name}
 description: {StringHelper.CleanForDescription(summary)}
 ---
-# [{parent.name}]({parent.UrlName}).{name}
+# [{parent.Name}]({parent.UrlName}).{name}
+
+<div class='signature' markdown='1'>{signature}</div>
 
 ## Description
 {summary}

@@ -199,8 +199,11 @@ namespace StereoKitDocumenter
 
 			for (int i = 0; i < classes.Count; i++)
 			{
-				DocIndexFolder classFolder = new DocIndexFolder(classes[i].name);
+				DocIndexFolder classFolder = new DocIndexFolder(classes[i].Name);
 				reference.folders.Add(classFolder);
+
+				// Enums don't need child items, it's a little much.
+				if (classes[i].IsEnum) continue;
 
 				for (int f = 0; f < classes[i].fields.Count; f++)
 				{

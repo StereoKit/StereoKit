@@ -13,20 +13,21 @@ namespace StereoKitDocumenter
 		public List<DocField>   fields   = new List<DocField>();
 		public List<DocExample> examples = new List<DocExample>();
 
-		public string Name { get { return name; } }
-		public string FileName { get{ 
-			return Path.Combine( Program.referenceOut, name+".md");
-		} }
-		public string UrlName { get{ 
-			return $"{{{{site.url}}}}/Pages/Reference/{name}.html";
-		} }
+		public string Name      { get {
+				int generic = name.IndexOf('`');
+				 return generic != -1 
+					? name.Substring(0, generic)
+					: name; } }
+		public string FileName  => Path.Combine( Program.referenceOut, Name+".md");
+		public string UrlName   => $"{{{{site.url}}}}/Pages/Reference/{Name}.html";
+		public Type   ClassType => Type.GetType("StereoKit." + name + ", StereoKit") ?? Type.GetType("StereoKit.Framework." + name + ", StereoKit");
+		public bool   IsEnum    => ClassType.IsEnum;
 
-		public void AddExample(DocExample aExample) { examples.Add(aExample); }
+		public void AddExample(DocExample aExample) => examples.Add(aExample);
 
 		public override string ToString()
 		{
-			Type t = Type.GetType("StereoKit." + name + ", StereoKit");
-			if (t==null) t = Type.GetType("StereoKit.Framework." + name + ", StereoKit");
+			Type t = ClassType;
 			methods.Sort((a,b)=>a.name.CompareTo(b.name));
 			fields .Sort((a,b)=>a.name.CompareTo(b.name));
 			List<DocMethod> methodsStatic   = methods.FindAll(a =>  a.IsStatic);
@@ -36,6 +37,12 @@ namespace StereoKitDocumenter
 
 			Func<DocField,  string> fieldToString  = (f) => { return $"|{StringHelper.TypeName(f.GetFieldType(t).Name)} [{f.name}]({f.UrlName})|{StringHelper.CleanForTable(f.summary)}|"; };
 			Func<DocMethod, string> methodToString = (m) => { return $"|[{m.ShowName}]({m.UrlName})|{StringHelper.CleanForTable(m.overloads[0].summary)}|"; };
+
+			string classDescription = "";
+			if      (t.IsEnum)      classDescription = "enum";
+			else if (t.IsClass)     classDescription = "class";
+			else if (t.IsValueType) classDescription = "struct";
+			if (t.IsAbstract && t.IsSealed) classDescription = "static " + classDescription;
 
 			string memberText = methodsInstance.Count == 0 ? 
 				"" : "\n\n## Instance Methods\n\n|  |  |\n|--|--|\n";
@@ -52,8 +59,14 @@ namespace StereoKitDocumenter
 			memberTextStatic += string.Join("\n", methodsStatic
 				.Select(methodToString));
 
-			string fieldTextStatic = fieldsStatic.Count == 0 ?
-				"" : "\n\n## Static Fields and Properties\n\n|  |  |\n|--|--|\n";
+			string fieldTextStatic;
+			if (t.IsEnum) {
+				fieldTextStatic = fieldsStatic.Count == 0 ?
+					"" : "\n\n## Enum Values\n\n|  |  |\n|--|--|\n";
+			} else {
+				fieldTextStatic = fieldsStatic.Count == 0 ?
+					"" : "\n\n## Static Fields and Properties\n\n|  |  |\n|--|--|\n";
+			}
 			fieldTextStatic += string.Join("\n", fieldsStatic
 				.Select(fieldToString));
 
@@ -63,10 +76,10 @@ namespace StereoKitDocumenter
 
 			return $@"---
 layout: default
-title: {name}
+title: {Name}
 description: {StringHelper.CleanForDescription(summary)}
 ---
-# {name}
+# {classDescription} {Name}
 
 {summary}
 {fieldText}
