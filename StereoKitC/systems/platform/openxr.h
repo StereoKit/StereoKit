@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../stereokit.h"
-#include "sk_config.h"
 #include "../../libraries/sk_gpu.h"
 #include "../platform/platform_utils.h"
 

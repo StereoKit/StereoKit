@@ -1,5 +1,4 @@
 #include "linux.h"
-#include "sk_config.h"
 #if defined(SK_OS_LINUX)
 
 #include <GL/glx.h>

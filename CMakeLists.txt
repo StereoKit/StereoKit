@@ -40,12 +40,16 @@ else()
 	target_link_libraries(sk-pthreads INTERFACE Threads::Threads)
 endif()
 
-# Linux system packages
-# Linux OpenGL function pointer loader thing - on Windows, SK has its own function pointer loader thing
-find_package(GLEW REQUIRED)
+SET(LINUX_EGL OFF CACHE BOOL "Force using EGL graphics backend on Linux")
 
-# "Old" Linux window manager
-find_package(X11 REQUIRED)
+# Linux system packages
+if(NOT LINUX_EGL)
+	# Linux OpenGL function pointer loader thing - on Windows, SK has its own function pointer loader thing
+	find_package(GLEW REQUIRED)
+
+	# "Old" Linux window manager
+	find_package(X11 REQUIRED)
+endif()
 
 # OpenXR
 # find_package(OpenXR REQUIRED)
@@ -53,15 +57,11 @@ find_package(X11 REQUIRED)
 # For installing on Linux
 # find_package(PkgConfig)
 
-set(FILE_CONTENTS "#define SKG_LINUX_GLX")
-
-configure_file(
-	${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/sk_config.h.cmake_in
-	${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/sk_config.h
-	@ONLY
-)
-
-
+if(LINUX_EGL)
+	add_definitions("-DSKG_LINUX_EGL")
+else()
+	add_definitions("-DSKG_LINUX_GLX")
+endif()
 
 add_library(StereoKitC
 SHARED
@@ -139,6 +139,22 @@ target_include_directories(StereoKitC
   StereoKitC/lib/include/
 )
 
+if(LINUX_EGL)
+	target_link_libraries(
+		StereoKitC
+		PUBLIC
+		EGL
+	)
+else()
+	target_link_libraries(
+		StereoKitC
+		PUBLIC
+		GL
+		GLEW
+		X11
+	)
+endif()
+
 target_link_libraries(
   StereoKitC
   # PUBLIC
@@ -146,11 +162,8 @@ target_link_libraries(
   # PRIVATE
   PUBLIC
   ReactPhysics3D::ReactPhysics3D
-  GL
-  GLEW
   GLX
   fontconfig
-  X11
   openxr_loader
   ${CMAKE_DL_LIBS}
   PRIVATE
