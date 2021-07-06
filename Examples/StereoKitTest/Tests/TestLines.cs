@@ -5,7 +5,7 @@ class DemoTestLines : ITest
 	public void Initialize(){}
 	public void Shutdown(){}
 	public void Update() {
-		Tests.Screenshot(600,600,"LineRenderer.jpg", V.XYZ(0,0,0.5f), Vec3.Zero);
+		Tests.Screenshot(600,600,"Tests/LineRenderer.jpg", V.XYZ(0,0,0.5f), Vec3.Zero);
 
 		// A ring of lines that goes out past the edge of the screen
 		Color32 c = Color32.White;
