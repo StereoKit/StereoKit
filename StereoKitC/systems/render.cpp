@@ -731,9 +731,23 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 ///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
+	skg_platform_data_t platform = skg_get_platform_data();
+#if defined(SKG_DIRECT3D11)
+	*device  = platform._d3d11_device;
+	//*context = platform._d3d11_context;
+	*context = nullptr;
+#elif defined(_SKG_GL_LOAD_EGL)
+	*device  = _egl_display;
+	*context = _egl_context;
+#elif defined(_SKG_GL_LOAD_WGL)
+	*device  = _gl_hdc;
+	*context = _gl_hrc;
+#elif defined(_SKG_GL_LOAD_GLX)
+	*device  = _glx_drawable;
+	*context = _glx_context;
+#else
 	log_warn("render_get_device not implemented for sk_gpu!");
-	*device  = nullptr; //d3d_device;
-	*context = nullptr; //d3d_context;
+#endif
 }
 
 ///////////////////////////////////////////
