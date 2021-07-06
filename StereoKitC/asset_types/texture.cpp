@@ -142,6 +142,26 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
+tex_t tex_create_color32(color32 *data, int32_t width, int32_t height, bool32_t srgb_data) {
+	tex_t result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_colors(result, width, height, data);
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_t srgb_data) {
+	tex_t    result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	color32 *color  = sk_malloc_t(color32, width * height);
+	for (size_t i = 0; i < width*height; i++)
+		color[i] = color_to_32(data[i]);
+	tex_set_colors(result, width, height, color);
+	free(color);
+	return result;
+}
+
+///////////////////////////////////////////
+
 tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	tex_t result = tex_find(file);
 	if (result != nullptr)
