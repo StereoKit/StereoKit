@@ -209,7 +209,7 @@ namespace StereoKit
 				colorData = new Color32[Width*Height];
 
 			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
-			IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+			IntPtr   pointer = pinnedArray.AddrOfPinnedObject();
 			NativeAPI.tex_get_data(_inst, pointer, (ulong)(colorData.Length * 4));
 			pinnedArray.Free();
 		}
@@ -357,6 +357,8 @@ namespace StereoKit
 		/// or is it normal/metal/rough/data that's not for direct display? 
 		/// sRGB colors get converted to linear color space on the graphics
 		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
+		/// the given array of colors.</returns>
 		public static Tex FromColors(in Color32[] colors, int width, int height, bool sRGBData = true)
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
@@ -383,6 +385,8 @@ namespace StereoKit
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
 		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
+		/// the given array of colors.</returns>
 		public static Tex FromColors(in Color[] colors, int width, int height, bool sRGBData = true)
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
