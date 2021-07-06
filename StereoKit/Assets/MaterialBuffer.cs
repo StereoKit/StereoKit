@@ -19,19 +19,19 @@ namespace StereoKit
 	/// requirements! Example:
 	/// 
 	/// C#
-	/// ```CSharp
+	/// ```csharp
 	///[StructLayout(LayoutKind.Sequential)]
 	///struct BufferData {
-	///	Vec3    windDirection;
-	///	float   windStrength
+	///	   Vec3  windDirection;
+	///	   float windStrength
 	///}
 	/// ```
 	/// 
 	/// HLSL
-	/// ```HLSL
+	/// ```c
 	///cbuffer BufferData : register(b3) {
-	///	float3 windDirection;
-	///	float  windStrength;
+	///	   float3 windDirection;
+	///	   float  windStrength;
 	///}
 	/// ```
 	/// </summary>

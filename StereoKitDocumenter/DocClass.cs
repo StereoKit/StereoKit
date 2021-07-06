@@ -36,6 +36,7 @@ namespace StereoKitDocumenter
 			List<DocField>  fieldsInstance  = fields.FindAll(a => !a.GetStatic(t));
 
 			Func<DocField,  string> fieldToString  = (f) => { return $"|{StringHelper.TypeName(f.GetFieldType(t).Name)} [{f.name}]({f.UrlName})|{StringHelper.CleanForTable(f.summary)}|"; };
+			Func<DocField,  string> enumToString   = (e) => { return $"|{e.name}|{StringHelper.CleanForTable(e.summary)}|"; };
 			Func<DocMethod, string> methodToString = (m) => { return $"|[{m.ShowName}]({m.UrlName})|{StringHelper.CleanForTable(m.overloads[0].summary)}|"; };
 
 			string classDescription = "";
@@ -63,12 +64,14 @@ namespace StereoKitDocumenter
 			if (t.IsEnum) {
 				fieldTextStatic = fieldsStatic.Count == 0 ?
 					"" : "\n\n## Enum Values\n\n|  |  |\n|--|--|\n";
+				fieldTextStatic += string.Join("\n", fieldsStatic
+					.Select(enumToString));
 			} else {
 				fieldTextStatic = fieldsStatic.Count == 0 ?
 					"" : "\n\n## Static Fields and Properties\n\n|  |  |\n|--|--|\n";
+				fieldTextStatic += string.Join("\n", fieldsStatic
+					.Select(fieldToString));
 			}
-			fieldTextStatic += string.Join("\n", fieldsStatic
-				.Select(fieldToString));
 
 			string exampleText = examples.Count == 0 ?
 				"" : "\n\n## Examples\n\n";

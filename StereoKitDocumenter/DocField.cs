@@ -70,7 +70,9 @@ description: {StringHelper.CleanForDescription(summary)}
 ---
 # [{parent.Name}]({parent.UrlName}).{name}
 
-<div class='signature' markdown='1'>{signature}</div>
+<div class='signature' markdown='1'>
+{signature}
+</div>
 
 ## Description
 {summary}
