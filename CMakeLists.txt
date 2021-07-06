@@ -151,7 +151,6 @@ else()
 		PUBLIC
 		GL
 		GLEW
-		X11
 	)
 endif()
 
@@ -163,6 +162,7 @@ target_link_libraries(
   PUBLIC
   ReactPhysics3D::ReactPhysics3D
   GLX
+  X11
   fontconfig
   openxr_loader
   ${CMAKE_DL_LIBS}
