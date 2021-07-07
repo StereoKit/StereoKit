@@ -737,14 +737,14 @@ void render_get_device(void **device, void **context) {
 	//*context = platform._d3d11_context;
 	*context = nullptr;
 #elif defined(_SKG_GL_LOAD_EGL)
-	*device  = _egl_display;
-	*context = _egl_context;
+	*device  = platform._egl_display;
+	*context = platform._egl_context;
 #elif defined(_SKG_GL_LOAD_WGL)
-	*device  = _gl_hdc;
-	*context = _gl_hrc;
+	*device  = platform._gl_hdc;
+	*context = platform._gl_hrc;
 #elif defined(_SKG_GL_LOAD_GLX)
-	*device  = _glx_drawable;
-	*context = _glx_context;
+	*device  = platform._glx_drawable;
+	*context = platform._glx_context;
 #else
 	log_warn("render_get_device not implemented for sk_gpu!");
 #endif

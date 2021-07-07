@@ -971,6 +971,8 @@ SK_API const pose_t         *input_eyes           ();
 SK_API button_state_         input_eyes_tracked   ();
 SK_API const mouse_t        *input_mouse          ();
 SK_API button_state_         input_key            (key_ key);
+SK_API uint32_t              input_text_consume   ();
+SK_API void                  input_text_reset     ();
 SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material  (handed_ hand, material_t material);

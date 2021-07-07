@@ -51,7 +51,7 @@ void input_keyboard_suspend(bool suspend) {
 ///////////////////////////////////////////
 
 void input_keyboard_update() {
-	input_keyboard_char_reset();
+	input_text_reset();
 
 	// Clear any just_in/active flags that were set on the last frame
 	array_t<keyboard_event_t> &evts = input_key_data.events;
@@ -127,7 +127,7 @@ button_state_ input_keyboard_get(key_ key) {
 
 ///////////////////////////////////////////
 
-void input_keyboard_inject_char(uint32_t character) {
+void input_text_inject_char(uint32_t character) {
 	// Don't inject characters if input is suspended
 	if (input_key_suspended) return;
 
@@ -140,7 +140,7 @@ void input_keyboard_inject_char(uint32_t character) {
 
 ///////////////////////////////////////////
 
-uint32_t input_keyboard_char_consume() {
+uint32_t input_text_consume() {
 	// Return false if queue is empty
 	if (input_key_data.queue_counter >= input_key_data.characters.count) return 0;
 
@@ -152,7 +152,7 @@ uint32_t input_keyboard_char_consume() {
 
 ///////////////////////////////////////////
 
-void input_keyboard_char_reset() {
+void input_text_reset() {
 	input_key_data.queue_counter = 0;
 }
 

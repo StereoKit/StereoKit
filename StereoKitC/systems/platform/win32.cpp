@@ -61,7 +61,7 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     return true;
 	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam);     return true;
 	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam);     return true;
-	case WM_CHAR:        input_keyboard_inject_char   ((uint32_t)wParam); return true;
+	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
 	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
 	}

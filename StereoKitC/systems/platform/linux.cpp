@@ -182,7 +182,7 @@ void linux_events() {
 				int    count  = Xutf8LookupString(x_linux_input_context, &event.xkey, keys_return, sizeof(keys_return), &keysym, &status);
 
 				if ((status == XLookupChars || status == XLookupBoth) && keysym != 0xFF08) {
-					input_keyboard_inject_char((uint32_t)keysym);
+					input_text_inject_char((uint32_t)keysym);
 				}
 
 				// Translate keypress to a hardware key, and submit that
@@ -198,7 +198,7 @@ void linux_events() {
 					// Some non-text characters get fed into the text system as well
 					if (is_pressed) {
 						if (key == key_backspace || key == key_return || key == key_esc) {
-							input_keyboard_inject_char((uint32_t)key);
+							input_text_inject_char((uint32_t)key);
 						}
 					}
 				}

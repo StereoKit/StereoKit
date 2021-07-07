@@ -53,7 +53,7 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace sk;
 
 void uwp_on_corewindow_character(CoreWindow const &, CharacterReceivedEventArgs const &args) {
-	input_keyboard_inject_char((uint32_t)args.KeyCode());
+	input_text_inject_char((uint32_t)args.KeyCode());
 }
 
 void uwp_on_corewindow_keypress(CoreDispatcher const &, AcceleratorKeyEventArgs const & args) {

@@ -227,6 +227,19 @@ namespace StereoKit
 			return false;
 		}
 
+		/// <summary>This is an input field where users can input text to the
+		/// app! Selecting it will spawn a virtual keyboard, or act as the
+		/// keyboard focus. Hitting escape or enter, or focusing another UI
+		/// element will remove focus from this Input.</summary>
+		/// <param name="id">A per-window unique id for tracking element 
+		/// state.</param>
+		/// <param name="value">The string that will store the Input's 
+		/// content in.</param>
+		/// <returns>Returns true every time the contents of 'value' change.
+		/// </returns>
+		public static bool Input(string id, ref string value)
+			=> Input(id, ref value, Vec2.Zero);
+
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
 		/// <param name="id">A per-window unique id for tracking element 

@@ -1025,6 +1025,9 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 ///////////////////////////////////////////
 
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
+	if (size.x == 0) size.x = ui_area_remaining().x;
+	if (size.y == 0) size.y = ui_line_height();
+
 	uint64_t id_hash  = ui_stack_hash(id);
 	bool     result   = false;
 	vec3     offset   = skui_layers.last().offset;
@@ -1060,7 +1063,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 	// If focused, acquire any input in the keyboard's queue
 	if (skui_input_target == id_hash) {
-		uint32_t curr = input_keyboard_char_consume();
+		uint32_t curr = input_text_consume();
 		while (curr != 0) {
 			uint32_t add = '\0';
 
@@ -1091,7 +1094,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 				}
 			}
 
-			curr = input_keyboard_char_consume();
+			curr = input_text_consume();
 		}
 	}
 
