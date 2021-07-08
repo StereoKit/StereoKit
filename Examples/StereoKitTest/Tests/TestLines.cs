@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DemoTestLines : ITest
+class TestLines : ITest
 {
 	public void Initialize(){}
 	public void Shutdown(){}

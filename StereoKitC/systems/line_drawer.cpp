@@ -89,12 +89,12 @@ void line_addv(line_point_t start, line_point_t end) {
 	}
 
 	vind_t start_vert = (vind_t)line_vert_ct;
-	vec3   dir        = vec3_normalize(end.pt - start.pt);
+	vec3   dir        = end.pt-start.pt;
 
-	line_verts[line_vert_ct+0] = vert_t{ start.pt, dir, { start.thickness,0}, start.color };
-	line_verts[line_vert_ct+1] = vert_t{ start.pt, dir, {-start.thickness,1}, start.color };
-	line_verts[line_vert_ct+2] = vert_t{ end  .pt, dir, { end  .thickness,0}, end  .color };
-	line_verts[line_vert_ct+3] = vert_t{ end  .pt, dir, {-end  .thickness,1}, end  .color };
+	line_verts[line_vert_ct+0] = vert_t{ start.pt, end.pt,     { start.thickness,0}, start.color };
+	line_verts[line_vert_ct+1] = vert_t{ start.pt, end.pt,     {-start.thickness,1}, start.color }; 
+	line_verts[line_vert_ct+2] = vert_t{ end  .pt, end.pt+dir, { end  .thickness,0}, end  .color };
+	line_verts[line_vert_ct+3] = vert_t{ end  .pt, end.pt+dir, {-end  .thickness,1}, end  .color };
 
 	line_inds[line_ind_ct++] = start_vert + 0;
 	line_inds[line_ind_ct++] = start_vert + 2;
