@@ -358,6 +358,14 @@ namespace StereoKit
 		public static void PushId(string rootId) 
 			=> NativeAPI.ui_push_id(rootId);
 
+		/// <summary>Adds a root id to the stack for the following UI 
+		/// elements! This id is combined when hashing any following ids, to
+		/// prevent id collisions in separate groups.</summary>
+		/// <param name="rootId">The root id to use until the following PopId 
+		/// call.</param>
+		public static void PushId(int rootId)
+			=> NativeAPI.ui_push_idi(rootId);
+
 		/// <summary>Removes the last root id from the stack, and moves up to 
 		/// the one before it!</summary>
 		public static void PopId() 

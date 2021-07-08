@@ -434,8 +434,24 @@ uint64_t ui_stack_hash(const char *string) {
 
 ///////////////////////////////////////////
 
+uint64_t ui_stack_hashi(int32_t id) {
+	return skui_id_stack.count > 0 
+		? hash_fnv64_data(&id, sizeof(int32_t), skui_id_stack.last().id) 
+		: hash_fnv64_data(&id, sizeof(int32_t));
+}
+
+///////////////////////////////////////////
+
 uint64_t ui_push_id(const char *id) {
 	uint64_t result = ui_stack_hash(id);
+	skui_id_stack.add({ result });
+	return result;
+}
+
+///////////////////////////////////////////
+
+uint64_t ui_push_idi(int32_t id) {
+	uint64_t result = ui_stack_hashi(id);
 	skui_id_stack.add({ result });
 	return result;
 }

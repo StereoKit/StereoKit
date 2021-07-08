@@ -41,6 +41,7 @@ SK_API float    ui_line_height   ();
 SK_API void     ui_reserve_box   (vec2 size);
 SK_API void     ui_space         (float space);
 SK_API uint64_t ui_push_id       (const char *id);
+SK_API uint64_t ui_push_idi      (int32_t id);
 SK_API void     ui_pop_id        ();
 SK_API uint64_t ui_stack_hash    (const char *string);
 

@@ -414,6 +414,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_reserve_box   (Vec2 size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_space         (float space);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong ui_push_id       (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong ui_push_idi      (int id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_pop_id        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong ui_stack_hash    (string str);
 
