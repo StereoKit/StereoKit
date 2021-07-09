@@ -2,28 +2,35 @@
 
 #include "stereokit.h"
 
+#ifdef __cplusplus
 namespace sk {
+#endif
 
-enum ui_move_ {
+typedef enum ui_move_ {
 	ui_move_exact = 0,
 	ui_move_face_user,
 	ui_move_pos_only,
-};
+} ui_move_;
 
-enum ui_win_ {
+typedef enum ui_win_ {
 	ui_win_empty  = 0,
 	ui_win_head   = 1 << 0,
 	ui_win_body   = 1 << 1,
 	ui_win_normal = ui_win_head | ui_win_body,
-};
+} ui_win_;
 
-struct ui_settings_t {
+typedef enum ui_confirm_ {
+	ui_confirm_push,
+	ui_confirm_pinch
+} ui_confirm_;
+
+typedef struct ui_settings_t {
 	float padding;
 	float gutter;
 	float depth;
 	float backplate_depth;
 	float backplate_border;
-};
+} ui_settings_t;
 
 SK_API void     ui_show_volumes        (bool32_t      show);
 SK_API void     ui_enable_far_interact (bool32_t      enable);
@@ -46,33 +53,35 @@ SK_API void     ui_pop_id        ();
 SK_API uint64_t ui_stack_hash    (const char *string);
 
 SK_API bool32_t ui_is_interacting (handed_ hand);
-SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float &finger_offset, button_state_ &button_state, button_state_ &focus_state);
+SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, sk_ref(float) finger_offset, sk_ref(button_state_) button_state, sk_ref(button_state_) focus_state);
 
 SK_API void     ui_model_at       (model_t model, vec3 start, vec3 size, color128 color);
 SK_API bool32_t ui_volume_at      (const char *id, bounds_t bounds);
-SK_API button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand);
+SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);
 SK_API bool32_t ui_button_at      (const char *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relative_pos, float diameter);
-SK_API bool32_t ui_toggle_at      (const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_hslider_at     (const char *id,   float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_toggle_at      (const char *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_hslider_at     (const char *id,   sk_ref(float) value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
 
 SK_API void     ui_hseparator  ();
-SK_API void     ui_label       (const char *text, bool32_t use_padding = true);
+SK_API void     ui_label       (const char *text, bool32_t use_padding sk_default(true));
 SK_API void     ui_label_sz    (const char *text, vec2 size);
 SK_API void     ui_text        (const char *text);
 SK_API void     ui_image       (sprite_t image, vec2 size);
 SK_API bool32_t ui_button      (const char *text);
 SK_API bool32_t ui_button_sz   (const char *text, vec2 size);
-SK_API bool32_t ui_button_round(const char *id, sprite_t image, float diameter = 0);
-SK_API bool32_t ui_toggle      (const char *text, bool32_t &pressed);
-SK_API bool32_t ui_toggle_sz   (const char *text, bool32_t &pressed, vec2 size);
+SK_API bool32_t ui_button_round(const char *id, sprite_t image, float diameter sk_default(0));
+SK_API bool32_t ui_toggle      (const char *text, sk_ref(bool32_t) pressed);
+SK_API bool32_t ui_toggle_sz   (const char *text, sk_ref(bool32_t) pressed, vec2 size);
 //SK_API bool32_t ui_toggle_round(const char *text, bool32_t &pressed);
 SK_API void     ui_model       (model_t model, vec2 ui_size, float model_scale);
-SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_size, vec2 size = vec2_zero);
-SK_API bool32_t ui_hslider     (const char *id, float &value, float min, float max, float step, float width = 0);
-SK_API bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type = ui_move_exact);
+SK_API bool32_t ui_input       (const char *id, char *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero));
+SK_API bool32_t ui_hslider     (const char *id, sk_ref(float) value, float min, float max, float step, float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
+SK_API bool32_t ui_handle_begin(const char *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API void     ui_handle_end  ();
-SK_API void     ui_window_begin(const char *text, pose_t &pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type = ui_win_normal, ui_move_ move_type = ui_move_face_user);
+SK_API void     ui_window_begin(const char *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_end  ();
 
+#ifdef __cplusplus
 } // namespace sk
+#endif

@@ -129,7 +129,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           ();
 SK_API void          sk_quit               ();
-SK_API bool32_t      sk_step               (void (*app_update)());
+SK_API bool32_t      sk_step               (void (*app_update)(void));
 SK_API display_mode_ sk_active_display_mode();
 SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
@@ -291,16 +291,16 @@ static inline float    vec3_magnitude_sq(vec3 a) { return a.x*a.x + a.y*a.y + a.
 static inline float    vec2_magnitude_sq(vec2 a) { return a.x*a.x + a.y*a.y; }
 static inline float    vec3_dot         (vec3 a, vec3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 static inline float    vec2_dot         (vec2 a, vec2 b) { return a.x*b.x + a.y*b.y; }
-static inline float    vec3_distance_sq (vec3 a, vec3 b) { return vec3_magnitude_sq({a.x-b.x, a.y-b.y, a.z-b.z}); }
-static inline float    vec2_distance_sq (vec2 a, vec2 b) { return vec2_magnitude_sq({a.x-b.x, a.y-b.y}); }
-static inline float    vec3_distance    (vec3 a, vec3 b) { return vec3_magnitude({a.x-b.x, a.y-b.y, a.z-b.z}); }
-static inline float    vec2_distance    (vec2 a, vec2 b) { return vec2_magnitude({a.x-b.x, a.y-b.y}); }
-static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); return {a.x*imag, a.y*imag, a.z*imag}; }
-static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); return {a.x*imag, a.y*imag}; }
-static inline vec3     vec3_abs         (vec3 a) { return { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; }
-static inline vec2     vec2_abs         (vec2 a) { return { fabsf(a.x), fabsf(a.y) }; }
-static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { return { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; }
-static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { return { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; }
+static inline float    vec3_distance_sq (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.y-b.y, a.z-b.z}; return vec3_magnitude_sq(v); }
+static inline float    vec2_distance_sq (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude_sq(v); }
+static inline float    vec3_distance    (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.y-b.y, a.z-b.z}; return vec3_magnitude(v); }
+static inline float    vec2_distance    (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude(v); }
+static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); vec3 v = {a.x*imag, a.y*imag, a.z*imag}; return v; }
+static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
+static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; return v; }
+static inline vec2     vec2_abs         (vec2 a) { vec2 v = { fabsf(a.x), fabsf(a.y) }; return v; }
+static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; return v; }
+static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
 static inline bool32_t vec2_in_radius   (vec2 pt, vec2 center, float radius) { return vec2_distance_sq(center, pt) < radius*radius; }
 

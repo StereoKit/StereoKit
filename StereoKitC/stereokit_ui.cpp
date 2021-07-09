@@ -1132,7 +1132,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 ///////////////////////////////////////////
 
-bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size) {
+bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) {
 	uint64_t id     = ui_stack_hash(id_text);
 	bool     result = false;
 
@@ -1198,7 +1198,7 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 
 ///////////////////////////////////////////
 
-bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width) {
+bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) {
 	vec3 offset = skui_layers.last().offset;
 	if (width == 0)
 		width = skui_layers.last().size.x == 0 ? 0.1f : (skui_layers.last().size.x - skui_settings.padding) - offset.x;
@@ -1208,7 +1208,7 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	ui_reserve_box(size);
 	ui_nextline();
 	
-	return ui_hslider_at(name, value, min, max, step, offset, size);
+	return ui_hslider_at(name, value, min, max, step, offset, size, confirm_method);
 }
 
 ///////////////////////////////////////////
