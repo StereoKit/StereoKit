@@ -254,12 +254,15 @@ namespace StereoKit
 		/// at min, and increments by step.</param>
 		/// <param name="width">Physical width of the slider on the window.
 		/// </param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0) 
-			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width);
+		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
+			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width, confirmMethod);
 
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size);
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
+			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.

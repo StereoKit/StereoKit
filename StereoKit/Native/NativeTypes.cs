@@ -944,4 +944,21 @@ namespace StereoKit
 		/// <summary>Flag to include a body on the window.</summary>
 		Body = 1 << 1,
 	}
+
+	/// <summary>Used with StereoKit's UI, and determines the interaction
+	/// confirmation behavior for certain elements, such as the UI.HSlider!
+	/// </summary>
+	public enum UIConfirm
+	{
+		/// <summary>The user must push a button with their finger to confirm
+		/// interaction with this element. This is simpler to activate as it
+		/// requires no learned gestures, but may result in more false 
+		/// positives.</summary>
+		Push = 0,
+		/// <summary>The user must use a pinch gesture to interact with this
+		/// element. This is much harder to activate by accident, but does
+		/// require the user to make a precise pinch gesture. You can pretty
+		/// much be sure that's what the user meant to do!</summary>
+		Pinch
+	}
 }

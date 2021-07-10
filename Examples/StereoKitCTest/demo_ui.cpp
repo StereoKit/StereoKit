@@ -28,8 +28,8 @@ void demo_ui_update() {
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;
-	ui_hslider("slider", val, 0, 1, 0.2f, 72*mm2m); ui_sameline();
-	ui_hslider("slider2", val2, 0, 1, 0, 72*mm2m);
+	ui_hslider("slider", val, 0, 1, 0.2f, 72*mm2m, ui_confirm_pinch); ui_sameline();
+	ui_hslider("slider2", val2, 0, 1, 0, 72*mm2m, ui_confirm_push);
 	if (input_key(key_mouse_left) & button_state_active)
 		ui_image(ui_sprite, vec2{ 6,0 }*cm2m);
 	if (ui_button("Press me!")) {
