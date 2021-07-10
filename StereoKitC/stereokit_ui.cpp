@@ -696,10 +696,6 @@ button_state_ ui_active_set(int32_t hand, uint64_t for_el_id, bool32_t active) {
 	if ( is_active               ) result  = button_state_active;
 	if ( is_active && !was_active) result |= button_state_just_active;
 	if (!is_active &&  was_active) result |= button_state_just_inactive;
-
-	if (result & button_state_just_active) {
-		log_infof("Switched to %llu", for_el_id);
-	}
 	return result;
 }
 
@@ -1247,19 +1243,19 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 	// Slide line
 	ui_box(
 		vec3{ x, line_y, window_relative_pos.z }, 
-		vec3{ size.x, rule_size, rule_size*skui_settings.backplate_depth+mm2m+mm2m }, 
+		vec3{ size.x, rule_size, rule_size*skui_settings.backplate_depth-mm2m }, 
 		skui_mat_quad, skui_palette[2] * color_blend);
 	if (confirm_method == ui_confirm_push) {
 		ui_cylinder(
 			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z}, 
-			button_size.x, fmaxf(finger_offset,rule_size*skui_settings.backplate_depth+mm2m), skui_mat, skui_palette[0]);
+			button_size.x, fmaxf(finger_offset,rule_size*skui_settings.backplate_depth+mm2m), skui_mat, skui_palette[0] * color_blend);
 		ui_cylinder(
 			vec3{ x+back_size - slide_x_rel, slide_y + back_size, window_relative_pos.z}, 
-			button_size.x+back_size*2, rule_size*skui_settings.backplate_depth, skui_mat, skui_color_border);
+			button_size.x+back_size*2, rule_size*skui_settings.backplate_depth, skui_mat, skui_color_border * color_blend);
 	} else if (confirm_method == ui_confirm_pinch) {
 		ui_box(
 			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z},
-			vec3{ button_size.x, button_size.y, skui_settings.depth*1.5f}, 
+			vec3{ button_size.x, button_size.y, skui_settings.depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
 	}
 	
@@ -1363,7 +1359,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			from_pt = matrix_transform_pt(to_local, hierarchy_to_world_point(vec3_zero));
 		}
 
-		if (focused & button_state_active) {
+		// This waits until the window has been focused for a frame,
+		// otherwise the handle UI may try and use a frame of focus to move
+		// around a bit.
+		if (skui_hand[i].focused_prev ==  id) {
 			color = 1.5f;
 			if (hand->pinch_state & button_state_just_active) {
 				sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
