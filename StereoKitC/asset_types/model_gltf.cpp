@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "model.h"
+#include "mesh.h"
 #include "texture.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -30,8 +31,14 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[primitive_id];
 
-	if (p->type != cgltf_primitive_type_triangles)
-		log_warnf("Unimplemented gltf primitive mode: %d", p->type);
+	if (p->type != cgltf_primitive_type_triangles) {
+		log_warnf("[%s] Unimplemented GLTF primitive mode: %d", filename, p->type);
+		return nullptr;
+	}
+	if (p->has_draco_mesh_compression) {
+		log_warnf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
+		return nullptr;
+	}
 
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh/%d_%d_%s", filename, node_id, primitive_id, m->name);
@@ -43,6 +50,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	vert_t *verts = nullptr;
 	int     vert_count = 0;
 
+	bool has_normals = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
@@ -77,11 +85,12 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].pos = *pos;
 					}
 				} else {
-					log_errf("Unimplemented vertex position format in %s", filename);
+					log_errf("[%s] Unimplemented vertex position format", filename);
 				}
 				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
+			has_normals = true;
 			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
@@ -100,7 +109,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].norm = *norm;
 					}
 				} else {
-					log_errf("Unimplemented vertex normal format in %s", filename);
+					log_errf("[%s] Unimplemented vertex normal format", filename);
 				}
 				free(floats);
 			}
@@ -123,7 +132,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].uv = *uv;
 					}
 				} else {
-					log_errf("Unimplemented vertex uv format in %s", filename);
+					log_errf("[%s] Unimplemented vertex uv format", filename);
 				}
 				free(floats);
 			}
@@ -158,7 +167,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].col = color_to_32({ col[0], col[1], col[2], 1 });
 					}
 				} else {
-					log_errf("Unimplemented vertex color format in %s", filename);
+					log_errf("[%s] Unimplemented vertex color format", filename);
 				}
 				free(floats);
 			}
@@ -194,7 +203,11 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 #endif
 		}
 	} else {
-		log_errf("Unimplemented vertex index format in %s", filename);
+		log_errf("[%s] Unimplemented vertex index format", filename);
+	}
+
+	if (!has_normals) {
+		mesh_calculate_normals(verts, vert_count, inds, ind_count);
 	}
 
 	result = mesh_create();
@@ -247,7 +260,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		// If it's already a loaded buffer, like in a .glb
 		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size, srgb_data);
 		if (result == nullptr) 
-			log_warnf("Couldn't load %s texture for %s!", image->name, filename);
+			log_warnf("[%s] Couldn't load texture: %s", filename, image->name);
 		else
 			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
@@ -390,13 +403,13 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);
 	if (result != cgltf_result_success) {
-		log_diagf("gltf parse err %d", result);
+		log_diagf("[%s] gltf parse err %d", filename, result);
 		return false;
 	}
 
 	result = cgltf_load_buffers(&options, data, model_file);
 	if (result != cgltf_result_success) {
-		log_diagf("gltf buffer load err %d", result);
+		log_diagf("[%s] gltf buffer load err %d", filename, result);
 		cgltf_free(data);
 		return false;
 	}
@@ -416,10 +429,12 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		matrix offset = transform * orientation_correction;
 
 		for (int32_t p = 0; p < n->mesh->primitives_count; p++) {
-			mesh_t     mesh     = gltf_parsemesh    (n->mesh, i, p, filename);
+			mesh_t mesh = gltf_parsemesh(n->mesh, i, p, filename);
+			if (mesh == nullptr) continue;
+
 			material_t material = gltf_parsematerial(data, n->mesh->primitives[p].material, filename, shader);
 
-			model_add_subset(model, mesh, material, offset);
+			model_add_named_subset(model, n->name, mesh, material, offset);
 
 			mesh_release    (mesh);
 			material_release(material);

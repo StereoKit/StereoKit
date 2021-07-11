@@ -9,6 +9,8 @@ using namespace sk;
 #include "demo_mic.h"
 #include "demo_sprites.h"
 #include "demo_lines.h"
+#include "demo_picker.h"
+#include "demo_world.h"
 
 #include <stdio.h>
 
@@ -46,6 +48,16 @@ scene_t demos[] = {
 		demo_lines_init,
 		demo_lines_update,
 		demo_lines_shutdown,
+	}, {
+		"Picker",
+		demo_picker_init,
+		demo_picker_update,
+		demo_picker_shutdown,
+	}, {
+		"World",
+		demo_world_init,
+		demo_world_update,
+		demo_world_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
@@ -102,7 +114,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[0]);
+	scene_set_active(demos[6]);
 
 	while (sk_step( []() {
 		scene_update();
@@ -147,7 +159,8 @@ void common_init() {
 
 void common_update() {
 	// Render floor
-	render_add_model(floor_model, floor_tr);
+	if (sk_system_info().display_type == display_opaque)
+		render_add_model(floor_model, floor_tr);
 
 	ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
 	for (int i = 0; i < sizeof(demos) / sizeof(scene_t); i++) {
@@ -180,7 +193,7 @@ void ruler_window() {
 	text_add_at("Centimeters",
 				matrix_trs(vec3{14.5f*cm2m, -1.5f*cm2m, -0.6f*cm2m},
 						   quat_identity, vec3{0.3f, 0.3f, 0.3f}),
-				-1, text_align_x_left | text_align_y_bottom);
+				-1, text_align_bottom_left);
 	for (int d = 0; d <= 60; d++) {
 		float x = d / 2.0f;
 		float size = (d % 2 == 0) ? 1.0f : 0.15f;
@@ -193,7 +206,7 @@ void ruler_window() {
 						matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
 										(2 - size)*cm2m, -0.6f*cm2m},
 									quat_identity, vec3{0.2f, 0.2f, 0.2f}),
-						-1, text_align_x_left | text_align_y_bottom);
+						-1, text_align_bottom_left);
 		}
 	}
 	ui_handle_end();

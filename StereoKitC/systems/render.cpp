@@ -236,9 +236,9 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	// TODO: May want to also update controllers/hands?
 	quat rot = matrix_extract_rotation(render_camera_root_final);
-	input_head_pose_world.position    = matrix_mul_point( render_camera_root_final, input_head_pose_local.position );
+	input_head_pose_world.position    = render_camera_root_final * input_head_pose_local.position;
 	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
-	input_eyes_pose_world.position    = matrix_mul_point( render_camera_root_final, input_eyes_pose_local.position );
+	input_eyes_pose_world.position    = render_camera_root_final * input_eyes_pose_local.position;
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
 }
 
@@ -370,7 +370,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
 
-		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+		XMVECTOR cam_pos = XMVector3Transform      (DirectX::g_XMIdentityR3,    view_inv);
 		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos[i], cam_pos);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir[i], cam_dir);
@@ -731,9 +731,23 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 ///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
+	skg_platform_data_t platform = skg_get_platform_data();
+#if defined(SKG_DIRECT3D11)
+	*device  = platform._d3d11_device;
+	//*context = platform._d3d11_context;
+	*context = nullptr;
+#elif defined(_SKG_GL_LOAD_EGL)
+	*device  = platform._egl_display;
+	*context = platform._egl_context;
+#elif defined(_SKG_GL_LOAD_WGL)
+	*device  = platform._gl_hdc;
+	*context = platform._gl_hrc;
+#elif defined(_SKG_GL_LOAD_GLX)
+	*device  = platform._glx_drawable;
+	*context = platform._glx_context;
+#else
 	log_warn("render_get_device not implemented for sk_gpu!");
-	*device  = nullptr; //d3d_device;
-	*context = nullptr; //d3d_context;
+#endif
 }
 
 ///////////////////////////////////////////

@@ -160,7 +160,7 @@ bool modelfmt_fbx(model_t model, const char *filename, void *file_data, size_t f
 			sk_transform.row[m].w = (float)transform.m[m*4+3];
 		}
 
-		model_add_subset(model, mesh, material, sk_transform * matrix_trs(vec3_zero, quat_identity, vec3_one * cm2m));
+		model_add_named_subset(model, fbx_mesh->name, mesh, material, sk_transform * matrix_trs(vec3_zero, quat_identity, vec3_one * cm2m));
 	}
 
 	free(folder);

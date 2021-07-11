@@ -36,6 +36,7 @@ const char *xr_request_layers[] = {
 };
 bool xr_has_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
+bool xr_has_hand_meshes       = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -261,9 +262,9 @@ bool openxr_init() {
 #endif
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
-	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
-	systemInfo.formFactor = xr_config_form;
-	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
+	XrSystemGetInfo system_info = { XR_TYPE_SYSTEM_GET_INFO };
+	system_info.formFactor = xr_config_form;
+	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_warning, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
 		openxr_shutdown();
@@ -273,22 +274,43 @@ bool openxr_init() {
 	// Figure out what this device is capable of!
 	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
 	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
+	XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
 	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
 	properties         .next = &properties_tracking;
-	properties_tracking.next = &properties_gaze;
+	properties_tracking.next = &properties_handmesh;
+	properties_handmesh.next = &properties_gaze;
 
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
-	xr_has_articulated_hands     = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
-	sk_info.eye_tracking_present = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
-	xr_has_depth_lsr             = xr_ext_available.KHR_composition_layer_depth;
+	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
+	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
+	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
+	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
+	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
+	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
 
-	if (xr_has_articulated_hands) log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_has_depth_lsr)         log_diag("OpenXR depth LSR ext enabled!");
+	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
+	if (xr_has_depth_lsr)                  log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
 	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
 	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+
+	// Check scene understanding features
+	if (xr_ext_available.MSFT_scene_understanding) {
+		uint32_t count = 0;
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
+		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, count, &count, features);
+		for (uint32_t i = 0; i < count; i++) {
+			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
+			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
+		}
+		free(features);
+	}
+	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
+	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
@@ -317,16 +339,25 @@ bool openxr_init() {
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
 	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	#if defined (SK_OS_LINUX)
+		gfx_binding.getProcAddress = eglGetProcAddress;
+	#endif
 	gfx_binding.display = (EGLDisplay)platform._egl_display;
 	gfx_binding.config  = (EGLConfig )platform._egl_config;
 	gfx_binding.context = (EGLContext)platform._egl_context;
 #elif defined(XR_USE_GRAPHICS_API_D3D11)
 	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
 #endif
-	XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-	sessionInfo.next     = &gfx_binding;
-	sessionInfo.systemId = xr_system_id;
-	xrCreateSession(xr_instance, &sessionInfo, &xr_session);
+	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
+	session_info.next     = &gfx_binding;
+	session_info.systemId = xr_system_id;
+	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
+	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
+		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
+		gfx_binding.next = &overlay_info;
+		sk_info.overlay_app = true;
+	}
+	result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
@@ -372,6 +403,11 @@ bool openxr_init() {
 	if (!openxr_views_create() || !oxri_init()) {
 		openxr_shutdown();
 		return false;
+	}
+
+	if (sk_info.overlay_app) {
+		log_diag("Starting as an overlay app, display blend mode switched to blend.");
+		sk_info.display_type = display_blend;
 	}
 
 	return true;
@@ -556,8 +592,7 @@ void openxr_poll_actions() {
 	// Track the head location
 	openxr_get_space(xr_head_space, &input_head_pose_local);
 	matrix root = render_get_cam_final();
-	input_head_pose_world.position    = matrix_mul_point   (root, input_head_pose_local.position);
-	input_head_pose_world.orientation = matrix_mul_rotation(root, input_head_pose_local.orientation);
+	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	oxri_update_frame();
 }

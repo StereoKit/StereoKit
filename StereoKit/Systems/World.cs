@@ -43,5 +43,56 @@ namespace StereoKit
 			Marshal.Release(unknown);
 			return result;
 		}
+
+		/// <summary>World.RaycastEnabled must be set to true first! 
+		/// SK.System.worldRaycastPresent must also be true. This does a ray
+		/// intersection with whatever represents the environment at the
+		/// moment! In this case, it's a watertight collection of low
+		/// resolution meshes calculated by the Scene Understanding
+		/// extension, which is only provided by the Microsoft HoloLens
+		/// runtime.</summary>
+		/// <param name="ray">A world space ray that you'd like to try
+		/// intersecting with the world mesh.</param>
+		/// <param name="intersection">The location of the intersection, and
+		/// direction of the world's surface at that point. This is only
+		/// valid if the method returns true.</param>
+		/// <returns>True if an intersection is detected, false if raycasting
+		/// is disabled, or there was no intersection.</returns>
+		public static bool Raycast(Ray ray, out Ray intersection)
+			=> NativeAPI.world_raycast(ray, out intersection);
+
+		/// <summary>Off by default. This tells StereoKit to load up and
+		/// display an occlusion surface that allows the real world to
+		/// occlude the application's digital content! Most systems may allow
+		/// you to customize the visual appearance of this occlusion surface
+		/// via the World.OcclusionMaterial.
+		/// Check SK.System.worldOcclusionPresent to see if occlusion can be
+		/// enabled. This will reset itself to false if occlusion isn't
+		/// possible. Loading occlusion data is asynchronous, so occlusion
+		/// may not occur immediately after setting this flag.</summary>
+		public static bool OcclusionEnabled { 
+			get => NativeAPI.world_get_occlusion_enabled();
+			set => NativeAPI.world_set_occlusion_enabled(value); }
+
+		/// <summary>Off by default. This tells StereoKit to load up 
+		/// collision meshes for the environment, for use with World.Raycast.
+		/// Check SK.System.worldRaycastPresent to see if raycasting can be
+		/// enabled. This will reset itself to false if raycasting isn't
+		/// possible. Loading raycasting data is asynchronous, so collision
+		/// surfaces may not be abailable immediately after setting this
+		/// flag.</summary>
+		public static bool RaycastEnabled { 
+			get => NativeAPI.world_get_raycast_enabled();
+			set => NativeAPI.world_set_raycast_enabled(value); }
+
+		/// <summary>By default, this is a black(0,0,0,0) opaque unlit
+		/// material that will occlude geometry, but won't show up as visible
+		/// anywhere. You can override this with whatever material you would
+		/// like.</summary>
+		public static Material OcclusionMaterial {
+			get => new Material(NativeAPI.world_get_occlusion_material());
+			set => NativeAPI.world_set_occlusion_material(value._inst); }
+
+
 	}
 }

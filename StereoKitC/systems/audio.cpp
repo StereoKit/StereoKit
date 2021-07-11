@@ -137,7 +137,7 @@ void data_callback(ma_device*, void* output, const void*, ma_uint32 frame_count)
 
 ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame_count, vec3* position, float* volume) {
 	// Set the position and volume for this object. ISAC applies this directly for us
-	*position = matrix_mul_point(au_head_transform, inst.position);
+	*position = matrix_transform_pt(au_head_transform, inst.position);
 	*volume   = inst.volume;
 
 	ma_uint64 frame_cap         = _countof(au_mix_temp);

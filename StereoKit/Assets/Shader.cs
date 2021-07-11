@@ -17,7 +17,7 @@ namespace StereoKit
 
 		/// <summary>The name of the shader, provided in the shader file 
 		/// itself. Not the filename or id.</summary>
-		public string Name => NativeAPI.shader_get_name(_inst);
+		public string Name => Marshal.PtrToStringAnsi(NativeAPI.shader_get_name(_inst));
 
 		internal Shader(IntPtr shader)
 		{
@@ -71,5 +71,18 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.shader_find(shaderId);
 			return inst == IntPtr.Zero ? null : new Shader(inst);
 		}
+
+		/// <inheritdoc cref="StereoKit.Default.Shader" />
+		public static Shader Default => StereoKit.Default.Shader;
+		/// <inheritdoc cref="StereoKit.Default.ShaderPbr" />
+		public static Shader PBR => StereoKit.Default.ShaderPbr;
+		/// <inheritdoc cref="StereoKit.Default.ShaderUI" />
+		public static Shader UI => StereoKit.Default.ShaderUI;
+		/// <inheritdoc cref="StereoKit.Default.ShaderUIBox" />
+		public static Shader UIBox => StereoKit.Default.ShaderUIBox;
+		/// <inheritdoc cref="StereoKit.Default.ShaderUnlit" />
+		public static Shader Unlit => StereoKit.Default.ShaderUnlit;
+		/// <inheritdoc cref="StereoKit.Default.ShaderUnlitClip" />
+		public static Shader UnlitClip => StereoKit.Default.ShaderUnlitClip;
 	}
 }

@@ -342,6 +342,9 @@ namespace StereoKit
 		/// <returns>A copy of the entire set of hand data!</returns>
 		public static Hand Hand(Handed handed)
 			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+		public static Hand Hand(int handed)
+			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand((Handed)handed));
+
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is
 		/// great for simulating input for testing purposes. It will remain
@@ -392,6 +395,31 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+
+		/// <summary>Returns the next text character from the list of
+		/// characters that have been entered this frame! Will return '\0' if
+		/// there are no more characters left in the list. These are from the
+		/// system's text entry system, and so can be unicode, will repeat if
+		/// their 'key' is held down, and could arrive from something like a
+		/// copy/paste operation.
+		/// 
+		/// If you wish to reset this function to begin at the start of the
+		/// read list on the next call, you can call `Input.TextReset`.</summary>
+		/// <returns>The next character in this frame's list, or '\0' if none
+		/// remain.</returns>
+		public static char TextConsume() 
+			=> (char)NativeAPI.input_text_consume();
+		/// <summary>Resets the `Input.TextConsume` read list back to the
+		/// start.
+		/// For example, `UI.Input` will _not_ call `TextReset`, so it
+		/// effectively will consume those characters, hiding them from
+		/// any `TextConsume` calls following it. If you wanted to check the
+		/// current frame's text, but still allow `UI.Input` to work later on
+		/// in the frame, you would read everything with `TextConsume`, and
+		/// then `TextReset` afterwards to reset the read list for the 
+		/// following `UI.Input`.</summary>
+		public static void TextReset() 
+			=> NativeAPI.input_text_reset();
 
 		public static int PointerCount(InputSource filter = InputSource.Any) 
 			=> NativeAPI.input_pointer_count(filter);

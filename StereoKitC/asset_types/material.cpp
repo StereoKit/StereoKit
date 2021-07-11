@@ -466,7 +466,7 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 
 ///////////////////////////////////////////
 
-void material_get_param_info(material_t material, int index, char **out_name, material_param_ *out_type) {
+void material_get_param_info(material_t material, int32_t index, char **out_name, material_param_ *out_type) {
 	skg_shader_var_t *info = &material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].vars[index];
 	if (out_type != nullptr) *out_type = (material_param_)0; //TODO: implement this // info->type;
 	if (out_name != nullptr) *out_name = info->name;

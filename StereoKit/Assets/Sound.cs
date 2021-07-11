@@ -158,5 +158,10 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.sound_generate(tmpGen, duration);
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
+
+		/// <inheritdoc cref="Default.SoundClick" />
+		public static Sound Click => Default.SoundClick;
+		/// <inheritdoc cref="Default.SoundUnclick" />
+		public static Sound Unclick => Default.SoundUnclick;
 	}
 }

@@ -32,7 +32,8 @@ struct _mesh_t {
 	mesh_collision_t collision_data;
 };
 
+void                    mesh_calculate_normals (vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count);
 const mesh_collision_t *mesh_get_collision_data(mesh_t mesh);
-void mesh_destroy(mesh_t mesh);
+void                    mesh_destroy           (mesh_t mesh);
 
 } // namespace sk

@@ -132,7 +132,7 @@ namespace StereoKitDocumenter
 			string nameSignature = segs[0];
 			string paramSignature = segs.Length > 1 ? segs[1] : "";
 			segs = nameSignature.Split('.');
-            
+
 			DocField result = new DocField(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
 
 			// Read properties
@@ -141,6 +141,12 @@ namespace StereoKitDocumenter
 				switch (reader.Name.ToLower())
 				{
 					case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+					case "inheritdoc": {
+						string reference = reader.GetAttribute("cref").Trim();
+						int    start     = reference.IndexOf('.');
+						start = start == -1 ? 0 : start+1;
+						result.summary = $"See `{reference.Substring(start)}`";
+					} break;
 				}
 			}
 
@@ -193,8 +199,11 @@ namespace StereoKitDocumenter
 
 			for (int i = 0; i < classes.Count; i++)
 			{
-				DocIndexFolder classFolder = new DocIndexFolder(classes[i].name);
+				DocIndexFolder classFolder = new DocIndexFolder(classes[i].Name);
 				reference.folders.Add(classFolder);
+
+				// Enums don't need child items, it's a little much.
+				if (classes[i].IsEnum) continue;
 
 				for (int f = 0; f < classes[i].fields.Count; f++)
 				{

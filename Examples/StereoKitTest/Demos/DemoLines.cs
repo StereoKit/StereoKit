@@ -108,10 +108,11 @@ namespace StereoKitTest
 				float     dist  = Vec3.Distance(prev, tip);
 				float     speed = Vec3.Distance(tip, prevTip) * Time.Elapsedf;
 				LinePoint here  = new LinePoint(tip, activeColor, Math.Max(1-speed/0.0003f,0.1f) * lineSize);
-				drawPoints[drawPoints.Count - 1]  = here;
 
 				if ((Vec3.Dot( dir, (tip-prev).Normalized ) < 0.99f && dist > 0.01f) || dist > 0.05f) { 
 					drawPoints.Add(here);
+				} else {
+					drawPoints[drawPoints.Count - 1] = here;
 				}
 			}
 

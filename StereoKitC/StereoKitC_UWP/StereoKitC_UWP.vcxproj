@@ -130,6 +130,14 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+      </Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
@@ -152,11 +160,20 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+      </Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\*.cpp" />
     <ClCompile Include="..\libraries\*.cpp" />
     <ClCompile Include="..\libraries\*.c" />
+    <ClCompile Include="..\tools\*.cpp" />
     <ClCompile Include="..\asset_types\*.cpp" />
     <ClCompile Include="..\systems\*.cpp" />
     <ClCompile Include="..\systems\platform\*.cpp" />
@@ -164,6 +181,7 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
     <ClCompile Include="..\shaders_builtin\*.cpp" />
     <ClInclude Include="..\*.h" />
     <ClInclude Include="..\libraries\*.h" />
+    <ClInclude Include="..\tools\*.h" />
     <ClInclude Include="..\asset_types\*.h" />
     <ClInclude Include="..\systems\*.h" />
     <ClInclude Include="..\systems\platform\*.h" />

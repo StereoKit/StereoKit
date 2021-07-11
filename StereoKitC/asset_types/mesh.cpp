@@ -31,7 +31,7 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void mesh_set_verts(mesh_t mesh, vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data) {
 		if (mesh->vert_capacity < vertex_count)
@@ -91,7 +91,7 @@ void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_coun
 
 ///////////////////////////////////////////
 
-void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
+void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
@@ -137,6 +137,25 @@ void mesh_set_inds (mesh_t mesh, vind_t *indices,  int32_t index_count) {
 void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
 	out_indices     = mesh->inds;
 	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
+}
+
+///////////////////////////////////////////
+
+void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count) {
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
+	for (size_t i = 0; i < ind_count; i+=3) {
+		vert_t *v1 = &verts[inds[i  ]];
+		vert_t *v2 = &verts[inds[i+1]];
+		vert_t *v3 = &verts[inds[i+2]];
+		// Length of cross product is twice the area of the triangle it's 
+		// from, so if we don't 'normalize' it, then we get trangle area
+		// weighting on our normals for free!
+		vec3 normal = vec3_cross(v3->pos - v2->pos, v1->pos - v2->pos);
+		v1->norm += normal;
+		v2->norm += normal;
+		v3->norm += normal;
+	}
+	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
 }
 
 ///////////////////////////////////////////
@@ -234,7 +253,7 @@ void mesh_destroy(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -274,7 +293,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, vec3 *out_pt) {
 			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
 			if (dist < nearest_dist) {
 				nearest_dist = dist;
-				*out_pt      = pt;
+				*out_pt = {pt, data->planes[i / 3].normal};
 			}
 		}
 	}

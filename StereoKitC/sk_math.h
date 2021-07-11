@@ -28,6 +28,12 @@ inline DirectX::XMVECTOR math_vec3_to_fast(const vec3 &vector) {
 
 ///////////////////////////////////////////
 
+inline DirectX::XMVECTOR math_vec4_to_fast(const vec4 &vector) {
+	return DirectX::XMLoadFloat4((DirectX::XMFLOAT4 *)&vector); 
+}
+
+///////////////////////////////////////////
+
 inline DirectX::XMVECTOR math_quat_to_fast(const quat &quaternion) {
 	return DirectX::XMLoadFloat4((DirectX::XMFLOAT4 *)&quaternion); 
 }
@@ -37,6 +43,14 @@ inline DirectX::XMVECTOR math_quat_to_fast(const quat &quaternion) {
 inline vec3 math_fast_to_vec3(const DirectX::XMVECTOR &a) {
 	vec3 result; 
 	DirectX::XMStoreFloat3((DirectX::XMFLOAT3 *)&result, a);
+	return result;
+}
+
+///////////////////////////////////////////
+
+inline vec4 math_fast_to_vec4(const DirectX::XMVECTOR &a) {
+	vec4 result; 
+	DirectX::XMStoreFloat4((DirectX::XMFLOAT4 *)&result, a);
 	return result;
 }
 

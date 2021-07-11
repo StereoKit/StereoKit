@@ -192,7 +192,7 @@ namespace StereoKit.Framework
 				bool  highlightLine = highlightText || (focused && (angleId+1)%count == i);
 				Vec3  dir           = Vec3.AngleXY(currAngle);
 				Lines.Add(dir * minDist, dir * maxDist, highlightLine ? Color.White : Color.White*0.5f, highlightLine?0.002f:0.001f);
-				Text .Add(layer.items[i].name, Matrix.TRS(Vec3.AngleXY(currAngle + halfStep)*midDist, Quat.FromAngles(0, 0, currAngle + halfStep - 90), highlightText?1.2f:1), TextAlign.XCenter | TextAlign.YBottom);
+				Text .Add(layer.items[i].name, Matrix.TRS(Vec3.AngleXY(currAngle + halfStep)*midDist, Quat.FromAngles(0, 0, currAngle + halfStep - 90), highlightText?1.2f:1), TextAlign.BottomCenter);
 			}
 
 			// Done with local work

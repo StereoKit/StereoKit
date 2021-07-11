@@ -39,19 +39,23 @@ public static class Tests
 		}
 		if (nextScene == null)
 			nextScene = (ITest)Activator.CreateInstance(allTests[testIndex]);
-		sceneTime = Time.Totalf;
 	}
 	public static void Update()
 	{
+		if (IsTesting && runSeconds != 0)
+			Time.SetTime(Time.Total+(1/90.0), 1/90.0);
+
 		if (nextScene != null)
 		{
 			activeScene?.Shutdown();
 			if (IsTesting)
-			{ 
+			{
+				Time.SetTime(0);
 				Input.HandVisible(Handed.Max, false);
 			}
 
 			nextScene.Initialize();
+			sceneTime   = Time.Totalf;
 			activeScene = nextScene;
 			nextScene   = null;
 		}
@@ -93,7 +97,6 @@ public static class Tests
 		}).First();
 		Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
 
-		sceneTime  = Time.Totalf;
 		sceneFrame = 0;
 		runFrames  = -1;
 		runSeconds = 0;

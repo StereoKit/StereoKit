@@ -209,7 +209,7 @@ namespace StereoKit
 				colorData = new Color32[Width*Height];
 
 			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
-			IntPtr pointer = pinnedArray.AddrOfPinnedObject();
+			IntPtr   pointer = pinnedArray.AddrOfPinnedObject();
 			NativeAPI.tex_get_data(_inst, pointer, (ulong)(colorData.Length * 4));
 			pinnedArray.Free();
 		}
@@ -262,7 +262,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, IntPtr.Zero);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData?1:0, IntPtr.Zero);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -283,7 +283,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, out lightingInfo);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData?1:0, out lightingInfo);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -301,32 +301,100 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData);
+			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData?1:0);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
+		/// <summary>Loads an array of image files directly into a single
+		/// array texture! Array textures are often useful for shader 
+		/// effects, layering, material merging, weird stuff, and will 
+		/// generally need a specific shader to support it. Supported formats
+		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the
+		/// hash of all the filenames merged consecutively.</summary>
+		/// <param name="files">Absolute filenames, or a filenames relative 
+		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
+		/// pic</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset from the given files, or null if it failed
+		/// to load.</returns>
 		public static Tex FromFiles(string[] files, bool sRGBData = true)
 		{
-			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData);
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData?1:0);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
 		/// <summary>Loads an image file stored in memory directly into a 
 		/// texture! Supported formats are: jpg, png, tga, bmp, psd, gif, 
 		/// hdr, pic. Asset Id will be the same as the filename.</summary>
-		/// <param name="data">The binary data of an image file, this is NOT 
-		/// a raw RGB color array!</param>
+		/// <param name="imageFileData">The binary data of an image file,
+		/// this is NOT a raw RGB color array!</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format, 
 		/// or is it normal/metal/rough/data that's not for direct display? 
 		/// sRGB colors get converted to linear color space on the graphics
 		/// card, so getting this right can have a big impact on visuals.</param>
 		/// <returns>A Tex asset from the given file, or null if it failed to
 		/// load.</returns>
-		public static Tex FromMemory(in byte[] data, bool sRGBData = true)
+		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData = true)
 		{
-			IntPtr inst = NativeAPI.tex_create_mem(data, data.Length, sRGBData);
+			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, imageFileData.Length, sRGBData?1:0);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+
+		/// <summary>Creates a texture and sets the texture's pixels using a
+		/// color array! This will be an image of type `TexType.Image`, and
+		/// a format of `TexFormat.Rgba32` or `TexFormat.Rgba32Linear`
+		/// depending on the value of the sRGBData parameter.</summary>
+		/// <param name="colors">An array of 32 bit colors, should be a
+		/// length of `width*height`.</param>
+		/// <param name="width">Width in pixels of the texture. Powers of two
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of 
+		/// two are generally best!</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format, 
+		/// or is it normal/metal/rough/data that's not for direct display? 
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
+		/// the given array of colors.</returns>
+		public static Tex FromColors(in Color32[] colors, int width, int height, bool sRGBData = true)
+		{
+			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
+
+			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData?1:0);
+			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
+		/// <summary>Creates a texture and sets the texture's pixels using a
+		/// color array! Color values are converted to 32 bit colors, so this
+		/// means a memory allocation and conversion. Prefer the Color32
+		/// overload for performance, or create an empty Texture and use
+		/// SetColors for more flexibility. This will be an image of type
+		/// `TexType.Image`, and a format of `TexFormat.Rgba32` or
+		/// `TexFormat.Rgba32Linear` depending on the value of the sRGBData
+		/// parameter.</summary>
+		/// <param name="colors">An array of 32 bit colors, should be a
+		/// length of `width*height`.</param>
+		/// <param name="width">Width in pixels of the texture. Powers of two
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of
+		/// two are generally best!</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.</param>
+		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
+		/// the given array of colors.</returns>
+		public static Tex FromColors(in Color[] colors, int width, int height, bool sRGBData = true)
+		{
+			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
+
+			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData ? 1 : 0);
+			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
 
 		/// <summary>Creates a cubemap texture from 6 different image files! 
 		/// If you have a single equirectangular image, use Tex.FromEquirectangular 
@@ -344,7 +412,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, IntPtr.Zero);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -367,7 +435,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, out lightingInfo);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -420,13 +488,34 @@ namespace StereoKit
 		/// <param name="resolution">The square size in pixels of each cubemap 
 		/// face! This generally doesn't need to be large, as SphericalHarmonics 
 		/// typically contain pretty low frequency information.</param>
+		/// <param name="lightSpotSizePct">The size of the glowing spot added
+		/// in the primary light direction. You can kinda thinl of the unit 
+		/// as a percentage of the cubemap face's size, but it's technically
+		/// a Chebyshev distance from the light's point on a 2m cube.</param>
+		/// <param name="lightSpotIntensity">The glowing spot's color is the
+		/// primary light direction's color, but multiplied by this value.
+		/// Since this method generates a 128bpp texture, this is not clamped
+		/// between 0-1, so feel free to go nuts here! Remember that 
+		/// reflections will often cut down some reflection intensity.</param>
 		/// <returns>A procedurally generated cubemap texture!</returns>
-		public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16)
+		public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16, float lightSpotSizePct = 0, float lightSpotIntensity = 6)
 		{
-			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution);
+			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution, lightSpotSizePct, lightSpotIntensity);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
+		#endregion
 
+		#region Static Properties
+		/// <inheritdoc cref="Default.Tex" />
+		public static Tex White => Default.Tex;
+		/// <inheritdoc cref="Default.TexBlack" />
+		public static Tex Black => Default.TexBlack;
+		/// <inheritdoc cref="Default.TexFlat" />
+		public static Tex Flat => Default.TexFlat;
+		/// <inheritdoc cref="Default.TexGray" />
+		public static Tex Gray => Default.TexGray;
+		/// <inheritdoc cref="Default.TexRough" />
+		public static Tex Rough => Default.TexRough;
 		#endregion
 	}
 }

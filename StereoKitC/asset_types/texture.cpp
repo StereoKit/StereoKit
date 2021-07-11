@@ -142,6 +142,26 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
+tex_t tex_create_color32(color32 *data, int32_t width, int32_t height, bool32_t srgb_data) {
+	tex_t result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_set_colors(result, width, height, data);
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_t srgb_data) {
+	tex_t    result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	color32 *color  = sk_malloc_t(color32, width * height);
+	for (size_t i = 0; i < width*height; i++)
+		color[i] = color_to_32(data[i]);
+	tex_set_colors(result, width, height, color);
+	free(color);
+	return result;
+}
+
+///////////////////////////////////////////
+
 tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	tex_t result = tex_find(file);
 	if (result != nullptr)
@@ -168,7 +188,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 ///////////////////////////////////////////
 
-tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
 	for (size_t i = 0; i < file_count; i++) {
@@ -180,8 +200,8 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
 	if (result != nullptr) {
-		if (result->light_info && sh_lighting_info)
-			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
+		if (result->light_info && out_sh_lighting_info)
+			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
 	}
 
@@ -221,12 +241,12 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 
 	// Create with the data we have
 	result = tex_create(type, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, sh_lighting_info);
+	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, out_sh_lighting_info);
 	tex_set_id       (result, file_id);
 
-	if (sh_lighting_info) {
+	if (out_sh_lighting_info) {
 		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+		memcpy(result->light_info, out_sh_lighting_info, sizeof(spherical_harmonics_t));
 	}
 
 	for (size_t i = 0; i < file_count; i++) {
@@ -245,17 +265,17 @@ tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
-	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, sh_lighting_info);
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
+	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, out_sh_lighting_info);
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *sh_lighting_info) {
+tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
 	tex_t result = tex_find(equirectangular_file);
 	if (result != nullptr) {
-		if (result->light_info && sh_lighting_info)
-			memcpy(sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
+		if (result->light_info && out_sh_lighting_info)
+			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
 	}
 
@@ -289,12 +309,12 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	}
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
-	tex_set_color_arr(result, width, height, (void**)&data, 6, sh_lighting_info);
+	tex_set_color_arr(result, width, height, (void**)&data, 6, out_sh_lighting_info);
 	tex_set_id       (result, equirectangular_file);
 
-	if (sh_lighting_info) {
+	if (out_sh_lighting_info) {
 		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		memcpy(result->light_info, sh_lighting_info, sizeof(spherical_harmonics_t));
+		memcpy(result->light_info, out_sh_lighting_info, sizeof(spherical_harmonics_t));
 	}
 
 	material_release(convert_material);
@@ -501,7 +521,7 @@ void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t* sh_lighting_info) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {
 		return nullptr;
@@ -551,7 +571,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 		}
 	}
 
-	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6, sh_lighting_info);
+	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6, out_sh_lighting_info);
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
 	}
@@ -561,10 +581,24 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size) {
+tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size, float light_spot_size_pct, float light_spot_intensity) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {
 		return nullptr;
+	}
+
+	// Calculate information used to create the light spot
+	vec3     light_dir = sh_dominant_dir(lookup);
+	color128 light_col = sh_lookup      (lookup, -light_dir) * light_spot_intensity;
+	vec3     light_pt  = { 100000,100000,100000 };
+	for (int32_t i = 0; i < 6; i++) {
+		vec3 p1 = math_cubemap_corner(i * 4);
+		vec3 p2 = math_cubemap_corner(i * 4 + 1);
+		vec3 p3 = math_cubemap_corner(i * 4 + 2);
+		plane_t plane = plane_from_points(p1, p2, p3);
+		vec3    pt;
+		if (!plane_ray_intersect(plane, { vec3_zero, light_dir }, &pt) && vec3_magnitude_sq(pt) < vec3_magnitude_sq(light_pt))
+			light_pt = pt;
 	}
 
 	int32_t size  = face_size;
@@ -574,15 +608,15 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 		power += 1;
 	size = (int32_t)pow(2, power);
 
-	float    half_px = 0.5f / size;
-	int32_t  size2 = size * size;
+	float     half_px = 0.5f / size;
+	int32_t   size2 = size * size;
 	color128 *data[6];
 	for (int32_t i = 0; i < 6; i++) {
 		data[i] = sk_malloc_t(color128, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
-		vec3 p4 = math_cubemap_corner(i * 4+3); 
+		vec3 p4 = math_cubemap_corner(i * 4+3);
 
 		for (int32_t y = 0; y < size; y++) {
 			float py = 1 - (y / (float)size + half_px);
@@ -602,9 +636,14 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size)
 				vec3 pl = vec3_lerp(p1, p4, py);
 				vec3 pr = vec3_lerp(p2, p3, py);
 				vec3 pt = vec3_lerp(pl, pr, px);
+				float dist = fmaxf(fmaxf(fabsf(pt.x-light_pt.x), fabsf(pt.y-light_pt.y)), fabsf(pt.z-light_pt.z));
 				pt = vec3_normalize(pt);
 
-				data[i][x + y * size] = sh_lookup(lookup, pt);
+				if (dist < light_spot_size_pct) {
+					data[i][x + y * size] = light_col;
+				} else {
+					data[i][x + y * size] = sh_lookup(lookup, pt);
+				}
 			}
 		}
 	}

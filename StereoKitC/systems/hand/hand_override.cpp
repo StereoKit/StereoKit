@@ -52,7 +52,7 @@ void hand_override_update_predicted() {
 
 ///////////////////////////////////////////
 
-void input_hand_override(handed_ hand, hand_joint_t *hand_joints) {
+void input_hand_override(handed_ hand, const hand_joint_t *hand_joints) {
 	override_hand[hand] = hand_joints != nullptr;
 	if (hand_joints != nullptr)
 		memcpy(override_joints[hand], hand_joints, sizeof(hand_joint_t) * 27);

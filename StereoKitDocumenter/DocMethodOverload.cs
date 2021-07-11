@@ -74,9 +74,7 @@ namespace StereoKitDocumenter
 		}
 		private static MethodBase GetMethodInfo(string signature, DocMethod rootMethod)
 		{
-			Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : signature
-				.Split(',')
-				.AsEnumerable()
+			Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : StringHelper.SeparateGroupedString(',',signature)
 				.Select(a => {
 					string cleanName = a.Replace("@", "");
 					bool   nullable  = a.Contains("System.Nullable");
@@ -98,16 +96,22 @@ namespace StereoKitDocumenter
 						cleanName = cleanName.Substring(0, cleanName.IndexOf("[]"));
 					}
 
-					Type t = Type.GetType(cleanName);
-					
+					int commas = cleanName.Count(c => c == ',');
+					Type t = null;
+					if (t == null && action && commas == 0)
+						t = typeof(Action<>).MakeGenericType(Type.GetType(cleanName));
+					if (t == null && action && commas == 1)
+						t = typeof(Action<,>).MakeGenericType(cleanName.Split(',').Select(n => Type.GetType(n)).ToArray());
+					if (t == null && action && commas == 2)
+						t = typeof(Action<,,>).MakeGenericType(cleanName.Split(',').Select(n => Type.GetType(n)).ToArray());
+					if (t == null) 
+						t = Type.GetType(cleanName);
 					if (t == null)
 						t = Type.GetType(cleanName + ", StereoKit");
 					if (t == null)
 						t = Type.GetType(cleanName + ", " + typeof(System.Numerics.Vector3).Assembly.FullName);
 					if (t != null && nullable)
 						t = typeof(Nullable<>).MakeGenericType(t);
-					if (t != null && action) 
-						t = typeof(Action<>).MakeGenericType(t);
 					if (t != null && array)
 						t = t.MakeArrayType();
 					if (t != null && a.Contains("@"))

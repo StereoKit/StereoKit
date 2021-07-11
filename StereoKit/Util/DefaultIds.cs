@@ -4,6 +4,7 @@
 		internal const string material         = "default/material";
 		internal const string materialPBR      = "default/material_pbr";
 		internal const string materialUnlit    = "default/material_unlit";
+		internal const string materialUnlitClip= "default/material_unlit_clip";
 		internal const string materialEquirect = "default/equirect_convert";
 		internal const string materialFont     = "default/material_font";
 		internal const string materialHand     = "default/material_hand";
@@ -27,6 +28,7 @@
 		internal const string shader         = "default/shader";
 		internal const string shaderPbr      = "default/shader_pbr";
 		internal const string shaderUnlit    = "default/shader_unlit";
+		internal const string shaderUnlitClip= "default/shader_unlit_clip";
 		internal const string shaderFont     = "default/shader_font";
 		internal const string shaderEquirect = "default/shader_equirect";
 		internal const string shaderUI       = "default/shader_ui";

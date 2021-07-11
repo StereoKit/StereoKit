@@ -276,5 +276,18 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.material_copy_id(materialId);
 			return inst == IntPtr.Zero ? null : new Material(inst);
 		}
+
+		/// <inheritdoc cref="StereoKit.Default.Material" />
+		public static Material Default => StereoKit.Default.Material;
+		/// <inheritdoc cref="StereoKit.Default.MaterialPBR" />
+		public static Material PBR => StereoKit.Default.MaterialPBR;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUI" />
+		public static Material UI => StereoKit.Default.MaterialUI;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUIBox" />
+		public static Material UIBox => StereoKit.Default.MaterialUIBox;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUnlit" />
+		public static Material Unlit => StereoKit.Default.MaterialUnlit;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUnlitClip" />
+		public static Material UnlitClip => StereoKit.Default.MaterialUnlitClip;
 	}
 }

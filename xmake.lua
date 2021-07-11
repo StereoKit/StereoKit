@@ -22,7 +22,7 @@ package("openxr_loader")
     
     add_urls("https://github.com/KhronosGroup/OpenXR-SDK/archive/release-$(version).tar.gz")
     
-    add_deps("cmake", "jsoncpp")
+    add_deps("cmake")
 
     if is_plat("linux") then
         add_syslinks("stdc++fs", "jsoncpp")
@@ -37,7 +37,7 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("android") then
-    add_requires("openxr_loader 1.0.14", {verify = false, configs = {vs_runtime="MD", shared=false}})
+    add_requires("openxr_loader 1.0.17", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
 add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
 
@@ -48,9 +48,16 @@ option("uwp")
     set_values(true, false)
     add_defines("WINDOWS_UWP", "WINAPI_FAMILY=WINAPI_FAMILY_APP")
     
+option("linux-graphics-backend")
+    set_default("GLX")
+    set_showmenu("true")
+    set_description("Graphics backend on Linux")
+    set_values("GLX", "EGL")
+
 target("StereoKitC")
     add_options("uwp")
-    set_version("0.3.1")
+    add_options("linux-graphics-backend")
+    set_version("0.3.2")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
@@ -71,6 +78,7 @@ target("StereoKitC")
 
     add_files("StereoKitC/*.cpp") 
     add_files("StereoKitC/libraries/*.cpp") 
+    add_files("StereoKitC/tools/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
     add_files("StereoKitC/systems/hand/*.cpp") 
     add_files("StereoKitC/systems/platform/*.cpp") 
@@ -89,7 +97,13 @@ target("StereoKitC")
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
-        add_links("GL", "GLEW", "GLX", "X11", "pthread")
+		if is_config("linux-graphics-backend", "EGL") then
+        	add_links("EGL", "GLX", "fontconfig", "pthread")
+			add_defines("SKG_LINUX_EGL")
+		elseif is_config("linux-graphics-backend", "GLX") then
+        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+			add_defines("SKG_LINUX_GLX")
+		end
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
     end

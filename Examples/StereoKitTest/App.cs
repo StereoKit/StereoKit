@@ -127,19 +127,22 @@ class App
 	// Ruler object //
 	//////////////////
 
-	static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
+	static Pose     rulerPose   = new Pose(0, 0, .5f, Quat.Identity);
+	static string[] rulerLabels = { "0", "5", "10", "15", "20", "25" };
 	static void RulerWindow()
 	{
-		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(31,4,1)*U.cm), true);
+		UI.HandleBegin("Ruler", ref rulerPose, new Bounds(new Vec3(31,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
-		Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), TextAlign.BottomLeft);
 		for (int d = 0; d <= 60; d+=1)
 		{
-			float x = d/2.0f;
-			float size = d%2==0?1f:0.15f;
-			Lines.Add(new Vec3(15-x,1.8f,-.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
-			if (d%2==0 && d/2 != 30)
-				Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+			float x    = d/2.0f;
+			float size = d%2==0?.5f:0.15f;
+			if (d%10 == 0 && d/2 != 30) {
+				size = 1;
+				Text.Add(rulerLabels[d/10], Matrix.TS(new Vec3(15-x-0.1f, 2-size, -.6f) * U.cm, .2f), TextAlign.BottomLeft);
+			}
+			Lines.Add(new Vec3(15-x, 1.8f, -.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
 		}
 		UI.HandleEnd();
 	}
@@ -157,17 +160,21 @@ class App
 	/// Here's the code for the window, and log tracking.
 	static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
 	static List<string> logList = new List<string>();
+	static string       logText = "";
 	static void OnLog(LogLevel level, string text)
 	{
-		if (logList.Count > 10)
+		if (logList.Count > 15)
 			logList.RemoveAt(logList.Count - 1);
-		logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
+		logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...\n");
+
+		logText = "";
+		for (int i = 0; i < logList.Count; i++)
+			logText += logList[i];
 	}
 	static void LogWindow()
 	{
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-		for (int i = 0; i < logList.Count; i++)
-			UI.Label(logList[i], false);
+		UI.Text(logText);
 		UI.WindowEnd();
 	}
 	/// :End:

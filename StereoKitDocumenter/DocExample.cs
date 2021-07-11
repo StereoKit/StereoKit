@@ -20,13 +20,11 @@ namespace StereoKitDocumenter
 		bool comments;
 
 		bool skipBlanks = true;
-		int skipIndent = -1;
+		int  skipIndent = -1;
 
-		public string Name => info;
-
+		public string Name     => info;
 		public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
-
-		public string UrlName => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
+		public string UrlName  => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
 
 		public DocExample(ExampleType aType, string aInfo)
 		{

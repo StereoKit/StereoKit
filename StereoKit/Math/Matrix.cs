@@ -42,21 +42,21 @@ namespace StereoKit
 
 		/// <summary>A fast Property that will return or set the translation
 		/// component embedded in this transform matrix.</summary>
-		public Vector3 Translation { get => m.Translation; set => m.Translation = value; }
+		public Vec3 Translation { get => m.Translation; set => m.Translation = value; }
 		/// <summary>Returns the scale embedded in this transform matrix. Not
 		/// exactly cheap, requires 3 sqrt calls, but is cheaper than calling
 		/// Decompose.</summary>
-		public Vector3 Scale => NativeAPI.matrix_extract_scale(m);
+		public Vec3 Scale => NativeAPI.matrix_extract_scale(m);
 		/// <summary>A slow function that returns the rotation quaternion 
 		/// embedded in this transform matrix. This is backed by Decompose,
 		/// so if you need any additional info, it's better to just call
 		/// Decompose instead.</summary>
-		public Quat    Rotation => NativeAPI.matrix_extract_rotation(m);
+		public Quat Rotation => NativeAPI.matrix_extract_rotation(m);
 		/// <summary>Extracts translation and rotation information from the
 		/// transform matrix, and makes a Pose from it! Not exactly fast.
 		/// This is backed by Decompose, so if you need any additional info,
 		/// it's better to just call Decompose instead.</summary>
-		public Pose    Pose => NativeAPI.matrix_extract_pose(m);
+		public Pose Pose => NativeAPI.matrix_extract_pose(m);
 
 		/// <summary>Creates an inverse matrix! If the matrix takes a point 
 		/// from a -> b, then its inverse takes the point from b -> a.
@@ -100,7 +100,7 @@ namespace StereoKit
 		/// <param name="pose">The original pose.</param>
 		/// <returns>The transformed pose.</returns>
 		public Pose Transform(Pose pose)
-			=> NativeAPI.matrix_mul_pose(m, pose);
+			=> NativeAPI.matrix_transform_pose(m, pose);
 
 		/// <summary>Returns this transformation matrix to its original 
 		/// translation, rotation and scale components. Not exactly a cheap
@@ -146,7 +146,7 @@ namespace StereoKit
 		/// <returns>A Matrix that will rotate by the provided pitch, yaw and 
 		/// roll.</returns>
 		public static Matrix R(float pitchXDeg, float yawYDeg, float rollZDeg) 
-			=> Matrix4x4.CreateFromYawPitchRoll(yawYDeg, pitchXDeg, rollZDeg);
+			=> Matrix4x4.CreateFromYawPitchRoll(yawYDeg*Units.deg2rad, pitchXDeg*Units.deg2rad, rollZDeg*Units.deg2rad);
 		/// <summary>Create a rotation matrix from pitch, yaw, and roll 
 		/// information. Units are in degrees.</summary>
 		/// <param name="pitchYawRollDeg">Pitch (x-axis), yaw (y-axis), and 
@@ -155,7 +155,7 @@ namespace StereoKit
 		/// <returns>A Matrix that will rotate by the provided pitch, yaw and 
 		/// roll.</returns>
 		public static Matrix R(Vec3 pitchYawRollDeg) 
-			=> Matrix4x4.CreateFromYawPitchRoll(pitchYawRollDeg.y, pitchYawRollDeg.x, pitchYawRollDeg.z);
+			=> Matrix4x4.CreateFromYawPitchRoll(pitchYawRollDeg.y*Units.deg2rad, pitchYawRollDeg.x*Units.deg2rad, pitchYawRollDeg.z*Units.deg2rad);
 
 		/// <summary>Creates a scaling Matrix, where scale can be different
 		/// on each axis (non-uniform).</summary>
