@@ -5,6 +5,10 @@ description: If the device has eye tracking hardware and the app has permission 
 ---
 # [Input]({{site.url}}/Pages/Reference/Input.html).Eyes
 
+<div class='signature' markdown='1'>
+static [Pose]({{site.url}}/Pages/Reference/Pose.html) Eyes{ get }
+</div>
+
 ## Description
 If the device has eye tracking hardware and the app has
 permission to use it, then this is the most recently tracked eye

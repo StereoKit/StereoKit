@@ -5,6 +5,10 @@ description: An angle offset for the layer, if you want a specific orientation f
 ---
 # [HandRadialLayer]({{site.url}}/Pages/Reference/HandRadialLayer.html).startAngle
 
+<div class='signature' markdown='1'>
+float startAngle
+</div>
+
 ## Description
 An angle offset for the layer, if you want a specific
 orientation for the menu's contents. Note this may not behave as

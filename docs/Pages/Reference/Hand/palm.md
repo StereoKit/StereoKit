@@ -5,6 +5,10 @@ description: The position and orientation at the center of the palm! Here, Forwa
 ---
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).palm
 
+<div class='signature' markdown='1'>
+[Pose]({{site.url}}/Pages/Reference/Pose.html) palm
+</div>
+
 ## Description
 The position and orientation at the center of the palm!
 Here, Forward is the direction the flat of the palm is facing. X+

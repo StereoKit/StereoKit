@@ -1,31 +1,41 @@
 ---
 layout: default
 title: TextAlign
-description: A bit-flag enum for describing alignment or positioning. Items can be combined using the '|' operator, like so.  TextAlign alignment = TextAlign.XLeft | TextAlign.YTop;  Avoid combining multiple items of the same axis, and note that a few items, like Center are already a combination of multiple flags.
+description: A bit-flag enum for describing alignment or positioning. Items can be combined using the '|' operator, like so.  TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;  Avoid combining multiple items of the same axis. There are also a complete list of valid bit flag combinations! These are the values without an axis listed in their names, 'TopLeft', 'BottomCenter', etc.
 ---
-# TextAlign
+# enum TextAlign
 
-A bit-flag enum for describing alignment or positioning. Items can be
-combined using the '|' operator, like so:
+A bit-flag enum for describing alignment or positioning.
+Items can be combined using the '|' operator, like so:
 
-`TextAlign alignment = TextAlign.XLeft | TextAlign.YTop;`
+`TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
 
-Avoid combining multiple items of the same axis, and note that a few items,
-like `Center` are already a combination of multiple flags.
+Avoid combining multiple items of the same axis. There are also a
+complete list of valid bit flag combinations! These are the values
+without an axis listed in their names, 'TopLeft', 'BottomCenter',
+etc.
 
 
 
 
-## Static Fields and Properties
+## Enum Values
 
 |  |  |
 |--|--|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [Center]({{site.url}}/Pages/Reference/TextAlign/Center.html)|A combination of XCenter and YCenter.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [XCenter]({{site.url}}/Pages/Reference/TextAlign/XCenter.html)|On the x axis, the item should be centered.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [XLeft]({{site.url}}/Pages/Reference/TextAlign/XLeft.html)|On the x axis, this item should start on the left.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [XRight]({{site.url}}/Pages/Reference/TextAlign/XRight.html)|On the x axis, this item should start on the right.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YBottom]({{site.url}}/Pages/Reference/TextAlign/YBottom.html)|On the y axis, this item should start on the bottom.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YCenter]({{site.url}}/Pages/Reference/TextAlign/YCenter.html)|On the y axis, the item should be centered.|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) [YTop]({{site.url}}/Pages/Reference/TextAlign/YTop.html)|On the y axis, this item should start at the top.|
+|BottomCenter|Center on the X axis, and bottom on the Y axis. This is a combination of XCenter and YBottom.|
+|BottomLeft|Start on the left of the X axis, and bottom on the Y axis. This is a combination of XLeft and YBottom.|
+|BottomRight|Start on the right of the X axis, and bottom on the Y axis.This is a combination of XRight and YBottom.|
+|Center|Center on both X and Y axes. This is a combination of XCenter and YCenter.|
+|CenterLeft|Start on the left of the X axis, center on the Y axis. This is a combination of XLeft and YCenter.|
+|CenterRight|Start on the right of the X axis, center on the Y axis. This is a combination of XRight and YCenter.|
+|TopCenter|Center on the X axis, and top on the Y axis. This is a combination of XCenter and YTop.|
+|TopLeft|Start on the left of the X axis, and top on the Y axis. This is a combination of XLeft and YTop.|
+|TopRight|Start on the right of the X axis, and top on the Y axis. This is a combination of XRight and YTop.|
+|XCenter|On the x axis, the item should be centered.|
+|XLeft|On the x axis, this item should start on the left.|
+|XRight|On the x axis, this item should start on the right.|
+|YBottom|On the y axis, this item should start on the bottom.|
+|YCenter|On the y axis, the item should be centered.|
+|YTop|On the y axis, this item should start at the top.|
 
 

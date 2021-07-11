@@ -3,7 +3,7 @@ layout: default
 title: HandMenuRadial
 description: A menu that shows up in circle around the user's hand! Selecting an item can perform an action, or even spawn a sub-layer of menu items. This is an easy way to store actions out of the way, yet remain easily accessible to the user.  The user faces their palm towards their head, and then makes a grip motion to spawn the menu. The user can then perform actions by making fast, direction based motions that are easy to build muscle memory for.
 ---
-# HandMenuRadial
+# class HandMenuRadial
 
 A menu that shows up in circle around the user's
 hand! Selecting an item can perform an action, or even spawn

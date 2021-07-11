@@ -3,7 +3,7 @@ layout: default
 title: U
 description: A shorthand class with unit multipliers. Helps make code a little more terse on occasions!.
 ---
-# U
+# static class U
 
 A shorthand class with unit multipliers. Helps make code a
 little more terse on occasions!.

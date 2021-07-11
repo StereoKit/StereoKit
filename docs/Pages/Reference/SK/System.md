@@ -5,6 +5,10 @@ description: This structure contains information about the current system and it
 ---
 # [SK]({{site.url}}/Pages/Reference/SK.html).System
 
+<div class='signature' markdown='1'>
+static [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html) System{ get }
+</div>
+
 ## Description
 This structure contains information about the current
 system and its capabilites. There's a lot of different MR devices,

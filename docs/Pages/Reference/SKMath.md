@@ -3,7 +3,7 @@ layout: default
 title: SKMath
 description: This class contains some convenience math functions! StereoKit typically uses floats instead of doubles, so you won't need to cast to and from using these methods.
 ---
-# SKMath
+# static class SKMath
 
 This class contains some convenience math functions!
 StereoKit typically uses floats instead of doubles, so you won't need

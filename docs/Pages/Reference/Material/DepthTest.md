@@ -5,6 +5,10 @@ description: How does this material interact with the ZBuffer? Generally DepthTe
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).DepthTest
 
+<div class='signature' markdown='1'>
+static [DepthTest]({{site.url}}/Pages/Reference/DepthTest.html) DepthTest{ get set }
+</div>
+
 ## Description
 How does this material interact with the ZBuffer?
 Generally DepthTest.Less would be normal behavior: don't draw

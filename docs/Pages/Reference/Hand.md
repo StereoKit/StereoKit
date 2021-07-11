@@ -3,7 +3,7 @@ layout: default
 title: Hand
 description: Information about a hand!
 ---
-# Hand
+# struct Hand
 
 Information about a hand!
 

@@ -3,7 +3,7 @@ layout: default
 title: Vec3
 description: A vector with 3 components. x, y, z. This can represent a point in space, a directional vector, or any other sort of value with 3 dimensions to it!  StereoKit uses a right-handed coordinate system, where +x is to the right, +y is upwards, and -z is forward.
 ---
-# Vec3
+# struct Vec3
 
 A vector with 3 components: x, y, z. This can represent a
 point in space, a directional vector, or any other sort of value with

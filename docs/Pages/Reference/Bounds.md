@@ -3,7 +3,7 @@ layout: default
 title: Bounds
 description: Bounds is an axis aligned bounding box type that can be used for storing the sizes of objects, calculating containment, intersections, and more!  While the constructor uses a center+dimensions for creating a bounds, don't forget the static From* methods that allow you to define a Bounds from different types of data!
 ---
-# Bounds
+# struct Bounds
 
 Bounds is an axis aligned bounding box type that can be used for
 storing the sizes of objects, calculating containment, intersections, and

@@ -5,6 +5,10 @@ description: The aspect ratio of the sprite! This is width/height. You may also 
 ---
 # [Sprite]({{site.url}}/Pages/Reference/Sprite.html).Aspect
 
+<div class='signature' markdown='1'>
+static float Aspect{ get }
+</div>
+
 ## Description
 The aspect ratio of the sprite! This is width/height.
 You may also be interested in the NormalizedDimensions property,

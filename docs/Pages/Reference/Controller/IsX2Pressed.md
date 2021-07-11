@@ -5,6 +5,10 @@ description: Is the controller's X2 button currently pressed? Depending on the s
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsX2Pressed
 
+<div class='signature' markdown='1'>
+static bool IsX2Pressed{ get }
+</div>
+
 ## Description
 Is the controller's X2 button currently pressed?
 Depending on the specific hardware, this is the second general

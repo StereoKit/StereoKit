@@ -52,10 +52,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix planeTransform = Matrix.T(1.0f, 0, 1);
+Matrix planeTransform = Matrix.T(-.5f, -1, 0);
 Renderer.Add(planeMesh, Default.Material, planeTransform);
 
-planeTransform = Matrix.T(1.0f, 0, -1);
+planeTransform = Matrix.T(.5f, -1, 0);
 Renderer.Add(planeModel, planeTransform);
 ```
 ## UV and Face layout

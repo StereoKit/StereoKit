@@ -5,6 +5,10 @@ description: If eye hardware is available and app has permission, then this is t
 ---
 # [Input]({{site.url}}/Pages/Reference/Input.html).EyesTracked
 
+<div class='signature' markdown='1'>
+static [BtnState]({{site.url}}/Pages/Reference/BtnState.html) EyesTracked{ get }
+</div>
+
 ## Description
 If eye hardware is available and app has permission,
 then this is the tracking state of the eyes. Eyes may move out of

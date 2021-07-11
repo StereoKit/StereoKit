@@ -5,6 +5,10 @@ description: The sprite will be batched onto an atlas texture so all sprites can
 ---
 # [SpriteType]({{site.url}}/Pages/Reference/SpriteType.html).Atlased
 
+<div class='signature' markdown='1'>
+static [SpriteType]({{site.url}}/Pages/Reference/SpriteType.html) Atlased
+</div>
+
 ## Description
 The sprite will be batched onto an atlas texture so all sprites can be
 drawn in a single pass. This is excellent for performance! The only thing to

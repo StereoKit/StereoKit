@@ -3,7 +3,7 @@ layout: default
 title: UISettings
 description: Visual properties and spacing of the UI system.
 ---
-# UISettings
+# struct UISettings
 
 Visual properties and spacing of the UI system.
 

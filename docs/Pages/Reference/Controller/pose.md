@@ -5,6 +5,10 @@ description: The grip pose of the controller. This approximately represents the 
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).pose
 
+<div class='signature' markdown='1'>
+[Pose]({{site.url}}/Pages/Reference/Pose.html) pose
+</div>
+
 ## Description
 The grip pose of the controller. This approximately
 represents the center of the hand's position. Check `trackedPos`

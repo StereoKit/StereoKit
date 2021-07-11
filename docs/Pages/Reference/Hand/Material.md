@@ -5,6 +5,10 @@ description: Set the Material used to render the hand! The default material uses
 ---
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).Material
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) Material{ set }
+</div>
+
 ## Description
 Set the Material used to render the hand! The default
 material uses an offset of 10 to ensure it gets drawn overtop of

@@ -5,6 +5,10 @@ description: The default unlit material! This is used by StereoKit any time a me
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).MaterialUnlit
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) MaterialUnlit{ get set }
+</div>
+
 ## Description
 The default unlit material! This is used by StereoKit
 any time a mesh or model needs to be rendered with an unlit

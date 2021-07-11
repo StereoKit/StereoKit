@@ -5,6 +5,10 @@ description: How should this material cull faces?
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).FaceCull
 
+<div class='signature' markdown='1'>
+static [Cull]({{site.url}}/Pages/Reference/Cull.html) FaceCull{ get set }
+</div>
+
 ## Description
 How should this material cull faces?
 

@@ -3,7 +3,7 @@ layout: default
 title: Units
 description: A collection of unit conversion constants! Multiply things by these to convert them into different units.
 ---
-# Units
+# static class Units
 
 A collection of unit conversion constants! Multiply things by these
 to convert them into different units.

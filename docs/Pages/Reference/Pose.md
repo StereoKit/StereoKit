@@ -3,7 +3,7 @@ layout: default
 title: Pose
 description: Pose represents a location and orientation in space, excluding scale! CAUTION. the default value of a Pose includes a completely zero Quat, which can cause problems. Use Pose.Identity instead of new Pose() for creating a default pose.
 ---
-# Pose
+# struct Pose
 
 Pose represents a location and orientation in space,
 excluding scale! CAUTION: the default value of a Pose includes a

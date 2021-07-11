@@ -5,6 +5,10 @@ description: This provides a reference to the Material used by this style, so yo
 ---
 # [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html).Material
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) Material{ get }
+</div>
+
 ## Description
 This provides a reference to the Material used by this
 style, so you can override certain features! Note that if you're

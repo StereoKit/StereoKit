@@ -5,6 +5,10 @@ description: Is this Sound instance currently playing? For streaming assets, thi
 ---
 # [SoundInst]({{site.url}}/Pages/Reference/SoundInst.html).IsPlaying
 
+<div class='signature' markdown='1'>
+static bool IsPlaying{ get }
+</div>
+
 ## Description
 Is this Sound instance currently playing? For streaming
 assets, this will be true even if they don't have any new data

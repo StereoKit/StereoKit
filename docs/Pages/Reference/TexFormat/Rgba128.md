@@ -5,6 +5,10 @@ description: Red/Green/Blue/Transparency data channels at 32 bits per-channel! B
 ---
 # [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html).Rgba128
 
+<div class='signature' markdown='1'>
+static [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html) Rgba128
+</div>
+
 ## Description
 Red/Green/Blue/Transparency data channels at 32 bits
 per-channel! Basically 4 floats per color, which is bonkers

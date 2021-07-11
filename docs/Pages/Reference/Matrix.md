@@ -3,7 +3,7 @@ layout: default
 title: Matrix
 description: A Matrix in StereoKit is a 4x4 grid of numbers that is used to represent a transformation for any sort of position or vector! This is an oversimplification of what a matrix actually is, but it's accurate in this case.  Matrices are really useful for transforms because you can chain together all sorts of transforms into a single Matrix! A Matrix transform really shines when applied to many positions, as the more expensive operations get cached within the matrix values.  Matrices are prominently used within shaders for mesh transforms!
 ---
-# Matrix
+# struct Matrix
 
 A Matrix in StereoKit is a 4x4 grid of numbers that is used
 to represent a transformation for any sort of position or vector!
@@ -37,8 +37,8 @@ Matrices are prominently used within shaders for mesh transforms!
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [Pose]({{site.url}}/Pages/Reference/Matrix/Pose.html)|Extracts translation and rotation information from the transform matrix, and makes a Pose from it! Not exactly fast. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Rotation]({{site.url}}/Pages/Reference/Matrix/Rotation.html)|A slow function that returns the rotation quaternion embedded in this transform matrix. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
-|Vector3 [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
-|Vector3 [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
 
 
 ## Static Methods

@@ -3,7 +3,7 @@ layout: default
 title: GradientKey
 description: A color/position pair for Gradient values!
 ---
-# GradientKey
+# struct GradientKey
 
 A color/position pair for Gradient values!
 

@@ -3,7 +3,7 @@ layout: default
 title: Sphere
 description: Represents a sphere in 3D space! Composed of a center point and a radius, can be used for raycasting, collision, visibility, and other things!
 ---
-# Sphere
+# struct Sphere
 
 Represents a sphere in 3D space! Composed of a center point
 and a radius, can be used for raycasting, collision, visibility, and

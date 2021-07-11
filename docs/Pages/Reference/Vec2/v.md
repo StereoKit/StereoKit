@@ -5,6 +5,10 @@ description: The internal, wrapped System.Numerics type. This can be nice to hav
 ---
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).v
 
+<div class='signature' markdown='1'>
+Vector2 v
+</div>
+
 ## Description
 The internal, wrapped System.Numerics type. This can be
 nice to have around so you can pass its fields as 'ref', which

@@ -5,6 +5,10 @@ description: Sets and gets the root transform of the camera! This will be the id
 ---
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).CameraRoot
 
+<div class='signature' markdown='1'>
+static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) CameraRoot{ get set }
+</div>
+
 ## Description
 Sets and gets the root transform of the camera! This
 will be the identity matrix by default. The user's head  location

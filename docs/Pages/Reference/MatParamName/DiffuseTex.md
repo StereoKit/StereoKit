@@ -5,6 +5,10 @@ description: The primary color texture for the shader! Diffuse, Albedo, 'The Tex
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).DiffuseTex
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) DiffuseTex
+</div>
+
 ## Description
 The primary color texture for the shader! Diffuse,
 Albedo, 'The Texture', or whatever you want to call it, this is

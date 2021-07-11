@@ -5,6 +5,10 @@ description: Should this material write to the ZBuffer? For opaque objects, this
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).DepthWrite
 
+<div class='signature' markdown='1'>
+static bool DepthWrite{ get set }
+</div>
+
 ## Description
 Should this material write to the ZBuffer? For opaque
 objects, this generally should be true. But transparent objects

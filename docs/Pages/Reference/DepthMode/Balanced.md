@@ -5,6 +5,10 @@ description: Default mode, uses 16 bit on mobile devices like HoloLens and Quest
 ---
 # [DepthMode]({{site.url}}/Pages/Reference/DepthMode.html).Balanced
 
+<div class='signature' markdown='1'>
+static [DepthMode]({{site.url}}/Pages/Reference/DepthMode.html) Balanced
+</div>
+
 ## Description
 Default mode, uses 16 bit on mobile devices like
 HoloLens and Quest, and 32 bit on higher powered platforms like

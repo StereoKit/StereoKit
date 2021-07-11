@@ -3,7 +3,7 @@ layout: default
 title: Shader
 description: A shader is a piece of code that runs on the GPU, and determines how model data gets transformed into pixels on screen! It's more likely that you'll work more directly with Materials, which shaders are a subset of.  With this particular class, you can mostly just look at it. It doesn't do a whole lot. Maybe you can swap out the shader code or something sometimes!
 ---
-# Shader
+# class Shader
 
 A shader is a piece of code that runs on the GPU, and
 determines how model data gets transformed into pixels on screen!
@@ -21,7 +21,13 @@ sometimes!
 
 |  |  |
 |--|--|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Default]({{site.url}}/Pages/Reference/Shader/Default.html)|See `Default.Shader`|
 |string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBR]({{site.url}}/Pages/Reference/Shader/PBR.html)|See `Default.ShaderPbr`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UI]({{site.url}}/Pages/Reference/Shader/UI.html)|See `Default.ShaderUI`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UIBox]({{site.url}}/Pages/Reference/Shader/UIBox.html)|See `Default.ShaderUIBox`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Unlit]({{site.url}}/Pages/Reference/Shader/Unlit.html)|See `Default.ShaderUnlit`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UnlitClip]({{site.url}}/Pages/Reference/Shader/UnlitClip.html)|See `Default.ShaderUnlitClip`|
 
 
 ## Static Methods

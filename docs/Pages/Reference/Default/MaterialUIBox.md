@@ -5,6 +5,10 @@ description: A material for indicating interaction volumes! It renders a border 
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).MaterialUIBox
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) MaterialUIBox{ get set }
+</div>
+
 ## Description
 A material for indicating interaction volumes! It
 renders a border around the edges of the UV coordinates that will

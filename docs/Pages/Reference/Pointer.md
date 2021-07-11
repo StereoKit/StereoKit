@@ -3,7 +3,7 @@ layout: default
 title: Pointer
 description: Pointer is an abstraction of a number of different input sources, and a way to surface input events!
 ---
-# Pointer
+# struct Pointer
 
 Pointer is an abstraction of a number of different input
 sources, and a way to surface input events!

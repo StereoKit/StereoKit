@@ -5,6 +5,10 @@ description: This will straight up add the pixel color to the color buffer! This
 ---
 # [Transparency]({{site.url}}/Pages/Reference/Transparency.html).Add
 
+<div class='signature' markdown='1'>
+static [Transparency]({{site.url}}/Pages/Reference/Transparency.html) Add
+</div>
+
 ## Description
 This will straight up add the pixel color to the color
 buffer! This usually looks -really- glowy, so it makes for good

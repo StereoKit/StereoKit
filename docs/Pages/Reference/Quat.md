@@ -3,7 +3,7 @@ layout: default
 title: Quat
 description: Quaternions are efficient and robust mathematical objects for representing rotations! Understanding the details of how a quaterion works is not generally necessary for using them effectively, so don't worry too much if they seem weird to you. They're weird to me too.  If you're interested in learning the details though, 3Blue1Brown and Ben Eater have an [excellent interactive lesson](https.//eater.net/quaternions) about them!
 ---
-# Quat
+# struct Quat
 
 Quaternions are efficient and robust mathematical objects
 for representing rotations! Understanding the details of how a

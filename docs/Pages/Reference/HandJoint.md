@@ -3,7 +3,7 @@ layout: default
 title: HandJoint
 description: Contains information to represents a joint on the hand.
 ---
-# HandJoint
+# struct HandJoint
 
 Contains information to represents a joint on the hand.
 

@@ -35,13 +35,15 @@ Generates a cubemap texture from a gradient and a
 direction! These are entirely suitable for skyboxes, which you
 can set via `Renderer.SkyTex`.
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap(SphericalHarmonics& lighting, int resolution)
+static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap(SphericalHarmonics& lighting, int resolution, float lightSpotSizePct, float lightSpotIntensity)
 </div>
 
 |  |  |
 |--|--|
 |SphericalHarmonics& lighting|Lighting information stored in a              SphericalHarmonics.|
 |int resolution|The square size in pixels of each cubemap              face! This generally doesn't need to be large, as SphericalHarmonics              typically contain pretty low frequency information.|
+|float lightSpotSizePct|The size of the glowing spot added             in the primary light direction. You can kinda thinl of the unit              as a percentage of the cubemap face's size, but it's technically             a Chebyshev distance from the light's point on a 2m cube.|
+|float lightSpotIntensity|The glowing spot's color is the             primary light direction's color, but multiplied by this value.             Since this method generates a 128bpp texture, this is not clamped             between 0-1, so feel free to go nuts here! Remember that              reflections will often cut down some reflection intensity.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A procedurally generated cubemap texture!|
 
 Creates a cubemap from SphericalHarmonics lookups! These

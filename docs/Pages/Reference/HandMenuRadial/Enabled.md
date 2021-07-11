@@ -5,6 +5,10 @@ description: HandMenuRadial is always Enabled.
 ---
 # [HandMenuRadial]({{site.url}}/Pages/Reference/HandMenuRadial.html).Enabled
 
+<div class='signature' markdown='1'>
+static bool Enabled{ get }
+</div>
+
 ## Description
 HandMenuRadial is always Enabled.
 

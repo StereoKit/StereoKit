@@ -5,6 +5,10 @@ description: This is the orientation and center point of the system's boundary/g
 ---
 # [World]({{site.url}}/Pages/Reference/World.html).BoundsPose
 
+<div class='signature' markdown='1'>
+static [Pose]({{site.url}}/Pages/Reference/Pose.html) BoundsPose{ get }
+</div>
+
 ## Description
 This is the orientation and center point of the system's
 boundary/guardian. This can be useful to find the floor height!

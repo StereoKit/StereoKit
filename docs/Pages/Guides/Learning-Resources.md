@@ -32,7 +32,12 @@ creating a terrain system using StereoKit's shader API, loading color and
 height data from an external API, and building a pedestal interface to
 interact with the content.
 
-## Test Projects
+### [Release Notes Demo for v0.3.1](https://github.com/maluoi/StereoKitReleaseNotes/tree/main/v0.3.1)
+
+This is an interactive release notes demo project that showcases the
+features released in StereoKit v0.3.1! Not every release has a demo like
+this, but it can be pretty enlightening to browse through a code-base
+such as this one for reference.
 
 ### [Github Demos folder](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
 
@@ -40,5 +45,19 @@ These are the demos I build to test StereoKit features and APIs! They
 are occasionally documented, but frequently short and concise. They
 can be great to check out for a focused example of certain parts of
 the API!
+
+### [Github Discussions/Issues](https://github.com/maluoi/StereoKit/discussions)
+
+The best place to ask a question! It's asynchronous, and a great place
+for long-form answers that can also benefit others. The Discussions tab
+is best for questions, feedback, and more nebulous stuff, and the Issues
+tab is best if you think something might be misbehaving or missing!
+
+### [The StereoKit Discord Channel](https://discord.gg/jtZpfS7nyK)
+
+In a rush with a question, got a project to share, or just want to hang
+out and chat? Or maybe you're looking for some feedback on a potential
+contribution? Whatever the case, come and say hi on the Discord! This is
+the core hang-out spot for the team and community :)
 
 

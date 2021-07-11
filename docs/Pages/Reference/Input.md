@@ -3,7 +3,7 @@ layout: default
 title: Input
 description: Input from the system come from this class! Hands, eyes, heads, mice and pointers!
 ---
-# Input
+# static class Input
 
 Input from the system come from this class! Hands, eyes,
 heads, mice and pointers!
@@ -32,4 +32,6 @@ heads, mice and pointers!
 |[HandSolid]({{site.url}}/Pages/Reference/Input/HandSolid.html)|Does StereoKit register the hand with the physics system? By default, this is true. Right now this is just a single block collider, but later will involve per-joint colliders!|
 |[HandVisible]({{site.url}}/Pages/Reference/Input/HandVisible.html)|Sets whether or not StereoKit should render the hand for you. Turn this to false if you're going to render your own, or don't need the hand itself to be visible.|
 |[Key]({{site.url}}/Pages/Reference/Input/Key.html)|Keyboard key state! On desktop this is super handy, but even standalone MR devices can have bluetooth keyboards, or even just holographic system keyboards!|
+|[TextConsume]({{site.url}}/Pages/Reference/Input/TextConsume.html)|Returns the next text character from the list of characters that have been entered this frame! Will return '\0' if there are no more characters left in the list. These are from the system's text entry system, and so can be unicode, will repeat if their 'key' is held down, and could arrive from something like a copy/paste operation.  If you wish to reset this function to begin at the start of the read list on the next call, you can call `Input.TextReset`.|
+|[TextReset]({{site.url}}/Pages/Reference/Input/TextReset.html)|Resets the `Input.TextConsume` read list back to the start. For example, `UI.Input` will _not_ call `TextReset`, so it effectively will consume those characters, hiding them from any `TextConsume` calls following it. If you wanted to check the current frame's text, but still allow `UI.Input` to work later on in the frame, you would read everything with `TextConsume`, and then `TextReset` afterwards to reset the read list for the following `UI.Input`.|
 

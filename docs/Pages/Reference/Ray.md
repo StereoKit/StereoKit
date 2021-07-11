@@ -3,7 +3,7 @@ layout: default
 title: Ray
 description: A position and a direction indicating a ray through space! This is a great tool for intersection testing with geometrical shapes.
 ---
-# Ray
+# struct Ray
 
 A position and a direction indicating a ray through space!
 This is a great tool for intersection testing with geometrical

@@ -3,7 +3,7 @@ layout: default
 title: Gradient
 description: A Gradient is a sparse collection of color keys that are used to represent a ramp of colors! This class is largely just storing colors and allowing you to sample between them.  Since the Gradient is just interpolating values, you can use whatever color space you want here, as long as it's linear and not gamma! Gamma space RGB can't math properly at all. It can be RGB(linear), HSV, LAB, just remember which one you have, and be sure to convert it appropriately later. Data is stored as float colors, so this'll be a high accuracy blend!
 ---
-# Gradient
+# class Gradient
 
 A Gradient is a sparse collection of color keys that are
 used to represent a ramp of colors! This class is largely just

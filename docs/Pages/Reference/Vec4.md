@@ -3,7 +3,7 @@ layout: default
 title: Vec4
 description: A vector with 4 components. x, y, z, and w. Can be useful for things like shaders, where the registers are aligned to 4 float vectors.  This is a wrapper on System.Numerics.Vector4, so it's SIMD optimized, and can be cast to and from implicitly.
 ---
-# Vec4
+# struct Vec4
 
 A vector with 4 components: x, y, z, and w. Can be useful
 for things like shaders, where the registers are aligned to 4 float

@@ -5,6 +5,10 @@ description: StereoKit uses a right-handed coordinate system, which means that f
 ---
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).Forward
 
+<div class='signature' markdown='1'>
+static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Forward
+</div>
+
 ## Description
 StereoKit uses a right-handed coordinate system, which
 means that forward is looking down the -Z axis! This value is the

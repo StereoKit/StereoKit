@@ -3,7 +3,7 @@ layout: default
 title: Color32
 description: A 32 bit color struct! This is often directly used by StereoKit data structures, and so is often necessary for setting texture data, or mesh data. Note that the Color type implicitly converts to Color32, so you can use the static methods there to create Color32 values!
 ---
-# Color32
+# struct Color32
 
 A 32 bit color struct! This is often directly used by StereoKit data
 structures, and so is often necessary for setting texture data, or mesh data.

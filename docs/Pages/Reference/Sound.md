@@ -3,7 +3,7 @@ layout: default
 title: Sound
 description: This class represents a sound effect! Excellent for blips and bloops and little clips that you might play around your scene. Not great for long streams of audio like you might see in a podcast. Right now, this only supports .wav files, and procedurally generated noises!  On HoloLens 2, sounds are automatically processed on the HPU, freeing up the CPU for more of your app's code. To simulate this same effect on your development PC, you need to enable spatial sound on your audio endpoint. To do this, right click the speaker icon in your system tray, navigate to "Spatial sound", and choose "Windows Sonic for Headphones." For more information, visit https.//docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 ---
-# Sound
+# class Sound
 
 This class represents a sound effect! Excellent for blips
 and bloops and little clips that you might play around your scene.
@@ -34,9 +34,11 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 
 |  |  |
 |--|--|
+|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Click]({{site.url}}/Pages/Reference/Sound/Click.html)|See `Default.SoundClick`|
 |int [CursorSamples]({{site.url}}/Pages/Reference/Sound/CursorSamples.html)|This is the current position of the playback cursor, measured in samples from the start of the audio data.|
 |float [Duration]({{site.url}}/Pages/Reference/Sound/Duration.html)|This will return the total length of the sound in seconds.|
 |int [TotalSamples]({{site.url}}/Pages/Reference/Sound/TotalSamples.html)|This will return the total number of audio samples used by the sound! StereoKit currently uses 48,000 samples per second for all audio.|
+|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Unclick]({{site.url}}/Pages/Reference/Sound/Unclick.html)|See `Default.SoundUnclick`|
 |int [UnreadSamples]({{site.url}}/Pages/Reference/Sound/UnreadSamples.html)|This is the maximum number of samples in the sound that are currently available for reading via ReadSamples! ReadSamples will reduce this number by the amount of samples read.  This is only really valid for Stream sounds, all other sound types will just return 0.|
 
 

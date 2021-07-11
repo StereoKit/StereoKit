@@ -3,7 +3,7 @@ layout: default
 title: SoundInst
 description: This represents a play instance of a Sound! You can get one when you call Sound.Play(). This allows you to do things like cancel a piece of audio early, or change the volume and position of it as it's playing.
 ---
-# SoundInst
+# struct SoundInst
 
 This represents a play instance of a Sound! You can get one
 when you call Sound.Play(). This allows you to do things like cancel

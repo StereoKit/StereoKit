@@ -5,6 +5,10 @@ description: Don't look at the zbuffer at all, just draw everything, always, all
 ---
 # [DepthTest]({{site.url}}/Pages/Reference/DepthTest.html).Always
 
+<div class='signature' markdown='1'>
+static [DepthTest]({{site.url}}/Pages/Reference/DepthTest.html) Always
+</div>
+
 ## Description
 Don't look at the zbuffer at all, just draw everything,
 always, all the time! At this poit, the order at which the mesh

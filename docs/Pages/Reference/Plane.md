@@ -3,7 +3,7 @@ layout: default
 title: Plane
 description: Planes are really useful for collisions, intersections, and visibility testing!  This plane is stored using the ax + by + cz + d = 0 formula, where the normal is a,b,c, and the d is, well, d.
 ---
-# Plane
+# struct Plane
 
 Planes are really useful for collisions, intersections, and
 visibility testing!

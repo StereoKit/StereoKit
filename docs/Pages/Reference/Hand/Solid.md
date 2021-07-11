@@ -5,6 +5,10 @@ description: Does StereoKit register the hand with the physics system? By defaul
 ---
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).Solid
 
+<div class='signature' markdown='1'>
+static bool Solid{ set }
+</div>
+
 ## Description
 Does StereoKit register the hand with the physics
 system? By default, this is true. Right now this is just a single

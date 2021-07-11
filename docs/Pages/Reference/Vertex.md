@@ -3,7 +3,7 @@ layout: default
 title: Vertex
 description: This represents a single vertex in a Mesh, all StereoKit Meshes currently use this exact layout!
 ---
-# Vertex
+# struct Vertex
 
 This represents a single vertex in a Mesh, all StereoKit
 Meshes currently use this exact layout!

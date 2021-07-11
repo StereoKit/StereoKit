@@ -3,7 +3,7 @@ layout: default
 title: Microphone
 description: This class provides access to the hardware's microphone, and stores it in a Sound stream. Start and Stop recording, and check the Sound property for the results! Remember to ensure your application has microphone permissions enabled!
 ---
-# Microphone
+# static class Microphone
 
 This class provides access to the hardware's microphone, and
 stores it in a Sound stream. Start and Stop recording, and check the

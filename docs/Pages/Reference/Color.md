@@ -3,7 +3,7 @@ layout: default
 title: Color
 description: A color value stored as 4 floats with values that are generally between 0 and 1! Note that there's also a Color32 structure, and that 4 floats is generally a lot more than you need. So, use this for calculating individual colors at quality, but maybe store them en-masse with Color32!  Also note that RGB is often a terrible color format for picking colors, but it's how our displays work and we're stuck with it. If you want to create a color via code, try out the static Color.HSV method instead!  A note on gamma space vs. linear space colors! Color is not inherently one or the other, but most color values we work with tend to be gamma space colors, so most functions in StereoKit are gamma space. There are occasional functions that will ask for linear space colors instead, primarily in performance critical places, or places where a color may not always be a color! However, performing math on gamma space colors is bad, and will result in incorrect colors. We do our best to indicate what color space a function uses, but it's not enforced through syntax!
 ---
-# Color
+# struct Color
 
 A color value stored as 4 floats with values that are
 generally between 0 and 1! Note that there's also a Color32

@@ -5,6 +5,10 @@ description: This is the current 2-axis position of the analog stick or equivale
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).stick
 
+<div class='signature' markdown='1'>
+[Vec2]({{site.url}}/Pages/Reference/Vec2.html) stick
+</div>
+
 ## Description
 This is the current 2-axis position of the analog stick
 or equivalent directional controller. This generally ranges from

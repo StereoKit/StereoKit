@@ -5,6 +5,10 @@ description: What type of backgroud blend mode do we prefer for this application
 ---
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).blendPreference
 
+<div class='signature' markdown='1'>
+[DisplayBlend]({{site.url}}/Pages/Reference/DisplayBlend.html) blendPreference
+</div>
+
 ## Description
 What type of backgroud blend mode do we prefer for this
 application? Are you trying to build an Opaque/Immersive/VR app,

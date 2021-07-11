@@ -39,13 +39,13 @@ bool Intersect([Bounds]({{site.url}}/Pages/Reference/Bounds.html) bounds, Vec3& 
 
 Checks the intersection of this ray with a bounding box!
 <div class='signature' markdown='1'>
-bool Intersect([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, Vec3& modelSpaceAt)
+bool Intersect([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, Ray& modelSpaceAt)
 </div>
 
 |  |  |
 |--|--|
 |[Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh|A mesh containing collision data on the CPU.             You can check this with Mesh.KeepData.|
-|Vec3& modelSpaceAt|The intersection point of the ray and             the mesh, if an intersection occurs. This is in model space, and             must be transformed back into world space later.|
+|Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
 Checks the intersection point of this ray and a Mesh
@@ -90,9 +90,9 @@ public void Update()
 
 	// Draw a sphere at the intersection point, if the ray intersects 
 	// with the mesh.
-	if (ray.Intersect(boxMesh, out Vec3 at))
+	if (ray.Intersect(boxMesh, out Ray at))
 	{
-		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at), 0.02f));
+		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
 	}
 }
 ```
