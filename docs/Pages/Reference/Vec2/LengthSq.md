@@ -6,7 +6,7 @@ description: This is the squared length/magnitude of the vector! It skips the Sq
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).LengthSq
 
 <div class='signature' markdown='1'>
-static float LengthSq{ get }
+float LengthSq{ get }
 </div>
 
 ## Description

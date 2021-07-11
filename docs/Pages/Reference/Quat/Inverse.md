@@ -6,7 +6,7 @@ description: The reverse rotation! If this quat goes from A to B, the inverse wi
 # [Quat]({{site.url}}/Pages/Reference/Quat.html).Inverse
 
 <div class='signature' markdown='1'>
-static [Quat]({{site.url}}/Pages/Reference/Quat.html) Inverse{ get }
+[Quat]({{site.url}}/Pages/Reference/Quat.html) Inverse{ get }
 </div>
 
 ## Description

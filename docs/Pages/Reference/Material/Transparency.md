@@ -6,7 +6,7 @@ description: What type of transparency does this Material use? Default is None. 
 # [Material]({{site.url}}/Pages/Reference/Material.html).Transparency
 
 <div class='signature' markdown='1'>
-static [Transparency]({{site.url}}/Pages/Reference/Transparency.html) Transparency{ get set }
+[Transparency]({{site.url}}/Pages/Reference/Transparency.html) Transparency{ get set }
 </div>
 
 ## Description

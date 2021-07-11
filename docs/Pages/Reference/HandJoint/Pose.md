@@ -6,7 +6,7 @@ description: Pose position is the center of the joint's world space location. Po
 # [HandJoint]({{site.url}}/Pages/Reference/HandJoint.html).Pose
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
+[Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
 </div>
 
 ## Description

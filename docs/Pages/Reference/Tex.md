@@ -11,6 +11,18 @@ format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
 plus more later on, and you can also create textures procedurally.
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|[TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) [AddressMode]({{site.url}}/Pages/Reference/Tex/AddressMode.html)|When looking at a UV texture coordinate on this texture, how do we handle values larger than 1, or less than zero? Do we Wrap to the other side? Clamp it between 0-1, or just keep Mirroring back and forth? Wrap is the default.|
+|int [Anisoptropy]({{site.url}}/Pages/Reference/Tex/Anisoptropy.html)|When SampleMode is set to Anisotropic, this is the number of samples the GPU takes to figure out the correct color. Default is 4, and 16 is pretty high.|
+|[TexFormat]({{site.url}}/Pages/Reference/TexFormat.html) [Format]({{site.url}}/Pages/Reference/Tex/Format.html)|The StereoKit format this texture was initialized with.|
+|int [Height]({{site.url}}/Pages/Reference/Tex/Height.html)|The height of the texture, in pixels.|
+|string [Id]({{site.url}}/Pages/Reference/Tex/Id.html)|Allows you to set the Id of the texture to a specific Id.|
+|[TexSample]({{site.url}}/Pages/Reference/TexSample.html) [SampleMode]({{site.url}}/Pages/Reference/Tex/SampleMode.html)|When sampling a texture that's stretched, or shrunk beyond its screen size, how do we handle figuring out which color to grab from the texture? Default is Linear.|
+|int [Width]({{site.url}}/Pages/Reference/Tex/Width.html)|The width of the texture, in pixels.|
+
 
 ## Instance Methods
 
@@ -26,18 +38,11 @@ plus more later on, and you can also create textures procedurally.
 
 |  |  |
 |--|--|
-|[TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) [AddressMode]({{site.url}}/Pages/Reference/Tex/AddressMode.html)|When looking at a UV texture coordinate on this texture, how do we handle values larger than 1, or less than zero? Do we Wrap to the other side? Clamp it between 0-1, or just keep Mirroring back and forth? Wrap is the default.|
-|int [Anisoptropy]({{site.url}}/Pages/Reference/Tex/Anisoptropy.html)|When SampleMode is set to Anisotropic, this is the number of samples the GPU takes to figure out the correct color. Default is 4, and 16 is pretty high.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [Black]({{site.url}}/Pages/Reference/Tex/Black.html)|See `Default.TexBlack`|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [Flat]({{site.url}}/Pages/Reference/Tex/Flat.html)|See `Default.TexFlat`|
-|[TexFormat]({{site.url}}/Pages/Reference/TexFormat.html) [Format]({{site.url}}/Pages/Reference/Tex/Format.html)|The StereoKit format this texture was initialized with.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [Gray]({{site.url}}/Pages/Reference/Tex/Gray.html)|See `Default.TexGray`|
-|int [Height]({{site.url}}/Pages/Reference/Tex/Height.html)|The height of the texture, in pixels.|
-|string [Id]({{site.url}}/Pages/Reference/Tex/Id.html)|Allows you to set the Id of the texture to a specific Id.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [Rough]({{site.url}}/Pages/Reference/Tex/Rough.html)|See `Default.TexRough`|
-|[TexSample]({{site.url}}/Pages/Reference/TexSample.html) [SampleMode]({{site.url}}/Pages/Reference/Tex/SampleMode.html)|When sampling a texture that's stretched, or shrunk beyond its screen size, how do we handle figuring out which color to grab from the texture? Default is Linear.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [White]({{site.url}}/Pages/Reference/Tex/White.html)|See `Default.Tex`|
-|int [Width]({{site.url}}/Pages/Reference/Tex/Width.html)|The width of the texture, in pixels.|
 
 
 ## Static Methods

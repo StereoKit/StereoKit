@@ -6,7 +6,7 @@ description: The height of the texture, in pixels.
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Height
 
 <div class='signature' markdown='1'>
-static int Height{ get }
+int Height{ get }
 </div>
 
 ## Description

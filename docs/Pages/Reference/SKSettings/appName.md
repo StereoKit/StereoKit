@@ -6,7 +6,7 @@ description: Name of the application, this shows up an the top of the Win32 wind
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).appName
 
 <div class='signature' markdown='1'>
-static string appName{ get set }
+string appName{ get set }
 </div>
 
 ## Description

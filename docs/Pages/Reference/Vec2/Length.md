@@ -6,7 +6,7 @@ description: This is the length of the vector! Or the distance from the origin t
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).Length
 
 <div class='signature' markdown='1'>
-static float Length{ get }
+float Length{ get }
 </div>
 
 ## Description

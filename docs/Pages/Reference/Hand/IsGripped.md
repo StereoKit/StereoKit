@@ -6,7 +6,7 @@ description: Are the fingers currently gripped?
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).IsGripped
 
 <div class='signature' markdown='1'>
-static bool IsGripped{ get }
+bool IsGripped{ get }
 </div>
 
 ## Description

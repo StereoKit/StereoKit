@@ -6,7 +6,7 @@ description: The name of the shader, provided in the shader file itself. Not the
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).Name
 
 <div class='signature' markdown='1'>
-static string Name{ get }
+string Name{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: Does the device we're currently on have the spatial graph bridge ex
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).spatialBridgePresent
 
 <div class='signature' markdown='1'>
-static bool spatialBridgePresent{ get }
+bool spatialBridgePresent{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: This is the squared magnitude of the vector! It skips the Sqrt call
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).MagnitudeSq
 
 <div class='signature' markdown='1'>
-static float MagnitudeSq{ get }
+float MagnitudeSq{ get }
 </div>
 
 ## Description

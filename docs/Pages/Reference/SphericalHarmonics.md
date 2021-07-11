@@ -20,6 +20,12 @@ looks quite good, and is really fast! That's extremely great when
 you're trying to hit 60fps, or even 144fps.
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [DominantLightDirection]({{site.url}}/Pages/Reference/SphericalHarmonics/DominantLightDirection.html)|Returns the dominant direction of the light represented by this spherical harmonics data. The direction value is normalized.  You can get the color of the light in this direction by using the struct's Sample method: `light.Sample(-light.DominantLightDirection)`.|
+
 
 ## Instance Methods
 
@@ -31,12 +37,6 @@ you're trying to hit 60fps, or even 144fps.
 |[Sample]({{site.url}}/Pages/Reference/SphericalHarmonics/Sample.html)|Look up the color information in a particular direction!|
 |[ToArray]({{site.url}}/Pages/Reference/SphericalHarmonics/ToArray.html)|Converts the SphericalHarmonic into an array of coefficients 9 long. Useful for storing calculated data!|
 
-
-## Static Fields and Properties
-
-|  |  |
-|--|--|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [DominantLightDirection]({{site.url}}/Pages/Reference/SphericalHarmonics/DominantLightDirection.html)|Returns the dominant direction of the light represented by this spherical harmonics data. The direction value is normalized.  You can get the color of the light in this direction by using the struct's Sample method: `light.Sample(-light.DominantLightDirection)`.|
 
 
 ## Static Methods

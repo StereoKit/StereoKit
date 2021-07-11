@@ -6,7 +6,7 @@ description: This is a bounding box that encapsulates the Mesh! It's used for co
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Bounds
 
 <div class='signature' markdown='1'>
-static [Bounds]({{site.url}}/Pages/Reference/Bounds.html) Bounds{ get set }
+[Bounds]({{site.url}}/Pages/Reference/Bounds.html) Bounds{ get set }
 </div>
 
 ## Description

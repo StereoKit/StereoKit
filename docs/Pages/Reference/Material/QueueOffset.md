@@ -6,7 +6,7 @@ description: This property will force this material to draw earlier or later in 
 # [Material]({{site.url}}/Pages/Reference/Material.html).QueueOffset
 
 <div class='signature' markdown='1'>
-static int QueueOffset{ get set }
+int QueueOffset{ get set }
 </div>
 
 ## Description

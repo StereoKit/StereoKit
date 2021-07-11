@@ -18,6 +18,11 @@ and can be cast to and from implicitly.
 |  |  |
 |--|--|
 |Vector4 [v]({{site.url}}/Pages/Reference/Vec4/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XY]({{site.url}}/Pages/Reference/Vec4/XY.html)|This extracts a Vec2 from the X and Y axes.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XYZ]({{site.url}}/Pages/Reference/Vec4/XYZ.html)|This extracts a Vec3 from the X, Y, and Z axes.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XZ]({{site.url}}/Pages/Reference/Vec4/XZ.html)|This extracts a Vec2 from the X and Z axes.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YZ]({{site.url}}/Pages/Reference/Vec4/YZ.html)|This extracts a Vec2 from the Y and Z axes.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [ZW]({{site.url}}/Pages/Reference/Vec4/ZW.html)|This extracts a Vec2 from the Z and W axes.|
 
 
 ## Instance Methods
@@ -35,11 +40,6 @@ and can be cast to and from implicitly.
 |[Vec4]({{site.url}}/Pages/Reference/Vec4.html) [UnitX]({{site.url}}/Pages/Reference/Vec4/UnitX.html)|A normalized Vector that points down the X axis, this is the same as `new Vec4(1,0,0,0)`.|
 |[Vec4]({{site.url}}/Pages/Reference/Vec4.html) [UnitY]({{site.url}}/Pages/Reference/Vec4/UnitY.html)|A normalized Vector that points down the Y axis, this is the same as `new Vec4(0,1,0,0)`.|
 |[Vec4]({{site.url}}/Pages/Reference/Vec4.html) [UnitZ]({{site.url}}/Pages/Reference/Vec4/UnitZ.html)|A normalized Vector that points down the Z axis, this is the same as `new Vec4(0,1,0,0)`.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XY]({{site.url}}/Pages/Reference/Vec4/XY.html)|This extracts a Vec2 from the X and Y axes.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XYZ]({{site.url}}/Pages/Reference/Vec4/XYZ.html)|This extracts a Vec3 from the X, Y, and Z axes.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XZ]({{site.url}}/Pages/Reference/Vec4/XZ.html)|This extracts a Vec2 from the X and Z axes.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YZ]({{site.url}}/Pages/Reference/Vec4/YZ.html)|This extracts a Vec2 from the Y and Z axes.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [ZW]({{site.url}}/Pages/Reference/Vec4/ZW.html)|This extracts a Vec2 from the Z and W axes.|
 
 
 ## Static Methods

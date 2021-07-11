@@ -23,6 +23,13 @@ have a single mesh with a precalculated transform matrix, it can be
 faster to render a Mesh instead of a Model!
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh bounds, you can also override this to suit your needs.|
+|int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
+
 
 ## Instance Methods
 
@@ -41,13 +48,6 @@ faster to render a Mesh instead of a Model!
 |[SetMesh]({{site.url}}/Pages/Reference/Model/SetMesh.html)|Changes the mesh for the subset to a new one!|
 |[SetTransform]({{site.url}}/Pages/Reference/Model/SetTransform.html)|Changes the transform for the subset to a new one! This is in Model space, so it's relative to the origin of the model.|
 
-
-## Static Fields and Properties
-
-|  |  |
-|--|--|
-|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh bounds, you can also override this to suit your needs.|
-|int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
 
 
 ## Static Methods

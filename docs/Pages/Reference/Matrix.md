@@ -18,6 +18,16 @@ expensive operations get cached within the matrix values.
 Matrices are prominently used within shaders for mesh transforms!
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) [Pose]({{site.url}}/Pages/Reference/Matrix/Pose.html)|Extracts translation and rotation information from the transform matrix, and makes a Pose from it! Not exactly fast. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Rotation]({{site.url}}/Pages/Reference/Matrix/Rotation.html)|A slow function that returns the rotation quaternion embedded in this transform matrix. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
+
 
 ## Instance Methods
 
@@ -34,11 +44,6 @@ Matrices are prominently used within shaders for mesh transforms!
 |  |  |
 |--|--|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Identity]({{site.url}}/Pages/Reference/Matrix/Identity.html)|An identity Matrix is the matrix equivalent of '1'! Transforming anything by this will leave it at the exact same place.|
-|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Inverse]({{site.url}}/Pages/Reference/Matrix/Inverse.html)|Creates an inverse matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
-|[Pose]({{site.url}}/Pages/Reference/Pose.html) [Pose]({{site.url}}/Pages/Reference/Matrix/Pose.html)|Extracts translation and rotation information from the transform matrix, and makes a Pose from it! Not exactly fast. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
-|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Rotation]({{site.url}}/Pages/Reference/Matrix/Rotation.html)|A slow function that returns the rotation quaternion embedded in this transform matrix. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
 
 
 ## Static Methods

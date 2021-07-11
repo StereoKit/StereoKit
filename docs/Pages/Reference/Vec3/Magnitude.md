@@ -6,7 +6,7 @@ description: Magnitude is the length of the vector! The distance from the origin
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).Magnitude
 
 <div class='signature' markdown='1'>
-static float Magnitude{ get }
+float Magnitude{ get }
 </div>
 
 ## Description

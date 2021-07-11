@@ -6,7 +6,7 @@ description: Returns the maximum height of a text character using this style, in
 # [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html).CharHeight
 
 <div class='signature' markdown='1'>
-static float CharHeight{ get }
+float CharHeight{ get }
 </div>
 
 ## Description

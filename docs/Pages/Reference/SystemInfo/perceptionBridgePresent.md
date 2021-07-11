@@ -6,7 +6,7 @@ description: Can the device work with externally provided spatial anchors, like 
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).perceptionBridgePresent
 
 <div class='signature' markdown='1'>
-static bool perceptionBridgePresent{ get }
+bool perceptionBridgePresent{ get }
 </div>
 
 ## Description

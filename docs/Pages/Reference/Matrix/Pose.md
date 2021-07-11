@@ -6,7 +6,7 @@ description: Extracts translation and rotation information from the transform ma
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Pose
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
+[Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
 </div>
 
 ## Description

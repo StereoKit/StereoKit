@@ -6,7 +6,7 @@ description: This is a bounding box that encapsulates the Model and all its subs
 # [Model]({{site.url}}/Pages/Reference/Model.html).Bounds
 
 <div class='signature' markdown='1'>
-static [Bounds]({{site.url}}/Pages/Reference/Bounds.html) Bounds{ get set }
+[Bounds]({{site.url}}/Pages/Reference/Bounds.html) Bounds{ get set }
 </div>
 
 ## Description

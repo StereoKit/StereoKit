@@ -6,7 +6,7 @@ description: Sets whether or not StereoKit should render this hand for you. Turn
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).Visible
 
 <div class='signature' markdown='1'>
-static bool Visible{ set }
+bool Visible{ set }
 </div>
 
 ## Description

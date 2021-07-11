@@ -6,7 +6,7 @@ description: The 3D position in world space this sound instance is currently pla
 # [SoundInst]({{site.url}}/Pages/Reference/SoundInst.html).Position
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Position{ get set }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) Position{ get set }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: Have the fingers just stopped being gripped this frame?
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).IsJustUngripped
 
 <div class='signature' markdown='1'>
-static bool IsJustUngripped{ get }
+bool IsJustUngripped{ get }
 </div>
 
 ## Description

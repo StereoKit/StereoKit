@@ -16,6 +16,8 @@ the normal is a,b,c, and the d is, well, d.
 
 |  |  |
 |--|--|
+|float [d]({{site.url}}/Pages/Reference/Plane/d.html)|The distance/travel along the plane's normal from the origin to the surface of the plane.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [normal]({{site.url}}/Pages/Reference/Plane/normal.html)|The direction the plane is facing.|
 |[Plane]({{site.url}}/Pages/Reference/Plane.html) [p]({{site.url}}/Pages/Reference/Plane/p.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
 
 
@@ -27,13 +29,6 @@ the normal is a,b,c, and the d is, well, d.
 |[Closest]({{site.url}}/Pages/Reference/Plane/Closest.html)|Finds the closest point on this plane to the given point!|
 |[Intersect]({{site.url}}/Pages/Reference/Plane/Intersect.html)|Checks the intersection of a ray with this plane!|
 
-
-## Static Fields and Properties
-
-|  |  |
-|--|--|
-|float [d]({{site.url}}/Pages/Reference/Plane/d.html)|The distance/travel along the plane's normal from the origin to the surface of the plane.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [normal]({{site.url}}/Pages/Reference/Plane/normal.html)|The direction the plane is facing.|
 
 
 ## Static Methods

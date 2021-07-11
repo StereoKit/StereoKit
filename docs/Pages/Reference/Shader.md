@@ -15,6 +15,12 @@ do a whole lot. Maybe you can swap out the shader code or something
 sometimes!
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
+
 
 
 ## Static Fields and Properties
@@ -22,7 +28,6 @@ sometimes!
 |  |  |
 |--|--|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Default]({{site.url}}/Pages/Reference/Shader/Default.html)|See `Default.Shader`|
-|string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBR]({{site.url}}/Pages/Reference/Shader/PBR.html)|See `Default.ShaderPbr`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [UI]({{site.url}}/Pages/Reference/Shader/UI.html)|See `Default.ShaderUI`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [UIBox]({{site.url}}/Pages/Reference/Shader/UIBox.html)|See `Default.ShaderUIBox`|

@@ -6,7 +6,7 @@ description: Is the controller being tracked by the sensors right now?
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsTracked
 
 <div class='signature' markdown='1'>
-static bool IsTracked{ get }
+bool IsTracked{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: When SampleMode is set to Anisotropic, this is the number of sample
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Anisoptropy
 
 <div class='signature' markdown='1'>
-static int Anisoptropy{ get set }
+int Anisoptropy{ get set }
 </div>
 
 ## Description

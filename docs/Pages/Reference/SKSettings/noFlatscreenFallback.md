@@ -6,7 +6,7 @@ description: If the preferred display fails, should we avoid falling back to fla
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).noFlatscreenFallback
 
 <div class='signature' markdown='1'>
-static bool noFlatscreenFallback{ get set }
+bool noFlatscreenFallback{ get set }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: Is the controller's X1 button currently pressed? Depending on the s
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsX1Pressed
 
 <div class='signature' markdown='1'>
-static bool IsX1Pressed{ get }
+bool IsX1Pressed{ get }
 </div>
 
 ## Description

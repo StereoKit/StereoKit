@@ -6,7 +6,7 @@ description: The number of mesh subsets attached to this model.
 # [Model]({{site.url}}/Pages/Reference/Model.html).SubsetCount
 
 <div class='signature' markdown='1'>
-static int SubsetCount{ get }
+int SubsetCount{ get }
 </div>
 
 ## Description

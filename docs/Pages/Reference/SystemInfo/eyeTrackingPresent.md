@@ -6,7 +6,7 @@ description: Does the device we're on have eye tracking support present? This is
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).eyeTrackingPresent
 
 <div class='signature' markdown='1'>
-static bool eyeTrackingPresent{ get }
+bool eyeTrackingPresent{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: This tells if the app was successfully started as an overlay applic
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).overlayApp
 
 <div class='signature' markdown='1'>
-static bool overlayApp{ get }
+bool overlayApp{ get }
 </div>
 
 ## Description

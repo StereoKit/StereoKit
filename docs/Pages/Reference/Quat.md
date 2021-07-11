@@ -20,6 +20,8 @@ about them!
 
 |  |  |
 |--|--|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Inverse]({{site.url}}/Pages/Reference/Quat/Inverse.html)|The reverse rotation! If this quat goes from A to B, the inverse will go from B to A.|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Normalized]({{site.url}}/Pages/Reference/Quat/Normalized.html)|A normalized quaternion has the same orientation, and a length of 1.|
 |Quaternion [q]({{site.url}}/Pages/Reference/Quat/q.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
 
 
@@ -37,8 +39,6 @@ about them!
 |  |  |
 |--|--|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Identity]({{site.url}}/Pages/Reference/Quat/Identity.html)|This is the 'multiply by one!' of the quaternion rotation world. It's basically a default, no rotation quaternion.|
-|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Inverse]({{site.url}}/Pages/Reference/Quat/Inverse.html)|The reverse rotation! If this quat goes from A to B, the inverse will go from B to A.|
-|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Normalized]({{site.url}}/Pages/Reference/Quat/Normalized.html)|A normalized quaternion has the same orientation, and a length of 1.|
 
 
 ## Static Methods

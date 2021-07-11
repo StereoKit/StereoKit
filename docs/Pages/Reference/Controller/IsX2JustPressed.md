@@ -6,7 +6,7 @@ description: Has the controller's X2 button just been pressed this frame? Depend
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsX2JustPressed
 
 <div class='signature' markdown='1'>
-static bool IsX2JustPressed{ get }
+bool IsX2JustPressed{ get }
 </div>
 
 ## Description

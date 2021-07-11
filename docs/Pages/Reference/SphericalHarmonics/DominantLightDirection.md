@@ -6,7 +6,7 @@ description: Returns the dominant direction of the light represented by this sph
 # [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html).DominantLightDirection
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) DominantLightDirection{ get }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) DominantLightDirection{ get }
 </div>
 
 ## Description

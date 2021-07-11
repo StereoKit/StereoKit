@@ -6,7 +6,7 @@ description: Has the analog stick/directional controller button just been presse
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsStickJustClicked
 
 <div class='signature' markdown='1'>
-static bool IsStickJustClicked{ get }
+bool IsStickJustClicked{ get }
 </div>
 
 ## Description

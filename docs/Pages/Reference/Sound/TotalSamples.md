@@ -6,7 +6,7 @@ description: This will return the total number of audio samples used by the soun
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).TotalSamples
 
 <div class='signature' markdown='1'>
-static int TotalSamples{ get }
+int TotalSamples{ get }
 </div>
 
 ## Description

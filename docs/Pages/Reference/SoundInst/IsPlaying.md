@@ -6,7 +6,7 @@ description: Is this Sound instance currently playing? For streaming assets, thi
 # [SoundInst]({{site.url}}/Pages/Reference/SoundInst.html).IsPlaying
 
 <div class='signature' markdown='1'>
-static bool IsPlaying{ get }
+bool IsPlaying{ get }
 </div>
 
 ## Description

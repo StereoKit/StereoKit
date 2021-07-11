@@ -6,7 +6,7 @@ description: Has the controller just started being tracked this frame?
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsJustTracked
 
 <div class='signature' markdown='1'>
-static bool IsJustTracked{ get }
+bool IsJustTracked{ get }
 </div>
 
 ## Description

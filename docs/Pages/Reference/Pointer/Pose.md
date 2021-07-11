@@ -6,7 +6,7 @@ description: Convenience property that turns ray.position and orientation into a
 # [Pointer]({{site.url}}/Pages/Reference/Pointer.html).Pose
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
+[Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: This is the length, or magnitude of the vector! The distance from t
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).Length
 
 <div class='signature' markdown='1'>
-static float Length{ get }
+float Length{ get }
 </div>
 
 ## Description

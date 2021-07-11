@@ -6,7 +6,7 @@ description: A fast Property that will return or set the translation component e
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Translation
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Translation{ get set }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) Translation{ get set }
 </div>
 
 ## Description

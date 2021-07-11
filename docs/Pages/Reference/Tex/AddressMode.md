@@ -6,7 +6,7 @@ description: When looking at a UV texture coordinate on this texture, how do we 
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).AddressMode
 
 <div class='signature' markdown='1'>
-static [TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) AddressMode{ get set }
+[TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) AddressMode{ get set }
 </div>
 
 ## Description

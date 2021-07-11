@@ -6,7 +6,7 @@ description: If the runtime supports it, should this application run as an overl
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).overlayApp
 
 <div class='signature' markdown='1'>
-static bool overlayApp{ get set }
+bool overlayApp{ get set }
 </div>
 
 ## Description

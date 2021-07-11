@@ -6,7 +6,7 @@ description: This is the maximum number of samples in the sound that are current
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).UnreadSamples
 
 <div class='signature' markdown='1'>
-static int UnreadSamples{ get }
+int UnreadSamples{ get }
 </div>
 
 ## Description

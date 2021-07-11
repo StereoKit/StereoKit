@@ -6,7 +6,7 @@ description: Has the controller's X1 button just been released this frame? Depen
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsX1JustUnPressed
 
 <div class='signature' markdown='1'>
-static bool IsX1JustUnPressed{ get }
+bool IsX1JustUnPressed{ get }
 </div>
 
 ## Description

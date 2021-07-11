@@ -6,7 +6,7 @@ description: Creates an inverse matrix! If the matrix takes a point from a -> b,
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Inverse
 
 <div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) Inverse{ get }
+[Matrix]({{site.url}}/Pages/Reference/Matrix.html) Inverse{ get }
 </div>
 
 ## Description

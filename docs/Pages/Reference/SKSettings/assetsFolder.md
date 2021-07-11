@@ -6,7 +6,7 @@ description: Where to look for assets when loading files! Final path will look l
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).assetsFolder
 
 <div class='signature' markdown='1'>
-static string assetsFolder{ get set }
+string assetsFolder{ get set }
 </div>
 
 ## Description

@@ -17,6 +17,12 @@ appropriately later. Data is stored as float colors, so this'll be a
 high accuracy blend!
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|int [Count]({{site.url}}/Pages/Reference/Gradient/Count.html)|The number of color keys present in this gradient.|
+
 
 ## Instance Methods
 
@@ -29,11 +35,5 @@ high accuracy blend!
 |[Remove]({{site.url}}/Pages/Reference/Gradient/Remove.html)|Removes the color key at the given index!|
 |[Set]({{site.url}}/Pages/Reference/Gradient/Set.html)|Updates the color key at the given index! This will NOT re-order color keys if they are moved past another key's position, which could lead to strange behavior.|
 
-
-## Static Fields and Properties
-
-|  |  |
-|--|--|
-|int [Count]({{site.url}}/Pages/Reference/Gradient/Count.html)|The number of color keys present in this gradient.|
 
 

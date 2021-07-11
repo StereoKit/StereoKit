@@ -6,7 +6,7 @@ description: Does this device support world occlusion of digital objects? If thi
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).worldOcclusionPresent
 
 <div class='signature' markdown='1'>
-static bool worldOcclusionPresent{ get }
+bool worldOcclusionPresent{ get }
 </div>
 
 ## Description

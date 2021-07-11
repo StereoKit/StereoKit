@@ -6,7 +6,7 @@ description: Creates a normalized vector (vector with a length of 1) from the cu
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).Normalized
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Normalized{ get }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) Normalized{ get }
 </div>
 
 ## Description

@@ -17,7 +17,17 @@ right, +y is upwards, and -z is forward.
 
 |  |  |
 |--|--|
+|float [Length]({{site.url}}/Pages/Reference/Vec3/Length.html)|This is the length, or magnitude of the vector! The distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
+|float [LengthSq]({{site.url}}/Pages/Reference/Vec3/LengthSq.html)|This is the squared length of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
+|float [Magnitude]({{site.url}}/Pages/Reference/Vec3/Magnitude.html)|Magnitude is the length of the vector! The distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
+|float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec3/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Normalized]({{site.url}}/Pages/Reference/Vec3/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 |Vector3 [v]({{site.url}}/Pages/Reference/Vec3/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Z]({{site.url}}/Pages/Reference/Vec3/X0Z.html)|This returns a Vec3 that has been flattened to 0 on the Y axis. No other changes are made.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XY]({{site.url}}/Pages/Reference/Vec3/XY.html)|This extracts a Vec2 from the X and Y axes.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec3/XY0.html)|This returns a Vec3 that has been flattened to 0 on the Z axis. No other changes are made.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XZ]({{site.url}}/Pages/Reference/Vec3/XZ.html)|This extracts a Vec2 from the X and Z axes.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YZ]({{site.url}}/Pages/Reference/Vec3/YZ.html)|This extracts a Vec2 from the Y and Z axes.|
 
 
 ## Instance Methods
@@ -33,22 +43,12 @@ right, +y is upwards, and -z is forward.
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Forward]({{site.url}}/Pages/Reference/Vec3/Forward.html)|StereoKit uses a right-handed coordinate system, which means that forward is looking down the -Z axis! This value is the same as `new Vec3(0,0,-1)`. This is NOT the same as UnitZ!|
-|float [Length]({{site.url}}/Pages/Reference/Vec3/Length.html)|This is the length, or magnitude of the vector! The distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
-|float [LengthSq]({{site.url}}/Pages/Reference/Vec3/LengthSq.html)|This is the squared length of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
-|float [Magnitude]({{site.url}}/Pages/Reference/Vec3/Magnitude.html)|Magnitude is the length of the vector! The distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
-|float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec3/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Normalized]({{site.url}}/Pages/Reference/Vec3/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [One]({{site.url}}/Pages/Reference/Vec3/One.html)|Shorthand for a vector where all values are 1! Same as `new Vec3(1,1,1)`.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Right]({{site.url}}/Pages/Reference/Vec3/Right.html)|When looking forward, this is the direction to the right! In StereoKit, this is the same as `new Vec3(1,0,0)`|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [UnitX]({{site.url}}/Pages/Reference/Vec3/UnitX.html)|A normalized Vector that points down the X axis, this is the same as `new Vec3(1,0,0)`.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [UnitY]({{site.url}}/Pages/Reference/Vec3/UnitY.html)|A normalized Vector that points down the Y axis, this is the same as `new Vec3(0,1,0)`.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [UnitZ]({{site.url}}/Pages/Reference/Vec3/UnitZ.html)|A normalized Vector that points down the Z axis, this is the same as `new Vec3(0,0,1)`. This is NOT the same as Forward!|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Up]({{site.url}}/Pages/Reference/Vec3/Up.html)|A vector representing the up axis. In StereoKit, this is the same as `new Vec3(0,1,0)`.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Z]({{site.url}}/Pages/Reference/Vec3/X0Z.html)|This returns a Vec3 that has been flattened to 0 on the Y axis. No other changes are made.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XY]({{site.url}}/Pages/Reference/Vec3/XY.html)|This extracts a Vec2 from the X and Y axes.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec3/XY0.html)|This returns a Vec3 that has been flattened to 0 on the Z axis. No other changes are made.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XZ]({{site.url}}/Pages/Reference/Vec3/XZ.html)|This extracts a Vec2 from the X and Z axes.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YZ]({{site.url}}/Pages/Reference/Vec3/YZ.html)|This extracts a Vec2 from the Y and Z axes.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Zero]({{site.url}}/Pages/Reference/Vec3/Zero.html)|Shorthand for a vector where all values are 0! Same as `new Vec3(0,0,0)`.|
 
 

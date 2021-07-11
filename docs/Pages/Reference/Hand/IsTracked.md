@@ -6,7 +6,7 @@ description: Is the hand being tracked by the sensors right now?
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).IsTracked
 
 <div class='signature' markdown='1'>
-static bool IsTracked{ get }
+bool IsTracked{ get }
 </div>
 
 ## Description

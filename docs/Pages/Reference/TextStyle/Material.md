@@ -6,7 +6,7 @@ description: This provides a reference to the Material used by this style, so yo
 # [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html).Material
 
 <div class='signature' markdown='1'>
-static [Material]({{site.url}}/Pages/Reference/Material.html) Material{ get }
+[Material]({{site.url}}/Pages/Reference/Material.html) Material{ get }
 </div>
 
 ## Description

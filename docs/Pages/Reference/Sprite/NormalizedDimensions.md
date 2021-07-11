@@ -6,7 +6,7 @@ description: Width and height of the sprite, normalized so the maximum value is 
 # [Sprite]({{site.url}}/Pages/Reference/Sprite.html).NormalizedDimensions
 
 <div class='signature' markdown='1'>
-static [Vec2]({{site.url}}/Pages/Reference/Vec2.html) NormalizedDimensions{ get }
+[Vec2]({{site.url}}/Pages/Reference/Vec2.html) NormalizedDimensions{ get }
 </div>
 
 ## Description

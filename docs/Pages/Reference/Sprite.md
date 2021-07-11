@@ -26,15 +26,7 @@ atlas. So this is why you might wish to put a sprite in one atlas or
 another, so you can apply different
 
 
-
-## Instance Methods
-
-|  |  |
-|--|--|
-|[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
-
-
-## Static Fields and Properties
+## Instance Fields and Properties
 
 |  |  |
 |--|--|
@@ -42,6 +34,14 @@ another, so you can apply different
 |int [Height]({{site.url}}/Pages/Reference/Sprite/Height.html)|Height of the sprite, in pixels.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [NormalizedDimensions]({{site.url}}/Pages/Reference/Sprite/NormalizedDimensions.html)|Width and height of the sprite, normalized so the maximum value is 1.|
 |int [Width]({{site.url}}/Pages/Reference/Sprite/Width.html)|Width of the sprite, in pixels.|
+
+
+## Instance Methods
+
+|  |  |
+|--|--|
+|[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
+
 
 
 ## Static Methods

@@ -6,7 +6,7 @@ description: The distance/travel along the plane's normal from the origin to the
 # [Plane]({{site.url}}/Pages/Reference/Plane.html).d
 
 <div class='signature' markdown='1'>
-static float d{ get set }
+float d{ get set }
 </div>
 
 ## Description

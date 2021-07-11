@@ -6,7 +6,7 @@ description: The number of color keys present in this gradient.
 # [Gradient]({{site.url}}/Pages/Reference/Gradient.html).Count
 
 <div class='signature' markdown='1'>
-static int Count{ get }
+int Count{ get }
 </div>
 
 ## Description

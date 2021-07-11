@@ -6,7 +6,7 @@ description: Is the Solid enabled in the physics simulation? Set this to false i
 # [Solid]({{site.url}}/Pages/Reference/Solid.html).Enabled
 
 <div class='signature' markdown='1'>
-static bool Enabled{ set }
+bool Enabled{ set }
 </div>
 
 ## Description

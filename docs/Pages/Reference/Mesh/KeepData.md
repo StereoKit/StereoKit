@@ -6,7 +6,7 @@ description: Should StereoKit keep the mesh data on the CPU for later access, or
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).KeepData
 
 <div class='signature' markdown='1'>
-static bool KeepData{ get set }
+bool KeepData{ get set }
 </div>
 
 ## Description

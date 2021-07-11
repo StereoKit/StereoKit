@@ -6,7 +6,7 @@ description: Has the hand just stopped being tracked this frame?
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).IsJustUntracked
 
 <div class='signature' markdown='1'>
-static bool IsJustUntracked{ get }
+bool IsJustUntracked{ get }
 </div>
 
 ## Description

@@ -6,7 +6,7 @@ description: This is the current position of the playback cursor, measured in sa
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).CursorSamples
 
 <div class='signature' markdown='1'>
-static int CursorSamples{ get }
+int CursorSamples{ get }
 </div>
 
 ## Description

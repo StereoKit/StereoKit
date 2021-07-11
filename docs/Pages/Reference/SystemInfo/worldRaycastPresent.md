@@ -6,7 +6,7 @@ description: Can this device get ray intersections from the environment? If this
 # [SystemInfo]({{site.url}}/Pages/Reference/SystemInfo.html).worldRaycastPresent
 
 <div class='signature' markdown='1'>
-static bool worldRaycastPresent{ get }
+bool worldRaycastPresent{ get }
 </div>
 
 ## Description

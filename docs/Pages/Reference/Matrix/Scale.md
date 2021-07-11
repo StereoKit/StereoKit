@@ -6,7 +6,7 @@ description: Returns the scale embedded in this transform matrix. Not exactly ch
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Scale
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Scale{ get }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) Scale{ get }
 </div>
 
 ## Description

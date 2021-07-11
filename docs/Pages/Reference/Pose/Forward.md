@@ -6,7 +6,7 @@ description: Calculates the forward direction from this pose. This is done by mu
 # [Pose]({{site.url}}/Pages/Reference/Pose.html).Forward
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) Forward{ get }
+[Vec3]({{site.url}}/Pages/Reference/Vec3.html) Forward{ get }
 </div>
 
 ## Description

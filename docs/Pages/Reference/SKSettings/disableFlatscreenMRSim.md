@@ -6,7 +6,7 @@ description: By default, StereoKit will simulate Mixed Reality input so develope
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).disableFlatscreenMRSim
 
 <div class='signature' markdown='1'>
-static bool disableFlatscreenMRSim{ get set }
+bool disableFlatscreenMRSim{ get set }
 </div>
 
 ## Description
