@@ -16,6 +16,7 @@ class DemoAnim<T>
 	Func<T,T,float,T>     _lerp;
 	float                 _startTime;
 	float                 _updated;
+	float                 _speed = 1;
 	T                     _curr;
 
 	public T Current { get {
@@ -23,7 +24,7 @@ class DemoAnim<T>
 		if (now == _updated)
 			return _curr;
 
-		float elapsed = now - _startTime;
+		float elapsed = (now - _startTime) * _speed;
 		_updated = now;
 		_curr = Sample(elapsed);
 
@@ -31,6 +32,7 @@ class DemoAnim<T>
 	} }
 
 	public bool Playing => (Time.Totalf - _startTime) <= _frames[_frames.Length-1].time;
+	public float Duration => _frames[_frames.Length - 1].time;
 
 	public DemoAnim(Func<T, T, float, T> lerp, params (float,T)[] frames)
 	{
@@ -39,8 +41,9 @@ class DemoAnim<T>
 		_startTime = Time.Totalf;
 	}
 
-	public void Play()
+	public void Play(float speed = 1)
 	{
+		_speed = speed;
 		_startTime = Time.Totalf;
 	}
 
@@ -238,7 +241,7 @@ class DebugToolWindow
 		Log.Info(result);
 	}
 
-	static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)
+	public static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)
 	{
 		HandJoint[] result = new HandJoint[a.Length];
 		for (int i = 0; i < a.Length; i++) { 
