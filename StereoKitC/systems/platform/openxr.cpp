@@ -227,7 +227,7 @@ bool openxr_init() {
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
 
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	// Set up a really verbose debug log! Great for dev, but turn this off or
 	// down for final builds. WMR doesn't produce much output here, but it
 	// may be more useful for other runtimes?

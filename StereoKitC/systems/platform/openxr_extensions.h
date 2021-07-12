@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openxr.h"
+#include "platform_utils.h"
 #include "../../stereokit.h"
 #include "../../libraries/array.h"
 #include <openxr/openxr.h>
@@ -18,7 +19,7 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_UWP false
 #endif
-#if defined(_DEBUG)
+#if defined(SK__DEBUG)
 #define EXT_AVAILABLE_DEBUG true
 #else
 #define EXT_AVAILABLE_DEBUG false
