@@ -5,6 +5,10 @@ description: This is the sound stream of the Microphone when it is recording. Th
 ---
 # [Microphone]({{site.url}}/Pages/Reference/Microphone.html).Sound
 
+<div class='signature' markdown='1'>
+static [Sound]({{site.url}}/Pages/Reference/Sound.html) Sound{ get }
+</div>
+
 ## Description
 This is the sound stream of the Microphone when it is
 recording. This Asset is created the first time it is accessed

@@ -3,7 +3,7 @@ layout: default
 title: Lines
 description: A line drawing class! This is an easy way to visualize lines or relationships between objects. The current implementatation uses a quad strip that always faces the user, via vertex shader manipulation.
 ---
-# Lines
+# static class Lines
 
 A line drawing class! This is an easy way to visualize lines
 or relationships between objects. The current implementatation uses a

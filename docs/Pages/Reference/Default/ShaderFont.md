@@ -5,6 +5,10 @@ description: A shader for text! Right now, this will render a font atlas texture
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).ShaderFont
 
+<div class='signature' markdown='1'>
+static [Shader]({{site.url}}/Pages/Reference/Shader.html) ShaderFont{ get set }
+</div>
+
 ## Description
 A shader for text! Right now, this will render a font
 atlas texture, and perform alpha-testing for transparency, and

@@ -5,6 +5,10 @@ description: This tells the current tracking state of this controller overall. I
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).tracked
 
+<div class='signature' markdown='1'>
+[BtnState]({{site.url}}/Pages/Reference/BtnState.html) tracked
+</div>
+
 ## Description
 This tells the current tracking state of this controller
 overall. If either position or rotation are trackable, then this

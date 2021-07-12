@@ -5,6 +5,10 @@ description: This tells the current tracking state of the controller's rotationa
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).trackedRot
 
+<div class='signature' markdown='1'>
+[TrackState]({{site.url}}/Pages/Reference/TrackState.html) trackedRot
+</div>
+
 ## Description
 This tells the current tracking state of the
 controller's rotational information.

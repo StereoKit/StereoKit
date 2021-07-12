@@ -5,6 +5,10 @@ description: Should this material draw only the edges/wires of the mesh? This ca
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).Wireframe
 
+<div class='signature' markdown='1'>
+bool Wireframe{ get set }
+</div>
+
 ## Description
 Should this material draw only the edges/wires of the
 mesh? This can be useful for debugging, and even some kinds of

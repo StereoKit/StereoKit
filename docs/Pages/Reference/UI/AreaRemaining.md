@@ -5,6 +5,10 @@ description: How much space is available on the current layout! This is based on
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).AreaRemaining
 
+<div class='signature' markdown='1'>
+static [Vec2]({{site.url}}/Pages/Reference/Vec2.html) AreaRemaining{ get }
+</div>
+
 ## Description
 How much space is available on the current layout! This is based on the current
 layout position, so X will give you the amount remaining on the current line, and Y will

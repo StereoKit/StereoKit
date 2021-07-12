@@ -3,7 +3,7 @@ layout: default
 title: Log
 description: A class for logging errors, warnings and information! Different levels of information can be filtered out, and supports coloration via <~[colorCode]> and <~clr> tags.  Text colors can be set with a tag, and reset back to default with <~clr>. Color codes are as follows.  | Dark | Bright | Decription  | |------|--------|-------------| | DARK | BRIGHT | DESCRIPTION | | blk  | BLK    | Black       | | red  | RED    | Red         | | grn  | GRN    | Green       | | ylw  | YLW    | Yellow      | | blu  | BLU    | Blue        | | mag  | MAG    | Magenta     | | cyn  | cyn    | Cyan        | | grn  | GRN    | Green       | | wht  | WHT    | White       |
 ---
-# Log
+# static class Log
 
 A class for logging errors, warnings and information!
 Different levels of information can be filtered out, and supports
@@ -70,17 +70,21 @@ Here's the code for the window, and log tracking.
 ```csharp
 static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
 static List<string> logList = new List<string>();
+static string       logText = "";
 static void OnLog(LogLevel level, string text)
 {
-	if (logList.Count > 10)
+	if (logList.Count > 15)
 		logList.RemoveAt(logList.Count - 1);
-	logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...");
+	logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...\n");
+
+	logText = "";
+	for (int i = 0; i < logList.Count; i++)
+		logText += logList[i];
 }
 static void LogWindow()
 {
 	UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-	for (int i = 0; i < logList.Count; i++)
-		UI.Label(logList[i], false);
+	UI.Text(logText);
 	UI.WindowEnd();
 }
 ```

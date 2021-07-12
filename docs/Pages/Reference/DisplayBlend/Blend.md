@@ -5,6 +5,10 @@ description: This is a physically opaque display, but with a camera passthrough 
 ---
 # [DisplayBlend]({{site.url}}/Pages/Reference/DisplayBlend.html).Blend
 
+<div class='signature' markdown='1'>
+static [DisplayBlend]({{site.url}}/Pages/Reference/DisplayBlend.html) Blend
+</div>
+
 ## Description
 This is a physically opaque display, but with a camera
 passthrough displaying the world behind it anyhow. This would be

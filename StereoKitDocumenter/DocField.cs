@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace StereoKitDocumenter
@@ -39,7 +40,7 @@ namespace StereoKitDocumenter
 
 			PropertyInfo pInfo = classType.GetProperty(name);
 			if (pInfo != null)
-				return true;
+				return pInfo.GetAccessors(true).Any(x => x.IsStatic);
 
 			return false;
 		}

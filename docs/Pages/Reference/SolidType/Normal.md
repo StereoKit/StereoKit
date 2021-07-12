@@ -5,6 +5,10 @@ description: This object behaves like a normal physical object, it'll fall, get 
 ---
 # [SolidType]({{site.url}}/Pages/Reference/SolidType.html).Normal
 
+<div class='signature' markdown='1'>
+static [SolidType]({{site.url}}/Pages/Reference/SolidType.html) Normal
+</div>
+
 ## Description
 This object behaves like a normal physical object, it'll fall, get
 pushed around, and generally be succeptible to physical forces! This is a

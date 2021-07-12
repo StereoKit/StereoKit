@@ -5,6 +5,10 @@ description: The trigger button at the user's index finger. These buttons typica
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).trigger
 
+<div class='signature' markdown='1'>
+float trigger
+</div>
+
 ## Description
 The trigger button at the user's index finger. These
 buttons typically have a wide range of activation, so this is

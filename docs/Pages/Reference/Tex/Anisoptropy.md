@@ -5,6 +5,10 @@ description: When SampleMode is set to Anisotropic, this is the number of sample
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Anisoptropy
 
+<div class='signature' markdown='1'>
+int Anisoptropy{ get set }
+</div>
+
 ## Description
 When SampleMode is set to Anisotropic, this is the number
 of samples the GPU takes to figure out the correct color. Default

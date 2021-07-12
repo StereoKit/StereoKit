@@ -5,6 +5,10 @@ description: No culling at all! Draw the triangle regardless of which way it's p
 ---
 # [Cull]({{site.url}}/Pages/Reference/Cull.html).None
 
+<div class='signature' markdown='1'>
+static [Cull]({{site.url}}/Pages/Reference/Cull.html) None
+</div>
+
 ## Description
 No culling at all! Draw the triangle regardless of which
 way it's pointing.

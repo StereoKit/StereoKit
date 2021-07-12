@@ -5,6 +5,10 @@ description: The default Physically Based Rendering material! This is used by St
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).MaterialPBR
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) MaterialPBR{ get set }
+</div>
+
 ## Description
 The default Physically Based Rendering material! This is
 used by StereoKit anytime a mesh or model has metallic or

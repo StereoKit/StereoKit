@@ -5,6 +5,10 @@ description: Used by physically based shaders, this can be used for baked ambien
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).OcclusionTex
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) OcclusionTex
+</div>
+
 ## Description
 Used by physically based shaders, this can be used for
 baked ambient occlusion lighting, or to remove specular

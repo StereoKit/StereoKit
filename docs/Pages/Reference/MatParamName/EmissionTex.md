@@ -5,6 +5,10 @@ description: This texture is unaffected by lighting, and is frequently just adde
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).EmissionTex
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) EmissionTex
+</div>
+
 ## Description
 This texture is unaffected by lighting, and is
 frequently just added in on top of the material's final color!

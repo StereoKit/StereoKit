@@ -5,6 +5,10 @@ description: Set a cubemap skybox texture for rendering a background! This is on
 ---
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).SkyTex
 
+<div class='signature' markdown='1'>
+static [Tex]({{site.url}}/Pages/Reference/Tex.html) SkyTex{ get set }
+</div>
+
 ## Description
 Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 displays, since transparent displays have the real world behind them already! StereoKit has a

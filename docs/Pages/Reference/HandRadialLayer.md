@@ -3,7 +3,7 @@ layout: default
 title: HandRadialLayer
 description: This class represents a single layer in the HandRadialMenu. Each item in the layer is displayed around the radial menu's circle.
 ---
-# HandRadialLayer
+# class HandRadialLayer
 
 This class represents a single layer in the HandRadialMenu.
 Each item in the layer is displayed around the radial menu's circle.

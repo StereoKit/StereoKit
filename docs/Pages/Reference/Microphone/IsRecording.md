@@ -5,6 +5,10 @@ description: Tells if the Microphone is currently recording audio.
 ---
 # [Microphone]({{site.url}}/Pages/Reference/Microphone.html).IsRecording
 
+<div class='signature' markdown='1'>
+static bool IsRecording{ get }
+</div>
+
 ## Description
 Tells if the Microphone is currently recording audio.
 

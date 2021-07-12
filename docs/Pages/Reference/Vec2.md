@@ -3,7 +3,7 @@ layout: default
 title: Vec2
 description: A vector with 2 components. x and y. This can represent a point in 2D space, a directional vector, or any other sort of value with 2 dimensions to it!
 ---
-# Vec2
+# struct Vec2
 
 A vector with 2 components: x and y. This can represent a
 point in 2D space, a directional vector, or any other sort of value
@@ -14,7 +14,15 @@ with 2 dimensions to it!
 
 |  |  |
 |--|--|
+|float [Length]({{site.url}}/Pages/Reference/Vec2/Length.html)|This is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
+|float [LengthSq]({{site.url}}/Pages/Reference/Vec2/LengthSq.html)|This is the squared length/magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
+|float [Magnitude]({{site.url}}/Pages/Reference/Vec2/Magnitude.html)|Magnitude is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
+|float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec2/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Normalized]({{site.url}}/Pages/Reference/Vec2/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 |Vector2 [v]({{site.url}}/Pages/Reference/Vec2/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Y]({{site.url}}/Pages/Reference/Vec2/X0Y.html)|Promotes this Vec2 to a Vec3, using 0 for the Y axis.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec2/XY0.html)|Promotes this Vec2 to a Vec3, using 0 for the Z axis.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YX]({{site.url}}/Pages/Reference/Vec2/YX.html)|A transpose swizzle property, returns (y,x)|
 
 
 ## Instance Methods
@@ -30,17 +38,9 @@ with 2 dimensions to it!
 
 |  |  |
 |--|--|
-|float [Length]({{site.url}}/Pages/Reference/Vec2/Length.html)|This is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
-|float [LengthSq]({{site.url}}/Pages/Reference/Vec2/LengthSq.html)|This is the squared length/magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
-|float [Magnitude]({{site.url}}/Pages/Reference/Vec2/Magnitude.html)|Magnitude is the length of the vector! Or the distance from the origin to this point. Uses Math.Sqrt, so it's not dirt cheap or anything.|
-|float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec2/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Normalized]({{site.url}}/Pages/Reference/Vec2/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [One]({{site.url}}/Pages/Reference/Vec2/One.html)|A Vec2 with all components at one, this is the same as `new Vec2(1,1)`.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitX]({{site.url}}/Pages/Reference/Vec2/UnitX.html)|A normalized Vector that points down the X axis, this is the same as `new Vec2(1,0)`.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitY]({{site.url}}/Pages/Reference/Vec2/UnitY.html)|A normalized Vector that points down the Y axis, this is the same as `new Vec2(0,1)`.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Y]({{site.url}}/Pages/Reference/Vec2/X0Y.html)|Promotes this Vec2 to a Vec3, using 0 for the Y axis.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec2/XY0.html)|Promotes this Vec2 to a Vec3, using 0 for the Z axis.|
-|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YX]({{site.url}}/Pages/Reference/Vec2/YX.html)|A transpose swizzle property, returns (y,x)|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Zero]({{site.url}}/Pages/Reference/Vec2/Zero.html)|A Vec2 with all components at zero, this is the same as `new Vec2(0,0)`.|
 
 

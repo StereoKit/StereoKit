@@ -5,6 +5,10 @@ description: What kind of depth buffer should StereoKit use? A fast one, a detai
 ---
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).depthMode
 
+<div class='signature' markdown='1'>
+[DepthMode]({{site.url}}/Pages/Reference/DepthMode.html) depthMode
+</div>
+
 ## Description
 What kind of depth buffer should StereoKit use? A fast
 one, a detailed one, one that uses stencils? By default,

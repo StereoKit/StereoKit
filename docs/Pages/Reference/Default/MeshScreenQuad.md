@@ -5,6 +5,10 @@ description: A default quad mesh designed for full-screen rendering. 2 triangles
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).MeshScreenQuad
 
+<div class='signature' markdown='1'>
+static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) MeshScreenQuad{ get set }
+</div>
+
 ## Description
 A default quad mesh designed for full-screen rendering.
 2 triangles, 4 verts, from (-1,-1,0) to (1,1,0) and facing

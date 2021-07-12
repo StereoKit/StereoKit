@@ -5,6 +5,10 @@ description: What type of transparency does this Material use? Default is None. 
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).Transparency
 
+<div class='signature' markdown='1'>
+[Transparency]({{site.url}}/Pages/Reference/Transparency.html) Transparency{ get set }
+</div>
+
 ## Description
 What type of transparency does this Material use?
 Default is None. Transparency has an impact on performance, and

@@ -3,7 +3,7 @@ layout: default
 title: TrackState
 description: This is the tracking state of a sensory input in the world, like a controller's position sensor, or a QR code identified by a tracking system.
 ---
-# TrackState
+# enum TrackState
 
 This is the tracking state of a sensory input in the world,
 like a controller's position sensor, or a QR code identified by a
@@ -12,13 +12,13 @@ tracking system.
 
 
 
-## Static Fields and Properties
+## Enum Values
 
 |  |  |
 |--|--|
-|[TrackState]({{site.url}}/Pages/Reference/TrackState.html) [Inferred]({{site.url}}/Pages/Reference/TrackState/Inferred.html)|The system doesn't know for sure where this is, but it has an educated guess that may be inferred from previous data at a lower quality. For example, a controller may still have accelerometer data after going out of view, which can still be accurate for a short time after losing optical tracking.|
-|[TrackState]({{site.url}}/Pages/Reference/TrackState.html) [Known]({{site.url}}/Pages/Reference/TrackState/Known.html)|The system actively knows where this input is. Within the constraints of the relevant hardware's capabilities, this is as accurate as it gets!|
-|[TrackState]({{site.url}}/Pages/Reference/TrackState.html) [Lost]({{site.url}}/Pages/Reference/TrackState/Lost.html)|The system has no current knowledge about the state of this input. It may be out of visibility, or possibly just disconnected.|
+|Inferred|The system doesn't know for sure where this is, but it has an educated guess that may be inferred from previous data at a lower quality. For example, a controller may still have accelerometer data after going out of view, which can still be accurate for a short time after losing optical tracking.|
+|Known|The system actively knows where this input is. Within the constraints of the relevant hardware's capabilities, this is as accurate as it gets!|
+|Lost|The system has no current knowledge about the state of this input. It may be out of visibility, or possibly just disconnected.|
 
 
 

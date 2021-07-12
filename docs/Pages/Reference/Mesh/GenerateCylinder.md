@@ -38,10 +38,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
+Matrix cylinderTransform = Matrix.T(-.5f, 1, 0);
 Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 
-cylinderTransform = Matrix.T(0.5f, 0, -1);
+cylinderTransform = Matrix.T(.5f, 1, 0);
 Renderer.Add(cylinderModel, cylinderTransform);
 ```
 ## UV and Face layout

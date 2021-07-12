@@ -5,6 +5,10 @@ description: Enables or disables the far ray grab interaction for Handle element
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).EnableFarInteract
 
+<div class='signature' markdown='1'>
+static bool EnableFarInteract{ get set }
+</div>
+
 ## Description
 Enables or disables the far ray grab interaction for
 Handle elements like the Windows. It can be enabled and disabled

@@ -1,10 +1,15 @@
 ---
 layout: default
 title: TextAlign.Center
-description: A combination of XCenter and YCenter.
+description: Center on both X and Y axes. This is a combination of XCenter and YCenter.
 ---
 # [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html).Center
 
+<div class='signature' markdown='1'>
+static [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) Center
+</div>
+
 ## Description
-A combination of XCenter and YCenter.
+Center on both X and Y axes. This is a combination of
+XCenter and YCenter.
 

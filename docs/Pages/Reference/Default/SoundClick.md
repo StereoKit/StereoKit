@@ -5,6 +5,10 @@ description: A default click sound that lasts for 300ms. It's a procedurally gen
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).SoundClick
 
+<div class='signature' markdown='1'>
+static [Sound]({{site.url}}/Pages/Reference/Sound.html) SoundClick{ get set }
+</div>
+
 ## Description
 A default click sound that lasts for 300ms. It's a
 procedurally generated sound based on a mouse press, with extra
