@@ -1,5 +1,3 @@
-#pragma comment(lib, "reactphysics3d.lib")
-
 #include "physics.h"
 #include "../stereokit.h"
 #include "../_stereokit.h"
