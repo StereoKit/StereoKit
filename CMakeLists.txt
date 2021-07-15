@@ -47,23 +47,58 @@ if (UNIX)
   set(CPM_USE_LOCAL_PACKAGES ON) # Tell CPM to prefer locally installed packages
 endif()
 
+#### ReactPhysics3D - https://www.reactphysics3d.com/ ####
 CPMAddPackage(
   NAME reactphysics3d
   GITHUB_REPOSITORY DanielChappuis/reactphysics3d
   GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
 )
+# Something in reactphysics3d seems to require -fPIC
 set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
 # Disable warnings for reactphysics3d, it's a little horrifying
 target_compile_options(reactphysics3d PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W0>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-everything>
-)
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-everything> )
 
+#### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
 )
+
+###########################################
+## Shader Compiler                       ##
+###########################################
+
+set(SK_SRC_SHADERS_HLSL
+  StereoKitC/shaders_builtin/shader_builtin_default.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_font.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_quadrant.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_unlit.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_unlit_clip.hlsl )
+
+set(SK_SRC_SHADERS_H
+  StereoKitC/shaders_builtin/shader_builtin.h )
+
+set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/Tools/skshaderc")
+foreach(SHADER ${SK_SRC_SHADERS_HLSL})
+  # Shader compile tool doesn't work on Linux yet, but pre-built
+  # shaders should still be in the repository.
+  if (WIN32)
+    add_custom_command(
+        OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
+        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin ${CMAKE_SOURCE_DIR}/${SHADER}
+        DEPENDS ${SHADER} )
+  endif()
+  list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
+endforeach(SHADER)
 
 ###########################################
 ## Platform Specific Library Linking     ##
@@ -248,6 +283,7 @@ add_library(StereoKitC
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORM}
   ${SK_SRC_TOOLS}
+  ${SK_SRC_SHADERS_H}
 )
 
 # Set up Visual Studio folders/filters for a more organized
