@@ -1,5 +1,3 @@
-#pragma comment(lib,"openxr_loader.lib")
-
 #include "openxr.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
