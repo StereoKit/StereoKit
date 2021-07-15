@@ -1,5 +1,5 @@
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+#include <stereokit.h>
+#include <stereokit_ui.h>
 #include <vector>
 using namespace sk;
 

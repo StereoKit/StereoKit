@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "../../StereoKitC/stereokit.h"
+#include <stereokit.h>
 
 using namespace sk;
 

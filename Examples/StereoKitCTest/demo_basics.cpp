@@ -1,7 +1,7 @@
 #include "demo_basics.h"
 
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+#include <stereokit.h>
+#include <stereokit_ui.h>
 using namespace sk;
 #include <vector>
 using namespace std;
