@@ -1,5 +1,6 @@
 # Copyright 2021, Collabora, Ltd.
 # Copyright Moses Turner, 2021.
+# Copyright Nick Klingensmith, 2021.
 # Many thanks to Ryan Pavlik for showing the way
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +8,9 @@
 # - LINUX_EGL
 #     This tells the Linux build to use EGL as the OpenGL loader, 
 #     instead of the default GLX.
+# - MULTITHREAD_BUILD_BY_DEFAULT
+#     MSVC only, on by default. This forces projects here to
+#     build with multi-threading (/MP)
 #
 
 cmake_minimum_required(VERSION 3.10)
@@ -26,7 +30,8 @@ endif()
 ## Options                               ##
 ###########################################
 
-SET(LINUX_EGL OFF CACHE BOOL "Force using EGL graphics backend on Linux")
+set(LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
+set(MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 
 ###########################################
 ## Dependencies                          ##
@@ -34,6 +39,13 @@ SET(LINUX_EGL OFF CACHE BOOL "Force using EGL graphics backend on Linux")
 
 # See: https://github.com/cpm-cmake/CPM.cmake
 include("cmake/CPM.cmake")
+if (UNIX)
+  # Linux users/devs prefer shared system libraries rather than
+  # static libraries. Linux OpenXR runtimes are responsible for
+  # providing the shared OpenXR loader there. On Windows and
+  # Android, static linking is necessary.
+  set(CPM_USE_LOCAL_PACKAGES ON) # Tell CPM to prefer locally installed packages
+endif()
 
 CPMAddPackage(
   NAME reactphysics3d
@@ -41,18 +53,17 @@ CPMAddPackage(
   GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
 )
 set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
+# Disable warnings for reactphysics3d, it's a little horrifying
+target_compile_options(reactphysics3d PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/W0>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-everything>
+)
 
-# Linux users/devs prefer shared system libraries rather than
-# static libraries. OpenXR runtimes are responsible for providing
-# the OpenXR loader there. On Windows and Android, static linking
-# is necessary.
-if (WIN32)
-  CPMAddPackage(
-    NAME OpenXR
-    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
-  )
-endif()
+CPMAddPackage(
+  NAME OpenXR
+  GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
+  GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
+)
 
 ###########################################
 ## Platform Specific Library Linking     ##
@@ -69,7 +80,7 @@ if (UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 
-  # Add OpenGL
+  # Add OpenGL, and account for the LINUX_EGL option
   if(LINUX_EGL)
     add_definitions("-DSKG_LINUX_EGL")
     list(APPEND LINUX_LIBS EGL)
@@ -88,69 +99,172 @@ endif()
 ## StereoKitC                            ##
 ###########################################
 
-add_library(StereoKitC
-  SHARED
-  StereoKitC/sk_math.cpp
-  StereoKitC/tools/file_picker.cpp
+set(SK_SRC_CODE
+  StereoKitC/stereokit.h
+  StereoKitC/stereokit_ui.h
+
+  StereoKitC/_stereokit.h
+  StereoKitC/_stereokit_ui.h
   StereoKitC/color.cpp
-  StereoKitC/systems/defaults.cpp
-  StereoKitC/systems/system.cpp
-  StereoKitC/systems/render.cpp
-  StereoKitC/systems/sprite_drawer.cpp
-  StereoKitC/systems/world.cpp
-  StereoKitC/systems/input_keyboard.cpp
-  StereoKitC/systems/physics.cpp
-  StereoKitC/systems/line_drawer.cpp
-  StereoKitC/systems/platform/linux.cpp
-  StereoKitC/systems/platform/platform_utils.cpp
-  StereoKitC/systems/platform/openxr_input.cpp
-  StereoKitC/systems/platform/openxr.cpp
-  StereoKitC/systems/platform/platform.cpp
-  StereoKitC/systems/platform/win32.cpp
-  StereoKitC/systems/platform/flatscreen_input.cpp
-  StereoKitC/systems/platform/openxr_view.cpp
-  StereoKitC/systems/platform/android.cpp
-  StereoKitC/systems/platform/uwp.cpp
-  StereoKitC/systems/text.cpp
-  StereoKitC/systems/input.cpp
-  StereoKitC/systems/audio.cpp
-  StereoKitC/systems/hand/hand_override.cpp
-  StereoKitC/systems/hand/hand_oxr_articulated.cpp
-  StereoKitC/systems/hand/hand_oxr_controller.cpp
-  StereoKitC/systems/hand/hand_mouse.cpp
-  StereoKitC/systems/hand/input_hand.cpp
-  StereoKitC/systems/render_sort.cpp
-  StereoKitC/spherical_harmonics.cpp
+  StereoKitC/hierarchy.h
+  StereoKitC/hierarchy.cpp
+  StereoKitC/intersect.cpp
+  StereoKitC/log.h
+  StereoKitC/log.cpp
+  StereoKitC/sk_math.h
+  StereoKitC/sk_math.cpp
+  StereoKitC/sk_memory.h
   StereoKitC/sk_memory.cpp
-  StereoKitC/asset_types/material.cpp
-  StereoKitC/asset_types/font.cpp
-  StereoKitC/asset_types/mesh.cpp
-  StereoKitC/asset_types/sound.cpp
-  StereoKitC/asset_types/sprite.cpp
+  StereoKitC/spherical_harmonics.h
+  StereoKitC/spherical_harmonics.cpp
+  StereoKitC/stereokit.cpp
+  StereoKitC/stereokit_ui.cpp )
+
+set(SK_SRC_ASSET_TYPES
+  StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
-  StereoKitC/asset_types/model_gltf.cpp
-  StereoKitC/asset_types/shader.cpp
-  StereoKitC/asset_types/model_obj.cpp
+  StereoKitC/asset_types/font.h
+  StereoKitC/asset_types/font.cpp
+  StereoKitC/asset_types/material.h
+  StereoKitC/asset_types/material.cpp
+  StereoKitC/asset_types/mesh.h
+  StereoKitC/asset_types/mesh.cpp
+  StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
   StereoKitC/asset_types/model_fbx.cpp
-  StereoKitC/asset_types/model_stl.cpp
-  StereoKitC/asset_types/texture.cpp
+  StereoKitC/asset_types/model_gltf.cpp
+  StereoKitC/asset_types/model_obj.cpp
   StereoKitC/asset_types/model_ply.cpp
-  StereoKitC/stereokit.cpp
-  StereoKitC/libraries/sk_gpu.cpp
-  StereoKitC/libraries/sokol_time.cpp
-  StereoKitC/libraries/isac_spatial_sound.cpp
-  StereoKitC/libraries/tinycthread.cpp
-  StereoKitC/libraries/ofbx.cpp
-  StereoKitC/libraries/miniz.cpp
+  StereoKitC/asset_types/model_stl.cpp
+  StereoKitC/asset_types/shader.h
+  StereoKitC/asset_types/shader.cpp
+  StereoKitC/asset_types/sound.h
+  StereoKitC/asset_types/sound.cpp
+  StereoKitC/asset_types/sprite.h
+  StereoKitC/asset_types/sprite.cpp
+  StereoKitC/asset_types/texture.h
+  StereoKitC/asset_types/texture.cpp )
+
+set(SK_SRC_LIBRARIES
+  StereoKitC/libraries/array.h
+  StereoKitC/libraries/cgltf.h
+  StereoKitC/libraries/dr_wav.h
+  StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
+  StereoKitC/libraries/isac_spatial_sound.h
+  StereoKitC/libraries/isac_spatial_sound.cpp
+  StereoKitC/libraries/micro_ply.h
+  StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
+  StereoKitC/libraries/miniz.h
+  StereoKitC/libraries/miniz.cpp
+  StereoKitC/libraries/ofbx.h
+  StereoKitC/libraries/ofbx.cpp
+  StereoKitC/libraries/sk_gpu.h
+  StereoKitC/libraries/sk_gpu.cpp
+  StereoKitC/libraries/sokol_time.h
+  StereoKitC/libraries/sokol_time.cpp
+  StereoKitC/libraries/stb_image.h
+  StereoKitC/libraries/stb_image_write.h
+  StereoKitC/libraries/stb_rect_pack.h
+  StereoKitC/libraries/stb_truetype.h
+  StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
-  StereoKitC/intersect.cpp
-  StereoKitC/hierarchy.cpp
-  StereoKitC/log.cpp
-  StereoKitC/stereokit_ui.cpp
-) # Probably some of these can be PRIVATE, might make the debug symbols smaller for example.
+  StereoKitC/libraries/tinycthread.h
+  StereoKitC/libraries/tinycthread.cpp )
+
+set(SK_SRC_SYSTEMS
+  StereoKitC/systems/audio.h
+  StereoKitC/systems/audio.cpp
+  StereoKitC/systems/defaults.h
+  StereoKitC/systems/defaults.cpp
+  StereoKitC/systems/input.h
+  StereoKitC/systems/input.cpp
+  StereoKitC/systems/input_keyboard.h
+  StereoKitC/systems/input_keyboard.cpp
+  StereoKitC/systems/line_drawer.h
+  StereoKitC/systems/line_drawer.cpp
+  StereoKitC/systems/physics.h
+  StereoKitC/systems/physics.cpp
+  StereoKitC/systems/render.h
+  StereoKitC/systems/render.cpp
+  StereoKitC/systems/render_sort.h
+  StereoKitC/systems/render_sort.cpp
+  StereoKitC/systems/sprite_drawer.h
+  StereoKitC/systems/sprite_drawer.cpp
+  StereoKitC/systems/system.h
+  StereoKitC/systems/system.cpp
+  StereoKitC/systems/text.h
+  StereoKitC/systems/text.cpp  
+  StereoKitC/systems/world.h
+  StereoKitC/systems/world.cpp )
+
+set(SK_SRC_HANDS
+  StereoKitC/systems/hand/hand_mouse.h
+  StereoKitC/systems/hand/hand_mouse.cpp
+  StereoKitC/systems/hand/hand_override.h
+  StereoKitC/systems/hand/hand_override.cpp
+  StereoKitC/systems/hand/hand_oxr_articulated.h
+  StereoKitC/systems/hand/hand_oxr_articulated.cpp
+  StereoKitC/systems/hand/hand_oxr_controller.h
+  StereoKitC/systems/hand/hand_oxr_controller.cpp
+  StereoKitC/systems/hand/hand_poses.h
+  StereoKitC/systems/hand/input_hand.h
+  StereoKitC/systems/hand/input_hand.cpp )
+
+set(SK_SRC_PLATFORM
+  StereoKitC/systems/platform/android.cpp
+  StereoKitC/systems/platform/android.h
+  StereoKitC/systems/platform/flatscreen_input.h
+  StereoKitC/systems/platform/flatscreen_input.cpp
+  StereoKitC/systems/platform/linux.h
+  StereoKitC/systems/platform/linux.cpp
+  StereoKitC/systems/platform/openxr.h
+  StereoKitC/systems/platform/openxr.cpp
+  StereoKitC/systems/platform/openxr_extensions.h
+  StereoKitC/systems/platform/openxr_input.h
+  StereoKitC/systems/platform/openxr_input.cpp
+  StereoKitC/systems/platform/openxr_view.h
+  StereoKitC/systems/platform/openxr_view.cpp
+  StereoKitC/systems/platform/platform.h
+  StereoKitC/systems/platform/platform.cpp
+  StereoKitC/systems/platform/platform_utils.h
+  StereoKitC/systems/platform/platform_utils.cpp
+  StereoKitC/systems/platform/uwp.h
+  StereoKitC/systems/platform/uwp.cpp  
+  StereoKitC/systems/platform/win32.h
+  StereoKitC/systems/platform/win32.cpp )
+
+set(SK_SRC_TOOLS
+  StereoKitC/tools/file_picker.h
+  StereoKitC/tools/file_picker.cpp )
+
+add_library(StereoKitC
+  SHARED
+  ${SK_SRC_CODE}
+  ${SK_SRC_ASSET_TYPES}
+  ${SK_SRC_LIBRARIES}
+  ${SK_SRC_SYSTEMS}
+  ${SK_SRC_HANDS}
+  ${SK_SRC_PLATFORM}
+  ${SK_SRC_TOOLS}
+)
+
+# Set up Visual Studio folders/filters for a more organized
+# workspace there.
+source_group("code"        FILES ${SK_SRC_CODE})
+source_group("asset_types" FILES ${SK_SRC_ASSET_TYPES})
+source_group("libraries"   FILES ${SK_SRC_LIBRARIES})
+source_group("systems"     FILES ${SK_SRC_SYSTEMS})
+source_group("hands"       FILES ${SK_SRC_HANDS})
+source_group("platform"    FILES ${SK_SRC_PLATFORM})
+source_group("tools"       FILES ${SK_SRC_TOOLS})
+
+if (UNIX)
+  # DirectXMath on Linux needs a few extra files
+  set(LINUX_INCLUDES
+    StereoKitC/lib/include_no_win/)
+endif()
 
 target_include_directories(StereoKitC
   PUBLIC
@@ -158,10 +272,7 @@ target_include_directories(StereoKitC
     $<INSTALL_INTERFACE:include>
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
-    # openxr_loader
-    # ${OPENXR_INCLUDE_DIRS}  
-    StereoKitC/lib/include_no_win/
-    StereoKitC/lib/include/
+    ${LINUX_INCLUDES}
 )
 
 target_link_libraries( StereoKitC
@@ -201,6 +312,20 @@ add_executable( StereoKitCTest
 target_link_libraries( StereoKitCTest
   StereoKitC
 )
+
+###########################################
+## Multi-threaded build MSVC             ##
+###########################################
+
+# Setup Visual Studio to use multi-threaded compilation by
+# default, this is mostly for when using Visual Studio as
+# the IDE. CLI users can pass in command line arguments.
+if (MSVC)
+  target_compile_options(reactphysics3d PRIVATE "/MP")
+  target_compile_options(openxr_loader PRIVATE "/MP")
+  target_compile_options(StereoKitC PRIVATE "/MP")
+  target_compile_options(StereoKitCTest PRIVATE "/MP")
+endif()
 
 ###########################################
 ## Installation                          ##
