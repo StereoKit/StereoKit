@@ -1,6 +1,5 @@
 #include "assets.h"
 #include "../_stereokit.h"
-#include "../systems/platform/platform_utils.h"
 #include "../sk_memory.h"
 
 #include "mesh.h"
@@ -87,7 +86,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t &header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	header.id_text = string_copy(id);
 #endif
 }
@@ -95,7 +94,7 @@ void assets_set_id(asset_header_t &header, const char *id) {
 ///////////////////////////////////////////
 
 void assets_set_id(asset_header_t &header, uint64_t id) {
-#if _DEBUG
+#if defined(SK_DEBUG)
 	asset_header_t *other = (asset_header_t *)assets_find(id, header.type);
 	assert(other == nullptr);
 #endif
@@ -142,7 +141,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	free(asset.id_text);
 #endif
 	free(&asset);

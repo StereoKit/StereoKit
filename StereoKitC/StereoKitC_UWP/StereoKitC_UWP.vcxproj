@@ -116,9 +116,11 @@
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
@@ -146,9 +148,11 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y

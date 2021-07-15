@@ -350,6 +350,7 @@ _site/
 .jekyll-cache/
 *.lock
 build/
+build_*/
 
 .vscode/
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../systems/platform/platform_utils.h" // SK_DEBUG
 #include <stdint.h>
 
 namespace sk {
@@ -20,7 +21,7 @@ struct asset_header_t {
 	uint64_t    id;
 	int32_t     refs;
 	uint64_t    index;
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	char       *id_text;
 #endif
 };

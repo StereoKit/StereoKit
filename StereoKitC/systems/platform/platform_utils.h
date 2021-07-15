@@ -14,6 +14,10 @@
 	#define SK_OS_WINDOWS
 #endif
 
+#if !defined(NDEBUG)
+	#define SK_DEBUG
+#endif
+
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 #define platform_path_separator "\\"
 #define platform_path_separator_c '\\'
