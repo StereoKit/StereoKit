@@ -5,13 +5,17 @@
 # SPDX-License-Identifier: MIT
 
 # This build file has the following options
-# - LINUX_EGL
+# - SK_LINUX_EGL
 #     This tells the Linux build to use EGL as the OpenGL loader, 
 #     instead of the default GLX.
-# - MULTITHREAD_BUILD_BY_DEFAULT
+# - SK_MULTITHREAD_BUILD_BY_DEFAULT
 #     MSVC only, on by default. This forces projects here to
 #     build with multi-threading (/MP)
-#
+# - SK_BUILD_TESTS
+#     Build the StereoKitCTest project in addition to the StereoKitC
+#     library. This is off by default.
+# - SK_BUILD_SHARED_LIBS
+#     Should StereoKit build as a shared, or static library?
 
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -30,8 +34,10 @@ endif()
 ## Options                               ##
 ###########################################
 
-set(LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
-set(MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
+set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
+set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
+set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
+set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 
 ###########################################
 ## Dependencies                          ##
@@ -115,8 +121,8 @@ if (UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 
-  # Add OpenGL, and account for the LINUX_EGL option
-  if(LINUX_EGL)
+  # Add OpenGL, and account for the SK_LINUX_EGL option
+  if(SK_LINUX_EGL)
     add_definitions("-DSKG_LINUX_EGL")
     list(APPEND LINUX_LIBS EGL)
   else()
@@ -274,8 +280,15 @@ set(SK_SRC_TOOLS
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 
-add_library(StereoKitC
-  SHARED
+# Switch between a static or shared library based on
+# the cmake options provided.
+if (SK_BUILD_SHARED_LIBS)
+  set(LIBRARY_TYPE SHARED)
+else()
+  set(LIBRARY_TYPE STATIC)
+endif()
+
+add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_CODE}
   ${SK_SRC_ASSET_TYPES}
   ${SK_SRC_LIBRARIES}
@@ -283,8 +296,7 @@ add_library(StereoKitC
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORM}
   ${SK_SRC_TOOLS}
-  ${SK_SRC_SHADERS_H}
-)
+  ${SK_SRC_SHADERS_H} )
 
 # Set up Visual Studio folders/filters for a more organized
 # workspace there.
@@ -325,29 +337,35 @@ target_link_libraries( StereoKitC
 ## StereoKitCTest                        ##
 ###########################################
 
-add_executable( StereoKitCTest
-  Examples/StereoKitCTest/main.cpp
-  Examples/StereoKitCTest/demo_basics.h
-  Examples/StereoKitCTest/demo_basics.cpp
-  Examples/StereoKitCTest/demo_picker.h
-  Examples/StereoKitCTest/demo_picker.cpp
-  Examples/StereoKitCTest/demo_mic.h
-  Examples/StereoKitCTest/demo_mic.cpp
-  Examples/StereoKitCTest/demo_sprites.h
-  Examples/StereoKitCTest/demo_sprites.cpp
-  Examples/StereoKitCTest/scene.h
-  Examples/StereoKitCTest/scene.cpp
-  Examples/StereoKitCTest/demo_ui.h
-  Examples/StereoKitCTest/demo_ui.cpp
-  Examples/StereoKitCTest/demo_world.h
-  Examples/StereoKitCTest/demo_world.cpp
-  Examples/StereoKitCTest/demo_lines.h
-  Examples/StereoKitCTest/demo_lines.cpp
-)
+if (SK_BUILD_TESTS)
+  add_executable( StereoKitCTest
+    Examples/StereoKitCTest/main.cpp
+    Examples/StereoKitCTest/demo_basics.h
+    Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_picker.h
+    Examples/StereoKitCTest/demo_picker.cpp
+    Examples/StereoKitCTest/demo_mic.h
+    Examples/StereoKitCTest/demo_mic.cpp
+    Examples/StereoKitCTest/demo_sprites.h
+    Examples/StereoKitCTest/demo_sprites.cpp
+    Examples/StereoKitCTest/scene.h
+    Examples/StereoKitCTest/scene.cpp
+    Examples/StereoKitCTest/demo_ui.h
+    Examples/StereoKitCTest/demo_ui.cpp
+    Examples/StereoKitCTest/demo_world.h
+    Examples/StereoKitCTest/demo_world.cpp
+    Examples/StereoKitCTest/demo_lines.h
+    Examples/StereoKitCTest/demo_lines.cpp
+  )
 
-target_link_libraries( StereoKitCTest
-  StereoKitC
-)
+  target_link_libraries( StereoKitCTest
+    StereoKitC
+  )
+
+  if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
+    target_compile_options(StereoKitCTest PRIVATE "/MP")
+  endif()
+endif()
 
 ###########################################
 ## Multi-threaded build MSVC             ##
@@ -356,11 +374,10 @@ target_link_libraries( StereoKitCTest
 # Setup Visual Studio to use multi-threaded compilation by
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
-if (MSVC)
+if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
   target_compile_options(reactphysics3d PRIVATE "/MP")
   target_compile_options(openxr_loader PRIVATE "/MP")
   target_compile_options(StereoKitC PRIVATE "/MP")
-  target_compile_options(StereoKitCTest PRIVATE "/MP")
 endif()
 
 ###########################################
