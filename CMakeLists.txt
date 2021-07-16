@@ -63,7 +63,7 @@ set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
 # Disable warnings for reactphysics3d, it's a little horrifying
 target_compile_options(reactphysics3d PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W0>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-everything> )
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
