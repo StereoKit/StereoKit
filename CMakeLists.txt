@@ -18,7 +18,6 @@
 #     Should StereoKit build as a shared, or static library?
 
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -132,6 +131,7 @@ if (UNIX)
     list(APPEND LINUX_LIBS GL GLEW)
   endif()
 elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     WindowsApp) # Required for ISAC spatial audio code
 endif()

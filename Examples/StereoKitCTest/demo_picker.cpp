@@ -53,7 +53,7 @@ void demo_picker_update() {
 
 	ui_window_end();
 	if (model_loaded) {
-		render_add_model(model,matrix_trs(vec3{0,0.3,0}));
+		render_add_model(model,matrix_trs(vec3{0,0.3f,0}));
 	}
 }
 
