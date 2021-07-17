@@ -35,6 +35,7 @@ class SKFunction:
         retString  = nameMatches[1].strip()
         self.ret = SKParam(retString + " " + self.name)
         self.params = []
+        self.isStatic = True
 
         currParam = ""
         parens = 0
@@ -110,10 +111,11 @@ class SKParam:
 ###########################################
 
 class SKType:
-    def __init__(self, name):
+    def __init__(self, name, isAsset):
         self.name       = name
         self.properties = []
         self.functions  = []
+        self.isAsset    = isAsset
 
     def __str__(self):
         result = self.name + ":\n"
@@ -128,6 +130,9 @@ class SKType:
         return "}" in text
 
     def addfunc(self, function):
+        if len(function.params) > 0:
+            if function.params[0].type == self.name:
+                function.isStatic = False
         self.functions.append(function)
 
 ###########################################
@@ -168,7 +173,7 @@ class SKParse:
         self.skTypes     = []
         active = None
 
-        self.skTypes.append(SKType("sk"))
+        self.skTypes.append(SKType("sk", False))
 
         for line in lines:
             if active is not None:
@@ -180,10 +185,10 @@ class SKParse:
                 active = SKEnum(line)
                 self.skEnums.append(active)
             elif line.startswith("typedef struct"):
-                active = SKType(re.search("struct\s+(.*)\s*{", line).group(1).strip())
+                active = SKType(re.search("struct\s+(.*)\s*{", line).group(1).strip(), False)
                 self.skTypes.append(active)
             elif line.startswith("SK_DeclarePrivateType"):
-                self.skTypes.append(SKType(re.search("\((.*)\)", line).group(1)))
+                self.skTypes.append(SKType(re.search("\((.*)\)", line).group(1), True))
 
         for func in self.skFunctions:
             for type in self.skTypes:
