@@ -4,7 +4,9 @@
 using namespace sk;
 
 #include "scene.h"
+#ifdef SK_SYSTEMS_PHYSICS
 #include "demo_basics.h"
+#endif
 #include "demo_ui.h"
 #include "demo_mic.h"
 #include "demo_sprites.h"
@@ -18,18 +20,22 @@ using namespace sk;
 #include <string>
 #include <list>
 
+#ifdef SK_SYSTEMS_PHYSICS
 solid_t     floor_solid;
+#endif
 matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
 
 scene_t demos[] = {
 	{
+#ifdef SK_SYSTEMS_PHYSICS
 		"Basics",
 		demo_basics_init,
 		demo_basics_update,
 		demo_basics_shutdown,
 	}, {
+#endif
 		"UI",
 		demo_ui_init,
 		demo_ui_update,
@@ -114,13 +120,17 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	sk_settings_t settings = {};
 	settings.app_name           = "StereoKit C";
 	settings.assets_folder      = "Assets";
-	settings.display_preference = display_mode_mixedreality;
+	settings.display_preference = display_mode_flatscreen;
 	if (!sk_init(settings))
 		return 1;
 
 	common_init();
 
+#ifndef SK_SYSTEMS_PHYSICS
+	scene_set_active(demos[5]);
+#else
 	scene_set_active(demos[6]);
+#endif
 
 	while (sk_step( []() {
 		scene_update();
@@ -156,8 +166,10 @@ void common_init() {
 	vec3 pos   = vec3{ 0,-1.5f,0 };
 	vec3 scale = vec3{ 5,1,5 };
 	floor_tr    = matrix_trs(pos, quat_identity, scale);
+#ifdef SK_SYSTEMS_PHYSICS
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
+#endif
 
 	demo_select_pose.position = vec3{0, 0, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
@@ -185,7 +197,9 @@ void common_update() {
 }
 
 void common_shutdown() {
+#ifdef SK_SYSTEMS_PHYSICS
 	solid_release   (floor_solid);
+#endif
 	material_release(floor_mat);
 	model_release   (floor_model);
 }

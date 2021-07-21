@@ -27,7 +27,9 @@ namespace sk {
 struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
+#ifdef SK_SYSTEMS_PHYSICS
 	solid_t     solids[SK_FINGER_SOLIDS];
+#endif
 	material_t  material;
 	hand_mesh_t mesh;
 	bool        visible;
@@ -200,9 +202,11 @@ void input_hand_init() {
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
 
+#ifdef SK_SYSTEMS_PHYSICS
 		hand_state[i].solids[0] = solid_create(vec3_zero, quat_identity, solid_type_unaffected);
 		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
 		solid_set_enabled(hand_state[i].solids[0], false);
+#endif
 
 		// Set up initial default hand pose, so we don't get any accidental pinch/grips on start
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
@@ -241,9 +245,11 @@ void input_hand_shutdown() {
 	}
 
 	for (size_t i = 0; i < handed_max; i++) {
+#ifdef SK_SYSTEMS_PHYSICS
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
 			solid_release(hand_state[i].solids[f]);
 		}
+#endif
 		material_release(hand_state[i].material);
 		mesh_release    (hand_state[i].mesh.mesh);
 		free(hand_state[i].mesh.inds);
@@ -287,12 +293,14 @@ void input_hand_update() {
 		}
 
 		// Update hand physics
+#ifdef SK_SYSTEMS_PHYSICS
 		if (hand_state[i].solid) {
 			solid_set_enabled(hand_state[i].solids[0], tracked);
 			if (tracked) {
 				solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
 			}
 		}
+#endif
 	}
 
 	for (size_t i = 0; i < _countof(hand_sources); i++) {
@@ -613,6 +621,7 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 ///////////////////////////////////////////
 
 void input_hand_solid(handed_ hand, bool32_t solid) {
+#ifdef SK_SYSTEMS_PHYSICS
 	if (hand == handed_max) {
 		input_hand_solid(handed_left,  solid);
 		input_hand_solid(handed_right, solid);
@@ -623,6 +632,7 @@ void input_hand_solid(handed_ hand, bool32_t solid) {
 	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}
+#endif
 }
 
 ///////////////////////////////////////////

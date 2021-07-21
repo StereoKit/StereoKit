@@ -60,6 +60,7 @@ target("StereoKitC")
     set_version("0.3.3-preview.3")
     set_kind("shared")
     set_symbols("debug")
+	add_defines("SK_SYSTEMS_PHYSICS")
     if is_plat("windows") then
         set_languages("cxx17")
         add_cxflags(is_mode("debug") and "/MDd" or "/MD")

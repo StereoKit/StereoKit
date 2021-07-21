@@ -39,6 +39,7 @@ set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics bac
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
+set(SK_SYSTEMS_PHYSICS              ON  CACHE BOOL "Build the physics system")
 
 ###########################################
 ## Dependencies                          ##
@@ -54,18 +55,20 @@ if (UNIX)
   set(CPM_USE_LOCAL_PACKAGES ON) # Tell CPM to prefer locally installed packages
 endif()
 
-#### ReactPhysics3D - https://www.reactphysics3d.com/ ####
-CPMAddPackage(
-  NAME reactphysics3d
-  GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-  GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
-)
-# Something in reactphysics3d seems to require -fPIC
-set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
-# Disable warnings for reactphysics3d, it's a little horrifying
-target_compile_options(reactphysics3d PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W0>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
+if(SK_SYSTEMS_PHYSICS)
+	#### ReactPhysics3D - https://www.reactphysics3d.com/ ####
+	CPMAddPackage(
+	NAME reactphysics3d
+	GITHUB_REPOSITORY DanielChappuis/reactphysics3d
+	GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
+	)
+	# Something in reactphysics3d seems to require -fPIC
+	set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
+	# Disable warnings for reactphysics3d, it's a little horrifying
+	target_compile_options(reactphysics3d PRIVATE
+	$<$<CXX_COMPILER_ID:MSVC>:/W0>
+	$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
+endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
@@ -223,8 +226,6 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input_keyboard.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
-  StereoKitC/systems/physics.h
-  StereoKitC/systems/physics.cpp
   StereoKitC/systems/render.h
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_sort.h
@@ -237,6 +238,13 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/text.cpp  
   StereoKitC/systems/world.h
   StereoKitC/systems/world.cpp )
+
+if(SK_SYSTEMS_PHYSICS)
+  list(APPEND SK_SRC_SYSTEMS 
+    StereoKitC/systems/physics.h
+    StereoKitC/systems/physics.cpp )
+    add_definitions("-DSK_SYSTEMS_PHYSICS")
+endif()
 
 set(SK_SRC_HANDS
   StereoKitC/systems/hand/hand_mouse.h
@@ -274,7 +282,7 @@ set(SK_SRC_PLATFORM
   StereoKitC/systems/platform/win32.h
   StereoKitC/systems/platform/win32.cpp )
 
-set(SK_SRC_TOOLS
+set(SK_SRC_TOOLS 
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 
@@ -321,9 +329,14 @@ target_include_directories(StereoKitC
     ${LINUX_INCLUDES}
 )
 
-target_link_libraries( StereoKitC
-  PRIVATE
+if(SK_SYSTEMS_PHYSICS)
+  target_link_libraries( StereoKitC
+    PRIVATE
     reactphysics3d
+  )
+endif()
+
+target_link_libraries( StereoKitC
   PUBLIC
     openxr_loader
     ${LINUX_LIBS}
@@ -336,10 +349,8 @@ target_link_libraries( StereoKitC
 ###########################################
 
 if (SK_BUILD_TESTS)
-  add_executable( StereoKitCTest
+  set(SK_C_TEST_SRC 
     Examples/StereoKitCTest/main.cpp
-    Examples/StereoKitCTest/demo_basics.h
-    Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_picker.h
     Examples/StereoKitCTest/demo_picker.cpp
     Examples/StereoKitCTest/demo_mic.h
@@ -361,6 +372,15 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl.h
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl.h
   )
+  if(SK_SYSTEMS_PHYSICS)
+    list(APPEND SK_C_TEST_SRC
+      Examples/StereoKitCTest/demo_basics.h
+      Examples/StereoKitCTest/demo_basics.cpp
+    )
+  endif()
+  add_executable( StereoKitCTest
+    ${SK_C_TEST_SRC}
+  )
 
   target_link_libraries( StereoKitCTest
     StereoKitC
@@ -379,7 +399,9 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-  target_compile_options(reactphysics3d PRIVATE "/MP")
+  if(SK_SYSTEMS_PHYSICS)
+    target_compile_options(reactphysics3d PRIVATE "/MP")
+  endif()
   target_compile_options(openxr_loader PRIVATE "/MP")
   target_compile_options(StereoKitC PRIVATE "/MP")
 endif()

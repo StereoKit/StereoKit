@@ -7,7 +7,9 @@
 
 #include "systems/render.h"
 #include "systems/input.h"
-#include "systems/physics.h"
+#ifdef SK_SYSTEMS_PHYSICS
+	#include "systems/physics.h"
+#endif
 #include "systems/system.h"
 #include "systems/text.h"
 #include "systems/audio.h"
@@ -143,21 +145,28 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_ui.func_shutdown           = ui_shutdown;
 	systems_add(&sys_ui);
 
-	system_t sys_physics = { "Physics" };
-	const char *physics_deps       [] = {"Defaults"};
-	const char *physics_update_deps[] = {"Input", "FrameBegin"};
-	sys_physics.init_dependencies       = physics_deps;
-	sys_physics.init_dependency_count   = _countof(physics_deps);
-	sys_physics.update_dependencies     = physics_update_deps;
-	sys_physics.update_dependency_count = _countof(physics_update_deps);
-	sys_physics.func_initialize         = physics_init;
-	sys_physics.func_update             = physics_update;
-	sys_physics.func_shutdown           = physics_shutdown;
-	systems_add(&sys_physics);
+	#ifdef SK_SYSTEMS_PHYSICS
+		system_t sys_physics = { "Physics" };
+		const char *physics_deps       [] = {"Defaults"};
+		const char *physics_update_deps[] = {"Input", "FrameBegin"};
+		sys_physics.init_dependencies       = physics_deps;
+		sys_physics.init_dependency_count   = _countof(physics_deps);
+		sys_physics.update_dependencies     = physics_update_deps;
+		sys_physics.update_dependency_count = _countof(physics_update_deps);
+		sys_physics.func_initialize         = physics_init;
+		sys_physics.func_update             = physics_update;
+		sys_physics.func_shutdown           = physics_shutdown;
+		systems_add(&sys_physics);
+	#endif
 
 	system_t sys_renderer = { "Renderer" };
 	const char *renderer_deps       [] = {"Platform", "Defaults"};
-	const char *renderer_update_deps[] = {"Physics", "FrameBegin"};
+	const char *renderer_update_deps[] = {
+#ifdef SK_SYSTEMS_PHYSICS
+		"Physics",
+#endif
+		"FrameBegin"
+	};
 	sys_renderer.init_dependencies       = renderer_deps;
 	sys_renderer.init_dependency_count   = _countof(renderer_deps);
 	sys_renderer.update_dependencies     = renderer_update_deps;
@@ -239,7 +248,18 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_world);
 
 	system_t sys_app = { "App" };
-	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI", "World"};
+	const char *app_update_deps[] = {
+		"Input",
+		"Defaults",
+		"FrameBegin",
+		"Platform",
+		#ifdef SK_SYSTEMS_PHYSICS
+		"Physics",
+		#endif
+		"Renderer",
+		"UI",
+		"World"
+	};
 	sys_app.update_dependencies     = app_update_deps;
 	sys_app.update_dependency_count = _countof(app_update_deps);
 	sys_app.func_update             = sk_app_update;
@@ -353,7 +373,9 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	sk_timev_elapsedf    = (float)sk_timev_elapsed;
 	sk_timevf_us         = (float)sk_timev_us;
 	sk_timevf            = (float)sk_timev;
+#ifdef SK_SYSTEMS_PHYSICS
 	physics_sim_time     = sk_timev;
+#endif
 }
 
 } // namespace sk
