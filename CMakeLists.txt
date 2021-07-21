@@ -68,11 +68,19 @@ target_compile_options(reactphysics3d PRIVATE
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
-CPMAddPackage(
-  NAME OpenXR
-  GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
-)
+# On Linux, OpenXR is found through pkgconfig or cmake's own find_package()
+# So this will use the pkgconfig OpenXR whenever possible
+if(UNIX)
+  include(FindPkgConfig)
+  pkg_search_module(OpenXR openxr)
+endif()
+if(NOT OpenXR_FOUND)
+  CPMAddPackage(
+    NAME OpenXR
+    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
+    GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
+  )
+endif()
 
 ###########################################
 ## Shader Compiler                       ##
