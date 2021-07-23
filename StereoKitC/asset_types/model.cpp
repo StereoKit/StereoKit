@@ -3,9 +3,6 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "model.h"
-#include "mesh.h"
-#include "material.h"
-#include "texture.h"
 #include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 
@@ -32,7 +29,7 @@ void model_set_id(model_t model, const char *id) {
 model_t model_find(const char *id) {
 	model_t result = (model_t)assets_find(id, asset_type_model);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		model_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -106,16 +103,16 @@ void model_recalculate_bounds(model_t model) {
 		model->bounds = {};
 		return;
 	}
-
+	
 	// Get an initial size
-	vec3 first_corner = bounds_corner(model->subsets[0].mesh->bounds, 0);
+	vec3 first_corner = bounds_corner(mesh_get_bounds(model->subsets[0].mesh), 0);
 	vec3 min, max;
 	min = max = matrix_transform_pt( model->subsets[0].offset, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
 	for (int32_t m = 0; m < model->subset_count; m += 1) {
 		for (int32_t i = 0; i < 8; i += 1) {
-			vec3 corner = bounds_corner      (model->subsets[m].mesh->bounds, i);
+			vec3 corner = bounds_corner      (mesh_get_bounds(model->subsets[m].mesh), i);
 			vec3 pt     = matrix_transform_pt(model->subsets[m].offset, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
@@ -142,7 +139,7 @@ const char *model_get_name(model_t model, int32_t subset) {
 
 material_t model_get_material(model_t model, int32_t subset) {
 	assert(subset < model->subset_count);
-	assets_addref(model->subsets[subset].material->header);
+	material_addref(model->subsets[subset].material);
 	return model->subsets[subset].material;
 }
 
@@ -150,7 +147,7 @@ material_t model_get_material(model_t model, int32_t subset) {
 
 mesh_t model_get_mesh(model_t model, int32_t subset) {
 	assert(subset < model->subset_count);
-	assets_addref(model->subsets[subset].mesh->header);
+	mesh_addref(model->subsets[subset].mesh);
 	return model->subsets[subset].mesh;
 }
 
@@ -169,7 +166,7 @@ void model_set_material(model_t model, int32_t subset, material_t material) {
 
 	material_release(model->subsets[subset].material);
 	model->subsets[subset].material = material;
-	assets_addref(model->subsets[subset].material->header);
+	material_addref(model->subsets[subset].material);
 }
 
 ///////////////////////////////////////////
@@ -180,7 +177,7 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 
 	mesh_release(model->subsets[subset].mesh);
 	model->subsets[subset].mesh = mesh;
-	assets_addref(model->subsets[subset].mesh->header);
+	mesh_addref(model->subsets[subset].mesh);
 
 	model_recalculate_bounds(model);
 }
@@ -212,8 +209,8 @@ int32_t model_add_named_subset(model_t model, const char *name, mesh_t mesh, mat
 
 	model->subsets                      = sk_realloc_t(model_subset_t, model->subsets, model->subset_count + 1);
 	model->subsets[model->subset_count] = model_subset_t{ string_copy(name), mesh, material, transform };
-	assets_addref(mesh->header);
-	assets_addref(material->header);
+	mesh_addref    (mesh);
+	material_addref(material);
 
 	model->subset_count += 1;
 	model_recalculate_bounds(model);
@@ -244,6 +241,12 @@ void model_remove_subset(model_t model, int32_t subset) {
 			sizeof(model_subset_t) * (model->subset_count - (subset + 1)));
 	}
 	model->subset_count -= 1;
+}
+
+///////////////////////////////////////////
+
+void model_addref(model_t model) {
+	assets_addref(model->header);
 }
 
 ///////////////////////////////////////////

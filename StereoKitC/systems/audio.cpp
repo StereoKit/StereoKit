@@ -306,7 +306,7 @@ sound_t mic_get_stream() {
 		au_mic_sound = sound_create_stream(0.5f);
 		sound_set_id(au_mic_sound, "sk/mic_sound");
 	}
-	assets_addref(au_mic_sound->header);
+	sound_addref(au_mic_sound);
 	return au_mic_sound;
 }
 

@@ -185,7 +185,7 @@ bounds_t mesh_get_bounds(mesh_t mesh) {
 mesh_t mesh_find(const char *id) {
 	mesh_t result = (mesh_t)assets_find(id, asset_type_mesh);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		mesh_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -195,6 +195,12 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(mesh->header, id);
+}
+
+///////////////////////////////////////////
+
+void mesh_addref(mesh_t mesh) {
+	assets_addref(mesh->header);
 }
 
 ///////////////////////////////////////////

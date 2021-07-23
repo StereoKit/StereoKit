@@ -51,7 +51,7 @@ material_t sprite_create_material(int index_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
-	assets_addref(image->header);
+	tex_addref(image);
 	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
 	result->texture = image;
@@ -123,6 +123,12 @@ sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char 
 	sprite_t result = sprite_create(image, type, atlas_id);
 	tex_release(image);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void sprite_addref(sprite_t sprite) {
+	assets_addref(sprite->header);
 }
 
 ///////////////////////////////////////////

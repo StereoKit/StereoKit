@@ -3,7 +3,6 @@
 #endif
 
 #include "platform_utils.h"
-#include "android.h"
 
 #include "../../stereokit.h"
 #include "../../sk_memory.h"
@@ -35,6 +34,8 @@
 #endif
 
 #ifdef SK_OS_ANDROID
+#include "android.h"
+
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>

@@ -258,13 +258,13 @@ void render_set_skytex(tex_t sky_texture) {
 	if (render_sky_cubemap == nullptr)
 		return;
 
-	assets_addref(render_sky_cubemap->header);
+	tex_addref(render_sky_cubemap);
 }
 
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
-	assets_addref(render_sky_cubemap->header);
+	tex_addref(render_sky_cubemap);
 	return render_sky_cubemap;
 }
 
@@ -507,7 +507,7 @@ void render_check_viewpoints() {
 		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref
-		assets_releaseref(render_viewpoint_list[i].rendertarget->header);
+		tex_release(render_viewpoint_list[i].rendertarget);
 	}
 	render_viewpoint_list.clear();
 	skg_tex_target_bind(old_target);
@@ -539,7 +539,7 @@ bool render_init() {
 
 	// Set up resources for doing blit operations
 	render_blit_quad = mesh_find(default_id_mesh_screen_quad);
-	assets_addref(render_blit_quad->header);
+	mesh_addref(render_blit_quad);
 
 	// Create a default skybox
 	render_sky_mesh = mesh_create();
@@ -645,7 +645,7 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
-	assets_addref(to_rendertarget->header);
+	tex_addref(to_rendertarget);
 	
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);

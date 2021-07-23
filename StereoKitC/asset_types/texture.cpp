@@ -58,7 +58,7 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
 		return;
 	}
-	assets_addref(depth_texture->header);
+	tex_addref(depth_texture);
 	if (texture->depth_buffer != nullptr)
 		tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
@@ -103,7 +103,7 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 tex_t tex_find(const char *id) {
 	tex_t result = (tex_t)assets_find(id, asset_type_texture);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		tex_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -326,6 +326,12 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	}
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void tex_addref(tex_t texture) {
+	assets_addref(texture->header);
 }
 
 ///////////////////////////////////////////

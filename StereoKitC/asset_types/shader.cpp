@@ -13,7 +13,7 @@ namespace sk {
 shader_t shader_find(const char *id) {
 	shader_t result = (shader_t)assets_find(id, asset_type_shader);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		shader_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -82,6 +82,12 @@ shader_t shader_create_file(const char *filename) {
 	return loaded 
 		? shader_create_mem(data, size)
 		: nullptr;
+}
+
+///////////////////////////////////////////
+
+void shader_addref(shader_t shader) {
+	assets_addref(shader->header);
 }
 
 ///////////////////////////////////////////

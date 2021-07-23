@@ -1,7 +1,6 @@
 #include "text.h"
 
 #include "../asset_types/material.h"
-#include "../asset_types/assets.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../sk_math.h"
@@ -112,8 +111,8 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 		buffer->id       = id;
 		buffer->font     = font;
 		buffer->material = material;
-		assets_addref(font->header);
-		assets_addref(material->header);
+		font_addref    (font);
+		material_addref(material);
 
 		material_set_texture     (material, "diffuse", font_get_tex(font));
 		material_set_cull        (material, cull_none);

@@ -1,5 +1,5 @@
 #include "material.h"
-#include "texture.h"
+#include "shader.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
@@ -17,7 +17,7 @@ _material_buffer_t material_buffers[14] = {};
 material_t material_find(const char *id) {
 	material_t result = (material_t)assets_find(id, asset_type_material);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		material_addref(result);
 		return result;
 	}
 	return result;
@@ -88,7 +88,7 @@ material_t material_create(shader_t shader) {
 		shader = shader_find(default_id_shader_unlit);
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
-	assets_addref(shader->header);
+	shader_addref(shader);
 	result->alpha_mode = transparency_none;
 	result->shader     = shader;
 	result->depth_test = depth_test_less;
@@ -126,10 +126,10 @@ material_t material_copy(material_t material) {
 	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skg_bind_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
-	assets_addref(result->shader->header);
+	shader_addref(result->shader);
 	for (int32_t i = 0; i < result->args.texture_count; i++) {
 		if (result->args.textures[i] != nullptr)
-			assets_addref(result->args.textures[i]->header);
+			tex_addref(result->args.textures[i]);
 	}
 
 	// Copy over the material's pipeline
@@ -150,6 +150,12 @@ material_t material_copy_id(const char *id) {
 	material_t result = material_copy(src);
 	material_release(src);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void material_addref(material_t material) {
+	assets_addref(material->header);
 }
 
 ///////////////////////////////////////////
@@ -183,7 +189,7 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	// Update references
 	if (shader != nullptr)
-		assets_addref(shader->header);
+		shader_addref(shader);
 
 	// Copy over any relevant values that are attached to the old shader
 	if (material->shader != nullptr && shader != nullptr) {
@@ -376,13 +382,13 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 					tex_release(material->args.textures[i]);
 				material->args.textures[i] = value;
 				if (value != nullptr) {
-					assets_addref(value->header);
+					tex_addref(value);
 
 					// Tell the shader about the texture dimensions, if it has
 					// a parameter for it. Texture info will get put into any
 					// float4 param with the name [texname]_i
 					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
-					vec4     info = {(float)value->tex.width, (float)value->tex.height, (float)(uint32_t)log2(value->tex.width), 0};
+					vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
 					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
 				}
 			}

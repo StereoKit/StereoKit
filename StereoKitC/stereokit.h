@@ -425,6 +425,7 @@ SK_DeclarePrivateType(mesh_t);
 SK_API mesh_t   mesh_find         (const char *name);
 SK_API mesh_t   mesh_create       ();
 SK_API void     mesh_set_id       (mesh_t mesh, const char *id);
+SK_API void     mesh_addref       (mesh_t mesh);
 SK_API void     mesh_release      (mesh_t mesh);
 SK_API void     mesh_set_keep_data(mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data(mesh_t mesh);
@@ -503,6 +504,7 @@ SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,  
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
+SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
@@ -527,6 +529,7 @@ SK_DeclarePrivateType(font_t);
 SK_API font_t font_find   (const char *id);
 SK_API font_t font_create (const char *file);
 SK_API void   font_set_id (font_t font, const char* id);
+SK_API void   font_addref (font_t font);
 SK_API void   font_release(font_t font);
 SK_API tex_t  font_get_tex(font_t font);
 
@@ -539,6 +542,7 @@ SK_API shader_t    shader_create_file (const char *filename);
 SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
+SK_API void        shader_addref      (shader_t shader);
 SK_API void        shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
@@ -578,6 +582,7 @@ SK_API material_t    material_create          (shader_t shader);
 SK_API material_t    material_copy            (material_t material);
 SK_API material_t    material_copy_id         (const char *id);
 SK_API void          material_set_id          (material_t material, const char *id);
+SK_API void          material_addref          (material_t material);
 SK_API void          material_release         (material_t material);
 SK_API void          material_set_transparency(material_t material, transparency_ mode);
 SK_API void          material_set_cull        (material_t material, cull_ mode);
@@ -686,6 +691,7 @@ SK_API model_t    model_create_mesh       (mesh_t mesh, material_t material);
 SK_API model_t    model_create_mem        (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t    model_create_file       (const char *filename, shader_t shader sk_default(nullptr));
 SK_API void       model_set_id            (model_t model, const char *id);
+SK_API void       model_addref            (model_t model);
 SK_API void       model_release           (model_t model);
 SK_API const char*model_get_name          (model_t model, int32_t subset);
 SK_API material_t model_get_material      (model_t model, int32_t subset);
@@ -714,6 +720,7 @@ typedef enum sprite_type_ {
 SK_API sprite_t sprite_create     (tex_t    sprite,      sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API void     sprite_set_id     (sprite_t sprite, const char *id);
+SK_API void     sprite_addref     (sprite_t sprite);
 SK_API void     sprite_release    (sprite_t sprite);
 SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API int32_t  sprite_get_width  (sprite_t sprite);
@@ -816,6 +823,7 @@ SK_API uint64_t     sound_total_samples (sound_t sound);
 SK_API uint64_t     sound_cursor_samples(sound_t sound);
 SK_API sound_inst_t sound_play          (sound_t sound, vec3 at, float volume);
 SK_API float        sound_duration      (sound_t sound);
+SK_API void         sound_addref        (sound_t sound);
 SK_API void         sound_release       (sound_t sound);
 
 SK_API void         sound_inst_stop      (sound_inst_t sound_inst);

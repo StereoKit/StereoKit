@@ -10,8 +10,6 @@
 #include "hand_oxr_controller.h"
 #include "hand_oxr_articulated.h"
 
-#include "../../asset_types/assets.h"
-#include "../../asset_types/material.h"
 #include "../platform/platform_utils.h"
 
 #include <math.h>
@@ -181,7 +179,7 @@ void input_hand_init() {
 		hand_state[i].visible  = true;
 		hand_state[i].solid    = true;
 		hand_state[i].material = hand_mat;
-		assets_addref(hand_state[i].material->header);
+		material_addref(hand_state[i].material);
 
 		hand_state[i].info.palm.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
@@ -619,7 +617,7 @@ void input_hand_material(handed_ hand, material_t material) {
 	material_release(hand_state[hand].material);
 	
 	if (material != nullptr)
-		assets_addref(material->header);
+		material_addref(material);
 
 	hand_state[hand].material = material;
 }

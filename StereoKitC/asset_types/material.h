@@ -3,7 +3,6 @@
 #include "../stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "assets.h"
-#include "shader.h"
 
 namespace sk {
 

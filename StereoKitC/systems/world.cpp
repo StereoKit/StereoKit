@@ -2,7 +2,6 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
-#include "../asset_types/material.h"
 #include "platform/openxr.h"
 
 #include <float.h>
@@ -146,14 +145,14 @@ void world_set_occlusion_material(material_t material) {
 	material_release(xr_scene_material);
 	xr_scene_material = material;
 	if (xr_scene_material)
-		assets_addref(xr_scene_material->header);
+		material_addref(xr_scene_material);
 }
 
 ///////////////////////////////////////////
 
 material_t world_get_occlusion_material() {
 	if (xr_scene_material)
-		assets_addref(xr_scene_material->header);
+		material_addref(xr_scene_material);
 	return xr_scene_material;
 }
 
