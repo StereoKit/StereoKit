@@ -24,6 +24,17 @@ typedef enum ui_confirm_ {
 	ui_confirm_pinch
 } ui_confirm_;
 
+typedef enum ui_el_ {
+	ui_el_none = 0,
+	ui_el_default,
+	ui_el_button,
+	ui_el_toggle,
+	ui_el_input,
+	ui_el_handle,
+	ui_el_window, 
+	ui_el_max,
+} ui_el_;
+
 typedef struct ui_settings_t {
 	float padding;
 	float gutter;
@@ -37,6 +48,7 @@ SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API void     ui_set_color           (color128      color);
+SK_API void     ui_set_element_visual  (ui_el_ element, mesh_t mesh, material_t material sk_default(nullptr));
 SK_API void     ui_push_text_style     (text_style_t  style);
 SK_API void     ui_pop_text_style      ();
 

@@ -56,10 +56,16 @@ struct ui_id_t {
 	uint64_t id;
 };
 
+struct ui_el_visual_t {
+	mesh_t     mesh;
+	material_t material;
+};
+
 array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
 array_t<text_style_t>skui_font_stack = {};
+ui_el_visual_t  skui_visuals[ui_el_max] = {};
 mesh_t          skui_box          = nullptr;
 vec3            skui_box_min      = {};
 mesh_t          skui_box_dbg      = nullptr;
@@ -121,6 +127,9 @@ button_state_ ui_focus_set          (int32_t hand, uint64_t for_el_id, bool32_t 
 button_state_ ui_active_set         (int32_t hand, uint64_t for_el_id, bool32_t active);
 int32_t       ui_last_active_hand   (uint64_t for_el_id);
 int32_t       ui_last_focused_hand  (uint64_t for_el_id);
+mesh_t        ui_get_mesh           (ui_el_ element);
+material_t    ui_get_material       (ui_el_ element);
+void          ui_draw_el            (ui_el_ element, vec3 start, vec3 size, color128 color);
 
 // Base render types
 void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
@@ -301,6 +310,44 @@ void ui_set_color(color128 color) {
 
 ///////////////////////////////////////////
 
+void ui_set_element_visual(ui_el_ element, mesh_t mesh, material_t material) {
+	ui_el_visual_t visual = {};
+	visual.mesh     = mesh;
+	visual.material = material;
+	skui_visuals[element] = visual;
+}
+
+///////////////////////////////////////////
+
+mesh_t ui_get_mesh(ui_el_ element) {
+	return skui_visuals[element].mesh
+		? skui_visuals[element      ].mesh
+		: skui_visuals[ui_el_default].mesh;
+}
+
+///////////////////////////////////////////
+
+material_t ui_get_material(ui_el_ element) {
+	return skui_visuals[element].material
+		? skui_visuals[element      ].material
+		: skui_visuals[ui_el_default].material;
+}
+
+///////////////////////////////////////////
+
+void ui_draw_el(ui_el_ element, vec3 start, vec3 size, color128 color) {
+	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
+	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
+	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
+
+	vec3   pos = start - size / 2;
+	matrix mx  = matrix_trs(pos, quat_identity, size);
+
+	render_add_mesh(ui_get_mesh(element), ui_get_material(element), mx, color);
+}
+
+///////////////////////////////////////////
+
 void ui_push_text_style(text_style_t style) {
 	skui_font_stack.add(style);
 }
@@ -341,6 +388,8 @@ bool ui_init() {
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
+
+	ui_set_element_visual(ui_el_default, skui_box,     skui_mat_quad);
 
 	return true;
 }
@@ -694,7 +743,7 @@ button_state_ ui_active_set(int32_t hand, uint64_t for_el_id, bool32_t active) {
 
 	button_state_ result = button_state_inactive;
 	if ( is_active               ) result  = button_state_active;
-	if ( is_active && !was_active) result |= button_state_just_active;
+	if ( is_active && !was_active) result |= button_state_just_active; 
 	if (!is_active &&  was_active) result |= button_state_just_inactive;
 	return result;
 }
@@ -942,8 +991,8 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 		color_blend = math_ease_overshoot(1, 2.f, 40, t);
 	}
 
-	ui_box (window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_draw_el(ui_el_button, window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_palette[2] * color_blend);
+	ui_text   (              window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
@@ -992,8 +1041,8 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 	}
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
-	ui_box (window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_mat_quad, skui_palette[2] * color_blend);
-	ui_text(window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_draw_el(ui_el_toggle, window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_palette[2] * color_blend);
+	ui_text   (              window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
@@ -1152,8 +1201,8 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 	// Render the input UI
 	ui_reserve_box(size);
-	ui_box (offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_mat_quad, skui_palette[2] * color_blend );
-	ui_text(offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
+	ui_draw_el(ui_el_input, offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_palette[2] * color_blend);
+	ui_text   (             offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
@@ -1464,10 +1513,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	}
 
 	if (draw) {
-		ui_box(
+		ui_draw_el(ui_el_handle,
 			handle.center+handle.dimensions/2, 
 			handle.dimensions, 
-			skui_mat_quad, skui_palette[0] * color);
+			skui_palette[0] * color);
 		ui_nextline();
 	}
 	return result;
@@ -1548,10 +1597,10 @@ void ui_window_end() {
 		float glow = 1;
 		if (skui_hand[0].focused_prev == layer.window->hash || skui_hand[1].focused_prev == layer.window->hash)
 			glow = 1.5f;
-		ui_box(start + vec3{0,line_height,0}, { size.x, line_height, size.z }, skui_mat_quad, skui_palette[0] * glow);
+		ui_draw_el(ui_el_window, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, skui_palette[0] * glow);
 	}
 	if (layer.window->type & ui_win_body) {
-		ui_box(start, size, skui_mat_quad, skui_palette[1]);
+		ui_draw_el(ui_el_window, start, size, skui_palette[1]);
 	}
 	ui_handle_end();
 	ui_pop_id();
