@@ -54,13 +54,13 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 float4 ps(psIn input) : SV_TARGET {
 	float2 glow = FingerGlowEx(input.world.xyz, input.normal);
 	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
-	glow.x = min(1,glow.x / border_affect_radius);
+	glow.x = max(0,1-(glow.x / border_affect_radius));
 	
-	float  border_grow = -glow.x * border_size_grow + border_size;
+	float  border_grow = glow.x * border_size_grow + border_size;
 	float2 border_pos  = (0.5-abs(input.uv)) * input.scale;
-	float  corner      = 1-saturate((min(border_pos.x, border_pos.y)-border_grow)*100);
+	float  corner      = min(border_pos.x, border_pos.y)-border_grow;
 	
-	if (max(glow.y,corner) < 0.1) discard;
+	if (corner > 0.0) discard;
 
 	float4 col  = float4(lerp(input.color.rgb, float3(1,1,1), glow.y), input.color.a);
 
