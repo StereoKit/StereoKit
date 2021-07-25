@@ -149,6 +149,7 @@ extern bool       xr_has_articulated_hands;
 extern bool       xr_has_hand_meshes;
 extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
+extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
 extern XrSpace    xrc_space_grip[2];
 extern vec2       xr_bounds_size;

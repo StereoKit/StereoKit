@@ -7,6 +7,7 @@
 #include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../asset_types/texture.h"
+#include "../../libraries/stref.h"
 #include "../render.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
@@ -35,6 +36,7 @@ const char *xr_request_layers[] = {
 bool xr_has_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
 bool xr_has_hand_meshes       = false;
+bool xr_has_single_pass       = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -287,6 +289,14 @@ bool openxr_init() {
 	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+
+	xr_has_single_pass = true;
+#if defined(SK_OS_LINUX)
+	if (stref_startswith(stref_make(properties.systemName), "SteamVR/OpenXR")) {
+		log_warn("SteamVR+Linux disable single pass rendering hack. To be removed when SteamVR bug is fixed.");
+		xr_has_single_pass = false;
+	}
+#endif
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");

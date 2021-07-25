@@ -257,7 +257,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// If shaders can't select layers from a texture array, we'll have to
 	// seprate the layers into individual render targets.
-	if (skg_capability(skg_cap_tex_layer_select)) {
+	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) {
 		display.swapchain_color.surface_layers = 1;
 		display.swapchain_depth.surface_layers = 1;
 		log_diagf("Platform supports single-pass rendering");
