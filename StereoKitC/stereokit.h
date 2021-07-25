@@ -686,6 +686,7 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 SK_DeclarePrivateType(model_t);
 
 SK_API model_t    model_find              (const char *id);
+SK_API model_t    model_copy              (model_t model);
 SK_API model_t    model_create            ();
 SK_API model_t    model_create_mesh       (mesh_t mesh, material_t material);
 SK_API model_t    model_create_mem        (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));

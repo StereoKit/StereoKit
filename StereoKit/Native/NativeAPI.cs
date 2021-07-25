@@ -231,6 +231,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find              (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_copy              (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh       (IntPtr mesh, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, int data_size, IntPtr shader);

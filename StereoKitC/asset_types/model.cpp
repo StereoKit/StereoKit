@@ -37,6 +37,30 @@ model_t model_find(const char *id) {
 
 ///////////////////////////////////////////
 
+model_t model_copy(model_t model) {
+	if (model == nullptr) {
+		log_err("model_copy was provided a null model!");
+		return nullptr;
+	}
+
+	model_t result = (model_t)assets_allocate(asset_type_model);
+	result->subset_count = model->subset_count;
+	result->subsets      = (model_subset_t*)malloc(sizeof(model_subset_t) * result->subset_count);
+	result->bounds       = model->bounds;
+	for (size_t i = 0; i < result->subset_count; i++) {
+		result->subsets[i].material = model->subsets[i].material;
+		result->subsets[i].mesh     = model->subsets[i].mesh;
+		result->subsets[i].offset   = model->subsets[i].offset;
+		result->subsets[i].name     = string_copy(model->subsets[i].name);
+		material_addref(result->subsets[i].material);
+		mesh_addref    (result->subsets[i].mesh);
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 model_t model_create_mesh(mesh_t mesh, material_t material) {
 	model_t result = model_create();
 

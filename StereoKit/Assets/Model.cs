@@ -85,6 +85,13 @@ namespace StereoKit
 
 		#region Methods
 
+		/// <summary>Creates a shallow copy of a Model asset! Meshes and 
+		/// Materials referenced by this Model will be referenced, not
+		/// copied.</summary>
+		/// <returns>A new shallow copy of a Model.</returns>
+		public Model Copy()
+			=> new Model(NativeAPI.model_copy(_inst));
+
 		/// <summary>Returns the name of the specific subset! This will be 
 		/// the node name of your model asset. If no node name is available,
 		/// SteroKit will generate a name in the format of "subsetX", where
