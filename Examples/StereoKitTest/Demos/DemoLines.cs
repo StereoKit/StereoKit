@@ -86,8 +86,7 @@ namespace StereoKitTest
 		void Draw(Handed handed)
 		{
 			Hand hand = Input.Hand(handed);
-			Vec3 tip  = hand[FingerId.Index, JointId.Tip].position;
-			tip = prevTip + (tip-prevTip) * 0.3f;
+			Vec3 tip  = Vec3.Lerp(prevTip, hand.pinchPt, 0.3f);
 
 			if (hand.IsJustPinched && !UI.IsInteracting(handed)) { 
 				if (drawPoints.Count > 0)

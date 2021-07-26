@@ -1365,10 +1365,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			continue;
 
 		const hand_t *hand = input_hand((handed_)i);
-		vec3 finger_pos_world = vec3_lerp(
-			hand->fingers[0][4].position,
-			hand->fingers[1][4].position, 0.3f);
-		finger_pos[i] = matrix_transform_pt( to_local, finger_pos_world );
+		finger_pos[i] = matrix_transform_pt( to_local, hand->pinch_pt );
 
 		// Check to see if the handle has focus
 		vec3  from_pt             = finger_pos[i];

@@ -37,6 +37,7 @@ struct hand_state_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
+	float pinch_blend;
 	bool (*available)();
 	void (*init)();
 	void (*shutdown)();
@@ -47,6 +48,7 @@ typedef struct hand_system_t {
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override,
+		0.2f,
 		hand_override_available,
 		hand_override_init,
 		hand_override_shutdown,
@@ -54,6 +56,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_frame,
 		hand_override_update_predicted },
 	{ hand_system_oxr_articulated,
+		0.2f,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
@@ -61,6 +64,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxra_update_frame,
 		hand_oxra_update_predicted },
 	{ hand_system_oxr_controllers,
+		0.6f,
 		hand_oxrc_available,
 		hand_oxrc_init,
 		hand_oxrc_shutdown,
@@ -68,6 +72,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxrc_update_frame,
 		hand_oxrc_update_predicted },
 	{ hand_system_mouse,
+		1,
 		hand_mouse_available,
 		hand_mouse_init,
 		hand_mouse_shutdown,
@@ -75,6 +80,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_mouse_update_frame,
 		hand_mouse_update_predicted },
 	{ hand_system_none,
+		1,
 		[]() {return true;},
 		[]() {},
 		[]() {},
@@ -144,11 +150,20 @@ void input_hand_init() {
 	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
 
+	float blend = 1;
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_sources[i].system == hand_system_oxr_controllers) {
+			blend = hand_sources[i].pinch_blend;
+			break;
+		}
+	}
+	vec3 from_pt = vec3_lerp(input_pose_neutral[0][4].position, input_pose_neutral[1][4].position, blend);
+	vec3 grab_pt = vec3_lerp(input_pose_pinch  [0][4].position, input_pose_pinch  [1][4].position, blend);
+
 	modify(&input_pose_fist   [0][0], {});
 	modify(&input_pose_neutral[0][0], {});
 	modify(&input_pose_point  [0][0], {});
-	modify(&input_pose_pinch  [0][0], 
-		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_display_mode() == display_mode_flatscreen ? 1 : 0.5f));
+	modify(&input_pose_pinch  [0][0], from_pt - grab_pt);
 
 	material_t hand_mat = material_copy_id(default_id_material);
 	material_set_id          (hand_mat, default_id_material_hand);
@@ -329,6 +344,11 @@ void input_hand_state_update(handed_ handedness) {
 	hand.grip_activation  = fminf(1, fmaxf(0, 1 - ((grip_dist   - grip_activation_dist)  / (grip_max  - grip_activation_dist))));
 	bool is_trigger = finger_dist <= pinch_activation_dist;
 	bool is_grip    = grip_dist   <= grip_activation_dist;
+
+	hand.pinch_pt = vec3_lerp(
+		hand.fingers[0][4].position,
+		hand.fingers[1][4].position,
+		hand_sources[hand_system].pinch_blend);
 
 	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
 	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;

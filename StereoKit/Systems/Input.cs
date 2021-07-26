@@ -62,6 +62,15 @@ namespace StereoKit
 		/// is to the outside of the right hand, and to the inside of the
 		/// left hand. </summary>
 		public  Pose        palm;
+		/// <summary>This is an approximation of where the center of a 
+		/// 'pinch' gesture occurs, and is used internally by StereoKit for
+		/// some tasks, such as UI. For simulated hands, this position will
+		/// give you the most stable pinch location possible. For real hands,
+		/// it'll be pretty close to the stablest point you'll get. This is
+		/// especially important for when the user begins and ends their 
+		/// pinch action, as you'll often see a lot of extra movement in the 
+		/// fingers then.</summary>
+		public  Vec3        pinchPt;
 		/// <summary>Is this a right hand, or a left hand?</summary>
 		public  Handed      handed;
 		/// <summary>Is the hand being tracked by the sensors right now?
