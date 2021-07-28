@@ -81,9 +81,6 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	} else if (string_endswith(filename, ".obj", false)) {
 		if (!modelfmt_obj (result, filename, data, data_size, shader))
 			log_errf("Issue loading Wavefront OBJ file: %s!", filename);
-	} else if (string_endswith(filename, ".fbx", false)) {
-		if (!modelfmt_fbx (result, filename, data, data_size, shader))
-			log_errf("Issue loading FBX file: %s!", filename);
 	} else if (string_endswith(filename, ".stl", false)) {
 		if (!modelfmt_stl (result, filename, data, data_size, shader))
 			log_errf("Issue loading STL file: %s!", filename);

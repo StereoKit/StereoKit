@@ -130,7 +130,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClCompile Include="asset_types\material.cpp" />
     <ClCompile Include="asset_types\mesh.cpp" />
     <ClCompile Include="asset_types\model.cpp" />
-    <ClCompile Include="asset_types\model_fbx.cpp" />
     <ClCompile Include="asset_types\model_gltf.cpp" />
     <ClCompile Include="asset_types\model_obj.cpp" />
     <ClCompile Include="asset_types\model_ply.cpp" />
@@ -145,8 +144,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniaudio.cpp" />
-    <ClCompile Include="libraries\miniz.cpp" />
-    <ClCompile Include="libraries\ofbx.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
@@ -199,13 +196,10 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClInclude Include="hierarchy.h" />
     <ClInclude Include="libraries\array.h" />
     <ClInclude Include="libraries\cgltf.h" />
-    <ClInclude Include="libraries\dr_wav.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
-    <ClInclude Include="libraries\miniz.h" />
-    <ClInclude Include="libraries\ofbx.h" />
     <ClInclude Include="libraries\sk_gpu.h" />
     <ClInclude Include="libraries\sokol_time.h" />
     <ClInclude Include="libraries\stb_image.h" />

@@ -115,16 +115,7 @@
     <ClCompile Include="systems\platform\flatscreen_input.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
-    <ClCompile Include="asset_types\model_fbx.cpp">
-      <Filter>asset_types</Filter>
-    </ClCompile>
-    <ClCompile Include="libraries\ofbx.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="libraries\isac_spatial_sound.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
-    <ClCompile Include="libraries\miniz.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
     <ClCompile Include="systems\platform\openxr_input.cpp">
@@ -284,9 +275,6 @@
     <ClInclude Include="asset_types\sound.h">
       <Filter>asset_types</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\dr_wav.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="systems\platform\openxr_extensions.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
@@ -313,12 +301,6 @@
     </ClInclude>
     <ClInclude Include="systems\platform\flatscreen_input.h">
       <Filter>systems\platform</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\miniz.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\ofbx.h">
-      <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\isac_spatial_sound.h">
       <Filter>libraries</Filter>

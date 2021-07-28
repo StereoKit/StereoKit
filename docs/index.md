@@ -16,7 +16,7 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 - Builds your application to device in seconds, not minutes
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
-- Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, ASCII .ply, procedural
+- Model formats: .gltf, .glb, .obj, .stl, ASCII .ply, procedural
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Physics

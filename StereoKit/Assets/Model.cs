@@ -9,9 +9,9 @@ namespace StereoKit
 	/// model formats are composed this way already!
 	/// 
 	/// This class contains a number of methods for creation. If you pass in
-	/// a .obj, .stl, .gltf, or .glb, StereoKit will load that model from 
-	/// file, and assemble materials and transforms from the file 
-	/// information. But you can also assemble a model from procedurally 
+	/// a .obj, .stl, , .ply (ASCII), .gltf, or .glb, StereoKit will load
+	/// that model from file, and assemble materials and transforms from the
+	/// file information. But you can also assemble a model from procedurally 
 	/// generated meshes!
 	/// 
 	/// Because models include an offset transform for each mesh element,
@@ -244,7 +244,7 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .gltf, or .glb file.</summary>
+		/// .stl, .ply (ASCII), .gltf, or .glb file.</summary>
 		/// <param name="file">Name of the file to load! This gets prefixed
 		/// with the StereoKit asset folder if no drive letter is specified
 		/// in the path.</param>
@@ -261,9 +261,9 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .gltf, or .glb file stored in memory. Note that this
-		/// function won't work well on files that reference other files,
-		/// such as .gltf files with references in them.</summary>
+		/// .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
+		/// that this function won't work well on files that reference other
+		/// files, such as .gltf files with references in them.</summary>
 		/// <param name="filename">StereoKit still uses the filename of the
 		/// data for format discovery, but not asset Id creation. If you 
 		/// don't have a real filename for the data, just pass in an
