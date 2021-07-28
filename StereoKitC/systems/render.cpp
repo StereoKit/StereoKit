@@ -17,6 +17,9 @@
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
 
+#if defined(_WIN32)
+#define __STDC_LIB_EXT1__
+#endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libraries/stb_image_write.h"
 
