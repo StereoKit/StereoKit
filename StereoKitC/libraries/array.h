@@ -157,6 +157,10 @@ struct array_t {
 	array_t<U>  each_new   (U    (*e)(const T &))    { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
 
+	static array_t<T> make     (int32_t capacity)              { array_t<T> result = {}; result.resize(capacity); return result; }
+	static array_t<T> make_fill(int32_t capacity, T copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(size_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
+	static array_t<T> make_from(T *use_memory, size_t count)   { return {use_memory, count, count}; }
+
 	//////////////////////////////////////
 	// Linear search methods
 
@@ -353,6 +357,13 @@ inline static array_view_t<D> array_view_create(const T *data, size_t count, D T
 template <typename D, typename T>
 inline static array_view_t<D> array_view_create(const array_t<T> &src, D T::*key) {
 	return array_view_t<D>{src.data, src.count, sizeof(T), (size_t)&((T*)nullptr->*key)};
+}
+
+//////////////////////////////////////
+
+template <typename T>
+inline static array_view_t<T> array_view_create(const array_t<T> &src) {
+	return array_view_t<T>{src.data, src.count, sizeof(T), 0};
 }
 
 //////////////////////////////////////
