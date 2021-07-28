@@ -1,5 +1,6 @@
 #include "text.h"
-
+#include "../stereokit.h"
+#include "../asset_types/font.h"
 #include "../asset_types/material.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
@@ -13,6 +14,37 @@
 using namespace DirectX;
 
 namespace sk {
+
+///////////////////////////////////////////
+
+struct _text_style_t {
+	font_t         font;
+	uint32_t       buffer_index;
+	color32        color;
+	float          size;
+	float          char_height;
+	float          line_spacing;
+};
+
+struct text_buffer_t {
+	font_t         font;
+	material_t     material;
+	mesh_t         mesh;
+	vert_t        *verts;
+	uint32_t       id;
+	int            vert_count;
+	int            vert_cap;
+};
+
+struct text_stepper_t {
+	_text_style_t *style;
+	text_align_    align;
+	int32_t        line_remaining;
+	bool32_t       wrap;
+	vec2           start;
+	vec2           bounds;
+	vec2           pos;
+};
 
 ///////////////////////////////////////////
 
@@ -143,26 +175,6 @@ material_t text_style_get_material(text_style_t style) {
 
 float text_style_get_char_height(text_style_t style) {
 	return text_styles[style].char_height;
-}
-
-///////////////////////////////////////////
-
-vec2 text_line_size(text_style_t style, const char *text) {
-	font_t      font = text_styles[style].font;
-	const char *curr = text;
-	float       x    = 0;
-	while (*curr != '\0' && *curr != '\n') {
-		char         currch = *curr;
-		font_char_t &ch     = font->characters[(uint8_t)currch];
-
-		// Do spacing for whitespace characters
-		switch (currch) {
-		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
-		default:   x += ch.xadvance; break;
-		}
-		curr += 1;
-	}
-	return vec2{ x, font->character_height } * text_styles[style].size;
 }
 
 ///////////////////////////////////////////
