@@ -7,6 +7,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
+#include "../libraries/unicode.h"
 
 #include <ctype.h>
 
@@ -59,7 +60,7 @@ inline bool text_is_space(char c) {
 
 //////////////////////////////////////////
 
-inline bool text_is_breakable(char c) {
+inline bool text_is_breakable(char32_t c) {
 	return c==' ' || c=='-' || c=='/' || c=='\\' || c=='|' || c=='\n' || c == '\r' || c== '\t';
 }
 
@@ -183,20 +184,18 @@ vec2 text_size(const char *text, text_style_t style) {
 	if (text == nullptr) return {};
 
 	font_t      font  = text_styles[style == -1 ? 0 : style].font;
-	const char *curr  = text;
+	char32_t    curr  = 0;
 	float       x     = 0;
 	int         y     = 1;
 	float       max_x = 0;
-	while (*curr != '\0') {
-		char currch = *curr;
-		curr += 1;
-		font_char_t &ch = font->characters[(uint8_t)currch];
+	while (utf8_decode_fast_b(text, &text, &curr)) {
+		const font_char_t *ch = font_get_glyph(font, curr);
 
 		// Do spacing for whitespace characters
-		switch (currch) {
-		case '\t': x += font->characters[(uint8_t)' '].xadvance * 4; break;
+		switch (curr) {
+		case '\t': x += font->space_width * 4; break;
 		case '\n': if (x > max_x) max_x = x; x = 0; y += 1; break;
-		default  : x += ch.xadvance; break;
+		default  : x += ch->xadvance; break;
 		}
 	}
 	if (x > max_x) max_x = x;
@@ -205,17 +204,19 @@ vec2 text_size(const char *text, text_style_t style) {
 
 ///////////////////////////////////////////
 
-float text_step_line_length(const char *start, int32_t *out_char_count, const text_stepper_t &step) {
+float text_step_line_length(const char *start, int32_t *out_char_count, const char **out_next_start, const text_stepper_t &step) {
 	// If we're not wrapping, this is really simple
 	if (!step.wrap) {
 		const char *curr  = start;
+		char32_t    ch    = 0;
 		float       width = 0;
-		while (*curr != '\n' && *curr != '\0') {
-			width += step.style->font->characters[(uint8_t)*curr].xadvance;
-			curr++;
+		int32_t     count = 0;
+		while (utf8_decode_fast_b(curr, &curr, &ch) && ch != '\n') {
+			width += font_get_glyph(step.style->font, ch)->xadvance;
+			count++;
 		}
-		if (out_char_count != nullptr)
-			*out_char_count = (int32_t)((*curr == '\n' ? curr+1 : curr) - start);
+		*out_char_count = ch == '\n' ? count+1 : count;
+		*out_next_start = curr;
 		return width * step.style->size;
 	}
 
@@ -227,23 +228,24 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 	bool        was_break  = false;
 
 	while (true) {
-		char curr     = *ch;
-		bool is_break = text_is_breakable(curr);
+		const char *next_char;
+		char32_t    curr     = utf8_decode_fast(ch, &next_char);
+		bool        is_break = text_is_breakable(curr);
 
 		// We prefer to line break at spaces and other breakable characters, 
 		// rather than in the middle of words
 		if (is_break || curr == '\0') {
 			if (!was_break)
 				last_width = curr_width;
-			last_at = curr != '\0' ? ch+1 : ch;
+			last_at = curr != '\0' ? next_char : ch;
 		}
 		// End of line or string?
 		if (curr == '\0' || curr == '\n')
 			break;
 
 		// Advance by character width
-		font_char_t &char_info  = step.style->font->characters[(uint8_t)curr];
-		float        next_width = char_info.xadvance*step.style->size + curr_width;
+		const font_char_t *char_info  = font_get_glyph(step.style->font, curr);
+		float              next_width = char_info->xadvance*step.style->size + curr_width;
 
 		// Check if it steps out of bounds
 		if (!is_break && next_width > step.bounds.x) {
@@ -259,36 +261,35 @@ float text_step_line_length(const char *start, int32_t *out_char_count, const te
 		// Next character!
 		curr_width = next_width;
 		was_break  = is_break;
-		ch++;
+		ch         = next_char;
 	}
 
-	if (out_char_count != nullptr)
-		*out_char_count = (int32_t)(last_at - start);
+	*out_char_count = (int32_t)(last_at - start);
+	*out_next_start = last_at;
 	return last_width;
 }
 
-///
+///////////////////////////////////////////
 
 float text_step_height(const char *text, int32_t *out_length, const text_stepper_t &step) {
 	int32_t     count  = 1;
 	const char *curr   = text;
 	float       height = 0;
 	while (count > 0) {
-		text_step_line_length(curr, &count, step);
-		curr += count;
+		text_step_line_length(curr, &count, &curr, step);
 		if (count > 0)
 			height += 1;
 	}
 
-	if (out_length != nullptr)
-		*out_length = (int32_t)(curr - text);
+	*out_length = (int32_t)(curr - text);
 	return (height * step.style->font->character_height + (height-1)*step.style->line_spacing) * step.style->size;
 }
 
 ///
 
 void text_step_next_line(const char *start, text_stepper_t &step) {
-	float line_size  = text_step_line_length(start, &step.line_remaining, step);
+	const char *next;
+	float line_size  = text_step_line_length(start, &step.line_remaining, &next, step);
 	float align_x    = 0;
 	if (step.align & text_align_x_center) align_x = ((step.bounds.x - line_size) / 2.f);
 	if (step.align & text_align_x_right)  align_x =  (step.bounds.x - line_size);
@@ -296,43 +297,42 @@ void text_step_next_line(const char *start, text_stepper_t &step) {
 	step.pos.y -= step.style->size * step.style->font->character_height;
 }
 
-void text_step_position(char ch, const char *start, text_stepper_t &step) {
-	font_char_t &char_info = step.style->font->characters[(uint8_t)ch];
+void text_step_position(char32_t ch, const font_char_t *char_info, const char *next, text_stepper_t &step) {
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
-		text_step_next_line(start+1, step);
+		text_step_next_line(next, step);
 		step.pos.y -= step.style->size * step.style->line_spacing;
 		return;
 	}
 
 	switch (ch) {
-	case '\t': step.pos.x -= step.style->font->characters[(uint8_t)' '].xadvance * 4 * step.style->size; break;
+	case '\t': step.pos.x -= step.style->font->space_width * 4 * step.style->size; break;
 	case '\n': {
 	} break;
-	default : step.pos.x -= char_info.xadvance*step.style->size; break;
+	default : step.pos.x -= char_info->xadvance*step.style->size; break;
 	}
 }
 
 ///
 
-void text_add_quad(float x, float y, float off_z, font_char_t &char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
-	float x_min = x - char_info.x0 * style_data.size;
-	float x_max = x - char_info.x1 * style_data.size;
-	float y_min = y + char_info.y0 * style_data.size;
-	float y_max = y + char_info.y1 * style_data.size;
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info.u0, char_info.v0 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info.u1, char_info.v0 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info.u1, char_info.v1 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ char_info.u0, char_info.v1 }, style_data.color };
+void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+	float x_min = x - char_info->x0 * style_data.size;
+	float x_max = x - char_info->x1 * style_data.size;
+	float y_min = y + char_info->y0 * style_data.size;
+	float y_max = y + char_info->y1 * style_data.size;
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info->u0, char_info->v0 }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info->u1, char_info->v0 }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info->u1, char_info->v1 }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ char_info->u0, char_info->v1 }, style_data.color };
 }
 
 ///
 
-void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, font_char_t &char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
-	float x_max = x - char_info.x0 * style_data.size;
-	float x_min = x - char_info.x1 * style_data.size;
-	float y_max = y + char_info.y0 * style_data.size;
-	float y_min = y + char_info.y1 * style_data.size;
+void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+	float x_max = x - char_info->x0 * style_data.size;
+	float x_min = x - char_info->x1 * style_data.size;
+	float y_max = y + char_info->y0 * style_data.size;
+	float y_min = y + char_info->y1 * style_data.size;
 
 	// Ditch out if it's completely out of bounds
 	if (x_min > bounds_max.x ||
@@ -341,10 +341,10 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 		y_max < bounds_min.y)
 		return;
 
-	float u_max = char_info.u0;
-	float u_min = char_info.u1;
-	float v_max = char_info.v0;
-	float v_min = char_info.v1;
+	float u_max = char_info->u0;
+	float u_min = char_info->u1;
+	float v_max = char_info->v0;
+	float v_min = char_info->v1;
 
 	// Clip it if it's partially out of bounds
 	if (x_min < bounds_min.x) {
@@ -448,18 +448,17 @@ float text_add_in(const char* text, const matrix& transform, vec2 size, text_fit
 	text_buffer_ensure_capacity(buffer, text_length);
 
 	// Core loop for drawing the text
-	vec2 bounds_min = step.start - step.bounds;
-	bool clip = fit & text_fit_clip;
+	vec2     bounds_min = step.start - step.bounds;
+	bool     clip       = fit & text_fit_clip;
+	char32_t c;
 	text_step_next_line(text, step);
-	for (int32_t i=0; i<text_length; i++) {
-		if (!text_is_space(text[i])) {
-			font_char_t &char_info = step.style->font->characters[(uint8_t)text[i]];
-			if (clip)
-				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
-			else
-				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, buffer, tr, normal);
+	while(utf8_decode_fast_b(text, &text, &c)) {
+		const font_char_t *char_info = font_get_glyph(step.style->font, c);
+		if (!text_is_space(c)) {
+			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
+			else      text_add_quad        (step.pos.x, step.pos.y, off_z, char_info, *step.style, buffer, tr, normal);
 		}
-		text_step_position(text[i], &text[i], step);
+		text_step_position(c, char_info, text, step);
 	}
 	return (step.start.y - step.pos.y) - step.style->size * step.style->font->character_height;
 }
@@ -472,7 +471,7 @@ void text_update() {
 		if (buffer.vert_count <= 0)
 			continue;
 
-		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count, false);
+		mesh_set_verts    (buffer.mesh, buffer.verts, buffer.vert_count, false);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
 		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);

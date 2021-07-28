@@ -46,11 +46,11 @@ font_t font_create(const char *file) {
 	//stbtt_fontinfo font;
 	uint8_t *bitmap;
 	stbtt_pack_context pc;
-	stbtt_packedchar chars[256];
+	stbtt_packedchar chars[128];
 	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
 	bitmap = sk_malloc_t(uint8_t, w * h);
 	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 2, NULL);
-	stbtt_PackFontRange(&pc, data, 0, size, start_char, 254, chars);
+	stbtt_PackFontRange(&pc, data, 0, size, start_char, 128-start_char, chars);
 	stbtt_PackEnd(&pc);
 	free(data);
 	
@@ -58,7 +58,7 @@ font_t font_create(const char *file) {
 	float convert_w = 1.0f / w;
 	float convert_h = 1.0f / h;
 	result->character_height = 0;
-	for (size_t i = 0; i < _countof(chars)-(start_char+1); i++) {
+	for (size_t i = 0; i < 128-start_char; i++) {
 		result->characters[i+start_char] = {
 			chars[i].xoff/size,  -chars[i].yoff/size,
 			chars[i].xoff2/size, -chars[i].yoff2/size,
@@ -68,6 +68,7 @@ font_t font_create(const char *file) {
 		};
 	}
 	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
+	result->space_width      = result->characters[(uint8_t)' '].xadvance;
 
 	// Convert to color data
 	color32 *colors = sk_malloc_t(color32, w * h);
@@ -114,6 +115,20 @@ void font_destroy(font_t font) {
 
 tex_t font_get_tex(font_t font) {
 	return font->font_tex;
+}
+
+///////////////////////////////////////////
+
+const font_char_t *font_get_glyph(font_t font, char32_t character) {
+	if (character < 128)
+		return &font->characters[character];
+
+	int64_t index = font->character_map.contains(character);
+	if (index < 0) {
+		index = font->character_map.add(character, {});
+		font->update_queue.add(character);
+	}
+	return &font->character_map.items[index];
 }
 
 } // namespace sk

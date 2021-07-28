@@ -40,6 +40,13 @@ inline char32_t utf8_decode_fast(const char *utf8_str, const char **out_next_cha
 
 ///////////////////////////////////////////
 
+inline bool utf8_decode_fast_b(const char *utf8_str, const char **out_next_char, char32_t *out_char) {
+	*out_char = utf8_decode_fast(utf8_str, out_next_char);
+	return *out_char != 0;
+}
+
+///////////////////////////////////////////
+
 inline char32_t utf8_decode(const char *utf8_str, const char **out_next_char, int32_t *out_err) {
 	static const char lengths[] = {
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
