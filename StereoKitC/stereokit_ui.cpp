@@ -231,6 +231,9 @@ void ui_quadrant_mesh(float padding) {
 
 	mesh_set_verts(skui_box, verts, vert_count);
 	mesh_set_inds (skui_box, inds,  ind_count);
+
+	free(verts);
+	free(inds);
 }
 
 ///////////////////////////////////////////

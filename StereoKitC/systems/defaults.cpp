@@ -172,14 +172,14 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
 
 	// Materials
-	sk_default_material          = material_create(sk_default_shader);
-	sk_default_material_pbr      = material_create(sk_default_shader_pbr);
-	sk_default_material_unlit    = material_create(sk_default_shader_unlit);
-	sk_default_material_unlit_clip = material_create(sk_default_shader_unlit_clip);
-	sk_default_material_equirect = material_create(sk_default_shader_equirect);
-	sk_default_material_font     = material_create(sk_default_shader_font);
-	sk_default_material_ui       = material_create(sk_default_shader_ui);
-	sk_default_material_ui_box   = material_create(sk_default_shader_ui_box);
+	sk_default_material             = material_create(sk_default_shader);
+	sk_default_material_pbr         = material_create(sk_default_shader_pbr);
+	sk_default_material_unlit       = material_create(sk_default_shader_unlit);
+	sk_default_material_unlit_clip  = material_create(sk_default_shader_unlit_clip);
+	sk_default_material_equirect    = material_create(sk_default_shader_equirect);
+	sk_default_material_font        = material_create(sk_default_shader_font);
+	sk_default_material_ui          = material_create(sk_default_shader_ui);
+	sk_default_material_ui_box      = material_create(sk_default_shader_ui_box);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
 
 	if (sk_default_material          == nullptr ||
@@ -268,23 +268,26 @@ void defaults_shutdown() {
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	font_release    (sk_default_font);
-	material_release(sk_default_material_equirect);
 	material_release(sk_default_material);
 	material_release(sk_default_material_pbr);
 	material_release(sk_default_material_unlit);
+	material_release(sk_default_material_unlit_clip);
+	material_release(sk_default_material_equirect);
 	material_release(sk_default_material_font);
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
-	shader_release  (sk_default_shader_equirect);
-	shader_release  (sk_default_shader_font);
-	shader_release  (sk_default_shader_unlit);
-	shader_release  (sk_default_shader_pbr);
 	shader_release  (sk_default_shader);
+	shader_release  (sk_default_shader_unlit);
+	shader_release  (sk_default_shader_unlit_clip);
+	shader_release  (sk_default_shader_font);
+	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_box);
 	shader_release  (sk_default_shader_ui_quadrant);
 	shader_release  (sk_default_shader_sky);
+	shader_release  (sk_default_shader_lines);
+	shader_release  (sk_default_shader_pbr);
 	mesh_release    (sk_default_cube);
 	mesh_release    (sk_default_sphere);
 	mesh_release    (sk_default_quad);
@@ -294,6 +297,7 @@ void defaults_shutdown() {
 	tex_release     (sk_default_tex_gray);
 	tex_release     (sk_default_tex_flat);
 	tex_release     (sk_default_tex_rough);
+	tex_release     (sk_default_cubemap);
 }
 
 } // namespace sk
