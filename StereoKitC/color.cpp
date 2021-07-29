@@ -219,7 +219,8 @@ color32 gradient_get32(gradient_t gradient, float at) {
 
 void gradient_release(gradient_t gradient) {
 	free(gradient->keys);
-	gradient = {};
+	*gradient = {};
+	free(gradient);
 }
 
 }

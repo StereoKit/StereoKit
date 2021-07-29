@@ -296,23 +296,24 @@ void platform_default_font(char *fontname_buffer, size_t buffer_size) {
 		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
 
 #elif defined(SK_OS_LINUX)
-	FcConfig* config = FcInitLoadConfigAndFonts();
-	FcPattern* pat = FcNameParse((const FcChar8*)("sans-serif"));
-	FcConfigSubstitute(config, pat, FcMatchPattern);
-	FcDefaultSubstitute(pat);
+	FcConfig  *config  = FcInitLoadConfigAndFonts();
+	FcPattern *pattern = FcNameParse((const FcChar8*)("sans-serif"));
+	FcConfigSubstitute (config, pattern, FcMatchPattern);
+	FcDefaultSubstitute(pattern);
 
-	FcResult res;
-	FcPattern* font = FcFontMatch(config, pat, &res);
+	FcResult   result;
+	FcPattern* font = FcFontMatch(config, pattern, &result);
 	if (font) {
 		FcChar8* file = nullptr;
 		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
 			// Put the font file path in the proper string
-			snprintf(fontname_buffer, buffer_size, (char*) file);
+			snprintf(fontname_buffer, buffer_size, "%s", (char*)file);
 		}
 		FcPatternDestroy(font);
 	}
 
-	FcPatternDestroy(pat);
+	FcPatternDestroy(pattern);
+	FcConfigDestroy (config);
 #else
 	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
 #endif

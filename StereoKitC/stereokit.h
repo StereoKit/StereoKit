@@ -387,7 +387,7 @@ SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
 SK_API int32_t    gradient_count      (gradient_t gradient);
 SK_API color128   gradient_get        (gradient_t gradient, float at);
 SK_API color32    gradient_get32      (gradient_t gradient, float at);
-SK_API void       gradient_release    (gradient_t gradient);
+SK_API void       gradient_release    (gradient_t gradient); // TODO v0.4, consider renaming this to _destroy, no reference counting happens here!
 
 ///////////////////////////////////////////
 
