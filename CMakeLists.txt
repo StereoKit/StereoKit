@@ -172,7 +172,6 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/mesh.cpp
   StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
-  StereoKitC/asset_types/model_fbx.cpp
   StereoKitC/asset_types/model_gltf.cpp
   StereoKitC/asset_types/model_obj.cpp
   StereoKitC/asset_types/model_ply.cpp
@@ -189,7 +188,6 @@ set(SK_SRC_ASSET_TYPES
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
-  StereoKitC/libraries/dr_wav.h
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
   StereoKitC/libraries/isac_spatial_sound.h
@@ -197,10 +195,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
-  StereoKitC/libraries/miniz.h
-  StereoKitC/libraries/miniz.cpp
-  StereoKitC/libraries/ofbx.h
-  StereoKitC/libraries/ofbx.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sokol_time.h

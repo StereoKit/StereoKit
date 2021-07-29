@@ -297,7 +297,7 @@ STBIW_EXTERN __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned in
 
 STBIWDEF int stbiw_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input)
 {
-   return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
+   return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, nullptr, nullptr);
 }
 #endif
 
@@ -333,7 +333,7 @@ static int stbi__start_write_file(stbi__write_context *s, const char *filename)
 {
    FILE *f = stbiw__fopen(filename, "wb");
    stbi__start_write_callbacks(s, stbi__stdio_write, (void *) f);
-   return f != NULL;
+   return f != nullptr;
 }
 
 static void stbi__end_write_file(stbi__write_context *s)
@@ -760,7 +760,7 @@ static void stbiw__write_hdr_scanline(stbi__write_context *s, int width, int nco
 
 static int stbi_write_hdr_core(stbi__write_context *s, int x, int y, int comp, float *data)
 {
-   if (y <= 0 || x <= 0 || data == NULL)
+   if (y <= 0 || x <= 0 || data == nullptr)
       return 0;
    else {
       // Each component is stored separately. Allocate scratch space for full output scanline.
@@ -904,10 +904,10 @@ STBIWDEF unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, i
    static unsigned char  disteb[]  = { 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13 };
    unsigned int bitbuf=0;
    int i,j, bitcount=0;
-   unsigned char *out = NULL;
+   unsigned char *out = nullptr;
    unsigned char ***hash_table = (unsigned char***) STBIW_MALLOC(stbiw__ZHASH * sizeof(unsigned char**));
-   if (hash_table == NULL)
-      return NULL;
+   if (hash_table == nullptr)
+      return nullptr;
    if (quality < 5) quality = 5;
 
    stbiw__sbpush(out, 0x78);   // DEFLATE 32K window
@@ -916,7 +916,7 @@ STBIWDEF unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, i
    stbiw__zlib_add(1,2);  // BTYPE = 1 -- fixed huffman
 
    for (i=0; i < stbiw__ZHASH; ++i)
-      hash_table[i] = NULL;
+      hash_table[i] = nullptr;
 
    i=0;
    while (i < data_len-3) {
@@ -947,7 +947,7 @@ STBIWDEF unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, i
             if (hlist[j]-data > i-32767) {
                int e = stbiw__zlib_countm(hlist[j], data+i+1, data_len-i-1);
                if (e > best) { // if next match is better, bail on current match
-                  bestloc = NULL;
+                  bestloc = nullptr;
                   break;
                }
             }
@@ -1217,7 +1217,7 @@ STBIWDEF int stbi_write_png(char const *filename, int x, int y, int comp, const 
    FILE *f;
    int len;
    unsigned char *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
-   if (png == NULL) return 0;
+   if (png == nullptr) return 0;
 
    f = stbiw__fopen(filename, "wb");
    if (!f) { STBIW_FREE(png); return 0; }
@@ -1232,7 +1232,7 @@ STBIWDEF int stbi_write_png_to_func(stbi_write_func *func, void *context, int x,
 {
    int len;
    unsigned char *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
-   if (png == NULL) return 0;
+   if (png == nullptr) return 0;
    func(context, png, len);
    STBIW_FREE(png);
    return 1;
