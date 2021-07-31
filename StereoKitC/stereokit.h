@@ -361,14 +361,15 @@ SK_API vec3     color_to_lab   (const sk_ref(color128) color);
 SK_API color128 color_to_linear(color128 srgb_gamma_correct);
 SK_API color128 color_to_gamma (color128 srgb_linear);
 
+static inline color128 color_lerp     (color128 a, color128 b, float t) { color128 result = {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; return result; }
+static inline color32  color_to_32    (color128 a)                      { color32  result = {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; return result; }
+
+static inline color128 color32_to_128 (color32 color) { color128 result = { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f }; return result; }
+static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint8_t)(hex>>24), (uint8_t)((hex>>16)&0x000000FF), (uint8_t)((hex>>8)&0x000000FF), (uint8_t)(hex&0x000000FF)}; return result; };
+static inline color128 color_hex      (uint32_t hex)  { return color32_to_128(color32_hex(hex)); };
 
 #ifdef __cplusplus
-static inline color128  operator*  (const color128 &a, const float b)              { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
-inline        color128  color_lerp (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline        color32   color_to_32(const color128 &a)                             { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
-#else
-inline        color128  color_lerp (const color128 *a, const color128 *b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
-inline        color32   color_to_32(const color128 *a)                             { color32  result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
+static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 #endif
 
 ///////////////////////////////////////////
