@@ -151,10 +151,17 @@ struct array_t {
 	inline T   &operator[] (size_t id) const         { return data[id]; }
 	void        reverse    ();
 	array_t<T>  copy       () const;
-	void        each       (void (*e)(T &))          { for (size_t i=0; i<count; i++) e(data[i]); }
-	void        each       (void (*e)(void *))       { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(T &))             { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(const T &)) const { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(void *))          { for (size_t i=0; i<count; i++) e(data[i]); }
 	template <typename U>
-	array_t<U>  each_new   (U    (*e)(const T &))    { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
+	void        each_with  (U *with, void (*e)(U*, const T &)) const { for (size_t i=0; i<count; i++) e(with, data[i]); }
+	template <typename U>
+	U           each_with  (void (*e)(U *, const T &))         const { U result = {}; for (size_t i = 0; i < count; i++) e(&result, data[i]); }
+	template <typename U>
+	U           each_sum   (U (*e)(const T &))                 const { U result = 0; for (size_t i = 0; i < count; i++) result += e(data[i]); return result; }
+	template <typename U>
+	array_t<U>  each_new   (U    (*e)(const T &)) const { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
 
 	static array_t<T> make     (int32_t capacity)              { array_t<T> result = {}; result.resize(capacity); return result; }
@@ -169,6 +176,12 @@ struct array_t {
 	int64_t     index_where(const D _T::*key, const D &item) const                            { const size_t offset = (size_t)&((_T*)0->*key); for (size_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
 	int64_t     index_where(bool (*c)(const T &item, void *user_data), void *user_data) const { for (size_t i=0; i<count; i++) if (c(data[i], user_data)) return i; return -1;}
 	int64_t     index_where(bool (*c)(const T &item)) const                                   { for (size_t i=0; i<count; i++) if (c(data[i]))            return i; return -1;}
+	int64_t     index_best_small(int32_t (*c)(const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r < best) { best = r; result = i;} } return result; }
+	int64_t     index_best_large(int32_t (*c)(const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r > best) { best = r; result = i;} } return result;}
+	template <typename U>
+	int64_t     index_best_small_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r < best) { best = r; result = i;} } return result; }
+	template <typename U>
+	int64_t     index_best_large_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r > best) { best = r; result = i;} } return result; }
 
 	//////////////////////////////////////
 	// Binary search methods
