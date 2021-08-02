@@ -1,4 +1,4 @@
-#include <stereokit.h>
+﻿#include <stereokit.h>
 #include <stereokit_ui.h>
 #include <vector>
 using namespace sk;
@@ -11,6 +11,7 @@ using namespace sk;
 #include "demo_lines.h"
 #include "demo_picker.h"
 #include "demo_world.h"
+#include "demo_lighting.h"
 
 #include <stdio.h>
 
@@ -58,6 +59,11 @@ scene_t demos[] = {
 		demo_world_init,
 		demo_world_update,
 		demo_world_shutdown,
+	}, {
+		"Lighting",
+		demo_lighting_init,
+		demo_lighting_update,
+		demo_lighting_shutdown,
 	}, {
 		"Exit",
 		sk_quit,

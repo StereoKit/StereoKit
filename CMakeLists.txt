@@ -350,6 +350,12 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_world.cpp
     Examples/StereoKitCTest/demo_lines.h
     Examples/StereoKitCTest/demo_lines.cpp
+    Examples/StereoKitCTest/demo_lighting.h
+    Examples/StereoKitCTest/demo_lighting.cpp
+    Examples/StereoKitCTest/skt_lighting.h
+    Examples/StereoKitCTest/skt_lighting.cpp
+    Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl.h
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl.h
   )
 
   target_link_libraries( StereoKitCTest

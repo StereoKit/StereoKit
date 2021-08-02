@@ -10,6 +10,8 @@
     <ClCompile Include="demo_mic.cpp" />
     <ClCompile Include="demo_picker.cpp" />
     <ClCompile Include="demo_world.cpp" />
+    <ClCompile Include="skt_lighting.cpp" />
+    <ClCompile Include="demo_lighting.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -20,5 +22,26 @@
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_world.h" />
+    <ClInclude Include="skt_lighting.h" />
+    <ClInclude Include="demo_lighting.h" />
+    <ClInclude Include="Shaders\skt_default_lighting.hlsl.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\skt_light_only.hlsl.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{743c36d2-f0e5-4241-82d2-2b2c61d41ad8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\skt_light_only.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\skt_default_lighting.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
