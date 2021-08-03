@@ -444,13 +444,14 @@ void ui_update() {
 			20.0f * time_elapsedf_unscaled());
 		if (skui_hand[i].focused_prev != 0) skui_hand[i].ray_visibility = 0;
 		if (skui_hand[i].ray_visibility > 0.004f) {
-			ray_t r = input_get_pointer(input_hand_pointer_id[i])->ray;
+			ray_t       r     = input_get_pointer(input_hand_pointer_id[i])->ray;
+			const float scale = 2;
 			line_point_t points[5] = {
-				line_point_t{r.pos+r.dir*0.07f, 0.001f,  color32{255,255,255,0}},
-				line_point_t{r.pos+r.dir*0.08f, 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 60 )}},
-				line_point_t{r.pos+r.dir*0.09f, 0.0020f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 80)}},
-				line_point_t{r.pos+r.dir*0.14f, 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 25 )}},
-				line_point_t{r.pos+r.dir*0.18f, 0.001f,  color32{255,255,255,0}} };
+				line_point_t{r.pos+r.dir*(0.07f              ), 0.001f,  color32{255,255,255,0}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.01f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 60 )}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.02f*scale), 0.0020f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 80)}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.07f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_hand[i].ray_visibility * 25 )}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.11f*scale), 0.001f,  color32{255,255,255,0}} };
 			line_add_listv(points, 5);
 		}
 		skui_hand[i].ray_discard = false;
