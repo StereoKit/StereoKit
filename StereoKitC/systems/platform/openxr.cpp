@@ -283,20 +283,13 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
+	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
 	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
 	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
-
-	xr_has_single_pass = true;
-#if defined(SK_OS_LINUX)
-	if (stref_startswith(stref_make(properties.systemName), "SteamVR/OpenXR")) {
-		log_warn("SteamVR+Linux disable single pass rendering hack. To be removed when SteamVR bug is fixed.");
-		xr_has_single_pass = false;
-	}
-#endif
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
