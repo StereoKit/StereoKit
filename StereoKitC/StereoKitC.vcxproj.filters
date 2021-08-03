@@ -172,6 +172,9 @@
     <ClCompile Include="tools\file_picker.cpp">
       <Filter>tools</Filter>
     </ClCompile>
+    <ClCompile Include="rect_atlas.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -394,6 +397,9 @@
     </ClInclude>
     <ClInclude Include="libraries\unicode.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="rect_atlas.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

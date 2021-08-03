@@ -152,6 +152,8 @@ set(SK_SRC_CODE
   StereoKitC/intersect.cpp
   StereoKitC/log.h
   StereoKitC/log.cpp
+  StereoKitC/rect_atlas.h
+  StereoKitC/rect_atlas.cpp
   StereoKitC/sk_math.h
   StereoKitC/sk_math.cpp
   StereoKitC/sk_memory.h

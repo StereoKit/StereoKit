@@ -149,6 +149,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="log.cpp" />
+    <ClCompile Include="rect_atlas.cpp" />
     <ClCompile Include="sk_math.cpp" />
     <ClCompile Include="sk_memory.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
@@ -210,6 +211,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="rect_atlas.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
     <ClInclude Include="sk_math.h" />
