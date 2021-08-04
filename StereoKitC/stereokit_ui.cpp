@@ -8,6 +8,7 @@
 #include "systems/hand/input_hand.h"
 #include "libraries/ferr_hash.h"
 #include "libraries/array.h"
+#include "libraries/unicode.h"
 
 #include <math.h>
 #include <float.h>
@@ -1174,6 +1175,8 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 			if (curr == key_backspace) {
 				size_t len = strlen(buffer);
+				while (len > 0 && !utf8_is_start(buffer[len - 1]))
+					len--;
 				if (len > 0) {
 					buffer[len - 1] = '\0';
 					result = true;
@@ -1191,12 +1194,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 			}
 
 			if (add != '\0') {
-				size_t len = strlen(buffer);
-				if (len + 2 < buffer_size) {
-					buffer[len] = add;
-					buffer[len + 1] = '\0';
-					result = true;
-				}
+				utf8_encode_append(buffer, buffer_size, add);
 			}
 
 			curr = input_text_consume();
