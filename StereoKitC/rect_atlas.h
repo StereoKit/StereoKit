@@ -20,5 +20,5 @@ typedef struct rect_atlas_t {
 
 rect_atlas_t rect_atlas_create (int32_t width, int32_t height);
 void         rect_atlas_destroy(rect_atlas_t *atlas);
-int32_t      rect_atlas_add    (rect_atlas_t *atlas, recti_t rect);
+int32_t      rect_atlas_add    (rect_atlas_t *atlas, int32_t width, int32_t height);
 void         rect_atlas_remove (rect_atlas_t *atlas, int32_t idx);

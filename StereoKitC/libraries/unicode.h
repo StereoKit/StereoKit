@@ -41,6 +41,7 @@ inline char32_t utf8_decode_fast(const char *utf8_str, const char **out_next_cha
 ///////////////////////////////////////////
 
 inline bool utf8_decode_fast_b(const char *utf8_str, const char **out_next_char, char32_t *out_char) {
+	if (*utf8_str == 0) return false;
 	*out_char = utf8_decode_fast(utf8_str, out_next_char);
 	return *out_char != 0;
 }
@@ -85,6 +86,69 @@ inline char32_t utf8_decode(const char *utf8_str, const char **out_next_char, in
 
 	*out_next_char = next;
 	return result;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf8_encode_chars(char32_t ch) {
+	if      (ch <= 0x7F)     return 1;
+	else if (ch <= 0x07FF)   return 2;
+	else if (ch <= 0xFFFF)   return 3;
+	else if (ch <= 0x10FFFF) return 4;
+	else                     return 0;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf8_encode(char *out, char32_t utf) {
+	if (utf <= 0x7F) {
+		// Plain ASCII
+		out[0] = (char) utf;
+		out[1] = 0;
+		return 1;
+	} else if (utf <= 0x07FF) {
+		// 2-byte unicode
+		out[0] = (char) (((utf >> 6) & 0x1F) | 0xC0);
+		out[1] = (char) (((utf >> 0) & 0x3F) | 0x80);
+		out[2] = 0;
+		return 2;
+	} else if (utf <= 0xFFFF) {
+		// 3-byte unicode
+		out[0] = (char) (((utf >> 12) & 0x0F) | 0xE0);
+		out[1] = (char) (((utf >>  6) & 0x3F) | 0x80);
+		out[2] = (char) (((utf >>  0) & 0x3F) | 0x80);
+		out[3] = 0;
+		return 3;
+	} else if (utf <= 0x10FFFF) {
+		// 4-byte unicode
+		out[0] = (char) (((utf >> 18) & 0x07) | 0xF0);
+		out[1] = (char) (((utf >> 12) & 0x3F) | 0x80);
+		out[2] = (char) (((utf >>  6) & 0x3F) | 0x80);
+		out[3] = (char) (((utf >>  0) & 0x3F) | 0x80);
+		out[4] = 0;
+		return 4;
+	}
+	return 0;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf8_encode_append(char *buffer, size_t size, char32_t ch) {
+	int32_t count = utf8_encode_chars(ch);
+	size_t  len   = strlen(buffer);
+	if (len + count + 1 >= size) {
+		return 0;
+	} else {
+		return utf8_encode(&buffer[len], ch);
+	}
+}
+
+///////////////////////////////////////////
+
+inline bool utf8_is_start(char ch) {
+	return 
+		(ch & 0x80) == 0 ||
+		(ch & 0xC0) == 0xC0;
 }
 
 ///////////////////////////////////////////

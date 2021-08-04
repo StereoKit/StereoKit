@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "win32.h"
 
 #if defined(SK_OS_WINDOWS)
@@ -132,7 +134,10 @@ bool win32_start_flat() {
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 
-	WNDCLASS wc = {0}; 
+	wchar_t app_name_w[256];
+	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+
+	WNDCLASSW wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
@@ -173,8 +178,8 @@ bool win32_start_flat() {
 	};
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = sk_app_name;
-	if( !RegisterClass(&wc) ) return false;
+	wc.lpszClassName = app_name_w;
+	if( !RegisterClassW(&wc) ) return false;
 
 	RECT r;
 	r.left   = sk_settings.flatscreen_pos_x;
@@ -183,7 +188,7 @@ bool win32_start_flat() {
 	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
 	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindow(
-		wc.lpszClassName, 
+		sk_app_name, 
 		sk_app_name, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
 		max(0,r.left), 

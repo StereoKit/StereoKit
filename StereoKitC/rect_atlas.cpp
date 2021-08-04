@@ -31,45 +31,45 @@ int32_t _rect_atlas_fit(recti_t src, const recti_t &r) {
 
 ///////////////////////////////////////////
 
-int32_t rect_atlas_add(rect_atlas_t *atlas, recti_t rect) {
-	int32_t idx = atlas->free_space.index_best_small_with(rect, _rect_atlas_fit);
+int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
+	int32_t idx = atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
 	if (idx == -1)
 		return -1;
 
 	const recti_t parent = atlas->free_space[idx];
 
-	if (parent.h == rect.h && parent.w == rect.w) { 
+	if (parent.h == height && parent.w == width) { 
 		// Perfect fit!
 		atlas->free_space.remove(idx);
-	} else if (parent.h == rect.h) {
+	} else if (parent.h == height) {
 		// Perfect vertical fit, just slide the bounds over to the right
-		atlas->free_space[idx].x += rect.w;
-		atlas->free_space[idx].w -= rect.w;
-	} else if (parent.w == rect.w) {
+		atlas->free_space[idx].x += width;
+		atlas->free_space[idx].w -= width;
+	} else if (parent.w == width) {
 		// Perfect horizontal fit, just slide the bounds down
-		atlas->free_space[idx].y += rect.h;
-		atlas->free_space[idx].h -= rect.h;
+		atlas->free_space[idx].y += height;
+		atlas->free_space[idx].h -= height;
 	} else {
 		// Split along the shortest edge, try and preserve large areas
 		recti_t new_free = {};
-		if (parent.h - rect.h < parent.w - rect.w) {
+		if (parent.h - height < parent.w - width) {
 			// Vertical axis is shorter, split horizontally
-			atlas->free_space[idx].y += rect.h;
-			atlas->free_space[idx].h -= rect.h;
-			atlas->free_space[idx].w  = rect.w;
-			new_free.x = parent.x + rect.w;
+			atlas->free_space[idx].y += height;
+			atlas->free_space[idx].h -= height;
+			atlas->free_space[idx].w  = width;
+			new_free.x = parent.x + width;
 			new_free.y = parent.y;
-			new_free.w = parent.w - rect.w;
+			new_free.w = parent.w - width;
 			new_free.h = parent.h;
 		} else {
 			// Horizontal axis is shorter, split vertically
-			atlas->free_space[idx].x += rect.w;
-			atlas->free_space[idx].w -= rect.w;
-			atlas->free_space[idx].h  = rect.h;
+			atlas->free_space[idx].x += width;
+			atlas->free_space[idx].w -= width;
+			atlas->free_space[idx].h  = height;
 			new_free.x = parent.x;
-			new_free.y = parent.y + rect.h;
+			new_free.y = parent.y + height;
 			new_free.w = parent.w;
-			new_free.h = parent.h - rect.h;
+			new_free.h = parent.h - height;
 		}
 		atlas->free_space.add(new_free);
 	}
@@ -77,9 +77,9 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, recti_t rect) {
 	recti_t new_rect = {};
 	new_rect.x = parent.x;
 	new_rect.y = parent.y;
-	new_rect.w = rect.w;
-	new_rect.h = rect.h;
-	atlas->used_area += rect.w * rect.h;
+	new_rect.w = width;
+	new_rect.h = height;
+	atlas->used_area += width * height;
 	return atlas->packed.add(new_rect);
 }
 

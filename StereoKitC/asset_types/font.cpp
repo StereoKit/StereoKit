@@ -1,8 +1,9 @@
-#include "font.h"
+﻿#include "font.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../libraries/stb_rect_pack.h"
+#include "../rect_atlas.h"
 #include "../libraries/stb_truetype.h"
 #include "../systems/platform/platform_utils.h"
 #include "../sk_memory.h"
@@ -10,6 +11,14 @@
 #include <stdio.h>
 
 namespace sk {
+
+array_t<font_t> font_list = {};
+
+///////////////////////////////////////////
+
+void font_render_character(font_t font, char32_t character);
+void font_update_texture  (font_t font);
+void font_update_cache    (font_t font);
 
 ///////////////////////////////////////////
 
@@ -31,56 +40,35 @@ font_t font_create(const char *file) {
 	result = (font_t)assets_allocate(asset_type_font);
 	assets_set_id(result->header, file);
 
-	unsigned char *data;
 	size_t length;
-	if (!platform_read_file(file, (void **)&data, &length)) {
+	if (!platform_read_file(file, (void **)&result->font_file, &length)) {
 		log_warnf("Font file failed to load: %s", file);
 		return nullptr;
 	}
 
-	// Load and pack font data
-	const int w = 1024;
-	const int h = 1024;
-	const float size = 64;
-	const int start_char = 32;
-	//stbtt_fontinfo font;
-	uint8_t *bitmap;
-	stbtt_pack_context pc;
-	stbtt_packedchar chars[128];
-	//stbtt_InitFont(&font, data, stbtt_GetFontOffsetForIndex(data,0));
-	bitmap = sk_malloc_t(uint8_t, w * h);
-	stbtt_PackBegin(&pc, (unsigned char*)(bitmap), w, h, 0, 2, NULL);
-	stbtt_PackFontRange(&pc, data, 0, size, start_char, 128-start_char, chars);
-	stbtt_PackEnd(&pc);
-	free(data);
-	
-	// convert characters
-	float convert_w = 1.0f / w;
-	float convert_h = 1.0f / h;
-	result->character_height = 0;
-	for (size_t i = 0; i < 128-start_char; i++) {
-		result->characters[i+start_char] = {
-			chars[i].xoff/size,  -chars[i].yoff/size,
-			chars[i].xoff2/size, -chars[i].yoff2/size,
-			chars[i].x0*convert_w, chars[i].y0*convert_h,
-			chars[i].x1*convert_w, chars[i].y1*convert_h,
-			chars[i].xadvance/size,
-		};
-	}
-	result->character_height = fabsf(chars[(int32_t)'T'].yoff/size);
-	result->space_width      = result->characters[(uint8_t)' '].xadvance;
+	const int32_t atlas_resolution = 1024;
+	stbtt_InitFont(&result->font_info, (const unsigned char *)result->font_file, stbtt_GetFontOffsetForIndex((const unsigned char *)result->font_file,0));
+	result->character_resolution = 64;
+	result->font_scale           = stbtt_ScaleForPixelHeight(&result->font_info, (float)result->character_resolution);
+	result->atlas                = rect_atlas_create( atlas_resolution, atlas_resolution );
+	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution * atlas_resolution);
+	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
 
-	// Convert to color data
-	color32 *colors = sk_malloc_t(color32, w * h);
-	for (size_t i = 0; i < w*h; i++) {
-		colors[i] = color32{ bitmap[i], 0, 0, 0 };
-	}
-	result->font_tex = tex_create(tex_type_image);
-	tex_set_colors(result->font_tex, w, h, colors);
+	for (size_t i = 32; i < 128; i++)
+		font_render_character(result, (char32_t)i);
 
-	free(bitmap);
-	free(colors);
+	font_update_texture(result);
 
+	// Get information about character sizes for this font
+	stbtt_GetFontVMetrics(&result->font_info, &result->character_ascend, &result->character_descend, &result->line_gap);
+	int32_t x0, y0, x1, y1;
+	stbtt_GetCodepointBox(&result->font_info, 'T', &x0, &y0, &x1, &y1);
+	result->character_height = y1 * result->font_scale;
+	int32_t advance, lsb; 
+	stbtt_GetGlyphHMetrics(&result->font_info, ' ', &advance, &lsb);
+	result->space_width = advance * result->font_scale;
+
+	font_list.add(result);
 	return result;
 }
 
@@ -107,7 +95,15 @@ void font_release(font_t font) {
 ///////////////////////////////////////////
 
 void font_destroy(font_t font) {
-	tex_release(font->font_tex);
+	font_list.remove(font_list.index_of(font));
+
+	tex_release       ( font->font_tex);
+	rect_atlas_destroy(&font->atlas);
+	free              ( font->atlas_data);
+	free              ( font->font_file);
+	font->character_map.free();
+	font->update_queue .free();
+
 	*font = {};
 }
 
@@ -119,16 +115,94 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
+void font_render_character(font_t font, char32_t character) {
+	int32_t glyph     = stbtt_FindGlyphIndex(&font->font_info, character);
+	int64_t glyph_idx = font->glyph_map.contains(glyph);
+	if (glyph_idx >= 0) {
+		if (character < 128) font->characters[character] = font->glyph_map.items[glyph_idx];
+		else                 font->character_map.add_or_set(character, font->glyph_map.items[glyph_idx]);
+		return;
+	}
+
+	const int32_t pad  = 1;
+	const float   to_u = 1.0f / font->atlas.w;
+	const float   to_v = 1.0f / font->atlas.h;
+
+	int advance, lsb;
+	int x0, x1, y0, y1;
+	stbtt_GetGlyphBitmapBox(&font->font_info, glyph, font->font_scale, font->font_scale, &x0, &y0, &x1, &y1);
+	stbtt_GetGlyphHMetrics (&font->font_info, glyph, &advance, &lsb);
+	int32_t sw = (x1-x0) + pad*2;
+	int32_t sh = (y1-y0) + pad*2;
+
+	recti_t  rect       = font->atlas.packed[rect_atlas_add(&font->atlas, sw, sh)];
+	recti_t  rect_unpad = { rect.x + pad, rect.y + pad, rect.w - pad * 2, rect.h - pad * 2};
+	stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[rect_unpad.x + rect_unpad.y * font->atlas.w], rect_unpad.w, rect_unpad.h, font->atlas.w, font->font_scale, font->font_scale, glyph);
+
+	font_char_t char_info = {};
+	char_info.x0 =  x0-0.5f;
+	char_info.y0 = -y0-0.5f;
+	char_info.x1 =  x1+0.5f;
+	char_info.y1 = -y1+0.5f;
+	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
+	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
+	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
+	char_info.v1 = (rect_unpad.y+rect_unpad.h+0.5f) * to_v;
+	char_info.xadvance = advance * font->font_scale;
+
+	// Add it to the list!
+	if (character < 128) font->characters[character] = char_info;
+	else                 font->character_map.add_or_set(character, char_info);
+	font->glyph_map.add_or_set(glyph, char_info);
+}
+
+///////////////////////////////////////////
+
+void font_update_texture(font_t font) {
+	if (font->font_tex == nullptr) {
+		font->font_tex = tex_create(tex_type_image, tex_format_r8);
+	}
+	tex_set_colors(font->font_tex, font->atlas.w, font->atlas.h, font->atlas_data);
+}
+
+///////////////////////////////////////////
+
 const font_char_t *font_get_glyph(font_t font, char32_t character) {
 	if (character < 128)
 		return &font->characters[character];
 
 	int64_t index = font->character_map.contains(character);
 	if (index < 0) {
-		index = font->character_map.add(character, {});
-		font->update_queue.add(character);
+		int32_t glyph   = stbtt_FindGlyphIndex(&font->font_info, character);
+		int64_t g_index = font->glyph_map.contains(glyph);
+		if (g_index >= 0) {
+			index = font->character_map.add(character, font->glyph_map.items[g_index]);
+		} else {
+			index = font->character_map.add(character, font->characters['?']);
+			font->update_queue.add(character);
+		}
 	}
 	return &font->character_map.items[index];
+}
+
+///////////////////////////////////////////
+
+void font_update_cache(font_t font) {
+	for (size_t i = 0; i < font->update_queue.count; i++) {
+		font_render_character(font, font->update_queue[i]);
+	}
+	if (font->update_queue.count > 0) {
+		font_update_texture(font);
+		font->update_queue.clear();
+	}
+}
+
+///////////////////////////////////////////
+
+void font_update_fonts() {
+	for (size_t i = 0; i < font_list.count; i++) {
+		font_update_cache(font_list[i]);
+	}
 }
 
 } // namespace sk
