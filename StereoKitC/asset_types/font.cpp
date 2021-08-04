@@ -16,9 +16,11 @@ array_t<font_t> font_list = {};
 
 ///////////////////////////////////////////
 
-void font_render_character(font_t font, char32_t character);
-void font_update_texture  (font_t font);
-void font_update_cache    (font_t font);
+font_char_t font_place_glyph   (font_t font, int32_t glyph);
+void        font_render_glyph  (font_t font, int32_t glyph, const font_char_t *ch);
+int64_t     font_add_character (font_t font, char32_t character);
+void        font_update_texture(font_t font);
+void        font_update_cache  (font_t font);
 
 ///////////////////////////////////////////
 
@@ -54,10 +56,10 @@ font_t font_create(const char *file) {
 	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution * atlas_resolution);
 	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
 
-	for (size_t i = 32; i < 128; i++)
-		font_render_character(result, (char32_t)i);
-
-	font_update_texture(result);
+	for (size_t i = 32; i < 128; i++) {
+		font_add_character(result, i);
+	}
+	font_update_cache(result);
 
 	// Get information about character sizes for this font
 	stbtt_GetFontVMetrics(&result->font_info, &result->character_ascend, &result->character_descend, &result->line_gap);
@@ -115,15 +117,7 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
-void font_render_character(font_t font, char32_t character) {
-	int32_t glyph     = stbtt_FindGlyphIndex(&font->font_info, character);
-	int64_t glyph_idx = font->glyph_map.contains(glyph);
-	if (glyph_idx >= 0) {
-		if (character < 128) font->characters[character] = font->glyph_map.items[glyph_idx];
-		else                 font->character_map.add_or_set(character, font->glyph_map.items[glyph_idx]);
-		return;
-	}
-
+font_char_t font_place_glyph(font_t font, int32_t glyph) {
 	const int32_t pad  = 1;
 	const float   to_u = 1.0f / font->atlas.w;
 	const float   to_v = 1.0f / font->atlas.h;
@@ -132,12 +126,10 @@ void font_render_character(font_t font, char32_t character) {
 	int x0, x1, y0, y1;
 	stbtt_GetGlyphBitmapBox(&font->font_info, glyph, font->font_scale, font->font_scale, &x0, &y0, &x1, &y1);
 	stbtt_GetGlyphHMetrics (&font->font_info, glyph, &advance, &lsb);
-	int32_t sw = (x1-x0) + pad*2;
-	int32_t sh = (y1-y0) + pad*2;
-
+	int32_t  sw         = (x1-x0) + pad*2;
+	int32_t  sh         = (y1-y0) + pad*2;
 	recti_t  rect       = font->atlas.packed[rect_atlas_add(&font->atlas, sw, sh)];
 	recti_t  rect_unpad = { rect.x + pad, rect.y + pad, rect.w - pad * 2, rect.h - pad * 2};
-	stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[rect_unpad.x + rect_unpad.y * font->atlas.w], rect_unpad.w, rect_unpad.h, font->atlas.w, font->font_scale, font->font_scale, glyph);
 
 	font_char_t char_info = {};
 	char_info.x0 =  x0-0.5f;
@@ -149,11 +141,17 @@ void font_render_character(font_t font, char32_t character) {
 	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
 	char_info.v1 = (rect_unpad.y+rect_unpad.h+0.5f) * to_v;
 	char_info.xadvance = advance * font->font_scale;
+	return char_info;
+}
 
-	// Add it to the list!
-	if (character < 128) font->characters[character] = char_info;
-	else                 font->character_map.add_or_set(character, char_info);
-	font->glyph_map.add_or_set(glyph, char_info);
+///////////////////////////////////////////
+
+void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
+	int32_t x = ch->u0 * font->atlas.w + 0.5f;
+	int32_t y = ch->v0 * font->atlas.h + 0.5f;
+	int32_t w = (ch->u1 * font->atlas.w) - x - 0.5f;
+	int32_t h = (ch->v1 * font->atlas.h) - y - 0.5f;
+	stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
 }
 
 ///////////////////////////////////////////
@@ -167,20 +165,36 @@ void font_update_texture(font_t font) {
 
 ///////////////////////////////////////////
 
+int64_t font_add_character(font_t font, char32_t character) {
+	int64_t index   = -1;
+	int32_t glyph   = stbtt_FindGlyphIndex(&font->font_info, character);
+	int64_t g_index = font->glyph_map.contains(glyph);
+	if (g_index >= 0) {
+		if (character < 128) {
+			font->characters[character] = font->glyph_map.items[g_index];
+			index = -1;
+		} else index = font->character_map.add(character, font->glyph_map.items[g_index]);
+	} else {
+		font_char_t ch = font_place_glyph(font, glyph);
+		if (character < 128) {
+			font->characters[character] = ch;
+			index = -1;
+		} else index = font->character_map.add(character, ch);
+		font->glyph_map   .add(glyph, ch);
+		font->update_queue.add(glyph);
+	}
+	return index;
+}
+
+///////////////////////////////////////////
+
 const font_char_t *font_get_glyph(font_t font, char32_t character) {
 	if (character < 128)
 		return &font->characters[character];
 
 	int64_t index = font->character_map.contains(character);
 	if (index < 0) {
-		int32_t glyph   = stbtt_FindGlyphIndex(&font->font_info, character);
-		int64_t g_index = font->glyph_map.contains(glyph);
-		if (g_index >= 0) {
-			index = font->character_map.add(character, font->glyph_map.items[g_index]);
-		} else {
-			index = font->character_map.add(character, font->characters['?']);
-			font->update_queue.add(character);
-		}
+		index = font_add_character(font, character);
 	}
 	return &font->character_map.items[index];
 }
@@ -189,7 +203,7 @@ const font_char_t *font_get_glyph(font_t font, char32_t character) {
 
 void font_update_cache(font_t font) {
 	for (size_t i = 0; i < font->update_queue.count; i++) {
-		font_render_character(font, font->update_queue[i]);
+		font_render_glyph(font, font->update_queue[i], font->glyph_map.get(font->update_queue[i]));
 	}
 	if (font->update_queue.count > 0) {
 		font_update_texture(font);
