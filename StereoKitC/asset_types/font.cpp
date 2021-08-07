@@ -19,6 +19,7 @@ array_t<font_t> font_list = {};
 font_char_t font_place_glyph   (font_t font, int32_t glyph);
 void        font_render_glyph  (font_t font, int32_t glyph, const font_char_t *ch);
 int64_t     font_add_character (font_t font, char32_t character);
+void        font_upsize_texture(font_t font);
 void        font_update_texture(font_t font);
 void        font_update_cache  (font_t font);
 
@@ -48,12 +49,13 @@ font_t font_create(const char *file) {
 		return nullptr;
 	}
 
-	const int32_t atlas_resolution = 1024;
+	const int32_t atlas_resolution_x = 256;
+	const int32_t atlas_resolution_y = 256;
 	stbtt_InitFont(&result->font_info, (const unsigned char *)result->font_file, stbtt_GetFontOffsetForIndex((const unsigned char *)result->font_file,0));
 	result->character_resolution = 64;
 	result->font_scale           = stbtt_ScaleForPixelHeight(&result->font_info, (float)result->character_resolution);
-	result->atlas                = rect_atlas_create( atlas_resolution, atlas_resolution );
-	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution * atlas_resolution);
+	result->atlas                = rect_atlas_create( atlas_resolution_x, atlas_resolution_y );
+	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
 	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
 
 	for (size_t i = 32; i < 128; i++) {
@@ -118,20 +120,34 @@ tex_t font_get_tex(font_t font) {
 ///////////////////////////////////////////
 
 font_char_t font_place_glyph(font_t font, int32_t glyph) {
+	if (glyph == 0) return {};
+
 	const int32_t pad  = 1;
-	const float   to_u = 1.0f / font->atlas.w;
-	const float   to_v = 1.0f / font->atlas.h;
+	float   to_u = 1.0f / font->atlas.w;
+	float   to_v = 1.0f / font->atlas.h;
 
 	int advance, lsb;
 	int x0, x1, y0, y1;
 	stbtt_GetGlyphBitmapBox(&font->font_info, glyph, font->font_scale, font->font_scale, &x0, &y0, &x1, &y1);
 	stbtt_GetGlyphHMetrics (&font->font_info, glyph, &advance, &lsb);
-	int32_t  sw         = (x1-x0) + pad*2;
-	int32_t  sh         = (y1-y0) + pad*2;
-	recti_t  rect       = font->atlas.packed[rect_atlas_add(&font->atlas, sw, sh)];
-	recti_t  rect_unpad = { rect.x + pad, rect.y + pad, rect.w - pad * 2, rect.h - pad * 2};
 
 	font_char_t char_info = {};
+	char_info.xadvance = advance * font->font_scale;
+
+	if (x1-x0 <= 0) return char_info;
+
+	int32_t  sw         = (x1-x0) + pad*2;
+	int32_t  sh         = (y1-y0) + pad*2;
+	int64_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
+	if (rect_idx == -1) {
+		font_upsize_texture(font);
+		rect_idx = rect_atlas_add(&font->atlas, sw, sh);
+		to_u     = 1.0f / font->atlas.w; 
+		to_v     = 1.0f / font->atlas.h;
+	}
+	recti_t  rect       = font->atlas.packed[rect_idx];
+	recti_t  rect_unpad = { rect.x + pad, rect.y + pad, rect.w - pad * 2, rect.h - pad * 2};
+
 	char_info.x0 =  x0-0.5f;
 	char_info.y0 = -y0-0.5f;
 	char_info.x1 =  x1+0.5f;
@@ -140,7 +156,6 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
 	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
 	char_info.v1 = (rect_unpad.y+rect_unpad.h+0.5f) * to_v;
-	char_info.xadvance = advance * font->font_scale;
 	return char_info;
 }
 
@@ -151,7 +166,100 @@ void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
 	int32_t y = ch->v0 * font->atlas.h + 0.5f;
 	int32_t w = (ch->u1 * font->atlas.w) - x - 0.5f;
 	int32_t h = (ch->v1 * font->atlas.h) - y - 0.5f;
-	stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
+
+	// This is a really simple low quality render, very fast
+	//stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
+	//return;
+
+	// This is a multisampling high quality render, about 7x slower?
+	int32_t multisample = 3;
+
+	// Following code based on stbtt_GetGlyphBitmap, but modified to always
+	// produce a bitmap that's a multiple of `multisample`
+	int ix0,iy0,ix1,iy1;
+	stbtt_vertex *vertices;
+	int num_verts = stbtt_GetGlyphShape(&font->font_info, glyph, &vertices);
+
+	stbtt_GetGlyphBitmapBoxSubpixel(&font->font_info, glyph, font->font_scale*multisample, font->font_scale*multisample, 0, 0, &ix0,&iy0,&ix1,&iy1);
+
+	// now we get the size
+	stbtt__bitmap gbm;
+	gbm.w = w*multisample;
+	gbm.h = h*multisample;
+	gbm.pixels = (unsigned char *)malloc(gbm.w * gbm.h);
+	gbm.stride = gbm.w;
+	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, font->font_scale*multisample, font->font_scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
+	free(vertices);
+
+	// Now average the multisamples to get a final value, and add it to the
+	// atlas data.
+	for (int32_t py = 0; py < gbm.h; py+=multisample) {
+		int32_t yoff = (y + py/multisample) * font->atlas.w;
+	for (int32_t px = 0; px < gbm.w; px+=multisample) {
+		int32_t total = 0;
+		for (int32_t oy = 0; oy < multisample; oy+=1) {
+			int32_t oyoff = (py+oy) * gbm.w;
+		for (int32_t ox = 0; ox < multisample; ox+=1) {
+			total += gbm.pixels[(px+ox) + oyoff];
+		}}
+		total = total / 9;
+
+		font->atlas_data[(x + px/multisample) + yoff] = total;
+	}}
+	free(gbm.pixels);
+}
+
+///////////////////////////////////////////
+
+inline void font_char_reuv(font_char_t *ch, float scale_x, float scale_y) {
+	ch->u0 = ch->u0 * scale_x;
+	ch->v0 = ch->v0 * scale_y;
+	ch->u1 = ch->u1 * scale_x;
+	ch->v1 = ch->v1 * scale_y;
+}
+
+void font_upsize_texture(font_t font) {
+	// Double the space horizontally first, then double it vertically the
+	// next time.
+	int32_t new_w = font->atlas.w;
+	int32_t new_h = font->atlas.h;
+	if (new_w == new_h) { new_w = new_w * 2; font->atlas.free_space.add({font->atlas.w, 0, font->atlas.w,   font->atlas.h}); }
+	else                { new_h = new_h * 2; font->atlas.free_space.add({0, font->atlas.h, font->atlas.w*2, font->atlas.h}); }
+	float scale_x = font->atlas.w / (float)new_w;
+	float scale_y = font->atlas.h / (float)new_h;
+
+	// Move all our glyphs over to a new chunk of memory that uses the larger
+	// size. We'll copy glyph by glyph to make sorting easier later on.
+	uint8_t *new_data = sk_malloc_t(uint8_t, new_w*new_h);
+	memset(new_data, 0, new_w * new_h);
+	for (size_t i = 0; i < font->glyph_map.items.count; i++) {
+		font_char_t ch     = font->glyph_map.items[i];
+		font_char_t new_ch = ch;
+		font_char_reuv(&new_ch, scale_x, scale_y);
+		font->glyph_map.items[i] = new_ch;
+
+		// Copy memory
+		recti_t src = {ch.u0 * font->atlas.w, ch.v0 * font->atlas.h, (ch.u1-ch.u0) * font->atlas.w, (ch.v1-ch.v0) * font->atlas.h };
+		for (size_t y = 0; y < src.h; y++) { 
+			memcpy(&new_data[src.x + (src.y+y)*new_w], &font->atlas_data[src.x + (src.y+y)*font->atlas.w], src.w * sizeof(uint8_t));
+		}
+	}
+	// Update the rest of our rectangles
+	for (size_t i = 32; i < 128;                             i++) font_char_reuv(&font->characters         [i], scale_x, scale_y);
+	for (size_t i = 0;  i < font->character_map.items.count; i++) font_char_reuv(&font->character_map.items[i], scale_x, scale_y);
+	
+	// This could be a faster copy, but may not make a big difference. Also
+	// doesn't allow for copying to new locations.
+	/*for (size_t i = 0;  i < font->glyph_map.items.count; i++) font_char_reuv(&font->glyph_map.items[i], scale_x, scale_y);
+	for (int32_t y = 0; y < font->atlas.h; y++) {
+		memcpy(&new_data[y * new_w], &font->atlas_data[y * font->atlas.w], font->atlas.w * sizeof(uint8_t));
+	}*/
+
+	// Update the atlas to the new values
+	free(font->atlas_data);
+	font->atlas_data = new_data;
+	font->atlas.w = new_w;
+	font->atlas.h = new_h;
 }
 
 ///////////////////////////////////////////

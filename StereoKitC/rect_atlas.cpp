@@ -33,7 +33,7 @@ int32_t _rect_atlas_fit(recti_t src, const recti_t &r) {
 
 int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 	int32_t idx = atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
-	if (idx == -1)
+	if (idx == -1 || atlas->free_space[idx].w < width || atlas->free_space[idx].h < height)
 		return -1;
 
 	const recti_t parent = atlas->free_space[idx];
