@@ -652,9 +652,12 @@ typedef int32_t text_style_t;
 SK_API text_style_t text_make_style       (font_t font, float character_height,                      color128 color_gamma);
 SK_API text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader,     color128 color_gamma);
 SK_API text_style_t text_make_style_mat   (font_t font, float character_height, material_t material, color128 color_gamma);
-SK_API void         text_add_at           (const char *text, const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API float        text_add_in           (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API vec2         text_size             (const char *text, text_style_t style sk_default(-1));
+SK_API void         text_add_at           (const char     *text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API void         text_add_at_16        (const char16_t *text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API float        text_add_in           (const char     *text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API float        text_add_in_16        (const char16_t *text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API vec2         text_size             (const char     *text_utf8,  text_style_t style sk_default(-1));
+SK_API vec2         text_size_16          (const char16_t *text_utf16, text_style_t style sk_default(-1));
 
 SK_API material_t   text_style_get_material   (text_style_t style);
 SK_API float        text_style_get_char_height(text_style_t style);

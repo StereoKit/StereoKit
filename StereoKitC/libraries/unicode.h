@@ -41,7 +41,7 @@ inline char32_t utf8_decode_fast(const char *utf8_str, const char **out_next_cha
 ///////////////////////////////////////////
 
 inline bool utf8_decode_fast_b(const char *utf8_str, const char **out_next_char, char32_t *out_char) {
-	if (*utf8_str == 0) return false;
+	if (*utf8_str == 0) { *out_char = 0; return false; }
 	*out_char = utf8_decode_fast(utf8_str, out_next_char);
 	return *out_char != 0;
 }
@@ -169,4 +169,12 @@ inline char32_t utf16_decode_fast(const char16_t *utf16_str, const char16_t **ou
 		return result;
 	}
 	return 0;
+}
+
+///////////////////////////////////////////
+
+inline bool utf16_decode_fast_b(const char16_t *utf16_str, const char16_t **out_next_char, char32_t *out_char) {
+	if (*utf16_str == 0) { *out_char = 0; return false; }
+	*out_char = utf16_decode_fast(utf16_str, out_next_char);
+	return *out_char != 0;
 }

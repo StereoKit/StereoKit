@@ -103,7 +103,7 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX=0, float offY=0, float offZ=0) 
-			=> NativeAPI.text_add_at(text, transform, style.id, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_at_16(text, transform, style.id, position, align, offX, offY, offZ);
 
 		/// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
 		/// <param name="text">What text should be drawn?</param>
@@ -114,13 +114,13 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_at(text, transform, -1, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_at_16(text, transform, -1, position, align, offX, offY, offZ);
 
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_in_16(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
 
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in(text, transform, size, fit, -1, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_in_16(text, transform, size, fit, -1, position, align, offX, offY, offZ);
 
 		/// <summary>Sometimes you just need to know how much room some text takes up! This finds
 		/// the size of the text in meters, when using the indicated style!</summary>
@@ -128,13 +128,13 @@ namespace StereoKit
 		/// <param name="style">The visual style of the text, see Text.MakeStyle or the TextStyle object for more details.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text, TextStyle style)
-			=> NativeAPI.text_size(text, style.id);
+			=> NativeAPI.text_size_16(text, style.id);
 
 		/// <summary>Sometimes you just need to know how much room some text takes up! This finds
 		/// the size of the text in meters, when using the indicated style!</summary>
 		/// <param name="text">Text you want to find the size of.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text)
-			=> NativeAPI.text_size(text, -1);
+			=> NativeAPI.text_size_16(text, -1);
 	}
 }
