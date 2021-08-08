@@ -58,9 +58,8 @@ font_t font_create(const char *file) {
 	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
 	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
 
-	for (size_t i = 32; i < 128; i++) {
-		font_add_character(result, i);
-	}
+	for (size_t i = 65; i < 128; i++) font_add_character(result, i);
+	for (size_t i = 32; i < 65;  i++) font_add_character(result, i);
 	font_update_cache(result);
 
 	// Get information about character sizes for this font
@@ -122,7 +121,7 @@ tex_t font_get_tex(font_t font) {
 font_char_t font_place_glyph(font_t font, int32_t glyph) {
 	if (glyph == 0) return {};
 
-	const int32_t pad  = 1;
+	const int32_t pad = 4;
 	float   to_u = 1.0f / font->atlas.w;
 	float   to_v = 1.0f / font->atlas.h;
 
@@ -136,8 +135,8 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 
 	if (x1-x0 <= 0) return char_info;
 
-	int32_t  sw         = (x1-x0) + pad*2;
-	int32_t  sh         = (y1-y0) + pad*2;
+	int32_t  sw         = (x1-x0) + pad;
+	int32_t  sh         = (y1-y0) + pad;
 	int64_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
 	if (rect_idx == -1) {
 		font_upsize_texture(font);
@@ -146,7 +145,7 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 		to_v     = 1.0f / font->atlas.h;
 	}
 	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { rect.x + pad, rect.y + pad, rect.w - pad * 2, rect.h - pad * 2};
+	recti_t  rect_unpad = { rect.x, rect.y, rect.w - pad, rect.h - pad};
 
 	char_info.x0 =  x0-0.5f;
 	char_info.y0 = -y0-0.5f;
