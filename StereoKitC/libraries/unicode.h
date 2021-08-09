@@ -153,6 +153,15 @@ inline bool utf8_is_start(char ch) {
 
 ///////////////////////////////////////////
 
+inline size_t strlen(const char16_t *str) {
+	if(!str) return 0;
+	const char16_t* curr = str;
+	while (*curr) curr++;
+	return curr-str;
+}
+
+///////////////////////////////////////////
+
 inline char32_t utf16_decode_fast(const char16_t *utf16_str, const char16_t **out_next) {
 	const char16_t *start = utf16_str;
 
@@ -177,4 +186,48 @@ inline bool utf16_decode_fast_b(const char16_t *utf16_str, const char16_t **out_
 	if (*utf16_str == 0) { *out_char = 0; return false; }
 	*out_char = utf16_decode_fast(utf16_str, out_next_char);
 	return *out_char != 0;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf16_encode_chars(char32_t ch) {
+	if (ch < 0x00010000L) return 1;
+	if (ch < 0x00110000L) return 2;
+	return 0;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf16_encode(char16_t *out, char32_t utf) {
+	if (utf < 0x00010000L) {
+		out[0] = utf;
+		out[1] = '\0';
+		return 1;
+	} else if (utf < 0x00110000L) {
+		utf -= 0x00010000L;
+
+		out[0] = ((utf >> 10) & 0x3ff) | 0xd800;
+		out[1] = ((utf >> 0 ) & 0x3ff) | 0xdc00;
+		out[2] = '\0';
+		return 2;
+	}
+	return 0;
+}
+
+///////////////////////////////////////////
+
+inline int32_t utf16_encode_append(char16_t *buffer, size_t size, char32_t ch) {
+	int32_t count = utf16_encode_chars(ch);
+	size_t  len   = strlen(buffer);
+	if (len + count + 1 >= size) {
+		return 0;
+	} else {
+		return utf16_encode(&buffer[len], ch);
+	}
+}
+
+///////////////////////////////////////////
+
+inline bool utf16_is_start(char ch) {
+	return !(ch >= 0xdc00 && ch <= 0xdfff);
 }

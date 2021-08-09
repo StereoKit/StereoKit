@@ -133,9 +133,17 @@ material_t    ui_get_material       (ui_el_ element);
 void          ui_draw_el            (ui_el_ element, vec3 start, vec3 size, color128 color);
 
 // Base render types
-void ui_box      (vec3 start, vec3 size, material_t material, color128 color);
-void ui_cube     (vec3 start, vec3 size, material_t material, color128 color);
-void ui_text     (vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align);
+void ui_box    (vec3 start, vec3 size, material_t material, color128 color);
+void ui_cube   (vec3 start, vec3 size, material_t material, color128 color);
+void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align);
+void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align);
+
+typedef float (*text_add_in_t )(const void *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z);
+typedef vec2  (*text_size_t   )(const void *text, text_style_t style);
+typedef bool  (*utf_is_start_t)(const void *text);
+
+//typedef float (*ui_text_t    )(const void *text);
+typedef float (*ui_text_in_t )(vec3 start, vec2 size, const void *text, text_align_ position, text_align_ align);
 
 ///////////////////////////////////////////
 
@@ -483,11 +491,32 @@ void ui_shutdown() {
 
 ///////////////////////////////////////////
 
+uint64_t hash_fnv64_string_16(const char16_t* string, uint64_t start_hash = HASH_FNV64_START) {
+	uint64_t hash = start_hash;
+	while (*string != '\0') {
+		hash = (hash ^ ((*string & 0xFF00) >> 2)) * 1099511628211;
+		hash = (hash ^ ( *string & 0x00FF      )) * 1099511628211;
+		string++;
+	}
+	return hash;
+}
+
+///////////////////////////////////////////
+
 uint64_t ui_stack_hash(const char *string) {
 	return skui_id_stack.count > 0 
 		? hash_fnv64_string(string, skui_id_stack.last().id) 
 		: hash_fnv64_string(string);
 }
+
+///////////////////////////////////////////
+
+uint64_t ui_stack_hash_16(const char16_t *string) {
+	return skui_id_stack.count > 0 
+		? hash_fnv64_string_16(string, skui_id_stack.last().id) 
+		: hash_fnv64_string_16(string);
+}
+uint64_t ui_stack_hash(const char16_t *string) { return ui_stack_hash_16(string); }
 
 ///////////////////////////////////////////
 
@@ -504,6 +533,15 @@ uint64_t ui_push_id(const char *id) {
 	skui_id_stack.add({ result });
 	return result;
 }
+
+///////////////////////////////////////////
+
+uint64_t ui_push_id_16(const char16_t *id) {
+	uint64_t result = ui_stack_hash(id);
+	skui_id_stack.add({ result });
+	return result;
+}
+inline uint64_t ui_push_id(const char16_t *id) { return ui_push_id_16(id); }
 
 ///////////////////////////////////////////
 
@@ -857,7 +895,8 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_volume_at(const char *id, bounds_t bounds) {
+template<typename C>
+bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 	uint64_t id_hash = ui_stack_hash(id);
 	bool     result  = false;
 
@@ -876,6 +915,8 @@ bool32_t ui_volume_at(const char *id, bounds_t bounds) {
 
 	return result;
 }
+bool32_t ui_volume_at   (const char     *id, bounds_t bounds) { return ui_volume_at_g<char    >(id, bounds); }
+bool32_t ui_volume_at_16(const char16_t *id, bounds_t bounds) { return ui_volume_at_g<char16_t>(id, bounds); }
 
 ///////////////////////////////////////////
 
@@ -903,9 +944,12 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 
 ///////////////////////////////////////////
 
-void ui_text(vec3 start, vec2 size, const char *text, text_align_ position, text_align_ align) {
-	text_add_in(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
+template<typename C, text_add_in_t text_add_in_g>
+inline void ui_text_in_g(vec3 start, vec2 size, const C *text, text_align_ position, text_align_ align) {
+	text_add_in_g(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
 }
+void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align) { ui_text_in_g<char,     (text_add_in_t)text_add_in   >(start, size, text, position, align); }
+void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align) { ui_text_in_g<char16_t, (text_add_in_t)text_add_in_16>(start, size, text, position, align); }
 
 ///////////////////////////////////////////
 ///////////   UI Components   /////////////
@@ -926,42 +970,51 @@ void ui_hseparator() {
 
 ///////////////////////////////////////////
 
-void ui_label_sz(const char *text, vec2 size) {
+template<typename C>
+void ui_label_sz_g(const C *text, vec2 size) {
 	vec3 offset;
 	size.x -= skui_settings.gutter;
 	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
 	ui_nextline();
 
-	ui_text(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_top_left, text_align_center_left);
+	ui_text_in(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_top_left, text_align_center_left);
 }
+void ui_label_sz   (const char     *text, vec2 size) { ui_label_sz_g<char    >(text, size); }
+void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(text, size); }
 
 ///////////////////////////////////////////
 
-void ui_label(const char *text, bool32_t use_padding) {
+template<typename C, text_size_t text_size_g>
+void ui_label_g(const C *text, bool32_t use_padding) {
 	vec3  offset   = skui_layers.last().offset;
-	vec2  txt_size = text_size(text, skui_font_stack.last());
+	vec2  txt_size = text_size_g(text, skui_font_stack.last());
 	vec2  size     = txt_size;
 	float pad      = use_padding ? skui_settings.gutter : 0;
 
 	ui_layout_box (size, offset, size, use_padding);
 	ui_reserve_box(size);
 	ui_nextline();
-	ui_text(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_top_left, text_align_center_left);
+	ui_text_in(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_top_left, text_align_center_left);
 }
+void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char    , (text_size_t)text_size   >(text, use_padding); }
+void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t, (text_size_t)text_size_16>(text, use_padding); }
 
 ///////////////////////////////////////////
 
-void ui_text(const char *text) {
+template<typename C, text_add_in_t text_add_in_g>
+void ui_text_g(const C *text) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_area_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 2 };
-	size.y = text_add_in(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
+	size.y = text_add_in_g(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
 
 	ui_reserve_box(size);
 	ui_nextline();
 }
+void ui_text   (const char     *text) { ui_text_g<char,     (text_add_in_t)text_add_in   >(text); }
+void ui_text_16(const char16_t *text) { ui_text_g<char16_t, (text_add_in_t)text_add_in_16>(text); }
 
 ///////////////////////////////////////////
 
@@ -982,7 +1035,8 @@ void ui_image(sprite_t image, vec2 size) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
+template<typename C>
+bool32_t ui_button_at_g(const C *text, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -997,14 +1051,18 @@ bool32_t ui_button_at(const char *text, vec3 window_relative_pos, vec2 size) {
 	}
 
 	ui_draw_el(ui_el_button, window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, skui_palette[2] * color_blend);
-	ui_text   (              window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_text_in(           window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
+bool32_t ui_button_at   (const char     *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char    >(text, window_relative_pos, size); }
+bool32_t ui_button_at   (const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char16_t>(text, window_relative_pos, size); }
+bool32_t ui_button_at_16(const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char16_t>(text, window_relative_pos, size); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_sz(const char *text, vec2 size) {
+template<typename C>
+bool32_t ui_button_sz_g(const C *text, vec2 size) {
 	vec3 offset;
 	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
@@ -1012,22 +1070,28 @@ bool32_t ui_button_sz(const char *text, vec2 size) {
 
 	return ui_button_at(text, offset, size);
 }
+bool32_t ui_button_sz   (const char     *text, vec2 size) { return ui_button_sz_g<char    >(text, size); }
+bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_sz_g<char16_t>(text, size); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button(const char *text) {
+template<typename C, text_size_t text_size_g>
+bool32_t ui_button_g(const C *text) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size(text, skui_font_stack.last()), offset, size);
+	ui_layout_box (text_size_g(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
 	return ui_button_at(text, offset, size);
 }
+bool32_t ui_button   (const char     *text) { return ui_button_g<char,     (text_size_t)text_size   >(text); }
+bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, (text_size_t)text_size_16>(text); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
+template<typename C>
+bool32_t ui_toggle_at_g(const C *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -1047,26 +1111,33 @@ bool32_t ui_toggle_at(const char *text, bool32_t &pressed, vec3 window_relative_
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
 	ui_draw_el(ui_el_toggle, window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, skui_palette[2] * color_blend);
-	ui_text   (              window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_text_in(              window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
 
 	return state & button_state_just_active;
 }
+bool32_t ui_toggle_at   (const char     *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char    >(text, pressed, window_relative_pos, size); }
+bool32_t ui_toggle_at   (const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char16_t>(text, pressed, window_relative_pos, size); }
+bool32_t ui_toggle_at_16(const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char16_t>(text, pressed, window_relative_pos, size); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_toggle(const char *text, bool32_t &pressed) {
+template<typename C, text_size_t text_size_g>
+bool32_t ui_toggle_g(const C *text, bool32_t &pressed) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size(text, skui_font_stack.last()), offset, size);
+	ui_layout_box (text_size_g(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
 	return ui_toggle_at(text, pressed, offset, size);
 }
+bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_g<char,     (text_size_t)text_size   >(text, pressed); }
+bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_g<char16_t, (text_size_t)text_size_16>(text, pressed); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_toggle_sz(const char *text, bool32_t &pressed, vec2 size) {
+template<typename C>
+bool32_t ui_toggle_sz_g(const C *text, bool32_t &pressed, vec2 size) {
 	vec3 offset;
 	ui_layout_exact(size, offset);
 	ui_reserve_box(size);
@@ -1074,10 +1145,13 @@ bool32_t ui_toggle_sz(const char *text, bool32_t &pressed, vec2 size) {
 
 	return ui_toggle_at(text, pressed, offset, size);
 }
+bool32_t ui_toggle_sz   (const char     *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char    >(text, pressed, size); }
+bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char16_t>(text, pressed, size); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relative_pos, float diameter) {
+template<typename C>
+bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -1098,10 +1172,14 @@ bool32_t ui_button_round_at(const char *text, sprite_t image, vec3 window_relati
 
 	return state & button_state_just_active;
 }
+bool32_t ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char    >(text, image, window_relative_pos, diameter); }
+bool32_t ui_button_round_at   (const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char16_t>(text, image, window_relative_pos, diameter); }
+bool32_t ui_button_round_at_16(const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char16_t>(text, image, window_relative_pos, diameter); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_button_round(const char *id, sprite_t image, float diameter) {
+template<typename C>
+bool32_t ui_button_round_g(const C *id, sprite_t image, float diameter) {
 	if (diameter == 0)
 		diameter = ui_line_height();
 	vec3 offset;
@@ -1113,6 +1191,8 @@ bool32_t ui_button_round(const char *id, sprite_t image, float diameter) {
 
 	return ui_button_round_at(id, image, offset, size.x);
 }
+bool32_t ui_button_round   (const char     *id, sprite_t image, float diameter) { return ui_button_round_g<char>(id, image, diameter); }
+bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter) { return ui_button_round_g<char16_t>(id, image, diameter); }
 
 ///////////////////////////////////////////
 
@@ -1128,7 +1208,13 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
+inline bool    utf_is_start     (char     ch) { return utf8_is_start(ch); }
+inline bool    utf_is_start     (char16_t ch) { return utf16_is_start(ch); }
+inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { return utf8_encode_append (buffer, size, ch); }
+inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }
+
+template<typename C, text_size_t text_size_g>
+bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	if (size.x == 0) size.x = ui_area_remaining().x;
 	if (size.y == 0) size.y = ui_line_height();
 
@@ -1175,7 +1261,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 
 			if (curr == key_backspace) {
 				size_t len = strlen(buffer);
-				while (len > 0 && !utf8_is_start(buffer[len - 1]))
+				while (len > 0 && !utf_is_start(buffer[len - 1]))
 					len--;
 				if (len > 0) {
 					buffer[len - 1] = '\0';
@@ -1184,6 +1270,7 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
 				platform_keyboard_show(false);
+				result = true;
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
@@ -1194,7 +1281,8 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 			}
 
 			if (add != '\0') {
-				utf8_encode_append(buffer, buffer_size, add);
+				utf_encode_append(buffer, buffer_size, add);
+				result = true;
 			}
 
 			curr = input_text_consume();
@@ -1204,11 +1292,11 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	// Render the input UI
 	ui_reserve_box(size);
 	ui_draw_el(ui_el_input, offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_palette[2] * color_blend);
-	ui_text   (             offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
+	ui_text_in(             offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
-		float carat_at = skui_settings.padding + fminf(text_size(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
+		float carat_at = skui_settings.padding + fminf(text_size_g(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
 		float line     = ui_line_height() * 0.5f;
 		ui_cube(offset - vec3{ carat_at,size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
 	}
@@ -1217,9 +1305,17 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) 
 	return result;
 }
 
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
+	return ui_input_g<char, (text_size_t)text_size>(id, buffer, buffer_size, size);
+}
+bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size) {
+	return ui_input_g<char16_t, (text_size_t)text_size_16>(id, buffer, buffer_size, size);
+}
+
 ///////////////////////////////////////////
 
-bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) {
+template<typename C>
+bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) {
 	uint64_t id     = ui_stack_hash(id_text);
 	bool     result = false;
 
@@ -1318,10 +1414,14 @@ bool32_t ui_hslider_at(const char *id_text, float &value, float min, float max, 
 
 	return result;
 }
+bool32_t ui_hslider_at   (const char     *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) { return ui_hslider_at_g<char    >(id_text, value, min, max, step, window_relative_pos, size, confirm_method); }
+bool32_t ui_hslider_at   (const char16_t *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) { return ui_hslider_at_g<char16_t>(id_text, value, min, max, step, window_relative_pos, size, confirm_method); }
+bool32_t ui_hslider_at_16(const char16_t *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) { return ui_hslider_at_g<char16_t>(id_text, value, min, max, step, window_relative_pos, size, confirm_method); }
 
 ///////////////////////////////////////////
 
-bool32_t ui_hslider(const char *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) {
+template<typename C>
+bool32_t ui_hslider_g(const C *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) {
 	vec3 offset = skui_layers.last().offset;
 	if (width == 0)
 		width = skui_layers.last().size.x == 0 ? 0.1f : (skui_layers.last().size.x - skui_settings.padding) - offset.x;
@@ -1333,6 +1433,8 @@ bool32_t ui_hslider(const char *name, float &value, float min, float max, float 
 	
 	return ui_hslider_at(name, value, min, max, step, offset, size, confirm_method);
 }
+bool32_t ui_hslider   (const char     *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) { return ui_hslider_g<char    >(name, value, min, max, step, width, confirm_method); }
+bool32_t ui_hslider_16(const char16_t *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) { return ui_hslider_g<char16_t>(name, value, min, max, step, width, confirm_method); }
 
 ///////////////////////////////////////////
 
@@ -1526,6 +1628,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
 }
+bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
+}
 
 ///////////////////////////////////////////
 
@@ -1535,7 +1640,8 @@ void ui_handle_end() {
 
 ///////////////////////////////////////////
 
-void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+template<typename C, text_size_t text_size_g>
+void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
 
 	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
@@ -1570,14 +1676,20 @@ void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ w
 
 	// draw label
 	if (window.type & ui_win_head) {
-		vec2 size = text_size(text, skui_font_stack.last());
+		vec2 size = text_size_g(text, skui_font_stack.last());
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
-		ui_text(at, size, text, text_align_top_left, text_align_center_left);
+		ui_text_in(at, size, text, text_align_top_left, text_align_center_left);
 
 		if (skui_layers.last().max_x > at.x - size.x - skui_settings.padding)
 			skui_layers.last().max_x = at.x - size.x - skui_settings.padding;
 	}
 	window.pose = pose;
+}
+void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char, (text_size_t)text_size>(text, pose, window_size, window_type, move_type);
+}
+void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char16_t, (text_size_t)text_size_16>(text, pose, window_size, window_type, move_type);
 }
 
 ///////////////////////////////////////////

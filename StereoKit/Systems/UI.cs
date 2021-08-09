@@ -83,7 +83,7 @@ namespace StereoKit
 		/// <param name="bounds">Size and position of the volume, relative to the current Hierarchy.</param>
 		/// <returns>True on the first frame a finger has entered the volume, false otherwise.</returns>
 		public static bool VolumeAt(string id, Bounds bounds)
-			=> NativeAPI.ui_volume_at(id, bounds);
+			=> NativeAPI.ui_volume_at_16(id, bounds);
 
 		/// <summary>This watches a volume of space for pinch interaction 
 		/// events! If a hand is inside the space indicated by the bounds,
@@ -120,10 +120,10 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label (string text, bool usePadding = true) 
-			=> NativeAPI.ui_label(text, usePadding);
+			=> NativeAPI.ui_label_16(text, usePadding);
 
 		public static void Label(string text, Vec2 size)
-			=> NativeAPI.ui_label_sz(text, size);
+			=> NativeAPI.ui_label_sz_16(text, size);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -132,7 +132,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		public static void Text(string text)
-			=> NativeAPI.ui_text(text);
+			=> NativeAPI.ui_text_16(text);
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
@@ -149,13 +149,13 @@ namespace StereoKit
 		/// it will be used as the element id.</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool Button (string text) 
-			=> NativeAPI.ui_button(text);
+			=> NativeAPI.ui_button_16(text);
 
 		public static bool Button(string text, Vec2 size)
-			=> NativeAPI.ui_button_sz(text, size);
+			=> NativeAPI.ui_button_sz_16(text, size);
 
 		public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_button_at(text, windowRelativeCorner, size);
+			=> NativeAPI.ui_button_at_16(text, windowRelativeCorner, size);
 
 		/// <summary>A Radio is similar to a button, except you can specify if it looks pressed
 		/// or not regardless of interaction. This can be useful for radio-like behavior! Check
@@ -166,10 +166,10 @@ namespace StereoKit
 		/// <param name="active">Does this button look like it's pressed?</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool Radio (string text, bool active) 
-			=> NativeAPI.ui_toggle(text, ref active) && active;
+			=> NativeAPI.ui_toggle_16(text, ref active) && active;
 
 		public static bool Radio(string text, bool active, Vec2 size)
-			=> NativeAPI.ui_toggle_sz(text, ref active, size) && active;
+			=> NativeAPI.ui_toggle_sz_16(text, ref active, size) && active;
 
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
 		/// vertically and horizontally. Text is re-used as the id. Will return true only on 
@@ -179,10 +179,10 @@ namespace StereoKit
 		/// <param name="diameter">The diameter of the button's visual.</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
-			=> NativeAPI.ui_button_round(id, image._inst, diameter);
+			=> NativeAPI.ui_button_round_16(id, image._inst, diameter);
 
 		public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
-			=> NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
+			=> NativeAPI.ui_button_round_at_16(text, sprite._inst, windowRelativeCorner, diameter);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -195,13 +195,13 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes!
 		/// </returns>
 		public static bool Toggle (string text, ref bool value)
-			=> NativeAPI.ui_toggle(text, ref value);
+			=> NativeAPI.ui_toggle_16(text, ref value);
 
 		public static bool Toggle(string text, ref bool value, Vec2 size)
-			=> NativeAPI.ui_toggle_sz(text, ref value, size);
+			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
 
 		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
+			=> NativeAPI.ui_toggle_at_16(text, ref pressed, windowRelativeCorner, size);
 
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
@@ -220,7 +220,7 @@ namespace StereoKit
 				new StringBuilder(value, value.Length + 4) :
 				new StringBuilder(4);
 
-			if (NativeAPI.ui_input(id, builder, builder.Capacity, size)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size)) { 
 				value = builder.ToString();
 				return true;
 			}
@@ -259,10 +259,10 @@ namespace StereoKit
 		/// will be a tab that the user must pinch and drag around.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
-			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width, confirmMethod);
+			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
 
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
+			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
@@ -280,7 +280,7 @@ namespace StereoKit
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn.</summary>
@@ -305,7 +305,7 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 		{
-			bool result = NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -328,7 +328,7 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
+			=> NativeAPI.ui_window_begin_16(text, ref pose, size, windowType, moveType);
 
 		/// <summary>Begins a new window! This will push a pose onto the 
 		/// transform stack, and all UI elements will be relative to that new 
@@ -346,7 +346,7 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin(text, ref pose, Vec2.Zero, windowType, moveType);
+			=> NativeAPI.ui_window_begin_16(text, ref pose, Vec2.Zero, windowType, moveType);
 
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>
@@ -359,7 +359,7 @@ namespace StereoKit
 		/// <param name="rootId">The root id to use until the following PopId 
 		/// call.</param>
 		public static void PushId(string rootId) 
-			=> NativeAPI.ui_push_id(rootId);
+			=> NativeAPI.ui_push_id_16(rootId);
 
 		/// <summary>Adds a root id to the stack for the following UI 
 		/// elements! This id is combined when hashing any following ids, to
@@ -387,9 +387,9 @@ namespace StereoKit
 			=> NativeAPI.ui_pop_text_style();
 
 		public static ulong StackHash(string id)
-			=> NativeAPI.ui_stack_hash(id);
+			=> NativeAPI.ui_stack_hash_16(id);
 
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash(id), out fingerOffset, out buttonState, out focusState);
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState);
 	}
 }
