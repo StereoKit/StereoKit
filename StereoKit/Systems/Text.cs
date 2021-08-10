@@ -20,6 +20,9 @@ namespace StereoKit
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
 		public float CharHeight => NativeAPI.text_style_get_char_height(this);
+
+
+		public static TextStyle Default { get => new TextStyle { id = -1 }; }
 	}
 
 	/// <summary>A collection of functions for rendering and working with text.</summary>

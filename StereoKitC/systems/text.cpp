@@ -211,15 +211,15 @@ vec2 text_size_16(const char16_t *text_utf16, text_style_t style) { return text_
 
 ///////////////////////////////////////////
 
-template<typename T, char_decode_b decode_b>
-float text_step_line_length(const void *start, int32_t *out_char_count, const void **out_next_start, const text_stepper_t &step) {
+template<typename C, char_decode_b decode_b>
+float text_step_line_length(const C *start, int32_t *out_char_count, const C **out_next_start, const text_stepper_t &step) {
 	// If we're not wrapping, this is really simple
 	if (!step.wrap) {
-		const void *curr  = start;
-		char32_t    ch    = 0;
-		float       width = 0;
-		int32_t     count = 0;
-		while (decode_b(curr, &curr, &ch) && ch != '\n') {
+		const C *curr  = start;
+		char32_t ch    = 0;
+		float    width = 0;
+		int32_t  count = 0;
+		while (decode_b(curr, (const void**)&curr, &ch) && ch != '\n') {
 			width += font_get_glyph(step.style->font, ch)->xadvance;
 			count++;
 		}
@@ -229,16 +229,16 @@ float text_step_line_length(const void *start, int32_t *out_char_count, const vo
 	}
 
 	// Otherwise, we gotta do it the tricky way
-	float       curr_width = 0;
-	float       last_width = 0;
-	const void *last_at    = start;
-	const void *ch         = start;
-	bool        was_break  = false;
+	float    curr_width = 0;
+	float    last_width = 0;
+	const C *last_at    = start;
+	const C *ch         = start;
+	bool     was_break  = false;
 
 	while (true) {
-		const void *next_char;
-		char32_t    curr;
-		decode_b(ch, &next_char, &curr);
+		const C *next_char;
+		char32_t curr;
+		decode_b(ch, (const void**)&next_char, &curr);
 		bool is_break = text_is_breakable(curr);
 
 		// We prefer to line break at spaces and other breakable characters, 
@@ -273,34 +273,34 @@ float text_step_line_length(const void *start, int32_t *out_char_count, const vo
 		ch         = next_char;
 	}
 
-	*out_char_count = (int32_t)((T*)last_at - (T*)start);
+	*out_char_count = (int32_t)(last_at - start);
 	*out_next_start = last_at;
 	return last_width;
 }
 
 ///////////////////////////////////////////
 
-template<typename T, char_decode_b decode_b>
-float text_step_height(const void *text, int32_t *out_length, const text_stepper_t &step) {
-	int32_t     count  = 1;
-	const void *curr   = text;
-	float       height = 0;
+template<typename C, char_decode_b decode_b>
+float text_step_height(const C *text, int32_t *out_length, const text_stepper_t &step) {
+	int32_t  count  = 1;
+	const C *curr   = text;
+	float    height = 0;
 	while (count > 0) {
-		text_step_line_length<T, decode_b>(curr, &count, &curr, step);
+		text_step_line_length<C, decode_b>(curr, &count, &curr, step);
 		if (count > 0)
 			height += 1;
 	}
 
-	*out_length = (int32_t)((T*)curr - (T*)text);
+	*out_length = (int32_t)(curr - text);
 	return (height * step.style->font->character_height + (height-1)*step.style->line_spacing) * step.style->size;
 }
 
 ///
 
-template<typename T, char_decode_b decode_b>
-void text_step_next_line(const void *start, text_stepper_t &step) {
-	const void *next;
-	float line_size  = text_step_line_length<T, decode_b>(start, &step.line_remaining, &next, step);
+template<typename C, char_decode_b decode_b>
+void text_step_next_line(const C *start, text_stepper_t &step) {
+	const C *next;
+	float line_size  = text_step_line_length<C, decode_b>(start, &step.line_remaining, &next, step);
 	float align_x    = 0;
 	if (step.align & text_align_x_center) align_x = ((step.bounds.x - line_size) / 2.f);
 	if (step.align & text_align_x_right)  align_x =  (step.bounds.x - line_size);
@@ -308,11 +308,11 @@ void text_step_next_line(const void *start, text_stepper_t &step) {
 	step.pos.y -= step.style->size * step.style->font->character_height;
 }
 
-template<typename T, char_decode_b decode_b>
-void text_step_position(char32_t ch, const font_char_t *char_info, const void *next, text_stepper_t &step) {
+template<typename C, char_decode_b decode_b>
+void text_step_position(char32_t ch, const font_char_t *char_info, const C *next, text_stepper_t &step) {
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
-		text_step_next_line<T, decode_b>(next, step);
+		text_step_next_line<C, decode_b>(next, step);
 		step.pos.y -= step.style->size * step.style->line_spacing;
 		return;
 	}
@@ -397,7 +397,7 @@ void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t 
 ///////////////////////////////////////////
 
 template<typename T, char_decode_b decode_b>
-float text_add_in_g(const void* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+float text_add_in_g(const T* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
 	if (text == nullptr) return 0;
 
 	XMMATRIX tr;
@@ -471,7 +471,7 @@ float text_add_in_g(const void* text, const matrix& transform, vec2 size, text_f
 	bool     clip       = fit & text_fit_clip;
 	char32_t c;
 	text_step_next_line<T, decode_b>(text, step);
-	while(decode_b(text, &text, &c)) {
+	while(decode_b(text, (const void**)&text, &c)) {
 		const font_char_t *char_info = font_get_glyph(step.style->font, c);
 		if (!text_is_space(c)) {
 			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);

@@ -623,8 +623,8 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 vec2 ui_area_remaining() {
 	layer_t &layer = skui_layers.last();
 	return vec2{
-		fmaxf(0, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
-		fmaxf(0, fmaxf(layer.size.y, layer.window != nullptr ? layer.window->size.y : 0) + (layer.offset.y + layer.offset_initial.y) - skui_settings.padding)
+		fmaxf(-layer.max_x, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
+		fmaxf(0,            fmaxf(layer.size.y, layer.window != nullptr ? layer.window->size.y : 0) + (layer.offset.y + layer.offset_initial.y) - skui_settings.padding)
 	};
 }
 
