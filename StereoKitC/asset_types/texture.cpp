@@ -195,7 +195,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "tex_arr/%" PRIu64, hash);
+	snprintf(file_id, sizeof(file_id), "sk_arr::%" PRIu64, hash);
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
@@ -272,7 +272,10 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 ///////////////////////////////////////////
 
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
-	tex_t result = tex_find(equirectangular_file);
+	char equirect_id[64];
+	snprintf(equirect_id, sizeof(equirect_id), "sk_equi::%" PRIu64, hash_fnv64_string(equirectangular_file));
+
+	tex_t result = tex_find(equirect_id);
 	if (result != nullptr) {
 		if (result->light_info && out_sh_lighting_info)
 			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
@@ -310,7 +313,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
 	tex_set_color_arr(result, width, height, (void**)&data, 6, out_sh_lighting_info);
-	tex_set_id       (result, equirectangular_file);
+	tex_set_id       (result, equirect_id);
 
 	if (out_sh_lighting_info) {
 		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
