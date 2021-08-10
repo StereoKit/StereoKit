@@ -99,7 +99,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		settings.nFilterIndex = 1;
 
 		if (mode == picker_mode_open) {
-			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Open";
 			if (GetOpenFileName(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
@@ -107,7 +107,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 				if (on_confirm) on_confirm(callback_data, false, nullptr);
 			}
 		} else if (mode == picker_mode_save) {
-			settings.Flags = OFN_PATHMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Save As";
 			if (GetSaveFileNameA(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
