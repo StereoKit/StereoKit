@@ -490,6 +490,8 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 ///////////////////////////////////////////
 
 void text_update() {
+	font_update_fonts();
+
 	for (size_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
