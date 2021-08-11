@@ -187,7 +187,7 @@ template<char_decode_b decode>
 inline vec2 text_size_g(const void *text, text_style_t style) {
 	if (text == nullptr) return {};
 
-	font_t      font  = text_styles[style == -1 ? 0 : style].font;
+	font_t      font  = text_styles[style].font;
 	char32_t    curr  = 0;
 	float       x     = 0;
 	int         y     = 1;
@@ -382,13 +382,13 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 ///////////////////////////////////////////
 
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	text_add_in(text, transform, text_size(text, style == -1 ? 0 : style), text_fit_exact, style, position, align, off_x, off_y, off_z);
+	text_add_in(text, transform, text_size(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z);
 }
 
 ///////////////////////////////////////////
 
 void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	text_add_in_16(text, transform, text_size_16(text, style == -1 ? 0 : style), text_fit_exact, style, position, align, off_x, off_y, off_z);
+	text_add_in_16(text, transform, text_size_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z);
 }
 
 ///////////////////////////////////////////
@@ -410,7 +410,7 @@ float text_add_in_g(const T* text, const matrix& transform, vec2 size, text_fit_
 	step.line_remaining = 0;
 	step.align  = align;
 	step.wrap   = fit & text_fit_wrap;
-	step.style  = &text_styles[style == -1 ? 0 : style];
+	step.style  = &text_styles[style];
 	step.bounds = size;
 	step.start  = { off_x, off_y };
 
@@ -427,7 +427,7 @@ float text_add_in_g(const T* text, const matrix& transform, vec2 size, text_fit_
 	
 	// Ensure scale is right for our fit
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
-		vec2 txt_size = text_size_g<decode_b>(text, style == -1 ? 0 : style);
+		vec2 txt_size = text_size_g<decode_b>(text, style);
 		vec2 scale_xy = {
 			size.x / txt_size.x,
 			size.y / txt_size.y };

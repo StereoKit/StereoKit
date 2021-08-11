@@ -9,7 +9,7 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct TextStyle
 	{
-		internal int id;
+		internal uint id;
 
 		/// <summary>This provides a reference to the Material used by this
 		/// style, so you can override certain features! Note that if you're
@@ -22,7 +22,7 @@ namespace StereoKit
 		public float CharHeight => NativeAPI.text_style_get_char_height(this);
 
 
-		public static TextStyle Default { get => new TextStyle { id = -1 }; }
+		public static TextStyle Default { get => new TextStyle { id = 0 }; }
 	}
 
 	/// <summary>A collection of functions for rendering and working with text.</summary>
@@ -117,13 +117,13 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_at_16(text, transform, -1, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_at_16(text, transform, 0, position, align, offX, offY, offZ);
 
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
 
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, -1, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_in_16(text, transform, size, fit, 0, position, align, offX, offY, offZ);
 
 		/// <summary>Sometimes you just need to know how much room some text takes up! This finds
 		/// the size of the text in meters, when using the indicated style!</summary>
@@ -138,6 +138,6 @@ namespace StereoKit
 		/// <param name="text">Text you want to find the size of.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text)
-			=> NativeAPI.text_size_16(text, -1);
+			=> NativeAPI.text_size_16(text, 0);
 	}
 }
