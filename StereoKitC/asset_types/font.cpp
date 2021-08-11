@@ -70,6 +70,7 @@ font_t font_create(const char *file) {
 	int32_t advance, lsb; 
 	stbtt_GetGlyphHMetrics(&result->font_info, ' ', &advance, &lsb);
 	result->space_width = advance * result->font_scale;
+	result->characters['\t'].xadvance = result->space_width * 2;
 
 	font_list.add(result);
 	return result;

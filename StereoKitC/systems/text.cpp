@@ -196,11 +196,11 @@ inline vec2 text_size_g(const void *text, text_style_t style) {
 		const font_char_t *ch = font_get_glyph(font, curr);
 
 		// Do spacing for whitespace characters
-		switch (curr) {
-		case '\t': x += font->space_width * 4; break;
-		case '\n': if (x > max_x) max_x = x; x = 0; y += 1; break;
-		default  : x += ch->xadvance; break;
-		}
+		if (curr == '\n') {
+			if (x > max_x) max_x = x; 
+			x  = 0;
+			y += 1;
+		} else x += ch->xadvance;
 	}
 	if (x > max_x) max_x = x;
 	return vec2{ max_x, y * font->character_height + (y-1)*text_styles[style].line_spacing} * text_styles[style].size;
@@ -317,11 +317,8 @@ void text_step_position(char32_t ch, const font_char_t *char_info, const C *next
 		return;
 	}
 
-	switch (ch) {
-	case '\t': step.pos.x -= step.style->font->space_width * 4 * step.style->size; break;
-	case '\n': {
-	} break;
-	default : step.pos.x -= char_info->xadvance*step.style->size; break;
+	if (ch != '\n'){
+		step.pos.x -= char_info->xadvance*step.style->size;
 	}
 }
 
