@@ -138,13 +138,6 @@ void ui_cube   (vec3 start, vec3 size, material_t material, color128 color);
 void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align);
 void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align);
 
-typedef float (*text_add_in_t )(const void *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z);
-typedef vec2  (*text_size_t   )(const void *text, text_style_t style);
-typedef bool  (*utf_is_start_t)(const void *text);
-
-//typedef float (*ui_text_t    )(const void *text);
-typedef float (*ui_text_in_t )(vec3 start, vec2 size, const void *text, text_align_ position, text_align_ align);
-
 ///////////////////////////////////////////
 
 void quadrantify(vert_t *verts, int32_t count) {
@@ -944,12 +937,12 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 
 ///////////////////////////////////////////
 
-template<typename C, text_add_in_t text_add_in_g>
+template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
 inline void ui_text_in_g(vec3 start, vec2 size, const C *text, text_align_ position, text_align_ align) {
-	text_add_in_g(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
+	text_add_in_t(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
 }
-void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align) { ui_text_in_g<char,     (text_add_in_t)text_add_in   >(start, size, text, position, align); }
-void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align) { ui_text_in_g<char16_t, (text_add_in_t)text_add_in_16>(start, size, text, position, align); }
+void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align) { ui_text_in_g<char,     text_add_in >(start, size, text, position, align); }
+void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align) { ui_text_in_g<char16_t, text_add_in_16>(start, size, text, position, align); }
 
 ///////////////////////////////////////////
 ///////////   UI Components   /////////////
@@ -985,10 +978,10 @@ void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(t
 
 ///////////////////////////////////////////
 
-template<typename C, text_size_t text_size_g>
+template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_label_g(const C *text, bool32_t use_padding) {
 	vec3  offset   = skui_layers.last().offset;
-	vec2  txt_size = text_size_g(text, skui_font_stack.last());
+	vec2  txt_size = text_size_t(text, skui_font_stack.last());
 	vec2  size     = txt_size;
 	float pad      = use_padding ? skui_settings.gutter : 0;
 
@@ -997,24 +990,24 @@ void ui_label_g(const C *text, bool32_t use_padding) {
 	ui_nextline();
 	ui_text_in(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_top_left, text_align_center_left);
 }
-void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char    , (text_size_t)text_size   >(text, use_padding); }
-void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t, (text_size_t)text_size_16>(text, use_padding); }
+void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char,     text_size   >(text, use_padding); }
+void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t, text_size_16>(text, use_padding); }
 
 ///////////////////////////////////////////
 
-template<typename C, text_add_in_t text_add_in_g>
+template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
 void ui_text_g(const C *text) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_area_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 2 };
-	size.y = text_add_in_g(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
+	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
 
 	ui_reserve_box(size);
 	ui_nextline();
 }
-void ui_text   (const char     *text) { ui_text_g<char,     (text_add_in_t)text_add_in   >(text); }
-void ui_text_16(const char16_t *text) { ui_text_g<char16_t, (text_add_in_t)text_add_in_16>(text); }
+void ui_text   (const char     *text) { ui_text_g<char,     text_add_in   >(text); }
+void ui_text_16(const char16_t *text) { ui_text_g<char16_t, text_add_in_16>(text); }
 
 ///////////////////////////////////////////
 
@@ -1075,18 +1068,18 @@ bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_sz_
 
 ///////////////////////////////////////////
 
-template<typename C, text_size_t text_size_g>
+template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_button_g(const C *text) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size_g(text, skui_font_stack.last()), offset, size);
+	ui_layout_box (text_size_t(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
 	return ui_button_at(text, offset, size);
 }
-bool32_t ui_button   (const char     *text) { return ui_button_g<char,     (text_size_t)text_size   >(text); }
-bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, (text_size_t)text_size_16>(text); }
+bool32_t ui_button   (const char     *text) { return ui_button_g<char,     text_size   >(text); }
+bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_size_16>(text); }
 
 ///////////////////////////////////////////
 
@@ -1121,18 +1114,18 @@ bool32_t ui_toggle_at_16(const char16_t *text, bool32_t &pressed, vec3 window_re
 
 ///////////////////////////////////////////
 
-template<typename C, text_size_t text_size_g>
+template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_toggle_g(const C *text, bool32_t &pressed) {
 	vec3 offset;
 	vec2 size;
-	ui_layout_box (text_size_g(text, skui_font_stack.last()), offset, size);
+	ui_layout_box (text_size_t(text, skui_font_stack.last()), offset, size);
 	ui_reserve_box(size);
 	ui_nextline   ();
 
 	return ui_toggle_at(text, pressed, offset, size);
 }
-bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_g<char,     (text_size_t)text_size   >(text, pressed); }
-bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_g<char16_t, (text_size_t)text_size_16>(text, pressed); }
+bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_g<char,     text_size   >(text, pressed); }
+bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_g<char16_t, text_size_16>(text, pressed); }
 
 ///////////////////////////////////////////
 
@@ -1223,7 +1216,7 @@ inline bool    utf_is_start     (char16_t ch) { return utf16_is_start(ch); }
 inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { return utf8_encode_append (buffer, size, ch); }
 inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }
 
-template<typename C, text_size_t text_size_g>
+template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	if (size.x == 0) size.x = ui_area_remaining().x;
 	if (size.y == 0) size.y = ui_line_height();
@@ -1306,7 +1299,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
-		float carat_at = skui_settings.padding + fminf(text_size_g(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
+		float carat_at = skui_settings.padding + fminf(text_size_t(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
 		float line     = ui_line_height() * 0.5f;
 		ui_cube(offset - vec3{ carat_at,size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
 	}
@@ -1316,10 +1309,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 }
 
 bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
-	return ui_input_g<char, (text_size_t)text_size>(id, buffer, buffer_size, size);
+	return ui_input_g<char, text_size>(id, buffer, buffer_size, size);
 }
 bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size) {
-	return ui_input_g<char16_t, (text_size_t)text_size_16>(id, buffer, buffer_size, size);
+	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size);
 }
 
 ///////////////////////////////////////////
@@ -1650,7 +1643,7 @@ void ui_handle_end() {
 
 ///////////////////////////////////////////
 
-template<typename C, text_size_t text_size_g>
+template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
 
@@ -1686,7 +1679,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 
 	// draw label
 	if (window.type & ui_win_head) {
-		vec2 size = text_size_g(text, skui_font_stack.last());
+		vec2 size = text_size_t(text, skui_font_stack.last());
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
 		ui_text_in(at, size, text, text_align_top_left, text_align_center_left);
 
@@ -1696,10 +1689,10 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	window.pose = pose;
 }
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char, (text_size_t)text_size>(text, pose, window_size, window_type, move_type);
+	ui_window_begin_g<char, text_size>(text, pose, window_size, window_type, move_type);
 }
 void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char16_t, (text_size_t)text_size_16>(text, pose, window_size, window_type, move_type);
+	ui_window_begin_g<char16_t, text_size_16>(text, pose, window_size, window_type, move_type);
 }
 
 ///////////////////////////////////////////

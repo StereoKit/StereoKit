@@ -239,7 +239,11 @@ void font_upsize_texture(font_t font) {
 		font->glyph_map.items[i] = new_ch;
 
 		// Copy memory
-		recti_t src = {ch.u0 * font->atlas.w, ch.v0 * font->atlas.h, (ch.u1-ch.u0) * font->atlas.w, (ch.v1-ch.v0) * font->atlas.h };
+		recti_t src = {
+			(int32_t)(ch.u0 * font->atlas.w),
+			(int32_t)(ch.v0 * font->atlas.h),
+			(int32_t)((ch.u1-ch.u0) * font->atlas.w),
+			(int32_t)((ch.v1-ch.v0) * font->atlas.h) };
 		for (size_t y = 0; y < src.h; y++) { 
 			memcpy(&new_data[src.x + (src.y+y)*new_w], &font->atlas_data[src.x + (src.y+y)*font->atlas.w], src.w * sizeof(uint8_t));
 		}
