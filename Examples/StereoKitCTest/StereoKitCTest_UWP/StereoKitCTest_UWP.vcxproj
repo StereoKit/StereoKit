@@ -85,6 +85,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
     <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_ARM);$(WindowsSDK_LibraryPath_ARM);$(NETFXKitsDir)Lib\um\ARM</LibraryPath>
+    <IncludePath>$(SolutionDir)StereoKitC;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
@@ -102,6 +103,7 @@
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
     <LibraryPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitC_UWP\;$(VC_LibraryPath_ARM);$(WindowsSDK_LibraryPath_ARM);$(NETFXKitsDir)Lib\um\ARM</LibraryPath>
+    <IncludePath>$(SolutionDir)StereoKitC;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

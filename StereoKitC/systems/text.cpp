@@ -236,7 +236,7 @@ float text_step_line_length(const void *start, int32_t *out_char_count, const vo
 	bool        was_break  = false;
 
 	while (true) {
-		const void *next_char;
+		const void *next_char = start;
 		char32_t    curr;
 		decode_b(ch, &next_char, &curr);
 		bool is_break = text_is_breakable(curr);

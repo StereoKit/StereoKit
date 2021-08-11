@@ -164,9 +164,9 @@ struct array_t {
 	array_t<U>  each_new   (U    (*e)(const T &)) const { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
 
-	static array_t<T> make     (int32_t capacity)              { array_t<T> result = {}; result.resize(capacity); return result; }
-	static array_t<T> make_fill(int32_t capacity, T copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(size_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
-	static array_t<T> make_from(T *use_memory, size_t count)   { return {use_memory, count, count}; }
+	static array_t<T> make     (int32_t capacity)                     { array_t<T> result = {}; result.resize(capacity); return result; }
+	static array_t<T> make_fill(int32_t capacity, const T &copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(size_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
+	static array_t<T> make_from(T *use_memory, size_t count)          { return {use_memory, count, count}; }
 
 	//////////////////////////////////////
 	// Linear search methods
@@ -192,7 +192,7 @@ struct array_t {
 	template <typename _T, typename D>
 	int64_t binary_search(const D _T::*key, const D &item) const {
 		array_view_t<D> view = array_view_t<D>{data, count, sizeof(_T), (size_t)&((_T*)nullptr->*key)};
-		int64_t l = 0, r = view.count - 1;
+		int64_t l = 0, r = (int64_t)view.count - 1;
 		while (l <= r) {
 			int64_t mid = (l+r) / 2;
 			if      (view[mid] < item) l = mid + 1;
@@ -279,7 +279,7 @@ struct hashmap_t {
 
 template <typename T>
 int64_t array_t<T>::binary_search(const T &item) const {
-	int64_t l = 0, r = count - 1;
+	int64_t l = 0, r = (int64_t)count - 1;
 	while (l <= r) {
 		int64_t mid = (l+r) / 2;
 		if      (get(mid) < item) l = mid + 1;
