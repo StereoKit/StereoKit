@@ -75,7 +75,7 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 
 ///////////////////////////////////////////
 
-inline vec3 matrix_mul_point(DirectX::XMMATRIX transform, vec3 point){
+inline vec3 matrix_mul_point(const DirectX::XMMATRIX &transform, vec3 point){
 	return math_fast_to_vec3( XMVector3Transform(math_vec3_to_fast(point), transform) );
 }
 

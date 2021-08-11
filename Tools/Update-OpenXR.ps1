@@ -47,6 +47,8 @@ function Build-Config {
     Write-Host "Built $config complete!" -ForegroundColor green
 
     #copy files into the project
+    New-Item -ItemType Directory -Path "..\..\..\..\StereoKitC\lib\bin\$config\Release" -Force
+    New-Item -ItemType Directory -Path "..\..\..\..\StereoKitC\lib\bin\$config\Debug" -Force
     Copy-Item -Path "src\loader\Release\openxr_loader.lib" -Destination "..\..\..\..\StereoKitC\lib\bin\$config\Release\openxr_loader.lib" -Force -Confirm:$false
     Copy-Item -Path "src\loader\Debug\openxr_loaderd.lib" -Destination "..\..\..\..\StereoKitC\lib\bin\$config\Debug\openxr_loader.lib" -Force -Confirm:$false
 
@@ -120,3 +122,9 @@ Remove-Item -Path "OpenXR-SDK" -Recurse -Force -Confirm:$false
 Set-Content -Path 'oxr_current.txt' -Value $openxrDesired
 
 Pop-Location
+
+# We'll tack on a React Physics build here as well. This may mean
+# more builds of react physics than strictly necessary, but we do
+# tap into the OXR build-if-necessary logic.
+Write-Host 'Building ReactPhysics3D too!'
+C:update_physics_win.bat
