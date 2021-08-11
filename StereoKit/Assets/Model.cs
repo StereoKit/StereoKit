@@ -278,7 +278,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst  = NativeAPI.model_create_mem(filename, data, data.Length, final);
+			IntPtr inst  = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 

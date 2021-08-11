@@ -114,7 +114,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_find                (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create              (TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, int data_size, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, UIntPtr data_size, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color32      ([In] Color32[] data, int width, int height, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color128     ([In] Color[]   data, int width, int height, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file         (string file, int srgb_data);
@@ -132,7 +132,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, ulong out_data_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, UIntPtr out_data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution, float light_spot_size_pct, float light_spot_intensity);
@@ -157,7 +157,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_find        (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file (string filename);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, ulong data_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, UIntPtr data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_get_name    (IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_release     (IntPtr shader);
@@ -234,7 +234,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_copy              (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh       (IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, int data_size, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, UIntPtr data_size, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file       (string filename, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id            (IntPtr model, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release           (IntPtr model);
@@ -346,8 +346,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker        (PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallback on_callback, [In] FileFilter[] filters, int filter_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker_close  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_file_picker_visible();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out ulong out_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, ulong size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out UIntPtr out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, UIntPtr size);
 
 		///////////////////////////////////////////
 
