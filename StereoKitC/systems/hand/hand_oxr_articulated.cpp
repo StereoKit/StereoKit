@@ -169,10 +169,10 @@ void hand_oxra_update_joints() {
 	// with the direction of both hands.
 	vec3 face_fwd = input_head()->orientation * vec3_forward;
 	face_fwd.y = 0;
-	face_fwd  = vec3_normalize(face_fwd) * 2;
-	face_fwd += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
-	face_fwd += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
-	face_fwd *= 0.25f;
+	face_fwd   = vec3_normalize(face_fwd) * 2;
+	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
+	face_fwd  += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
+	face_fwd  *= 0.25f;
 	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width;
 
 	bool hands_active = false;
@@ -227,8 +227,8 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
 		// Create pointers for the hands
-		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
-		vec3 ray_joint = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
+		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 		pose_t point_pose = {
 			ray_joint,
 			quat_lookat(shoulder, ray_joint) };

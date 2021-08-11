@@ -203,6 +203,11 @@ namespace StereoKit
 		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_toggle_at_16(text, ref pressed, windowRelativeCorner, size);
 
+		public static void Model(Model model)
+			=> NativeAPI.ui_model(model._inst, Vec2.Zero, 0);
+		public static void Model(Model model, Vec2 uiSize, float modelScale = 0)
+			=> NativeAPI.ui_model(model._inst, uiSize, modelScale);
+
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI

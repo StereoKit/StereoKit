@@ -623,8 +623,8 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 vec2 ui_area_remaining() {
 	layer_t &layer = skui_layers.last();
 	return vec2{
-		fmaxf(0, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
-		fmaxf(0, fmaxf(layer.size.y, layer.window != nullptr ? layer.window->size.y : 0) + (layer.offset.y + layer.offset_initial.y) - skui_settings.padding)
+		fmaxf(-layer.max_x, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
+		fmaxf(0,            fmaxf(layer.size.y, layer.window != nullptr ? layer.window->size.y : 0) + (layer.offset.y + layer.offset_initial.y) - skui_settings.padding)
 	};
 }
 
@@ -1197,6 +1197,16 @@ bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter) 
 ///////////////////////////////////////////
 
 void ui_model(model_t model, vec2 ui_size, float model_scale) {
+	if (ui_size.x == 0) ui_size.x = ui_area_remaining().x - (skui_settings.padding*2);
+	if (ui_size.y == 0) {
+		bounds_t bounds = model_get_bounds(model);
+		ui_size.y = ui_size.x * (bounds.dimensions.x / bounds.dimensions.y);
+	}
+	if (model_scale == 0) {
+		bounds_t bounds = model_get_bounds(model);
+		model_scale = fminf(ui_size.x / bounds.dimensions.x, ui_size.y / bounds.dimensions.y);
+	}
+
 	vec3 offset = skui_layers.last().offset;
 	vec2 size   = ui_size + vec2{ skui_settings.padding, skui_settings.padding }*2;
 
