@@ -65,6 +65,7 @@ New-Item -Path . -Name "x64" -ItemType "directory" | Out-Null
 New-Item -Path . -Name "x64_UWP" -ItemType "directory" | Out-Null
 New-Item -Path . -Name "ARM64" -ItemType "directory" | Out-Null
 New-Item -Path . -Name "ARM64_UWP" -ItemType "directory" | Out-Null
+New-Item -Path . -Name "ARM_UWP" -ItemType "directory" | Out-Null
 
 # cmake each project configuration
 Push-Location -Path "x64"
@@ -91,11 +92,18 @@ Write-Host 'Making ARM64_UWP' -ForegroundColor green
 Write-Host 'Made ARM64_UWP' -ForegroundColor green
 Pop-Location
 
+Push-Location -Path "ARM_UWP"
+Write-Host 'Making ARM_UWP' -ForegroundColor green
+& cmake -G "Visual Studio 16 2019" -A ARM "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
+Write-Host 'Made ARM_UWP' -ForegroundColor green
+Pop-Location
+
 # Now we'll build each project
 Build-Config -config "x64" -target "x64"
 Build-Config -config "x64_UWP" -target "x64"
 Build-Config -config "ARM64" -target "ARM64"
 Build-Config -config "ARM64_UWP" -target "ARM64"
+Build-Config -config "ARM_UWP" -target "ARM"
 
 Pop-Location
 

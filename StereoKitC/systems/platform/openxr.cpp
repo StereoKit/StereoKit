@@ -398,7 +398,7 @@ bool openxr_init() {
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_STAGE;
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_stage_space);
 	if (XR_FAILED(result)) {
-		xr_stage_space = nullptr;
+		xr_stage_space = {};
 	}
 
 	if (!openxr_views_create() || !oxri_init()) {

@@ -92,6 +92,7 @@ function Build-Sizes {
     $size_x64_uwp   = (Get-Item "bin/x64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
     $size_arm64     = (Get-Item "bin/ARM64_Release/StereoKitC_Android/libStereoKitC.so").length
     $size_arm64_uwp = (Get-Item "bin/ARM64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
+    $size_arm_uwp   = (Get-Item "bin/ARM_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
 
     $text = (@"
 ## Build Sizes:
@@ -103,11 +104,13 @@ function Build-Sizes {
 | UWP      | x64   | {4,8:N0} | {5,11:N0} |
 | UWP      | ARM64 | {6,8:N0} | {7,11:N0} |
 | Android  | ARM64 | {8,8:N0} | {9,11:N0} |
+| UWP      | ARM   | {10,8:N0} | {11,11:N0} |
 "@ -f ([math]::Round($size_x64/1kb), $size_x64,
        [math]::Round($size_x64_linux/1kb), $size_x64_linux,
        [math]::Round($size_x64_uwp/1kb), $size_x64_uwp,
        [math]::Round($size_arm64_uwp/1kb), $size_arm64_uwp,
-       [math]::Round($size_arm64/1kb), $size_arm64))
+       [math]::Round($size_arm64/1kb), $size_arm64,
+       [math]::Round($size_arm_uwp/1kb), $size_arm_uwp))
 
     return $text
 }
@@ -197,7 +200,7 @@ if ($LASTEXITCODE -ne 0) {
 
 #### Build Windows ########################
 
-# Build ARM first
+# Build ARM64 first
 $result = Build -mode "Release|ARM64" -project "StereoKitC"
 if ($result -ne 0) {
     Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
@@ -224,6 +227,14 @@ if ($result -ne 0) {
     exit
 }
 Write-Host "Finished building: UWP X64" -ForegroundColor green
+
+# Build ARM (UWP only) next
+$result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "Finished building: UWP ARM" -ForegroundColor green
 
 #### Assemble NuGet Package ###############
 
