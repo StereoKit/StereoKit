@@ -17,6 +17,7 @@
 #include "../../log.h"
 #include "../../libraries/sk_gpu.h"
 #include "../../libraries/sokol_time.h"
+#include "../../libraries/unicode.h"
 
 #if defined(SKG_LINUX_EGL)
 
@@ -180,9 +181,12 @@ void linux_events() {
 				Status status;
 				KeySym keysym = NoSymbol;
 				int    count  = Xutf8LookupString(x_linux_input_context, &event.xkey, keys_return, sizeof(keys_return), &keysym, &status);
+				keys_return[count] = 0;
 
 				if ((status == XLookupChars || status == XLookupBoth) && keysym != 0xFF08) {
-					input_text_inject_char((uint32_t)keysym);
+					const char *next;
+					char32_t    ch = utf8_decode_fast(keys_return, &next);
+					input_text_inject_char(ch);
 				}
 
 				// Translate keypress to a hardware key, and submit that
@@ -198,7 +202,7 @@ void linux_events() {
 					// Some non-text characters get fed into the text system as well
 					if (is_pressed) {
 						if (key == key_backspace || key == key_return || key == key_esc) {
-							input_text_inject_char((uint32_t)key);
+							input_text_inject_char((char32_t)key);
 						}
 					}
 				}
