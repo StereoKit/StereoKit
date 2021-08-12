@@ -31,10 +31,10 @@ struct text_buffer_t {
 	font_t         font;
 	material_t     material;
 	mesh_t         mesh;
-	vert_t        *verts;
+	vert_t        *verts; // TODO: potentially change this to array_t
 	uint32_t       id;
-	int            vert_count;
-	int            vert_cap;
+	int32_t        vert_count;
+	int32_t        vert_cap;
 };
 
 struct text_stepper_t {
@@ -54,7 +54,7 @@ array_t<text_buffer_t> text_buffers = {};
 
 ///////////////////////////////////////////
 
-inline bool text_is_space(char c) {
+inline bool text_is_space(char32_t c) {
 	return c == ' ' || c=='\n' || c == '\r' || c== '\t';
 }
 
@@ -67,7 +67,7 @@ inline bool text_is_breakable(char32_t c) {
 //////////////////////////////////////////
 
 void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
-	if (buffer.vert_count + characters * 4 <= buffer.vert_cap)
+	if (buffer.vert_count + (int32_t)characters*4 <= buffer.vert_cap)
 		return;
 
 	buffer.vert_cap = buffer.vert_count + (int)characters * 4;

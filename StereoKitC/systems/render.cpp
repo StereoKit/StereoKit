@@ -580,7 +580,7 @@ void render_update() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (int32_t i = 0; i < render_lists.count; i++) {
+	for (size_t i = 0; i < render_lists.count; i++) {
 		render_list_release(i);
 	}
 	render_lists.free();
@@ -680,7 +680,7 @@ void render_set_material(material_t material) {
 	}
 
 	// Bind the material textures
-	for (size_t i = 0; i < material->args.texture_count; i++) {
+	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.texture_binds[i].slot != render_list_sky_bind.slot)
 			skg_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
 	}

@@ -163,8 +163,6 @@ inline size_t strlen(const char16_t *str) {
 ///////////////////////////////////////////
 
 inline char32_t utf16_decode_fast(const char16_t *utf16_str, const char16_t **out_next) {
-	const char16_t *start = utf16_str;
-
 	if (utf16_str[0] < 0xd800 || utf16_str[0] > 0xdfff) {
 		char32_t result = utf16_str[0];
 		*out_next = utf16_str + 1;
@@ -200,7 +198,7 @@ inline int32_t utf16_encode_chars(char32_t ch) {
 
 inline int32_t utf16_encode(char16_t *out, char32_t utf) {
 	if (utf < 0x00010000L) {
-		out[0] = utf;
+		out[0] = (char16_t)utf;
 		out[1] = '\0';
 		return 1;
 	} else if (utf < 0x00110000L) {

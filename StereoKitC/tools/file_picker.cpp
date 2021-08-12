@@ -50,7 +50,7 @@ std::vector<fp_file_cache_t> fp_file_cache = {};
 #endif
 
 char                         fp_filename[1024];
-char                         fp_buffer[1024];
+char                         fp_buffer[1023];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
@@ -234,7 +234,7 @@ void file_picker_open_folder(const char *folder) {
 		bool valid = fp_filter_count == 0;
 		// If the extention matches our filter, add it
 		if (file) {
-			for (size_t e = 0; e < fp_filter_count; e++) {
+			for (int32_t e = 0; e < fp_filter_count; e++) {
 				if (string_endswith(name, fp_filters[e].ext, false)) {
 					valid = true;
 					break;
@@ -287,9 +287,16 @@ void file_picker_update() {
 		// Show the active item
 		switch (fp_mode) {
 		case picker_mode_save: {
-			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
+			if (ui_button("Cancel")) {
+				fp_call        = true;
+				fp_call_status = false;
+			}
 			ui_sameline();
-			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; fp_call_status = true; }
+			if (ui_button("Save")) { 
+				snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer);
+				fp_call        = true;
+				fp_call_status = true;
+			}
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;

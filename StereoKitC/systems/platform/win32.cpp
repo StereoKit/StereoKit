@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "win32.h"
 
 #if defined(SK_OS_WINDOWS)

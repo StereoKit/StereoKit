@@ -138,14 +138,14 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 
 	// Read the data
 	*out_data = sk_malloc(*out_size+1);
-	fread (*out_data, 1, *out_size, fp);
+	size_t read = fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
 	((uint8_t *)*out_data)[*out_size] = 0;
 
-	return true;
+	return read != 0 || *out_size == 0;
 }
 
 ///////////////////////////////////////////
