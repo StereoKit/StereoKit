@@ -1,10 +1,12 @@
 ﻿#include "font.h"
 
-#define STB_RECT_PACK_IMPLEMENTATION
+#pragma warning(push)
+#pragma warning(disable : 26451 26819 6387 6011 6385 )
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../libraries/stb_rect_pack.h"
-#include "../rect_atlas.h"
 #include "../libraries/stb_truetype.h"
+#pragma warning(pop)
+
+#include "../rect_atlas.h"
 #include "../systems/platform/platform_utils.h"
 #include "../sk_memory.h"
 
@@ -18,7 +20,7 @@ array_t<font_t> font_list = {};
 
 font_char_t font_place_glyph   (font_t font, int32_t glyph);
 void        font_render_glyph  (font_t font, int32_t glyph, const font_char_t *ch);
-int64_t     font_add_character (font_t font, char32_t character);
+int32_t     font_add_character (font_t font, char32_t character);
 void        font_upsize_texture(font_t font);
 void        font_update_texture(font_t font);
 void        font_update_cache  (font_t font);
@@ -99,7 +101,9 @@ void font_release(font_t font) {
 ///////////////////////////////////////////
 
 void font_destroy(font_t font) {
-	font_list.remove(font_list.index_of(font));
+	int64_t idx = font_list.index_of(font);
+	if (idx >= 0)
+		font_list.remove((size_t)idx);
 
 	tex_release       ( font->font_tex);
 	rect_atlas_destroy(&font->atlas);
@@ -138,7 +142,7 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 
 	int32_t  sw         = (x1-x0) + pad;
 	int32_t  sh         = (y1-y0) + pad;
-	int64_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
+	int32_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
 	if (rect_idx == -1) {
 		font_upsize_texture(font);
 		rect_idx = rect_atlas_add(&font->atlas, sw, sh);
@@ -244,7 +248,7 @@ void font_upsize_texture(font_t font) {
 			(int32_t)(ch.v0 * font->atlas.h),
 			(int32_t)((ch.u1-ch.u0) * font->atlas.w),
 			(int32_t)((ch.v1-ch.v0) * font->atlas.h) };
-		for (size_t y = 0; y < src.h; y++) { 
+		for (int32_t y = 0; y < src.h; y++) { 
 			memcpy(&new_data[src.x + (src.y+y)*new_w], &font->atlas_data[src.x + (src.y+y)*font->atlas.w], src.w * sizeof(uint8_t));
 		}
 	}
@@ -277,21 +281,21 @@ void font_update_texture(font_t font) {
 
 ///////////////////////////////////////////
 
-int64_t font_add_character(font_t font, char32_t character) {
-	int64_t index   = -1;
+int32_t font_add_character(font_t font, char32_t character) {
+	int32_t index   = -1;
 	int32_t glyph   = stbtt_FindGlyphIndex(&font->font_info, character);
-	int64_t g_index = font->glyph_map.contains(glyph);
+	int32_t g_index = (int32_t)font->glyph_map.contains(glyph);
 	if (g_index >= 0) {
 		if (character < 128) {
 			font->characters[character] = font->glyph_map.items[g_index];
 			index = -1;
-		} else index = font->character_map.add(character, font->glyph_map.items[g_index]);
+		} else index = (int32_t)font->character_map.add(character, font->glyph_map.items[g_index]);
 	} else {
 		font_char_t ch = font_place_glyph(font, glyph);
 		if (character < 128) {
 			font->characters[character] = ch;
 			index = -1;
-		} else index = font->character_map.add(character, ch);
+		} else index = (int32_t)font->character_map.add(character, ch);
 		font->glyph_map   .add(glyph, ch);
 		font->update_queue.add(glyph);
 	}
@@ -304,7 +308,7 @@ const font_char_t *font_get_glyph(font_t font, char32_t character) {
 	if (character < 128)
 		return &font->characters[character];
 
-	int64_t index = font->character_map.contains(character);
+	int32_t index = (int32_t)font->character_map.contains(character);
 	if (index < 0) {
 		index = font_add_character(font, character);
 	}

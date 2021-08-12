@@ -7,10 +7,11 @@
 #include "../spherical_harmonics.h"
 #include "texture.h"
 
-#pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
+#pragma warning(push)
+#pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libraries/stb_image.h"
-#pragma warning( default : 26451 6011 6262 6308 6387 28182 )
+#pragma warning(pop)
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>

@@ -17,11 +17,14 @@
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
 
+#pragma warning(push)
+#pragma warning(disable : 26451 26819 6386 6385 )
 #if defined(_WIN32)
 #define __STDC_LIB_EXT1__
 #endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libraries/stb_image_write.h"
+#pragma warning(pop)
 
 #include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;

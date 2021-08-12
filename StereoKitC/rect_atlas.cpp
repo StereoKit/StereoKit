@@ -30,7 +30,7 @@ int32_t _rect_atlas_fit(recti_t src, const recti_t &r) {
 ///////////////////////////////////////////
 
 int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
-	int64_t idx = atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
+	int32_t idx = (int32_t)atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
 	if (idx == -1 || atlas->free_space[idx].w < width || atlas->free_space[idx].h < height)
 		return -1;
 
@@ -89,7 +89,7 @@ int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, recti_t rect, int32_t id
 	int32_t result = -1;
 
 	for (size_t i = 0; i < atlas->free_space.count; i++) {
-		if (i == idx) continue;
+		if ((int32_t)i == idx) continue;
 		recti_t cell = atlas->free_space[i];
 
 		if (cell.h == rect.h && cell.y == rect.y) {

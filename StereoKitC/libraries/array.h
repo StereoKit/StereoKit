@@ -248,8 +248,8 @@ struct hashmap_t {
 		int64_t  id   = hashes.binary_search(hash);
 		if (id < 0) {
 			id = ~id;
-			hashes.insert(id, hash );
-			items .insert(id, value);
+			hashes.insert((size_t)id, hash );
+			items .insert((size_t)id, value);
 		}
 		return id;
 	}
@@ -267,8 +267,8 @@ struct hashmap_t {
 		return id;
 	}
 
-	T       *get     (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[id]; }
-	const T &get_or  (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[id]; }
+	T       *get     (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[(size_t)id]; }
+	const T &get_or  (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[(size_t)id]; }
 	int64_t  contains(const K &key)                         const { return hashes.binary_search(_hash(key)); }
 	void     free    ()                                           { hashes.free(); items.free(); }
 };
@@ -282,9 +282,9 @@ int64_t array_t<T>::binary_search(const T &item) const {
 	int64_t l = 0, r = (int64_t)count - 1;
 	while (l <= r) {
 		int64_t mid = (l+r) / 2;
-		if      (get(mid) < item) l = mid + 1;
-		else if (get(mid) > item) r = mid - 1;
-		else                      return mid;
+		if      (get((size_t)mid) < item) l = mid + 1;
+		else if (get((size_t)mid) > item) r = mid - 1;
+		else                              return mid;
 	}
 	return r < 0 ? r : -(r+2);
 }
