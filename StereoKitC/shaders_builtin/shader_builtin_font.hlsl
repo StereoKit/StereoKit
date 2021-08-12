@@ -52,7 +52,7 @@ float4 ps(psIn input) : SV_TARGET {
 	offsetUV.xy = input.uv.xy - uvOffsets.y * dx + uvOffsets.x * dy;
 	col += diffuse.SampleBias(diffuse_s, offsetUV.xy, offsetUV.w);
 	col *= 0.25;
-	float text_value = col.r;
+	float text_value = col.r * input.color.a;
 	clip(text_value-0.004); // .004 is 1/255, or one 8bit pixel value!
 
 	return float4(input.color.rgb, text_value);
