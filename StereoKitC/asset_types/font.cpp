@@ -58,8 +58,8 @@ font_t font_create(const char *file) {
 	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
 	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
 
-	for (size_t i = 65; i < 128; i++) font_add_character(result, i);
-	for (size_t i = 32; i < 65;  i++) font_add_character(result, i);
+	for (char32_t i = 65; i < 128; i++) font_add_character(result, i);
+	for (char32_t i = 32; i < 65;  i++) font_add_character(result, i);
 	font_update_cache(result);
 
 	// Get information about character sizes for this font
@@ -162,17 +162,17 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 ///////////////////////////////////////////
 
 void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
-	int32_t x = ch->u0 * font->atlas.w + 0.5f;
-	int32_t y = ch->v0 * font->atlas.h + 0.5f;
-	int32_t w = (ch->u1 * font->atlas.w) - x - 0.5f;
-	int32_t h = (ch->v1 * font->atlas.h) - y - 0.5f;
+	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f);
+	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f);
+	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
+	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
 
 	// This is a really simple low quality render, very fast
 	//stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
 	//return;
 
 	// This is a multisampling high quality render, about 7x slower?
-	int32_t multisample = 3;
+	const int32_t multisample = 3;
 
 	// Following code based on stbtt_GetGlyphBitmap, but modified to always
 	// produce a bitmap that's a multiple of `multisample`
@@ -202,9 +202,9 @@ void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
 		for (int32_t ox = 0; ox < multisample; ox+=1) {
 			total += gbm.pixels[(px+ox) + oyoff];
 		}}
-		total = total / 9;
+		total = total / (multisample*multisample);
 
-		font->atlas_data[(x + px/multisample) + yoff] = total;
+		font->atlas_data[(x + px/multisample) + yoff] = (uint8_t)total;
 	}}
 	free(gbm.pixels);
 }

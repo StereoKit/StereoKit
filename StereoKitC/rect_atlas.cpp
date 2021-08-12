@@ -22,15 +22,15 @@ void rect_atlas_destroy(rect_atlas_t *atlas) {
 
 int32_t _rect_atlas_fit(recti_t src, const recti_t &r) {
 	if (r.w < src.w || r.h < src.h) return 0x7FFFFFFF;
-	int16_t w_diff = r.w - src.w;
-	int16_t h_diff = r.h - src.h;
+	int16_t w_diff = (int16_t)(r.w - src.w);
+	int16_t h_diff = (int16_t)(r.h - src.h);
 	return w_diff << 16 | h_diff;
 }
 
 ///////////////////////////////////////////
 
 int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
-	int32_t idx = atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
+	int64_t idx = atlas->free_space.index_best_small_with({ 0,0,width,height }, _rect_atlas_fit);
 	if (idx == -1 || atlas->free_space[idx].w < width || atlas->free_space[idx].h < height)
 		return -1;
 
@@ -78,7 +78,7 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 	new_rect.w = width;
 	new_rect.h = height;
 	atlas->used_area += width * height;
-	return atlas->packed.add(new_rect);
+	return (int32_t)atlas->packed.add(new_rect);
 }
 
 ///////////////////////////////////////////
@@ -97,11 +97,11 @@ int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, recti_t rect, int32_t id
 			if (cell.x == rect_r) { // left side of this cell matches up
 				atlas->free_space[i].x  = rect.x;
 				atlas->free_space[i].w += rect.w;
-				result = i;
+				result = (int32_t)i;
 				break;
 			} else if (cell_r == rect.x) { // right side of this cell matches up
 				atlas->free_space[i].w += rect.w;
-				result = i;
+				result = (int32_t)i;
 				break;
 			}
 		} else if (cell.w == rect.w && cell.x == rect.x) {
@@ -109,11 +109,11 @@ int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, recti_t rect, int32_t id
 			if (cell.y == rect_b) { // top side of this cell matches up
 				atlas->free_space[i].y  = rect.y;
 				atlas->free_space[i].h += rect.h;
-				result = i;
+				result = (int32_t)i;
 				break;
 			} else if (cell_b == rect.y) { // bottom side of this cell matches up
 				atlas->free_space[i].h += rect.h;
-				result = i;
+				result = (int32_t)i;
 				break;
 			}
 		}

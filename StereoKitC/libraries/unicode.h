@@ -226,6 +226,6 @@ inline int32_t utf16_encode_append(char16_t *buffer, size_t size, char32_t ch) {
 
 ///////////////////////////////////////////
 
-inline bool utf16_is_start(char ch) {
+inline bool utf16_is_start(char16_t ch) {
 	return !(ch >= 0xdc00 && ch <= 0xdfff);
 }

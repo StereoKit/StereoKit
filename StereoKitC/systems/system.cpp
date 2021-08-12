@@ -42,7 +42,7 @@ void systems_add(const system_t *system) {
 int32_t systems_find_id(const char *name) {
 	for (size_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
-			return i;
+			return (int32_t)i;
 	}
 	return -1;
 }
