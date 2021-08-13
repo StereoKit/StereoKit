@@ -24,7 +24,7 @@ namespace StereoKit
 			return _loaded;
 		}
 
-		[DllImport("kernel32")]
+		[DllImport("kernel32", ExactSpelling = true)]
 		static extern IntPtr LoadLibrary(string fileName);
 		static bool LoadWindows(string arch)
 		{
@@ -33,7 +33,8 @@ namespace StereoKit
 			return false;
 		}
 
-		[DllImport("libdl")]
+		
+		[DllImport("libdl", ExactSpelling = true)]
 		static extern IntPtr dlopen(string fileName, int flags);
 		static bool LoadUnix(string arch)
 		{
