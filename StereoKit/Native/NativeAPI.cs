@@ -184,7 +184,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          material_get_queue_offset(IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float  value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_color       (IntPtr material, string name, Color  value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector      (IntPtr material, string name, Vec4   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector4     (IntPtr material, string name, Vec4   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector3     (IntPtr material, string name, Vec3   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector2     (IntPtr material, string name, Vec2   value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_matrix      (IntPtr material, string name, Matrix value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture     (IntPtr material, string name, IntPtr value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture_id  (IntPtr material, ulong  id,   IntPtr value);

@@ -599,7 +599,10 @@ SK_API bool32_t      material_get_depth_write (material_t material);
 SK_API int32_t       material_get_queue_offset(material_t material);
 SK_API void          material_set_float       (material_t material, const char *name, float    value);
 SK_API void          material_set_color       (material_t material, const char *name, color128 color_gamma);
-SK_API void          material_set_vector      (material_t material, const char *name, vec4     value);
+SK_API void          material_set_vector4     (material_t material, const char *name, vec4     value);
+SK_API void          material_set_vector3     (material_t material, const char *name, vec3     value);
+SK_API void          material_set_vector2     (material_t material, const char *name, vec2     value);
+SK_API void          material_set_vector      (material_t material, const char *name, vec4     value); // TODO: Remove in v0.4
 SK_API void          material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t      material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t      material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);

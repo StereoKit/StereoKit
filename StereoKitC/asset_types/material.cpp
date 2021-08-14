@@ -324,6 +324,10 @@ void material_set_float(material_t material, const char *name, float value) {
 	if (i == -1) return;
 	
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(float)) {
+		log_errf("material_set_float: '%s' is not a float (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }
@@ -335,6 +339,10 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(color128)) {
+		log_errf("material_set_color32: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = color_to_linear( { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f } );
 	material->args.buffer_dirty = true;
 }
@@ -346,6 +354,10 @@ void material_set_color(material_t material, const char *name, color128 value) {
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(color128)) {
+		log_errf("material_set_color: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = color_to_linear( value );
 	material->args.buffer_dirty = true;
 }
@@ -353,11 +365,51 @@ void material_set_color(material_t material, const char *name, color128 value) {
 ///////////////////////////////////////////
 
 void material_set_vector(material_t material, const char *name, vec4 value) {
+	material_set_vector4(material, name, value);
+}
+
+///////////////////////////////////////////
+
+void material_set_vector4(material_t material, const char *name, vec4 value) {
 	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec4)) {
+		log_errf("material_set_vector4: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
+}
+
+///////////////////////////////////////////
+
+void material_set_vector3(material_t material, const char *name, vec3 value) {
+	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec3)) {
+		log_errf("material_set_vector3: '%s' is not a float3 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
+	*(vec3 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
+}
+
+///////////////////////////////////////////
+
+void material_set_vector2(material_t material, const char *name, vec2 value) {
+	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec2)) {
+		log_errf("material_set_vector2: '%s' is not a float2 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
+	*(vec2 *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }
 
@@ -368,6 +420,10 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(matrix)) {
+		log_errf("material_set_matrix: '%s' is not a float4x4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }

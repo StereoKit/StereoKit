@@ -171,6 +171,8 @@ namespace StereoKit
 				case Color32 c32:  SetColor  (parameterName, c32); break;
 				case Color   c128: SetColor  (parameterName, c128); break;
 				case Vec4    v:    SetVector (parameterName, v); break;
+				case Vec3    v:    SetVector (parameterName, v); break;
+				case Vec2    v:    SetVector (parameterName, v); break;
 				case Matrix  m:    SetMatrix (parameterName, m); break;
 				case Tex     t:    SetTexture(parameterName, t); break;
 				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
@@ -234,7 +236,23 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetVector(string name, Vec4 value)
-			=> NativeAPI.material_set_vector(_inst, name, value);
+			=> NativeAPI.material_set_vector4(_inst, name, value);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
+		public void SetVector(string name, Vec3 value)
+			=> NativeAPI.material_set_vector3(_inst, name, value);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
+		public void SetVector(string name, Vec2 value)
+			=> NativeAPI.material_set_vector2(_inst, name, value);
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
