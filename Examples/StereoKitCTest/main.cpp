@@ -159,7 +159,7 @@ void common_init() {
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
 
-	demo_select_pose.position = vec3{0, 0.2f, -0.4f};
+	demo_select_pose.position = vec3{0, 0, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
 }
 
