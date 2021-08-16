@@ -42,7 +42,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_texture, "zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count);
+	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	
 	return texture->depth_buffer;
@@ -358,7 +358,7 @@ void tex_destroy(tex_t tex) {
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
 	// If they want spherical harmonics, lets calculate it for them, or give
 	// them a good error message!
 	if (sh_lighting_info != nullptr) {
@@ -393,11 +393,11 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		texture->tex = skg_tex_create(type, use, format, use_mips);
 		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 		if (texture->depth_buffer != nullptr)
-			tex_set_colors(texture->depth_buffer, width, height, nullptr);
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
 	} else if (dynamic) {
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}

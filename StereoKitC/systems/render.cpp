@@ -446,8 +446,8 @@ void render_check_screenshots() {
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
-		tex_set_colors (render_capture_surface, w, h, buffer);
-		tex_add_zbuffer(render_capture_surface);
+		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
+		tex_add_zbuffer  (render_capture_surface);
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -467,7 +467,12 @@ void render_check_screenshots() {
 		skg_tex_target_bind(nullptr);
 		
 		// And save the screenshot to file
-		tex_get_data(render_capture_surface, buffer, size);
+		tex_t resolve_tex = tex_create(tex_type_image_nomips);
+		tex_set_colors(resolve_tex, w, h, nullptr);
+		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
+		tex_get_data(resolve_tex, buffer, size);
+		tex_release(render_capture_surface);
+		tex_release(resolve_tex);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
 		free(buffer);
 		free(render_screenshot_list[i].filename);

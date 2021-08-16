@@ -50,6 +50,8 @@ GLint                   fb_att[] = {
 	GLX_DEPTH_SIZE,    16,
 	GLX_RENDER_TYPE,   GLX_RGBA_BIT,
 	GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
+	GLX_SAMPLE_BUFFERS,1,
+	GLX_SAMPLES,       8,
 	GLX_X_RENDERABLE,  true,
 	None
 };

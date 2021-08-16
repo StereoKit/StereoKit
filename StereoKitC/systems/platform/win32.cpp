@@ -22,6 +22,7 @@ namespace sk {
 
 HWND            win32_window              = nullptr;
 skg_swapchain_t win32_swapchain           = {};
+tex_t           win32_target              = {};
 float           win32_scroll              = 0;
 LONG_PTR        win32_openxr_base_winproc = 0;
 system_t       *win32_render_sys          = nullptr;
@@ -41,6 +42,7 @@ void win32_resize(int width, int height) {
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
 	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
+	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
 	render_update_projection();
 }
 
@@ -205,9 +207,13 @@ bool win32_start_flat() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
-	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, depth_fmt, width, height);
+	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, skg_tex_fmt_none, width, height);
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
+	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_add_zbuffer  (win32_target, (tex_format_)depth_fmt);
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
@@ -219,6 +225,7 @@ bool win32_start_flat() {
 
 void win32_stop_flat() {
 	flatscreen_input_shutdown();
+	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
 }
 
@@ -247,7 +254,7 @@ void win32_step_end_flat() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();
-	skg_swapchain_bind(&win32_swapchain);
+	skg_tex_target_bind(&win32_target->tex);
 	skg_target_clear(true, &col.r);
 
 	input_update_predicted();
@@ -257,6 +264,10 @@ void win32_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
 	render_clear();
+
+	// This copies the color data over to the swapchain, and resolves any
+	// multisampling on the primary target texture.
+	skg_tex_copy_to_swapchain(&win32_target->tex, &win32_swapchain);
 
 	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
 	skg_swapchain_present(&win32_swapchain);
