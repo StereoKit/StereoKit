@@ -24,9 +24,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(StereoKit VERSION "0.3.2" LANGUAGES CXX C)
 
-set(default_build_type "Release")
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git" AND NOT DEFINED ENV{CI})
-  set(default_build_type "Debug")
+# Default build configuration to RelWithDebInfo 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "" FORCE)
+    endif()
 endif()
 
 ###########################################

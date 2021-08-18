@@ -278,12 +278,15 @@ void log_fail_reason(int32_t confidence, log_ log_as, const char *fail_reason) {
 void log_fail_reasonf(int32_t confidence, log_ log_as, const char *fail_reason, ...) {
 	va_list args;
 	va_start(args, fail_reason);
+	va_list copy;
+	va_copy(copy, args);
 	size_t length = vsnprintf(nullptr, 0, fail_reason, args);
 	char*  buffer = sk_malloc_t(char, length + 2);
-	vsnprintf(buffer, length + 2, fail_reason, args);
+	vsnprintf(buffer, length + 2, fail_reason, copy);
 
 	log_fail_reason(confidence, log_as, buffer);
 	free(buffer);
+	va_end(copy);
 	va_end(args);
 }
 

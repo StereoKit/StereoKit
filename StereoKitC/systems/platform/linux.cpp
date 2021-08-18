@@ -23,7 +23,7 @@
 
 extern EGLDisplay egl_display;
 extern EGLContext egl_context;
-extern EGLConfig egl_config;
+extern EGLConfig  egl_config;
 
 #endif
 
@@ -40,24 +40,8 @@ Display                *x_dpy;
 XIM                     x_linux_input_method;
 XIC                     x_linux_input_context;
 
-GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
-GLint                   fb_att[] = {
-	GLX_DOUBLEBUFFER,  true,
-	GLX_RED_SIZE,      8,
-	GLX_GREEN_SIZE,    8,
-	GLX_BLUE_SIZE,     8,
-	GLX_ALPHA_SIZE,    8,
-	GLX_DEPTH_SIZE,    16,
-	GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-	GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-	GLX_SAMPLE_BUFFERS,1,
-	GLX_SAMPLES,       8,
-	GLX_X_RENDERABLE,  true,
-	None
-};
-
 XVisualInfo            *x_vi;
-GLXFBConfig            *x_fb_config;
+GLXFBConfig             x_fb_config;
 Colormap                x_cmap;
 XSetWindowAttributes    x_swa;
 Window                  x_win;
@@ -262,27 +246,75 @@ void linux_events() {
 ///////////////////////////////////////////
 
 bool setup_x_window() {
-	x_dpy = XOpenDisplay(0);
+	x_dpy = XOpenDisplay(nullptr);
 	if (x_dpy == nullptr) {
 		log_fail_reason(90, log_error, "Cannot connect to X server");
 		return false;
 	}
-
 	x_root = DefaultRootWindow(x_dpy);
-	int fbConfigNumber = 0;
-	x_fb_config = glXChooseFBConfig(x_dpy, 0, fb_att, &fbConfigNumber);
-	x_vi = glXGetVisualFromFBConfig(x_dpy, *x_fb_config);
+	if (x_root == 0) {
+		log_fail_reason(90, log_error, "No root window found!");
+		return false;
+	}
 
-	if (x_vi == nullptr) {
+	// FBConfigs were added in GLX version 1.3.
+	int32_t glx_major, glx_minor;
+	if (!glXQueryVersion(x_dpy, &glx_major, &glx_minor) || 
+		((glx_major == 1) && (glx_minor < 3) ) || (glx_major < 1)) {
+		log_fail_reason(90, log_error, "GLX 1.3+ required.");
+		return false;
+	}
+
+	GLint fb_attributes[] = {
+		GLX_X_RENDERABLE,  true,
+		GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
+		GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+		GLX_DOUBLEBUFFER,  true,
+		GLX_RED_SIZE,      8,
+		GLX_GREEN_SIZE,    8,
+		GLX_BLUE_SIZE,     8,
+		GLX_ALPHA_SIZE,    8,
+		GLX_DEPTH_SIZE,    16,
+		None
+	};
+
+	int32_t      config_count = 0;
+	GLXFBConfig *configs      = glXChooseFBConfig(x_dpy, 0, fb_attributes, &config_count);
+	if (configs == nullptr) {
+		log_fail_reason(90, log_error, "No matching display configurations found!");
+		return false;
+	}
+
+	// find a configuration with multisample enabled
+	int32_t best_config = -1, best_samples = -1;
+	for (int32_t i=0; i<config_count; i++) {
+		XVisualInfo *vi = glXGetVisualFromFBConfig(x_dpy, configs[i]);
+		if (vi != nullptr) {
+			int32_t samp_buf, samples;
+			glXGetFBConfigAttrib(x_dpy, configs[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+			glXGetFBConfigAttrib(x_dpy, configs[i], GLX_SAMPLES       , &samples );
+
+			if (best_config < 0 || (samp_buf != 0 && samples > best_samples && samples <= 8)) {
+				best_config  = i;
+				best_samples = samples;
+			}
+		}
+		XFree( vi );
+	}
+	if (best_config == -1) {
 		log_fail_reason(90, log_error, "No appropriate GLX visual found");
 		return false;
 	}
 
+	x_fb_config = configs[best_config];
+	XFree(configs);
+
+	x_vi   = glXGetVisualFromFBConfig(x_dpy, x_fb_config);
 	x_cmap = XCreateColormap(x_dpy, x_root, x_vi->visual, AllocNone);
 
 	x_swa.colormap   = x_cmap;
 	x_swa.event_mask = ExposureMask | KeyPressMask;
-
 	x_win = XCreateWindow(x_dpy, x_root, 0, 0, 1280, 720, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
 
 	XSizeHints *hints = XAllocSizeHints();
@@ -334,6 +366,8 @@ bool setup_x_window() {
 
 	XWindowAttributes wa;
 	XGetWindowAttributes(x_dpy,x_win,&wa);
+
+	skg_setup_xlib(x_dpy, x_vi, &x_fb_config, &x_win);
 	return true;
 }
 
@@ -357,7 +391,6 @@ bool linux_init() {
 
 	if (!setup_x_window())
 		return false;
-	skg_setup_xlib(x_dpy, x_vi, x_fb_config, &x_win);
 
 	#endif
 
@@ -421,14 +454,6 @@ float linux_get_scroll() {
 ///////////////////////////////////////////
 
 void linux_set_cursor(vec2 window_pos) {
-	// XWarpPointer(display, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x,
-	//                dest_y)
-	//        Display *display;
-	//        Window src_w, dest_w;
-	//        int src_x, src_y;
-	//        unsigned int src_width, src_height;
-	//        int dest_x, dest_y;
-
 	XWarpPointer(x_dpy, x_win, x_win, 0, 0, 0, 0, window_pos.x,window_pos.y);
 	XFlush(x_dpy);
 }
@@ -449,7 +474,7 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
-	//linux_events();
+	linux_events();
 }
 
 ///////////////////////////////////////////
