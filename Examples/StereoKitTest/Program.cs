@@ -21,7 +21,8 @@ class Program
 		app.Init();
 
 		// Now loop until finished, and then shut down
-		while (SK.Step(app.Step)) { }
+		Action step = app.Step; // Storing this separately reduces allocations
+		while (SK.Step(step)) { }
 		SK.Shutdown();
 	}
 }

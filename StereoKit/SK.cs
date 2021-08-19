@@ -123,15 +123,22 @@ namespace StereoKit
 		/// function will return false.</returns>
 		public static bool Step(Action onStep = null)
 		{
-			return NativeAPI.sk_step(() => {
-				_steppers.Step();
-				onStep?.Invoke();
+			_stepCallback = onStep;
+			return NativeAPI.sk_step(_stepAction);
+		}
+		// This pattern is a little weird, but it avoids continuous Action
+		// allocations, and saves our GC a surprising amount of work.
+		private static Action _stepAction   = _Step;
+		private static Action _stepCallback = null;
+		private static void _Step() {
+			_steppers.Step();
+			_stepCallback?.Invoke();
 
-				for (int i = 0; i < _mainThreadInvoke.Count; i++) {
-					_mainThreadInvoke[i].Invoke();
-				}
-				_mainThreadInvoke.Clear();
-			});
+			for (int i = 0; i < _mainThreadInvoke.Count; i++)
+			{
+				_mainThreadInvoke[i].Invoke();
+			}
+			_mainThreadInvoke.Clear();
 		}
 
 		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
