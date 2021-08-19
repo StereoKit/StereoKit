@@ -340,7 +340,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
 		if (material_has_param(result, "color", material_param_color128))
-			material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
+			material_set_color(result, "color", color_to_gamma({ c[0], c[1], c[2], c[3] }));
 
 		if (material_has_param(result, "metallic",  material_param_float))
 			material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
