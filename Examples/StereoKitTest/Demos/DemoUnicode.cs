@@ -14,6 +14,7 @@ class DemoUnicode : ITest
 	{
 		atlasModel = new Model(Mesh.Quad, TextStyle.Default.Material);
 		atlasModel.SetTransform(0, Matrix.T(0,0,-0.01f));
+		Tests.RunForFrames(2);
 	}
 
 	public void Shutdown()
@@ -22,7 +23,6 @@ class DemoUnicode : ITest
 
 	public void Update()
 	{
-		
 		UI.HandleBegin("", ref clipboardPose, clipboard.Bounds);
 		clipboard.Draw(Matrix.Identity);
 		UI.LayoutArea(V.XY0(12, 15) * U.cm, V.XY(24, 30) * U.cm);
@@ -41,5 +41,8 @@ class DemoUnicode : ITest
 		UI.HSeparator();
 		UI.Text("Windows only symbols:\n");
 		UI.WindowEnd();
+
+		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
+		Tests.Screenshot(1, 600, 400, "Unicode.jpg", at-V.XYZ(.19f,0,-.19f), at);
 	}
 }
