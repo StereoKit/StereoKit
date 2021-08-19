@@ -394,8 +394,10 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
-		if (texture->depth_buffer != nullptr)
+		if (texture->depth_buffer != nullptr) {
 			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
+			tex_set_zbuffer(texture, texture->depth_buffer);
+		}
 	} else if (dynamic) {
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
