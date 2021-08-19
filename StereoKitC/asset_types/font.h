@@ -13,24 +13,26 @@ struct font_char_t {
 	float u0,v0,u1,v1;
 	float xadvance;
 };
+
+struct font_glyph_t {
+	int32_t idx;
+	int32_t font;
+};
+
 struct _font_t {
 	asset_header_t header;
 	tex_t       font_tex;
 	font_char_t characters[128];
-	float       character_height;
-	int32_t     character_resolution;
-	int32_t     character_ascend;
-	int32_t     character_descend;
-	int32_t     line_gap;
+	float       character_ascend;
+	float       character_descend;
+	float       line_gap;
 	float       space_width;
 
-	hashmap_t<int32_t,  font_char_t> glyph_map;
-	hashmap_t<char32_t, font_char_t> character_map;
-	array_t  <char32_t>              update_queue;
+	hashmap_t<font_glyph_t, font_char_t> glyph_map;
+	hashmap_t<char32_t,     font_char_t> character_map;
+	array_t  <font_glyph_t>              update_queue;
+	array_t  <int32_t>                   font_ids;
 
-	float          font_scale;
-	stbtt_fontinfo font_info;
-	void          *font_file;
 	rect_atlas_t   atlas;
 	uint8_t       *atlas_data;
 };

@@ -6,24 +6,89 @@
 #include "../libraries/stb_truetype.h"
 #pragma warning(pop)
 
+#include "../libraries/ferr_hash.h"
+#include "../libraries/stref.h"
 #include "../rect_atlas.h"
 #include "../systems/platform/platform_utils.h"
 #include "../sk_memory.h"
 
 #include <stdio.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 namespace sk {
 
-array_t<font_t> font_list = {};
+typedef struct font_source_t {
+	int64_t        name_hash;
+	char          *name;
+	int32_t        references;
+	stbtt_fontinfo info;
+	void          *file;
+	float          scale;
+	float          char_height;
+} font_source_t;
+
+array_t<font_t>        font_list       = {};
+array_t<font_source_t> font_sources    = {};
+const int32_t          font_resolution = 64;
 
 ///////////////////////////////////////////
 
-font_char_t font_place_glyph   (font_t font, int32_t glyph);
-void        font_render_glyph  (font_t font, int32_t glyph, const font_char_t *ch);
-int32_t     font_add_character (font_t font, char32_t character);
-void        font_upsize_texture(font_t font);
-void        font_update_texture(font_t font);
-void        font_update_cache  (font_t font);
+font_glyph_t font_find_glyph    (font_t font, char32_t character);
+font_char_t  font_place_glyph   (font_t font, font_glyph_t glyph);
+void         font_render_glyph  (font_t font, font_glyph_t glyph, const font_char_t *ch);
+int32_t      font_add_character (font_t font, char32_t character);
+void         font_upsize_texture(font_t font);
+void         font_update_texture(font_t font);
+void         font_update_cache  (font_t font);
+
+int32_t      font_source_add    (const char *filename);
+void         font_source_release(int32_t id);
+
+///////////////////////////////////////////
+
+int32_t font_source_add(const char *filename) {
+	int64_t hash = hash_fnv64_string(filename);
+	int32_t id   = (int32_t)font_sources.index_where(&font_source_t::name_hash, hash);
+
+	if (id == -1) {
+		font_source_t new_file = {};
+		new_file.name_hash = hash;
+		new_file.name      = string_copy(filename);
+		id = (int32_t)font_sources.add(new_file);
+	}
+	font_sources[id].references += 1;
+
+	if (font_sources[id].references == 1) {
+		size_t length;
+		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
+			log_warnf("Font file failed to load: %s", filename);
+		} else {
+			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
+			font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+			int32_t x0, y0, x1, y1;
+			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
+			font_sources[id].char_height = y1 * font_sources[id].scale;
+		}
+	}
+
+	return font_sources[id].file == nullptr
+		? -1
+		: id;
+}
+
+///////////////////////////////////////////
+
+void font_source_release(int32_t id) {
+	assert(font_sources[id].references > 0);
+
+	font_sources[id].references -= 1;
+	if (font_sources[id].references == 0) {
+		free(font_sources[id].file);
+		font_sources[id].file = nullptr;
+		font_sources[id].info = {};
+	}
+}
 
 ///////////////////////////////////////////
 
@@ -39,23 +104,47 @@ font_t font_find(const char *id) {
 ///////////////////////////////////////////
 
 font_t font_create(const char *file) {
-	font_t result = font_find(file);
+	return font_create_files(&file, 1);
+}
+
+///////////////////////////////////////////
+
+font_t font_create_files(const char **files, int32_t file_count) {
+	if (file_count <= 0) {
+		log_err("No font files provided to font_create_files");
+		return nullptr;
+	}
+
+	// Hash the names of all of the files together
+	uint64_t hash = HASH_FNV64_START;
+	for (size_t i = 0; i < file_count; i++) {
+		hash_fnv64_string(files[i], hash);
+	}
+	char file_id[64];
+	snprintf(file_id, sizeof(file_id), "sk_arr::%" PRIu64, hash);
+
+	font_t result = font_find(file_id);
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, file);
+	assets_set_id(result->header, file_id);
 
-	size_t length;
-	if (!platform_read_file(file, (void **)&result->font_file, &length)) {
-		log_warnf("Font file failed to load: %s", file);
+	// Load relevant fonts
+	result->font_ids.resize(file_count);
+	for (int32_t i = 0; i < file_count; i++) {
+		int32_t id = font_source_add(files[i]);
+		if (id >= 0)
+			result->font_ids.add(id);
+	}
+
+	if (result->font_ids.count == 0) {
+		log_err("All font files provided to font_create_files were invalid!");
+		font_release(result);
 		return nullptr;
 	}
 
 	const int32_t atlas_resolution_x = 256;
 	const int32_t atlas_resolution_y = 256;
-	stbtt_InitFont(&result->font_info, (const unsigned char *)result->font_file, stbtt_GetFontOffsetForIndex((const unsigned char *)result->font_file,0));
-	result->character_resolution = 64;
-	result->font_scale           = stbtt_ScaleForPixelHeight(&result->font_info, (float)result->character_resolution);
 	result->atlas                = rect_atlas_create( atlas_resolution_x, atlas_resolution_y );
 	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
 	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
@@ -65,13 +154,17 @@ font_t font_create(const char *file) {
 	font_update_cache(result);
 
 	// Get information about character sizes for this font
-	stbtt_GetFontVMetrics(&result->font_info, &result->character_ascend, &result->character_descend, &result->line_gap);
+	font_source_t *font = &font_sources[result->font_ids[0]];
 	int32_t x0, y0, x1, y1;
-	stbtt_GetCodepointBox(&result->font_info, 'T', &x0, &y0, &x1, &y1);
-	result->character_height = y1 * result->font_scale;
+	stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
+	int32_t ascend, descend, gap;
+	stbtt_GetFontVMetrics(&font->info, &ascend, &descend, &gap);
 	int32_t advance, lsb; 
-	stbtt_GetGlyphHMetrics(&result->font_info, ' ', &advance, &lsb);
-	result->space_width = advance * result->font_scale;
+	stbtt_GetGlyphHMetrics(&font->info, ' ', &advance, &lsb);
+	result->space_width       = advance / (float)y1;
+	result->character_ascend  = ascend  / (float)y1;
+	result->character_descend = descend / (float)y1;
+	result->line_gap          = gap     / (float)y1;
 	result->characters['\t'].xadvance = result->space_width * 2;
 
 	font_list.add(result);
@@ -105,12 +198,16 @@ void font_destroy(font_t font) {
 	if (idx >= 0)
 		font_list.remove((size_t)idx);
 
+	for (size_t i = 0; i < font->font_ids.count; i++) {
+		font_source_release(font->font_ids[i]);
+	}
+
 	tex_release       ( font->font_tex);
 	rect_atlas_destroy(&font->atlas);
 	free              ( font->atlas_data);
-	free              ( font->font_file);
 	font->character_map.free();
 	font->update_queue .free();
+	font->font_ids     .free();
 
 	*font = {};
 }
@@ -123,8 +220,9 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
-font_char_t font_place_glyph(font_t font, int32_t glyph) {
-	if (glyph == 0) return {};
+font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
+	if (glyph.idx == 0) return {};
+	font_source_t *source = &font_sources[glyph.font];
 
 	const int32_t pad = 4;
 	float   to_u = 1.0f / font->atlas.w;
@@ -132,11 +230,11 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 
 	int advance, lsb;
 	int x0, x1, y0, y1;
-	stbtt_GetGlyphBitmapBox(&font->font_info, glyph, font->font_scale, font->font_scale, &x0, &y0, &x1, &y1);
-	stbtt_GetGlyphHMetrics (&font->font_info, glyph, &advance, &lsb);
+	stbtt_GetGlyphBitmapBox(&source->info, glyph.idx, source->scale, source->scale, &x0, &y0, &x1, &y1);
+	stbtt_GetGlyphHMetrics (&source->info, glyph.idx, &advance, &lsb);
 
 	font_char_t char_info = {};
-	char_info.xadvance = advance * font->font_scale;
+	char_info.xadvance = (advance/source->char_height) * source->scale;
 
 	if (x1-x0 <= 0) return char_info;
 
@@ -152,10 +250,10 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 	recti_t  rect       = font->atlas.packed[rect_idx];
 	recti_t  rect_unpad = { rect.x, rect.y, rect.w - pad, rect.h - pad};
 
-	char_info.x0 =  x0-0.5f;
-	char_info.y0 = -y0-0.5f;
-	char_info.x1 =  x1+0.5f;
-	char_info.y1 = -y1+0.5f;
+	char_info.x0 = ( x0-0.5f) / source->char_height;
+	char_info.y0 = (-y0-0.5f) / source->char_height;
+	char_info.x1 = ( x1+0.5f) / source->char_height;
+	char_info.y1 = (-y1+0.5f) / source->char_height;
 	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
 	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
 	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
@@ -165,11 +263,12 @@ font_char_t font_place_glyph(font_t font, int32_t glyph) {
 
 ///////////////////////////////////////////
 
-void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
+void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f);
 	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f);
 	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
 	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
+	font_source_t *source = &font_sources[glyph.font];
 
 	// This is a really simple low quality render, very fast
 	//stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
@@ -182,9 +281,9 @@ void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
 	// produce a bitmap that's a multiple of `multisample`
 	int ix0,iy0,ix1,iy1;
 	stbtt_vertex *vertices;
-	int num_verts = stbtt_GetGlyphShape(&font->font_info, glyph, &vertices);
+	int num_verts = stbtt_GetGlyphShape(&source->info, glyph.idx, &vertices);
 
-	stbtt_GetGlyphBitmapBoxSubpixel(&font->font_info, glyph, font->font_scale*multisample, font->font_scale*multisample, 0, 0, &ix0,&iy0,&ix1,&iy1);
+	stbtt_GetGlyphBitmapBoxSubpixel(&source->info, glyph.idx, source->scale*multisample, source->scale*multisample, 0, 0, &ix0,&iy0,&ix1,&iy1);
 
 	// now we get the size
 	stbtt__bitmap gbm;
@@ -192,7 +291,7 @@ void font_render_glyph(font_t font, int32_t glyph, const font_char_t *ch) {
 	gbm.h = h*multisample;
 	gbm.pixels = (unsigned char *)malloc(gbm.w * gbm.h);
 	gbm.stride = gbm.w;
-	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, font->font_scale*multisample, font->font_scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
+	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
 	free(vertices);
 
 	// Now average the multisamples to get a final value, and add it to the
@@ -281,9 +380,23 @@ void font_update_texture(font_t font) {
 
 ///////////////////////////////////////////
 
+font_glyph_t font_find_glyph(font_t font, char32_t character) {
+	for (size_t i = 0; i < font->font_ids.count; i++) {
+		int32_t glyph = stbtt_FindGlyphIndex(&font_sources[font->font_ids[i]].info, character);
+		if (glyph > 0) {
+			return { glyph, font->font_ids[i] };
+		}
+	}
+	return { 0, -1 };
+}
+
+///////////////////////////////////////////
+
 int32_t font_add_character(font_t font, char32_t character) {
-	int32_t index   = -1;
-	int32_t glyph   = stbtt_FindGlyphIndex(&font->font_info, character);
+	int32_t      index   = -1;
+	font_glyph_t glyph   = font_find_glyph(font, character);
+	if (glyph.idx == 0) return (int32_t)font->character_map.add(character, font->characters['?']);
+
 	int32_t g_index = (int32_t)font->glyph_map.contains(glyph);
 	if (g_index >= 0) {
 		if (character < 128) {

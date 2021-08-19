@@ -1,4 +1,4 @@
-#ifndef _CRT_SECURE_NO_WARNINGS
+﻿#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
@@ -9,11 +9,13 @@
 #include "../../sk_math.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
@@ -275,47 +277,83 @@ bool platform_keyboard_visible() {
 
 ///////////////////////////////////////////
 
-void platform_default_font(char *fontname_buffer, size_t buffer_size) {
+bool platform_file_exists(const char *filename) {
+	struct stat buffer;
+	return (stat (filename, &buffer) == 0);
+}
+
+///////////////////////////////////////////
+
+font_t platform_default_font() {
 #if defined(SK_OS_ANDROID)
 
 	// If we're using Android API 29+, we can just look up the system font!
-	bool found_font = false;
+	array_t<const char *> fonts  = array_t<const char *>::make(2);
+	font_t                result = nullptr;
+
 #if __ANDROID_API__ >= 29
 	AFontMatcher *matcher = AFontMatcher_create();
-	uint16_t      text[2] = {'A', 0};
-	AFont        *font    = AFontMatcher_match(matcher, "sans-serif", text, 2, nullptr);
-	if (font) {
-		const char *result = AFont_getFontFilePath(font);
-		snprintf(fontname_buffer, buffer_size, result);
-		AFont_close(font);
-	}
+	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", u"A", 2, nullptr);
+	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", u"あ", 2, nullptr);
+	if (font_latin   ) fonts.add(AFont_getFontFilePath(font_latin));
+	if (font_japanese) fonts.add(AFont_getFontFilePath(font_japanese));
+
+	if (fonts.count > 0)
+		result = font_create_files(fonts.data, fonts.count)
+
+	if (font_latin   ) AFont_close(font_latin);
+	if (font_japanese) AFont_close(font_japanese);
 	AFontMatcher_destroy(matcher);
 #endif
 	// We can fall back to a plausible default.
-	if (!found_font)
-		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
+	if (result == nullptr) {
+		fonts.add("/system/fonts/DroidSans.ttf");
+		fonts.add("/system/fonts/DroidSansJapanese.ttf");
+		result = font_create_files(fonts.data, fonts.count);
+	}
+	fonts.free();
+	return result;
 
 #elif defined(SK_OS_LINUX)
+	array_t<char *> fonts  = array_t<char *>::make(2);
+	font_t          result = nullptr;
+
 	FcConfig  *config  = FcInitLoadConfigAndFonts();
 	FcPattern *pattern = FcNameParse((const FcChar8*)("sans-serif"));
 	FcConfigSubstitute (config, pattern, FcMatchPattern);
 	FcDefaultSubstitute(pattern);
 
-	FcResult   result;
-	FcPattern* font = FcFontMatch(config, pattern, &result);
+	FcResult   fc_result;
+	FcPattern* font = FcFontMatch(config, pattern, &fc_result);
 	if (font) {
 		FcChar8* file = nullptr;
 		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
 			// Put the font file path in the proper string
-			snprintf(fontname_buffer, buffer_size, "%s", (char*)file);
+			fonts.add(string_copy((char*)file));
 		}
 		FcPatternDestroy(font);
 	}
-
 	FcPatternDestroy(pattern);
 	FcConfigDestroy (config);
+
+	result = font_create_files((const char **)fonts.data, fonts.count);
+	fonts.each(free);
+	fonts.free();
+	return result;
 #else
-	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
+	array_t<const char *> fonts = array_t<const char *>::make(3);
+	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
+		? "C:/Windows/Fonts/segoeui.ttf"
+		: "C:/Windows/Fonts/arial.ttf");
+	fonts.add(platform_file_exists("C:/Windows/Fonts/YuGothR.ttc")
+		? "C:/Windows/Fonts/YuGothR.ttc"
+		: "C:/Windows/Fonts/Meiryo.ttc");
+	if (platform_file_exists("C:/Windows/Fonts/segmdl2.ttf"))
+		fonts.add("C:/Windows/Fonts/segmdl2.ttf");
+
+	font_t result = font_create_files(fonts.data, fonts.count);
+	fonts.free();
+	return result;
 #endif
 }
 

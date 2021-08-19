@@ -527,12 +527,13 @@ SK_API int32_t      tex_get_anisotropy      (tex_t texture);
 
 SK_DeclarePrivateType(font_t);
 
-SK_API font_t font_find   (const char *id);
-SK_API font_t font_create (const char *file);
-SK_API void   font_set_id (font_t font, const char* id);
-SK_API void   font_addref (font_t font);
-SK_API void   font_release(font_t font);
-SK_API tex_t  font_get_tex(font_t font);
+SK_API font_t font_find        (const char *id);
+SK_API font_t font_create      (const char *file);
+SK_API font_t font_create_files(const char **files, int32_t file_count);
+SK_API void   font_set_id      (font_t font, const char* id);
+SK_API void   font_addref      (font_t font);
+SK_API void   font_release     (font_t font);
+SK_API tex_t  font_get_tex     (font_t font);
 
 ///////////////////////////////////////////
 

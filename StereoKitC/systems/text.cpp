@@ -22,7 +22,6 @@ struct _text_style_t {
 	font_t         font;
 	uint32_t       buffer_index;
 	color32        color;
-	float          size;
 	float          char_height;
 	float          line_spacing;
 };
@@ -159,8 +158,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
 	style.color           = color_to_32( color_to_linear( color ) );
-	style.size            = character_height/font->character_height;
-	style.line_spacing    = font->character_height * 0.5f;
+	style.line_spacing    = 0.5f;
 	style.char_height     = character_height;
 	
 	return (text_style_t)text_styles.add(style);
@@ -197,10 +195,10 @@ inline vec2 text_size_g(const C *text, text_style_t style) {
 			if (x > max_x) max_x = x; 
 			x  = 0;
 			y += 1;
-		} else x += ch->xadvance;
+		} else x += ch->xadvance * text_styles[style].char_height;
 	}
 	if (x > max_x) max_x = x;
-	return vec2{ max_x, y * font->character_height + (y-1)*text_styles[style].line_spacing} * text_styles[style].size;
+	return vec2{ max_x, (y + (y - 1) * text_styles[style].line_spacing) * text_styles[style].char_height };
 }
 
 vec2 text_size   (const char     *text_utf8,  text_style_t style) { return text_size_g<char,     utf8_decode_fast_b >(text_utf8,  style); }
@@ -222,7 +220,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		}
 		*out_char_count = ch == '\n' ? count+1 : count;
 		*out_next_start = curr;
-		return width * step.style->size;
+		return width * step.style->char_height;
 	}
 
 	// Otherwise, we gotta do it the tricky way
@@ -251,7 +249,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 
 		// Advance by character width
 		const font_char_t *char_info  = font_get_glyph(step.style->font, curr);
-		float              next_width = char_info->xadvance*step.style->size + curr_width;
+		float              next_width = char_info->xadvance*step.style->char_height + curr_width;
 
 		// Check if it steps out of bounds
 		if (!is_break && next_width > step.bounds.x) {
@@ -289,7 +287,7 @@ float text_step_height(const C *text, int32_t *out_length, const text_stepper_t 
 	}
 
 	*out_length = (int32_t)(curr - text);
-	return (height * step.style->font->character_height + (height-1)*step.style->line_spacing) * step.style->size;
+	return (height + (height-1)*step.style->line_spacing) * step.style->char_height;
 }
 
 ///
@@ -302,7 +300,7 @@ void text_step_next_line(const C *start, text_stepper_t &step) {
 	if (step.align & text_align_x_center) align_x = ((step.bounds.x - line_size) / 2.f);
 	if (step.align & text_align_x_right)  align_x =  (step.bounds.x - line_size);
 	step.pos.x  = step.start.x - align_x;
-	step.pos.y -= step.style->size * step.style->font->character_height;
+	step.pos.y -= step.style->char_height;
 }
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
@@ -310,22 +308,22 @@ void text_step_position(char32_t ch, const font_char_t *char_info, const C *next
 	step.line_remaining--;
 	if (step.line_remaining <= 0) {
 		text_step_next_line<C, char_decode_b_T>(next, step);
-		step.pos.y -= step.style->size * step.style->line_spacing;
+		step.pos.y -= step.style->char_height * step.style->line_spacing;
 		return;
 	}
 
 	if (ch != '\n'){
-		step.pos.x -= char_info->xadvance*step.style->size;
+		step.pos.x -= char_info->xadvance*step.style->char_height;
 	}
 }
 
 ///
 
 void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
-	float x_min = x - char_info->x0 * style_data.size;
-	float x_max = x - char_info->x1 * style_data.size;
-	float y_min = y + char_info->y0 * style_data.size;
-	float y_max = y + char_info->y1 * style_data.size;
+	float x_min = x - char_info->x0 * style_data.char_height;
+	float x_max = x - char_info->x1 * style_data.char_height;
+	float y_min = y + char_info->y0 * style_data.char_height;
+	float y_max = y + char_info->y1 * style_data.char_height;
 	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info->u0, char_info->v0 }, style_data.color };
 	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info->u1, char_info->v0 }, style_data.color };
 	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info->u1, char_info->v1 }, style_data.color };
@@ -335,10 +333,10 @@ void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, 
 ///
 
 void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
-	float x_max = x - char_info->x0 * style_data.size;
-	float x_min = x - char_info->x1 * style_data.size;
-	float y_max = y + char_info->y0 * style_data.size;
-	float y_min = y + char_info->y1 * style_data.size;
+	float x_max = x - char_info->x0 * style_data.char_height;
+	float x_min = x - char_info->x1 * style_data.char_height;
+	float y_max = y + char_info->y0 * style_data.char_height;
+	float y_min = y + char_info->y1 * style_data.char_height;
 
 	// Ditch out if it's completely out of bounds
 	if (x_min > bounds_max.x ||
@@ -473,7 +471,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 		}
 		text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 	}
-	return (step.start.y - step.pos.y) - step.style->size * step.style->font->character_height;
+	return (step.start.y - step.pos.y) - step.style->char_height;
 }
 
 
