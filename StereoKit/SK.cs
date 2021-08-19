@@ -89,7 +89,6 @@ namespace StereoKit
 				Default.Initialize();
 
 				_steppers = new Steppers();
-				result = _steppers.Initialize();
 			}
 
 			return result;
