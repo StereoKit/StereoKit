@@ -227,8 +227,8 @@ void font_upsize_texture(font_t font) {
 	// next time.
 	int32_t new_w = font->atlas.w;
 	int32_t new_h = font->atlas.h;
-	if (new_w == new_h) { new_w = new_w * 2; font->atlas.free_space.add({font->atlas.w, 0, font->atlas.w,   font->atlas.h}); }
-	else                { new_h = new_h * 2; font->atlas.free_space.add({0, font->atlas.h, font->atlas.w*2, font->atlas.h}); }
+	if (new_w == new_h) { new_w = new_w * 2; font->atlas.free_space.add({font->atlas.w, 0, font->atlas.w, font->atlas.h}); }
+	else                { new_h = new_h * 2; font->atlas.free_space.add({0, font->atlas.h, font->atlas.w, font->atlas.h}); }
 	float scale_x = font->atlas.w / (float)new_w;
 	float scale_y = font->atlas.h / (float)new_h;
 
