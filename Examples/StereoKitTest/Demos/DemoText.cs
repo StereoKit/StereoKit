@@ -19,7 +19,7 @@ class DemoText : ITest
 		/// and a base color. Overloads for MakeStyle can allow you to 
 		/// override the default font shader, or provide a specific Material.
 		style = Text.MakeStyle(
-			Font.FromFile("C:/Windows/Fonts/Arial.ttf") ?? Default.Font, 
+			Font.FromFile("C:/Windows/Fonts/times.ttf") ?? Default.Font, 
 			2 * U.cm,
 			Color.HSV(0.55f, 0.62f, 0.93f));
 		/// :End:

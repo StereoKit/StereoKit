@@ -148,10 +148,11 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_find   (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create (string file);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   font_release(IntPtr font);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_get_tex(IntPtr font);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_find        (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create      (string file);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create_files(string[] file, int file_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   font_release     (IntPtr font);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_get_tex     (IntPtr font);
 
 		///////////////////////////////////////////
 

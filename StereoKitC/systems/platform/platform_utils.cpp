@@ -299,7 +299,7 @@ font_t platform_default_font() {
 	if (font_japanese) fonts.add(AFont_getFontFilePath(font_japanese));
 
 	if (fonts.count > 0)
-		result = font_create_files(fonts.data, fonts.count)
+		result = font_create_files(fonts.data, (int32_t)fonts.count)
 
 	if (font_latin   ) AFont_close(font_latin);
 	if (font_japanese) AFont_close(font_japanese);
@@ -309,7 +309,7 @@ font_t platform_default_font() {
 	if (result == nullptr) {
 		fonts.add("/system/fonts/DroidSans.ttf");
 		fonts.add("/system/fonts/DroidSansJapanese.ttf");
-		result = font_create_files(fonts.data, fonts.count);
+		result = font_create_files(fonts.data, (int32_t)fonts.count);
 	}
 	fonts.free();
 	return result;
@@ -336,7 +336,7 @@ font_t platform_default_font() {
 	FcPatternDestroy(pattern);
 	FcConfigDestroy (config);
 
-	result = font_create_files((const char **)fonts.data, fonts.count);
+	result = font_create_files((const char **)fonts.data, (int32_t)fonts.count);
 	fonts.each(free);
 	fonts.free();
 	return result;
@@ -351,7 +351,7 @@ font_t platform_default_font() {
 	if (platform_file_exists("C:/Windows/Fonts/segmdl2.ttf"))
 		fonts.add("C:/Windows/Fonts/segmdl2.ttf");
 
-	font_t result = font_create_files(fonts.data, fonts.count);
+	font_t result = font_create_files(fonts.data, (int32_t)fonts.count);
 	fonts.free();
 	return result;
 #endif
