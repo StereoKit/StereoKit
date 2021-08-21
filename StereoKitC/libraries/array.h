@@ -312,7 +312,7 @@ void array_t<T>::free() {
 template <typename T>
 array_t<T> array_t<T>::copy() const { 
 	array_t<T> result = { 
-		ARRAY_MALLOC(sizeof(T) * capacity), 
+		(T*)ARRAY_MALLOC(sizeof(T) * capacity), 
 		count, 
 		capacity 
 	}; 
