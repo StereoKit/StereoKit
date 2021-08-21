@@ -351,15 +351,15 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		math_matrix_to_fast(transform, &root);
 	}
 
-	for (int i = 0; i < model->subset_count; i++) {
+	for (size_t i = 0; i < model->visuals.count; i++) {
 		render_item_t item;
-		item.mesh     = &model->subsets[i].mesh->gpu_mesh;
-		item.mesh_inds= model->subsets[i].mesh->ind_count;
-		item.material = model->subsets[i].material;
+		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
+		item.mesh_inds= model->visuals[i].mesh->ind_count;
+		item.material = model->visuals[i].material;
 		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
+		item.sort_id  = render_queue_id(item.material, model->visuals[i].mesh);
 		item.layer    = (uint16_t)layer;
-		matrix_mul(model->subsets[i].offset, root, item.transform);
+		matrix_mul(model->visuals[i].transform_model, root, item.transform);
 		render_list_add(&item);
 	}
 }

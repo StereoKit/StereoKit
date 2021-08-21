@@ -692,6 +692,7 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(model_t);
+typedef int32_t model_node_id;
 
 SK_API model_t    model_find              (const char *id);
 SK_API model_t    model_copy              (model_t model);
@@ -716,6 +717,24 @@ SK_API int32_t    model_subset_count      (model_t model);
 SK_API void       model_recalculate_bounds(model_t model);
 SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t   model_get_bounds        (model_t model);
+
+SK_API model_node_id model_node_add                (model_t model,                      const char *name, matrix transform,       mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr));
+SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr));
+SK_API model_node_id model_node_next               (model_t model, model_node_id node);
+SK_API model_node_id model_node_parent             (model_t model, model_node_id node);
+SK_API model_node_id model_node_child              (model_t model, model_node_id node);
+SK_API model_node_id model_node_iterate            (model_t model, model_node_id node);
+SK_API model_node_id model_node_get_root           (model_t model);
+SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
+SK_API material_t    model_node_get_material       (model_t model, model_node_id node);
+SK_API mesh_t        model_node_get_mesh           (model_t model, model_node_id node);
+SK_API matrix        model_node_get_transform      (model_t model, model_node_id node);
+SK_API matrix        model_node_get_transform_local(model_t model, model_node_id node);
+SK_API void          model_node_set_name           (model_t model, model_node_id node, const char* name);
+SK_API void          model_node_set_material       (model_t model, model_node_id node, material_t  material);
+SK_API void          model_node_set_mesh           (model_t model, model_node_id node, mesh_t      mesh);
+SK_API void          model_node_set_transform_model(model_t model, model_node_id node, matrix      transform_model_space);
+SK_API void          model_node_set_transform_local(model_t model, model_node_id node, matrix      transform_local_space);
 
 ///////////////////////////////////////////
 
