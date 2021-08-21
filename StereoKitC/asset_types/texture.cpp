@@ -193,7 +193,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
 	for (size_t i = 0; i < file_count; i++) {
-		hash_fnv64_string(files[i], hash);
+		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
 	snprintf(file_id, sizeof(file_id), "sk_arr::%" PRIu64, hash);
