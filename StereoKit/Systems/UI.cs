@@ -48,6 +48,26 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
+		/// <summary>This will push a surface into SK's UI layout system. The
+		/// surface becomes part of the transform hierarchy, and SK creates a
+		/// layout surface for UI content to be placed on and interacted with.
+		/// Must be accompanied by a PopSurface call.</summary>
+		/// <param name="surfacePose">The Pose of the UI surface, where the
+		/// surface forward direction is the same as the Pose's.</param>
+		/// <param name="layoutStart">This is an offset from the center of the
+		/// coordinate space created by the surfacePose. Vec3.Zero would mean
+		/// that content starts at the center of the surfacePose.</param>
+		/// <param name="layoutDimensions">The size of the surface area to use
+		/// during layout. Like other UI layout sizes, an axis set to zero
+		/// means it will auto-expand in that direction.</param>
+		public static void PushSurface(Pose surfacePose, Vec3 layoutStart = new Vec3(), Vec2 layoutDimensions = new Vec2())
+			=> NativeAPI.ui_push_surface(surfacePose, layoutStart, layoutDimensions);
+
+		/// <summary>This will return to the previous UI layout on the stack.
+		/// This must be called after a PushSurface call.</summary>
+		public static void PopSurface()
+			=> NativeAPI.ui_pop_surface();
+
 		/// <summary>Manually define what area is used for the UI layout. This is in
 		/// the current Hierarchy's coordinate space on the X/Y plane.</summary>
 		/// <param name="start">The top left of the layout area, relative to the current Hierarchy in local meters.</param>
@@ -217,10 +237,10 @@ namespace StereoKit
 		/// <param name="value">The string that will store the Input's 
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
-		/// </param>
+		/// Zero axes will auto-size.</param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size) {
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2()) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 4) :
 				new StringBuilder(4);
@@ -231,19 +251,6 @@ namespace StereoKit
 			}
 			return false;
 		}
-
-		/// <summary>This is an input field where users can input text to the
-		/// app! Selecting it will spawn a virtual keyboard, or act as the
-		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
-		/// <param name="id">A per-window unique id for tracking element 
-		/// state.</param>
-		/// <param name="value">The string that will store the Input's 
-		/// content in.</param>
-		/// <returns>Returns true every time the contents of 'value' change.
-		/// </returns>
-		public static bool Input(string id, ref string value)
-			=> Input(id, ref value, Vec2.Zero);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>

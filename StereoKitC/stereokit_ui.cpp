@@ -110,8 +110,6 @@ color128 skui_palette[5];
 ///////////////////////////////////////////
 
 // Layout
-void ui_push_pose  (pose_t &pose, vec3 offset);
-void ui_pop_pose   ();
 void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding = true);
 void ui_reserve_box(vec2 size);
 
@@ -560,15 +558,15 @@ bool32_t ui_is_interacting(handed_ hand) {
 //////////////   Layout!   ////////////////
 ///////////////////////////////////////////
 
-void ui_push_pose(pose_t &pose, vec3 offset) {
-	vec3   right = pose.orientation * vec3_right;
-	matrix trs   = matrix_trs(pose.position + right*offset, pose.orientation);
+void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensions) {
+	vec3   right = surface_pose.orientation * vec3_right;
+	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation);
 	hierarchy_push(trs);
 
 	skui_layers.add(layer_t{
 		nullptr,
 		vec3{skui_settings.padding, -skui_settings.padding}, 
-		vec3{skui_settings.padding, -skui_settings.padding}, {0,0}, 0, 0
+		vec3{skui_settings.padding, -skui_settings.padding}, layout_dimensions, 0, 0
 	});
 
 	layer_t &layer = skui_layers.last();
@@ -580,7 +578,7 @@ void ui_push_pose(pose_t &pose, vec3 offset) {
 
 ///////////////////////////////////////////
 
-void ui_pop_pose() {
+void ui_pop_surface() {
 	hierarchy_pop();
 	skui_layers.pop();
 
@@ -1447,7 +1445,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
-	ui_push_pose(movement, vec3{ 0,0,0 });
+	ui_push_surface(movement);
 
 	// If the handle is scale of zero, we don't actually want to draw or interact with it
 	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
@@ -1610,8 +1608,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 					skui_hand[i].active = 0;
 					sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
 				}
-				ui_pop_pose();
-				ui_push_pose(movement, vec3{ 0,0,0 });
+				ui_pop_surface();
+				ui_push_surface(movement);
 			}
 		}
 	}
@@ -1638,7 +1636,7 @@ bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t han
 ///////////////////////////////////////////
 
 void ui_handle_end() {
-	ui_pop_pose();
+	ui_pop_surface();
 }
 
 ///////////////////////////////////////////

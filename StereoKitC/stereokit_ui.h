@@ -52,6 +52,8 @@ SK_API void     ui_set_element_visual  (ui_el_ element, mesh_t mesh, material_t 
 SK_API void     ui_push_text_style     (text_style_t  style);
 SK_API void     ui_pop_text_style      ();
 
+SK_API void     ui_push_surface  (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
+SK_API void     ui_pop_surface   ();
 SK_API void     ui_layout_area   (vec3 start, vec2 dimensions);
 SK_API vec2     ui_area_remaining();
 SK_API void     ui_nextline      ();
