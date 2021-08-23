@@ -362,6 +362,16 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 
 ///////////////////////////////////////////
 
+model_node_id model_node_find(model_t model, const char *name) {
+	for (size_t i = 0; i < model->nodes.count; i++) {
+		if (string_eq(model->nodes[i].name, name))
+			return i;
+	}
+	return -1;
+}
+
+///////////////////////////////////////////
+
 model_node_id model_node_next(model_t model, model_node_id node) {
 	return model->nodes[node].sibling;
 }

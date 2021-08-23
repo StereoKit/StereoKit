@@ -718,8 +718,9 @@ SK_API void       model_recalculate_bounds(model_t model);
 SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t   model_get_bounds        (model_t model);
 
-SK_API model_node_id model_node_add                (model_t model,                      const char *name, matrix transform,       mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr));
+SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr));
 SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr));
+SK_API model_node_id model_node_find               (model_t model, const char *name);
 SK_API model_node_id model_node_next               (model_t model, model_node_id node);
 SK_API model_node_id model_node_parent             (model_t model, model_node_id node);
 SK_API model_node_id model_node_child              (model_t model, model_node_id node);
