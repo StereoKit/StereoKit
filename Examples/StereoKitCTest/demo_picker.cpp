@@ -62,7 +62,7 @@ void show_node(model_t model, model_node_id node, int32_t tab) {
 		for (size_t i = 0; i < tab; i++) { ui_label("-"); ui_sameline(); }
 		ui_label(model_node_get_name(picker_model, node));
 		show_node(model, node, tab + 1);
-		node = model_node_next(picker_model, node);
+		node = model_node_sibling(picker_model, node);
 	}
 }
 
