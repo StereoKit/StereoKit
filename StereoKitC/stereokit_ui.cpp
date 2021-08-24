@@ -565,8 +565,9 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 
 	skui_layers.add(layer_t{
 		nullptr,
-		vec3{skui_settings.padding, -skui_settings.padding}, 
-		vec3{skui_settings.padding, -skui_settings.padding}, layout_dimensions, 0, 0
+		layout_start,
+		layout_start,
+		layout_dimensions, 0, 0
 	});
 
 	layer_t &layer = skui_layers.last();
@@ -998,7 +999,7 @@ void ui_text_g(const C *text) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_area_remaining().x, 0 };
 
-	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 2 };
+	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
 	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
 
 	ui_reserve_box(size);
