@@ -79,7 +79,7 @@ namespace StereoKit
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.model_release(_inst));
+				SK.ExecuteOnMain(() => NativeAPI.model_release(_inst));
 		}
 		#endregion
 
@@ -115,7 +115,7 @@ namespace StereoKit
 		/// Material for, should be less than SubsetCount.</param>
 		/// <returns>A link to the Material asset used by the model subset at
 		/// subsetIndex</returns>
-		public Material GetMaterial(int subsetIndex) 
+		public Material GetMaterial(int subsetIndex)
 			=> new Material(NativeAPI.model_get_material(_inst, subsetIndex));
 
 		/// <summary>Gets a link to the Mesh asset used by the model subset!
@@ -126,7 +126,7 @@ namespace StereoKit
 		/// Mesh for, should be less than SubsetCount.</param>
 		/// <returns>A link to the Mesh asset used by the model subset at
 		/// subsetIndex</returns>
-		public Mesh GetMesh(int subsetIndex) 
+		public Mesh GetMesh(int subsetIndex)
 			=> new Mesh(NativeAPI.model_get_mesh(_inst, subsetIndex));
 
 		/// <summary>Gets the transform matrix used by the model subset!
@@ -135,7 +135,7 @@ namespace StereoKit
 		/// transform for, should be less than SubsetCount.</param>
 		/// <returns>A transform matrix used by the model subset at 
 		/// subsetIndex</returns>
-		public Matrix GetTransform(int subsetIndex) 
+		public Matrix GetTransform(int subsetIndex)
 			=> NativeAPI.model_get_transform(_inst, subsetIndex);
 
 		/// <summary>Changes the Material for the subset to a new one!
@@ -256,7 +256,7 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst  = NativeAPI.model_create_file(file, final);
+			IntPtr inst = NativeAPI.model_create_file(file, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -278,7 +278,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst  = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -311,5 +311,104 @@ namespace StereoKit
 			}
 			return null;
 		}
+
+		public ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh = null, Material material = null)
+		{
+			return new ModelNode(
+				_inst,
+				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero));
+		}
+
+		public ModelNode FindNode(string name)
+			=> new ModelNode(_inst, NativeAPI.model_node_find(_inst, name));
+
+		public ModelNode RootNode { get {
+			int nodeId = NativeAPI.model_node_get_root(_inst);
+			return nodeId >= 0 
+				? new ModelNode(_inst, nodeId)
+				: null;
+		} }
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public class ModelNode {
+		internal int    _nodeId;
+		internal IntPtr _modelInst;
+
+		public ModelNode Sibling => From(NativeAPI.model_node_sibling(_modelInst, _nodeId));
+		public ModelNode Parent  => From(NativeAPI.model_node_parent (_modelInst, _nodeId));
+		public ModelNode Child   => From(NativeAPI.model_node_child  (_modelInst, _nodeId));
+
+		public string Name {
+			get => NativeAPI.model_node_get_name(_modelInst, _nodeId);
+			set => NativeAPI.model_node_set_name(_modelInst, _nodeId, value);
+		}
+		public Matrix ModelTransform {
+			get => NativeAPI.model_node_get_transform_model(_modelInst, _nodeId);
+			set => NativeAPI.model_node_set_transform_model(_modelInst, _nodeId, value);
+		}
+		public Matrix LocalTransform { 
+			get => NativeAPI.model_node_get_transform_local(_modelInst, _nodeId);
+			set => NativeAPI.model_node_set_transform_local(_modelInst, _nodeId, value);
+		}
+		public Mesh Mesh { 
+			get => new Mesh(NativeAPI.model_node_get_mesh(_modelInst, _nodeId));
+			set => NativeAPI.model_node_set_mesh(_modelInst, _nodeId, value._inst);
+		}
+		public Material Material { 
+			get => new Material(NativeAPI.model_node_get_material(_modelInst, _nodeId));
+			set => NativeAPI.model_node_set_material(_modelInst, _nodeId, value._inst);
+		}
+
+		internal ModelNode(IntPtr model, int nodeId)
+		{
+			_modelInst = model;
+			_nodeId    = nodeId;
+		}
+		~ModelNode()
+		{
+			if (_modelInst != IntPtr.Zero)
+				SK.ExecuteOnMain(() => NativeAPI.model_release(_modelInst));
+		}
+
+		public bool MoveSibling()
+		{
+			int sibling = NativeAPI.model_node_sibling(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+		public bool MoveParent ()
+		{
+			int sibling = NativeAPI.model_node_parent(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+		public bool MoveChild  ()
+		{
+			int sibling = NativeAPI.model_node_child(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+
+		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null)
+		{
+			return new ModelNode(
+				_modelInst,
+				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero));
+		}
+
+		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_modelInst, nodeId) : null;
 	}
 }

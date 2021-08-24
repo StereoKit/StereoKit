@@ -372,7 +372,7 @@ model_node_id model_node_find(model_t model, const char *name) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_next(model_t model, model_node_id node) {
+model_node_id model_node_sibling(model_t model, model_node_id node) {
 	return model->nodes[node].sibling;
 }
 
@@ -457,7 +457,7 @@ mesh_t model_node_get_mesh(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-matrix model_node_get_transform(model_t model, model_node_id node) {
+matrix model_node_get_transform_model(model_t model, model_node_id node) {
 	return model->nodes[node].transform_model;
 }
 

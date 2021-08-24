@@ -256,6 +256,25 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add                (IntPtr model,             string name, Matrix model_transform, IntPtr mesh, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add_child          (IntPtr model, int parent, string name, Matrix local_transform, IntPtr mesh, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_find               (IntPtr model, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_sibling            (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_parent             (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_child              (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_iterate            (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_root           (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string model_node_get_name           (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_material       (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_mesh           (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_model(IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_local(IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_name           (IntPtr model, int node, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_material       (IntPtr model, int node, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_mesh           (IntPtr model, int node, IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_model(IntPtr model, int node, Matrix transform_model_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_local(IntPtr model, int node, Matrix transform_local_space);
+
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create     (IntPtr sprite,   SpriteType type = SpriteType.Atlased, string atlas_id = "default");
