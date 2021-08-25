@@ -70,6 +70,7 @@ target_compile_options(reactphysics3d PRIVATE
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
+  VERSION 1.0.17
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
 )
