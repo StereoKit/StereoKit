@@ -59,6 +59,7 @@ CPMAddPackage(
   NAME reactphysics3d
   GITHUB_REPOSITORY DanielChappuis/reactphysics3d
   GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
+  EXCLUDE_FROM_ALL YES
 )
 # Something in reactphysics3d seems to require -fPIC
 set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -73,6 +74,7 @@ CPMAddPackage(
   VERSION 1.0.17
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
+  EXCLUDE_FROM_ALL YES
 )
 
 ###########################################
