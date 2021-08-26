@@ -117,8 +117,8 @@ namespace StereoKit
 			return sound == IntPtr.Zero ? null : new Sound(sound);
 		}
 
-		/// <summary>Loads a sound effect from file! Currently, StereoKit only supports
-		/// .wav files. Audio is converted to mono.</summary>
+		/// <summary>Loads a sound effect from file! Currently, StereoKit
+		/// supports .wav and .mp3 files. Audio is converted to mono.</summary>
 		/// <param name="filename">Name of the audio file! Supports .wav files.</param>
 		/// <returns>A sound object, or null if something went wrong.</returns>
 		public static Sound FromFile(string filename)
