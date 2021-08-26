@@ -317,7 +317,7 @@ void hand_oxra_update_system_meshes() {
 		// transform for the mesh.
 		pose_t pose;
 		if (openxr_get_space(oxra_hand_space[h], &pose, xr_time))
-			hand_mesh->root_transform = pose_matrix(pose);
+			hand_mesh->root_transform = pose_matrix(pose) * render_get_cam_final();
 
 		if (oxra_mesh_src[h].isActive) {
 			// Update hand mesh indices when they've changed, or when we've
