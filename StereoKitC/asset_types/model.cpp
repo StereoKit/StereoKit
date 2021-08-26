@@ -392,6 +392,30 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
+int32_t model_node_count(model_t model) {
+	return model->nodes.count;
+}
+
+///////////////////////////////////////////
+
+model_node_id model_node_index(model_t model, int32_t index) {
+	return index;
+}
+
+///////////////////////////////////////////
+
+int32_t model_node_visual_count(model_t model){
+	return model->visuals.count;
+}
+
+///////////////////////////////////////////
+
+model_node_id model_node_visual_index(model_t model, int32_t index) {
+	return model->visuals[index].node;
+}
+
+///////////////////////////////////////////
+
 model_node_id model_node_iterate(model_t model, model_node_id node) {
 	if (node == -1) return 0;
 
@@ -408,12 +432,6 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 		node = model->nodes[node].parent;
 		if (model->nodes[node].sibling != -1)
 			return model->nodes[node].sibling;
-	}
-
-	// move on to see if there's another root node
-	for (size_t i = node+1; i < model->nodes.count; i++) {
-		if (model->nodes[i].parent == -1)
-			return i;
 	}
 
 	return -1;

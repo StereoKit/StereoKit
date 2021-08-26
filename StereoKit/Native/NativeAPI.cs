@@ -262,9 +262,13 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_sibling            (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_parent             (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_child              (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_count              (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_index              (IntPtr model, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_visual_count       (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_visual_index       (IntPtr model, int index);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_iterate            (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_root           (IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string model_node_get_name           (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_name           (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_material       (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_mesh           (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_model(IntPtr model, int node);

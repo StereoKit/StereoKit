@@ -724,6 +724,10 @@ SK_API model_node_id model_node_find               (model_t model, const char *n
 SK_API model_node_id model_node_sibling            (model_t model, model_node_id node);
 SK_API model_node_id model_node_parent             (model_t model, model_node_id node);
 SK_API model_node_id model_node_child              (model_t model, model_node_id node);
+SK_API int32_t       model_node_count              (model_t model);
+SK_API model_node_id model_node_index              (model_t model, int32_t index);
+SK_API int32_t       model_node_visual_count       (model_t model);
+SK_API model_node_id model_node_visual_index       (model_t model, int32_t index);
 SK_API model_node_id model_node_iterate            (model_t model, model_node_id node);
 SK_API model_node_id model_node_get_root           (model_t model);
 SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
@@ -1033,7 +1037,6 @@ SK_API void       world_set_raycast_enabled   (bool32_t enabled);
 SK_API bool32_t   world_get_raycast_enabled   ();
 SK_API void       world_set_occlusion_material(material_t material);
 SK_API material_t world_get_occlusion_material();
-
 
 ///////////////////////////////////////////
 
