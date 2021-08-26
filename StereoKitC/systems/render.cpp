@@ -1,5 +1,6 @@
 #include "render.h"
 #include "render_sort.h"
+#include "world.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
@@ -246,6 +247,8 @@ void render_set_cam_root(const matrix &cam_root) {
 	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
 	input_eyes_pose_world.position    = render_camera_root_final * input_eyes_pose_local.position;
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
+
+	world_refresh_transforms();
 }
 
 ///////////////////////////////////////////

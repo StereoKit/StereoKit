@@ -3,6 +3,7 @@
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
 #include "platform/openxr.h"
+#include "render.h"
 
 #include <float.h>
 
@@ -27,6 +28,7 @@ struct scene_mesh_t {
 
 struct su_mesh_inst_t {
 	mesh_t   mesh_ref;
+	matrix   local_transform;
 	matrix   transform;
 	matrix   inv_transform;
 };
@@ -316,9 +318,10 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 
 		int32_t        mesh_idx = world_mesh_get_or_add(meshes.sceneMeshes[i].meshBufferId);
 		su_mesh_inst_t inst     = {};
-		inst.mesh_ref      = xr_meshes[mesh_idx].mesh;
-		inst.transform     = pose_matrix(pose);
-		inst.inv_transform = matrix_invert(inst.transform);
+		inst.mesh_ref        = xr_meshes[mesh_idx].mesh;
+		inst.local_transform = pose_matrix(pose);
+		inst.transform       = inst.local_transform * render_get_cam_final();
+		inst.inv_transform   = matrix_invert(inst.transform);
 		if (xr_meshes[mesh_idx].buffer_updated != components.components[i].updateTime) {
 			xr_meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;
 			xr_meshes[mesh_idx].buffer_dirty    = true;
@@ -419,6 +422,20 @@ void world_shutdown() {
 	xr_meshes         .free();
 	xr_scene_colliders.free();
 	xr_scene_visuals  .free();
+}
+
+///////////////////////////////////////////
+
+inline void world_update_inst(su_mesh_inst_t &inst) {
+	inst.transform     = inst.local_transform * render_get_cam_final();
+	inst.inv_transform = matrix_invert(inst.transform);
+}
+
+///////////////////////////////////////////
+
+void world_refresh_transforms() {
+	xr_scene_colliders.each(world_update_inst);
+	xr_scene_visuals  .each(world_update_inst);
 }
 
 } // namespace sk
