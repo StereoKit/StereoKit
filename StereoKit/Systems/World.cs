@@ -36,12 +36,23 @@ namespace StereoKit
 		public static Pose FromSpatialNode(Guid spatialNodeGuid)
 			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray());
 
+		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose)
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), out pose) > 0;
+
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
 			Pose   result  = NativeAPI.world_from_perception_anchor(unknown);
 			Marshal.Release(unknown);
 			return result;
+		}
+
+		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
+		{
+			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
+			int    result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
+			Marshal.Release(unknown);
+			return result>0;
 		}
 
 		/// <summary>World.RaycastEnabled must be set to true first! 

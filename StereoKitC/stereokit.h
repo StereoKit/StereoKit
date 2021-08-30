@@ -1025,18 +1025,20 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 
 ///////////////////////////////////////////
 
-SK_API bool32_t   world_has_bounds            ();
-SK_API vec2       world_get_bounds_size       ();
-SK_API pose_t     world_get_bounds_pose       ();
-SK_API pose_t     world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
-SK_API pose_t     world_from_perception_anchor(void *perception_spatial_anchor);
-SK_API bool32_t   world_raycast               (ray_t ray, ray_t *out_intersection);
-SK_API void       world_set_occlusion_enabled (bool32_t enabled);
-SK_API bool32_t   world_get_occlusion_enabled ();
-SK_API void       world_set_raycast_enabled   (bool32_t enabled);
-SK_API bool32_t   world_get_raycast_enabled   ();
-SK_API void       world_set_occlusion_material(material_t material);
-SK_API material_t world_get_occlusion_material();
+SK_API bool32_t   world_has_bounds                ();
+SK_API vec2       world_get_bounds_size           ();
+SK_API pose_t     world_get_bounds_pose           ();
+SK_API pose_t     world_from_spatial_graph        (uint8_t spatial_graph_node_id[16]);
+SK_API pose_t     world_from_perception_anchor    (void *perception_spatial_anchor);
+SK_API bool32_t   world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], pose_t *out_pose);
+SK_API bool32_t   world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
+SK_API bool32_t   world_raycast                   (ray_t ray, ray_t *out_intersection);
+SK_API void       world_set_occlusion_enabled     (bool32_t enabled);
+SK_API bool32_t   world_get_occlusion_enabled     ();
+SK_API void       world_set_raycast_enabled       (bool32_t enabled);
+SK_API bool32_t   world_get_raycast_enabled       ();
+SK_API void       world_set_occlusion_material    (material_t material);
+SK_API material_t world_get_occlusion_material    ();
 
 ///////////////////////////////////////////
 

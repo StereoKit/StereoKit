@@ -627,24 +627,57 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
-		return { {0,0,0}, {0,0,0,1} };
+		return pose_identity;
 	}
 	if (!sk_info.spatial_bridge_present) {
 		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
-		return { {0,0,0}, {0,0,0,1} };
+		return pose_identity;
 	}
 
 	XrSpace                               space;
-	pose_t                                result     = {};
 	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
 	space_info.nodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
 	space_info.pose     = { {0,0,0,1}, {0,0,0} };
 	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
 
-	xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space);
+	if (XR_FAILED(xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space))) {
+		log_warn("world_from_spatial_graph: xrCreateSpatialGraphNodeSpaceMSFT call failed, maybe a bad spatial node?");
+		return pose_identity;
+	}
 
+	pose_t result = {};
 	openxr_get_space(space, &result);
 	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], pose_t *out_pose) {
+	if (!xr_session) {
+		log_warn("No OpenXR session available for converting spatial graph nodes!");
+		*out_pose = pose_identity;
+		return false;
+	}
+	if (!sk_info.spatial_bridge_present) {
+		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
+		*out_pose = pose_identity;
+		return false;
+	}
+
+	XrSpace                               space;
+	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
+	space_info.nodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	space_info.pose     = { {0,0,0,1}, {0,0,0} };
+	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
+
+	if (XR_FAILED(xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space))) {
+		*out_pose = pose_identity;
+		return false;
+	}
+
+	pose_t result = {};
+	openxr_get_space(space, out_pose);
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -653,11 +686,11 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 #if defined(SK_OS_WINDOWS_UWP)
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting perception anchors!");
-		return { {0,0,0}, {0,0,0,1} };
+		return pose_identity;
 	}
 	if (!sk_info.perception_bridge_present) {
 		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
-		return { {0,0,0}, {0,0,0,1} };
+		return pose_identity;
 	}
 
 	// Create an anchor from what the user gave us
@@ -669,7 +702,10 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
 	info.anchor            = anchor;
 	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
-	xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space);
+	if (XR_FAILED(xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space))) {
+		log_warn("world_from_perception_anchor: xrCreateSpatialAnchorSpaceMSFT call failed, possibly a bad anchor?");
+		return pose_identity;
+	}
 
 	// Convert the space into a pose
 	pose_t result;
@@ -680,7 +716,50 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 	return result;
 #else
 	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
-	return { {0,0,0}, {0,0,0,1} };
+	return pose_identity;
+#endif
+}
+
+///////////////////////////////////////////
+
+bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_t *out_pose) {
+#if defined(SK_OS_WINDOWS_UWP)
+	if (!xr_session) {
+		log_warn("No OpenXR session available for converting perception anchors!");
+		*out_pose = pose_identity;
+		return false;
+	}
+	if (!sk_info.perception_bridge_present) {
+		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
+		*out_pose = pose_identity;
+		return false;
+	}
+
+	// Create an anchor from what the user gave us
+	XrSpatialAnchorMSFT anchor = {};
+	xr_extensions.xrCreateSpatialAnchorFromPerceptionAnchorMSFT(xr_session, (IUnknown*)perception_spatial_anchor, &anchor);
+
+	// Create a Space from the anchor
+	XrSpace                            space;
+	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
+	info.anchor            = anchor;
+	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
+	if (XR_FAILED(xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space))) {
+		log_warn("world_from_perception_anchor: xrCreateSpatialAnchorSpaceMSFT call failed, possibly a bad anchor?");
+		*out_pose = pose_identity;
+		return false;
+	}
+
+	// Convert the space into a pose
+	openxr_get_space(space, out_pose);
+
+	// Release the anchor, and return the resulting pose!
+	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
+	return true;
+#else
+	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
+	*out_pose = pose_identity;
+	return false;
 #endif
 }
 
