@@ -135,7 +135,6 @@ bool openxr_render_frame  ();
 void openxr_poll_actions  ();
 
 void       *openxr_get_luid ();
-int64_t     openxr_get_time ();
 bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char* openxr_string   (XrResult result);
 

@@ -36,8 +36,6 @@ void hand_oxrc_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxrc_update_frame() {
-	if (xr_time == 0) return;
-
 	// Now we'll get the current states of our actions, and store them for later use
 	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
 		const controller_t *controller = input_controller ((handed_)hand_id);

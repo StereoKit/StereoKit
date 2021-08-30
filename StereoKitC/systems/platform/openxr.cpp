@@ -60,9 +60,10 @@ XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-XrReferenceSpaceType openxr_preferred_space();
+XrReferenceSpaceType openxr_preferred_space     ();
 bool                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
-void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
+void                 openxr_preferred_layers    (uint32_t &out_layer_count, const char **out_layers);
+XrTime               openxr_acquire_time        ();
 
 ///////////////////////////////////////////
 
@@ -94,12 +95,12 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 		return false;
 	if (!openxr_get_space(xr_stage_space, out_pose, time))
 		return false;
-	
+
 	out_size->x = bounds.width;
 	out_size->y = bounds.height;
 
-	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)", 
-		out_size->x, out_size->y, 
+	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)",
+		out_size->x, out_size->y,
 		out_pose->position.x, out_pose->position.y, out_pose->position.z,
 		out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
 	return true;
@@ -150,16 +151,22 @@ void *openxr_get_luid() {
 
 ///////////////////////////////////////////
 
-int64_t openxr_get_time() {
+XrTime openxr_acquire_time() {
+	XrTime result = {};
 #ifdef XR_USE_TIMESPEC
 	struct timespec time;
-	xr_extensions.xrConvertTimeToTimespecTimeKHR(xr_instance, xr_time, &time);
-	return time.tv_sec*1000000000 + time.tv_nsec;
+	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
+		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
+	}
 #else
 	LARGE_INTEGER time;
-	xr_extensions.xrConvertTimeToWin32PerformanceCounterKHR(xr_instance, xr_time, &time);
-	return time.QuadPart;
+	if (!QueryPerformanceCounter(&time) ||
+		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
+	}
 #endif
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -411,6 +418,8 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
+	xr_time = openxr_acquire_time();
+
 	return true;
 }
 
@@ -587,7 +596,7 @@ void openxr_poll_events() {
 ///////////////////////////////////////////
 
 void openxr_poll_actions() {
-	if (xr_session_state != XR_SESSION_STATE_FOCUSED || xr_time == 0)
+	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
 		return;
 
 	// Track the head location

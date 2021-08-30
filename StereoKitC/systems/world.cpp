@@ -357,7 +357,7 @@ void world_update() {
 			xr_scene_update_requested = true;
 
 		// Check if we need to request a new scene
-		if (xr_time > 0 && !xr_scene_updating && xr_scene_update_requested) {
+		if (!xr_scene_updating && xr_scene_update_requested) {
 			xr_scene_update_requested = false;
 			world_request_update(xr_scene_next_req);
 		}

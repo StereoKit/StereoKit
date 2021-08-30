@@ -39,8 +39,6 @@ bool hand_oxra_available() {
 ///////////////////////////////////////////
 
 bool hand_oxra_is_tracked() {
-	if (xr_time <= 0)
-		return true;
 	if (!oxra_system_initialized)
 		return false;
 
@@ -149,9 +147,6 @@ void hand_oxra_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_joints() {
-	if (xr_time <= 0)
-		return;
-
 	// Generate some shoulder data used for generating hand pointers
 
 	// Average shoulder width for women:37cm, men:41cm, center of shoulder
