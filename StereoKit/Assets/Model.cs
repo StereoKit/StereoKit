@@ -242,6 +242,28 @@ namespace StereoKit
 		public void RemoveSubset(int subsetIndex)
 			=> NativeAPI.model_remove_subset(_inst, subsetIndex);
 
+		/// <summary>Checks the intersection point of this ray and a Model's 
+		/// visual nodes. This will skip any node that is not flagged as Solid,
+		/// as well as any Mesh without collision data. Ray must be in model 
+		/// space, intersection point will be in model space too. You can use
+		/// the inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="modelSpaceRay">Ray must be in model space, the
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
+
+
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a
 		/// root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
@@ -255,14 +277,17 @@ namespace StereoKit
 		/// this is null, then material must also be null.</param>
 		/// <param name="material">The Material to attach to this Node's
 		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
 		/// <returns>This returns the newly added ModelNode, or if there's an
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
-		public ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh = null, Material material = null)
+		public ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
 			return new ModelNode(
 				_inst,
-				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero));
+				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
 		}
 
 		/// <summary>Searches the entire list of Nodes, and will return the
@@ -425,6 +450,13 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_modelInst, _nodeId));
 			set => NativeAPI.model_node_set_name(_modelInst, _nodeId, value);
 		}
+		/// <summary>A flag that indicates the Mesh for this node will be used
+		/// in ray intersection tests. This flag is ignored if no Mesh is 
+		/// attached.</summary>
+		public bool Solid {
+			get => NativeAPI.model_node_get_solid(_modelInst, _nodeId) > 0;
+			set => NativeAPI.model_node_set_solid(_modelInst, _nodeId, value ? 1 : 0);
+		}
 		/// <summary>The transform of this node relative to the Model itself.
 		/// This incorporates transforms from all parent nodes. Setting this
 		/// transform will update the LocalTransform, as well as all Child
@@ -518,15 +550,18 @@ namespace StereoKit
 		/// this is null, then material must also be null.</param>
 		/// <param name="material">The Material to attach to this Node's
 		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
 		/// <returns>This returns the newly added ModelNode, or if there's an
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
 		/// <returns>The new child ModelNode.</returns>
-		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null)
+		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
 			return new ModelNode(
 				_modelInst,
-				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero));
+				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
 		}
 
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_modelInst, nodeId) : null;
@@ -563,13 +598,16 @@ namespace StereoKit
 		/// this is null, then material must also be null.</param>
 		/// <param name="material">The Material to attach to this Node's
 		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
 		/// <returns>This returns the newly added ModelNode, or if there's an
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
-		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null)
+		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
 			return new ModelNode( _model,
-				NativeAPI.model_node_add(_model, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero));
+				NativeAPI.model_node_add(_model, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
 		}
 	}
 

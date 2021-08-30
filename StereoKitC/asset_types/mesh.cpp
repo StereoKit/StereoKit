@@ -228,7 +228,7 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
 		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
 		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
-		vec3    normal = vec3_normalize( vec3_cross(dir1, dir2) );
+		vec3    normal = vec3_normalize( vec3_cross(dir2, dir1) );
 		plane_t plane  = { normal, -vec3_dot(coll.pts[i + 1], normal) };
 		coll.planes[i/3] = plane;
 	}

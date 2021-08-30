@@ -13,7 +13,7 @@ class DemoUnicode : ITest
 	public void Initialize()
 	{
 		atlasModel = new Model(Mesh.Quad, TextStyle.Default.Material);
-		atlasModel.SetTransform(0, Matrix.T(0,0,-0.01f));
+		atlasModel.RootNode.LocalTransform = Matrix.T(0,0,-0.01f);
 		Tests.RunForFrames(2);
 	}
 

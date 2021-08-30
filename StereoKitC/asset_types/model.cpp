@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 namespace sk {
 
@@ -279,6 +280,34 @@ bounds_t model_get_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
+bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt) {
+	vec3 bounds_at;
+	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
+		return false;
+
+	float closest = FLT_MAX;
+	*out_pt = {};
+	for (size_t i = 0; i < model->nodes.count; i++) {
+		model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1)
+			continue;
+
+		matrix inverse   = matrix_invert(n->transform_model);
+		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
+		ray_t  at;
+		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at)) {
+			float d = vec3_distance_sq(local_ray.pos, at.pos);
+			if (d < closest) {
+				closest = d;
+				*out_pt = matrix_transform_ray(n->transform_model, at);
+			}
+		}
+	}
+	return closest != FLT_MAX;
+}
+
+///////////////////////////////////////////
+
 void model_destroy(model_t model) {
 	for (size_t i = 0; i < model->nodes.count; i++) {
 		free(model->nodes[i].name);
@@ -294,13 +323,13 @@ void model_destroy(model_t model) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_add(model_t model, const char *name, matrix transform, mesh_t mesh, material_t material) {
-	return model_node_add_child(model, -1, name, transform, mesh, material);
+model_node_id model_node_add(model_t model, const char *name, matrix transform, mesh_t mesh, material_t material, bool32_t solid) {
+	return model_node_add_child(model, -1, name, transform, mesh, material, solid);
 }
 
 ///////////////////////////////////////////
 
-model_node_id model_node_add_child(model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh, material_t material) {
+model_node_id model_node_add_child(model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh, material_t material, bool32_t solid) {
 	if ((mesh != nullptr && material == nullptr) ||
 		(mesh == nullptr && material != nullptr)) {
 		log_err("model_node_add_child: mesh and material must either both be null, or neither be null!");
@@ -320,6 +349,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 	node.child           = -1;
 	node.sibling         = -1;
 	node.visual          = -1;
+	node.solid           = solid;
 	node.transform_local = local_transform;
 	if (node.parent >= 0) {
 		node.transform_model = local_transform * model->nodes[node.parent].transform_model;
@@ -451,6 +481,12 @@ const char* model_node_get_name(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
+bool32_t model_node_get_solid(model_t model, model_node_id node) {
+	return model->nodes[node].solid;
+}
+
+///////////////////////////////////////////
+
 material_t  model_node_get_material(model_t model, model_node_id node) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
@@ -495,6 +531,12 @@ void model_node_set_name(model_t model, model_node_id node, const char* name) {
 		name = tmp_name;
 	}
 	model->nodes[node].name = string_copy(name);
+}
+
+///////////////////////////////////////////
+
+void model_node_set_solid(model_t model, model_node_id node, bool32_t solid) {
+	model->nodes[node].solid = solid;
 }
 
 ///////////////////////////////////////////

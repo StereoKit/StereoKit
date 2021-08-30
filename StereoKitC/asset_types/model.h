@@ -14,13 +14,14 @@ struct model_visual_t {
 };
 
 struct model_node_t {
-	char   *name;
-	matrix  transform_local;
-	matrix  transform_model;
-	int32_t visual;
-	int32_t parent;
-	int32_t child;
-	int32_t sibling;
+	char    *name;
+	matrix   transform_local;
+	matrix   transform_model;
+	int32_t  visual;
+	int32_t  parent;
+	int32_t  child;
+	int32_t  sibling;
+	bool32_t solid;
 };
 
 struct _model_t {
