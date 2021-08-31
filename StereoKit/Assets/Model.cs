@@ -263,7 +263,6 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
 			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
 
-
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a
 		/// root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
