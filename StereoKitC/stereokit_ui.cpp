@@ -1322,15 +1322,16 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 	bool     result = false;
 
 	// Find sizes of slider elements
+	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
 	float rule_size   = fmaxf(skui_settings.padding, size.y / 6.f);
-	vec3  box_start   = window_relative_pos + vec3{ 0, 0, skui_settings.depth };
-	vec3  box_size    = vec3{ size.x, size.y, skui_settings.depth*2 };
+	vec3  box_start   = window_relative_pos + vec3{ 0, 0, button_depth };
+	vec3  box_size    = vec3{ size.x, size.y, button_depth*2 };
 	vec2  button_size = confirm_method == ui_confirm_push
 		? vec2{ size.y / 2, size.y / 2 }
 		: vec2{ size.y / 8, size.y };
 
 	// Activation bounds sizing
-	float activation_plane = skui_settings.depth + skui_finger_radius;
+	float activation_plane = button_depth + skui_finger_radius;
 	vec3  activation_start = window_relative_pos + vec3{ ((value-min) / (max-min)) * -(size.x-button_size.x), size.y / -4, -activation_plane };
 	vec3  activation_size  = vec3{ button_size.x, button_size.y, 0.0001f };
 	vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
@@ -1339,7 +1340,8 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 	// Set up for getting the state of the sliders.
 	button_state_ focus_state   = button_state_inactive;
 	button_state_ button_state  = button_state_inactive;
-	float         finger_offset = skui_settings.depth;
+	float         finger_offset = button_depth;
+	float         finger_x;
 	int32_t       hand          = -1;
 	ui_box_interaction_1h(id,
 		activation_start, activation_size,
@@ -1350,24 +1352,27 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 		// only slides when that button is pressed.
 		if (focus_state & button_state_active) {
 			finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
-			bool pressed  = finger_offset < skui_settings.depth / 2;
+			bool pressed  = finger_offset < button_depth / 2;
 			button_state  = ui_active_set(hand, id, pressed);
-			finger_offset = fminf(fmaxf(2*mm2m, finger_offset), skui_settings.depth);
+			finger_offset = fminf(fmaxf(2*mm2m, finger_offset), button_depth);
 		} else {
 			button_state = ui_active_set(hand, id, false);
 		}
+		finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch) {
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		button_state_ pinch = input_hand((handed_)hand)->pinch_state;
+		const hand_t *h     = input_hand((handed_)hand);
+		button_state_ pinch = h->pinch_state;
 		button_state = ui_active_set(hand, id, pinch & button_state_active);
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
-		focus_state  = ui_focus_set (hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
+		focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
+		finger_x    = hierarchy_to_local_point(h->pinch_pt).x;
 	}
 
 	if (button_state & button_state_active) {
-		float new_val = min + fminf(1, fmaxf(0, ((window_relative_pos.x-button_size.x/2)-skui_hand[hand].finger.x) / (size.x-button_size.x)))*(max-min);
+		float new_val = min + fminf(1, fmaxf(0, ((window_relative_pos.x-button_size.x/2)-finger_x) / (size.x-button_size.x)))*(max-min);
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + 0.5f)) * step;
 		}
@@ -1404,7 +1409,7 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 	} else if (confirm_method == ui_confirm_pinch) {
 		ui_box(
 			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z},
-			vec3{ button_size.x, button_size.y, skui_settings.depth}, 
+			vec3{ button_size.x, button_size.y, button_depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
 	}
 	
