@@ -21,7 +21,8 @@ typedef enum ui_win_ {
 
 typedef enum ui_confirm_ {
 	ui_confirm_push,
-	ui_confirm_pinch
+	ui_confirm_pinch,
+	ui_confirm_variable_pinch
 } ui_confirm_;
 
 typedef enum ui_el_ {

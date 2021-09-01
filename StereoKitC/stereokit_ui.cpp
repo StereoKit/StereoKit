@@ -1359,7 +1359,7 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 			button_state = ui_active_set(hand, id, false);
 		}
 		finger_x = skui_hand[hand].finger.x;
-	} else if (confirm_method == ui_confirm_pinch) {
+	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
 		const hand_t *h     = input_hand((handed_)hand);
@@ -1368,7 +1368,13 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
 		focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
-		finger_x    = hierarchy_to_local_point(h->pinch_pt).x;
+		vec3 pinch_local = hierarchy_to_local_point(h->pinch_pt);
+		finger_x    = pinch_local.x;
+
+		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && -pinch_local.z > button_depth) {
+			pinch_local.z = 1+(-pinch_local.z-button_depth) / .05f;
+			finger_x = finger_x / pinch_local.z;
+		}
 	}
 
 	if (button_state & button_state_active) {
@@ -1406,11 +1412,34 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 		ui_cylinder(
 			vec3{ x+back_size - slide_x_rel, slide_y + back_size, window_relative_pos.z}, 
 			button_size.x+back_size*2, rule_size*skui_settings.backplate_depth, skui_mat, skui_color_border * color_blend);
-	} else if (confirm_method == ui_confirm_pinch) {
+	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		ui_box(
 			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z},
 			vec3{ button_size.x, button_size.y, button_depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
+
+		vec3 pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
+		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && -pinch_local.z > button_depth) {
+			
+			float z = pinch_local.z;
+			pinch_local.z = 1+(-pinch_local.z-button_depth) / .05f;
+			float scaled_x = x+size.x*(pinch_local.z-1)*0.5f;
+
+			float var_line_y  = pinch_local.y + rule_size / 2.f;
+			float var_slide_y = pinch_local.y + (button_size.y)/2;
+			
+			line_add({ x, line_y-rule_size*0.5f, window_relative_pos.z}, { scaled_x, var_line_y-rule_size*0.5f, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			line_add({ x-size.x, line_y-rule_size*0.5f, window_relative_pos.z}, { scaled_x-size.x*pinch_local.z, var_line_y-rule_size*0.5f, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+
+			ui_box(
+				vec3{ scaled_x, var_line_y, window_relative_pos.z + z }, 
+				vec3{ size.x*pinch_local.z, rule_size, rule_size*skui_settings.backplate_depth-mm2m },
+				skui_mat_quad, skui_palette[2] * color_blend);
+			ui_box(
+				vec3{ scaled_x - slide_x_rel*pinch_local.z, var_slide_y, window_relative_pos.z+z},
+				vec3{ button_size.x, button_size.y, button_depth}, 
+				skui_mat_quad, skui_palette[0] * color_blend);
+		}
 	}
 	
 

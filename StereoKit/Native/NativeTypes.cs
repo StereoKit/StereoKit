@@ -959,6 +959,10 @@ namespace StereoKit
 		/// element. This is much harder to activate by accident, but does
 		/// require the user to make a precise pinch gesture. You can pretty
 		/// much be sure that's what the user meant to do!</summary>
-		Pinch
+		Pinch,
+		/// <summary>Same as Pinch, but pulling out from the slider creates a
+		/// scaled slider that lets you adjust the slider at a more granular
+		/// resolution.</summary>
+		VariablePinch
 	}
 }
