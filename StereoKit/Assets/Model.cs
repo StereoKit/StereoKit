@@ -488,6 +488,8 @@ namespace StereoKit
 		{
 			_modelInst = model;
 			_nodeId    = nodeId;
+			if (_modelInst != IntPtr.Zero)
+				NativeAPI.model_addref(_modelInst);
 		}
 		~ModelNode()
 		{
