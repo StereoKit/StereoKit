@@ -40,10 +40,12 @@ void sprite_set_id(sprite_t sprite, const char *id) {
 material_t sprite_create_material(int index_id) {
 	char id[64];
 	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);
-	material_t result = material_create(shader_find(default_id_shader_unlit_clip));
+	shader_t   shader = shader_find(default_id_shader_unlit_clip);
+	material_t result = material_create(shader);
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
 	material_set_cull        (result, cull_none);
+	shader_release(shader);
 
 	return result;
 }
