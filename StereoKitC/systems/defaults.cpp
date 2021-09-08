@@ -265,6 +265,8 @@ bool defaults_init() {
 void defaults_shutdown() {
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
+	sound_release   (sk_default_grab);
+	sound_release   (sk_default_ungrab);
 	font_release    (sk_default_font);
 	material_release(sk_default_material);
 	material_release(sk_default_material_pbr);

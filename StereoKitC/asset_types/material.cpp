@@ -83,9 +83,10 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_create(shader_t shader) {
-	if (shader == nullptr) {
+	shader_t material_shader = shader;
+	if (material_shader == nullptr) {
 		log_warn("material_create was provided a null shader, defaulting to an unlit shader.");
-		shader = shader_find(default_id_shader_unlit);
+		material_shader = shader_find(default_id_shader_unlit);
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	shader_addref(shader);
@@ -97,6 +98,10 @@ material_t material_create(shader_t shader) {
 
 	material_set_cull(result, cull_back);
 	material_create_arg_defaults(result, shader);
+
+	if (shader == nullptr) {
+		shader_release(material_shader);
+	}
 
 	return result;
 }

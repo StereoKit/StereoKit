@@ -473,6 +473,7 @@ void ui_shutdown() {
 	sound_release(skui_snd_ungrab);
 	mesh_release(skui_box);
 	mesh_release(skui_cylinder);
+	mesh_release(skui_box_dbg);
 	material_release(skui_mat);
 	material_release(skui_mat_dbg);
 	material_release(skui_mat_quad);

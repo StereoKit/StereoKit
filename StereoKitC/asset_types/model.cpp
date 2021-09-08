@@ -186,9 +186,9 @@ void model_set_material(model_t model, int32_t subset, material_t material) {
 	assert(subset < model->visuals.count);
 	assert(material != nullptr);
 
-	material_release(model->visuals[subset].material);
-	model->visuals[subset].material = material;
-	material_addref(model->visuals[subset].material);
+	assets_safeswap_ref(
+		(asset_header_t**)&model->visuals[subset].material,
+		(asset_header_t* )material);
 }
 
 ///////////////////////////////////////////
@@ -197,9 +197,9 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 	assert(subset < model->visuals.count);
 	assert(mesh != nullptr);
 
-	mesh_release(model->visuals[subset].mesh);
-	model->visuals[subset].mesh = mesh;
-	mesh_addref(model->visuals[subset].mesh);
+	assets_safeswap_ref(
+		(asset_header_t**)&model->visuals[subset].mesh,
+		(asset_header_t* )mesh);
 
 	model_recalculate_bounds(model);
 }
@@ -547,9 +547,9 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
-	material_release(model->visuals[vis].material);
-	model->visuals[vis].material = material;
-	material_addref(model->visuals[vis].material);
+	assets_safeswap_ref(
+		(asset_header_t**)model->visuals[vis].material,
+		(asset_header_t* )material);
 }
 
 ///////////////////////////////////////////
@@ -560,9 +560,10 @@ void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
-	mesh_release(model->visuals[vis].mesh);
+	mesh_t prev_mesh = model->visuals[vis].mesh;
 	model->visuals[vis].mesh = mesh;
-	mesh_addref(model->visuals[vis].mesh);
+	mesh_addref (model->visuals[vis].mesh);
+	mesh_release(prev_mesh);
 
 	model_recalculate_bounds(model);
 }

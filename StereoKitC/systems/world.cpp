@@ -144,10 +144,9 @@ bool32_t world_get_raycast_enabled() {
 ///////////////////////////////////////////
 
 void world_set_occlusion_material(material_t material) {
-	material_release(xr_scene_material);
-	xr_scene_material = material;
-	if (xr_scene_material)
-		material_addref(xr_scene_material);
+	assets_safeswap_ref(
+		(asset_header_t**)&xr_scene_material,
+		(asset_header_t *)material);
 }
 
 ///////////////////////////////////////////
@@ -338,6 +337,7 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 
 bool world_init() {
 	xr_scene_material = material_copy_id(default_id_material_unlit);
+	material_set_id   (xr_scene_material, "default/world_mat");
 	material_set_color(xr_scene_material, "color", { 0,0,0,0 });
 
 	xr_scene_next_req.center = { 10000,10000,10000 };
@@ -406,6 +406,8 @@ void world_scene_shutdown() {
 	xr_meshes         .clear();
 	xr_scene_colliders.clear();
 	xr_scene_visuals  .clear();
+
+	material_release(xr_scene_material);
 
 	xr_scene_updating = false;
 }

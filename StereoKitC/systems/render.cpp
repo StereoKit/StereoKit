@@ -553,7 +553,6 @@ bool render_init() {
 
 	// Set up resources for doing blit operations
 	render_blit_quad = mesh_find(default_id_mesh_screen_quad);
-	mesh_addref(render_blit_quad);
 
 	// Create a default skybox
 	render_sky_mesh = mesh_create();
@@ -567,7 +566,10 @@ bool render_init() {
 	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
 	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
 
-	render_sky_mat  = material_create(shader_find(default_id_shader_sky));
+	shader_t shader_sky = shader_find(default_id_shader_sky);
+	render_sky_mat = material_create(shader_sky);
+	shader_release(shader_sky);
+
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
 	
@@ -594,23 +596,22 @@ void render_shutdown() {
 	for (size_t i = 0; i < render_lists.count; i++) {
 		render_list_release(i);
 	}
-	render_lists.free();
-	render_list_stack.free();
+	render_lists          .free();
+	render_list_stack     .free();
 	render_screenshot_list.free();
-	render_viewpoint_list.free();
-	render_instance_list.free();
+	render_viewpoint_list .free();
+	render_instance_list  .free();
 
-	material_release(render_sky_mat);
-	mesh_release    (render_sky_mesh);
-	tex_release     (render_sky_cubemap);
+	material_release       (render_sky_mat);
+	mesh_release           (render_sky_mesh);
+	tex_release            (render_sky_cubemap);
+	mesh_release           (render_blit_quad);
+	material_buffer_release(render_shader_globals);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		skg_buffer_destroy(&render_instance_buffers[i].buffer);
 	}
-
 	skg_buffer_destroy(&render_shader_blit);
-	material_buffer_release(render_shader_globals);
-	mesh_release(render_blit_quad);
 }
 
 ///////////////////////////////////////////

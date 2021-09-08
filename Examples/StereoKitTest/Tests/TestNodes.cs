@@ -66,6 +66,12 @@ class DemoNodes : ITest
 		Log.Info("Depth first ModelNode traversal:");
 		DepthFirstTraversal(model);
 
+		for (int i = 0; i < model.Nodes.Count; i++)
+		{
+			Log.Info($"{model.Nodes[i].Name} using shader {model.Nodes[i].Material?.Shader.Name}");
+		}
+		
+
 		_model       = model;
 		_surfaceNode = surfaceNode;
 	}
