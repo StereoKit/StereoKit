@@ -111,6 +111,11 @@ material_t material_create(shader_t shader) {
 material_t material_copy(material_t material) {
 	// Make a new empty material
 	material_t result = material_create(material->shader);
+	// release any of the default textures for the material.
+	for (int32_t i = 0; i < result->args.texture_count; i++) {
+		if (result->args.textures[i] != nullptr)
+			tex_release(result->args.textures[i]);
+	}
 	// Store allocated memory temporarily
 	void          *tmp_buffer        = result->args.buffer;
 	skg_buffer_t   tmp_buffer_gpu    = result->args.buffer_gpu;
@@ -131,7 +136,6 @@ material_t material_copy(material_t material) {
 	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skg_bind_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
-	shader_addref(result->shader);
 	for (int32_t i = 0; i < result->args.texture_count; i++) {
 		if (result->args.textures[i] != nullptr)
 			tex_addref(result->args.textures[i]);

@@ -215,6 +215,7 @@ void font_destroy(font_t font) {
 ///////////////////////////////////////////
 
 tex_t font_get_tex(font_t font) {
+	tex_addref(font->font_tex);
 	return font->font_tex;
 }
 
