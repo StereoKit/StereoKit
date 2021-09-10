@@ -89,15 +89,15 @@ material_t material_create(shader_t shader) {
 		material_shader = shader_find(default_id_shader_unlit);
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
-	shader_addref(shader);
+	shader_addref(material_shader);
 	result->alpha_mode = transparency_none;
-	result->shader     = shader;
+	result->shader     = material_shader;
 	result->depth_test = depth_test_less;
 	result->depth_write= true;
 	result->pipeline   = skg_pipeline_create(&result->shader->shader);
 
 	material_set_cull(result, cull_back);
-	material_create_arg_defaults(result, shader);
+	material_create_arg_defaults(result, material_shader);
 
 	if (shader == nullptr) {
 		shader_release(material_shader);

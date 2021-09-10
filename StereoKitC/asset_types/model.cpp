@@ -548,7 +548,7 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 		model->nodes[node].visual = vis;
 	}
 	assets_safeswap_ref(
-		(asset_header_t**)model->visuals[vis].material,
+		(asset_header_t**)&model->visuals[vis].material,
 		(asset_header_t* )material);
 }
 

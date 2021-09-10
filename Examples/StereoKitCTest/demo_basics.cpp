@@ -22,7 +22,7 @@ model_t gltf;
 void demo_basics_init() {
 
 	// Load a gltf model
-	gltf = model_create_file("DamagedHelmet.gltf", shader_find(default_id_shader_pbr));
+	gltf = model_create_file("DamagedHelmet.gltf");
 }
 
 ///////////////////////////////////////////
