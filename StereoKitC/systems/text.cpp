@@ -229,6 +229,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 	// Otherwise, we gotta do it the tricky way
 	float    curr_width = 0;
 	float    last_width = 0;
+	int32_t  last_count = 0;
 	const C *last_at    = start;
 	const C *ch         = start;
 	char32_t curr;
@@ -245,7 +246,8 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		if (is_break || curr == '\0') {
 			if (!was_break)
 				last_width = curr_width;
-			last_at = curr != '\0' ? next_char : ch;
+			last_at    = curr != '\0' ? next_char : ch;
+			last_count = curr != '\0' ? count + 1 : count;
 		}
 		// End of line or string?
 		if (curr == '\0' || curr == '\n')
@@ -261,6 +263,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 			if (last_width == 0) {
 				last_width = curr_width;
 				last_at    = ch;
+				last_count = count;
 			}
 			// Exit the line
 			break;
@@ -273,7 +276,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		count     += 1;
 	}
 
-	*out_char_count = curr == '\n' ? count+1 : count;
+	*out_char_count = last_count;
 	*out_next_start = last_at;
 	return last_width;
 }
@@ -283,15 +286,17 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 float text_step_height(const C *text, int32_t *out_length, const text_stepper_t &step) {
 	int32_t  count  = 1;
+	int32_t  length = 0;
 	const C *curr   = text;
 	float    height = 0;
 	while (count > 0) {
 		text_step_line_length<C, char_decode_b_T>(curr, &count, &curr, step);
+		length += count;
 		if (count > 0)
 			height += 1;
 	}
 
-	*out_length = (int32_t)(curr - text);
+	*out_length = length;
 	return (height + (height-1)*step.style->line_spacing) * step.style->char_height;
 }
 
