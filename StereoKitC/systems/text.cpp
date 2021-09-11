@@ -231,11 +231,12 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 	float    last_width = 0;
 	const C *last_at    = start;
 	const C *ch         = start;
+	char32_t curr;
 	bool     was_break  = false;
+	int32_t  count      = 0;
 
 	while (true) {
 		const C *next_char = start;
-		char32_t curr;
 		char_decode_b_T(ch, &next_char, &curr);
 		bool is_break = text_is_breakable(curr);
 
@@ -269,9 +270,10 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		curr_width = next_width;
 		was_break  = is_break;
 		ch         = next_char;
+		count     += 1;
 	}
 
-	*out_char_count = (int32_t)(last_at - start);
+	*out_char_count = curr == '\n' ? count+1 : count;
 	*out_next_start = last_at;
 	return last_width;
 }
@@ -422,7 +424,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
 	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);*/
-	
+
 	// Ensure scale is right for our fit
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
 		vec2 txt_size = text_size_g<C, char_decode_b_T>(text, style);
