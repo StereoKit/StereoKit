@@ -154,7 +154,7 @@ bool win32_start_flat() {
 				// Disable alt menu
 				if (GET_SC_WPARAM(wParam) == SC_KEYMENU) 
 					return (LRESULT)0; 
-			} return DefWindowProc(hWnd, message, wParam, lParam); 
+			} return DefWindowProcW(hWnd, message, wParam, lParam); 
 			case WM_SIZE: {
 				win32_resize_x = (UINT)LOWORD(lParam);
 				win32_resize_y = (UINT)HIWORD(lParam);
@@ -165,18 +165,18 @@ bool win32_start_flat() {
 					win32_check_resize = false; 
 					win32_resize(win32_resize_x, win32_resize_y); 
 				}
-			} return DefWindowProc(hWnd, message, wParam, lParam);
+			} return DefWindowProcW(hWnd, message, wParam, lParam);
 			case WM_EXITSIZEMOVE: {
 				// If the user was dragging the window around, WM_SIZE is called -before- this 
 				// event, so we can go ahead and resize now!
 				win32_resize(win32_resize_x, win32_resize_y);
-			} return DefWindowProc(hWnd, message, wParam, lParam);
-			default: return DefWindowProc(hWnd, message, wParam, lParam);
+			} return DefWindowProcW(hWnd, message, wParam, lParam);
+			default: return DefWindowProcW(hWnd, message, wParam, lParam);
 			}
 		}
 		return (LRESULT)0;
 	};
-	wc.hInstance     = GetModuleHandle(NULL);
+	wc.hInstance     = GetModuleHandleW(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
 	if( !RegisterClassW(&wc) ) return false;
@@ -187,9 +187,9 @@ bool win32_start_flat() {
 	r.top    = sk_settings.flatscreen_pos_y;
 	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
 	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
-	win32_window = CreateWindow(
-		sk_app_name, 
-		sk_app_name, 
+	win32_window = CreateWindowW(
+		app_name_w, 
+		app_name_w, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
 		max(0,r.left), 
 		max(0,r.top), 
