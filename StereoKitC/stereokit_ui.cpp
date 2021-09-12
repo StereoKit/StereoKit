@@ -138,17 +138,34 @@ void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ positio
 
 ///////////////////////////////////////////
 
-void quadrantify(vert_t *verts, int32_t count) {
-	float left   =  FLT_MAX;
-	float right  = -FLT_MIN;
-	float top    = -FLT_MIN;
-	float bottom =  FLT_MAX;
+void ui_quadrant_size_verts(vert_t *verts, int32_t count, float overflow) {
+	float left      =  FLT_MAX;
+	float left_in   = -FLT_MAX;
+	float right     = -FLT_MAX;
+	float right_in  =  FLT_MAX;
+	float top       = -FLT_MAX;
+	float top_in    =  FLT_MAX;
+	float bottom    =  FLT_MAX;
+	float bottom_in = -FLT_MAX;
+	float depth     = 0;
 	for (int32_t i = 0; i < count; i++) {
-		if (verts[i].pos.x < left  ) left   = verts[i].pos.x;
-		if (verts[i].pos.x > right ) right  = verts[i].pos.x;
-		if (verts[i].pos.y < bottom) bottom = verts[i].pos.y;
-		if (verts[i].pos.y > top   ) top    = verts[i].pos.y;
+		if (verts[i].pos.x < left                           ) left       = verts[i].pos.x;
+		if (verts[i].pos.x < 0 && verts[i].pos.x > left_in  ) left_in    = verts[i].pos.x;
+		if (verts[i].pos.x > right                          ) right      = verts[i].pos.x;
+		if (verts[i].pos.x > 0 && verts[i].pos.x < right_in ) right_in   = verts[i].pos.x;
+		if (verts[i].pos.y < bottom                         ) bottom     = verts[i].pos.y;
+		if (verts[i].pos.y < 0 && verts[i].pos.y > bottom_in) bottom_in  = verts[i].pos.y;
+		if (verts[i].pos.y > top                            ) top        = verts[i].pos.y;
+		if (verts[i].pos.y > 0 && verts[i].pos.y < top_in   ) top_in     = verts[i].pos.y;
+		if (verts[i].pos.z < depth                          ) depth      = verts[i].pos.z;
 	}
+
+	left   = math_lerp(left,   left_in,   overflow);
+	right  = math_lerp(right,  right_in,  overflow);
+	bottom = math_lerp(bottom, bottom_in, overflow);
+	top    = math_lerp(top,    top_in,    overflow);
+	depth = fabsf(depth * 2);
+	if (depth == 0) depth = 1;
 
 	for (int32_t i = 0; i < count; i++) {
 		float quadrant_x = verts[i].pos.x / fabsf(verts[i].pos.x);
@@ -161,8 +178,22 @@ void quadrantify(vert_t *verts, int32_t count) {
 		else if (quadrant_x > 0) verts[i].pos.x -= right;
 		if      (quadrant_y < 0) verts[i].pos.y -= bottom;
 		else if (quadrant_y > 0) verts[i].pos.y -= top;
+		verts[i].pos.z = verts[i].pos.z / depth;
 	}
 }
+
+///////////////////////////////////////////
+
+void ui_quadrant_size_mesh(mesh_t ref_mesh, float overflow) {
+	vert_t *verts      = nullptr;
+	int32_t vert_count = 0;
+	mesh_get_verts        (ref_mesh, verts, vert_count);
+	ui_quadrant_size_verts(verts, vert_count, overflow);
+	mesh_set_verts        (ref_mesh, verts, vert_count);
+	free(verts);
+}
+
+///////////////////////////////////////////
 
 void ui_quadrant_mesh(float padding) {
 	if (skui_box == nullptr) {
@@ -227,7 +258,7 @@ void ui_quadrant_mesh(float padding) {
 	// center points for the circle
 	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
 	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	quadrantify(verts, vert_count);
+	ui_quadrant_size_verts(verts, vert_count, 0);
 
 	mesh_set_verts(skui_box, verts, vert_count);
 	mesh_set_inds (skui_box, inds,  ind_count);
