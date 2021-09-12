@@ -1,7 +1,7 @@
 ﻿using StereoKit;
 using System.Linq;
 
-class DemoNodes : ITest
+class TestNodes : ITest
 {
 	Pose      _modelPose = Pose.Identity;
 	Model     _model;
