@@ -9,10 +9,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
-		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
+		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
 	</ItemGroup>

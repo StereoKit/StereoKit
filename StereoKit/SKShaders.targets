@@ -19,7 +19,7 @@
 
 	<!-- This target builds all SKShader items. This is skipped for Library
 	     type projects. -->
-	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths">
+	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!='' And '$(OS)'=='Windows_NT'" BeforeTargets="AssignTargetPaths">
 		<!-- For debug builds, include shader debug info -->
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
