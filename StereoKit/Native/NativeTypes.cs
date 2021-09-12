@@ -965,4 +965,26 @@ namespace StereoKit
 		/// resolution.</summary>
 		VariablePinch
 	}
+
+	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
+	/// element.</summary>
+	public enum UIElement
+	{
+		/// <summary>Default state, no UI element at all.</summary>
+		None,
+		/// <summary>A default root UI element. Not a particular element, but
+		/// other elements may refer to this if there is nothing more specific
+		/// present.</summary>
+		Default,
+		/// <summary>Refers to UI.Button elements.</summary>
+		Button,
+		/// <summary>Refers to UI.Toggle elements.</summary>
+		Toggle,
+		/// <summary>Refers to UI.Input elements.</summary>
+		Input,
+		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
+		Handle,
+		/// <summary>Refers to UI.Window/WindowBegin elements.</summary>
+		Window
+	}
 }

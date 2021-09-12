@@ -398,6 +398,24 @@ namespace StereoKit
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
 
+		/// <summary>Override the visual assets attached to a particular UI
+		/// element. 
+		/// 
+		/// Note that StereoKit's default UI assets use a type of quadrant
+		/// sizing that is implemented in the Material _and_ the Mesh. You
+		/// don't need to use quadrant sizing for your own visuals, but if
+		/// you wish to know more, you can read more about the technique
+		/// [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// <param name="element">Which UI element to override.</param>
+		/// <param name="mesh">The Mesh to use for the UI element's visual
+		/// component. The Mesh will be scaled to match the dimensions of the
+		/// UI element.</param>
+		/// <param name="material">The Material to use when rendering the UI
+		/// element. The default Material is specifically designed to work
+		/// with quadrant sizing formatted meshes.</param>
+		public static void SetElementVisual(UIElement element, Mesh mesh, Material material)
+			=> NativeAPI.ui_set_element_visual(element, mesh._inst, material._inst);
+
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
