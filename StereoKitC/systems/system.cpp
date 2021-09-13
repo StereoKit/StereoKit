@@ -141,6 +141,7 @@ bool systems_initialize() {
 
 			// end timing
 			systems[index].profile_start_duration = stm_since(start);
+			log_diagf("Initialized %s", systems[index].name);
 		}
 	}
 	systems_initialized = true;

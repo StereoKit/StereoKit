@@ -226,7 +226,7 @@ bool openxr_init() {
 	// Check if OpenXR is on this system, if this is null here, the user needs to install an
 	// OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		log_fail_reasonf(90, log_warning, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
+		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
 		openxr_shutdown();
 		return false;
 	}
@@ -273,7 +273,7 @@ bool openxr_init() {
 	system_info.formFactor = xr_config_form;
 	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
-		log_fail_reasonf(90, log_warning, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
+		log_fail_reasonf(90, log_inform, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
 		openxr_shutdown();
 		return false;
 	}
@@ -369,7 +369,7 @@ bool openxr_init() {
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
-		log_fail_reasonf(90, log_warning, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
+		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
 		openxr_shutdown();
 		return false;
 	}
