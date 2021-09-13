@@ -44,8 +44,8 @@ typedef struct ui_settings_t {
 	float backplate_border;
 } ui_settings_t;
 
-SK_API void     ui_quadrant_size_verts (vert_t *ref_vertices, int32_t vertex_count, float overflow);
-SK_API void     ui_quadrant_size_mesh  (mesh_t ref_mesh, float overflow);
+SK_API void     ui_quadrant_size_verts (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
+SK_API void     ui_quadrant_size_mesh  (mesh_t ref_mesh, float overflow_percent);
 SK_API void     ui_show_volumes        (bool32_t      show);
 SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();

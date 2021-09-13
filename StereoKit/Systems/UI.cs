@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace StereoKit
 {
@@ -405,7 +406,9 @@ namespace StereoKit
 		/// sizing that is implemented in the Material _and_ the Mesh. You
 		/// don't need to use quadrant sizing for your own visuals, but if
 		/// you wish to know more, you can read more about the technique
-		/// [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).
+		/// You may also find UI.QuadrantSizeVerts and UI.QuadrantSizeMesh to
+		/// be helpful.</summary>
 		/// <param name="element">Which UI element to override.</param>
 		/// <param name="mesh">The Mesh to use for the UI element's visual
 		/// component. The Mesh will be scaled to match the dimensions of the
@@ -413,8 +416,40 @@ namespace StereoKit
 		/// <param name="material">The Material to use when rendering the UI
 		/// element. The default Material is specifically designed to work
 		/// with quadrant sizing formatted meshes.</param>
-		public static void SetElementVisual(UIElement element, Mesh mesh, Material material)
-			=> NativeAPI.ui_set_element_visual(element, mesh._inst, material._inst);
+		public static void SetElementVisual(UIElement element, Mesh mesh, Material material = null)
+			=> NativeAPI.ui_set_element_visual(element, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero);
+
+		/// <summary>This will reposition the vertices to work well with
+		/// quadrant resizing shaders. The mesh should generally be centered
+		/// around the origin, and face down the -Z axis. This will also 
+		/// overwrite any UV coordinates in the verts.
+		/// 
+		/// You can read more about the technique [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// <param name="verts">A list of vertices to be modified to fit the
+		/// sizing shader.</param>
+		/// <param name="overflowPercent">When scaled, should the geometry
+		/// stick out past the "box" represented by the scale, or edge up
+		/// against it? A value of 0 will mean the geometry will fit entirely
+		/// inside the "box", and a value of 1 means the geometry will start at
+		/// the boundary of the box and continue outside it.</param>
+		public static void QuadrantSizeVerts(Vertex[] verts, float overflowPercent = 0)
+			=> NativeAPI.ui_quadrant_size_verts(verts, verts.Length, overflowPercent);
+
+		/// <summary>This will reposition the Mesh's vertices to work well with
+		/// quadrant resizing shaders. The mesh should generally be centered
+		/// around the origin, and face down the -Z axis. This will also 
+		/// overwrite any UV coordinates in the verts.
+		/// 
+		/// You can read more about the technique [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// <param name="mesh">The vertices of this Mesh will be retrieved,
+		/// modified, and overwritten.</param>
+		/// <param name="overflowPercent">When scaled, should the geometry
+		/// stick out past the "box" represented by the scale, or edge up
+		/// against it? A value of 0 will mean the geometry will fit entirely
+		/// inside the "box", and a value of 1 means the geometry will start at
+		/// the boundary of the box and continue outside it.</param>
+		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
+			=> NativeAPI.ui_quadrant_size_mesh(mesh._inst, overflowPercent);
 
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);

@@ -432,6 +432,8 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_quadrant_size_verts ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_quadrant_size_mesh  (IntPtr ref_mesh, float overflow);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_show_volumes        (bool show);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_enable_far_interact (bool enable);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_far_interact_enabled();
