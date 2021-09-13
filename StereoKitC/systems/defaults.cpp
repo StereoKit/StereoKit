@@ -206,6 +206,10 @@ bool defaults_init() {
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 	material_set_cull(sk_default_material_ui_box, cull_none);
 
+	// These can be paired with changes in the shader for antialiased edges.
+	// material_set_transparency(sk_default_material_ui_box, transparency_blend);
+	// material_set_depth_write(sk_default_material_ui_box, false);
+
 	// Text!
 	sk_default_font = platform_default_font();
 	if (sk_default_font == nullptr)
