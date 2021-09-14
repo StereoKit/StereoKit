@@ -223,10 +223,26 @@ bool openxr_init() {
 	extensions.free();
 	free(layers);
 
-	// Check if OpenXR is on this system, if this is null here, the user needs to install an
-	// OpenXR runtime and ensure it's active!
+	// Check if OpenXR is on this system, if this is null here, the user needs
+	// to install an OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
+		// openxr_string only works when an xr_instance is present, so we gotta
+		// check the errors manually here. This is only the subset of errors
+		// that xrCreateInstance can throw.
+		const char *err_name = "Unknown";
+		switch (result) {
+			case XR_ERROR_VALIDATION_FAILURE:      err_name = "XR_ERROR_VALIDATION_FAILURE"; break;
+			case XR_ERROR_RUNTIME_FAILURE:         err_name = "XR_ERROR_RUNTIME_FAILURE"; break;
+			case XR_ERROR_OUT_OF_MEMORY:           err_name = "XR_ERROR_OUT_OF_MEMORY"; break;
+			case XR_ERROR_LIMIT_REACHED:           err_name = "XR_ERROR_LIMIT_REACHED"; break;
+			case XR_ERROR_RUNTIME_UNAVAILABLE:     err_name = "XR_ERROR_RUNTIME_UNAVAILABLE"; break;
+			case XR_ERROR_NAME_INVALID:            err_name = "XR_ERROR_NAME_INVALID"; break;
+			case XR_ERROR_INITIALIZATION_FAILED:   err_name = "XR_ERROR_INITIALIZATION_FAILED"; break;
+			case XR_ERROR_EXTENSION_NOT_PRESENT:   err_name = "XR_ERROR_EXTENSION_NOT_PRESENT"; break;
+			case XR_ERROR_API_VERSION_UNSUPPORTED: err_name = "XR_ERROR_API_VERSION_UNSUPPORTED"; break;
+			case XR_ERROR_API_LAYER_NOT_PRESENT:   err_name = "XR_ERROR_API_LAYER_NOT_PRESENT"; break;
+		}
+		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
 		openxr_shutdown();
 		return false;
 	}
