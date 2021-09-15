@@ -196,6 +196,8 @@ const char *assets_file(const char *file_name) {
 		}
 		ch++;
 	}
+#elif defined(SK_OS_ANDROID)
+	return file_name;
 #else
 	if (file_name[0] == platform_path_separator_c)
 		return file_name;
