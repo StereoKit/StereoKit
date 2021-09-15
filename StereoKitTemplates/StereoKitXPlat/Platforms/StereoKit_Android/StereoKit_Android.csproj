@@ -75,7 +75,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
-    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets" />
+    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Assets" BuildTo="Assets" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml">
