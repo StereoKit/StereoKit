@@ -22,7 +22,6 @@ namespace StereoKit_Android
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
-			
 			JavaSystem.LoadLibrary("openxr_loader");
 			JavaSystem.LoadLibrary("StereoKitC");
 
