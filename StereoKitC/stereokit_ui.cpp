@@ -1403,6 +1403,9 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 	uint64_t id     = ui_stack_hash(id_text);
 	bool     result = false;
 
+	const float snap_scale = 1;
+	const float snap_dist  = 7*cm2m;
+
 	// Find sizes of slider elements
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
 	float rule_size   = fmaxf(skui_settings.padding, size.y / 6.f);
@@ -1456,12 +1459,12 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
 		focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
-		vec3 pinch_local = hierarchy_to_local_point(h->pinch_pt);
-		finger_x    = pinch_local.x;
+		vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
+		int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
+		finger_x = pinch_local.x;
 
-		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && -pinch_local.z > button_depth) {
-			pinch_local.z = 1+(-pinch_local.z-button_depth) / .05f;
-			finger_x = finger_x / pinch_local.z;
+		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
+			finger_x = finger_x / (1 + scale_step * snap_scale);
 		}
 	}
 
@@ -1506,25 +1509,23 @@ bool32_t ui_hslider_at_g(const C *id_text, float &value, float min, float max, f
 			vec3{ button_size.x, button_size.y, button_depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
 
-		vec3 pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
-		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && -pinch_local.z > button_depth) {
+		vec3    pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
+		int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
+		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
+			float scale    = 1 + scale_step * snap_scale;
+			float z        = -activation_plane - (scale_step * snap_dist) + button_depth/2;
+			float scaled_x = x+size.x*(scale-1)*0.5f;
 			
-			float z = pinch_local.z;
-			pinch_local.z = 1+(-pinch_local.z-button_depth) / .05f;
-			float scaled_x = x+size.x*(pinch_local.z-1)*0.5f;
-
-			float var_line_y  = pinch_local.y + rule_size / 2.f;
-			float var_slide_y = pinch_local.y + (button_size.y)/2;
-			
-			line_add({ x, line_y-rule_size*0.5f, window_relative_pos.z}, { scaled_x, var_line_y-rule_size*0.5f, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			line_add({ x-size.x, line_y-rule_size*0.5f, window_relative_pos.z}, { scaled_x-size.x*pinch_local.z, var_line_y-rule_size*0.5f, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			float connector_y = line_y - rule_size * 0.5f;
+			line_add({ x,        connector_y, window_relative_pos.z}, { scaled_x,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_x-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
 
 			ui_box(
-				vec3{ scaled_x, var_line_y, window_relative_pos.z + z }, 
-				vec3{ size.x*pinch_local.z, rule_size, rule_size*skui_settings.backplate_depth-mm2m },
+				vec3{ scaled_x, line_y, window_relative_pos.z + z }, 
+				vec3{ size.x*scale, rule_size, rule_size*skui_settings.backplate_depth-mm2m },
 				skui_mat_quad, skui_palette[2] * color_blend);
 			ui_box(
-				vec3{ scaled_x - slide_x_rel*pinch_local.z, var_slide_y, window_relative_pos.z+z},
+				vec3{ scaled_x - slide_x_rel*scale, slide_y, window_relative_pos.z+z},
 				vec3{ button_size.x, button_size.y, button_depth}, 
 				skui_mat_quad, skui_palette[0] * color_blend);
 		}
@@ -1548,7 +1549,7 @@ template<typename C>
 bool32_t ui_hslider_g(const C *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) {
 	vec3 offset = skui_layers.last().offset;
 	if (width == 0)
-		width = skui_layers.last().size.x == 0 ? 0.1f : (skui_layers.last().size.x - skui_settings.padding) - offset.x;
+		width = ui_area_remaining().x;
 	vec2 size = { width, ui_line_height() };
 
 	// Draw the UI
