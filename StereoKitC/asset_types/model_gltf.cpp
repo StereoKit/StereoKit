@@ -249,9 +249,38 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 	snprintf(dest, dest_length, "%s/unknown_image", filename);
 }
 
+
 ///////////////////////////////////////////
 
-tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename, bool srgb_data) {
+void gltf_apply_sampler(tex_t to_tex, cgltf_sampler *sampler) {
+	if (sampler == nullptr) return;
+
+	tex_sample_ sample = tex_get_sample(to_tex);
+	switch (sampler->mag_filter) {
+	case 9728: // NEAREST
+	case 9984: // NEAREST_MIPMAP_NEAREST
+	case 9986: // NEAREST_MIPMAP_LINEAR
+		sample = tex_sample_point;
+		break;
+	default:
+		sample = tex_sample_linear;
+		break;
+	}
+
+	tex_address_ address = tex_get_address(to_tex);
+	switch (sampler->wrap_s) {
+	case 33071: address = tex_address_clamp;  break;
+	case 33648: address = tex_address_mirror; break;
+	case 10497: address = tex_address_wrap;   break;
+	}
+	tex_set_options(to_tex, sample, address);
+}
+
+///////////////////////////////////////////
+
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data) {
+	cgltf_image *image = tex->image;
+
 	// Check if we've already loaded this image
 	char id[512];
 	gltf_imagename(data, image, filename, id, 512);
@@ -286,6 +315,9 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		// If it's a file path to an external image file
 		result = tex_create_file(id, srgb_data);
 	}
+	if (result != nullptr)
+		gltf_apply_sampler(result, tex->sampler);
+
 	return result;
 }
 
@@ -336,14 +368,14 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
-			tex_t parse_tex = gltf_parsetexture(data, tex->image, filename, true);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 			material_set_texture(result, "diffuse", parse_tex);
 			tex_release(parse_tex);
 		}
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
-			tex_t parse_tex = gltf_parsetexture(data, tex->image, filename, false);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 			material_set_texture(result, "metal", parse_tex);
 			tex_release(parse_tex);
 		}
@@ -364,21 +396,21 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
-		tex_t parse_tex = gltf_parsetexture(data, tex->image, filename, false);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "normal", parse_tex);
 		tex_release(parse_tex);
 	}
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
-		tex_t parse_tex = gltf_parsetexture(data, tex->image, filename, false);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "occlusion", parse_tex);
 		tex_release(parse_tex);
 	}
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
-		tex_t parse_tex = gltf_parsetexture(data, tex->image, filename, true);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 		material_set_texture(result, "emission", parse_tex);
 		tex_release(parse_tex);
 	}
