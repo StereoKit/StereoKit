@@ -450,10 +450,15 @@ bool uwp_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool uwp_start_post_xr() {
-	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
-	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
-		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
-	});
+	// This only works with WMR, and will crash elsewhere
+	try {
+		CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
+		CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+			CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
+		});
+	} catch (...) {
+		log_warn("Keyboard input not available through this runtime.");
+	}
 	return true;
 }
 
