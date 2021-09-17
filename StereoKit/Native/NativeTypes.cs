@@ -967,8 +967,8 @@ namespace StereoKit
 	}
 
 	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
-	/// element.</summary>
-	public enum UIElement
+	/// element visual.</summary>
+	public enum UIVisual
 	{
 		/// <summary>Default state, no UI element at all.</summary>
 		None,
@@ -984,7 +984,19 @@ namespace StereoKit
 		Input,
 		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
 		Handle,
-		/// <summary>Refers to UI.Window/WindowBegin elements.</summary>
-		Window
+		/// <summary>Refers to UI.Window/WindowBegin body panel element, this
+		/// element is used when a Window head is also present.</summary>
+		WindowBody,
+		/// <summary>Refers to UI.Window/WindowBegin body element, this element
+		/// is used when a Window only has the body panel, without a head.
+		/// </summary>
+		WindowBodyOnly,
+		/// <summary>Refers to UI.Window/WindowBegin head panel element, this
+		/// element is used when a Window body is also present.</summary>
+		WindowHead,
+		/// <summary>Refers to UI.Window/WindowBegin head element, this element
+		/// is used when a Window only has the head panel, without a body.
+		/// </summary>
+		WindowHeadOnly,
 	}
 }
