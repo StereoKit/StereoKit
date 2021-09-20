@@ -73,6 +73,8 @@ array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
 array_t<text_style_t>skui_font_stack = {};
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
+mesh_t          skui_win_top      = nullptr;
+mesh_t          skui_win_bot      = nullptr;
 mesh_t          skui_box          = nullptr;
 vec3            skui_box_min      = {};
 mesh_t          skui_box_dbg      = nullptr;
@@ -202,16 +204,14 @@ void ui_quadrant_size_mesh(mesh_t ref_mesh, float overflow) {
 
 ///////////////////////////////////////////
 
-void ui_quadrant_mesh(float padding) {
-	if (skui_box == nullptr) {
-		skui_box = mesh_create();
-		mesh_set_id(skui_box, default_id_mesh_ui_button);
+void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
+	if (*mesh == nullptr) {
+		*mesh = mesh_create();
 	}
 	
 	float radius = padding / 2;
-	skui_box_min = { padding, padding, 0 };
 
-	vind_t  subd       = (vind_t)3*4;
+	vind_t  subd       = (vind_t)quadrant_slices*4;
 	int     vert_count = subd * 5 + 2;
 	int     ind_count  = subd * 18;
 	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
@@ -222,7 +222,7 @@ void ui_quadrant_mesh(float padding) {
 	for (vind_t i = 0; i < subd; i++) {
 		float u = 0, v = 0;
 
-		float ang = ((float)i / subd + (0.5f/subd)) * (float)3.14159f * 2;
+		float ang = ((float)i / subd + (0.5f/subd)) *(float)MATH_PI * 2;
 		float x = cosf(ang);
 		float y = sinf(ang);
 		vec3 normal  = {x,y,0};
@@ -247,6 +247,7 @@ void ui_quadrant_mesh(float padding) {
 		inds[ind++] = subd * 5+1;
 		inds[ind++] = in * 5 + 4;
 		inds[ind++] = i  * 5 + 4;
+
 		// Now edge strip quad bottom
 		inds[ind++] = in * 5+1;
 		inds[ind++] = in * 5;
@@ -262,13 +263,126 @@ void ui_quadrant_mesh(float padding) {
 		inds[ind++] = in * 5+2;
 		inds[ind++] = i  * 5+1;
 	}
+
 	// center points for the circle
 	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
 	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
 	ui_quadrant_size_verts(verts, vert_count, 0);
 
-	mesh_set_verts(skui_box, verts, vert_count);
-	mesh_set_inds (skui_box, inds,  ind_count);
+	mesh_set_verts(*mesh, verts, vert_count);
+	mesh_set_inds (*mesh, inds,  ind_count);
+
+	free(verts);
+	free(inds);
+}
+
+///////////////////////////////////////////
+
+void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices, float angle_start) {
+	if (*mesh == nullptr) {
+		*mesh = mesh_create();
+	}
+
+	float radius = padding / 2;
+
+	vind_t  subd       = (vind_t)quadrant_slices*2 + 2;
+	int     vert_count = subd * 5 + 2;
+	int     ind_count  = subd * 18 - 12;
+	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
+
+	for (vind_t i = 0; i < subd-2; i++) {
+		float u = 0, v = 0;
+
+		float ang = angle_start + ((float)i / (subd-2) + (0.5f / (subd-2))) * (MATH_PI);
+		float x = cosf(ang);
+		float y = sinf(ang);
+		vec3 normal  = {x,y,0};
+		vec3 top_pos = normal*radius*0.75f + vec3{0, 0.001f*radius, 0.5f};
+		vec3 ctr_pos = normal*radius;
+		vec3 bot_pos = normal*radius*0.75f + vec3{0, 0.001f*radius,-0.5f};
+
+		// strip first
+		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
+		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
+		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {u,v}, {255,255,255,0} };
+		// now circular faces
+		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
+		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
+	}
+	// Top half
+	{
+		int32_t i   = subd - 2;
+		float   ang = angle_start + MATH_PI;
+		float   x   = cosf(ang);
+		float   y   = sinf(ang);
+		vec3 normal  = {x,y,0};
+		vec3 up      = vec3{-y,x,0 } * radius;
+		vec3 top_pos = normal*radius*0.75f + vec3{0,0, 0.5f} + up;
+		vec3 ctr_pos = normal*radius                         + up;
+		vec3 bot_pos = normal*radius*0.75f + vec3{0,0,-0.5f} + up;
+		// strip first
+		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
+		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
+		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
+		// now circular faces
+		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
+		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
+
+		i   = subd - 1;
+		ang = angle_start;
+		x   = cosf(ang);
+		y   = sinf(ang);
+		normal  = {x,y,0};
+		top_pos = normal*radius*0.75f + vec3{0,0, 0.5f} + up;
+		ctr_pos = normal*radius                         + up;
+		bot_pos = normal*radius*0.75f + vec3{0,0,-0.5f} + up;
+		// strip first
+		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
+		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
+		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
+		// now circular faces
+		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
+		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
+	}
+
+	vind_t ind = 0;
+	for (vind_t i = 0; i < subd; i++) {
+		vind_t in = (i + 1) % subd;
+		// Top slice
+		inds[ind++] = i  * 5 + 3;
+		inds[ind++] = in * 5 + 3;
+		inds[ind++] = subd * 5;
+		// Bottom slice
+		inds[ind++] = subd * 5+1;
+		inds[ind++] = in * 5 + 4;
+		inds[ind++] = i  * 5 + 4;
+
+		if (i == subd - 2) continue;
+
+		// Now edge strip quad bottom
+		inds[ind++] = in * 5+1;
+		inds[ind++] = in * 5;
+		inds[ind++] = i  * 5;
+		inds[ind++] = i  * 5+1;
+		inds[ind++] = in * 5+1;
+		inds[ind++] = i  * 5;
+		// And edge strip quad top
+		inds[ind++] = in * 5+2;
+		inds[ind++] = in * 5+1;
+		inds[ind++] = i  * 5+1;
+		inds[ind++] = i  * 5+2;
+		inds[ind++] = in * 5+2;
+		inds[ind++] = i  * 5+1;
+	}
+
+	// center points for the circle
+	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
+	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
+	ui_quadrant_size_verts(verts, vert_count, 0);
+
+	mesh_set_verts(*mesh, verts, vert_count);
+	mesh_set_inds (*mesh, inds,  ind_count);
 
 	free(verts);
 	free(inds);
@@ -334,7 +448,10 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
 	skui_settings = settings; 
 
-	ui_quadrant_mesh(settings.padding*0.75f);
+	skui_box_min = { settings.padding*0.75f, settings.padding*0.75f, 0 };
+	ui_quadrant_mesh(&skui_box, settings.padding*0.75f, 3);
+	ui_quadrant_mesh_half(&skui_win_top, skui_settings.padding, 3, 0);
+	ui_quadrant_mesh_half(&skui_win_bot, skui_settings.padding, 3, 180 * deg2rad);
 }
 
 ///////////////////////////////////////////
@@ -408,7 +525,11 @@ void ui_pop_text_style() {
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
-	ui_quadrant_mesh(skui_settings.padding*0.75f);
+	skui_box_min = { skui_settings.padding*0.75f, skui_settings.padding*0.75f, 0 };
+	ui_quadrant_mesh(&skui_box, skui_settings.padding*0.75f, 3);
+	ui_quadrant_mesh_half(&skui_win_top, skui_settings.padding, 3, 0);
+	ui_quadrant_mesh_half(&skui_win_bot, skui_settings.padding, 3, 180 * deg2rad);
+
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_cylinder = mesh_gen_cylinder(1, 1, {0,0,1}, 24);
 	skui_mat      = material_find(default_id_material_ui);
@@ -430,7 +551,9 @@ bool ui_init() {
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
 
-	ui_set_element_visual(ui_vis_default, skui_box, skui_mat_quad);
+	ui_set_element_visual(ui_vis_default,     skui_box, skui_mat_quad);
+	ui_set_element_visual(ui_vis_window_head, skui_win_top, nullptr);
+	ui_set_element_visual(ui_vis_window_body, skui_win_bot, nullptr);
 
 	return true;
 }
