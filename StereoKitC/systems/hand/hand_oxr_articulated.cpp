@@ -39,8 +39,6 @@ bool hand_oxra_available() {
 ///////////////////////////////////////////
 
 bool hand_oxra_is_tracked() {
-	if (xr_time <= 0)
-		return true;
 	if (!oxra_system_initialized)
 		return false;
 
@@ -149,20 +147,28 @@ void hand_oxra_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_joints() {
-	if (xr_time <= 0)
-		return;
-
 	// Generate some shoulder data used for generating hand pointers
 
-	// Average shoulder width for women:37cm, men:41cm, but 2/3 that feels a
-	// bit better.
-	const float avg_shoulder_width = (39.0f/2.0f) * cm2m * 0.66f;
+	// Average shoulder width for women:37cm, men:41cm, center of shoulder
+	// joint is around 4cm inwards
+	const float avg_shoulder_width = ((39.0f/2.0f)-4.0f)*cm2m;
+	const float head_length        = 10*cm2m;
+	const float neck_length        = 7*cm2m;
 
-	vec3 chest_center = input_head()->position;
-	chest_center.y -= 25*cm2m;
+	// Chest center is down to the base of the head, and then down the neck.
+	const pose_t *head = input_head();
+	vec3 chest_center = head->position + head->orientation * vec3{0,-head_length,0};
+	chest_center.y   -= neck_length;
+
+	// Shoulder forward facing direction is head direction weighted equally 
+	// with the direction of both hands.
 	vec3 face_fwd = input_head()->orientation * vec3_forward;
 	face_fwd.y = 0;
-	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width; 
+	face_fwd   = vec3_normalize(face_fwd) * 2;
+	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
+	face_fwd  += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
+	face_fwd  *= 0.25f;
+	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width;
 
 	bool hands_active = false;
 	for (int32_t h = 0; h < handed_max; h++) {
@@ -216,8 +222,8 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
 		// Create pointers for the hands
-		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
-		vec3 ray_joint = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
+		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 		pose_t point_pose = {
 			ray_joint,
 			quat_lookat(shoulder, ray_joint) };
@@ -306,7 +312,7 @@ void hand_oxra_update_system_meshes() {
 		// transform for the mesh.
 		pose_t pose;
 		if (openxr_get_space(oxra_hand_space[h], &pose, xr_time))
-			hand_mesh->root_transform = pose_matrix(pose);
+			hand_mesh->root_transform = pose_matrix(pose) * render_get_cam_final();
 
 		if (oxra_mesh_src[h].isActive) {
 			// Update hand mesh indices when they've changed, or when we've

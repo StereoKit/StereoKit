@@ -50,7 +50,7 @@ std::vector<fp_file_cache_t> fp_file_cache = {};
 #endif
 
 char                         fp_filename[1024];
-char                         fp_buffer[1024];
+char                         fp_buffer[1023];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
@@ -99,7 +99,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		settings.nFilterIndex = 1;
 
 		if (mode == picker_mode_open) {
-			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Open";
 			if (GetOpenFileName(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
@@ -107,7 +107,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 				if (on_confirm) on_confirm(callback_data, false, nullptr);
 			}
 		} else if (mode == picker_mode_save) {
-			settings.Flags = OFN_PATHMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Save As";
 			if (GetSaveFileNameA(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
@@ -234,7 +234,7 @@ void file_picker_open_folder(const char *folder) {
 		bool valid = fp_filter_count == 0;
 		// If the extention matches our filter, add it
 		if (file) {
-			for (size_t e = 0; e < fp_filter_count; e++) {
+			for (int32_t e = 0; e < fp_filter_count; e++) {
 				if (string_endswith(name, fp_filters[e].ext, false)) {
 					valid = true;
 					break;
@@ -287,9 +287,16 @@ void file_picker_update() {
 		// Show the active item
 		switch (fp_mode) {
 		case picker_mode_save: {
-			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
+			if (ui_button("Cancel")) {
+				fp_call        = true;
+				fp_call_status = false;
+			}
 			ui_sameline();
-			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; fp_call_status = true; }
+			if (ui_button("Save")) { 
+				snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer);
+				fp_call        = true;
+				fp_call_status = true;
+			}
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;

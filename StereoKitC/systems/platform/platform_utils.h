@@ -38,7 +38,7 @@ void  platform_set_cursor(vec2 window_pos);
 float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
 void  platform_sleep       (int ms);
-void  platform_default_font(char *fontname_buffer, size_t buffer_size);
+font_t platform_default_font();
 char *platform_working_dir ();
 void  platform_iterate_dir (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file));
 char *platform_push_path_ref(char *path, const char *directory);

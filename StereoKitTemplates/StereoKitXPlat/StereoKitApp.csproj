@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="StereoKit" Version="0.3.1-preview.2" />
+    <PackageReference Include="StereoKit" Version="0.3.2" />
   </ItemGroup>
 
 </Project>

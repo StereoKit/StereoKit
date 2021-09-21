@@ -1,5 +1,5 @@
 #include "material.h"
-#include "texture.h"
+#include "shader.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
@@ -17,7 +17,7 @@ _material_buffer_t material_buffers[14] = {};
 material_t material_find(const char *id) {
 	material_t result = (material_t)assets_find(id, asset_type_material);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		material_addref(result);
 		return result;
 	}
 	return result;
@@ -83,20 +83,25 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_create(shader_t shader) {
-	if (shader == nullptr) {
+	shader_t material_shader = shader;
+	if (material_shader == nullptr) {
 		log_warn("material_create was provided a null shader, defaulting to an unlit shader.");
-		shader = shader_find(default_id_shader_unlit);
+		material_shader = shader_find(default_id_shader_unlit);
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
-	assets_addref(shader->header);
+	shader_addref(material_shader);
 	result->alpha_mode = transparency_none;
-	result->shader     = shader;
+	result->shader     = material_shader;
 	result->depth_test = depth_test_less;
 	result->depth_write= true;
 	result->pipeline   = skg_pipeline_create(&result->shader->shader);
 
 	material_set_cull(result, cull_back);
-	material_create_arg_defaults(result, shader);
+	material_create_arg_defaults(result, material_shader);
+
+	if (shader == nullptr) {
+		shader_release(material_shader);
+	}
 
 	return result;
 }
@@ -106,6 +111,11 @@ material_t material_create(shader_t shader) {
 material_t material_copy(material_t material) {
 	// Make a new empty material
 	material_t result = material_create(material->shader);
+	// release any of the default textures for the material.
+	for (int32_t i = 0; i < result->args.texture_count; i++) {
+		if (result->args.textures[i] != nullptr)
+			tex_release(result->args.textures[i]);
+	}
 	// Store allocated memory temporarily
 	void          *tmp_buffer        = result->args.buffer;
 	skg_buffer_t   tmp_buffer_gpu    = result->args.buffer_gpu;
@@ -126,10 +136,9 @@ material_t material_copy(material_t material) {
 	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skg_bind_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
-	assets_addref(result->shader->header);
 	for (int32_t i = 0; i < result->args.texture_count; i++) {
 		if (result->args.textures[i] != nullptr)
-			assets_addref(result->args.textures[i]->header);
+			tex_addref(result->args.textures[i]);
 	}
 
 	// Copy over the material's pipeline
@@ -150,6 +159,12 @@ material_t material_copy_id(const char *id) {
 	material_t result = material_copy(src);
 	material_release(src);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void material_addref(material_t material) {
+	assets_addref(material->header);
 }
 
 ///////////////////////////////////////////
@@ -183,7 +198,7 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	// Update references
 	if (shader != nullptr)
-		assets_addref(shader->header);
+		shader_addref(shader);
 
 	// Copy over any relevant values that are attached to the old shader
 	if (material->shader != nullptr && shader != nullptr) {
@@ -318,6 +333,10 @@ void material_set_float(material_t material, const char *name, float value) {
 	if (i == -1) return;
 	
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(float)) {
+		log_errf("material_set_float: '%s' is not a float (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }
@@ -329,6 +348,10 @@ void material_set_color32(material_t material, const char *name, color32 value) 
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(color128)) {
+		log_errf("material_set_color32: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = color_to_linear( { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f } );
 	material->args.buffer_dirty = true;
 }
@@ -340,6 +363,10 @@ void material_set_color(material_t material, const char *name, color128 value) {
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(color128)) {
+		log_errf("material_set_color: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = color_to_linear( value );
 	material->args.buffer_dirty = true;
 }
@@ -347,11 +374,51 @@ void material_set_color(material_t material, const char *name, color128 value) {
 ///////////////////////////////////////////
 
 void material_set_vector(material_t material, const char *name, vec4 value) {
+	material_set_vector4(material, name, value);
+}
+
+///////////////////////////////////////////
+
+void material_set_vector4(material_t material, const char *name, vec4 value) {
 	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec4)) {
+		log_errf("material_set_vector4: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
+}
+
+///////////////////////////////////////////
+
+void material_set_vector3(material_t material, const char *name, vec3 value) {
+	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec3)) {
+		log_errf("material_set_vector3: '%s' is not a float3 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
+	*(vec3 *)((uint8_t*)material->args.buffer + info->offset) = value;
+	material->args.buffer_dirty = true;
+}
+
+///////////////////////////////////////////
+
+void material_set_vector2(material_t material, const char *name, vec2 value) {
+	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
+	if (i == -1) return;
+
+	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(vec2)) {
+		log_errf("material_set_vector2: '%s' is not a float2 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
+	*(vec2 *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }
 
@@ -362,6 +429,10 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 	if (i == -1) return;
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
+	if (info->size != sizeof(matrix)) {
+		log_errf("material_set_matrix: '%s' is not a float4x4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		return;
+	}
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
 	material->args.buffer_dirty = true;
 }
@@ -376,13 +447,13 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 					tex_release(material->args.textures[i]);
 				material->args.textures[i] = value;
 				if (value != nullptr) {
-					assets_addref(value->header);
+					tex_addref(value);
 
 					// Tell the shader about the texture dimensions, if it has
 					// a parameter for it. Texture info will get put into any
 					// float4 param with the name [texname]_i
 					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
-					vec4     info = {(float)value->tex.width, (float)value->tex.height, (float)(uint32_t)log2(value->tex.width), 0};
+					vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
 					material_set_param_id(material, tex_info_hash, material_param_vector, &info);
 				}
 			}

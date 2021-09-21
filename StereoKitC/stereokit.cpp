@@ -114,7 +114,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_platform_begin  .func_update     = platform_step_begin;
 	sys_platform_render .func_update     = platform_step_end;
 
-	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines"};
+	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
 
@@ -228,7 +228,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	system_t sys_world = { "World" };
 	const char *world_deps       [] = {"Platform", "Defaults"};
-	const char *world_update_deps[] = {"Platform"};
+	const char *world_update_deps[] = {"Platform", "App"};
 	sys_world.init_dependencies       = world_deps;
 	sys_world.init_dependency_count   = _countof(world_deps);
 	sys_world.update_dependencies     = world_update_deps;
@@ -239,7 +239,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_world);
 
 	system_t sys_app = { "App" };
-	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI", "World"};
+	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
 	sys_app.update_dependencies     = app_update_deps;
 	sys_app.update_dependency_count = _countof(app_update_deps);
 	sys_app.func_update             = sk_app_update;

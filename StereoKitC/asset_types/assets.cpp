@@ -149,9 +149,35 @@ void  assets_releaseref(asset_header_t &asset) {
 
 ///////////////////////////////////////////
 
+void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
+	// Swap references by adding a reference first, then removing. If the asset
+	// is the same, then this prevents the asset from getting destroyed.
+	assets_addref    (* asset);
+	assets_releaseref(**asset_link);
+	*asset_link = asset;
+}
+
+///////////////////////////////////////////
+
 void  assets_shutdown_check() {
 	if (assets.count > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
+#if defined(SK_DEBUG)
+		for (size_t i = 0; i < assets.count; i++) {
+			const char *type_name = "[unimplemented type name]";
+			switch(assets[i]->type) {
+			case asset_type_mesh:     type_name = "mesh_t";     break;
+			case asset_type_texture:  type_name = "tex_t";      break;
+			case asset_type_shader:   type_name = "shader_t";   break;
+			case asset_type_material: type_name = "material_t"; break;
+			case asset_type_model:    type_name = "model_t";    break;
+			case asset_type_font:     type_name = "font_t";     break;
+			case asset_type_sprite:   type_name = "sprite_t";   break;
+			case asset_type_sound:    type_name = "sound_t";    break;
+			}
+			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
+		}
+#endif
 	}
 }
 
@@ -170,6 +196,8 @@ const char *assets_file(const char *file_name) {
 		}
 		ch++;
 	}
+#elif defined(SK_OS_ANDROID)
+	return file_name;
 #else
 	if (file_name[0] == platform_path_separator_c)
 		return file_name;

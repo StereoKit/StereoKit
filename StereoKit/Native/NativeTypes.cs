@@ -210,16 +210,16 @@ namespace StereoKit
 		/// display, this will be the height of a single eye.</summary>
 		public int displayHeight;
 
-		/// <summary>Does the device we're currently on have the spatial 
-		/// graph bridge extension? The extension is provided through the 
-		/// function `Pose.FromSpatialNode`. This allows OpenXR to talk with 
+		/// <summary>Does the device we're currently on have the spatial
+		/// graph bridge extension? The extension is provided through the
+		/// function `World.FromSpatialNode`. This allows OpenXR to talk with
 		/// certain windows APIs, such as the QR code API that provides Graph
 		/// Node GUIDs for the pose.</summary>
 		public  bool spatialBridgePresent { get => _spatialBridgePresent > 0; }
 		private int _spatialBridgePresent;
 
 		/// <summary>Can the device work with externally provided spatial
-		/// anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`?
+		/// anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`
 		/// </summary>
 		public bool perceptionBridgePresent { get => _perceptionBridgePresent > 0; }
 		private int _perceptionBridgePresent;
@@ -959,6 +959,44 @@ namespace StereoKit
 		/// element. This is much harder to activate by accident, but does
 		/// require the user to make a precise pinch gesture. You can pretty
 		/// much be sure that's what the user meant to do!</summary>
-		Pinch
+		Pinch,
+		/// <summary>Same as Pinch, but pulling out from the slider creates a
+		/// scaled slider that lets you adjust the slider at a more granular
+		/// resolution.</summary>
+		VariablePinch
+	}
+
+	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
+	/// element visual.</summary>
+	public enum UIVisual
+	{
+		/// <summary>Default state, no UI element at all.</summary>
+		None,
+		/// <summary>A default root UI element. Not a particular element, but
+		/// other elements may refer to this if there is nothing more specific
+		/// present.</summary>
+		Default,
+		/// <summary>Refers to UI.Button elements.</summary>
+		Button,
+		/// <summary>Refers to UI.Toggle elements.</summary>
+		Toggle,
+		/// <summary>Refers to UI.Input elements.</summary>
+		Input,
+		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
+		Handle,
+		/// <summary>Refers to UI.Window/WindowBegin body panel element, this
+		/// element is used when a Window head is also present.</summary>
+		WindowBody,
+		/// <summary>Refers to UI.Window/WindowBegin body element, this element
+		/// is used when a Window only has the body panel, without a head.
+		/// </summary>
+		WindowBodyOnly,
+		/// <summary>Refers to UI.Window/WindowBegin head panel element, this
+		/// element is used when a Window body is also present.</summary>
+		WindowHead,
+		/// <summary>Refers to UI.Window/WindowBegin head element, this element
+		/// is used when a Window only has the head panel, without a body.
+		/// </summary>
+		WindowHeadOnly,
 	}
 }

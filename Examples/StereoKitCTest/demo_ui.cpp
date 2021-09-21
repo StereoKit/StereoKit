@@ -1,7 +1,7 @@
-#include "demo_ui.h"
+﻿#include "demo_ui.h"
 
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+#include <stereokit.h>
+#include <stereokit_ui.h>
 using namespace sk;
 
 ///////////////////////////////////////////
@@ -35,6 +35,9 @@ void demo_ui_update() {
 	if (ui_button("Press me!")) {
 		ui_button("DYNAMIC BUTTON!!");
 	}
+
+	ui_text(u8"古池や\n蛙飛び込む\n水の音\n- Matsuo Basho");
+	ui_text(u8"Съешь же ещё этих мягких французских булок да выпей чаю. Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства. В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!");
 
 	ui_window_end();
 }

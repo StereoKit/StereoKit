@@ -47,11 +47,13 @@
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(SolutionDir)StereoKitC;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(SolutionDir)StereoKitC;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -64,6 +66,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)Shaders\*.hlsl</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -79,8 +84,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(ProjectDir)Shaders\*.hlsl</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
     <ClCompile Include="demo_picker.cpp" />
@@ -90,8 +99,10 @@
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="skt_lighting.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
@@ -100,6 +111,9 @@
     <ClInclude Include="demo_world.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="demo_basics.h" />
+    <ClInclude Include="Shaders\skt_default_lighting.hlsl.h" />
+    <ClInclude Include="Shaders\skt_light_only.hlsl.h" />
+    <ClInclude Include="skt_lighting.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StereoKitC\StereoKitC.vcxproj">
@@ -112,6 +126,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\skt_default_lighting.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shaders\skt_light_only.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

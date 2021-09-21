@@ -2,8 +2,8 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
-#include "../asset_types/material.h"
 #include "platform/openxr.h"
+#include "render.h"
 
 #include <float.h>
 
@@ -28,6 +28,7 @@ struct scene_mesh_t {
 
 struct su_mesh_inst_t {
 	mesh_t   mesh_ref;
+	matrix   local_transform;
 	matrix   transform;
 	matrix   inv_transform;
 };
@@ -143,17 +144,16 @@ bool32_t world_get_raycast_enabled() {
 ///////////////////////////////////////////
 
 void world_set_occlusion_material(material_t material) {
-	material_release(xr_scene_material);
-	xr_scene_material = material;
-	if (xr_scene_material)
-		assets_addref(xr_scene_material->header);
+	assets_safeswap_ref(
+		(asset_header_t**)&xr_scene_material,
+		(asset_header_t *)material);
 }
 
 ///////////////////////////////////////////
 
 material_t world_get_occlusion_material() {
 	if (xr_scene_material)
-		assets_addref(xr_scene_material->header);
+		material_addref(xr_scene_material);
 	return xr_scene_material;
 }
 
@@ -317,9 +317,10 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 
 		int32_t        mesh_idx = world_mesh_get_or_add(meshes.sceneMeshes[i].meshBufferId);
 		su_mesh_inst_t inst     = {};
-		inst.mesh_ref      = xr_meshes[mesh_idx].mesh;
-		inst.transform     = pose_matrix(pose);
-		inst.inv_transform = matrix_invert(inst.transform);
+		inst.mesh_ref        = xr_meshes[mesh_idx].mesh;
+		inst.local_transform = pose_matrix(pose);
+		inst.transform       = inst.local_transform * render_get_cam_final();
+		inst.inv_transform   = matrix_invert(inst.transform);
 		if (xr_meshes[mesh_idx].buffer_updated != components.components[i].updateTime) {
 			xr_meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;
 			xr_meshes[mesh_idx].buffer_dirty    = true;
@@ -336,6 +337,7 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 
 bool world_init() {
 	xr_scene_material = material_copy_id(default_id_material_unlit);
+	material_set_id   (xr_scene_material, "default/world_mat");
 	material_set_color(xr_scene_material, "color", { 0,0,0,0 });
 
 	xr_scene_next_req.center = { 10000,10000,10000 };
@@ -355,7 +357,7 @@ void world_update() {
 			xr_scene_update_requested = true;
 
 		// Check if we need to request a new scene
-		if (xr_time > 0 && !xr_scene_updating && xr_scene_update_requested) {
+		if (!xr_scene_updating && xr_scene_update_requested) {
 			xr_scene_update_requested = false;
 			world_request_update(xr_scene_next_req);
 		}
@@ -405,6 +407,8 @@ void world_scene_shutdown() {
 	xr_scene_colliders.clear();
 	xr_scene_visuals  .clear();
 
+	material_release(xr_scene_material);
+
 	xr_scene_updating = false;
 }
 
@@ -420,6 +424,20 @@ void world_shutdown() {
 	xr_meshes         .free();
 	xr_scene_colliders.free();
 	xr_scene_visuals  .free();
+}
+
+///////////////////////////////////////////
+
+inline void world_update_inst(su_mesh_inst_t &inst) {
+	inst.transform     = inst.local_transform * render_get_cam_final();
+	inst.inv_transform = matrix_invert(inst.transform);
+}
+
+///////////////////////////////////////////
+
+void world_refresh_transforms() {
+	xr_scene_colliders.each(world_update_inst);
+	xr_scene_visuals  .each(world_update_inst);
 }
 
 } // namespace sk

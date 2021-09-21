@@ -18,6 +18,10 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|ARM64">
       <Configuration>Debug</Configuration>
       <Platform>ARM64</Platform>
@@ -25,6 +29,10 @@
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|ARM64">
       <Configuration>Release</Configuration>
@@ -71,7 +79,21 @@
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>StereoKitC</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>StereoKitC</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>StereoKitC</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
@@ -112,11 +134,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <PreprocessorDefinitions>WINDOWS_UWP;SK_NO_LEAP_MOTION;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -128,27 +154,41 @@ xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <PreprocessorDefinitions>WINDOWS_UWP;SK_NO_LEAP_MOTION;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</CompileAsWinRT>
+      <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</CompileAsWinRT>
     </ClCompile>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -160,17 +200,26 @@ xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">$(SolutionDir)Tools\skshaderc.exe -O3 -h -t xge -i $(SolutionDir)Tools\include $(SolutionDir)StereoKitC\shaders_builtin\*.hlsl
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(SolutionDir)Tools\Update-OpenXR.ps1</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

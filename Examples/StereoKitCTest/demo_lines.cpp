@@ -1,7 +1,7 @@
 #include "demo_lines.h"
 
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+#include <stereokit.h>
+#include <stereokit_ui.h>
 using namespace sk;
 #include <vector>
 using namespace std;
@@ -23,11 +23,14 @@ vector<vector<line_point_t>> line_list;
 ///////////////////////////////////////////
 
 void demo_lines_init() {
-	line_palette_model = model_create_file("Palette.glb", shader_find(default_id_shader_ui));
+	shader_t ui_shader = shader_find(default_id_shader_ui);
+	line_palette_model = model_create_file("Palette.glb", ui_shader);
 	line_window_pose   = { { 0.3f, 0, -0.3f}, quat_lookat(vec3_zero, {-1,0,1}) };
 	line_palette_pose  = { {-0.3f, 0, -0.3f}, quat_lookat(vec3_zero, { 1,0,1}) };
 
 	line_hand_mat = material_find(default_id_material_hand);
+
+	shader_release(ui_shader);
 }
 
 ///////////////////////////////////////////
@@ -121,5 +124,6 @@ void demo_lines_update() {
 ///////////////////////////////////////////
 
 void demo_lines_shutdown() {
-	model_release(line_palette_model);
+	model_release   (line_palette_model);
+	material_release(line_hand_mat);
 }

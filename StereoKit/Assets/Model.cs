@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -9,9 +11,9 @@ namespace StereoKit
 	/// model formats are composed this way already!
 	/// 
 	/// This class contains a number of methods for creation. If you pass in
-	/// a .obj, .stl, .gltf, or .glb, StereoKit will load that model from 
-	/// file, and assemble materials and transforms from the file 
-	/// information. But you can also assemble a model from procedurally 
+	/// a .obj, .stl, , .ply (ASCII), .gltf, or .glb, StereoKit will load
+	/// that model from file, and assemble materials and transforms from the
+	/// file information. But you can also assemble a model from procedurally 
 	/// generated meshes!
 	/// 
 	/// Because models include an offset transform for each mesh element,
@@ -21,11 +23,25 @@ namespace StereoKit
 	/// faster to render a Mesh instead of a Model!</summary>
 	public class Model
 	{
-		internal IntPtr _inst;
+		internal IntPtr                _inst;
+		private  ModelNodeCollection   _nodeCollection;
+		private  ModelVisualCollection _visualCollection;
 
 		/// <summary>The number of mesh subsets attached to this model.
 		/// </summary>
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals instead.")]
 		public int SubsetCount => NativeAPI.model_subset_count(_inst);
+
+		/// <summary>This is an enumerable collection of all the nodes in this
+		/// Model, ordered non-heirarchically by when they were added. You can
+		/// do Linq stuff with it, foreach it, or just treat it like a List or
+		/// array!</summary>
+		public ModelNodeCollection   Nodes   => _nodeCollection;
+		/// <summary>This is an enumerable collection of all the nodes with
+		/// Mesh/Material data in this Model, ordered non-heirarchically by
+		/// when they were added. You can do Linq stuff with it, foreach it, or
+		/// just treat it like a List or array!</summary>
+		public ModelVisualCollection Visuals => _visualCollection;
 
 		/// <summary>This is a bounding box that encapsulates the Model and
 		/// all its subsets! It's used for collision, visibility testing, UI
@@ -37,6 +53,17 @@ namespace StereoKit
 			set => NativeAPI.model_set_bounds(_inst, value);
 		}
 
+		/// <summary>Returns the first root node in the Model's hierarchy.
+		/// There may be additional root nodes, and these will be Siblings
+		/// of this ModelNode. If there are no nodes present on the Model,
+		/// this will be null.</summary>
+		public ModelNode RootNode { get {
+			int nodeId = NativeAPI.model_node_get_root(_inst);
+			return nodeId >= 0 
+				? new ModelNode(_inst, nodeId)
+				: null;
+		} }
+
 		#region Constructors
 		/// <summary>Creates a single mesh subset Model using the indicated
 		/// Mesh and Material! An id will be automatically generated for this
@@ -45,7 +72,9 @@ namespace StereoKit
 		/// <param name="material">Any Material asset.</param>
 		public Model(Mesh mesh, Material material)
 		{
-			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_inst             = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_visualCollection = new ModelVisualCollection(_inst);
 		}
 
 		/// <summary>Creates an empty Model object with an automatically 
@@ -53,7 +82,9 @@ namespace StereoKit
 		/// </summary>
 		public Model()
 		{
-			_inst = NativeAPI.model_create();
+			_inst             = NativeAPI.model_create();
+			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_visualCollection = new ModelVisualCollection(_inst);
 		}
 
 		/// <summary>Creates a single mesh subset Model using the indicated 
@@ -64,7 +95,9 @@ namespace StereoKit
 		/// <param name="material">Any Material asset.</param>
 		public Model(string id, Mesh mesh, Material material)
 		{
-			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_inst             = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_visualCollection = new ModelVisualCollection(_inst);
 			if (_inst != IntPtr.Zero)
 			{
 				NativeAPI.material_set_id(_inst, id);
@@ -72,18 +105,27 @@ namespace StereoKit
 		}
 		internal Model(IntPtr model)
 		{
-			_inst = model;
+			_inst             = model;
+			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_visualCollection = new ModelVisualCollection(_inst);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty model!");
 		}
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.model_release(_inst));
+				SK.ExecuteOnMain(() => NativeAPI.model_release(_inst));
 		}
 		#endregion
 
 		#region Methods
+
+		/// <summary>Creates a shallow copy of a Model asset! Meshes and 
+		/// Materials referenced by this Model will be referenced, not
+		/// copied.</summary>
+		/// <returns>A new shallow copy of a Model.</returns>
+		public Model Copy()
+			=> new Model(NativeAPI.model_copy(_inst));
 
 		/// <summary>Returns the name of the specific subset! This will be 
 		/// the node name of your model asset. If no node name is available,
@@ -97,6 +139,7 @@ namespace StereoKit
 		/// <param name="subsetIndex">Index of the model subset to get the 
 		/// Material for, should be less than SubsetCount.</param>
 		/// <returns>See summary for details.</returns>
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Name instead.")]
 		public string GetName(int subsetIndex)
 			=> Marshal.PtrToStringAnsi(NativeAPI.model_get_name(_inst, subsetIndex));
 
@@ -108,7 +151,8 @@ namespace StereoKit
 		/// Material for, should be less than SubsetCount.</param>
 		/// <returns>A link to the Material asset used by the model subset at
 		/// subsetIndex</returns>
-		public Material GetMaterial(int subsetIndex) 
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
+		public Material GetMaterial(int subsetIndex)
 			=> new Material(NativeAPI.model_get_material(_inst, subsetIndex));
 
 		/// <summary>Gets a link to the Mesh asset used by the model subset!
@@ -119,7 +163,8 @@ namespace StereoKit
 		/// Mesh for, should be less than SubsetCount.</param>
 		/// <returns>A link to the Mesh asset used by the model subset at
 		/// subsetIndex</returns>
-		public Mesh GetMesh(int subsetIndex) 
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
+		public Mesh GetMesh(int subsetIndex)
 			=> new Mesh(NativeAPI.model_get_mesh(_inst, subsetIndex));
 
 		/// <summary>Gets the transform matrix used by the model subset!
@@ -128,7 +173,8 @@ namespace StereoKit
 		/// transform for, should be less than SubsetCount.</param>
 		/// <returns>A transform matrix used by the model subset at 
 		/// subsetIndex</returns>
-		public Matrix GetTransform(int subsetIndex) 
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
+		public Matrix GetTransform(int subsetIndex)
 			=> NativeAPI.model_get_transform(_inst, subsetIndex);
 
 		/// <summary>Changes the Material for the subset to a new one!
@@ -136,6 +182,7 @@ namespace StereoKit
 		/// <param name="subsetIndex">Index of the model subset to replace, 
 		/// should be less than SubsetCount.</param>
 		/// <param name="material">The new Material, cannot be null.</param>
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
 		public void SetMaterial(int subsetIndex, Material material)
 			=> NativeAPI.model_set_material(_inst, subsetIndex, material._inst);
 
@@ -143,6 +190,7 @@ namespace StereoKit
 		/// <param name="subsetIndex">Index of the model subset to replace, 
 		/// should be less than SubsetCount.</param>
 		/// <param name="mesh">The new Mesh, cannot be null.</param>
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
 		public void SetMesh(int subsetIndex, Mesh mesh)
 			=> NativeAPI.model_set_mesh(_inst, subsetIndex, mesh._inst);
 
@@ -152,6 +200,7 @@ namespace StereoKit
 		/// <param name="subsetIndex">Index of the transform to replace,
 		/// should be less than SubsetCount.</param>
 		/// <param name="transform">The new transform.</param>
+		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
 		public void SetTransform(int subsetIndex, in Matrix transform)
 			=> NativeAPI.model_set_transform(_inst, subsetIndex, transform);
 
@@ -165,6 +214,7 @@ namespace StereoKit
 		/// <param name="transform">A transform Matrix representing the 
 		/// Mesh's location relative to the origin of the Model.</param>
 		/// <returns>The index of the subset that was just added.</returns>
+		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
 		public int AddSubset(Mesh mesh, Material material, in Matrix transform)
 			=> NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
 
@@ -180,6 +230,7 @@ namespace StereoKit
 		/// <param name="transform">A transform Matrix representing the 
 		/// Mesh's location relative to the origin of the Model.</param>
 		/// <returns>The index of the subset that was just added.</returns>
+		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
 		public int AddSubset(string name, Mesh mesh, Material material, in Matrix transform)
 			=> NativeAPI.model_add_named_subset(_inst, name, mesh._inst, material._inst, transform);
 
@@ -187,10 +238,74 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="subsetIndex">Index of the subset to remove, should
 		/// be less than SubsetCount.</param>
+		[Obsolete("For removal in v0.4.")]
 		public void RemoveSubset(int subsetIndex)
 			=> NativeAPI.model_remove_subset(_inst, subsetIndex);
 
-		/// <summary>Examines the subsets as they currently are, and rebuilds
+		/// <summary>Checks the intersection point of this ray and a Model's 
+		/// visual nodes. This will skip any node that is not flagged as Solid,
+		/// as well as any Mesh without collision data. Ray must be in model 
+		/// space, intersection point will be in model space too. You can use
+		/// the inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="modelSpaceRay">Ray must be in model space, the
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
+
+		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
+		/// There is already an initial root node, this node will still be a
+		/// root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
+		/// this is the first root node added, you'll be able to access it via
+		/// `RootNode`.</summary>
+		/// <param name="name">A text name to identify the node. If null is
+		/// provided, it will be auto named to "node"+index.</param>
+		/// <param name="modelTransform">A Matrix describing this node's
+		/// transform in Model space.</param>
+		/// <param name="mesh">The Mesh to attach to this Node's visual, if
+		/// this is null, then material must also be null.</param>
+		/// <param name="material">The Material to attach to this Node's
+		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
+		/// <returns>This returns the newly added ModelNode, or if there's an
+		/// issue with mesh and material being inconsistently null, then this
+		/// result will also be null.</returns>
+		public ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
+		{
+			return new ModelNode(
+				_inst,
+				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
+		}
+
+		/// <summary>Searches the entire list of Nodes, and will return the
+		/// first on that matches this name exactly. If no ModelNode is found,
+		/// then this will return null. Node Names are not guaranteed to be 
+		/// unique.</summary>
+		/// <param name="name">Exact name to match against. ASCII only for now.
+		/// </param>
+		/// <returns>The first matching ModelNode, or null if none are found.
+		/// </returns>
+		public ModelNode FindNode(string name)
+		{
+			int nodeId = NativeAPI.model_node_find(_inst, name);
+			return nodeId >= 0
+				? new ModelNode(_inst, nodeId)
+				: null;
+		}
+
+		/// <summary>Examines the visuals as they currently are, and rebuilds
 		/// the bounds based on that! This is normally done automatically,
 		/// but if you modify a Mesh that this Model is using, the Model
 		/// can't see it, and you should call this manually.</summary>
@@ -237,7 +352,7 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .gltf, or .glb file.</summary>
+		/// .stl, .ply (ASCII), .gltf, or .glb file.</summary>
 		/// <param name="file">Name of the file to load! This gets prefixed
 		/// with the StereoKit asset folder if no drive letter is specified
 		/// in the path.</param>
@@ -249,14 +364,14 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst  = NativeAPI.model_create_file(file, final);
+			IntPtr inst = NativeAPI.model_create_file(file, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .gltf, or .glb file stored in memory. Note that this
-		/// function won't work well on files that reference other files,
-		/// such as .gltf files with references in them.</summary>
+		/// .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
+		/// that this function won't work well on files that reference other
+		/// files, such as .gltf files with references in them.</summary>
 		/// <param name="filename">StereoKit still uses the filename of the
 		/// data for format discovery, but not asset Id creation. If you 
 		/// don't have a real filename for the data, just pass in an
@@ -271,7 +386,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst  = NativeAPI.model_create_mem(filename, data, data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -304,5 +419,216 @@ namespace StereoKit
 			}
 			return null;
 		}
+	}
+
+	/// <summary>This class is a link to a node in a Model's internal
+	/// hierarchy tree. It's composed of node information, and links to
+	/// the directly adjacent tree nodes.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public class ModelNode {
+		internal int    _nodeId;
+		internal IntPtr _modelInst;
+
+		/// <summary>The next ModelNode in the heirarchy, at the same level as
+		/// this one. To the "right" on a heirarchy tree. Null if there are no
+		/// more ModelNodes in the tree there.</summary>
+		public ModelNode Sibling => From(NativeAPI.model_node_sibling(_modelInst, _nodeId));
+		/// <summary>The ModelNode above this one ("up") in the hierarchy tree,
+		/// or null if this is a root node.</summary>
+		public ModelNode Parent  => From(NativeAPI.model_node_parent (_modelInst, _nodeId));
+		/// <summary>The first child node "below" on the hierarchy tree, or
+		/// null if there are none. To see all children, get the Child and then
+		/// iterate through its Siblings.</summary>
+		public ModelNode Child   => From(NativeAPI.model_node_child  (_modelInst, _nodeId));
+
+		/// <summary>This is the ASCII name that identifies this ModelNode. It
+		/// is generally provided by the Model's file, but in the event no name
+		/// (or null name) is provided, the name will default to "node"+index.
+		/// Names are not required to be unique.</summary>
+		public string Name {
+			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_modelInst, _nodeId));
+			set => NativeAPI.model_node_set_name(_modelInst, _nodeId, value);
+		}
+		/// <summary>A flag that indicates the Mesh for this node will be used
+		/// in ray intersection tests. This flag is ignored if no Mesh is 
+		/// attached.</summary>
+		public bool Solid {
+			get => NativeAPI.model_node_get_solid(_modelInst, _nodeId) > 0;
+			set => NativeAPI.model_node_set_solid(_modelInst, _nodeId, value ? 1 : 0);
+		}
+		/// <summary>The transform of this node relative to the Model itself.
+		/// This incorporates transforms from all parent nodes. Setting this
+		/// transform will update the LocalTransform, as well as all Child
+		/// nodes below this one.</summary>
+		public Matrix ModelTransform {
+			get => NativeAPI.model_node_get_transform_model(_modelInst, _nodeId);
+			set => NativeAPI.model_node_set_transform_model(_modelInst, _nodeId, value);
+		}
+		/// <summary>The transform of this node relative to the Parent node.
+		/// Setting this transform will update the ModelTransform, as well as
+		/// all Child nodes below this one.</summary>
+		public Matrix LocalTransform { 
+			get => NativeAPI.model_node_get_transform_local(_modelInst, _nodeId);
+			set => NativeAPI.model_node_set_transform_local(_modelInst, _nodeId, value);
+		}
+		/// <summary>The Mesh associated with this node. May be null, or may
+		/// also be re-used elsewhere.</summary>
+		public Mesh Mesh {
+			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_modelInst, _nodeId); return new Mesh(ptr); }
+			set => NativeAPI.model_node_set_mesh(_modelInst, _nodeId, value._inst);
+		}
+		/// <summary>The Model associated with this node. May be null, or may
+		/// also be re-used elsewhere.</summary>
+		public Material Material { 
+			get { IntPtr ptr = NativeAPI.model_node_get_material(_modelInst, _nodeId); return ptr == IntPtr.Zero ? null : new Material(ptr); }
+			set => NativeAPI.model_node_set_material(_modelInst, _nodeId, value._inst);
+		}
+
+		internal ModelNode(IntPtr model, int nodeId)
+		{
+			_modelInst = model;
+			_nodeId    = nodeId;
+			if (_modelInst != IntPtr.Zero)
+				NativeAPI.model_addref(_modelInst);
+		}
+		~ModelNode()
+		{
+			if (_modelInst != IntPtr.Zero)
+				SK.ExecuteOnMain(() => NativeAPI.model_release(_modelInst));
+		}
+
+		/// <summary>Advances this ModelNode class to the next Sibling in the
+		/// hierarchy tree. If it cannot, then it remains the same. </summary>
+		/// <returns>True if it moved to the Sibling, false if there was no
+		/// Sibling to move to.</returns>
+		public bool MoveSibling()
+		{
+			int sibling = NativeAPI.model_node_sibling(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+		/// <summary>Moves this ModelNode class to the Parent up the hierarchy
+		/// tree. If it cannot, then it remains the same. </summary>
+		/// <returns>True if it moved to the Parent, false if there was no
+		/// Parent to move to.</returns>
+		public bool MoveParent ()
+		{
+			int sibling = NativeAPI.model_node_parent(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+		/// <summary>Moves this ModelNode class to the first Child of this
+		/// node. If it cannot, then it remains the same. </summary>
+		/// <returns>True if it moved to the Child, false if there was no
+		/// Child to move to.</returns>
+		public bool MoveChild  ()
+		{
+			int sibling = NativeAPI.model_node_child(_modelInst, _nodeId);
+			if (sibling >= 0)
+			{
+				_nodeId = sibling;
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>Adds a Child node below this node, at the end of the child
+		/// chain!</summary>
+		/// <param name="name">A text name to identify the node. If null is
+		/// provided, it will be auto named to "node"+index.</param>
+		/// <param name="localTransform">A Matrix describing this node's
+		/// transform in local space relative to the currently selected node.
+		/// </param>
+		/// <param name="mesh">The Mesh to attach to this Node's visual, if
+		/// this is null, then material must also be null.</param>
+		/// <param name="material">The Material to attach to this Node's
+		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
+		/// <returns>This returns the newly added ModelNode, or if there's an
+		/// issue with mesh and material being inconsistently null, then this
+		/// result will also be null.</returns>
+		/// <returns>The new child ModelNode.</returns>
+		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null, bool solid = true)
+		{
+			return new ModelNode(
+				_modelInst,
+				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
+		}
+
+		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_modelInst, nodeId) : null;
+	}
+
+	/// <summary>An enumerable for Model's ModelNodes</summary>
+	public class ModelNodeCollection : IEnumerable<ModelNode>
+	{
+		IntPtr _model;
+		/// <summary>This is the total number of nodes in the Model.</summary>
+		public int Count => NativeAPI.model_node_count(_model);
+		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_index(_model, index));
+
+		internal ModelNodeCollection(IntPtr model) { _model = model; }
+
+		public IEnumerator<ModelNode> GetEnumerator()
+		{
+			int count = Count;
+			for (int i = 0; i < count; i++)
+				yield return new ModelNode(_model, NativeAPI.model_node_index(_model, i));
+		}
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
+		/// There is already an initial root node, this node will still be a
+		/// root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
+		/// this is the first root node added, you'll be able to access it via
+		/// `RootNode`.</summary>
+		/// <param name="name">A text name to identify the node. If null is
+		/// provided, it will be auto named to "node"+index.</param>
+		/// <param name="modelTransform">A Matrix describing this node's
+		/// transform in Model space.</param>
+		/// <param name="mesh">The Mesh to attach to this Node's visual, if
+		/// this is null, then material must also be null.</param>
+		/// <param name="material">The Material to attach to this Node's
+		/// visual, if this is null, then mesh must also be null.</param>
+		/// <param name="solid">A flag that indicates the Mesh for this node
+		/// will be used in ray intersection tests. This flag is ignored if no
+		/// Mesh is attached.</param>
+		/// <returns>This returns the newly added ModelNode, or if there's an
+		/// issue with mesh and material being inconsistently null, then this
+		/// result will also be null.</returns>
+		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
+		{
+			return new ModelNode( _model,
+				NativeAPI.model_node_add(_model, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
+		}
+	}
+
+	/// <summary>An enumerable for Model's visual ModelNodes</summary>
+	public class ModelVisualCollection : IEnumerable<ModelNode>
+	{
+		IntPtr _model;
+		/// <summary>This is the total number of nodes with visual data
+		/// attached to them.</summary>
+		public int Count => NativeAPI.model_node_visual_count(_model);
+		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_visual_index(_model, index));
+
+		internal ModelVisualCollection(IntPtr model) { _model = model; }
+
+		public IEnumerator<ModelNode> GetEnumerator()
+		{
+			int count = Count;
+			for (int i = 0; i < count; i++)
+				yield return new ModelNode(_model, NativeAPI.model_node_visual_index(_model, i));
+		}
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 }

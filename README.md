@@ -24,7 +24,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Builds your application to device in seconds, not minutes
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
-- Model formats: .gltf, .glb, .fbx(partial), .obj, .stl, procedural
+- Model formats: .gltf, .glb, .obj, .stl, ASCII .ply, procedural
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
 - Runtime asset loading
 - Physics
@@ -74,12 +74,10 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [OpenXR](https://www.khronos.org/openxr/)
 - [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
 - [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
-- [OpenFBX](https://github.com/nem0/OpenFBX) - fbx format support
-- [miniz](https://github.com/richgel999/miniz) - ofbx dependency
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
 - [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
-- [dr_wav](https://mackron.github.io/dr_wav) - wav format support
 - [sokol_time](https://github.com/floooh/sokol) - cross platform high performance time
+- [TinyCThread](https://github.com/tinycthread/tinycthread) - for portable threading
 
 And some of my own libraries that I maintain separately from this repository.
 

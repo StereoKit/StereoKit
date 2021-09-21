@@ -651,7 +651,7 @@ void oxri_update_frame() {
 
 void oxri_set_profile(handed_ hand, XrPath profile) {
 	xrc_active_profile[hand] = profile;
-	for (int32_t i = 0; i < xrc_profile_offsets.count; i++) {
+	for (size_t i = 0; i < xrc_profile_offsets.count; i++) {
 		if (xrc_profile_offsets[i].profile == profile) {
 			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset_pos[hand];
 			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset_rot[hand];

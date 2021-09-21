@@ -83,16 +83,34 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt);
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt) > 0;
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Ray.Intersect overload with a Ray output.")]
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection);
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection) > 0;
 			modelSpaceAt = intersection.position;
 			return result;
 		}
+
+		/// <summary>Checks the intersection point of this ray and the Solid
+		/// flagged Meshes in the Model's visual nodes. Ray must be in model
+		/// space, intersection point will be in model space too. You can use
+		/// the inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="model">Any Model that may or may not contain Solid
+		/// flagged nodes, and Meshes with collision data.</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
+		public bool Intersect(Model model, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt) > 0;
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's

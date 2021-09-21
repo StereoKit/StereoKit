@@ -126,13 +126,13 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection);
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection) > 0;
 			modelSpaceAt = intersection.position;
 			return result;
 		}

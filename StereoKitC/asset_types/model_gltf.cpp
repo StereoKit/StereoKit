@@ -25,6 +25,10 @@
 
 namespace sk {
 
+// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 
+// rotate the gltf matrices so that they use -Z as forward, simplifying lookat math
+matrix gltf_orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
+
 ///////////////////////////////////////////
 
 mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const char *filename) {
@@ -245,9 +249,38 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 	snprintf(dest, dest_length, "%s/unknown_image", filename);
 }
 
+
 ///////////////////////////////////////////
 
-tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filename, bool srgb_data) {
+void gltf_apply_sampler(tex_t to_tex, cgltf_sampler *sampler) {
+	if (sampler == nullptr) return;
+
+	tex_sample_ sample = tex_get_sample(to_tex);
+	switch (sampler->mag_filter) {
+	case 9728: // NEAREST
+	case 9984: // NEAREST_MIPMAP_NEAREST
+	case 9986: // NEAREST_MIPMAP_LINEAR
+		sample = tex_sample_point;
+		break;
+	default:
+		sample = tex_sample_linear;
+		break;
+	}
+
+	tex_address_ address = tex_get_address(to_tex);
+	switch (sampler->wrap_s) {
+	case 33071: address = tex_address_clamp;  break;
+	case 33648: address = tex_address_mirror; break;
+	case 10497: address = tex_address_wrap;   break;
+	}
+	tex_set_options(to_tex, sample, address);
+}
+
+///////////////////////////////////////////
+
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data) {
+	cgltf_image *image = tex->image;
+
 	// Check if we've already loaded this image
 	char id[512];
 	gltf_imagename(data, image, filename, id, 512);
@@ -282,6 +315,9 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_image *image, const char *filena
 		// If it's a file path to an external image file
 		result = tex_create_file(id, srgb_data);
 	}
+	if (result != nullptr)
+		gltf_apply_sampler(result, tex->sampler);
+
 	return result;
 }
 
@@ -331,16 +367,22 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
-		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture))
-			material_set_texture(result, "diffuse", gltf_parsetexture(data, tex->image, filename, true));
+		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+			material_set_texture(result, "diffuse", parse_tex);
+			tex_release(parse_tex);
+		}
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
-		if (tex != nullptr && material_has_param(result, "metal", material_param_texture))
-			material_set_texture(result, "metal", gltf_parsetexture(data, tex->image, filename, false));
+		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+			material_set_texture(result, "metal", parse_tex);
+			tex_release(parse_tex);
+		}
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
 		if (material_has_param(result, "color", material_param_color128))
-			material_set_color(result, "color", { c[0], c[1], c[2], c[3] });
+			material_set_color(result, "color", color_to_gamma({ c[0], c[1], c[2], c[3] }));
 
 		if (material_has_param(result, "metallic",  material_param_float))
 			material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
@@ -349,30 +391,36 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
-	if (material->alpha_mode == cgltf_alpha_mode_blend)
+	if (material->alpha_mode == cgltf_alpha_mode_blend || material->alpha_mode == cgltf_alpha_mode_mask)
 		material_set_transparency(result, transparency_blend);
 
 	tex = material->normal_texture.texture;
-	if (tex != nullptr && material_has_param(result, "normal", material_param_texture))
-		material_set_texture(result, "normal", gltf_parsetexture(data, tex->image, filename, false));
+	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+		material_set_texture(result, "normal", parse_tex);
+		tex_release(parse_tex);
+	}
 
 	tex = material->occlusion_texture.texture;
-	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture))
-		material_set_texture(result, "occlusion", gltf_parsetexture(data, tex->image, filename, false));
+	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+		material_set_texture(result, "occlusion", parse_tex);
+		tex_release(parse_tex);
+	}
 
 	tex = material->emissive_texture.texture;
-	if (tex != nullptr && material_has_param(result, "emission", material_param_texture))
-		material_set_texture(result, "emission", gltf_parsetexture(data, tex->image, filename, true));
+	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+		material_set_texture(result, "emission", parse_tex);
+		tex_release(parse_tex);
+	}
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
-	if (curr->parent != nullptr) {
-		gltf_build_node_matrix(curr->parent, result);
-	}
+matrix gltf_build_node_matrix(cgltf_node *curr) {
 	matrix mat;
 	if (!curr->has_matrix) {
 		vec3   pos   = curr->has_translation ? vec3{ curr->translation[0], curr->translation[1], curr->translation[2] } : vec3_zero;
@@ -382,7 +430,39 @@ void gltf_build_node_matrix(cgltf_node *curr, matrix &result) {
 	} else {
 		memcpy(&mat, curr->matrix, sizeof(matrix));
 	}
-	matrix_mul(mat, result, result);
+	return mat;
+}
+
+///////////////////////////////////////////
+
+void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const char *filename, cgltf_data *data, cgltf_node *node) {
+	int32_t       index   = node - data->nodes;
+	model_node_id node_id = -1;
+
+	matrix transform = gltf_build_node_matrix(node);
+	if (parent == -1)
+		transform = transform * gltf_orientation_correction;
+
+	for (int32_t p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+		mesh_t mesh = gltf_parsemesh(node->mesh, index, p, filename);
+		if (mesh == nullptr) continue;
+
+		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader);
+		model_node_id new_node = model_node_add_child(model, parent, node->name, transform, mesh, material);
+		if (node_id == -1)
+			node_id = new_node;
+
+		mesh_release    (mesh);
+		material_release(material);
+	}
+
+	if (node_id == -1) {
+		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
+	}
+
+	for (size_t i = 0; i < node->children_count; i++) {
+		gltf_add_node(model, shader, node_id, filename, data, node->children[i]);
+	}
 }
 
 ///////////////////////////////////////////
@@ -414,31 +494,11 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		return false;
 	}
 
-	// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 
-	// rotate the gltf matrices so that they use -Z as forward, simplifying lookat math
-	matrix orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
-
-	// Load each subset
+	// Load each root node
 	for (int32_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
-		if (n->mesh == nullptr)
-			continue;
-
-		matrix transform = matrix_identity;
-		gltf_build_node_matrix(n, transform);
-		matrix offset = transform * orientation_correction;
-
-		for (int32_t p = 0; p < n->mesh->primitives_count; p++) {
-			mesh_t mesh = gltf_parsemesh(n->mesh, i, p, filename);
-			if (mesh == nullptr) continue;
-
-			material_t material = gltf_parsematerial(data, n->mesh->primitives[p].material, filename, shader);
-
-			model_add_named_subset(model, n->name, mesh, material, offset);
-
-			mesh_release    (mesh);
-			material_release(material);
-		}
+		if (n->parent == nullptr)
+			gltf_add_node(model, shader, -1, filename, data, n);
 	}
 	cgltf_free(data);
 	return true;

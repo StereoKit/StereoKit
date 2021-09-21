@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net472</TargetFramework>
-		<PlatformTarget>x64</PlatformTarget>
+		<TargetFramework>netcoreapp5.0</TargetFramework>
 
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<OutputPath>$(SolutionDir)bin\x64_$(Configuration)\StereoKitTest\</OutputPath>
+		<OutputPath>..\..\bin\x64_$(Configuration)\StereoKitTest\</OutputPath>
 	</PropertyGroup>
 	
 	<!-- IF YOU ARE LOOKING AT THIS FOLDER AS REFERENCE, I recommend that you
@@ -27,18 +26,18 @@
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
 	<ItemGroup>
 		<ProjectReference Include="..\..\StereoKit\StereoKit.csproj" />
-		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="$(SolutionDir)bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
-		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="$(SolutionDir)bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
+		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
+		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
 	</ItemGroup>
-	<Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+	<Import Project="..\..\StereoKit\SKShaders.targets" />
 
 	<!-- Copy assets, and build the app's shaders into the final app folder -->
 	<ItemGroup>
-		<Content Include="$(SolutionDir)Examples\Assets\**">
+		<Content Include="..\Assets\**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
-		<SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
+		<SKShader Include="..\Assets\**\*.hlsl" BuildRoot="..\" BuildTo="Assets" />
 	</ItemGroup>
 
 	<!-- This guide file shouldn't be compiled -->

@@ -17,8 +17,8 @@ namespace StereoKitTest
 
 		Sound       wandStream;
 		SoundInst   wandStreamInst;
-		Pose        wandPose = new Pose(.5f, 0, -0.3f, Quat.LookDir(0,1,0));
-		Mesh        wandMesh;
+		Pose        wandPose = new Pose(.5f, 0, -0.3f, Quat.LookDir(1,0,0));
+		Model       wandModel;
 		Vec3        wandTipPrev;
 		LinePoint[] wandFollow = null;
 		float[]     wandSamples = new float[0];
@@ -27,14 +27,14 @@ namespace StereoKitTest
 		void StepWand()
 		{
 			if (wandStream == null) { wandStream = Sound.CreateStream(5f); wandStreamInst = wandStream.Play(wandTipPrev); }
-			if (wandMesh   == null) wandMesh = Mesh.GenerateCylinder(0.015f, 0.25f, Vec3.Forward);
+			if (wandModel  == null) wandModel = Model.FromFile("Wand.glb", Shader.UI);
 			if (wandFollow == null) { wandFollow = new LinePoint[10]; for (int i=0;i<wandFollow.Length;i+=1) wandFollow[i] = new LinePoint(Vec3.Zero, new Color(1,1,1,i/(float)wandFollow.Length), (i / (float)wandFollow.Length)*0.01f+0.001f); }
 
-			UI.HandleBegin("wand", ref wandPose, wandMesh.Bounds);
-			wandMesh.Draw(Default.MaterialUI, Matrix.Identity, Color.HSV(0.6f, 0.5f, 0.6f));
-			Vec3 wandTip = Hierarchy.ToWorld(Vec3.Forward*0.125f);
+			UI.HandleBegin("wand", ref wandPose, wandModel.Bounds);
+			wandModel.Draw(Matrix.Identity);
 			UI.HandleEnd();
 
+			Vec3  wandTip   = wandPose.ToMatrix() * (wandModel.Bounds.center + wandModel.Bounds.dimensions.y * 0.5f * Vec3.Up);
 			Vec3  wandVel   = (wandTip - wandTipPrev) * Time.Elapsedf;
 			float wandSpeed = wandVel.Magnitude*100;
 			

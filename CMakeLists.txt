@@ -18,16 +18,17 @@
 #     Should StereoKit build as a shared, or static library?
 
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(StereoKit VERSION "0.3.2" LANGUAGES CXX C)
 
-set(default_build_type "Release")
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git" AND NOT DEFINED ENV{CI})
-  set(default_build_type "Debug")
+# Default build configuration to RelWithDebInfo 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "" FORCE)
+    endif()
 endif()
 
 ###########################################
@@ -58,17 +59,19 @@ CPMAddPackage(
   NAME reactphysics3d
   GITHUB_REPOSITORY DanielChappuis/reactphysics3d
   GIT_TAG bdc3153f552f6665ea9d2d13afd20ea871119e17 # v0.8.0
+  EXCLUDE_FROM_ALL YES
 )
 # Something in reactphysics3d seems to require -fPIC
 set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
 # Disable warnings for reactphysics3d, it's a little horrifying
 target_compile_options(reactphysics3d PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W0>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-everything> )
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
+  VERSION 1.0.17
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG bf21ccb1007bb531b45d9978919a56ea5059c245 # v1.0.17
 )
@@ -132,6 +135,7 @@ if (UNIX)
     list(APPEND LINUX_LIBS GL GLEW)
   endif()
 elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     WindowsApp) # Required for ISAC spatial audio code
 endif()
@@ -152,6 +156,8 @@ set(SK_SRC_CODE
   StereoKitC/intersect.cpp
   StereoKitC/log.h
   StereoKitC/log.cpp
+  StereoKitC/rect_atlas.h
+  StereoKitC/rect_atlas.cpp
   StereoKitC/sk_math.h
   StereoKitC/sk_math.cpp
   StereoKitC/sk_memory.h
@@ -172,7 +178,6 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/mesh.cpp
   StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
-  StereoKitC/asset_types/model_fbx.cpp
   StereoKitC/asset_types/model_gltf.cpp
   StereoKitC/asset_types/model_obj.cpp
   StereoKitC/asset_types/model_ply.cpp
@@ -189,7 +194,6 @@ set(SK_SRC_ASSET_TYPES
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
-  StereoKitC/libraries/dr_wav.h
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
   StereoKitC/libraries/isac_spatial_sound.h
@@ -197,10 +201,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
-  StereoKitC/libraries/miniz.h
-  StereoKitC/libraries/miniz.cpp
-  StereoKitC/libraries/ofbx.h
-  StereoKitC/libraries/ofbx.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sokol_time.h
@@ -356,6 +356,12 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_world.cpp
     Examples/StereoKitCTest/demo_lines.h
     Examples/StereoKitCTest/demo_lines.cpp
+    Examples/StereoKitCTest/demo_lighting.h
+    Examples/StereoKitCTest/demo_lighting.cpp
+    Examples/StereoKitCTest/skt_lighting.h
+    Examples/StereoKitCTest/skt_lighting.cpp
+    Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl.h
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl.h
   )
 
   target_link_libraries( StereoKitCTest

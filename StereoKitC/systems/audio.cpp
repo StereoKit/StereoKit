@@ -273,7 +273,7 @@ bool32_t mic_start(const char *device_name) {
 	config.pUserData          = nullptr;
 	ma_result result = ma_device_init(&au_context, &config, &au_mic_device);
 	if (result != MA_SUCCESS) {
-		log_warnf("audio: Mic start failed, '%s'", ma_result_description(result));
+		log_warnf("Mic start failed, '%s'", ma_result_description(result));
 		return false;
 	}
 	ma_device_start(&au_mic_device);
@@ -306,7 +306,7 @@ sound_t mic_get_stream() {
 		au_mic_sound = sound_create_stream(0.5f);
 		sound_set_id(au_mic_sound, "sk/mic_sound");
 	}
-	assets_addref(au_mic_sound->header);
+	sound_addref(au_mic_sound);
 	return au_mic_sound;
 }
 
@@ -329,12 +329,12 @@ bool audio_init() {
 	HRESULT hr = isac_adapter->Activate(isac_data_callback);
 
 	if (SUCCEEDED(hr)) {
-		log_diag("audio: Using backend ISAC");
+		log_info("Using audio backend: ISAC");
 		return true;
 	} else if (hr == E_NOT_VALID_STATE){
-		log_diag("audio: ISAC not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
+		log_diag("ISAC audio backend not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
 	} else {
-		log_warnf("audio: ISAC failed 0x%X, falling back to miniaudio!", hr);
+		log_warnf("ISAC audio backend failed 0x%X, falling back to miniaudio!", hr);
 	}
 	delete isac_adapter;
 	isac_adapter = nullptr;
@@ -349,20 +349,20 @@ bool audio_init() {
 
 	ma_result result = ma_device_init(&au_context, &au_config, &au_device);
 	if (result != MA_SUCCESS) {
-		log_errf("audio: Failed to open playback device, '%s'.", ma_result_description(result));
+		log_errf("Failed to open audio playback device, '%s'.", ma_result_description(result));
 		return false;
 	}
 
 	result = ma_device_start(&au_device);
 	if (result != MA_SUCCESS) {
-		log_errf("audio: Failed to start playback device, '%s'.", ma_result_description(result));
+		log_errf("Failed to start audio playback device, '%s'.", ma_result_description(result));
 		ma_device_uninit(&au_device);
 		return false;
 	}
 
 	au_mic_name = nullptr;
 
-	log_diagf("audio: Using backend %s", ma_get_backend_name(au_device.pContext->backend));
+	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));
 	return true;
 }
 

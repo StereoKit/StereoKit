@@ -4,7 +4,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 2
+#define SK_VERSION_PATCH 3
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -361,14 +361,15 @@ SK_API vec3     color_to_lab   (const sk_ref(color128) color);
 SK_API color128 color_to_linear(color128 srgb_gamma_correct);
 SK_API color128 color_to_gamma (color128 srgb_linear);
 
+static inline color128 color_lerp     (color128 a, color128 b, float t) { color128 result = {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; return result; }
+static inline color32  color_to_32    (color128 a)                      { color32  result = {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; return result; }
+
+static inline color128 color32_to_128 (color32 color) { color128 result = { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f }; return result; }
+static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint8_t)(hex>>24), (uint8_t)((hex>>16)&0x000000FF), (uint8_t)((hex>>8)&0x000000FF), (uint8_t)(hex&0x000000FF)}; return result; };
+static inline color128 color_hex      (uint32_t hex)  { return color32_to_128(color32_hex(hex)); };
 
 #ifdef __cplusplus
-static inline color128  operator*  (const color128 &a, const float b)              { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
-inline        color128  color_lerp (const color128 &a, const color128 &b, float t) { return {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; }
-inline        color32   color_to_32(const color128 &a)                             { return {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; }
-#else
-inline        color128  color_lerp (const color128 *a, const color128 *b, float t) { color128 result = {a->r + (b->r - a->r)*t, a->g + (b->g - a->g)*t, a->b + (b->b - a->b)*t, a->a + (b->a - a->a)*t}; return result; }
-inline        color32   color_to_32(const color128 *a)                             { color32  result = {(uint8_t)(a->r * 255.f), (uint8_t)(a->g * 255.f), (uint8_t)(a->b * 255.f), (uint8_t)(a->a * 255.f)}; return result; }
+static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
 #endif
 
 ///////////////////////////////////////////
@@ -387,7 +388,7 @@ SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
 SK_API int32_t    gradient_count      (gradient_t gradient);
 SK_API color128   gradient_get        (gradient_t gradient, float at);
 SK_API color32    gradient_get32      (gradient_t gradient, float at);
-SK_API void       gradient_release    (gradient_t gradient);
+SK_API void       gradient_release    (gradient_t gradient); // TODO v0.4, consider renaming this to _destroy, no reference counting happens here!
 
 ///////////////////////////////////////////
 
@@ -425,6 +426,7 @@ SK_DeclarePrivateType(mesh_t);
 SK_API mesh_t   mesh_find         (const char *name);
 SK_API mesh_t   mesh_create       ();
 SK_API void     mesh_set_id       (mesh_t mesh, const char *id);
+SK_API void     mesh_addref       (mesh_t mesh);
 SK_API void     mesh_release      (mesh_t mesh);
 SK_API void     mesh_set_keep_data(mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data(mesh_t mesh);
@@ -503,9 +505,10 @@ SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,  
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
+SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
@@ -524,11 +527,13 @@ SK_API int32_t      tex_get_anisotropy      (tex_t texture);
 
 SK_DeclarePrivateType(font_t);
 
-SK_API font_t font_find   (const char *id);
-SK_API font_t font_create (const char *file);
-SK_API void   font_set_id (font_t font, const char* id);
-SK_API void   font_release(font_t font);
-SK_API tex_t  font_get_tex(font_t font);
+SK_API font_t font_find        (const char *id);
+SK_API font_t font_create      (const char *file);
+SK_API font_t font_create_files(const char **files, int32_t file_count);
+SK_API void   font_set_id      (font_t font, const char* id);
+SK_API void   font_addref      (font_t font);
+SK_API void   font_release     (font_t font);
+SK_API tex_t  font_get_tex     (font_t font);
 
 ///////////////////////////////////////////
 
@@ -539,6 +544,7 @@ SK_API shader_t    shader_create_file (const char *filename);
 SK_API shader_t    shader_create_mem  (void *data, size_t data_size);
 SK_API void        shader_set_id      (shader_t shader, const char *id);
 SK_API const char *shader_get_name    (shader_t shader);
+SK_API void        shader_addref      (shader_t shader);
 SK_API void        shader_release     (shader_t shader);
 
 ///////////////////////////////////////////
@@ -578,6 +584,7 @@ SK_API material_t    material_create          (shader_t shader);
 SK_API material_t    material_copy            (material_t material);
 SK_API material_t    material_copy_id         (const char *id);
 SK_API void          material_set_id          (material_t material, const char *id);
+SK_API void          material_addref          (material_t material);
 SK_API void          material_release         (material_t material);
 SK_API void          material_set_transparency(material_t material, transparency_ mode);
 SK_API void          material_set_cull        (material_t material, cull_ mode);
@@ -593,7 +600,10 @@ SK_API bool32_t      material_get_depth_write (material_t material);
 SK_API int32_t       material_get_queue_offset(material_t material);
 SK_API void          material_set_float       (material_t material, const char *name, float    value);
 SK_API void          material_set_color       (material_t material, const char *name, color128 color_gamma);
-SK_API void          material_set_vector      (material_t material, const char *name, vec4     value);
+SK_API void          material_set_vector4     (material_t material, const char *name, vec4     value);
+SK_API void          material_set_vector3     (material_t material, const char *name, vec3     value);
+SK_API void          material_set_vector2     (material_t material, const char *name, vec2     value);
+SK_API void          material_set_vector      (material_t material, const char *name, vec4     value); // TODO: Remove in v0.4
 SK_API void          material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t      material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t      material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
@@ -641,14 +651,17 @@ typedef enum text_align_ {
 } text_align_;
 SK_MakeFlag(text_align_);
 
-typedef int32_t text_style_t;
+typedef uint32_t text_style_t;
 
 SK_API text_style_t text_make_style       (font_t font, float character_height,                      color128 color_gamma);
 SK_API text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader,     color128 color_gamma);
 SK_API text_style_t text_make_style_mat   (font_t font, float character_height, material_t material, color128 color_gamma);
-SK_API void         text_add_at           (const char *text, const sk_ref(matrix)  transform, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API float        text_add_in           (const char *text, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(-1), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API vec2         text_size             (const char *text, text_style_t style sk_default(-1));
+SK_API void         text_add_at           (const char     *text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API void         text_add_at_16        (const char16_t *text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API float        text_add_in           (const char     *text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API float        text_add_in_16        (const char16_t *text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API vec2         text_size             (const char     *text_utf8,  text_style_t style sk_default(0));
+SK_API vec2         text_size_16          (const char16_t *text_utf16, text_style_t style sk_default(0));
 
 SK_API material_t   text_style_get_material   (text_style_t style);
 SK_API float        text_style_get_char_height(text_style_t style);
@@ -679,13 +692,16 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 ///////////////////////////////////////////
 
 SK_DeclarePrivateType(model_t);
+typedef int32_t model_node_id;
 
 SK_API model_t    model_find              (const char *id);
+SK_API model_t    model_copy              (model_t model);
 SK_API model_t    model_create            ();
 SK_API model_t    model_create_mesh       (mesh_t mesh, material_t material);
 SK_API model_t    model_create_mem        (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t    model_create_file       (const char *filename, shader_t shader sk_default(nullptr));
 SK_API void       model_set_id            (model_t model, const char *id);
+SK_API void       model_addref            (model_t model);
 SK_API void       model_release           (model_t model);
 SK_API const char*model_get_name          (model_t model, int32_t subset);
 SK_API material_t model_get_material      (model_t model, int32_t subset);
@@ -701,6 +717,32 @@ SK_API int32_t    model_subset_count      (model_t model);
 SK_API void       model_recalculate_bounds(model_t model);
 SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t   model_get_bounds        (model_t model);
+SK_API bool32_t   model_ray_intersect     (model_t model, ray_t model_space_ray, ray_t *out_pt);
+
+SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
+SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
+SK_API model_node_id model_node_find               (model_t model, const char *name);
+SK_API model_node_id model_node_sibling            (model_t model, model_node_id node);
+SK_API model_node_id model_node_parent             (model_t model, model_node_id node);
+SK_API model_node_id model_node_child              (model_t model, model_node_id node);
+SK_API int32_t       model_node_count              (model_t model);
+SK_API model_node_id model_node_index              (model_t model, int32_t index);
+SK_API int32_t       model_node_visual_count       (model_t model);
+SK_API model_node_id model_node_visual_index       (model_t model, int32_t index);
+SK_API model_node_id model_node_iterate            (model_t model, model_node_id node);
+SK_API model_node_id model_node_get_root           (model_t model);
+SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
+SK_API bool32_t      model_node_get_solid          (model_t model, model_node_id node);
+SK_API material_t    model_node_get_material       (model_t model, model_node_id node);
+SK_API mesh_t        model_node_get_mesh           (model_t model, model_node_id node);
+SK_API matrix        model_node_get_transform_model(model_t model, model_node_id node);
+SK_API matrix        model_node_get_transform_local(model_t model, model_node_id node);
+SK_API void          model_node_set_name           (model_t model, model_node_id node, const char* name);
+SK_API void          model_node_set_solid          (model_t model, model_node_id node, bool32_t    solid);
+SK_API void          model_node_set_material       (model_t model, model_node_id node, material_t  material);
+SK_API void          model_node_set_mesh           (model_t model, model_node_id node, mesh_t      mesh);
+SK_API void          model_node_set_transform_model(model_t model, model_node_id node, matrix      transform_model_space);
+SK_API void          model_node_set_transform_local(model_t model, model_node_id node, matrix      transform_local_space);
 
 ///////////////////////////////////////////
 
@@ -714,6 +756,7 @@ typedef enum sprite_type_ {
 SK_API sprite_t sprite_create     (tex_t    sprite,      sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API void     sprite_set_id     (sprite_t sprite, const char *id);
+SK_API void     sprite_addref     (sprite_t sprite);
 SK_API void     sprite_release    (sprite_t sprite);
 SK_API float    sprite_get_aspect (sprite_t sprite);
 SK_API int32_t  sprite_get_width  (sprite_t sprite);
@@ -816,6 +859,7 @@ SK_API uint64_t     sound_total_samples (sound_t sound);
 SK_API uint64_t     sound_cursor_samples(sound_t sound);
 SK_API sound_inst_t sound_play          (sound_t sound, vec3 at, float volume);
 SK_API float        sound_duration      (sound_t sound);
+SK_API void         sound_addref        (sound_t sound);
 SK_API void         sound_release       (sound_t sound);
 
 SK_API void         sound_inst_stop      (sound_inst_t sound_inst);
@@ -905,6 +949,7 @@ typedef struct hand_t {
 	hand_joint_t  fingers[5][5];
 	pose_t        wrist;
 	pose_t        palm;
+	vec3          pinch_pt;
 	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
@@ -971,7 +1016,7 @@ SK_API const pose_t         *input_eyes           ();
 SK_API button_state_         input_eyes_tracked   ();
 SK_API const mouse_t        *input_mouse          ();
 SK_API button_state_         input_key            (key_ key);
-SK_API uint32_t              input_text_consume   ();
+SK_API char32_t              input_text_consume   ();
 SK_API void                  input_text_reset     ();
 SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
@@ -983,19 +1028,20 @@ SK_API void input_fire_event (input_source_ source, button_state_ event, const s
 
 ///////////////////////////////////////////
 
-SK_API bool32_t   world_has_bounds            ();
-SK_API vec2       world_get_bounds_size       ();
-SK_API pose_t     world_get_bounds_pose       ();
-SK_API pose_t     world_from_spatial_graph    (uint8_t spatial_graph_node_id[16]);
-SK_API pose_t     world_from_perception_anchor(void *perception_spatial_anchor);
-SK_API bool32_t   world_raycast               (ray_t ray, ray_t *out_intersection);
-SK_API void       world_set_occlusion_enabled (bool32_t enabled);
-SK_API bool32_t   world_get_occlusion_enabled ();
-SK_API void       world_set_raycast_enabled   (bool32_t enabled);
-SK_API bool32_t   world_get_raycast_enabled   ();
-SK_API void       world_set_occlusion_material(material_t material);
-SK_API material_t world_get_occlusion_material();
-
+SK_API bool32_t   world_has_bounds                ();
+SK_API vec2       world_get_bounds_size           ();
+SK_API pose_t     world_get_bounds_pose           ();
+SK_API pose_t     world_from_spatial_graph        (uint8_t spatial_graph_node_id[16]);
+SK_API pose_t     world_from_perception_anchor    (void *perception_spatial_anchor);
+SK_API bool32_t   world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], pose_t *out_pose);
+SK_API bool32_t   world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
+SK_API bool32_t   world_raycast                   (ray_t ray, ray_t *out_intersection);
+SK_API void       world_set_occlusion_enabled     (bool32_t enabled);
+SK_API bool32_t   world_get_occlusion_enabled     ();
+SK_API void       world_set_raycast_enabled       (bool32_t enabled);
+SK_API bool32_t   world_get_raycast_enabled       ();
+SK_API void       world_set_occlusion_material    (material_t material);
+SK_API material_t world_get_occlusion_material    ();
 
 ///////////////////////////////////////////
 

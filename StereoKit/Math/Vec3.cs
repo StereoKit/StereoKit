@@ -137,6 +137,17 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Normalize() => v = v / v.Length();
 
+		/// <summary>Checks if a point is within a certain radius of this one.
+		/// This is an easily readable shorthand of the squared distance check.
+		/// </summary>
+		/// <param name="pt">The point to check against.</param>
+		/// <param name="radius">The distance to check against.</param>
+		/// <returns>True if the points are within radius of eachother, false 
+		/// not.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool InRadius(Vec3 pt, float radius)
+			=> (v - pt.v).LengthSquared() < radius * radius;
+
 		/// <summary>Calculates the distance between two points in space! 
 		/// Make sure they're in the same coordinate space! Uses a Sqrt, so 
 		/// it's not blazing fast, prefer DistanceSq when possible.</summary>
@@ -156,6 +167,18 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float DistanceSq(Vec3 a, Vec3 b)
 			=> (a.v-b.v).LengthSquared();
+
+		/// <summary>Checks if two points are within a certain radius of
+		/// eachother. This is an easily readable shorthand of the squared
+		/// distance check. </summary>
+		/// <param name="a">The first point.</param>
+		/// <param name="b">And the second point!</param>
+		/// <param name="radius">The distance to check against.</param>
+		/// <returns>True if a and b are within radius of eachother, false not.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool InRadius(Vec3 a, Vec3 b, float radius)
+			=> (a.v-b.v).LengthSquared() < radius * radius;
 
 		/// <summary>Creates a vector that points out at the given 2D angle! 
 		/// This creates the vector on the XZ plane, and allows you to

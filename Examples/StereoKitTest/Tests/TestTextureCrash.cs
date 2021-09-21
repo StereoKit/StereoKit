@@ -11,7 +11,7 @@ namespace StereoKitTest
 		{
 			if (!_doOnce)
 			{
-				Material mat = _model.GetMaterial(0);
+				Material mat = _model.RootNode.Material;
 				mat.SetTexture("diffuse", Tex.FromFile("Floor.png"));
 
 				_doOnce = true;

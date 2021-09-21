@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace StereoKit
 {
@@ -48,6 +49,26 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
+		/// <summary>This will push a surface into SK's UI layout system. The
+		/// surface becomes part of the transform hierarchy, and SK creates a
+		/// layout surface for UI content to be placed on and interacted with.
+		/// Must be accompanied by a PopSurface call.</summary>
+		/// <param name="surfacePose">The Pose of the UI surface, where the
+		/// surface forward direction is the same as the Pose's.</param>
+		/// <param name="layoutStart">This is an offset from the center of the
+		/// coordinate space created by the surfacePose. Vec3.Zero would mean
+		/// that content starts at the center of the surfacePose.</param>
+		/// <param name="layoutDimensions">The size of the surface area to use
+		/// during layout. Like other UI layout sizes, an axis set to zero
+		/// means it will auto-expand in that direction.</param>
+		public static void PushSurface(Pose surfacePose, Vec3 layoutStart = new Vec3(), Vec2 layoutDimensions = new Vec2())
+			=> NativeAPI.ui_push_surface(surfacePose, layoutStart, layoutDimensions);
+
+		/// <summary>This will return to the previous UI layout on the stack.
+		/// This must be called after a PushSurface call.</summary>
+		public static void PopSurface()
+			=> NativeAPI.ui_pop_surface();
+
 		/// <summary>Manually define what area is used for the UI layout. This is in
 		/// the current Hierarchy's coordinate space on the X/Y plane.</summary>
 		/// <param name="start">The top left of the layout area, relative to the current Hierarchy in local meters.</param>
@@ -83,7 +104,7 @@ namespace StereoKit
 		/// <param name="bounds">Size and position of the volume, relative to the current Hierarchy.</param>
 		/// <returns>True on the first frame a finger has entered the volume, false otherwise.</returns>
 		public static bool VolumeAt(string id, Bounds bounds)
-			=> NativeAPI.ui_volume_at(id, bounds);
+			=> NativeAPI.ui_volume_at_16(id, bounds);
 
 		/// <summary>This watches a volume of space for pinch interaction 
 		/// events! If a hand is inside the space indicated by the bounds,
@@ -120,10 +141,10 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label (string text, bool usePadding = true) 
-			=> NativeAPI.ui_label(text, usePadding);
+			=> NativeAPI.ui_label_16(text, usePadding);
 
 		public static void Label(string text, Vec2 size)
-			=> NativeAPI.ui_label_sz(text, size);
+			=> NativeAPI.ui_label_sz_16(text, size);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -132,7 +153,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		public static void Text(string text)
-			=> NativeAPI.ui_text(text);
+			=> NativeAPI.ui_text_16(text);
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
@@ -149,13 +170,13 @@ namespace StereoKit
 		/// it will be used as the element id.</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool Button (string text) 
-			=> NativeAPI.ui_button(text);
+			=> NativeAPI.ui_button_16(text);
 
 		public static bool Button(string text, Vec2 size)
-			=> NativeAPI.ui_button_sz(text, size);
+			=> NativeAPI.ui_button_sz_16(text, size);
 
 		public static bool ButtonAt(string text, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_button_at(text, windowRelativeCorner, size);
+			=> NativeAPI.ui_button_at_16(text, windowRelativeCorner, size);
 
 		/// <summary>A Radio is similar to a button, except you can specify if it looks pressed
 		/// or not regardless of interaction. This can be useful for radio-like behavior! Check
@@ -166,10 +187,10 @@ namespace StereoKit
 		/// <param name="active">Does this button look like it's pressed?</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool Radio (string text, bool active) 
-			=> NativeAPI.ui_toggle(text, ref active) && active;
+			=> NativeAPI.ui_toggle_16(text, ref active) && active;
 
 		public static bool Radio(string text, bool active, Vec2 size)
-			=> NativeAPI.ui_toggle_sz(text, ref active, size) && active;
+			=> NativeAPI.ui_toggle_sz_16(text, ref active, size) && active;
 
 		/// <summary>A pressable button! A button will expand to fit the text provided to it,
 		/// vertically and horizontally. Text is re-used as the id. Will return true only on 
@@ -179,10 +200,10 @@ namespace StereoKit
 		/// <param name="diameter">The diameter of the button's visual.</param>
 		/// <returns>Will return true only on the first frame it is pressed!</returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
-			=> NativeAPI.ui_button_round(id, image._inst, diameter);
+			=> NativeAPI.ui_button_round_16(id, image._inst, diameter);
 
 		public static bool ButtonRoundAt(string text, Sprite sprite, Vec3 windowRelativeCorner, float diameter)
-			=> NativeAPI.ui_button_round_at(text, sprite._inst, windowRelativeCorner, diameter);
+			=> NativeAPI.ui_button_round_at_16(text, sprite._inst, windowRelativeCorner, diameter);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -195,13 +216,18 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes!
 		/// </returns>
 		public static bool Toggle (string text, ref bool value)
-			=> NativeAPI.ui_toggle(text, ref value);
+			=> NativeAPI.ui_toggle_16(text, ref value);
 
 		public static bool Toggle(string text, ref bool value, Vec2 size)
-			=> NativeAPI.ui_toggle_sz(text, ref value, size);
+			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
 
 		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_toggle_at(text, ref pressed, windowRelativeCorner, size);
+			=> NativeAPI.ui_toggle_at_16(text, ref pressed, windowRelativeCorner, size);
+
+		public static void Model(Model model)
+			=> NativeAPI.ui_model(model._inst, Vec2.Zero, 0);
+		public static void Model(Model model, Vec2 uiSize, float modelScale = 0)
+			=> NativeAPI.ui_model(model._inst, uiSize, modelScale);
 
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
@@ -212,33 +238,20 @@ namespace StereoKit
 		/// <param name="value">The string that will store the Input's 
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
-		/// </param>
+		/// Zero axes will auto-size.</param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size) {
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2()) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 4) :
 				new StringBuilder(4);
 
-			if (NativeAPI.ui_input(id, builder, builder.Capacity, size)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size)) { 
 				value = builder.ToString();
 				return true;
 			}
 			return false;
 		}
-
-		/// <summary>This is an input field where users can input text to the
-		/// app! Selecting it will spawn a virtual keyboard, or act as the
-		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
-		/// <param name="id">A per-window unique id for tracking element 
-		/// state.</param>
-		/// <param name="value">The string that will store the Input's 
-		/// content in.</param>
-		/// <returns>Returns true every time the contents of 'value' change.
-		/// </returns>
-		public static bool Input(string id, ref string value)
-			=> Input(id, ref value, Vec2.Zero);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
@@ -259,10 +272,10 @@ namespace StereoKit
 		/// will be a tab that the user must pinch and drag around.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
-			=> NativeAPI.ui_hslider(id, ref value, min, max, step, width, confirmMethod);
+			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
 
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
+			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
@@ -280,7 +293,7 @@ namespace StereoKit
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn.</summary>
@@ -305,7 +318,7 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 		{
-			bool result = NativeAPI.ui_handle_begin(id, ref pose, handle, drawHandle, moveType);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -328,7 +341,7 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin(text, ref pose, size, windowType, moveType);
+			=> NativeAPI.ui_window_begin_16(text, ref pose, size, windowType, moveType);
 
 		/// <summary>Begins a new window! This will push a pose onto the 
 		/// transform stack, and all UI elements will be relative to that new 
@@ -346,7 +359,7 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin(text, ref pose, Vec2.Zero, windowType, moveType);
+			=> NativeAPI.ui_window_begin_16(text, ref pose, Vec2.Zero, windowType, moveType);
 
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>
@@ -359,7 +372,7 @@ namespace StereoKit
 		/// <param name="rootId">The root id to use until the following PopId 
 		/// call.</param>
 		public static void PushId(string rootId) 
-			=> NativeAPI.ui_push_id(rootId);
+			=> NativeAPI.ui_push_id_16(rootId);
 
 		/// <summary>Adds a root id to the stack for the following UI 
 		/// elements! This id is combined when hashing any following ids, to
@@ -386,10 +399,62 @@ namespace StereoKit
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
 
+		/// <summary>Override the visual assets attached to a particular UI
+		/// element. 
+		/// 
+		/// Note that StereoKit's default UI assets use a type of quadrant
+		/// sizing that is implemented in the Material _and_ the Mesh. You
+		/// don't need to use quadrant sizing for your own visuals, but if
+		/// you wish to know more, you can read more about the technique
+		/// [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).
+		/// You may also find UI.QuadrantSizeVerts and UI.QuadrantSizeMesh to
+		/// be helpful.</summary>
+		/// <param name="visual">Which UI visual element to override.</param>
+		/// <param name="mesh">The Mesh to use for the UI element's visual
+		/// component. The Mesh will be scaled to match the dimensions of the
+		/// UI element.</param>
+		/// <param name="material">The Material to use when rendering the UI
+		/// element. The default Material is specifically designed to work
+		/// with quadrant sizing formatted meshes.</param>
+		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null)
+			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero);
+
+		/// <summary>This will reposition the vertices to work well with
+		/// quadrant resizing shaders. The mesh should generally be centered
+		/// around the origin, and face down the -Z axis. This will also 
+		/// overwrite any UV coordinates in the verts.
+		/// 
+		/// You can read more about the technique [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// <param name="verts">A list of vertices to be modified to fit the
+		/// sizing shader.</param>
+		/// <param name="overflowPercent">When scaled, should the geometry
+		/// stick out past the "box" represented by the scale, or edge up
+		/// against it? A value of 0 will mean the geometry will fit entirely
+		/// inside the "box", and a value of 1 means the geometry will start at
+		/// the boundary of the box and continue outside it.</param>
+		public static void QuadrantSizeVerts(Vertex[] verts, float overflowPercent = 0)
+			=> NativeAPI.ui_quadrant_size_verts(verts, verts.Length, overflowPercent);
+
+		/// <summary>This will reposition the Mesh's vertices to work well with
+		/// quadrant resizing shaders. The mesh should generally be centered
+		/// around the origin, and face down the -Z axis. This will also 
+		/// overwrite any UV coordinates in the verts.
+		/// 
+		/// You can read more about the technique [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).</summary>
+		/// <param name="mesh">The vertices of this Mesh will be retrieved,
+		/// modified, and overwritten.</param>
+		/// <param name="overflowPercent">When scaled, should the geometry
+		/// stick out past the "box" represented by the scale, or edge up
+		/// against it? A value of 0 will mean the geometry will fit entirely
+		/// inside the "box", and a value of 1 means the geometry will start at
+		/// the boundary of the box and continue outside it.</param>
+		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
+			=> NativeAPI.ui_quadrant_size_mesh(mesh._inst, overflowPercent);
+
 		public static ulong StackHash(string id)
-			=> NativeAPI.ui_stack_hash(id);
+			=> NativeAPI.ui_stack_hash_16(id);
 
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash(id), out fingerOffset, out buttonState, out focusState);
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState);
 	}
 }

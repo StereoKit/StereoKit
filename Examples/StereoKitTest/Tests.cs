@@ -48,6 +48,7 @@ public static class Tests
 		if (nextScene != null)
 		{
 			activeScene?.Shutdown();
+			GC.Collect(int.MaxValue, GCCollectionMode.Forced);
 			if (IsTesting)
 			{
 				Time.SetTime(0);
@@ -75,6 +76,7 @@ public static class Tests
 	{
 		activeScene.Shutdown();
 		activeScene = null;
+		GC.Collect(int.MaxValue, GCCollectionMode.Forced);
 	}
 
 	public static string GetDemoName  (int index)

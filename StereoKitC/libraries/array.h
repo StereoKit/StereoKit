@@ -74,6 +74,7 @@ Example usage:
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "../sk_memory.h"
 
 //////////////////////////////////////
 
@@ -81,7 +82,7 @@ Example usage:
 
 #ifndef ARRAY_MALLOC
 #include <malloc.h>
-#define ARRAY_MALLOC malloc
+#define ARRAY_MALLOC sk::sk_malloc
 #endif
 #ifndef ARRAY_FREE
 #include <malloc.h>
@@ -89,7 +90,7 @@ Example usage:
 #endif
 #ifndef ARRAY_REALLOC
 #include <malloc.h>
-#define ARRAY_REALLOC realloc
+#define ARRAY_REALLOC sk::sk_realloc
 #endif
 
 #ifndef ARRAY_MEMCPY
@@ -151,11 +152,22 @@ struct array_t {
 	inline T   &operator[] (size_t id) const         { return data[id]; }
 	void        reverse    ();
 	array_t<T>  copy       () const;
-	void        each       (void (*e)(T &))          { for (size_t i=0; i<count; i++) e(data[i]); }
-	void        each       (void (*e)(void *))       { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(T &))             { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(const T &)) const { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(void *))          { for (size_t i=0; i<count; i++) e(data[i]); }
 	template <typename U>
-	array_t<U>  each_new   (U    (*e)(const T &))    { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
+	void        each_with  (U *with, void (*e)(U*, const T &)) const { for (size_t i=0; i<count; i++) e(with, data[i]); }
+	template <typename U>
+	U           each_with  (void (*e)(U *, const T &))         const { U result = {}; for (size_t i = 0; i < count; i++) e(&result, data[i]); }
+	template <typename U>
+	U           each_sum   (U (*e)(const T &))                 const { U result = 0; for (size_t i = 0; i < count; i++) result += e(data[i]); return result; }
+	template <typename U>
+	array_t<U>  each_new   (U    (*e)(const T &)) const { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
+
+	static array_t<T> make     (int32_t capacity)                     { array_t<T> result = {}; result.resize(capacity); return result; }
+	static array_t<T> make_fill(int32_t capacity, const T &copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(size_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
+	static array_t<T> make_from(T *use_memory, size_t count)          { return {use_memory, count, count}; }
 
 	//////////////////////////////////////
 	// Linear search methods
@@ -165,6 +177,12 @@ struct array_t {
 	int64_t     index_where(const D _T::*key, const D &item) const                            { const size_t offset = (size_t)&((_T*)0->*key); for (size_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
 	int64_t     index_where(bool (*c)(const T &item, void *user_data), void *user_data) const { for (size_t i=0; i<count; i++) if (c(data[i], user_data)) return i; return -1;}
 	int64_t     index_where(bool (*c)(const T &item)) const                                   { for (size_t i=0; i<count; i++) if (c(data[i]))            return i; return -1;}
+	int64_t     index_best_small(int32_t (*c)(const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r < best) { best = r; result = i;} } return result; }
+	int64_t     index_best_large(int32_t (*c)(const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r > best) { best = r; result = i;} } return result;}
+	template <typename U>
+	int64_t     index_best_small_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r < best) { best = r; result = i;} } return result; }
+	template <typename U>
+	int64_t     index_best_large_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r > best) { best = r; result = i;} } return result; }
 
 	//////////////////////////////////////
 	// Binary search methods
@@ -175,7 +193,7 @@ struct array_t {
 	template <typename _T, typename D>
 	int64_t binary_search(const D _T::*key, const D &item) const {
 		array_view_t<D> view = array_view_t<D>{data, count, sizeof(_T), (size_t)&((_T*)nullptr->*key)};
-		int64_t l = 0, r = view.count - 1;
+		int64_t l = 0, r = (int64_t)view.count - 1;
 		while (l <= r) {
 			int64_t mid = (l+r) / 2;
 			if      (view[mid] < item) l = mid + 1;
@@ -231,8 +249,8 @@ struct hashmap_t {
 		int64_t  id   = hashes.binary_search(hash);
 		if (id < 0) {
 			id = ~id;
-			hashes.insert(id, hash );
-			items .insert(id, value);
+			hashes.insert((size_t)id, hash );
+			items .insert((size_t)id, value);
 		}
 		return id;
 	}
@@ -250,8 +268,8 @@ struct hashmap_t {
 		return id;
 	}
 
-	T       *get     (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[id]; }
-	const T &get_or  (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[id]; }
+	T       *get     (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[(size_t)id]; }
+	const T &get_or  (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[(size_t)id]; }
 	int64_t  contains(const K &key)                         const { return hashes.binary_search(_hash(key)); }
 	void     free    ()                                           { hashes.free(); items.free(); }
 };
@@ -262,12 +280,12 @@ struct hashmap_t {
 
 template <typename T>
 int64_t array_t<T>::binary_search(const T &item) const {
-	int64_t l = 0, r = count - 1;
+	int64_t l = 0, r = (int64_t)count - 1;
 	while (l <= r) {
 		int64_t mid = (l+r) / 2;
-		if      (get(mid) < item) l = mid + 1;
-		else if (get(mid) > item) r = mid - 1;
-		else                      return mid;
+		if      (get((size_t)mid) < item) l = mid + 1;
+		else if (get((size_t)mid) > item) r = mid - 1;
+		else                              return mid;
 	}
 	return r < 0 ? r : -(r+2);
 }
@@ -295,7 +313,7 @@ void array_t<T>::free() {
 template <typename T>
 array_t<T> array_t<T>::copy() const { 
 	array_t<T> result = { 
-		ARRAY_MALLOC(sizeof(T) * capacity), 
+		(T*)ARRAY_MALLOC(sizeof(T) * capacity), 
 		count, 
 		capacity 
 	}; 
@@ -353,6 +371,13 @@ inline static array_view_t<D> array_view_create(const T *data, size_t count, D T
 template <typename D, typename T>
 inline static array_view_t<D> array_view_create(const array_t<T> &src, D T::*key) {
 	return array_view_t<D>{src.data, src.count, sizeof(T), (size_t)&((T*)nullptr->*key)};
+}
+
+//////////////////////////////////////
+
+template <typename T>
+inline static array_view_t<T> array_view_create(const array_t<T> &src) {
+	return array_view_t<T>{src.data, src.count, sizeof(T), 0};
 }
 
 //////////////////////////////////////

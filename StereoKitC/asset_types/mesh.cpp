@@ -185,7 +185,7 @@ bounds_t mesh_get_bounds(mesh_t mesh) {
 mesh_t mesh_find(const char *id) {
 	mesh_t result = (mesh_t)assets_find(id, asset_type_mesh);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		mesh_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -195,6 +195,12 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(mesh->header, id);
+}
+
+///////////////////////////////////////////
+
+void mesh_addref(mesh_t mesh) {
+	assets_addref(mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -222,7 +228,7 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
 		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
 		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
-		vec3    normal = vec3_normalize( vec3_cross(dir1, dir2) );
+		vec3    normal = vec3_normalize( vec3_cross(dir2, dir1) );
 		plane_t plane  = { normal, -vec3_dot(coll.pts[i + 1], normal) };
 		coll.planes[i/3] = plane;
 	}

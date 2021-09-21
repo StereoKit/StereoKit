@@ -2,17 +2,17 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
-		<Platforms>x64;ARM64;Any CPU</Platforms>
+		<Platforms>x64;ARM64;ARM;Any CPU</Platforms>
 		<OutputPath>..\bin\</OutputPath>
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj">
+		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
+		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
-		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
+		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
 	</ItemGroup>
@@ -20,7 +20,7 @@
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.2</Version>
+		<Version>0.3.3</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -55,6 +55,9 @@
 
 		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
 		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
+
+		<Content Pack="true" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm\native\" />
+		<Content Pack="true" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm\native\" />
 
 		<!-- Shader compile tools -->
 		<Content Pack="true" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />

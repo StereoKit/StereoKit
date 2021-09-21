@@ -1,5 +1,5 @@
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+﻿#include <stereokit.h>
+#include <stereokit_ui.h>
 #include <vector>
 using namespace sk;
 
@@ -11,6 +11,7 @@ using namespace sk;
 #include "demo_lines.h"
 #include "demo_picker.h"
 #include "demo_world.h"
+#include "demo_lighting.h"
 
 #include <stdio.h>
 
@@ -58,6 +59,11 @@ scene_t demos[] = {
 		demo_world_init,
 		demo_world_update,
 		demo_world_shutdown,
+	}, {
+		"Lighting",
+		demo_lighting_init,
+		demo_lighting_update,
+		demo_lighting_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
@@ -153,7 +159,7 @@ void common_init() {
 	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
 	solid_add_box (floor_solid, scale);
 
-	demo_select_pose.position = vec3{0, 0.2f, -0.4f};
+	demo_select_pose.position = vec3{0, 0, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
 }
 
@@ -193,7 +199,7 @@ void ruler_window() {
 	text_add_at("Centimeters",
 				matrix_trs(vec3{14.5f*cm2m, -1.5f*cm2m, -0.6f*cm2m},
 						   quat_identity, vec3{0.3f, 0.3f, 0.3f}),
-				-1, text_align_bottom_left);
+				0, text_align_bottom_left);
 	for (int d = 0; d <= 60; d++) {
 		float x = d / 2.0f;
 		float size = (d % 2 == 0) ? 1.0f : 0.15f;
@@ -206,7 +212,7 @@ void ruler_window() {
 						matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
 										(2 - size)*cm2m, -0.6f*cm2m},
 									quat_identity, vec3{0.2f, 0.2f, 0.2f}),
-						-1, text_align_bottom_left);
+						0, text_align_bottom_left);
 		}
 	}
 	ui_handle_end();

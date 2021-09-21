@@ -26,7 +26,7 @@ namespace StereoKit
 
 		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
 		/// based on its current position and rotation! Check
-		/// StereoKitApp.System.spatialBridge to see if this is available to
+		/// SK.System.spatialBridgePresent to see if this is available to
 		/// use. Currently only on HoloLens, good for use with the Windows
 		/// QR code package.</summary>
 		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
@@ -36,12 +36,34 @@ namespace StereoKit
 		public static Pose FromSpatialNode(Guid spatialNodeGuid)
 			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray());
 
+		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose)
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), out pose) > 0;
+
+		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
+		/// into SteroKit's coordinate system. This can be great for
+		/// interacting with some of the UWP spatial APIs such as WorldAnchors.
+		/// 
+		/// This method only works on UWP platforms, check 
+		/// SK.System.perceptionBridgePresent to see if this is available.
+		/// </summary>
+		/// <param name="perceptionSpatialAnchor">A valid
+		/// Windows.Perception.Spatial.SpatialAnchor.</param>
+		/// <returns>A Pose representing the current orientation of the
+		/// SpatialAnchor.</returns>
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
 			Pose   result  = NativeAPI.world_from_perception_anchor(unknown);
 			Marshal.Release(unknown);
 			return result;
+		}
+
+		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
+		{
+			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
+			int    result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
+			Marshal.Release(unknown);
+			return result>0;
 		}
 
 		/// <summary>World.RaycastEnabled must be set to true first! 

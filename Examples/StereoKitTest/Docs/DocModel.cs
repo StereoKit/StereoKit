@@ -8,10 +8,10 @@ class DocModel : ITest
 	{
 		/// :CodeSample: Model.Model
 		Model model = new Model();
-		model.AddSubset(
+		model.AddNode("Cube",
+			Matrix .Identity,
 			Mesh   .GenerateCube(Vec3.One),
-			Default.Material,
-			Matrix .Identity);
+			Default.Material);
 		/// :End:
 		/// :CodeSample: Model.AddSubset
 		model.AddSubset(

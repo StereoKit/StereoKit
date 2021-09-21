@@ -40,9 +40,9 @@ void systems_add(const system_t *system) {
 ///////////////////////////////////////////
 
 int32_t systems_find_id(const char *name) {
-	for (int32_t i = 0; i < systems.count; i++) {
+	for (size_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
-			return i;
+			return (int32_t)i;
 	}
 	return -1;
 }
@@ -50,7 +50,7 @@ int32_t systems_find_id(const char *name) {
 ///////////////////////////////////////////
 
 system_t *systems_find(const char *name) {
-	for (int32_t i = 0; i < systems.count; i++) {
+	for (size_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
 			return &systems[i];
 	}
@@ -69,7 +69,7 @@ bool systems_sort() {
 		update_ids[i].count = systems[i].update_dependency_count;
 		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].update_dependency_count);
 
-		for (size_t d = 0; d < systems[i].update_dependency_count; d++) {
+		for (int32_t d = 0; d < systems[i].update_dependency_count; d++) {
 			update_ids[i].ids[d] = systems_find_id(systems[i].update_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
 				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
@@ -128,7 +128,7 @@ bool systems_initialize() {
 	if (!systems_sort())
 		return false;
 
-	for (int32_t i = 0; i < systems.count; i++) {
+	for (size_t i = 0; i < systems.count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
 			// start timing
@@ -141,6 +141,7 @@ bool systems_initialize() {
 
 			// end timing
 			systems[index].profile_start_duration = stm_since(start);
+			log_diagf("Initialized %s", systems[index].name);
 		}
 	}
 	systems_initialized = true;
@@ -151,7 +152,7 @@ bool systems_initialize() {
 ///////////////////////////////////////////
 
 void systems_update() {
-	for (int32_t i = 0; i < systems.count; i++) {
+	for (size_t i = 0; i < systems.count; i++) {
 		if (systems[i].func_update != nullptr) {
 			// start timing
 			systems[i].profile_frame_start = stm_now();

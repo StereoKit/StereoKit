@@ -75,7 +75,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
-    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildTo="Assets" />
+    <SKShader Include="$(SolutionDir)Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Assets" BuildTo="Assets" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\activity_main.xml">
@@ -108,7 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="StereoKit">
-      <Version>0.3.1-preview.2</Version>
+      <Version>0.3.2</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.Android.Support.Design" Version="28.0.0.3" />
     <PackageReference Include="Xamarin.Android.Support.Core.Utils" Version="28.0.0.3" />

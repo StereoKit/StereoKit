@@ -7,10 +7,11 @@
 #include "../spherical_harmonics.h"
 #include "texture.h"
 
-#pragma warning( disable : 26451 6011 6262 6308 6387 28182 )
+#pragma warning(push)
+#pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libraries/stb_image.h"
-#pragma warning( default : 26451 6011 6262 6308 6387 28182 )
+#pragma warning(pop)
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -41,7 +42,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_texture, "zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count);
+	tex_set_color_arr(texture->depth_buffer, texture->tex.width, texture->tex.height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	
 	return texture->depth_buffer;
@@ -58,7 +59,7 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		log_err("tex_set_zbuffer can't add a non-depth texture as a zbuffer!");
 		return;
 	}
-	assets_addref(depth_texture->header);
+	tex_addref(depth_texture);
 	if (texture->depth_buffer != nullptr)
 		tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
@@ -103,7 +104,7 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 tex_t tex_find(const char *id) {
 	tex_t result = (tex_t)assets_find(id, asset_type_texture);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		tex_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -192,10 +193,10 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
 	for (size_t i = 0; i < file_count; i++) {
-		hash_fnv64_string(files[i], hash);
+		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "tex_arr/%" PRIu64, hash);
+	snprintf(file_id, sizeof(file_id), "sk_arr::%" PRIu64, hash);
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
@@ -272,14 +273,17 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 ///////////////////////////////////////////
 
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
-	tex_t result = tex_find(equirectangular_file);
+	char equirect_id[64];
+	snprintf(equirect_id, sizeof(equirect_id), "sk_equi::%" PRIu64, hash_fnv64_string(equirectangular_file));
+
+	tex_t result = tex_find(equirect_id);
 	if (result != nullptr) {
 		if (result->light_info && out_sh_lighting_info)
 			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
 		return result;
 	}
 
-	const vec3 up   [6] = { -vec3_up, -vec3_up, vec3_forward, -vec3_forward, -vec3_up, -vec3_up };
+	const vec3 up   [6] = { vec3_up, vec3_up, -vec3_forward, vec3_forward, vec3_up, vec3_up };
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
@@ -310,7 +314,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
 	tex_set_color_arr(result, width, height, (void**)&data, 6, out_sh_lighting_info);
-	tex_set_id       (result, equirectangular_file);
+	tex_set_id       (result, equirect_id);
 
 	if (out_sh_lighting_info) {
 		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
@@ -326,6 +330,12 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	}
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void tex_addref(tex_t texture) {
+	assets_addref(texture->header);
 }
 
 ///////////////////////////////////////////
@@ -348,7 +358,7 @@ void tex_destroy(tex_t tex) {
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info) {
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
 	// If they want spherical harmonics, lets calculate it for them, or give
 	// them a good error message!
 	if (sh_lighting_info != nullptr) {
@@ -383,11 +393,13 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		texture->tex = skg_tex_create(type, use, format, use_mips);
 		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
-		if (texture->depth_buffer != nullptr)
-			tex_set_colors(texture->depth_buffer, width, height, nullptr);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
+		if (texture->depth_buffer != nullptr) {
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
+			tex_set_zbuffer(texture, texture->depth_buffer);
+		}
 	} else if (dynamic) {
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height);
+		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}

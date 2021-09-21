@@ -167,7 +167,7 @@ class DemoMath : ITest
 		sphereMesh = Mesh.GenerateSphere(1);
 		cubeMesh   = Mesh.GenerateCube(Vec3.One);
 		material   = Default.Material;
-		suzanne    = Model.FromFile("suzanne_bin.stl").GetMesh(0);
+		suzanne    = Model.FromFile("suzanne_bin.stl").RootNode.Mesh;
 
 		boundsMesh = cubeMesh;
 		boundsMat  = Default.MaterialUIBox;

@@ -148,9 +148,9 @@
 		/// <summary>z/Z</summary>
 		Z = 0x5A,
 
-		/// <summary>,/<</summary>
+		/// <summary>,/&lt;</summary>
 		Comma = 0xBC,
-		/// <summary>./></summary>
+		/// <summary>./&gt;</summary>
 		Period = 0xBE,
 		/// <summary>/</summary>
 		SlashFwd = 0xBF,

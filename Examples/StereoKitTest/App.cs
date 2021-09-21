@@ -18,6 +18,8 @@ class App
 	Matrix floorTr;
 	Pose   demoSelectPose = new Pose();
 
+	List<string> demoNames = new List<string>();
+
 	//////////////////////
 
 	public App(string[] args)
@@ -58,6 +60,8 @@ class App
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+		for (int i = 0; i < Tests.DemoCount; i++)
+			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
 
 		if (!Tests.IsTesting)
 			SK.AddStepper(new RenderCamera(new Pose(0.3f, 0, .5f, Quat.FromAngles(0,-90,0)), 1000, 1000));
@@ -100,11 +104,9 @@ class App
 
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
-		for (int i = 0; i < Tests.DemoCount; i++)
+		for (int i = 0; i < demoNames.Count; i++)
 		{
-			string name = Tests.GetDemoName(i).Substring("Demo".Length);
-
-			if (UI.Button(name))
+			if (UI.Button(demoNames[i]))
 				Tests.SetDemoActive(i);
 			UI.SameLine();
 		}

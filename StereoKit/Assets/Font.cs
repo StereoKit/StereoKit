@@ -39,11 +39,15 @@ namespace StereoKit {
 		}
 
 		/// <summary>Loads a font and creates a font asset from it.</summary>
-		/// <param name="fontFile">A file address for the font! For example: 'C:/Windows/Fonts/segoeui.ttf'</param>
-		/// <returns>A font from the given file, or null if the file failed to load properly!</returns>
-		public static Font FromFile(string fontFile)
+		/// <param name="fontFiles">A list of file addresses for the font! For
+		/// example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,
+		/// StereoKit will look in the next font file in the list.</param>
+		/// <returns>A font from the given files, or null if all of the files
+		/// failed to load properly! If any of the given files sucessfully 
+		/// loads, then this font will be a valid asset.</returns>
+		public static Font FromFile(params string[] fontFiles)
 		{
-			IntPtr inst = NativeAPI.font_create(fontFile);
+			IntPtr inst = NativeAPI.font_create_files(fontFiles, fontFiles.Length);
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
 

@@ -257,7 +257,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// If shaders can't select layers from a texture array, we'll have to
 	// seprate the layers into individual render targets.
-	if (skg_capability(skg_cap_tex_layer_select)) {
+	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) {
 		display.swapchain_color.surface_layers = 1;
 		display.swapchain_depth.surface_layers = 1;
 		log_diagf("Platform supports single-pass rendering");
@@ -294,27 +294,27 @@ bool openxr_update_swapchains(device_display_t &display) {
 
 	// Update or set the native textures
 	for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
-		for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
-			int32_t index = layer*display.swapchain_color.surface_count + s;
-
-			// Update our textures with the new swapchain display surfaces
-			void *native_surface_col   = nullptr;
-			void *native_surface_depth = nullptr;
-	#if defined(XR_USE_GRAPHICS_API_D3D11)
-			native_surface_col   = display.swapchain_color.images[s].texture;
-			native_surface_depth = display.swapchain_depth.images[s].texture;
-	#elif defined(XR_USE_GRAPHICS_API_OPENGL) || defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-			native_surface_col   = (void*)(uint64_t)display.swapchain_color.images[s].image;
-			native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[s].image;
-	#endif
-			if (display.swapchain_color.surface_layers != 1) {
+		// Update our textures with the new swapchain display surfaces
+		void *native_surface_col   = nullptr;
+		void *native_surface_depth = nullptr;
+#if defined(XR_USE_GRAPHICS_API_D3D11)
+		native_surface_col   = display.swapchain_color.images[s].texture;
+		native_surface_depth = display.swapchain_depth.images[s].texture;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL) || defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+		native_surface_col   = (void*)(uint64_t)display.swapchain_color.images[s].image;
+		native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[s].image;
+#endif
+		if (display.swapchain_color.surface_layers == 1) {
+			tex_set_surface(display.swapchain_color.textures[s], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
+			tex_set_surface(display.swapchain_depth.textures[s], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
+			tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
+		} else {
+			for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
+				int32_t index = layer * display.swapchain_color.surface_count + s;
 				tex_set_surface_layer(display.swapchain_color.textures[index], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, layer);
 				tex_set_surface_layer(display.swapchain_depth.textures[index], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, layer);
-			} else {
-				tex_set_surface(display.swapchain_color.textures[index], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
-				tex_set_surface(display.swapchain_depth.textures[index], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
+				tex_set_zbuffer(display.swapchain_color.textures[index], display.swapchain_depth.textures[index]);
 			}
-			tex_set_zbuffer(display.swapchain_color.textures[index], display.swapchain_depth.textures[index]);
 		}
 	}
 
@@ -563,8 +563,6 @@ bool openxr_render_frame() {
 		}
 		openxr_render_layer(xr_time, xr_displays[i]);
 	}
-
-	render_clear();
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];

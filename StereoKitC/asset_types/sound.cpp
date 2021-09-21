@@ -15,7 +15,7 @@ namespace sk {
 sound_t sound_find(const char *id) {
 	sound_t result = (sound_t)assets_find(id, asset_type_sound);
 	if (result != nullptr) {
-		assets_addref(result->header);
+		sound_addref(result);
 		return result;
 	}
 	return nullptr;
@@ -146,7 +146,7 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == nullptr) {
-			assets_addref(sound->header);
+			sound_addref(sound);
 			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
 
 			result._id   = au_active_sounds[i].id;
@@ -184,6 +184,12 @@ float sound_duration(sound_t sound) {
 	case sound_type_stream: return (float)sound->buffer.count / (float)AU_SAMPLE_RATE;
 	default: return 0;
 	}
+}
+
+///////////////////////////////////////////
+
+void sound_addref(sound_t sound) {
+	assets_addref(sound->header);
 }
 
 ///////////////////////////////////////////
