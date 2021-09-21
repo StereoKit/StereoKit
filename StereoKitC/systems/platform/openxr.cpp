@@ -546,6 +546,8 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
+	render_clear();
+
 	// Check if the bounds have changed. This needs a valid xr_time, which is
 	// why we have this on a flag delay. xr_time is set in openxr_render_frame
 	if (xr_check_bounds) {

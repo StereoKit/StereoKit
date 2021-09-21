@@ -290,7 +290,7 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 	stbtt__bitmap gbm;
 	gbm.w = w*multisample;
 	gbm.h = h*multisample;
-	gbm.pixels = (unsigned char *)malloc(gbm.w * gbm.h);
+	gbm.pixels = (unsigned char *)sk_malloc(gbm.w * gbm.h);
 	gbm.stride = gbm.w;
 	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
 	free(vertices);

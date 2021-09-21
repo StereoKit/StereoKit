@@ -564,8 +564,6 @@ bool openxr_render_frame() {
 		openxr_render_layer(xr_time, xr_displays[i]);
 	}
 
-	render_clear();
-
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
 	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;

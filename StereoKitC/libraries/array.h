@@ -74,6 +74,7 @@ Example usage:
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "../sk_memory.h"
 
 //////////////////////////////////////
 
@@ -81,7 +82,7 @@ Example usage:
 
 #ifndef ARRAY_MALLOC
 #include <malloc.h>
-#define ARRAY_MALLOC malloc
+#define ARRAY_MALLOC sk::sk_malloc
 #endif
 #ifndef ARRAY_FREE
 #include <malloc.h>
@@ -89,7 +90,7 @@ Example usage:
 #endif
 #ifndef ARRAY_REALLOC
 #include <malloc.h>
-#define ARRAY_REALLOC realloc
+#define ARRAY_REALLOC sk::sk_realloc
 #endif
 
 #ifndef ARRAY_MEMCPY
