@@ -15,6 +15,7 @@ heads, mice and pointers!
 
 |  |  |
 |--|--|
+|[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [ControllerMenuButton]({{site.url}}/Pages/Reference/Input/ControllerMenuButton.html)|This is the state of the controller's menu button, this is not attached to any particular hand, so it's independent of a left or right controller.|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [Eyes]({{site.url}}/Pages/Reference/Input/Eyes.html)|If the device has eye tracking hardware and the app has permission to use it, then this is the most recently tracked eye pose. Check `Input.EyesTracked` to see if the pose is up-to date, or if it's a leftover!  You can also check `SK.System.eyeTrackingPresent` to see if the hardware is capable of providing eye tracking.  On Flatscreen when the MR sim is still enabled, then eyes are emulated using the cursor position when the user holds down Alt.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [EyesTracked]({{site.url}}/Pages/Reference/Input/EyesTracked.html)|If eye hardware is available and app has permission, then this is the tracking state of the eyes. Eyes may move out of bounds, hardware may fail to detect eyes, or who knows what else!  On Flatscreen when MR sim is still enabled, this will report whether the user is simulating eye input with the Alt key.|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [Head]({{site.url}}/Pages/Reference/Input/Head.html)|The position and orientation of the user's head! This is the center point between the user's eyes, NOT the center of the user's head. Forward points the same way the user's face is facing.|
@@ -25,6 +26,7 @@ heads, mice and pointers!
 
 |  |  |
 |--|--|
+|[Controller]({{site.url}}/Pages/Reference/Input/Controller.html)|Gets raw controller input data from the system. Note that not all buttons provided here are guaranteed to be present on the user's physical controller. Controllers are also not guaranteed to be available on the system, and are never simulated.|
 |[Hand]({{site.url}}/Pages/Reference/Input/Hand.html)|Retreives all the information about the user's hand! StereoKit will always provide hand information, however sometimes that information is simulated, like in the case of a mouse, or controllers.  Note that this is a copy of the hand information, and it's a good chunk of data, so it's a good idea to grab it once and keep it around for the frame, or at least function, rather than asking for it again and again each time you want to touch something.|
 |[HandClearOverride]({{site.url}}/Pages/Reference/Input/HandClearOverride.html)|Clear out the override status from Input.HandOverride, and restore the user's control over it again.|
 |[HandMaterial]({{site.url}}/Pages/Reference/Input/HandMaterial.html)|Set the Material used to render the hand! The default material uses an offset of 10 to ensure it gets drawn overtop of other elements.|

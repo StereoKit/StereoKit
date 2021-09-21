@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Model.FromFile
-description: Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file.
+description: Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file.
 ---
 # [Model]({{site.url}}/Pages/Reference/Model.html).FromFile
 
@@ -16,7 +16,7 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromFile(string file, [S
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model created from the file, or null if the file failed to load!|
 
 Loads a list of mesh and material subsets from a .obj,
-.stl, .gltf, or .glb file.
+.stl, .ply (ASCII), .gltf, or .glb file.
 
 
 

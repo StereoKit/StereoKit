@@ -3,7 +3,7 @@ layout: default
 title: Hand
 description: Information about a hand!
 ---
-# struct Hand
+# class Hand
 
 Information about a hand!
 
@@ -29,6 +29,7 @@ Information about a hand!
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the flat of the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [pinch]({{site.url}}/Pages/Reference/Hand/pinch.html)|Is the hand making a pinch gesture right now? Finger and thumb together.|
 |float [pinchActivation]({{site.url}}/Pages/Reference/Hand/pinchActivation.html)|What percentage of activation is the pinch gesture right now? Where 0 is a hand in an outstretched resting position, and 1 is fingers touching, within a device error tolerant threshold.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [pinchPt]({{site.url}}/Pages/Reference/Hand/pinchPt.html)|This is an approximation of where the center of a 'pinch' gesture occurs, and is used internally by StereoKit for some tasks, such as UI. For simulated hands, this position will give you the most stable pinch location possible. For real hands, it'll be pretty close to the stablest point you'll get. This is especially important for when the user begins and ends their pinch action, as you'll often see a lot of extra movement in the fingers then.|
 |float [size]({{site.url}}/Pages/Reference/Hand/size.html)|This is the size of the hand, calculated by measuring the length of the middle finger! This is calculated by adding the distances between each joint, then adding the joint radius of the root and tip. This value is recalculated at relatively frequent intervals, and can vary by as much as a centimeter.|
 |bool [Solid]({{site.url}}/Pages/Reference/Hand/Solid.html)|Does StereoKit register the hand with the physics system? By default, this is true. Right now this is just a single block collider, but later will involve per-joint colliders!|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [tracked]({{site.url}}/Pages/Reference/Hand/tracked.html)|Is the hand being tracked by the sensors right now?|

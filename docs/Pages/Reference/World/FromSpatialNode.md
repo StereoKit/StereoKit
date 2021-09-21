@@ -1,7 +1,7 @@
 ---
 layout: default
 title: World.FromSpatialNode
-description: Converts a Windows Mirage spatial node GUID into a Pose based on its current position and rotation! Check StereoKitApp.System.spatialBridge to see if this is available to use. Currently only on HoloLens, good for use with the Windows QR code package.
+description: Converts a Windows Mirage spatial node GUID into a Pose based on its current position and rotation! Check SK.System.spatialBridgePresent to see if this is available to use. Currently only on HoloLens, good for use with the Windows QR code package.
 ---
 # [World]({{site.url}}/Pages/Reference/World.html).FromSpatialNode
 
@@ -16,7 +16,7 @@ static [Pose]({{site.url}}/Pages/Reference/Pose.html) FromSpatialNode(Guid spati
 
 Converts a Windows Mirage spatial node GUID into a Pose
 based on its current position and rotation! Check
-StereoKitApp.System.spatialBridge to see if this is available to
+SK.System.spatialBridgePresent to see if this is available to
 use. Currently only on HoloLens, good for use with the Windows
 QR code package.
 

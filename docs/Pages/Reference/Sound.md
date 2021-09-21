@@ -53,7 +53,7 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 |--|--|
 |[CreateStream]({{site.url}}/Pages/Reference/Sound/CreateStream.html)|Create a sound used for streaming audio in or out! This is useful for things like reading from a microphone stream, or playing audio from a source streaming over the network, or even procedural sounds that are generated on the fly!  Use stream sounds with the WriteSamples and ReadSamples functions.|
 |[Find]({{site.url}}/Pages/Reference/Sound/Find.html)|Looks for a Sound asset that's already loaded, matching the given id!|
-|[FromFile]({{site.url}}/Pages/Reference/Sound/FromFile.html)|Loads a sound effect from file! Currently, StereoKit only supports .wav files. Audio is converted to mono.|
+|[FromFile]({{site.url}}/Pages/Reference/Sound/FromFile.html)|Loads a sound effect from file! Currently, StereoKit supports .wav and .mp3 files. Audio is converted to mono.|
 |[Generate]({{site.url}}/Pages/Reference/Sound/Generate.html)|This function will generate a sound from a function you provide! The function is called once for each sample in the duration. As an example, it may be called 48,000 times for each second of duration.|
 
 
@@ -62,8 +62,8 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 ### Getting streaming sound intensity
 This example shows how to read data from a Sound stream such as the
 microphone! In this case, we're just finding the average 'intensity'
-of the audio, and returning it as a value approximately between 0 and
-1. Microphone.Start() should be called before this example :)
+of the audio, and returning it as a value approximately between 0 and 1.
+Microphone.Start() should be called before this example :)
 ```csharp
 float[] micBuffer    = new float[0];
 float   micIntensity = 0;

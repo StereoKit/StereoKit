@@ -17,6 +17,30 @@ void SetVector(string name, [Vec4]({{site.url}}/Pages/Reference/Vec4.html) value
 Sets a shader parameter with the given name to the
 provided value. If no parameter is found, nothing happens, and
 the value is not set!
+<div class='signature' markdown='1'>
+void SetVector(string name, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) value)
+</div>
+
+|  |  |
+|--|--|
+|string name|Name of the shader parameter.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) value|New value for the parameter.|
+
+Sets a shader parameter with the given name to the
+provided value. If no parameter is found, nothing happens, and
+the value is not set!
+<div class='signature' markdown='1'>
+void SetVector(string name, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) value)
+</div>
+
+|  |  |
+|--|--|
+|string name|Name of the shader parameter.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) value|New value for the parameter.|
+
+Sets a shader parameter with the given name to the
+provided value. If no parameter is found, nothing happens, and
+the value is not set!
 
 
 

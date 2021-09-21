@@ -26,6 +26,7 @@ characters and mouse buttons.
 |BracketOpen|[/{|
 |C|c/C|
 |CapsLock|This behaves a little differently! This tells the toggle state of caps lock, rather than the key state itself.|
+|Comma|,/<|
 |Ctrl|Left or right Control key|
 |D|d/D|
 |Decimal|Numpad '.', NOT the same as character '.'|

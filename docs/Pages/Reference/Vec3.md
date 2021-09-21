@@ -35,6 +35,7 @@ right, +y is upwards, and -z is forward.
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3/Vec3.html)|Creates a vector from x, y, and z values! StereoKit uses a right-handed metric coordinate system, where +x is to the right, +y is upwards, and -z is forward.|
+|[InRadius]({{site.url}}/Pages/Reference/Vec3/InRadius.html)|Checks if a point is within a certain radius of this one. This is an easily readable shorthand of the squared distance check.|
 |[Normalize]({{site.url}}/Pages/Reference/Vec3/Normalize.html)|Turns this vector into a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 
 

@@ -43,9 +43,9 @@ Mesh and Material!
 
 ```csharp
 Model model = new Model();
-model.AddSubset(
+model.AddNode("Cube",
+	Matrix .Identity,
 	Mesh   .GenerateCube(Vec3.One),
-	Default.Material,
-	Matrix .Identity);
+	Default.Material);
 ```
 
