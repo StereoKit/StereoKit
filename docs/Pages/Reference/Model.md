@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Model
-description: A Model is a collection of meshes, materials, and transforms that make up a visual element! This is a great way to group together complex objects that have multiple parts in them, and in fact, most model formats are composed this way already!  This class contains a number of methods for creation. If you pass in a .obj, .stl, .gltf, or .glb, StereoKit will load that model from file, and assemble materials and transforms from the file information. But you can also assemble a model from procedurally generated meshes!  Because models include an offset transform for each mesh element, this does have the overhead of an extra matrix multiplication in order to execute a render command. So if you need speed, and only have a single mesh with a precalculated transform matrix, it can be faster to render a Mesh instead of a Model!
+description: A Model is a collection of meshes, materials, and transforms that make up a visual element! This is a great way to group together complex objects that have multiple parts in them, and in fact, most model formats are composed this way already!  This class contains a number of methods for creation. If you pass in a .obj, .stl, , .ply (ASCII), .gltf, or .glb, StereoKit will load that model from file, and assemble materials and transforms from the file information. But you can also assemble a model from procedurally generated meshes!  Because models include an offset transform for each mesh element, this does have the overhead of an extra matrix multiplication in order to execute a render command. So if you need speed, and only have a single mesh with a precalculated transform matrix, it can be faster to render a Mesh instead of a Model!
 ---
 # class Model
 
@@ -11,9 +11,9 @@ complex objects that have multiple parts in them, and in fact, most
 model formats are composed this way already!
 
 This class contains a number of methods for creation. If you pass in
-a .obj, .stl, .gltf, or .glb, StereoKit will load that model from
-file, and assemble materials and transforms from the file
-information. But you can also assemble a model from procedurally
+a .obj, .stl, , .ply (ASCII), .gltf, or .glb, StereoKit will load
+that model from file, and assemble materials and transforms from the
+file information. But you can also assemble a model from procedurally
 generated meshes!
 
 Because models include an offset transform for each mesh element,
@@ -28,7 +28,10 @@ faster to render a Mesh instead of a Model!
 |  |  |
 |--|--|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh bounds, you can also override this to suit your needs.|
+|[ModelNodeCollection]({{site.url}}/Pages/Reference/ModelNodeCollection.html) [Nodes]({{site.url}}/Pages/Reference/Model/Nodes.html)|This is an enumerable collection of all the nodes in this Model, ordered non-heirarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
+|[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) [RootNode]({{site.url}}/Pages/Reference/Model/RootNode.html)|Returns the first root node in the Model's hierarchy. There may be additional root nodes, and these will be Siblings of this ModelNode. If there are no nodes present on the Model, this will be null.|
 |int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
+|[ModelVisualCollection]({{site.url}}/Pages/Reference/ModelVisualCollection.html) [Visuals]({{site.url}}/Pages/Reference/Model/Visuals.html)|This is an enumerable collection of all the nodes with Mesh/Material data in this Model, ordered non-heirarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
 
 
 ## Instance Methods
@@ -36,13 +39,17 @@ faster to render a Mesh instead of a Model!
 |  |  |
 |--|--|
 |[Model]({{site.url}}/Pages/Reference/Model/Model.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
+|[AddNode]({{site.url}}/Pages/Reference/Model/AddNode.html)|This adds a root node to the `Model`'s node hierarchy! If There is already an initial root node, this node will still be a root node, but will be a `Sibling` of the `Model`'s `RootNode`. If this is the first root node added, you'll be able to access it via `RootNode`.|
 |[AddSubset]({{site.url}}/Pages/Reference/Model/AddSubset.html)|Adds a new subset to the Model, and recalculates the bounds. A default subset name of "subsetX" will be used, where X is the subset's index.|
+|[Copy]({{site.url}}/Pages/Reference/Model/Copy.html)|Creates a shallow copy of a Model asset! Meshes and Materials referenced by this Model will be referenced, not copied.|
 |[Draw]({{site.url}}/Pages/Reference/Model/Draw.html)|Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
+|[FindNode]({{site.url}}/Pages/Reference/Model/FindNode.html)|Searches the entire list of Nodes, and will return the first on that matches this name exactly. If no ModelNode is found, then this will return null. Node Names are not guaranteed to be unique.|
 |[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the model subset! Note that this is not necessarily a unique material, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
 |[GetMesh]({{site.url}}/Pages/Reference/Model/GetMesh.html)|Gets a link to the Mesh asset used by the model subset! Note that this is not necessarily a unique mesh, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
 |[GetName]({{site.url}}/Pages/Reference/Model/GetName.html)|Returns the name of the specific subset! This will be the node name of your model asset. If no node name is available, SteroKit will generate a name in the format of "subsetX", where X would be the subset index. Note that names are not guaranteed to be unique (users may assign the same name to multiple nodes). Some nodes may also produce multiple subsets with the same name, such as when a node contains a Mesh with multiple Materials, each Mesh/Material combination will receive a subset with the same name.|
 |[GetTransform]({{site.url}}/Pages/Reference/Model/GetTransform.html)|Gets the transform matrix used by the model subset!|
-|[RecalculateBounds]({{site.url}}/Pages/Reference/Model/RecalculateBounds.html)|Examines the subsets as they currently are, and rebuilds the bounds based on that! This is normally done automatically, but if you modify a Mesh that this Model is using, the Model can't see it, and you should call this manually.|
+|[Intersect]({{site.url}}/Pages/Reference/Model/Intersect.html)|Checks the intersection point of this ray and a Model's visual nodes. This will skip any node that is not flagged as Solid, as well as any Mesh without collision data. Ray must be in model space, intersection point will be in model space too. You can use the inverse of the mesh's world transform matrix to bring the ray into model space, see the example in the docs!|
+|[RecalculateBounds]({{site.url}}/Pages/Reference/Model/RecalculateBounds.html)|Examines the visuals as they currently are, and rebuilds the bounds based on that! This is normally done automatically, but if you modify a Mesh that this Model is using, the Model can't see it, and you should call this manually.|
 |[RemoveSubset]({{site.url}}/Pages/Reference/Model/RemoveSubset.html)|Removes and dereferences a subset from the model.|
 |[SetMaterial]({{site.url}}/Pages/Reference/Model/SetMaterial.html)|Changes the Material for the subset to a new one!|
 |[SetMesh]({{site.url}}/Pages/Reference/Model/SetMesh.html)|Changes the mesh for the subset to a new one!|
@@ -55,7 +62,110 @@ faster to render a Mesh instead of a Model!
 |  |  |
 |--|--|
 |[Find]({{site.url}}/Pages/Reference/Model/Find.html)|Looks for a Model asset that's already loaded, matching the given id!|
-|[FromFile]({{site.url}}/Pages/Reference/Model/FromFile.html)|Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file.|
-|[FromMemory]({{site.url}}/Pages/Reference/Model/FromMemory.html)|Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file stored in memory. Note that this function won't work well on files that reference other files, such as .gltf files with references in them.|
+|[FromFile]({{site.url}}/Pages/Reference/Model/FromFile.html)|Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file.|
+|[FromMemory]({{site.url}}/Pages/Reference/Model/FromMemory.html)|Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note that this function won't work well on files that reference other files, such as .gltf files with references in them.|
 |[FromMesh]({{site.url}}/Pages/Reference/Model/FromMesh.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
+
+
+## Examples
+
+### Assembling a Model
+While normally you'll load Models from file, you can also assemble
+them yourself procedurally! This example shows assembling a simple
+hierarchy of visual and empty nodes.
+```csharp
+Model model = new Model();
+model
+	.AddNode ("Root",    Matrix.S(0.2f), Mesh.Cube, Material.Default)
+	.AddChild("Sub",     Matrix.TR (V.XYZ(0.5f, 0, 0), Quat.FromAngles(0, 0, 45)), Mesh.Cube, Material.Default)
+	.AddChild("Surface", Matrix.TRS(V.XYZ(0.5f, 0, 0), Quat.LookDir(V.XYZ(1,0,0)), V.XYZ(1,1,1)));
+
+ModelNode surfaceNode = model.FindNode("Surface");
+
+surfaceNode.AddChild("UnitX", Matrix.T(Vec3.UnitX));
+surfaceNode.AddChild("UnitY", Matrix.T(Vec3.UnitY));
+surfaceNode.AddChild("UnitZ", Matrix.T(Vec3.UnitZ));
+```
+
+### Simple iteration
+Walking through the Model's list of nodes is pretty
+straightforward! This will touch every ModelNode in the Model,
+in the order they were defined, regardless of hierarchy position
+or contents.
+```csharp
+Log.Info("Iterate nodes:");
+foreach (ModelNode node in model.Nodes)
+	Log.Info("  "+ node.Name);
+```
+
+### Simple iteration of visual nodes
+This will iterate through every ModelNode in the Model with visual
+data attached to it!
+```csharp
+Log.Info("Iterate visuals:");
+foreach (ModelNode node in model.Visuals)
+	Log.Info("  "+ node.Name);
+```
+
+### Tagged Nodes
+You can search through Visuals and Nodes
+```csharp
+var nodes = model.Visuals
+	.Where(n => n.Name.StartsWith("[Wire]"));
+foreach (var node in nodes)
+{
+	node.Material = node.Material.Copy();
+	node.Material.Wireframe = true;
+}
+```
+
+### Non-recursive depth first node traversal
+If you need to walk through a Model's node hierarchy, this is a method
+of doing this without recursion! You essentially do this by walking the
+tree down (Child) and to the right (Sibling), and if neither is present,
+then walking back up (Parent) until it can keep going right (Sibling)
+and then down (Child) again.
+```csharp
+static void DepthFirstTraversal(Model model)
+{
+	ModelNode node  = model.RootNode;
+	int       depth = 0;
+	while (node != null)
+	{
+		string tabs = new string(' ', depth*2);
+		Log.Info(tabs + node.Name);
+
+		if      (node.Child   != null) { node = node.Child; depth++; }
+		else if (node.Sibling != null)   node = node.Sibling;
+		else {
+			while (node != null)
+			{
+				if (node.Sibling != null) {
+					node = node.Sibling;
+					break;
+				}
+				depth--;
+				node = node.Parent;
+			}
+		}
+	}
+}
+```
+
+### Recursive depth first node traversal
+Recursive depth first traversal is a little simpler to implement as
+long as you don't mind some recursion :)
+This would be called like: `RecursiveTraversal(model.RootNode);`
+```csharp
+static void RecursiveTraversal(ModelNode node, int depth = 0)
+{
+	string tabs = new string(' ', depth*2);
+	while (node != null)
+	{
+		Log.Info(tabs + node.Name);
+		RecursiveTraversal(node.Child, depth + 1);
+		node = node.Sibling;
+	}
+}
+```
 

@@ -54,6 +54,21 @@ data will always return false. Ray must be in model space,
 intersection point will be in model space too. You can use the
 inverse of the mesh's world transform matrix to bring the ray
 into model space, see the example in the docs!
+<div class='signature' markdown='1'>
+bool Intersect([Model]({{site.url}}/Pages/Reference/Model.html) model, Ray& modelSpaceAt)
+</div>
+
+|  |  |
+|--|--|
+|[Model]({{site.url}}/Pages/Reference/Model.html) model|Any Model that may or may not contain Solid             flagged nodes, and Meshes with collision data.|
+|Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
+|RETURNS: bool|True if an intersection occurs, false otherwise!|
+
+Checks the intersection point of this ray and the Solid
+flagged Meshes in the Model's visual nodes. Ray must be in model
+space, intersection point will be in model space too. You can use
+the inverse of the mesh's world transform matrix to bring the ray
+into model space, see the example in the docs!
 
 
 

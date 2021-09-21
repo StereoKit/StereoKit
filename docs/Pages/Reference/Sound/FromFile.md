@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Sound.FromFile
-description: Loads a sound effect from file! Currently, StereoKit only supports .wav files. Audio is converted to mono.
+description: Loads a sound effect from file! Currently, StereoKit supports .wav and .mp3 files. Audio is converted to mono.
 ---
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).FromFile
 
@@ -14,8 +14,8 @@ static [Sound]({{site.url}}/Pages/Reference/Sound.html) FromFile(string filename
 |string filename|Name of the audio file! Supports .wav files.|
 |RETURNS: [Sound]({{site.url}}/Pages/Reference/Sound.html)|A sound object, or null if something went wrong.|
 
-Loads a sound effect from file! Currently, StereoKit only supports
-.wav files. Audio is converted to mono.
+Loads a sound effect from file! Currently, StereoKit
+supports .wav and .mp3 files. Audio is converted to mono.
 
 
 

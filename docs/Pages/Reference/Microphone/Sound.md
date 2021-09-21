@@ -22,8 +22,8 @@ devices.
 ### Getting streaming sound intensity
 This example shows how to read data from a Sound stream such as the
 microphone! In this case, we're just finding the average 'intensity'
-of the audio, and returning it as a value approximately between 0 and
-1. Microphone.Start() should be called before this example :)
+of the audio, and returning it as a value approximately between 0 and 1.
+Microphone.Start() should be called before this example :)
 ```csharp
 float[] micBuffer    = new float[0];
 float   micIntensity = 0;

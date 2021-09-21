@@ -3,7 +3,7 @@ layout: default
 title: Controller
 description: This represents a physical controller input device! Tracking information, buttons, analog sticks and triggers! There's also a Menu button that's tracked separately at Input.ContollerMenu.
 ---
-# struct Controller
+# class Controller
 
 This represents a physical controller input device! Tracking
 information, buttons, analog sticks and triggers! There's also a Menu

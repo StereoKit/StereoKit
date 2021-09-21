@@ -28,6 +28,7 @@ and other various things.
 
 |  |  |
 |--|--|
-|[FromSpatialNode]({{site.url}}/Pages/Reference/World/FromSpatialNode.html)|Converts a Windows Mirage spatial node GUID into a Pose based on its current position and rotation! Check StereoKitApp.System.spatialBridge to see if this is available to use. Currently only on HoloLens, good for use with the Windows QR code package.|
+|[FromPerceptionAnchor]({{site.url}}/Pages/Reference/World/FromPerceptionAnchor.html)|Converts a Windows.Perception.Spatial.SpatialAnchor's pose into SteroKit's coordinate system. This can be great for interacting with some of the UWP spatial APIs such as WorldAnchors.  This method only works on UWP platforms, check SK.System.perceptionBridgePresent to see if this is available.|
+|[FromSpatialNode]({{site.url}}/Pages/Reference/World/FromSpatialNode.html)|Converts a Windows Mirage spatial node GUID into a Pose based on its current position and rotation! Check SK.System.spatialBridgePresent to see if this is available to use. Currently only on HoloLens, good for use with the Windows QR code package.|
 |[Raycast]({{site.url}}/Pages/Reference/World/Raycast.html)|World.RaycastEnabled must be set to true first! SK.System.worldRaycastPresent must also be true. This does a ray intersection with whatever represents the environment at the moment! In this case, it's a watertight collection of low resolution meshes calculated by the Scene Understanding extension, which is only provided by the Microsoft HoloLens runtime.|
 

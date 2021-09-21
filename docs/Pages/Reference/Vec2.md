@@ -31,6 +31,7 @@ with 2 dimensions to it!
 |--|--|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2/Vec2.html)|A basic constructor, just copies the values in!|
 |[Angle]({{site.url}}/Pages/Reference/Vec2/Angle.html)|Returns the counter-clockwise degrees from [1,0]. Resulting value is between 0 and 360. Vector does not need to be normalized.|
+|[InRadius]({{site.url}}/Pages/Reference/Vec2/InRadius.html)|Checks if a point is within a certain radius of this one. This is an easily readable shorthand of the squared distance check.|
 |[Normalize]({{site.url}}/Pages/Reference/Vec2/Normalize.html)|Turns this vector into a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 
 
