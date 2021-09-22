@@ -87,22 +87,25 @@ bool win32_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool win32_start_post_xr() {
+	wchar_t app_name_w[256];
+	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+
 	// Create a window just to grab input
-	WNDCLASS wc = {0}; 
+	WNDCLASSW wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProcW(hWnd, message, wParam, lParam);
 		}
 		return (LRESULT)0;
 	};
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = sk_app_name;
-	if( !RegisterClass(&wc) ) return false;
+	wc.lpszClassName = app_name_w;
+	if( !RegisterClassW(&wc) ) return false;
 
-	win32_window = CreateWindow(
-		wc.lpszClassName, 
-		sk_app_name, 
+	win32_window = CreateWindowW(
+		app_name_w, 
+		app_name_w, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		0, 0, 0, 0,
 		0, 0, 
