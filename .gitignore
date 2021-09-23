@@ -338,6 +338,10 @@ ASALocalRun/
 !StereoKitC/lib/bin/**
 !**/Assets/**
 
+# Ignore OpenXR related stuff
+Tools/oxr_current.txt
+StereoKitC/lib/bin/**/openxr_loader.lib
+
 # Ignore cached shader blobs
 */Assets/cache
 StereoKitC/shaders_builtin/*.sks
@@ -346,6 +350,7 @@ _site/
 .jekyll-cache/
 *.lock
 build/
+build_*/
 
 .vscode/
 

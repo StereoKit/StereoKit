@@ -35,10 +35,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
+Matrix sphereTransform = Matrix.T(-.5f, .5f, 0);
 Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 
-sphereTransform = Matrix.T(0.0f, 0, -1);
+sphereTransform = Matrix.T(.5f, .5f, 0);
 Renderer.Add(sphereModel, sphereTransform);
 ```
 ## UV and Face layout

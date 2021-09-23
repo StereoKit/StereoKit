@@ -100,7 +100,7 @@ namespace StereoKit
 		/// <param name="pose">The original pose.</param>
 		/// <returns>The transformed pose.</returns>
 		public Pose Transform(Pose pose)
-			=> NativeAPI.matrix_mul_pose(m, pose);
+			=> NativeAPI.matrix_transform_pose(m, pose);
 
 		/// <summary>Returns this transformation matrix to its original 
 		/// translation, rotation and scale components. Not exactly a cheap
@@ -146,7 +146,7 @@ namespace StereoKit
 		/// <returns>A Matrix that will rotate by the provided pitch, yaw and 
 		/// roll.</returns>
 		public static Matrix R(float pitchXDeg, float yawYDeg, float rollZDeg) 
-			=> Matrix4x4.CreateFromYawPitchRoll(yawYDeg, pitchXDeg, rollZDeg);
+			=> Matrix4x4.CreateFromYawPitchRoll(yawYDeg*Units.deg2rad, pitchXDeg*Units.deg2rad, rollZDeg*Units.deg2rad);
 		/// <summary>Create a rotation matrix from pitch, yaw, and roll 
 		/// information. Units are in degrees.</summary>
 		/// <param name="pitchYawRollDeg">Pitch (x-axis), yaw (y-axis), and 
@@ -155,7 +155,7 @@ namespace StereoKit
 		/// <returns>A Matrix that will rotate by the provided pitch, yaw and 
 		/// roll.</returns>
 		public static Matrix R(Vec3 pitchYawRollDeg) 
-			=> Matrix4x4.CreateFromYawPitchRoll(pitchYawRollDeg.y, pitchYawRollDeg.x, pitchYawRollDeg.z);
+			=> Matrix4x4.CreateFromYawPitchRoll(pitchYawRollDeg.y*Units.deg2rad, pitchYawRollDeg.x*Units.deg2rad, pitchYawRollDeg.z*Units.deg2rad);
 
 		/// <summary>Creates a scaling Matrix, where scale can be different
 		/// on each axis (non-uniform).</summary>

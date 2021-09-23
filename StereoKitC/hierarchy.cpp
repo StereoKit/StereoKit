@@ -68,37 +68,37 @@ const matrix *hierarchy_to_local() {
 ///////////////////////////////////////////
 
 vec3 hierarchy_to_local_point(const vec3 &world_pt) {
-	return matrix_mul_point(*hierarchy_to_local(), world_pt);
+	return matrix_transform_pt(*hierarchy_to_local(), world_pt);
 }
 
 ///////////////////////////////////////////
 
 vec3 hierarchy_to_local_direction(const vec3 &world_dir) {
-	return matrix_mul_direction(*hierarchy_to_local(), world_dir);
+	return matrix_transform_dir(*hierarchy_to_local(), world_dir);
 }
 
 ///////////////////////////////////////////
 
 quat hierarchy_to_local_rotation(const quat &world_orientation) {
-	return matrix_mul_rotation(*hierarchy_to_local(), world_orientation);
+	return matrix_transform_quat(*hierarchy_to_local(), world_orientation);
 }
 
 ///////////////////////////////////////////
 
 vec3 hierarchy_to_world_point(const vec3 &local_pt) {
-	return matrix_mul_point(*hierarchy_to_world(), local_pt);
+	return matrix_transform_pt(*hierarchy_to_world(), local_pt);
 }
 
 ///////////////////////////////////////////
 
 vec3 hierarchy_to_world_direction(const vec3 &local_dir) {
-	return matrix_mul_direction(*hierarchy_to_world(), local_dir);
+	return matrix_transform_dir(*hierarchy_to_world(), local_dir);
 }
 
 ///////////////////////////////////////////
 
 quat hierarchy_to_world_rotation(const quat &local_orientation) {
-	return matrix_mul_rotation(*hierarchy_to_world(), local_orientation);
+	return matrix_transform_quat(*hierarchy_to_world(), local_orientation);
 }
 
 } // namespace sk

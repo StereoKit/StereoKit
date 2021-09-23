@@ -5,6 +5,10 @@ description: The aim pose of a controller is where the controller 'points' from 
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).aim
 
+<div class='signature' markdown='1'>
+[Pose]({{site.url}}/Pages/Reference/Pose.html) aim
+</div>
+
 ## Description
 The aim pose of a controller is where the controller
 'points' from and to. This is great for pointer rays and far

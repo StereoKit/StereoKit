@@ -5,6 +5,10 @@ description: This refers to the play boundary, or guardian system that the syste
 ---
 # [World]({{site.url}}/Pages/Reference/World.html).HasBounds
 
+<div class='signature' markdown='1'>
+static bool HasBounds{ get }
+</div>
+
 ## Description
 This refers to the play boundary, or guardian system
 that the system may have! Not all systems have this, so it's

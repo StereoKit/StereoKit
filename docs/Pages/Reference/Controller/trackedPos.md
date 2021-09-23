@@ -5,6 +5,10 @@ description: This tells the current tracking state of the controller's position 
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).trackedPos
 
+<div class='signature' markdown='1'>
+[TrackState]({{site.url}}/Pages/Reference/TrackState.html) trackedPos
+</div>
+
 ## Description
 This tells the current tracking state of the
 controller's position information. This is often the first part

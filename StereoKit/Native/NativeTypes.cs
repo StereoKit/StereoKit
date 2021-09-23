@@ -70,7 +70,8 @@ namespace StereoKit
 		public DisplayBlend blendPreference;
 		/// <summary>If the preferred display fails, should we avoid falling
 		/// back to flatscreen and just crash out? Default is false.</summary>
-		public bool         noFlatscreenFallback;
+		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
+		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
 		/// one, a detailed one, one that uses stencils? By default, 
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
@@ -81,6 +82,17 @@ namespace StereoKit
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
 		public LogLevel     logFilter;
+		/// <summary>If the runtime supports it, should this application run
+		/// as an overlay above existing applications? Check 
+		/// SK.System.overlayApp after initialization to see if the runtime
+		/// could comply with this flag. This will always force StereoKit to
+		/// work in a blend compositing mode.</summary>
+		public  bool        overlayApp { get { return _overlayApp > 0; } set { _overlayApp = value?1:0; } }
+		private int        _overlayApp;
+		/// <summary>For overlay applications, this is the order in which
+		/// apps should be composited together. 0 means first, bottom of the
+		/// stack, and uint.MaxValue is last, on top of the stack.</summary>
+		public uint         overlayPriority;
 		/// <summary>If using Runtime.Flatscreen, the pixel position of the
 		/// window on the screen.</summary>
 		public int flatscreenPosX;
@@ -96,7 +108,8 @@ namespace StereoKit
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
 		/// so developers can test MR spaces without being in a headeset. If
 		/// You don't want this, you can disable it with this setting!</summary>
-		public bool disableFlatscreenMRSim;
+		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
+		private int _disableFlatscreenMRSim;
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
@@ -129,8 +142,10 @@ namespace StereoKit
 		}
 	}
 
+	// TODO: Remove in v0.4
 	/// <summary>This describes the type of display tech used on a Mixed
-	/// Reality device.</summary>
+	/// Reality device. This will be replaced by `DisplayBlend` in v0.4.
+	/// </summary>
 	public enum Display
 	{
 		/// <summary>Default value, when using this as a search type, it will
@@ -195,16 +210,16 @@ namespace StereoKit
 		/// display, this will be the height of a single eye.</summary>
 		public int displayHeight;
 
-		/// <summary>Does the device we're currently on have the spatial 
-		/// graph bridge extension? The extension is provided through the 
-		/// function `Pose.FromSpatialNode`. This allows OpenXR to talk with 
+		/// <summary>Does the device we're currently on have the spatial
+		/// graph bridge extension? The extension is provided through the
+		/// function `World.FromSpatialNode`. This allows OpenXR to talk with
 		/// certain windows APIs, such as the QR code API that provides Graph
 		/// Node GUIDs for the pose.</summary>
 		public  bool spatialBridgePresent { get => _spatialBridgePresent > 0; }
 		private int _spatialBridgePresent;
 
 		/// <summary>Can the device work with externally provided spatial
-		/// anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`?
+		/// anchors, like UWP's `Windows.Perception.Spatial.SpatialAnchor`
 		/// </summary>
 		public bool perceptionBridgePresent { get => _perceptionBridgePresent > 0; }
 		private int _perceptionBridgePresent;
@@ -215,6 +230,24 @@ namespace StereoKit
 		/// `Input.Gaze` for how to use this data.</summary>
 		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
 		private int _eyeTrackingPresent;
+
+		/// <summary>This tells if the app was successfully started as an
+		/// overlay application. If this is true, then expect this
+		/// application to be composited with other content below it!</summary>
+		public bool overlayApp { get => _overlayApp > 0; }
+		private int _overlayApp;
+
+		/// <summary>Does this device support world occlusion of digital 
+		/// objects? If this is true, then World.OcclusionEnabled can be set
+		/// to true, and World.OcclusionMaterial can be modified. </summary>
+		public bool worldOcclusionPresent { get => _worldOcclusionPresent > 0; }
+		private int _worldOcclusionPresent;
+
+		/// <summary>Can this device get ray intersections from the 
+		/// environment? If this is true, then World.RaycastEnabled can be
+		/// set to true, and World.Raycast can be used.</summary>
+		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
+		private int _worldRaycastPresent;
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
@@ -513,13 +546,15 @@ namespace StereoKit
 		Texture,
 	}
 
-	/// <summary>A bit-flag enum for describing alignment or positioning. Items can be
-	/// combined using the '|' operator, like so:
+	/// <summary>A bit-flag enum for describing alignment or positioning. 
+	/// Items can be combined using the '|' operator, like so:
 	/// 
-	/// `TextAlign alignment = TextAlign.XLeft | TextAlign.YTop;`
+	/// `TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
 	/// 
-	/// Avoid combining multiple items of the same axis, and note that a few items, 
-	/// like `Center` are already a combination of multiple flags.</summary>
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter', 
+	/// etc.</summary>
 	[Flags]
 	public enum TextAlign
 	{
@@ -535,17 +570,55 @@ namespace StereoKit
 		XRight  = 1 << 4,
 		/// <summary>On the y axis, this item should start on the bottom.</summary>
 		YBottom = 1 << 5,
-		/// <summary>A combination of XCenter and YCenter.</summary>
-		Center  = XCenter | YCenter,
+		/// <summary>Center on both X and Y axes. This is a combination of 
+		/// XCenter and YCenter.</summary>
+		Center      = XCenter | YCenter,
+		/// <summary>Start on the left of the X axis, center on the Y axis. 
+		/// This is a combination of XLeft and YCenter.</summary>
+		CenterLeft  = XLeft   | YCenter,
+		/// <summary>Start on the right of the X axis, center on the Y axis. 
+		/// This is a combination of XRight and YCenter.</summary>
+		CenterRight = XRight  | YCenter,
+		/// <summary>Start on the left of the X axis, and top on the Y axis.
+		/// This is a combination of XLeft and YTop.</summary>
+		TopLeft     = XLeft   | YTop,
+		/// <summary>Start on the right of the X axis, and top on the Y axis.
+		/// This is a combination of XRight and YTop.</summary>
+		TopRight    = XRight  | YTop,
+		/// <summary>Center on the X axis, and top on the Y axis. This is a
+		/// combination of XCenter and YTop.</summary>
+		TopCenter   = XCenter | YTop,
+		/// <summary>Start on the left of the X axis, and bottom on the Y
+		/// axis. This is a combination of XLeft and YBottom.</summary>
+		BottomLeft  = XLeft   | YBottom,
+		/// <summary>Start on the right of the X axis, and bottom on the Y
+		/// axis.This is a combination of XRight and YBottom.</summary>
+		BottomRight = XRight  | YBottom,
+		/// <summary>Center on the X axis, and bottom on the Y axis. This is
+		/// a combination of XCenter and YBottom.</summary>
+		BottomCenter= XCenter | YBottom,
 	}
 
+	/// <summary>This enum describes how text layout behaves within the space
+	/// it is given.</summary>
 	[Flags]
 	public enum TextFit
 	{
+		/// <summary>The text will wrap around to the next line down when it
+		/// reaches the end of the space on the X axis.</summary>
 		Wrap     = 1 << 0,
+		/// <summary>When the text reaches the end, it is simply truncated
+		/// and no longer visible.</summary>
 		Clip     = 1 << 1,
+		/// <summary>If the text is too large to fit in the space provided,
+		/// it will be scaled down to fit inside. This will not scale up.
+		/// </summary>
 		Squeeze  = 1 << 2,
+		/// <summary>If the text is larger, or smaller than the space 
+		/// provided, it will scale down or up to fill the space.</summary>
 		Exact    = 1 << 3,
+		/// <summary>The text will ignore the containing space, and just keep
+		/// on going.</summary>
 		Overflow = 1 << 4
 	}
 
@@ -789,6 +862,12 @@ namespace StereoKit
 		Error
 	}
 
+	enum LogColors
+	{
+		Ansi,
+		None
+	}
+
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
 
@@ -864,5 +943,60 @@ namespace StereoKit
 		Head = 1 << 0,
 		/// <summary>Flag to include a body on the window.</summary>
 		Body = 1 << 1,
+	}
+
+	/// <summary>Used with StereoKit's UI, and determines the interaction
+	/// confirmation behavior for certain elements, such as the UI.HSlider!
+	/// </summary>
+	public enum UIConfirm
+	{
+		/// <summary>The user must push a button with their finger to confirm
+		/// interaction with this element. This is simpler to activate as it
+		/// requires no learned gestures, but may result in more false 
+		/// positives.</summary>
+		Push = 0,
+		/// <summary>The user must use a pinch gesture to interact with this
+		/// element. This is much harder to activate by accident, but does
+		/// require the user to make a precise pinch gesture. You can pretty
+		/// much be sure that's what the user meant to do!</summary>
+		Pinch,
+		/// <summary>Same as Pinch, but pulling out from the slider creates a
+		/// scaled slider that lets you adjust the slider at a more granular
+		/// resolution.</summary>
+		VariablePinch
+	}
+
+	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
+	/// element visual.</summary>
+	public enum UIVisual
+	{
+		/// <summary>Default state, no UI element at all.</summary>
+		None,
+		/// <summary>A default root UI element. Not a particular element, but
+		/// other elements may refer to this if there is nothing more specific
+		/// present.</summary>
+		Default,
+		/// <summary>Refers to UI.Button elements.</summary>
+		Button,
+		/// <summary>Refers to UI.Toggle elements.</summary>
+		Toggle,
+		/// <summary>Refers to UI.Input elements.</summary>
+		Input,
+		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
+		Handle,
+		/// <summary>Refers to UI.Window/WindowBegin body panel element, this
+		/// element is used when a Window head is also present.</summary>
+		WindowBody,
+		/// <summary>Refers to UI.Window/WindowBegin body element, this element
+		/// is used when a Window only has the body panel, without a head.
+		/// </summary>
+		WindowBodyOnly,
+		/// <summary>Refers to UI.Window/WindowBegin head panel element, this
+		/// element is used when a Window body is also present.</summary>
+		WindowHead,
+		/// <summary>Refers to UI.Window/WindowBegin head element, this element
+		/// is used when a Window only has the head panel, without a body.
+		/// </summary>
+		WindowHeadOnly,
 	}
 }

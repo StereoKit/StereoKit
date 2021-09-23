@@ -3,7 +3,7 @@ layout: default
 title: LinePoint
 description: Used to represent lines for the line drawing functions! This is just a snapshot of information about each individual point on a line.
 ---
-# LinePoint
+# struct LinePoint
 
 Used to represent lines for the line drawing functions! This is just a snapshot of
 information about each individual point on a line.

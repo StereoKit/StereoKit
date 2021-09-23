@@ -14,6 +14,10 @@
 	#define SK_OS_WINDOWS
 #endif
 
+#if !defined(NDEBUG)
+	#define SK_DEBUG
+#endif
+
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 #define platform_path_separator "\\"
 #define platform_path_separator_c '\\'
@@ -29,13 +33,12 @@
 namespace sk {
 
 void  platform_msgbox_err(const char *text, const char *header);
-bool  platform_read_file (const char *filename, void **out_data, size_t *out_size);
 bool  platform_get_cursor(vec2 &out_pos);
 void  platform_set_cursor(vec2 window_pos);
 float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
 void  platform_sleep       (int ms);
-void  platform_default_font(char *fontname_buffer, size_t buffer_size);
+font_t platform_default_font();
 char *platform_working_dir ();
 void  platform_iterate_dir (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file));
 char *platform_push_path_ref(char *path, const char *directory);

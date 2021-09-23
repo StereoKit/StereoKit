@@ -12,7 +12,11 @@ namespace StereoKitDocumenter
 		public List<DocExample>        examples  = new List<DocExample>();
 		public List<DocMethodOverload> overloads = new List<DocMethodOverload>();
 
-		public bool IsStatic => overloads.Count > 0 ? overloads[0].IsStatic : throw new Exception("Calling this too early?");
+		public bool   IsStatic => overloads.Count > 0 ? overloads[0].IsStatic : throw new Exception("Calling this too early?");
+		public string ShowName => name == "#ctor" ? parent.Name : name;
+		public string Name     => $"{parent.Name}.{ShowName}";
+		public string FileName => Path.Combine(Program.referenceOut, parent.Name + "/" + ShowName + ".md");
+		public string UrlName  => $"{{{{site.url}}}}/Pages/Reference/{parent.Name}/{ShowName}.html";
 
 		public DocMethod(DocClass aParent, string aName)
 		{
@@ -28,22 +32,10 @@ namespace StereoKitDocumenter
 			return result;
 		}
 
-		public string ShowName => name == "#ctor" ? parent.name : name;
-		public string Name { get { return $"{parent.name}.{ShowName}"; } }
-		public string FileName { get{ 
-			return Path.Combine( Program.referenceOut, parent.name+"/"+ShowName+".md");
-		} }
-		public string UrlName { get{ 
-			return $"{{{{site.url}}}}/Pages/Reference/{parent.name}/{ShowName}.html";
-		} }
-
-		public void AddExample(DocExample aExample) { examples.Add(aExample); }
+		public void AddExample(DocExample aExample) => examples.Add(aExample);
 
 		public override string ToString()
 		{
-			//if (name=="#ctor")
-			//    return "---\nlayout: default\n---\n# Constructors not implmented yet.\n";
-
 			string exampleText = "";
 			if (examples.Count > 0) {
 				exampleText = "\n\n## Examples\n\n";
@@ -54,10 +46,10 @@ namespace StereoKitDocumenter
 
 			return $@"---
 layout: default
-title: {parent.name}.{ShowName}
+title: {parent.Name}.{ShowName}
 description: {StringHelper.CleanForDescription(overloads[0].summary)}
 ---
-# [{parent.name}]({parent.UrlName}).{ShowName}
+# [{parent.Name}]({parent.UrlName}).{ShowName}
 
 {string.Join("",overloads.Select(a=>a.ToString()).ToArray())}
 

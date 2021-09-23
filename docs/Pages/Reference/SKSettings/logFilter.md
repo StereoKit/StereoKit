@@ -5,6 +5,10 @@ description: The default log filtering level. This can be changed at runtime, bu
 ---
 # [SKSettings]({{site.url}}/Pages/Reference/SKSettings.html).logFilter
 
+<div class='signature' markdown='1'>
+[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) logFilter
+</div>
+
 ## Description
 The default log filtering level. This can be changed at
 runtime, but this allows you to set the log filter before

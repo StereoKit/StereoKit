@@ -3,7 +3,7 @@ layout: default
 title: SK
 description: This class contains functions for running the StereoKit library!
 ---
-# SK
+# static class SK
 
 This class contains functions for running the StereoKit
 library!

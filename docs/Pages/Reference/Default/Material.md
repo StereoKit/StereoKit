@@ -5,6 +5,10 @@ description: The default material! This is used by many models and meshes render
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).Material
 
+<div class='signature' markdown='1'>
+static [Material]({{site.url}}/Pages/Reference/Material.html) Material{ get set }
+</div>
+
 ## Description
 The default material! This is used by many models and
 meshes rendered from within StereoKit. Its shader is tuned for

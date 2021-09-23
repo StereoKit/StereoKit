@@ -5,6 +5,10 @@ description: Red/Green/Blue/Transparency data channels, at 8 bits per-channel in
 ---
 # [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html).Rgba32Linear
 
+<div class='signature' markdown='1'>
+static [TexFormat]({{site.url}}/Pages/Reference/TexFormat.html) Rgba32Linear
+</div>
+
 ## Description
 Red/Green/Blue/Transparency data channels, at 8 bits
 per-channel in linear color space. This is what you'll want most

@@ -31,8 +31,8 @@ class DemoMicrophone : ITest
 	/// ### Getting streaming sound intensity
 	/// This example shows how to read data from a Sound stream such as the
 	/// microphone! In this case, we're just finding the average 'intensity'
-	/// of the audio, and returning it as a value approximately between 0 and
-	/// 1. Microphone.Start() should be called before this example :)
+	/// of the audio, and returning it as a value approximately between 0 and 1.
+	/// Microphone.Start() should be called before this example :)
 	float[] micBuffer    = new float[0];
 	float   micIntensity = 0;
 	float GetMicIntensity()
@@ -135,6 +135,6 @@ class DemoMicrophone : ITest
 		}
 
 		Text.Add(title,       titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.XCenter | TextAlign.YTop, TextAlign.XLeft | TextAlign.YTop);
+		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 	}
 }

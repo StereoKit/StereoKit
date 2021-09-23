@@ -1,7 +1,7 @@
 #include "demo_basics.h"
 
-#include "../../StereoKitC/stereokit.h"
-#include "../../StereoKitC/stereokit_ui.h"
+#include <stereokit.h>
+#include <stereokit_ui.h>
 using namespace sk;
 #include <vector>
 using namespace std;
@@ -22,7 +22,7 @@ model_t gltf;
 void demo_basics_init() {
 
 	// Load a gltf model
-	gltf = model_create_file("DamagedHelmet.gltf", shader_find(default_id_shader_pbr));
+	gltf = model_create_file("DamagedHelmet.gltf");
 }
 
 ///////////////////////////////////////////

@@ -53,7 +53,7 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace sk;
 
 void uwp_on_corewindow_character(CoreWindow const &, CharacterReceivedEventArgs const &args) {
-	input_keyboard_inject_char((uint32_t)args.KeyCode());
+	input_text_inject_char((uint32_t)args.KeyCode());
 }
 
 void uwp_on_corewindow_keypress(CoreDispatcher const &, AcceleratorKeyEventArgs const & args) {
@@ -450,10 +450,15 @@ bool uwp_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool uwp_start_post_xr() {
-	CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
-	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
-		CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
-	});
+	// This only works with WMR, and will crash elsewhere
+	try {
+		CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
+		CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+			CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
+		});
+	} catch (...) {
+		log_warn("Keyboard input not available through this runtime.");
+	}
 	return true;
 }
 

@@ -5,6 +5,10 @@ description: The system actively knows where this input is. Within the constrain
 ---
 # [TrackState]({{site.url}}/Pages/Reference/TrackState.html).Known
 
+<div class='signature' markdown='1'>
+static [TrackState]({{site.url}}/Pages/Reference/TrackState.html) Known
+</div>
+
 ## Description
 The system actively knows where this input is. Within
 the constraints of the relevant hardware's capabilities, this is

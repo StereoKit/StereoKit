@@ -4,9 +4,9 @@
 /// ## Prerequisites
 /// 
 /// Before we get started, you'll need some software! You may have some of
-/// this already, but here's the list!
+/// this already, but here's the list:
 /// 
-/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - the Community version is great! Use these workloads:
+/// - [Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - the Community version is great, use these workloads:
 ///   - .NET Desktop development
 ///   - Universal Windows Platform development (for HoloLens)
 ///   - Mobile development with .Net (for Quest)
@@ -29,10 +29,10 @@
 /// There are two templates to pick from! One is for UWP, and one is for .NET
 /// Core. Choose the UWP one if you're deploying to HoloLens 2, and choose
 /// the .NET Core one if you're doing development for a desktop Windows or
-/// Linux environment! Iteration is slower in UWP due to the way it builds
+/// Linux environment. Iteration is slower in UWP due to the way it builds
 /// applications, so only choose UWP if HoloLens is important for you.
 /// 
-/// The starting code is pretty simple! Initialize StereoKit in Mixed Reality
+/// The starting code is pretty simple. Initialize StereoKit in Mixed Reality
 /// mode, create a 3D model that's a rounded cube with a default material,
 /// and then draw that model every step of the application!
 /// 
@@ -67,4 +67,15 @@ class Program
 /// repository, which contains a finger-painting application written in about
 /// 220 lines of code! It's well commented, and is a good example to pick
 /// through.
+/// 
+/// For additional learning resources, you can check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
+/// page for a couple of repositories and links that may help you out. In
+/// particular, the Github repository does contain a [number of small demo scenes](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+/// that are excellent reference for a number of different StereoKit features!
+/// 
+/// And don't forget to peek in the docs here! Most pages contain sample code
+/// that illustrates how a particular function or property is used
+/// in-context. The ultimate goal is to have a sample for 100% of the docs,
+/// so if you're looking for one and it isn't there, use the 'Create an Issue'
+/// link at the bottom of the web page to get it prioritized!
 /// :End:

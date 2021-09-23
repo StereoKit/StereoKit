@@ -36,10 +36,10 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
-Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
+Matrix roundedCubeTransform = Matrix.T(-.5f, 0, 0);
 Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 
-roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
+roundedCubeTransform = Matrix.T(.5f, 0, 0);
 Renderer.Add(roundedCubeModel, roundedCubeTransform);
 ```
 ## UV and Face layout

@@ -3,7 +3,7 @@ layout: default
 title: SHLight
 description: A light source used for creating SphericalHarmonics data.
 ---
-# SHLight
+# struct SHLight
 
 A light source used for creating SphericalHarmonics data.
 

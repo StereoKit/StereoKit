@@ -1,6 +1,7 @@
 #pragma once
 
 #include "openxr.h"
+#include "platform_utils.h"
 #include "../../stereokit.h"
 #include "../../libraries/array.h"
 #include <openxr/openxr.h>
@@ -18,7 +19,7 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_UWP false
 #endif
-#if defined(_DEBUG)
+#if defined(SK__DEBUG)
 #define EXT_AVAILABLE_DEBUG true
 #else
 #define EXT_AVAILABLE_DEBUG false
@@ -27,6 +28,11 @@ namespace sk {
 #define EXT_AVAILABLE_ANDROID true
 #else
 #define EXT_AVAILABLE_ANDROID false
+#endif
+#if defined(SK_OS_LINUX)
+#define EXT_AVAILABLE_LINUX true
+#else
+#define EXT_AVAILABLE_LINUX false
 #endif
 
 ///////////////////////////////////////////
@@ -41,11 +47,14 @@ namespace sk {
 	_(FB_color_space,                    true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_interaction,             true) \
+	_(MSFT_hand_tracking_mesh,           true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
+	_(MSFT_scene_understanding,          true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
+	_(EXTX_overlay,                      true)
 
 // UWP platform only
 #define FOR_EACH_EXT_UWP(_) \
@@ -54,6 +63,10 @@ namespace sk {
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
 	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
+
+// Linux platform only
+#define FOR_EACH_EXT_LINUX(_) \
+	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
 
 // Debug builds only
 #define FOR_EACH_EXT_DEBUG(_) \
@@ -67,10 +80,22 @@ namespace sk {
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSceneObserverMSFT)                 \
+	_(xrDestroySceneObserverMSFT)                \
+	_(xrCreateSceneMSFT)                         \
+	_(xrDestroySceneMSFT)                        \
+	_(xrComputeNewSceneMSFT)                     \
+	_(xrGetSceneComputeStateMSFT)                \
+	_(xrGetSceneComponentsMSFT)                  \
+	_(xrLocateSceneComponentsMSFT)               \
+	_(xrEnumerateSceneComputeFeaturesMSFT)       \
+	_(xrGetSceneMeshBuffersMSFT)                 \
 	_(xrGetVisibilityMaskKHR)                    \
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
 	_(xrLocateHandJointsEXT)                     \
+	_(xrCreateHandMeshSpaceMSFT)                 \
+	_(xrUpdateHandMeshMSFT)                      \
 	_(xrEnumerateColorSpacesFB)                  \
 	_(xrSetColorSpaceFB)                         \
 	_(xrCreateSpatialGraphNodeSpaceMSFT)         \
@@ -122,6 +147,7 @@ typedef struct XrExtInfo {
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_UWP    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
+	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_DEBUG  (DEFINE_EXT_INFO);
 } XrExtInfo;
 extern XrExtInfo xr_ext_available;
@@ -143,10 +169,11 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 	for (uint32_t i = 0; i < ext_count; i++) {
 		if      (strcmp(XR_GFX_EXTENSION,  exts[i].extensionName) == 0) { xr_ext_available.gfx_extension  = true; result.add(XR_GFX_EXTENSION);  }
 		else if (strcmp(XR_TIME_EXTENSION, exts[i].extensionName) == 0) { xr_ext_available.time_extension = true; result.add(XR_TIME_EXTENSION); }
-		FOR_EACH_EXT_ALL(CHECK_EXT)
-		FOR_EACH_EXT_UWP(CHECK_EXT)
+		FOR_EACH_EXT_ALL    (CHECK_EXT)
+		FOR_EACH_EXT_UWP    (CHECK_EXT)
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
-		FOR_EACH_EXT_DEBUG(CHECK_EXT)
+		FOR_EACH_EXT_LINUX  (CHECK_EXT)
+		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
 		else if (on_available != nullptr) { on_available(exts[i].extensionName); }
 	}
 
@@ -162,6 +189,7 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 #undef FOR_EACH_EXT_ALL
 #undef FOR_EACH_EXT_UWP
 #undef FOR_EACH_EXT_ANDROID
+#undef FOR_EACH_EXT_LINUX
 #undef FOR_EACH_EXT_DEBUG
 
 #pragma warning( pop )

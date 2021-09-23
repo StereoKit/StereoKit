@@ -5,6 +5,10 @@ description: This is the size of a rectangle within the play boundary/guardian's
 ---
 # [World]({{site.url}}/Pages/Reference/World.html).BoundsSize
 
+<div class='signature' markdown='1'>
+static [Vec2]({{site.url}}/Pages/Reference/Vec2.html) BoundsSize{ get }
+</div>
+
 ## Description
 This is the size of a rectangle within the play
 boundary/guardian's space, in meters if one exists. Check

@@ -3,7 +3,7 @@ layout: default
 title: Mouse
 description: This stores information about the mouse! What's its state, where's it pointed, do we even have one?
 ---
-# Mouse
+# struct Mouse
 
 This stores information about the mouse! What's its state, where's
 it pointed, do we even have one?

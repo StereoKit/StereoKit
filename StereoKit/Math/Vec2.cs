@@ -114,6 +114,17 @@ namespace StereoKit
 		/// <returns>The normalized (length of 1) vector!</returns>
 		public void Normalize() => v = v / v.Length();
 
+		/// <summary>Checks if a point is within a certain radius of this one.
+		/// This is an easily readable shorthand of the squared distance check.
+		/// </summary>
+		/// <param name="pt">The point to check against.</param>
+		/// <param name="radius">The distance to check against.</param>
+		/// <returns>True if the points are within radius of eachother, false 
+		/// not.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public bool InRadius(Vec2 pt, float radius)
+			=> (v - pt.v).LengthSquared() < radius * radius;
+
 		/// <summary>Calculates a signed angle between two vectors! Sign will
 		/// be positive if B is counter-clockwise (left) of A, and negative 
 		/// if B is clockwise (right) of A. Vectors do not need to be 
@@ -146,6 +157,18 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float DistanceSq(Vec2 a, Vec2 b)
 			=> (b.v-a.v).LengthSquared();
+
+		/// <summary>Checks if two points are within a certain radius of
+		/// eachother. This is an easily readable shorthand of the squared
+		/// distance check. </summary>
+		/// <param name="a">The first point.</param>
+		/// <param name="b">And the second point!</param>
+		/// <param name="radius">The distance to check against.</param>
+		/// <returns>True if a and b are within radius of eachother, false not.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static bool InRadius(Vec2 a, Vec2 b, float radius)
+			=> (a.v - b.v).LengthSquared() < radius * radius;
 
 		/// <summary>Blends (Linear Interpolation) between two vectors, based
 		/// on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp 

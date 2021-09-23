@@ -5,6 +5,10 @@ description: This texture's data will be updated frequently from the CPU (not re
 ---
 # [TexType]({{site.url}}/Pages/Reference/TexType.html).Dynamic
 
+<div class='signature' markdown='1'>
+static [TexType]({{site.url}}/Pages/Reference/TexType.html) Dynamic
+</div>
+
 ## Description
 This texture's data will be updated frequently from the
 CPU (not renders)! This ensures the graphics card stores it

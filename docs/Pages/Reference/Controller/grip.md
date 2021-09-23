@@ -5,6 +5,10 @@ description: The grip button typically sits under the user's middle finger. Thes
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).grip
 
+<div class='signature' markdown='1'>
+float grip
+</div>
+
 ## Description
 The grip button typically sits under the user's middle
 finger. These buttons occasionally have a wide range of

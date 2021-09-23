@@ -3,7 +3,7 @@ layout: default
 title: HandMenuItem
 description: This is a collection of display and behavior information for a single item on the hand menu.
 ---
-# HandMenuItem
+# class HandMenuItem
 
 This is a collection of display and behavior information for
 a single item on the hand menu.

@@ -1,5 +1,6 @@
 #include "render.h"
 #include "render_sort.h"
+#include "world.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
@@ -17,8 +18,14 @@
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
 
+#pragma warning(push)
+#pragma warning(disable : 26451 26819 6386 6385 )
+#if defined(_WIN32)
+#define __STDC_LIB_EXT1__
+#endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libraries/stb_image_write.h"
+#pragma warning(pop)
 
 #include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -236,10 +243,12 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	// TODO: May want to also update controllers/hands?
 	quat rot = matrix_extract_rotation(render_camera_root_final);
-	input_head_pose_world.position    = matrix_mul_point( render_camera_root_final, input_head_pose_local.position );
+	input_head_pose_world.position    = render_camera_root_final * input_head_pose_local.position;
 	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
-	input_eyes_pose_world.position    = matrix_mul_point( render_camera_root_final, input_eyes_pose_local.position );
+	input_eyes_pose_world.position    = render_camera_root_final * input_eyes_pose_local.position;
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
+
+	world_refresh_transforms();
 }
 
 ///////////////////////////////////////////
@@ -258,13 +267,13 @@ void render_set_skytex(tex_t sky_texture) {
 	if (render_sky_cubemap == nullptr)
 		return;
 
-	assets_addref(render_sky_cubemap->header);
+	tex_addref(render_sky_cubemap);
 }
 
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
-	assets_addref(render_sky_cubemap->header);
+	tex_addref(render_sky_cubemap);
 	return render_sky_cubemap;
 }
 
@@ -345,15 +354,15 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		math_matrix_to_fast(transform, &root);
 	}
 
-	for (int i = 0; i < model->subset_count; i++) {
+	for (size_t i = 0; i < model->visuals.count; i++) {
 		render_item_t item;
-		item.mesh     = &model->subsets[i].mesh->gpu_mesh;
-		item.mesh_inds= model->subsets[i].mesh->ind_count;
-		item.material = model->subsets[i].material;
+		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
+		item.mesh_inds= model->visuals[i].mesh->ind_count;
+		item.material = model->visuals[i].material;
 		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, model->subsets[i].mesh);
+		item.sort_id  = render_queue_id(item.material, model->visuals[i].mesh);
 		item.layer    = (uint16_t)layer;
-		matrix_mul(model->subsets[i].transform, root, item.transform);
+		matrix_mul(model->visuals[i].transform_model, root, item.transform);
 		render_list_add(&item);
 	}
 }
@@ -370,7 +379,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
 
-		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+		XMVECTOR cam_pos = XMVector3Transform      (DirectX::g_XMIdentityR3,    view_inv);
 		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos[i], cam_pos);
 		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir[i], cam_dir);
@@ -440,8 +449,8 @@ void render_check_screenshots() {
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
-		tex_set_colors (render_capture_surface, w, h, buffer);
-		tex_add_zbuffer(render_capture_surface);
+		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
+		tex_add_zbuffer  (render_capture_surface);
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -461,7 +470,12 @@ void render_check_screenshots() {
 		skg_tex_target_bind(nullptr);
 		
 		// And save the screenshot to file
-		tex_get_data(render_capture_surface, buffer, size);
+		tex_t resolve_tex = tex_create(tex_type_image_nomips);
+		tex_set_colors(resolve_tex, w, h, nullptr);
+		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
+		tex_get_data(resolve_tex, buffer, size);
+		tex_release(render_capture_surface);
+		tex_release(resolve_tex);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
 		free(buffer);
 		free(render_screenshot_list[i].filename);
@@ -507,7 +521,7 @@ void render_check_viewpoints() {
 		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref
-		assets_releaseref(render_viewpoint_list[i].rendertarget->header);
+		tex_release(render_viewpoint_list[i].rendertarget);
 	}
 	render_viewpoint_list.clear();
 	skg_tex_target_bind(old_target);
@@ -539,7 +553,6 @@ bool render_init() {
 
 	// Set up resources for doing blit operations
 	render_blit_quad = mesh_find(default_id_mesh_screen_quad);
-	assets_addref(render_blit_quad->header);
 
 	// Create a default skybox
 	render_sky_mesh = mesh_create();
@@ -553,7 +566,10 @@ bool render_init() {
 	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
 	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
 
-	render_sky_mat  = material_create(shader_find(default_id_shader_sky));
+	shader_t shader_sky = shader_find(default_id_shader_sky);
+	render_sky_mat = material_create(shader_sky);
+	shader_release(shader_sky);
+
 	material_set_id          (render_sky_mat, "render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
 	
@@ -577,26 +593,25 @@ void render_update() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (int32_t i = 0; i < render_lists.count; i++) {
+	for (size_t i = 0; i < render_lists.count; i++) {
 		render_list_release(i);
 	}
-	render_lists.free();
-	render_list_stack.free();
+	render_lists          .free();
+	render_list_stack     .free();
 	render_screenshot_list.free();
-	render_viewpoint_list.free();
-	render_instance_list.free();
+	render_viewpoint_list .free();
+	render_instance_list  .free();
 
-	material_release(render_sky_mat);
-	mesh_release    (render_sky_mesh);
-	tex_release     (render_sky_cubemap);
+	material_release       (render_sky_mat);
+	mesh_release           (render_sky_mesh);
+	tex_release            (render_sky_cubemap);
+	mesh_release           (render_blit_quad);
+	material_buffer_release(render_shader_globals);
 
 	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
 		skg_buffer_destroy(&render_instance_buffers[i].buffer);
 	}
-
 	skg_buffer_destroy(&render_shader_blit);
-	material_buffer_release(render_shader_globals);
-	mesh_release(render_blit_quad);
 }
 
 ///////////////////////////////////////////
@@ -645,7 +660,7 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
-	assets_addref(to_rendertarget->header);
+	tex_addref(to_rendertarget);
 	
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
@@ -677,7 +692,7 @@ void render_set_material(material_t material) {
 	}
 
 	// Bind the material textures
-	for (size_t i = 0; i < material->args.texture_count; i++) {
+	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.texture_binds[i].slot != render_list_sky_bind.slot)
 			skg_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
 	}
@@ -731,9 +746,23 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 ///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
+	skg_platform_data_t platform = skg_get_platform_data();
+#if defined(SKG_DIRECT3D11)
+	*device  = platform._d3d11_device;
+	//*context = platform._d3d11_context;
+	*context = nullptr;
+#elif defined(_SKG_GL_LOAD_EGL)
+	*device  = platform._egl_display;
+	*context = platform._egl_context;
+#elif defined(_SKG_GL_LOAD_WGL)
+	*device  = platform._gl_hdc;
+	*context = platform._gl_hrc;
+#elif defined(_SKG_GL_LOAD_GLX)
+	*device  = platform._glx_drawable;
+	*context = platform._glx_context;
+#else
 	log_warn("render_get_device not implemented for sk_gpu!");
-	*device  = nullptr; //d3d_device;
-	*context = nullptr; //d3d_context;
+#endif
 }
 
 ///////////////////////////////////////////

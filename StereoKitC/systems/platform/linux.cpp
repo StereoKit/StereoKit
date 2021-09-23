@@ -2,6 +2,8 @@
 
 #if defined(SK_OS_LINUX)
 
+#include <GL/glx.h>
+
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 
@@ -15,6 +17,15 @@
 #include "../../log.h"
 #include "../../libraries/sk_gpu.h"
 #include "../../libraries/sokol_time.h"
+#include "../../libraries/unicode.h"
+
+#if defined(SKG_LINUX_EGL)
+
+extern EGLDisplay egl_display;
+extern EGLContext egl_context;
+extern EGLConfig  egl_config;
+
+#endif
 
 namespace sk {
 
@@ -23,40 +34,29 @@ namespace sk {
 skg_swapchain_t         linux_swapchain;
 system_t               *linux_render_sys = nullptr;
 
-Display                *dpy;
-Window                  root;
-XIM                     linux_input_method;
-XIC                     linux_input_context;
+// GLX/Xlib
 
-GLint                   att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None };
-GLint                   fb_att[] = {
-	GLX_DOUBLEBUFFER,  true,
-	GLX_RED_SIZE,      8,
-	GLX_GREEN_SIZE,    8,
-	GLX_BLUE_SIZE,     8,
-	GLX_ALPHA_SIZE,    8,
-	GLX_DEPTH_SIZE,    16,
-	GLX_RENDER_TYPE,   GLX_RGBA_BIT,
-	GLX_DRAWABLE_TYPE, GLX_PBUFFER_BIT,
-	GLX_X_RENDERABLE,  true,
-	None
-};
+Display                *x_dpy;
+XIM                     x_linux_input_method;
+XIC                     x_linux_input_context;
 
-XVisualInfo            *vi;
-GLXFBConfig             fbconfig;
-Colormap                cmap;
-XSetWindowAttributes    swa;
-Window                  win;
+XVisualInfo            *x_vi;
+GLXFBConfig             x_fb_config;
+Colormap                x_cmap;
+XSetWindowAttributes    x_swa;
+Window                  x_win;
+Window                  x_root;
 
 ///////////////////////////////////////////
 // Start input
 ///////////////////////////////////////////
 
-key_  linux_xk_map_upper[255] = {};
-key_  linux_xk_map_lower[255] = {};
+key_  linux_xk_map_upper[256] = {};
+key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
+bool  linux_mouse_avail = true;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -68,7 +68,7 @@ void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_Home] = key_home;
 	linux_xk_map_upper[0xFF & XK_Left] = key_left;
 	linux_xk_map_upper[0xFF & XK_Up] = key_up;
-	linux_xk_map_upper[0xFF & XK_Right] = key_down;
+	linux_xk_map_upper[0xFF & XK_Right] = key_right;
 	linux_xk_map_upper[0xFF & XK_Down] = key_down;
 	linux_xk_map_upper[0xFF & XK_End] = key_end;
 	linux_xk_map_upper[0xFF & XK_Begin] = key_home;
@@ -155,9 +155,9 @@ void linux_init_key_lookups() {
 void linux_events() {
 	XEvent event;
 
-	while (XPending(dpy)) {
-		XNextEvent(dpy, &event);
-		
+	while (XPending(x_dpy)) {
+		XNextEvent(x_dpy, &event);
+
 		bool is_pressed = false;
 		switch(event.type) {
 			case KeyPress: is_pressed = true;
@@ -166,14 +166,17 @@ void linux_events() {
 				char   keys_return[32];
 				Status status;
 				KeySym keysym = NoSymbol;
-				int    count  = Xutf8LookupString(linux_input_context, &event.xkey, keys_return, sizeof(keys_return), &keysym, &status);
+				int    count  = Xutf8LookupString(x_linux_input_context, &event.xkey, keys_return, sizeof(keys_return), &keysym, &status);
+				keys_return[count] = 0;
 
 				if ((status == XLookupChars || status == XLookupBoth) && keysym != 0xFF08) {
-					input_keyboard_inject_char((uint32_t)keysym);
+					const char *next;
+					char32_t    ch = utf8_decode_fast(keys_return, &next);
+					input_text_inject_char(ch);
 				}
 
 				// Translate keypress to a hardware key, and submit that
-				uint32_t sym = XkbKeycodeToKeysym(dpy, event.xkey.keycode, 0, 0);
+				uint32_t sym = XkbKeycodeToKeysym(x_dpy, event.xkey.keycode, 0, 0);
 				key_     key = key_none;
 				if      ((sym & 0xFFFFFF00U) == 0xFF00U) key = linux_xk_map_upper[sym & 0xFFU];
 				else if ((sym & 0xFFFFFF00U) == 0x0000U) key = linux_xk_map_lower[sym];
@@ -185,7 +188,7 @@ void linux_events() {
 					// Some non-text characters get fed into the text system as well
 					if (is_pressed) {
 						if (key == key_backspace || key == key_return || key == key_esc) {
-							input_keyboard_inject_char((uint32_t)key);
+							input_text_inject_char((char32_t)key);
 						}
 					}
 				}
@@ -218,12 +221,18 @@ void linux_events() {
 				linux_mouse_x = event.xmotion.x;
 				linux_mouse_y = event.xmotion.y;
 			} break;
+			case EnterNotify: {
+				linux_mouse_avail = true;
+			} break;
+			case LeaveNotify: {
+				linux_mouse_avail = false;
+			} break;
 			case ConfigureNotify: {
 				//Todo: only call this when the user is done resizing
 				linux_resize(event.xconfigure.width, event.xconfigure.height);
 			} break;
 			case ClientMessage: {
-				if (!strcmp(XGetAtomName(dpy, event.xclient.message_type), "WM_PROTOCOLS")) {
+				if (!strcmp(XGetAtomName(x_dpy, event.xclient.message_type), "WM_PROTOCOLS")) {
 					sk_quit();
 					return;
 				}
@@ -236,36 +245,77 @@ void linux_events() {
 // End input
 ///////////////////////////////////////////
 
-bool window_closed_because_openxr = false;
-
-///////////////////////////////////////////
-
-bool linux_init() {
-	linux_render_sys = systems_find("FrameRender");
-	linux_init_key_lookups();
-
-	dpy = XOpenDisplay(0);
-	if (dpy == nullptr) {
+bool setup_x_window() {
+	x_dpy = XOpenDisplay(nullptr);
+	if (x_dpy == nullptr) {
 		log_fail_reason(90, log_error, "Cannot connect to X server");
 		return false;
 	}
+	x_root = DefaultRootWindow(x_dpy);
+	if (x_root == 0) {
+		log_fail_reason(90, log_error, "No root window found!");
+		return false;
+	}
 
-	root = DefaultRootWindow(dpy);
-	int fbConfigNumber = 0;
-	fbconfig = *glXChooseFBConfig((Display *) dpy, 0, fb_att, &fbConfigNumber);
-	vi = glXGetVisualFromFBConfig(dpy, fbconfig);
+	// FBConfigs were added in GLX version 1.3.
+	int32_t glx_major, glx_minor;
+	if (!glXQueryVersion(x_dpy, &glx_major, &glx_minor) || 
+		((glx_major == 1) && (glx_minor < 3) ) || (glx_major < 1)) {
+		log_fail_reason(90, log_error, "GLX 1.3+ required.");
+		return false;
+	}
 
-	if (vi == nullptr) {
+	GLint fb_attributes[] = {
+		GLX_X_RENDERABLE,  true,
+		GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
+		GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+		GLX_DOUBLEBUFFER,  true,
+		GLX_RED_SIZE,      8,
+		GLX_GREEN_SIZE,    8,
+		GLX_BLUE_SIZE,     8,
+		GLX_ALPHA_SIZE,    8,
+		GLX_DEPTH_SIZE,    16,
+		None
+	};
+
+	int32_t      config_count = 0;
+	GLXFBConfig *configs      = glXChooseFBConfig(x_dpy, 0, fb_attributes, &config_count);
+	if (configs == nullptr) {
+		log_fail_reason(90, log_error, "No matching display configurations found!");
+		return false;
+	}
+
+	// find a configuration with multisample enabled
+	int32_t best_config = -1, best_samples = -1;
+	for (int32_t i=0; i<config_count; i++) {
+		XVisualInfo *vi = glXGetVisualFromFBConfig(x_dpy, configs[i]);
+		if (vi != nullptr) {
+			int32_t samp_buf, samples;
+			glXGetFBConfigAttrib(x_dpy, configs[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+			glXGetFBConfigAttrib(x_dpy, configs[i], GLX_SAMPLES       , &samples );
+
+			if (best_config < 0 || (samp_buf != 0 && samples > best_samples && samples <= 8)) {
+				best_config  = i;
+				best_samples = samples;
+			}
+		}
+		XFree( vi );
+	}
+	if (best_config == -1) {
 		log_fail_reason(90, log_error, "No appropriate GLX visual found");
 		return false;
 	}
 
-	cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
+	x_fb_config = configs[best_config];
+	XFree(configs);
 
-	swa.colormap   = cmap;
-	swa.event_mask = ExposureMask | KeyPressMask;
+	x_vi   = glXGetVisualFromFBConfig(x_dpy, x_fb_config);
+	x_cmap = XCreateColormap(x_dpy, x_root, x_vi->visual, AllocNone);
 
-	win = XCreateWindow(dpy, root, 0, 0, 1280, 720, 0, vi->depth, InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
+	x_swa.colormap   = x_cmap;
+	x_swa.event_mask = ExposureMask | KeyPressMask;
+	x_win = XCreateWindow(x_dpy, x_root, 0, 0, 1280, 720, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
 
 	XSizeHints *hints = XAllocSizeHints();
 	if (hints == nullptr) {
@@ -274,38 +324,75 @@ bool linux_init() {
 		hints->flags      = PMinSize;
 		hints->min_width  = 100;
 		hints->min_height = 100;
-		XSetWMNormalHints(dpy, win, hints);
-		XSetWMSizeHints  (dpy, win, hints, PMinSize);
+		XSetWMNormalHints(x_dpy, x_win, hints);
+		XSetWMSizeHints  (x_dpy, x_win, hints, PMinSize);
 	}
-	
-	XMapWindow(dpy, win);
-	XStoreName(dpy, win, sk_app_name);
+
+	XMapWindow(x_dpy, x_win);
+	XStoreName(x_dpy, x_win, sk_app_name);
 
 	// loads the XMODIFIERS environment variable to see what input method to use
 	XSetLocaleModifiers("");
 
-	linux_input_method = XOpenIM(dpy, 0, 0, 0);
-	if (!linux_input_method) {
+	x_linux_input_method = XOpenIM(x_dpy, 0, 0, 0);
+	if (!x_linux_input_method) {
 		// fallback to internal input method
 		XSetLocaleModifiers("@im=none");
-		linux_input_method = XOpenIM(dpy, 0, 0, 0);
+		x_linux_input_method = XOpenIM(x_dpy, 0, 0, 0);
 	}
 
 	// X input context, you can have multiple for text boxes etc, but having a
 	// single one is the easiest.
-	linux_input_context = XCreateIC(linux_input_method,
+	x_linux_input_context = XCreateIC(x_linux_input_method,
 						XNInputStyle,   XIMPreeditNothing | XIMStatusNothing,
-						XNClientWindow, win,
-						XNFocusWindow,  win,
+						XNClientWindow, x_win,
+						XNFocusWindow,  x_win,
 						nullptr);
-	XSetICFocus(linux_input_context);
+	XSetICFocus(x_linux_input_context);
 
 	// Setup for window events
-	XSelectInput(dpy, win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask);
-	Atom wm_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", true);
-	XSetWMProtocols(dpy, win, &wm_delete, 1);
+	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask );
+	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
+	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
-	skg_setup_xlib(dpy, vi, &fbconfig, &win);
+	sk_info.display_width  = sk_settings.flatscreen_width;
+	sk_info.display_height = sk_settings.flatscreen_height;
+	sk_info.display_type   = display_opaque;
+	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	sk_info.display_width  = linux_swapchain.width;
+	sk_info.display_height = linux_swapchain.height;
+
+	XWindowAttributes wa;
+	XGetWindowAttributes(x_dpy,x_win,&wa);
+
+	skg_setup_xlib(x_dpy, x_vi, &x_fb_config, &x_win);
+	return true;
+}
+
+///////////////////////////////////////////
+
+#if defined(SKG_LINUX_EGL)
+
+bool setup_egl_flat() {
+	return true;
+}
+
+#endif
+
+///////////////////////////////////////////
+
+bool linux_init() {
+	linux_render_sys = systems_find("FrameRender");
+	linux_init_key_lookups();
+
+	#if !defined(SKG_LINUX_EGL)
+
+	if (!setup_x_window())
+		return false;
+
+	#endif
 
 	return true;
 }
@@ -313,10 +400,6 @@ bool linux_init() {
 ///////////////////////////////////////////
 
 bool linux_start_pre_xr() {
-	//window_closed_because_openxr = true;
-	//XDestroyWindow(dpy,win);
-	//XFlush(dpy);
-
 	return true;
 }
 
@@ -329,22 +412,14 @@ bool linux_start_post_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
-	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
-	linux_swapchain = skg_swapchain_create(&win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
-	sk_info.display_width  = linux_swapchain.width;
-	sk_info.display_height = linux_swapchain.height;
-
+	#if defined(SKG_LINUX_EGL)
+	if (!setup_x_window())
+		return false;
+	if (!setup_egl_flat())
+		return false;
+	#endif
+	
 	flatscreen_input_init();
-
-	XWindowAttributes wa;
-	XGetWindowAttributes(dpy,win,&wa);
-
-	//initial resize, in case there's a long time between window creation and here
-	linux_resize(wa.width,wa.height);
 
 	return true;
 }
@@ -357,7 +432,7 @@ void linux_resize(int width, int height) {
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
-	
+
 	skg_swapchain_resize(&linux_swapchain, sk_info.display_width, sk_info.display_height);
 	render_update_projection();
 }
@@ -367,7 +442,7 @@ void linux_resize(int width, int height) {
 bool linux_get_cursor(vec2 &out_pos) {
 	out_pos.x = (float)linux_mouse_x;
 	out_pos.y = (float)linux_mouse_y;
-	return true;
+	return linux_mouse_avail;
 }
 
 ///////////////////////////////////////////
@@ -379,16 +454,8 @@ float linux_get_scroll() {
 ///////////////////////////////////////////
 
 void linux_set_cursor(vec2 window_pos) {
-	// XWarpPointer(display, src_w, dest_w, src_x, src_y, src_width, src_height, dest_x, 
-	//                dest_y)
-	//        Display *display;
-	//        Window src_w, dest_w;
-	//        int src_x, src_y;
-	//        unsigned int src_width, src_height;
-	//        int dest_x, dest_y;
-
-	XWarpPointer(dpy, win, win, 0, 0, 0, 0, window_pos.x,window_pos.y);
-	XFlush(dpy);
+	XWarpPointer(x_dpy, x_win, x_win, 0, 0, 0, 0, window_pos.x,window_pos.y);
+	XFlush(x_dpy);
 }
 
 ///////////////////////////////////////////
@@ -401,30 +468,13 @@ void linux_stop_flat() {
 ///////////////////////////////////////////
 
 void linux_shutdown() {
-	if (!window_closed_because_openxr) {
-		glXMakeCurrent(dpy, None, nullptr);
-		XDestroyWindow(dpy, win);
-	}
-	XCloseDisplay(dpy);
+	XCloseDisplay(x_dpy);
 }
 
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
 	linux_events();
-
-	static char text[256] = "";
-	text_add_at(text, matrix_trs({0,0,-0.2f}, quat_lookat(vec3_zero, {0,0,1})));
-
-	input_keyboard_char_reset();
-	int32_t ch = input_keyboard_char_consume();
-	while (ch) {
-		size_t len = strlen(text);
-		text[len] = (char)ch;
-		text[len+1] = 0;
-		ch = input_keyboard_char_consume();
-	}
-	input_keyboard_char_reset();
 }
 
 ///////////////////////////////////////////

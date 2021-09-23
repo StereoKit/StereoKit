@@ -16,7 +16,7 @@ class DemoWelcome : ITest
 	{
 		Hierarchy.Push(Matrix.T(-0.3f, 0.1f, -0.7f));
 		logo.Draw(Matrix.TRS(V.XYZ(logoHalfWidth, 0.3f, 0), Quat.LookDir(0, 0, 1), V.XYZ(logo.Aspect,1,1)*0.25f));
-		Text.Add(message, Matrix.TRS(V.XYZ(-logoHalfWidth, 0, 0), Quat.LookDir(0, 0, 1), 1.25f), V.XY(logoHalfWidth/1.25f, 0), TextFit.Wrap, TextAlign.XLeft|TextAlign.YTop, TextAlign.XLeft|TextAlign.YTop);
+		Text.Add(message, Matrix.TRS(V.XYZ(-logoHalfWidth, 0, 0), Quat.LookDir(0, 0, 1), 1.25f), V.XY(logoHalfWidth/1.25f, 0), TextFit.Wrap, TextAlign.TopLeft, TextAlign.TopLeft);
 		Hierarchy.Pop();
 	}
 

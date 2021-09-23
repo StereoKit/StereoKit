@@ -555,7 +555,7 @@ void oxri_update_frame() {
 			if (valid_pos) {
 				vec3 local_pos;
 				memcpy(&local_pos, &space_location.pose.position, sizeof(vec3));
-				input_controllers[hand].pose.position = matrix_mul_point(root, local_pos);
+				input_controllers[hand].pose.position = root * local_pos;
 			}
 			if (valid_rot) {
 				quat local_rot;
@@ -573,7 +573,7 @@ void oxri_update_frame() {
 		xrGetActionStatePose(xr_session, &get_info, &state_aim);
 		pose_t local_aim;
 		openxr_get_space(xrc_space_aim[hand], &local_aim);
-		input_controllers[hand].aim = { matrix_mul_point(root, local_aim.position), local_aim.orientation * root_q };
+		input_controllers[hand].aim = { root * local_aim.position, local_aim.orientation * root_q };
 
 		//// Float actions
 
@@ -637,8 +637,8 @@ void oxri_update_frame() {
 		pointer->tracked = input_eyes_track_state;
 
 		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose_local)) {
-			input_eyes_pose_world.position    = matrix_mul_point( root, input_eyes_pose_local.position );
-			input_eyes_pose_world.orientation = input_eyes_pose_local.orientation * root_q;
+			input_eyes_pose_world.position    = root * input_eyes_pose_local.position;
+			input_eyes_pose_world.orientation = root_q * input_eyes_pose_local.orientation;
 
 			pointer->ray.pos     = input_eyes_pose_world.position;
 			pointer->ray.dir     = input_eyes_pose_world.orientation * vec3_forward;
@@ -651,7 +651,7 @@ void oxri_update_frame() {
 
 void oxri_set_profile(handed_ hand, XrPath profile) {
 	xrc_active_profile[hand] = profile;
-	for (int32_t i = 0; i < xrc_profile_offsets.count; i++) {
+	for (size_t i = 0; i < xrc_profile_offsets.count; i++) {
 		if (xrc_profile_offsets[i].profile == profile) {
 			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset_pos[hand];
 			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset_rot[hand];

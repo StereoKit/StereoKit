@@ -3,7 +3,7 @@ layout: default
 title: BtnStateExtensions
 description: A collection of extension methods for the BtnState enum that makes bit-field checks a little easier.
 ---
-# BtnStateExtensions
+# static class BtnStateExtensions
 
 A collection of extension methods for the BtnState enum that makes
 bit-field checks a little easier.

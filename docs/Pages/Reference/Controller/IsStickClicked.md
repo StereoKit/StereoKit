@@ -5,6 +5,10 @@ description: Is the analog stick/directional controller button currently being a
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).IsStickClicked
 
+<div class='signature' markdown='1'>
+bool IsStickClicked{ get }
+</div>
+
 ## Description
 Is the analog stick/directional controller button
 currently being actively pressed?

@@ -34,7 +34,6 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = diffuse.Sample(diffuse_s, input.uv);
-	clip(col.a-0.01);
 
 	col = col * input.color;
 

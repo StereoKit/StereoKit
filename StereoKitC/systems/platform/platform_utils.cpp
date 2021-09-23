@@ -1,18 +1,21 @@
+﻿#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "platform_utils.h"
-#include "android.h"
 
 #include "../../stereokit.h"
 #include "../../sk_memory.h"
 #include "../../sk_math.h"
 #include "../../log.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
@@ -33,6 +36,8 @@
 #endif
 
 #ifdef SK_OS_ANDROID
+#include "android.h"
+
 #include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
@@ -45,6 +50,7 @@
 #include <unistd.h>
 #include <dirent.h> 
 #include "linux.h"
+#include <fontconfig/fontconfig.h>
 #endif
 
 namespace sk {
@@ -95,7 +101,7 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-bool platform_read_file(const char *filename, void **out_data, size_t *out_size) {
+bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
 
@@ -118,7 +124,7 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 #elif defined(SK_OS_WINDOWS_UWP)
 	// See if we have a Handle cached from the FilePicker that matches this
 	// file name.
-	if (file_picker_cache(filename, out_data, out_size))
+	if (file_picker_cache_read(filename, out_data, out_size))
 		return true;
 #endif
 	FILE *fp = fopen(filename, "rb");
@@ -134,12 +140,34 @@ bool platform_read_file(const char *filename, void **out_data, size_t *out_size)
 
 	// Read the data
 	*out_data = sk_malloc(*out_size+1);
-	fread (*out_data, 1, *out_size, fp);
+	size_t read = fread (*out_data, 1, *out_size, fp);
 	fclose(fp);
 
 	// Stick an end string 0 character at the end in case the caller wants
 	// to treat it like a string
 	((uint8_t *)*out_data)[*out_size] = 0;
+
+	return read != 0 || *out_size == 0;
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_write_file(const char *filename, void *data, size_t size) {
+#if defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	if (file_picker_cache_save(filename, data, size))
+		return true;
+#endif
+
+	FILE *fp = fopen(filename, "wb");
+	if (fp == nullptr) {
+		log_diagf("platform_read_file can't write %s", filename);
+		return false;
+	}
+
+	fwrite(data, 1, size, fp);
+	fclose(fp);
 
 	return true;
 }
@@ -249,30 +277,91 @@ bool platform_keyboard_visible() {
 
 ///////////////////////////////////////////
 
-void platform_default_font(char *fontname_buffer, size_t buffer_size) {
+bool platform_file_exists(const char *filename) {
+	struct stat buffer;
+	return (stat (filename, &buffer) == 0);
+}
+
+///////////////////////////////////////////
+
+font_t platform_default_font() {
 #if defined(SK_OS_ANDROID)
 
 	// If we're using Android API 29+, we can just look up the system font!
-	bool found_font = false;
+	array_t<const char *> fonts         = array_t<const char *>::make(2);
+	font_t                result        = nullptr;
+	const char           *file_latin    = nullptr;
+	const char           *file_japanese = nullptr;
+
 #if __ANDROID_API__ >= 29
 	AFontMatcher *matcher = AFontMatcher_create();
-	uint16_t      text[2] = {'A', 0};
-	AFont        *font    = AFontMatcher_match(matcher, "sans-serif", text, 2, nullptr);
-	if (font) {
-		const char *result = AFont_getFontFilePath(font);
-		snprintf(fontname_buffer, buffer_size, result);
-		AFont_close(font);
-	}
+	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", u"A", 1, nullptr);
+	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", u"あ", 1, nullptr);
+	if (font_latin   ) file_latin    = AFont_getFontFilePath(font_latin);
+	if (font_japanese) file_japanese = AFont_getFontFilePath(font_japanese);
+#endif
+	if      (file_latin != nullptr)                                      fonts.add(file_latin);
+	else if (platform_file_exists("/system/fonts/NotoSans-Regular.ttf")) fonts.add("/system/fonts/NotoSans-Regular.ttf");
+	else if (platform_file_exists("/system/fonts/Roboto-Regular.ttf"  )) fonts.add("/system/fonts/Roboto-Regular.ttf");
+	else if (platform_file_exists("/system/fonts/DroidSans.ttf"       )) fonts.add("/system/fonts/DroidSans.ttf");
+
+	if      (file_japanese != nullptr)                                      fonts.add(file_japanese);
+	else if (platform_file_exists("/system/fonts/NotoSansCJK-Regular.ttc")) fonts.add("/system/fonts/NotoSansCJK-Regular.ttc");
+	else if (platform_file_exists("/system/fonts/DroidSansJapanese.ttf"  )) fonts.add("/system/fonts/DroidSansJapanese.ttf");
+
+	if (fonts.count > 0)
+		result = font_create_files(fonts.data, (int32_t)fonts.count);
+
+#if __ANDROID_API__ >= 29
+	if (font_latin   ) AFont_close(font_latin);
+	if (font_japanese) AFont_close(font_japanese);
 	AFontMatcher_destroy(matcher);
 #endif
-	// We can fall back to a plausible default.
-	if (!found_font)
-		snprintf(fontname_buffer, buffer_size, "/system/fonts/DroidSans.ttf");
+	fonts.free();
+	return result;
 
 #elif defined(SK_OS_LINUX)
-	snprintf(fontname_buffer, buffer_size, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+	array_t<char *> fonts  = array_t<char *>::make(2);
+	font_t          result = nullptr;
+
+	FcConfig  *config  = FcInitLoadConfigAndFonts();
+	FcPattern *pattern = FcNameParse((const FcChar8*)("sans-serif"));
+	FcConfigSubstitute (config, pattern, FcMatchPattern);
+	FcDefaultSubstitute(pattern);
+
+	FcResult   fc_result;
+	FcPattern* font = FcFontMatch(config, pattern, &fc_result);
+	if (font) {
+		FcChar8* file = nullptr;
+		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
+			// Put the font file path in the proper string
+			fonts.add(string_copy((char*)file));
+		}
+		FcPatternDestroy(font);
+	}
+	FcPatternDestroy(pattern);
+	FcConfigDestroy (config);
+
+	result = font_create_files((const char **)fonts.data, (int32_t)fonts.count);
+	fonts.each(free);
+	fonts.free();
+	return result;
 #else
-	snprintf(fontname_buffer, buffer_size, "C:\\Windows\\Fonts\\segoeui.ttf");
+	array_t<const char *> fonts = array_t<const char *>::make(3);
+	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
+		? "C:/Windows/Fonts/segoeui.ttf"
+		: "C:/Windows/Fonts/arial.ttf");
+
+	if      (platform_file_exists("C:/Windows/Fonts/YuGothR.ttc")) fonts.add("C:/Windows/Fonts/YuGothR.ttc");
+	else if (platform_file_exists("C:/Windows/Fonts/YuGothm.ttc")) fonts.add("C:/Windows/Fonts/YuGothm.ttc");
+	else if (platform_file_exists("C:/Windows/Fonts/Meiryo.ttc" )) fonts.add("C:/Windows/Fonts/Meiryo.ttc");
+	else if (platform_file_exists("C:/Windows/Fonts/Yumin.ttf"  )) fonts.add("C:/Windows/Fonts/Yumin.ttf");
+
+	if (platform_file_exists("C:/Windows/Fonts/segmdl2.ttf")) fonts.add("C:/Windows/Fonts/segmdl2.ttf");
+
+	font_t result = font_create_files(fonts.data, (int32_t)fonts.count);
+	fonts.free();
+	return result;
 #endif
 }
 
@@ -355,6 +444,11 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 		}
 		closedir(dir);
 	}
+#elif defined(SK_OS_WINDOWS_UWP)
+	(void)on_item;
+	(void)callback_data;
+	(void)directory_path;
+	log_err("platform_iterate_dir is not valid for UWP.");
 #endif
 }
 
@@ -380,7 +474,7 @@ char *platform_push_path_new(const char *path, const char *directory) {
 	if (path == nullptr || directory == nullptr) return nullptr;
 	if (directory[0] == '\0') return string_copy(path);
 
-	int32_t len = strlen(path);
+	size_t len = strlen(path);
 	if (len == 0) {
 		bool trailing_cslash = string_endswith(directory, ":\\") || string_endswith(directory, ":/");
 		bool trailing_c      = string_endswith(directory, ":");

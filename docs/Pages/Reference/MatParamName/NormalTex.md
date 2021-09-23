@@ -5,6 +5,10 @@ description: The 'normal map' texture for the material! This texture contains in
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).NormalTex
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) NormalTex
+</div>
+
 ## Description
 The 'normal map' texture for the material! This texture
 contains information about the direction of the material's

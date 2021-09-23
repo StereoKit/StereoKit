@@ -5,6 +5,10 @@ description: Extracts translation and rotation information from the transform ma
 ---
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Pose
 
+<div class='signature' markdown='1'>
+[Pose]({{site.url}}/Pages/Reference/Pose.html) Pose{ get }
+</div>
+
 ## Description
 Extracts translation and rotation information from the
 transform matrix, and makes a Pose from it! Not exactly fast.

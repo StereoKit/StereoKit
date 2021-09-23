@@ -2,6 +2,11 @@
 
 class DemoGeo : ITest
 {
+	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
+	string description = "Generating a Mesh or Model via code can be an important task, and StereoKit provides a number of tools to make this pretty easy! In addition to the Default meshes, you can also generate a number of shapes, seen here. (See the Mesh.Gen functions)\n\nIf the provided shapes aren't enough, it's also pretty easy to procedurally assemble a mesh of your own from vertices and indices! That's the wavy surface all the way to the right.";
+	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
+	string title       = "Mesh Generation";
+
 	Mesh  demoCubeMesh  = null;
 	Model demoCubeModel = null;
 	Mesh  demoRoundedCubeMesh  = null;
@@ -131,21 +136,39 @@ class DemoGeo : ITest
 
 	public void Update()
 	{
+		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
+
+		Tests.Screenshot(600, 600, "ProceduralGeometry.jpg", V.XYZ(0.3f, -0.25f, -0.3f), V.XYZ(0.5f, -0.25f, -0.5f));
+		Tests.Screenshot(600, 600, "ProceduralGrid.jpg", Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
+
+		// Plane!
+		Mesh  planeMesh  = demoPlaneMesh;
+		Model planeModel = demoPlaneModel;
+
+		/// :CodeSample: Mesh.GeneratePlane
+		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
+		/// here's a short example! For the Mesh, you'll need to create your own material, 
+		/// we just loaded up the default Material here.
+		Matrix planeTransform = Matrix.T(-.5f, -1, 0);
+		Renderer.Add(planeMesh, Default.Material, planeTransform);
+
+		planeTransform = Matrix.T(.5f, -1, 0);
+		Renderer.Add(planeModel, planeTransform);
+		/// :End:
+		
+
 		// Cube!
 		Mesh  cubeMesh  = demoCubeMesh;
 		Model cubeModel = demoCubeModel;
-
-		Tests.Screenshot(600, 400, "ProceduralGeometry.jpg", new Vec3(0.25f, 1.5f, 2f) * 0.75f, Vec3.Zero);
-		Tests.Screenshot(600, 400, "ProceduralGrid.jpg", new Vec3(0.358f, -0.013f, 0.358f), new Vec3(1.012f, -0.682f, 0));
 
 		/// :CodeSample: Mesh.GenerateCube
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix cubeTransform = Matrix.T(-1.0f, 0, 1);
+		Matrix cubeTransform = Matrix.T(-.5f, -.5f, 0);
 		Renderer.Add(cubeMesh, Default.Material, cubeTransform);
 
-		cubeTransform = Matrix.T(-1.0f, 0, -1);
+		cubeTransform = Matrix.T(.5f, -.5f, 0);
 		Renderer.Add(cubeModel, cubeTransform);
 		/// :End:
 
@@ -158,10 +181,10 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix roundedCubeTransform = Matrix.T(-0.5f, 0, 1);
+		Matrix roundedCubeTransform = Matrix.T(-.5f, 0, 0);
 		Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 
-		roundedCubeTransform = Matrix.T(-0.5f, 0, -1);
+		roundedCubeTransform = Matrix.T(.5f, 0, 0);
 		Renderer.Add(roundedCubeModel, roundedCubeTransform);
 		/// :End:
 
@@ -174,10 +197,10 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix sphereTransform = Matrix.T(0.0f, 0, 1);
+		Matrix sphereTransform = Matrix.T(-.5f, .5f, 0);
 		Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 
-		sphereTransform = Matrix.T(0.0f, 0, -1);
+		sphereTransform = Matrix.T(.5f, .5f, 0);
 		Renderer.Add(sphereModel, sphereTransform);
 		/// :End:
 
@@ -190,29 +213,18 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
-		Matrix cylinderTransform = Matrix.T(0.5f, 0, 1);
+		Matrix cylinderTransform = Matrix.T(-.5f, 1, 0);
 		Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 
-		cylinderTransform = Matrix.T(0.5f, 0, -1);
+		cylinderTransform = Matrix.T(.5f, 1, 0);
 		Renderer.Add(cylinderModel, cylinderTransform);
 		/// :End:
 
+		demoProcMesh.Draw(Default.Material, Matrix.TR(-2,0,0, Quat.FromAngles(-90,0,0)));
 
-		// Plane!
-		Mesh  planeMesh  = demoPlaneMesh;
-		Model planeModel = demoPlaneModel;
+		Hierarchy.Pop();
 
-		/// :CodeSample: Mesh.GeneratePlane
-		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
-		/// here's a short example! For the Mesh, you'll need to create your own material, 
-		/// we just loaded up the default Material here.
-		Matrix planeTransform = Matrix.T(1.0f, 0, 1);
-		Renderer.Add(planeMesh, Default.Material, planeTransform);
-
-		planeTransform = Matrix.T(1.0f, 0, -1);
-		Renderer.Add(planeModel, planeTransform);
-		/// :End:
-
-		demoProcMesh.Draw(Default.Material, Matrix.T(1,-.3f,0));
+		Text.Add(title, titlePose);
+		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 	}
 }

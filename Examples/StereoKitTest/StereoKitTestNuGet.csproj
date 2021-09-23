@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>netcoreapp3.0</TargetFramework>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="StereoKit" Version="0.3.3-preview.5" />
+    </ItemGroup>
+
+	<!-- Exclude the subfolders for different platform projects -->
+	<ItemGroup>
+		<Compile Remove="StereoKitTest_Android\**" />
+		<Compile Remove="StereoKitTest_UWP\**" />
+		<EmbeddedResource Remove="StereoKitTest_Android\**" />
+		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
+		<None Remove="StereoKitTest_Android\**" />
+		<None Remove="StereoKitTest_UWP\**" />
+	</ItemGroup>
+
+	<!-- Copy assets, and build the app's shaders into the final app folder -->
+	<ItemGroup>
+		<Content Include="..\Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
+		<SKShader Include="..\Assets\**\*.hlsl" BuildRoot="..\" BuildTo="Assets" />
+	</ItemGroup>
+
+	<!-- This guide file shouldn't be compiled -->
+	<ItemGroup>
+		<Compile Remove="Guides\GuideGettingStarted.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="Guides\GuideGettingStarted.cs" />
+	</ItemGroup>
+</Project>

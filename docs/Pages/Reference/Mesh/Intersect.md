@@ -6,13 +6,13 @@ description: Checks the intersection point of this ray and a Mesh with collision
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Intersect
 
 <div class='signature' markdown='1'>
-bool Intersect([Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay, Vec3& modelSpaceAt)
+bool Intersect([Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay, Ray& modelSpaceAt)
 </div>
 
 |  |  |
 |--|--|
 |[Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay|Ray must be in model space, the             intersection point will be in model space too. You can use the             inverse of the mesh's world transform matrix to bring the ray             into model space, see the example in the docs!|
-|Vec3& modelSpaceAt|The intersection point of the ray and             the mesh, if an intersection occurs. This is in model space, and             must be transformed back into world space later.|
+|Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
 Checks the intersection point of this ray and a Mesh
@@ -57,9 +57,9 @@ public void Update()
 
 	// Draw a sphere at the intersection point, if the ray intersects 
 	// with the mesh.
-	if (ray.Intersect(boxMesh, out Vec3 at))
+	if (ray.Intersect(boxMesh, out Ray at))
 	{
-		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at), 0.02f));
+		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
 	}
 }
 ```

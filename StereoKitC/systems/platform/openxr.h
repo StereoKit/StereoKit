@@ -13,10 +13,17 @@
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
 #elif defined(SK_OS_LINUX)
 	#include <time.h>
-	#define XR_USE_PLATFORM_XLIB
+
+	#if defined(SKG_LINUX_EGL)
+		#define XR_USE_PLATFORM_EGL
+		#define XR_USE_GRAPHICS_API_OPENGL_ES
+	#else
+		#define XR_USE_PLATFORM_XLIB
+		#define XR_USE_GRAPHICS_API_OPENGL
+	#endif
+
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_USE_GRAPHICS_API_OPENGL
 #elif defined(SK_OS_WEB)
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
@@ -101,6 +108,11 @@
 #define XrGraphicsBinding XrGraphicsBindingOpenGLESAndroidKHR
 #define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR
 
+#elif defined(SK_OS_LINUX)
+
+#define XrGraphicsBinding XrGraphicsBindingEGLMNDX
+#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_EGL_MNDX
+
 #endif
 
 #endif
@@ -123,7 +135,6 @@ bool openxr_render_frame  ();
 void openxr_poll_actions  ();
 
 void       *openxr_get_luid ();
-int64_t     openxr_get_time ();
 bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char* openxr_string   (XrResult result);
 
@@ -134,8 +145,10 @@ extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_has_articulated_hands;
+extern bool       xr_has_hand_meshes;
 extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
+extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
 extern XrSpace    xrc_space_grip[2];
 extern vec2       xr_bounds_size;

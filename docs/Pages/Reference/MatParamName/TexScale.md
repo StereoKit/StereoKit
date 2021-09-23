@@ -5,6 +5,10 @@ description: Not necessarily present in all shaders, this multiplies the UV coor
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).TexScale
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) TexScale
+</div>
+
 ## Description
 Not necessarily present in all shaders, this multiplies
 the UV coordinates of the mesh, so that the texture will repeat.

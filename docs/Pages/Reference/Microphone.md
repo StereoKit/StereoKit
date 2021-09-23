@@ -3,7 +3,7 @@ layout: default
 title: Microphone
 description: This class provides access to the hardware's microphone, and stores it in a Sound stream. Start and Stop recording, and check the Sound property for the results! Remember to ensure your application has microphone permissions enabled!
 ---
-# Microphone
+# static class Microphone
 
 This class provides access to the hardware's microphone, and
 stores it in a Sound stream. Start and Stop recording, and check the
@@ -35,8 +35,8 @@ has microphone permissions enabled!
 ### Getting streaming sound intensity
 This example shows how to read data from a Sound stream such as the
 microphone! In this case, we're just finding the average 'intensity'
-of the audio, and returning it as a value approximately between 0 and
-1. Microphone.Start() should be called before this example :)
+of the audio, and returning it as a value approximately between 0 and 1.
+Microphone.Start() should be called before this example :)
 ```csharp
 float[] micBuffer    = new float[0];
 float   micIntensity = 0;

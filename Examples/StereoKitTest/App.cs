@@ -18,6 +18,8 @@ class App
 	Matrix floorTr;
 	Pose   demoSelectPose = new Pose();
 
+	List<string> demoNames = new List<string>();
+
 	//////////////////////
 
 	public App(string[] args)
@@ -58,6 +60,8 @@ class App
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+		for (int i = 0; i < Tests.DemoCount; i++)
+			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
 
 		if (!Tests.IsTesting)
 			SK.AddStepper(new RenderCamera(new Pose(0.3f, 0, .5f, Quat.FromAngles(0,-90,0)), 1000, 1000));
@@ -100,11 +104,9 @@ class App
 
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
-		for (int i = 0; i < Tests.DemoCount; i++)
+		for (int i = 0; i < demoNames.Count; i++)
 		{
-			string name = Tests.GetDemoName(i).Substring("Demo".Length);
-
-			if (UI.Button(name))
+			if (UI.Button(demoNames[i]))
 				Tests.SetDemoActive(i);
 			UI.SameLine();
 		}
@@ -127,19 +129,22 @@ class App
 	// Ruler object //
 	//////////////////
 
-	static Pose demoRuler = new Pose(0, 0, .5f, Quat.Identity);
+	static Pose     rulerPose   = new Pose(0, 0, .5f, Quat.Identity);
+	static string[] rulerLabels = { "0", "5", "10", "15", "20", "25" };
 	static void RulerWindow()
 	{
-		UI.HandleBegin("Ruler", ref demoRuler, new Bounds(new Vec3(31,4,1)*U.cm), true);
+		UI.HandleBegin("Ruler", ref rulerPose, new Bounds(new Vec3(31,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
-		Text.Add("Centimeters", Matrix.TRS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, Quat.Identity, .3f), TextAlign.XLeft | TextAlign.YBottom);
+		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), TextAlign.BottomLeft);
 		for (int d = 0; d <= 60; d+=1)
 		{
-			float x = d/2.0f;
-			float size = d%2==0?1f:0.15f;
-			Lines.Add(new Vec3(15-x,1.8f,-.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
-			if (d%2==0 && d/2 != 30)
-				Text.Add((d/2).ToString(), Matrix.TRS(new Vec3(15-x-0.1f,2-size, -.6f)*U.cm, Quat.Identity, .2f), TextAlign.XLeft|TextAlign.YBottom);
+			float x    = d/2.0f;
+			float size = d%2==0?.5f:0.15f;
+			if (d%10 == 0 && d/2 != 30) {
+				size = 1;
+				Text.Add(rulerLabels[d/10], Matrix.TS(new Vec3(15-x-0.1f, 2-size, -.6f) * U.cm, .2f), TextAlign.BottomLeft);
+			}
+			Lines.Add(new Vec3(15-x, 1.8f, -.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
 		}
 		UI.HandleEnd();
 	}

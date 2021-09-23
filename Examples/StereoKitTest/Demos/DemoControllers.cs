@@ -25,7 +25,7 @@ namespace StereoKitTest
 			ShowController(Handed.Left);
 
 			Text.Add(title,       titlePose);
-			Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.XCenter | TextAlign.YTop, TextAlign.XLeft | TextAlign.YTop);
+			Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 		}
 
 		/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose

@@ -3,7 +3,7 @@ layout: default
 title: Solid
 description: A Solid is an object that gets simulated with physics! Once you create a solid, it will continuously be acted upon by forces like gravity and other objects. Solid does -not- draw anything on its own, but you can ask a Solid for its current pose, and draw an object at that pose!  Once you create a Solid, you need to define its shape using geometric primitives, this is the AddSphere, AddCube, AddCapsule functions. You can add more than one to a single Solid to get a more complex shape!  If you want to directly move a Solid, note the difference between the Move function and the Teleport function. Move will change the velocity for a single frame to travel through space to get to its destination, while teleport will simply appear at its destination without touching anything between.
 ---
-# Solid
+# class Solid
 
 A Solid is an object that gets simulated with physics! Once
 you create a solid, it will continuously be acted upon by forces like
@@ -22,6 +22,12 @@ destination, while teleport will simply appear at its destination
 without touching anything between.
 
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|bool [Enabled]({{site.url}}/Pages/Reference/Solid/Enabled.html)|Is the Solid enabled in the physics simulation? Set this to false if you want to prevent physics from influencing this solid!|
+
 
 ## Instance Methods
 
@@ -39,11 +45,5 @@ without touching anything between.
 |[SetVelocity]({{site.url}}/Pages/Reference/Solid/SetVelocity.html)|Sets the velocity of this Solid.|
 |[Teleport]({{site.url}}/Pages/Reference/Solid/Teleport.html)|Moves the Solid to the new pose, without colliding with objects on the way there.|
 
-
-## Static Fields and Properties
-
-|  |  |
-|--|--|
-|bool [Enabled]({{site.url}}/Pages/Reference/Solid/Enabled.html)|Is the Solid enabled in the physics simulation? Set this to false if you want to prevent physics from influencing this solid!|
 
 

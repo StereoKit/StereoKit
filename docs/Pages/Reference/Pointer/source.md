@@ -5,6 +5,10 @@ description: What input soure did this pointer come from? This is a bit-flag tha
 ---
 # [Pointer]({{site.url}}/Pages/Reference/Pointer.html).source
 
+<div class='signature' markdown='1'>
+[InputSource]({{site.url}}/Pages/Reference/InputSource.html) source
+</div>
+
 ## Description
 What input soure did this pointer come from? This is
 a bit-flag that contains input family and capability

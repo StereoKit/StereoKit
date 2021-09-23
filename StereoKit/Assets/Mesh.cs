@@ -117,13 +117,25 @@ namespace StereoKit
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</param>
-		/// <param name="modelSpaceAt">The intersection point of the ray and
-		/// the mesh, if an intersection occurs. This is in model space, and
-		/// must be transformed back into world space later.</param>
+		/// <param name="modelSpaceAt">The intersection point and surface
+		/// direction of the ray and the mesh, if an intersection occurs.
+		/// This is in model space, and must be transformed back into world
+		/// space later. Direction is not guaranteed to be normalized, 
+		/// especially if your own model->world transform contains scale/skew
+		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
+
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt);
+		{
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection) > 0;
+			modelSpaceAt = intersection.position;
+			return result;
+		}
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the 
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -261,5 +273,12 @@ namespace StereoKit
 			IntPtr mesh = NativeAPI.mesh_find(meshId);
 			return mesh == IntPtr.Zero ? null : new Mesh(mesh);
 		}
+
+		/// <inheritdoc cref="Default.MeshSphere" />
+		public static Mesh Sphere => Default.MeshSphere;
+		/// <inheritdoc cref="Default.MeshCube" />
+		public static Mesh Cube => Default.MeshCube;
+		/// <inheritdoc cref="Default.MeshQuad" />
+		public static Mesh Quad => Default.MeshQuad;
 	}
 }

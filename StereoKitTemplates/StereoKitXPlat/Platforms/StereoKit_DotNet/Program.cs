@@ -6,6 +6,10 @@ class SKLoader
 {
 	static void Main(string[] args)
 	{
+		// This will allow the App constructor to call a few SK methods
+		// before Initialize is called.
+		SK.PreLoadLibrary();
+
 		// If the app has a constructor that takes a string array, then
 		// we'll use that, and pass the command line arguments into it on
 		// creation

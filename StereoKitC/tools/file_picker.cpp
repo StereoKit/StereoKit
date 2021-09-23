@@ -50,7 +50,7 @@ std::vector<fp_file_cache_t> fp_file_cache = {};
 #endif
 
 char                         fp_filename[1024];
-char                         fp_buffer[1024];
+char                         fp_buffer[1023];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
@@ -87,8 +87,8 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		filter = string_append(filter, 1, ")\1");
 		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
-		int32_t len = strlen(filter);
-		for (int32_t i = 0; i < len; i++) if (filter[i] == '\1') filter[i] = '\0'; 
+		size_t len = strlen(filter);
+		for (size_t i = 0; i < len; i++) if (filter[i] == '\1') filter[i] = '\0'; 
 
 		OPENFILENAMEA settings = {};
 		settings.lStructSize  = sizeof(settings);
@@ -99,17 +99,17 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		settings.nFilterIndex = 1;
 
 		if (mode == picker_mode_open) {
-			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Open";
-			if (GetOpenFileName(&settings) == true) {
+			if (GetOpenFileName(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr);
 			}
 		} else if (mode == picker_mode_save) {
-			settings.Flags = OFN_PATHMUSTEXIST;
+			settings.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = "Save As";
-			if (GetSaveFileNameA(&settings) == true) {
+			if (GetSaveFileNameA(&settings) == TRUE) {
 				if (on_confirm) on_confirm(callback_data, true, fp_filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr);
@@ -128,7 +128,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
+			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
 			picker.FileTypeFilter().Append(wext);
 		}
 		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
@@ -139,7 +139,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		Pickers::FileSavePicker picker;
 		auto exts{ winrt::single_threaded_vector<winrt::hstring>() };
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, strlen(filters[i].ext)+1, wext, 32);
+			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
 			exts.Append(wext);
 		}
 		picker.FileTypeChoices().Insert(L"File Type", exts);
@@ -151,6 +151,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 	return;
 #endif
 
+#if !defined(SK_OS_WINDOWS_UWP)
 	// Set up the fallback file picker
 
 	// Make the title text for the window
@@ -181,6 +182,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 	fp_callback  = on_confirm;
 	fp_mode = mode;
 	fp_show = true;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -228,11 +230,11 @@ void file_picker_open_folder(const char *folder) {
 
 	fp_items.each([](fp_item_t &item) { free(item.name); });
 	fp_items.clear();
-	platform_iterate_dir(folder, nullptr, [](void *callback_data, const char *name, bool file) {
+	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file) {
 		bool valid = fp_filter_count == 0;
 		// If the extention matches our filter, add it
 		if (file) {
-			for (size_t e = 0; e < fp_filter_count; e++) {
+			for (int32_t e = 0; e < fp_filter_count; e++) {
 				if (string_endswith(name, fp_filters[e].ext, false)) {
 					valid = true;
 					break;
@@ -285,9 +287,16 @@ void file_picker_update() {
 		// Show the active item
 		switch (fp_mode) {
 		case picker_mode_save: {
-			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
+			if (ui_button("Cancel")) {
+				fp_call        = true;
+				fp_call_status = false;
+			}
 			ui_sameline();
-			if (ui_button("Save")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer); fp_call = true; fp_call_status = true; }
+			if (ui_button("Save")) { 
+				snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer);
+				fp_call        = true;
+				fp_call_status = true;
+			}
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
 		} break;
@@ -340,14 +349,14 @@ void file_picker_shutdown() {
 
 ///////////////////////////////////////////
 
-bool file_picker_cache(const char *filename, void **out_data, size_t *out_size) {
+bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_size) {
 #if defined(SK_OS_WINDOWS_UWP)
 	uint64_t hash = hash_fnv64_string(filename);
 	for (size_t i = 0; i < fp_file_cache.size(); i++) {
 		if (fp_file_cache[i].name_hash == hash) {
 			IRandomAccessStreamWithContentType stream = fp_file_cache[i].file.OpenReadAsync().get();
-			Buffer buffer(stream.Size());
-			winrt::Windows::Foundation::IAsyncOperationWithProgress<IBuffer, uint32_t> progress = stream.ReadAsync(buffer, stream.Size(), InputStreamOptions::None);
+			Buffer buffer((uint32_t)stream.Size());
+			winrt::Windows::Foundation::IAsyncOperationWithProgress<IBuffer, uint32_t> progress = stream.ReadAsync(buffer, (uint32_t)stream.Size(), InputStreamOptions::None);
 			IBuffer result = progress.get();
 
 			*out_size = result.Length();
@@ -355,6 +364,27 @@ bool file_picker_cache(const char *filename, void **out_data, size_t *out_size) 
 			memcpy(*out_data, result.data(), *out_size);
 
 			stream.Close();
+			fp_file_cache[i].file = nullptr;
+			fp_file_cache.erase(fp_file_cache.begin() + i);
+			i--;
+
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool file_picker_cache_save(const char *filename, void *data, size_t size) {
+#if defined(SK_OS_WINDOWS_UWP)
+	uint64_t hash = hash_fnv64_string(filename);
+	for (size_t i = 0; i < fp_file_cache.size(); i++) {
+		if (fp_file_cache[i].name_hash == hash) {
+			winrt::array_view<uint8_t const> view{ (uint8_t *)data, (uint8_t *)data + size };
+			FileIO::WriteBytesAsync(fp_file_cache[i].file, view);
+
 			fp_file_cache[i].file = nullptr;
 			fp_file_cache.erase(fp_file_cache.begin() + i);
 			i--;

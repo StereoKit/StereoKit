@@ -5,6 +5,10 @@ description: When looking at a UV texture coordinate on this texture, how do we 
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).AddressMode
 
+<div class='signature' markdown='1'>
+[TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) AddressMode{ get set }
+</div>
+
 ## Description
 When looking at a UV texture coordinate on this texture,
 how do we handle values larger than 1, or less than zero? Do we

@@ -10,8 +10,6 @@
 #include "hand_oxr_controller.h"
 #include "hand_oxr_articulated.h"
 
-#include "../../asset_types/assets.h"
-#include "../../asset_types/material.h"
 #include "../platform/platform_utils.h"
 
 #include <math.h>
@@ -26,14 +24,6 @@ namespace sk {
 #define SK_SQRT2 1.41421356237f
 #define SK_FINGER_SOLIDS 1
 
-struct hand_mesh_t {
-	mesh_t  mesh;
-	vert_t *verts;
-	int     vert_count;
-	vind_t *inds;
-	int     ind_count;
-};
-
 struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
@@ -47,6 +37,7 @@ struct hand_state_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
+	float pinch_blend;
 	bool (*available)();
 	void (*init)();
 	void (*shutdown)();
@@ -57,6 +48,7 @@ typedef struct hand_system_t {
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override,
+		0.2f,
 		hand_override_available,
 		hand_override_init,
 		hand_override_shutdown,
@@ -64,6 +56,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_frame,
 		hand_override_update_predicted },
 	{ hand_system_oxr_articulated,
+		0.2f,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
@@ -71,6 +64,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxra_update_frame,
 		hand_oxra_update_predicted },
 	{ hand_system_oxr_controllers,
+		0.6f,
 		hand_oxrc_available,
 		hand_oxrc_init,
 		hand_oxrc_shutdown,
@@ -78,6 +72,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxrc_update_frame,
 		hand_oxrc_update_predicted },
 	{ hand_system_mouse,
+		1,
 		hand_mouse_available,
 		hand_mouse_init,
 		hand_mouse_shutdown,
@@ -85,6 +80,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_mouse_update_frame,
 		hand_mouse_update_predicted },
 	{ hand_system_none,
+		1,
 		[]() {return true;},
 		[]() {},
 		[]() {},
@@ -134,17 +130,6 @@ void input_hand_refresh_system() {
 	if (available_source != hand_system) {
 		hand_system = available_source;
 
-		const char *source_name = "N/A";
-		switch (hand_sources[hand_system].system) {
-		case hand_system_mouse:           source_name = "Mouse"; break;
-		case hand_system_none:            source_name = "None"; break;
-		case hand_system_override:        source_name = "Override"; break;
-		case hand_system_oxr_articulated: source_name = "OpenXR Articulated"; break;
-		case hand_system_oxr_controllers: source_name = "OpenXR Controllers"; break;
-		}
-
-		log_diagf("Switched to input source: %s", source_name);
-
 		// Force the hand size to recalculate next update
 		hand_size_update = 0;
 	}
@@ -165,20 +150,30 @@ void input_hand_init() {
 	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
 
+	float blend = 1;
+	for (size_t i = 0; i < _countof(hand_sources); i++) {
+		if (hand_sources[i].system == hand_system_oxr_controllers) {
+			blend = hand_sources[i].pinch_blend;
+			break;
+		}
+	}
+	vec3 from_pt = vec3_lerp(input_pose_neutral[0][4].position, input_pose_neutral[1][4].position, blend);
+	vec3 grab_pt = vec3_lerp(input_pose_pinch  [0][4].position, input_pose_pinch  [1][4].position, blend);
+
 	modify(&input_pose_fist   [0][0], {});
 	modify(&input_pose_neutral[0][0], {});
 	modify(&input_pose_point  [0][0], {});
-	modify(&input_pose_pinch  [0][0], 
-		(vec3{ 0.02675417f,0.02690793f,-0.07531749f }-vec3{0.04969539f,0.02166998f,-0.0236005f}) * (sk_active_display_mode() == display_mode_flatscreen ? 1 : 0.5f));
+	modify(&input_pose_pinch  [0][0], from_pt - grab_pt);
 
 	material_t hand_mat = material_copy_id(default_id_material);
 	material_set_id          (hand_mat, default_id_material_hand);
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.0f);
-	gradient_add(color_grad, color128{ 1,1,1,0 }, 0.4f);
-	gradient_add(color_grad, color128{ 1,1,1,1 }, 0.9f);
+	gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
+	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
+	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
+	gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
@@ -199,7 +194,7 @@ void input_hand_init() {
 		hand_state[i].visible  = true;
 		hand_state[i].solid    = true;
 		hand_state[i].material = hand_mat;
-		assets_addref(hand_state[i].material->header);
+		material_addref(hand_state[i].material);
 
 		hand_state[i].info.palm.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
@@ -288,7 +283,7 @@ void input_hand_update() {
 		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
-			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, matrix_identity, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
+			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
 		}
 
 		// Update hand physics
@@ -350,6 +345,11 @@ void input_hand_state_update(handed_ handedness) {
 	bool is_trigger = finger_dist <= pinch_activation_dist;
 	bool is_grip    = grip_dist   <= grip_activation_dist;
 
+	hand.pinch_pt = vec3_lerp(
+		hand.fingers[0][4].position,
+		hand.fingers[1][4].position,
+		hand_sources[hand_system].pinch_blend);
+
 	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
 	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
 	if (is_trigger) hand.pinch_state |= button_state_active;
@@ -360,6 +360,12 @@ void input_hand_state_update(handed_ handedness) {
 
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
+}
+
+///////////////////////////////////////////
+
+hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
+	return &hand_state[handedness].mesh;
 }
 
 ///////////////////////////////////////////
@@ -450,6 +456,7 @@ void input_hand_update_mesh(handed_ hand) {
 
 	// if this mesh hasn't been initialized yet
 	if (data.verts == nullptr) {
+		data.root_transform = matrix_identity;
 		data.vert_count = (_countof(sincos) * slice_count + 1) * SK_FINGERS ; // verts: per joint, per finger 
 		data.ind_count  = (3 * 5 * 2 * (slice_count-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 		data.verts      = sk_malloc_t(vert_t, data.vert_count);
@@ -539,6 +546,7 @@ void input_hand_update_mesh(handed_ hand) {
 		}
 
 		data.mesh = mesh_create();
+		mesh_set_keep_data(data.mesh, false);
 		mesh_set_id(data.mesh, hand == handed_left
 			? default_id_mesh_lefthand
 			: default_id_mesh_righthand);
@@ -629,7 +637,7 @@ void input_hand_material(handed_ hand, material_t material) {
 	material_release(hand_state[hand].material);
 	
 	if (material != nullptr)
-		assets_addref(material->header);
+		material_addref(material);
 
 	hand_state[hand].material = material;
 }

@@ -5,6 +5,10 @@ description: For physically based shader, this is a multiplier to scale the meta
 ---
 # [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html).MetallicAmount
 
+<div class='signature' markdown='1'>
+static [MatParamName]({{site.url}}/Pages/Reference/MatParamName.html) MetallicAmount
+</div>
+
 ## Description
 For physically based shader, this is a multiplier to
 scale the metallic properties of the material.

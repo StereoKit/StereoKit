@@ -1,5 +1,6 @@
 pub usingnamespace @cImport({
-    @cInclude("stereokit.h"); });
+    @cInclude("stereokit.h");
+    @cInclude("stereokit_ui.h"); });
 
 pub fn main() !void {
     _ = sk_init(sk_settings_t {
@@ -17,6 +18,8 @@ pub fn main() !void {
         .log_filter = log_.diagnostic,
         .android_java_vm = null,
         .android_activity = null,
+        .overlay_app = 0,
+        .overlay_priority = 0,
     });
 
     while (sk_step( step ) == 1) { }

@@ -5,6 +5,10 @@ description: Wrap the UV coordinate around to the other side of the texture! Thi
 ---
 # [TexAddress]({{site.url}}/Pages/Reference/TexAddress.html).Wrap
 
+<div class='signature' markdown='1'>
+static [TexAddress]({{site.url}}/Pages/Reference/TexAddress.html) Wrap
+</div>
+
 ## Description
 Wrap the UV coordinate around to the other side of the texture! This
 is basically like a looping texture, and is an excellent default. If you can

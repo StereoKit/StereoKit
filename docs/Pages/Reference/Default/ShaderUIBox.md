@@ -5,6 +5,10 @@ description: A shader for indicating interaction volumes! It renders a border ar
 ---
 # [Default]({{site.url}}/Pages/Reference/Default.html).ShaderUIBox
 
+<div class='signature' markdown='1'>
+static [Shader]({{site.url}}/Pages/Reference/Shader.html) ShaderUIBox{ get set }
+</div>
+
 ## Description
 A shader for indicating interaction volumes! It renders
 a border around the edges of the UV coordinates that will 'grow'

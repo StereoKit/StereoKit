@@ -24,16 +24,17 @@ namespace StereoKit
 			return _loaded;
 		}
 
-		[DllImport("kernel32")]
-		static extern IntPtr LoadLibrary(string fileName);
+		[DllImport("kernel32", CharSet = CharSet.Unicode)]
+		static extern IntPtr LoadLibraryW(string fileName);
 		static bool LoadWindows(string arch)
 		{
-			if (LoadLibrary("StereoKitC") != IntPtr.Zero) return true;
-			if (LoadLibrary($"runtimes/win-{arch}/native/StereoKitC.dll") != IntPtr.Zero) return true;
+			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
+			if (LoadLibraryW($"runtimes/win-{arch}/native/StereoKitC.dll") != IntPtr.Zero) return true;
 			return false;
 		}
 
-		[DllImport("libdl")]
+
+		[DllImport("libdl", CharSet = CharSet.Ansi)]
 		static extern IntPtr dlopen(string fileName, int flags);
 		static bool LoadUnix(string arch)
 		{

@@ -86,7 +86,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t &header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	header.id_text = string_copy(id);
 #endif
 }
@@ -94,7 +94,7 @@ void assets_set_id(asset_header_t &header, const char *id) {
 ///////////////////////////////////////////
 
 void assets_set_id(asset_header_t &header, uint64_t id) {
-#if _DEBUG
+#if defined(SK_DEBUG)
 	asset_header_t *other = (asset_header_t *)assets_find(id, header.type);
 	assert(other == nullptr);
 #endif
@@ -141,7 +141,7 @@ void  assets_releaseref(asset_header_t &asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
-#ifdef _DEBUG
+#if defined(SK_DEBUG)
 	free(asset.id_text);
 #endif
 	free(&asset);
@@ -149,9 +149,35 @@ void  assets_releaseref(asset_header_t &asset) {
 
 ///////////////////////////////////////////
 
+void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
+	// Swap references by adding a reference first, then removing. If the asset
+	// is the same, then this prevents the asset from getting destroyed.
+	assets_addref    (* asset);
+	assets_releaseref(**asset_link);
+	*asset_link = asset;
+}
+
+///////////////////////////////////////////
+
 void  assets_shutdown_check() {
 	if (assets.count > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
+#if defined(SK_DEBUG)
+		for (size_t i = 0; i < assets.count; i++) {
+			const char *type_name = "[unimplemented type name]";
+			switch(assets[i]->type) {
+			case asset_type_mesh:     type_name = "mesh_t";     break;
+			case asset_type_texture:  type_name = "tex_t";      break;
+			case asset_type_shader:   type_name = "shader_t";   break;
+			case asset_type_material: type_name = "material_t"; break;
+			case asset_type_model:    type_name = "model_t";    break;
+			case asset_type_font:     type_name = "font_t";     break;
+			case asset_type_sprite:   type_name = "sprite_t";   break;
+			case asset_type_sound:    type_name = "sound_t";    break;
+			}
+			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
+		}
+#endif
 	}
 }
 
@@ -162,6 +188,7 @@ const char *assets_file(const char *file_name) {
 	if (file_name == nullptr || sk_settings.assets_folder == nullptr || sk_settings.assets_folder[0] == '\0')
 		return file_name;
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	const char *ch = file_name;
 	while (*ch != '\0') {
 		if (*ch == ':') {
@@ -169,6 +196,12 @@ const char *assets_file(const char *file_name) {
 		}
 		ch++;
 	}
+#elif defined(SK_OS_ANDROID)
+	return file_name;
+#else
+	if (file_name[0] == platform_path_separator_c)
+		return file_name;
+#endif
 
 	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;

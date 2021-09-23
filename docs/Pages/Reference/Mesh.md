@@ -3,7 +3,7 @@ layout: default
 title: Mesh
 description: A Mesh is a single collection of triangular faces with extra surface information to enhance rendering! StereoKit meshes are composed of a list of vertices, and a list of indices to connect the vertices into faces. Nothing more than that is stored here, so typically meshes are combined with Materials, or added to Models in order to draw them.  Mesh vertices are composed of a position, a normal (direction of the vert), a uv coordinate (for mapping a texture to the mesh's surface), and a 32 bit color containing red, green, blue, and alpha (transparency).  Mesh indices are stored as unsigned ints, so you can have a mesh with a fudgeton of verts! 4 billion or so .)
 ---
-# Mesh
+# class Mesh
 
 A Mesh is a single collection of triangular faces with extra surface
 information to enhance rendering! StereoKit meshes are composed of a
@@ -19,6 +19,13 @@ and a 32 bit color containing red, green, blue, and alpha
 Mesh indices are stored as unsigned ints, so you can have a mesh with
 a fudgeton of verts! 4 billion or so :)
 
+
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Mesh/Bounds.html)|This is a bounding box that encapsulates the Mesh! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh vertices, you can also override this to suit your needs.|
+|bool [KeepData]({{site.url}}/Pages/Reference/Mesh/KeepData.html)|Should StereoKit keep the mesh data on the CPU for later access, or collision detection? Defaults to true. If you set this to false before setting data, the data won't be stored. If you call this after setting data, that stored data will be freed! If you set this to true again later on, it will not contain data until it's set again.|
 
 
 ## Instance Methods
@@ -36,8 +43,9 @@ a fudgeton of verts! 4 billion or so :)
 
 |  |  |
 |--|--|
-|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Mesh/Bounds.html)|This is a bounding box that encapsulates the Mesh! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh vertices, you can also override this to suit your needs.|
-|bool [KeepData]({{site.url}}/Pages/Reference/Mesh/KeepData.html)|Should StereoKit keep the mesh data on the CPU for later access, or collision detection? Defaults to true. If you set this to false before setting data, the data won't be stored. If you call this after setting data, that stored data will be freed! If you set this to true again later on, it will not contain data until it's set again.|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Cube]({{site.url}}/Pages/Reference/Mesh/Cube.html)|See `Default.MeshCube`|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Quad]({{site.url}}/Pages/Reference/Mesh/Quad.html)|See `Default.MeshQuad`|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Sphere]({{site.url}}/Pages/Reference/Mesh/Sphere.html)|See `Default.MeshSphere`|
 
 
 ## Static Methods

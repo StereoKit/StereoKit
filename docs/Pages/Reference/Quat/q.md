@@ -5,6 +5,10 @@ description: The internal, wrapped System.Numerics type. This can be nice to hav
 ---
 # [Quat]({{site.url}}/Pages/Reference/Quat.html).q
 
+<div class='signature' markdown='1'>
+Quaternion q
+</div>
+
 ## Description
 The internal, wrapped System.Numerics type. This can be
 nice to have around so you can pass its fields as 'ref', which

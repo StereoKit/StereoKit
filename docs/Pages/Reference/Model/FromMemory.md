@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Model.FromMemory
-description: Loads a list of mesh and material subsets from a .obj, .stl, .gltf, or .glb file stored in memory. Note that this function won't work well on files that reference other files, such as .gltf files with references in them.
+description: Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note that this function won't work well on files that reference other files, such as .gltf files with references in them.
 ---
 # [Model]({{site.url}}/Pages/Reference/Model.html).FromMemory
 
@@ -17,9 +17,9 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromMemory(string filena
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model created from the file, or null if the file failed to load!|
 
 Loads a list of mesh and material subsets from a .obj,
-.stl, .gltf, or .glb file stored in memory. Note that this
-function won't work well on files that reference other files,
-such as .gltf files with references in them.
+.stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
+that this function won't work well on files that reference other
+files, such as .gltf files with references in them.
 
 
 

@@ -1,5 +1,6 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
+#include "../../sk_memory.h"
 #include "../platform/openxr.h"
 #include "../input.h"
 #include "../render.h"
@@ -14,9 +15,16 @@ namespace sk {
 ///////////////////////////////////////////
 
 XrHandTrackerEXT oxra_hand_tracker[2];
+XrSpace          oxra_hand_space[2];
 hand_joint_t     oxra_hand_joints[2][26];
 bool             oxra_hand_active = true;
 bool             oxra_system_initialized = false;
+bool             oxra_mesh_dirty[2] = { true, true };
+XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
+
+///////////////////////////////////////////
+
+void hand_oxra_update_system_meshes();
 
 ///////////////////////////////////////////
 
@@ -31,8 +39,6 @@ bool hand_oxra_available() {
 ///////////////////////////////////////////
 
 bool hand_oxra_is_tracked() {
-	if (xr_time <= 0)
-		return true;
 	if (!oxra_system_initialized)
 		return false;
 
@@ -78,8 +84,51 @@ void hand_oxra_init() {
 			return;
 		}
 	}
-	oxra_hand_active = hand_oxra_is_tracked();
+	oxra_hand_active        = hand_oxra_is_tracked();
 	oxra_system_initialized = true;
+
+	if (xr_has_hand_meshes) {
+		// Pre-allocate memory for the hand mesh structure
+		XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+		XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
+		properties.next = &properties_handmesh;
+		xrGetSystemProperties(xr_instance, xr_system_id, &properties);
+
+		// Initialize hand mesh trackers
+		for (int32_t h = 0; h < handed_max; h++) {
+			hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+
+			// Allocate memory for OpenXR to store hand mesh data in.
+			oxra_mesh_src[h].indexBuffer.indexCapacityInput   = properties_handmesh.maxHandMeshIndexCount;
+			oxra_mesh_src[h].indexBuffer.indices              = sk_malloc_t(uint32_t, properties_handmesh.maxHandMeshIndexCount);
+			oxra_mesh_src[h].vertexBuffer.vertexCapacityInput = properties_handmesh.maxHandMeshVertexCount;
+			oxra_mesh_src[h].vertexBuffer.vertices            = sk_malloc_t(XrHandMeshVertexMSFT, properties_handmesh.maxHandMeshIndexCount);
+
+			// Allocate memory for the SK format mesh data.
+			if (hand_mesh->ind_count < properties_handmesh.maxHandMeshIndexCount) {
+				free(hand_mesh->inds);
+				hand_mesh->inds      = sk_malloc_t(vind_t, properties_handmesh.maxHandMeshIndexCount);
+				hand_mesh->ind_count = properties_handmesh.maxHandMeshIndexCount;
+			}
+			if (hand_mesh->vert_count < properties_handmesh.maxHandMeshVertexCount) {
+				free(hand_mesh->verts);
+				hand_mesh->verts      = sk_malloc_t(vert_t, properties_handmesh.maxHandMeshVertexCount);
+				hand_mesh->vert_count = properties_handmesh.maxHandMeshVertexCount;
+				for (uint32_t i = 0; i < hand_mesh->vert_count; i++)
+					hand_mesh->verts[i] = { vec3_zero, vec3_zero, {0.5f,0.5f}, {255,255,255,255} };
+			}
+
+			// Create the hand mesh space that's used to track the hand mesh
+			// lifecycle.
+			XrHandMeshSpaceCreateInfoMSFT info = { XR_TYPE_HAND_MESH_SPACE_CREATE_INFO_MSFT };
+			info.handPoseType        = XR_HAND_POSE_TYPE_TRACKED_MSFT;
+			info.poseInHandMeshSpace = { {0,0,0,1}, {0,0,0} };
+			XrResult result = xr_extensions.xrCreateHandMeshSpaceMSFT(oxra_hand_tracker[h], &info, &oxra_hand_space[h]);
+			if (XR_FAILED(result)) {
+				log_warnf("xrCreateHandMeshSpaceMSFT failed: %s", openxr_string(result));
+			}
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -89,26 +138,37 @@ void hand_oxra_shutdown() {
 	
 	for (int32_t h = 0; h < handed_max; h++) {
 		xr_extensions.xrDestroyHandTrackerEXT(oxra_hand_tracker[h]);
+		xrDestroySpace(oxra_hand_space[h]);
+		free(oxra_mesh_src[h].indexBuffer.indices);
+		free(oxra_mesh_src[h].vertexBuffer.vertices);
 	}
 }
 
 ///////////////////////////////////////////
 
 void hand_oxra_update_joints() {
-	if (xr_time <= 0)
-		return;
-
 	// Generate some shoulder data used for generating hand pointers
 
-	// Average shoulder width for women:37cm, men:41cm, but 2/3 that feels a
-	// bit better.
-	const float avg_shoulder_width = (39.0f/2.0f) * cm2m * 0.66f;
+	// Average shoulder width for women:37cm, men:41cm, center of shoulder
+	// joint is around 4cm inwards
+	const float avg_shoulder_width = ((39.0f/2.0f)-4.0f)*cm2m;
+	const float head_length        = 10*cm2m;
+	const float neck_length        = 7*cm2m;
 
-	vec3 chest_center = input_head()->position;
-	chest_center.y -= 25*cm2m;
+	// Chest center is down to the base of the head, and then down the neck.
+	const pose_t *head = input_head();
+	vec3 chest_center = head->position + head->orientation * vec3{0,-head_length,0};
+	chest_center.y   -= neck_length;
+
+	// Shoulder forward facing direction is head direction weighted equally 
+	// with the direction of both hands.
 	vec3 face_fwd = input_head()->orientation * vec3_forward;
 	face_fwd.y = 0;
-	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width; 
+	face_fwd   = vec3_normalize(face_fwd) * 2;
+	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
+	face_fwd  += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
+	face_fwd  *= 0.25f;
+	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width;
 
 	bool hands_active = false;
 	for (int32_t h = 0; h < handed_max; h++) {
@@ -148,7 +208,7 @@ void hand_oxra_update_joints() {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
 			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
-			oxra_hand_joints[h][j].position    = matrix_mul_point(root, oxra_hand_joints[h][j].position);
+			oxra_hand_joints[h][j].position    = matrix_transform_pt(root, oxra_hand_joints[h][j].position);
 			oxra_hand_joints[h][j].orientation = oxra_hand_joints[h][j].orientation * root_q;
 		}
 
@@ -162,8 +222,8 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
 		// Create pointers for the hands
-		vec3 shoulder  = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
-		vec3 ray_joint = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
+		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 		pose_t point_pose = {
 			ray_joint,
 			quat_lookat(shoulder, ray_joint) };
@@ -181,6 +241,9 @@ void hand_oxra_update_joints() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_inactive() {
+	oxra_mesh_dirty[0] = true;
+	oxra_mesh_dirty[1] = true;
+
 	if (hand_oxra_is_tracked()) {
 		oxra_hand_active = true;
 		input_hand_refresh_system();
@@ -197,7 +260,111 @@ void hand_oxra_update_frame() {
 
 void hand_oxra_update_predicted() {
 	hand_oxra_update_joints();
-	input_hand_update_meshes();
+
+	if (xr_has_hand_meshes) {
+		hand_oxra_update_system_meshes();
+	} else {
+		input_hand_update_meshes();
+	}
+}
+
+///////////////////////////////////////////
+
+struct hand_tri_t {
+	vind_t a, b, c;
+
+	static int32_t compare_r(const void *a, const void *b) {
+		const hand_tri_t *t1 = (hand_tri_t *)a;
+		const hand_tri_t *t2 = (hand_tri_t *)b;
+		XrVector3f a1 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->a].position;
+		XrVector3f a2 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->b].position;
+		XrVector3f a3 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t1->c].position;
+		XrVector3f b1 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->a].position;
+		XrVector3f b2 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->b].position;
+		XrVector3f b3 = oxra_mesh_src[handed_right].vertexBuffer.vertices[t2->c].position;
+		return (int32_t) (((b1.x+b2.x+b3.x)*2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		                - ((a1.x+a2.x+a3.x)*2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000));
+	}
+	static int32_t compare_l(const void *a, const void *b) {
+		const hand_tri_t *t1 = (hand_tri_t *)a;
+		const hand_tri_t *t2 = (hand_tri_t *)b;
+		XrVector3f a1 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->a].position;
+		XrVector3f a2 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->b].position;
+		XrVector3f a3 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t1->c].position;
+		XrVector3f b1 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->a].position;
+		XrVector3f b2 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->b].position;
+		XrVector3f b3 = oxra_mesh_src[handed_left].vertexBuffer.vertices[t2->c].position;
+		return (int32_t) (((b1.x+b2.x+b3.x)*-2000 + (b1.y+b2.y+b3.y)*-1000 + (b1.z+b2.z+b3.z)*-1000)
+		                - ((a1.x+a2.x+a3.x)*-2000 + (a1.y+a2.y+a3.y)*-1000 + (a1.z+a2.z+a3.z)*-1000));
+	}
+};
+
+void hand_oxra_update_system_meshes() {
+	for (int32_t h = 0; h < handed_max; h++) {
+		hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+
+		XrHandMeshUpdateInfoMSFT info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
+		info.handPoseType = XR_HAND_POSE_TYPE_TRACKED_MSFT;
+		info.time         = xr_time;
+		xr_extensions.xrUpdateHandMeshMSFT(oxra_hand_tracker[h], &info, &oxra_mesh_src[h]);
+
+		// Hand mesh is in hand local space, so we'll provide a base matrix 
+		// transform for the mesh.
+		pose_t pose;
+		if (openxr_get_space(oxra_hand_space[h], &pose, xr_time))
+			hand_mesh->root_transform = pose_matrix(pose) * render_get_cam_final();
+
+		if (oxra_mesh_src[h].isActive) {
+			// Update hand mesh indices when they've changed, or when we've
+			// just switched away from another mesh type
+			if (oxra_mesh_src[h].indexBufferChanged || oxra_mesh_dirty[h]) {
+				for (uint32_t i = 0; i < oxra_mesh_src[h].indexBuffer.indexCountOutput; i+=3) {
+					hand_mesh->inds[i  ] = oxra_mesh_src[h].indexBuffer.indices[i+2];
+					hand_mesh->inds[i+1] = oxra_mesh_src[h].indexBuffer.indices[i+1];
+					hand_mesh->inds[i+2] = oxra_mesh_src[h].indexBuffer.indices[i];
+				}
+				// Sort the faces better rendering with transparency
+				hand_tri_t *tris = (hand_tri_t*)hand_mesh->inds;
+				qsort(tris, oxra_mesh_src[h].indexBuffer.indexCountOutput / 3, sizeof(hand_tri_t), h == handed_left ? hand_tri_t::compare_l : hand_tri_t::compare_r);
+
+				mesh_set_inds(hand_mesh->mesh, hand_mesh->inds, oxra_mesh_src[h].indexBuffer.indexCountOutput);
+			}
+
+			// Update hand mesh vertices when they've changed, or when we've
+			// just switched away from another mesh type
+			if (oxra_mesh_src[h].vertexBufferChanged || oxra_mesh_dirty[h]) {
+				for (uint32_t v = 0; v < oxra_mesh_src[h].vertexBuffer.vertexCountOutput; v++) {
+					memcpy(&hand_mesh->verts[v].pos,  &oxra_mesh_src[h].vertexBuffer.vertices[v].position, sizeof(vec3));
+					memcpy(&hand_mesh->verts[v].norm, &oxra_mesh_src[h].vertexBuffer.vertices[v].normal,   sizeof(vec3));
+				}
+				mesh_set_verts(hand_mesh->mesh, hand_mesh->verts, oxra_mesh_src[h].vertexBuffer.vertexCountOutput, false);
+			}
+
+			// Calculate the UVs from the reference pose if the mesh is dirty
+			if (oxra_mesh_dirty[h]) {
+				XrHandMeshUpdateInfoMSFT mesh_info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
+				mesh_info.handPoseType = XR_HAND_POSE_TYPE_REFERENCE_OPEN_PALM_MSFT;
+				mesh_info.time         = xr_time;
+				xr_extensions.xrUpdateHandMeshMSFT(oxra_hand_tracker[h], &mesh_info, &oxra_mesh_src[h]);
+
+				// Calculate UVs roughly by using their polar coordinates,
+				// Y axis is distance from the origin, and X axis is based on
+				// the angle from one side to the other.
+				for (uint32_t i = 0; i < oxra_mesh_src[h].vertexBuffer.vertexCountOutput; i++) {
+					vec2 pt = {
+						oxra_mesh_src[h].vertexBuffer.vertices[i].position.x,
+						oxra_mesh_src[h].vertexBuffer.vertices[i].position.y };
+					float angle = atan2f(fabsf(pt.y), h==handed_left?-pt.x:pt.x) * rad2deg;
+					float mag   = fmaxf(0, fminf(pt.y*2, sqrtf(pt.x*pt.x + pt.y*pt.y)));
+
+					hand_mesh->verts[i].uv = { 
+						(fminf(125, fmaxf(55, angle))-55)/70.0f, 
+						1-(fminf(1,mag / .17f)) };
+				}
+			}
+			oxra_mesh_dirty[h] = false;
+		}
+	}
 }
 
 }

@@ -9,6 +9,9 @@ using System;
 using Android.Graphics;
 using Java.Lang;
 using System.Threading.Tasks;
+using Android.Support.V4.Content;
+using Android;
+using Android.Support.V4.App;
 
 namespace StereoKitTest_Android
 {
@@ -71,6 +74,11 @@ namespace StereoKitTest_Android
 				SKSettings settings = app.Settings;
 				settings.androidActivity = activityHandle;
 				settings.assetsFolder    = "";
+
+				// For requesting permission to use the Microphone
+				if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
+					ActivityCompat.RequestPermissions(this, new string[] { Manifest.Permission.RecordAudio }, 1);
+
 				if (!SK.Initialize(settings))
 					return;
 				app.Init();

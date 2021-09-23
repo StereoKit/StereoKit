@@ -3,7 +3,7 @@ layout: default
 title: V
 description: This is a collection of vector initialization shorthands. Since math can often get a little long to write, saving a few characters here and there can make a difference in readability. This also comes with some swizzles to make things even shorter! I also don't love the 'new' keyword on Vectors, and this eliminates that.  For example. instead of new Vec3(2.0f, 2.0f, 2.0f) or even Vec3.One * 2.0f, you could write V.XXX(2.0f)
 ---
-# V
+# static class V
 
 This is a collection of vector initialization shorthands.
 Since math can often get a little long to write, saving a few

@@ -48,7 +48,7 @@ namespace StereoKit
 
 	/// <summary>Information about a hand!</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Hand {
+	public class Hand {
 		/// <summary>This is a 2D array with 25 HandJoints. You can get the
 		/// right joint by `finger*5 + joint`, but really, just use Hand.Get
 		/// or Hand[] instead. See Hand.Get for more info!</summary>
@@ -62,6 +62,15 @@ namespace StereoKit
 		/// is to the outside of the right hand, and to the inside of the
 		/// left hand. </summary>
 		public  Pose        palm;
+		/// <summary>This is an approximation of where the center of a 
+		/// 'pinch' gesture occurs, and is used internally by StereoKit for
+		/// some tasks, such as UI. For simulated hands, this position will
+		/// give you the most stable pinch location possible. For real hands,
+		/// it'll be pretty close to the stablest point you'll get. This is
+		/// especially important for when the user begins and ends their 
+		/// pinch action, as you'll often see a lot of extra movement in the 
+		/// fingers then.</summary>
+		public  Vec3        pinchPt;
 		/// <summary>Is this a right hand, or a left hand?</summary>
 		public  Handed      handed;
 		/// <summary>Is the hand being tracked by the sensors right now?
@@ -162,7 +171,7 @@ namespace StereoKit
 	/// information, buttons, analog sticks and triggers! There's also a Menu
 	/// button that's tracked separately at Input.ContollerMenu.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Controller
+	public class Controller
 	{
 		/// <summary>The grip pose of the controller. This approximately
 		/// represents the center of the hand's position. Check `trackedPos`
@@ -291,6 +300,8 @@ namespace StereoKit
 		static List<EventListener> listeners   = new List<EventListener>();
 		static bool                initialized = false;
 		static InputEventCallback  callback;
+		static Hand[]              hands       = new Hand[2] { new Hand(), new Hand() };
+		static Controller[]        controllers = new Controller[2] { new Controller(), new Controller() };
 
 		/// <summary>If the device has eye tracking hardware and the app has
 		/// permission to use it, then this is the most recently tracked eye
@@ -322,8 +333,22 @@ namespace StereoKit
 		/// </summary>
 		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
 
+		/// <summary>Gets raw controller input data from the system. Note that
+		/// not all buttons provided here are guaranteed to be present on the
+		/// user's physical controller. Controllers are also not guaranteed to
+		/// be available on the system, and are never simulated.</summary>
+		/// <param name="handed">The handedness of the controller to get the
+		/// state of.</param>
+		/// <returns>A reference to a class that contains state information 
+		/// about the indicated controller.</returns>
 		public static Controller Controller(Handed handed)
-			=> Marshal.PtrToStructure<Controller>(NativeAPI.input_controller(handed));
+		{
+			Marshal.PtrToStructure(NativeAPI.input_controller(handed), controllers[(int)handed]);
+			return controllers[(int)handed];
+		}
+		/// <summary>This is the state of the controller's menu button, this
+		/// is not attached to any particular hand, so it's independent of a
+		/// left or right controller.</summary>
 		public static BtnState ControllerMenuButton
 			=> NativeAPI.input_controller_menu();
 
@@ -340,8 +365,15 @@ namespace StereoKit
 		/// <param name="handed">Do you want the left or the right hand?
 		/// </param>
 		/// <returns>A copy of the entire set of hand data!</returns>
-		public static Hand Hand(Handed handed)
-			=> Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+		public static Hand Hand(Handed handed) {
+			Marshal.PtrToStructure(NativeAPI.input_hand(handed), hands[(int)handed]);
+			return hands[(int)handed];
+		}
+		public static Hand Hand(int handed){
+			Marshal.PtrToStructure(NativeAPI.input_hand((Handed)handed), hands[handed]);
+			return hands[handed];
+		}
+
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is
 		/// great for simulating input for testing purposes. It will remain
@@ -392,6 +424,31 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+
+		/// <summary>Returns the next text character from the list of
+		/// characters that have been entered this frame! Will return '\0' if
+		/// there are no more characters left in the list. These are from the
+		/// system's text entry system, and so can be unicode, will repeat if
+		/// their 'key' is held down, and could arrive from something like a
+		/// copy/paste operation.
+		/// 
+		/// If you wish to reset this function to begin at the start of the
+		/// read list on the next call, you can call `Input.TextReset`.</summary>
+		/// <returns>The next character in this frame's list, or '\0' if none
+		/// remain.</returns>
+		public static char TextConsume() 
+			=> (char)NativeAPI.input_text_consume();
+		/// <summary>Resets the `Input.TextConsume` read list back to the
+		/// start.
+		/// For example, `UI.Input` will _not_ call `TextReset`, so it
+		/// effectively will consume those characters, hiding them from
+		/// any `TextConsume` calls following it. If you wanted to check the
+		/// current frame's text, but still allow `UI.Input` to work later on
+		/// in the frame, you would read everything with `TextConsume`, and
+		/// then `TextReset` afterwards to reset the read list for the 
+		/// following `UI.Input`.</summary>
+		public static void TextReset() 
+			=> NativeAPI.input_text_reset();
 
 		public static int PointerCount(InputSource filter = InputSource.Any) 
 			=> NativeAPI.input_pointer_count(filter);

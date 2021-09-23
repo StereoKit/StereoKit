@@ -5,6 +5,10 @@ description: This is the size of the hand, calculated by measuring the length of
 ---
 # [Hand]({{site.url}}/Pages/Reference/Hand.html).size
 
+<div class='signature' markdown='1'>
+float size
+</div>
+
 ## Description
 This is the size of the hand, calculated by measuring
 the length of the middle finger! This is calculated by adding the

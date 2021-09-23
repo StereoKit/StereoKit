@@ -40,18 +40,11 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat     (in Vec3 from, in Vec3 at);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat_up  (in Vec3 from, in Vec3 at, in Vec3 up);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_inverse      (in Matrix a, out Matrix out_matrix);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_mul          (in Matrix a, in Matrix b, out Matrix out_matrix);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_mul_point    (in Matrix transform, in Vec3 point);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_mul_direction(in Matrix transform, in Vec3 direction);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_mul_pose     (in Matrix transform, in Pose pose);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix matrix_trs          (in Vec3 position, in Quat orientation, in Vec3 scale);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   matrix_trs_out      (out Matrix out_result, in Vec3 position, in Quat orientation, in Vec3 scale);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_translation(in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_scale      (in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat   matrix_extract_rotation   (in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_extract_pose       (in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_transform_pose  (Matrix transform, Pose pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix matrix_trs             (in Vec3 position, in Quat orientation, in Vec3 scale);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_scale   (in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat   matrix_extract_rotation(in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_extract_pose    (in Matrix transform);
 
 		///////////////////////////////////////////
 
@@ -99,6 +92,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_find         (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_create       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_id       (IntPtr mesh, string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_addref       (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_release      (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_keep_data(IntPtr mesh, bool keep_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_get_keep_data(IntPtr mesh);
@@ -109,7 +103,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_draw_inds(IntPtr mesh, int index_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_bounds   (IntPtr mesh, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds mesh_get_bounds   (IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Vec3 out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Ray out_pt);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_plane       (Vec2 dimensions, Vec3 plane_normal, Vec3 plane_top_direction, int subdivisions = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_cube        (Vec3 dimensions, int subdivisions = 0);
@@ -121,13 +115,15 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_find                (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create              (TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, int data_size, bool srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file         (string file, bool srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file_arr     (string[] files, int file_count, bool srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    bool srgb_data, IntPtr lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    bool srgb_data, out SphericalHarmonics lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, bool srgb_data, IntPtr lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, bool srgb_data, out SphericalHarmonics lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, UIntPtr data_size, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color32      ([In] Color32[] data, int width, int height, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color128     ([In] Color[]   data, int width, int height, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file         (string file, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file_arr     (string[] files, int file_count, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    int srgb_data, IntPtr lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    int srgb_data, out SphericalHarmonics lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, IntPtr lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_id              (IntPtr texture, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_release             (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, IntPtr data);
@@ -137,7 +133,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, ulong out_data_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, UIntPtr out_data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution, float light_spot_size_pct, float light_spot_intensity);
@@ -153,18 +149,19 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_find   (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create (string file);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   font_release(IntPtr font);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_get_tex(IntPtr font);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_find        (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create      (string file);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create_files(string[] file, int file_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   font_release     (IntPtr font);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_get_tex     (IntPtr font);
 
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_find        (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file (string filename);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, ulong data_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, UIntPtr data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern string shader_get_name    (IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_get_name    (IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_release     (IntPtr shader);
 
 		///////////////////////////////////////////
@@ -189,7 +186,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          material_get_queue_offset(IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float  value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_color       (IntPtr material, string name, Color  value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector      (IntPtr material, string name, Vec4   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector4     (IntPtr material, string name, Vec4   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector3     (IntPtr material, string name, Vec3   value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector2     (IntPtr material, string name, Vec2   value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_matrix      (IntPtr material, string name, Matrix value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture     (IntPtr material, string name, IntPtr value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture_id  (IntPtr material, ulong  id,   IntPtr value);
@@ -208,12 +207,12 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style       (IntPtr font, float character_height, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_shader(IntPtr font, float character_height, IntPtr shader, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle text_make_style_mat   (IntPtr font, float character_height, IntPtr material, Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_add_at           (string text, in Matrix transform, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_add_in           (string text, in Matrix transform, Vec2 size, TextFit fit, int style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2      text_size             (string text, int style);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style       (IntPtr font, float character_height, Color color);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_shader(IntPtr font, float character_height, IntPtr shader, Color color);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_mat   (IntPtr font, float character_height, IntPtr material, Color color);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void      text_add_at_16        (string text, in Matrix transform, uint style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern float     text_add_in_16        (string text, in Matrix transform, Vec2 size, TextFit fit, uint style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float off_x = 0, float off_y = 0, float off_z = 0);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_16          (string text, uint style);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_char_height(TextStyle style);
@@ -235,25 +234,55 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find         (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh  (IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem   (string filename, [In] byte[] data, int data_size, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file  (string filename, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id       (IntPtr model, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release      (IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_material (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_mesh     (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_get_transform(IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_material (IntPtr model, int subset, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_mesh     (IntPtr model, int subset, IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_transform(IntPtr model, int subset, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_remove_subset(IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_subset   (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find              (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_copy              (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh       (IntPtr mesh, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, UIntPtr data_size, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file       (string filename, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id            (IntPtr model, string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_addref            (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release           (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_name          (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_material      (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_mesh          (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_get_transform     (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_material      (IntPtr model, int subset, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_mesh          (IntPtr model, int subset, IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_transform     (IntPtr model, int subset, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_remove_subset     (IntPtr model, int subset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_subset        (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_named_subset  (IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count      (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds(IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds   (IntPtr model, in Bounds bounds);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds   (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_ray_intersect     (IntPtr model, Ray model_space_ray, out Ray out_pt);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add                (IntPtr model,             string name, Matrix model_transform, IntPtr mesh, IntPtr material, int solid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add_child          (IntPtr model, int parent, string name, Matrix local_transform, IntPtr mesh, IntPtr material, int solid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_find               (IntPtr model, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_sibling            (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_parent             (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_child              (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_count              (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_index              (IntPtr model, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_visual_count       (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_visual_index       (IntPtr model, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_iterate            (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_root           (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_name           (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_solid          (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_material       (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_mesh           (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_model(IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_local(IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_name           (IntPtr model, int node, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_solid          (IntPtr model, int node, int solid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_material       (IntPtr model, int node, IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_mesh           (IntPtr model, int node, IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_model(IntPtr model, int node, Matrix transform_model_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_local(IntPtr model, int node, Matrix transform_local_space);
 
 		///////////////////////////////////////////
 
@@ -348,6 +377,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker        (PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallback on_callback, [In] FileFilter[] filters, int filter_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_file_picker_close  ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_file_picker_visible();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out UIntPtr out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, UIntPtr size);
 
 		///////////////////////////////////////////
 
@@ -363,17 +394,28 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint     input_text_consume ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_reset   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, bool visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_solid   (Handed hand, bool solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_material(Handed hand, IntPtr material);
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool world_has_bounds            ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2 world_get_bounds_size       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_get_bounds_pose       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose world_from_perception_anchor(IntPtr perception_spatial_anchor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_has_bounds                ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   world_get_bounds_size           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_get_bounds_pose           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_spatial_graph        ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_perception_anchor    (IntPtr perception_spatial_anchor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    world_try_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    world_try_from_perception_anchor(IntPtr perception_spatial_anchor, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_raycast                   (Ray ray, out Ray out_intersection);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_enabled     (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_occlusion_enabled     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_raycast_enabled       (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_raycast_enabled       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_material    (IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr world_get_occlusion_material    ();
 
 		///////////////////////////////////////////
 
@@ -390,50 +432,57 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_quadrant_size_verts ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_quadrant_size_mesh  (IntPtr ref_mesh, float overflow);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_show_volumes        (bool show);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_enable_far_interact (bool enable);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_far_interact_enabled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_settings            (UISettings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_color           (Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_element_visual  (UIVisual element_visual, IntPtr mesh, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_layout_area   (Vec3 start, Vec2 dimensions);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2  ui_area_remaining();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_nextline      ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_sameline      ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float ui_line_height   ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_reserve_box   (Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_space         (float space);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong ui_push_id       (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_pop_id        ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong ui_stack_hash    (string str);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_push_surface  (Pose surface_pose, Vec3 layout_start, Vec2 layout_dimensions);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_surface   ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_layout_area   (Vec3 start, Vec2 dimensions);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern Vec2  ui_area_remaining();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_nextline      ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_sameline      ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern float ui_line_height   ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_reserve_box   (Vec2 size);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_space         (float space);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_push_id_16    (string id);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern ulong ui_push_idi      (int id);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_id        ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_stack_hash_16 (string str);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting (Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_button_behavior(Vec3 window_relative_pos, Vec2 size, ulong id, out float finger_offset, out BtnState button_state, out BtnState focus_state);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_volume_at      (string id, Bounds bounds);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_interact_volume_at(Bounds bounds, out Handed out_hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button_at      (string text, Vec3 window_relative_pos, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button_round_at(string text, IntPtr image_sprite, Vec3 window_relative_pos, float diameter);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_toggle_at      (string text, ref bool pressed, Vec3 window_relative_pos, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_hslider_at     (string id,   ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_volume_at_16      (string id, Bounds bounds);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern BtnState ui_interact_volume_at(Bounds bounds, out Handed out_hand);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_at_16      (string text, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_round_at_16(string text, IntPtr image_sprite, Vec3 window_relative_pos, float diameter);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_at_16      (string text, ref bool pressed, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_16     (string id,   ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_hseparator  ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label       (string text, bool use_padding);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_label_sz    (string text, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_text        (string text);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_image       (IntPtr sprite_image, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button      (string text);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button_sz   (string text, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_button_round(string id, IntPtr image, float diameter);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_toggle      (string text, ref bool pressed);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_toggle_sz   (string text, ref bool pressed, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_input       (string id,   StringBuilder buffer, int buffer_size, Vec2 size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_hslider     (string id,   ref float value, float min, float max, float step, float width = 0);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_handle_begin(string text, ref Pose movement, Bounds handle, bool draw, UIMove move_type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_handle_end  ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_window_begin(string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_window_end  ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_hseparator     ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16       (string text, bool use_padding);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16    (string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_16        (string text);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image          (IntPtr sprite_image, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16      (string text);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16   (string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16(string id, IntPtr image, float diameter);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16      (string text, ref bool pressed);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16   (string text, ref bool pressed, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model          (IntPtr model, Vec2 ui_size, float model_scale);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16     (string id,   ref float value, float min, float max, float step, float width, UIConfirm confirm_method);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16(string text, ref Pose movement, Bounds handle, bool draw, UIMove move_type);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end     ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16(string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_window_end     ();
 	}
 }

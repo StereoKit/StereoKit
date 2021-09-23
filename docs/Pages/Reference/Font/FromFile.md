@@ -6,13 +6,13 @@ description: Loads a font and creates a font asset from it.
 # [Font]({{site.url}}/Pages/Reference/Font.html).FromFile
 
 <div class='signature' markdown='1'>
-static [Font]({{site.url}}/Pages/Reference/Font.html) FromFile(string fontFile)
+static [Font]({{site.url}}/Pages/Reference/Font.html) FromFile(String[] fontFiles)
 </div>
 
 |  |  |
 |--|--|
-|string fontFile|A file address for the font! For example: 'C:/Windows/Fonts/segoeui.ttf'|
-|RETURNS: [Font]({{site.url}}/Pages/Reference/Font.html)|A font from the given file, or null if the file failed to load properly!|
+|String[] fontFiles|A list of file addresses for the font! For             example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,             StereoKit will look in the next font file in the list.|
+|RETURNS: [Font]({{site.url}}/Pages/Reference/Font.html)|A font from the given files, or null if all of the files failed to load properly! If any of the given files sucessfully loads, then this font will be a valid asset.|
 
 Loads a font and creates a font asset from it.
 
@@ -32,7 +32,7 @@ and a base color. Overloads for MakeStyle can allow you to
 override the default font shader, or provide a specific Material.
 ```csharp
 style = Text.MakeStyle(
-	Font.FromFile("C:/Windows/Fonts/Arial.ttf") ?? Default.Font, 
+	Font.FromFile("C:/Windows/Fonts/times.ttf") ?? Default.Font, 
 	2 * U.cm,
 	Color.HSV(0.55f, 0.62f, 0.93f));
 ```

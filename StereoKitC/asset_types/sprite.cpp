@@ -40,10 +40,12 @@ void sprite_set_id(sprite_t sprite, const char *id) {
 material_t sprite_create_material(int index_id) {
 	char id[64];
 	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);
-	material_t result = material_create(shader_find(default_id_shader_unlit));
+	shader_t   shader = shader_find(default_id_shader_unlit_clip);
+	material_t result = material_create(shader);
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
 	material_set_cull        (result, cull_none);
+	shader_release(shader);
 
 	return result;
 }
@@ -51,7 +53,7 @@ material_t sprite_create_material(int index_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
-	assets_addref(image->header);
+	tex_addref(image);
 	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
 	result->texture = image;
@@ -123,6 +125,12 @@ sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char 
 	sprite_t result = sprite_create(image, type, atlas_id);
 	tex_release(image);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void sprite_addref(sprite_t sprite) {
+	assets_addref(sprite->header);
 }
 
 ///////////////////////////////////////////

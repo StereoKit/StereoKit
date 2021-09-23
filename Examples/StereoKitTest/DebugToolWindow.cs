@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,6 +16,7 @@ class DemoAnim<T>
 	Func<T,T,float,T>     _lerp;
 	float                 _startTime;
 	float                 _updated;
+	float                 _speed = 1;
 	T                     _curr;
 
 	public T Current { get {
@@ -22,7 +24,7 @@ class DemoAnim<T>
 		if (now == _updated)
 			return _curr;
 
-		float elapsed = now - _startTime;
+		float elapsed = (now - _startTime) * _speed;
 		_updated = now;
 		_curr = Sample(elapsed);
 
@@ -30,6 +32,7 @@ class DemoAnim<T>
 	} }
 
 	public bool Playing => (Time.Totalf - _startTime) <= _frames[_frames.Length-1].time;
+	public float Duration => _frames[_frames.Length - 1].time;
 
 	public DemoAnim(Func<T, T, float, T> lerp, params (float,T)[] frames)
 	{
@@ -38,8 +41,9 @@ class DemoAnim<T>
 		_startTime = Time.Totalf;
 	}
 
-	public void Play()
+	public void Play(float speed = 1)
 	{
+		_speed = speed;
 		_startTime = Time.Totalf;
 	}
 
@@ -73,6 +77,7 @@ class DebugToolWindow
 	static Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
 	static bool screenshots  = false;
 	static int  screenshotId = 1;
+	static AvatarSkeleton avatar = null;
 
 	static DemoAnim<Pose>        headAnim = null;
 	static DemoAnim<HandJoint[]> handAnim = null;
@@ -94,6 +99,12 @@ class DebugToolWindow
 			if (UI.Button("Play2")) handAnim.Play();
 		}
 		UI.Toggle("Enable Screenshots", ref screenshots);
+		bool showAvatar = avatar != null;
+		if (UI.Toggle("Show Skeleton", ref showAvatar))
+		{
+			if (showAvatar) avatar = SK.AddStepper<AvatarSkeleton>();
+			else { SK.RemoveStepper(avatar); avatar = null; }
+		}
 		UI.WindowEnd();
 
 		if (screenshots) TakeScreenshots();
@@ -230,7 +241,7 @@ class DebugToolWindow
 		Log.Info(result);
 	}
 
-	static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)
+	public static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)
 	{
 		HandJoint[] result = new HandJoint[a.Length];
 		for (int i = 0; i < a.Length; i++) { 
