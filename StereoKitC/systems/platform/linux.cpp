@@ -51,8 +51,8 @@ Window                  x_root;
 // Start input
 ///////////////////////////////////////////
 
-key_  linux_xk_map_upper[255] = {};
-key_  linux_xk_map_lower[255] = {};
+key_  linux_xk_map_upper[256] = {};
+key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
