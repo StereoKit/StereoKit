@@ -68,7 +68,7 @@ void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_Home] = key_home;
 	linux_xk_map_upper[0xFF & XK_Left] = key_left;
 	linux_xk_map_upper[0xFF & XK_Up] = key_up;
-	linux_xk_map_upper[0xFF & XK_Right] = key_down;
+	linux_xk_map_upper[0xFF & XK_Right] = key_right;
 	linux_xk_map_upper[0xFF & XK_Down] = key_down;
 	linux_xk_map_upper[0xFF & XK_End] = key_end;
 	linux_xk_map_upper[0xFF & XK_Begin] = key_home;
