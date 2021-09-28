@@ -1540,7 +1540,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Activation bounds sizing
 	float activation_plane = button_depth + skui_finger_radius;
-	vec3  activation_start = window_relative_pos + vec3{ (float)(((value-min) / (max-min)) * -(size.x-button_size.x)), size.y / -4, -activation_plane };
+	vec3  activation_start = window_relative_pos + vec3{ (float)(((value-min) / (max-min)) * -(size.x-button_size.x)), -(size.y/2 - button_size.y/2), -activation_plane };
 	vec3  activation_size  = vec3{ button_size.x, button_size.y, 0.0001f };
 	vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
 	vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
@@ -1564,11 +1564,14 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			bool pressed  = finger_offset < button_depth / 2;
 			button_state  = ui_active_set(hand, id, pressed);
 			finger_offset = fminf(fmaxf(2*mm2m, finger_offset), button_depth);
-		} else {
+		} else if (focus_state & button_state_just_inactive) {
 			button_state = ui_active_set(hand, id, false);
 		}
 		finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
+		activation_size.x *= 2;
+		sustain_size  = vec3{ activation_size.x,  activation_size.y, activation_plane };
+		sustain_start = vec3{ activation_start.x, activation_start.y, 0 };
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
 			sustain_start,    sustain_size,
@@ -1576,18 +1579,20 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		const hand_t *h     = input_hand((handed_)hand);
-		button_state_ pinch = h->pinch_state;
-		button_state = ui_active_set(hand, id, pinch & button_state_active);
-		// Focus can get lost if the user is dragging outside the box, so set
-		// it to focused if it's still active.
-		focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
-		vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
-		int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
-		finger_x = pinch_local.x;
+		if (hand != -1) {
+			const hand_t *h     = input_hand((handed_)hand);
+			button_state_ pinch = h->pinch_state;
+			button_state = ui_active_set(hand, id, pinch & button_state_active);
+			// Focus can get lost if the user is dragging outside the box, so set
+			// it to focused if it's still active.
+			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
+			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
+			int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
+			finger_x = pinch_local.x;
 
-		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-			finger_x = finger_x / (1 + scale_step * snap_scale);
+			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
+				finger_x = finger_x / (1 + scale_step * snap_scale);
+			}
 		}
 	}
 
