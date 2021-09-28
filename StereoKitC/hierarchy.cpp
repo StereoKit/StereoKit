@@ -85,6 +85,12 @@ quat hierarchy_to_local_rotation(const quat &world_orientation) {
 
 ///////////////////////////////////////////
 
+pose_t hierarchy_to_local_pose(const pose_t &world_pose) {
+	return matrix_transform_pose(*hierarchy_to_local(), world_pose);
+}
+
+///////////////////////////////////////////
+
 vec3 hierarchy_to_world_point(const vec3 &local_pt) {
 	return matrix_transform_pt(*hierarchy_to_world(), local_pt);
 }
@@ -99,6 +105,12 @@ vec3 hierarchy_to_world_direction(const vec3 &local_dir) {
 
 quat hierarchy_to_world_rotation(const quat &local_orientation) {
 	return matrix_transform_quat(*hierarchy_to_world(), local_orientation);
+}
+
+///////////////////////////////////////////
+
+pose_t hierarchy_to_world_pose(const pose_t &local_pose) {
+	return matrix_transform_pose(*hierarchy_to_world(), local_pose);
 }
 
 } // namespace sk

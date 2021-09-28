@@ -61,6 +61,14 @@
 		public static Quat ToLocal(Quat worldOrientation)
 			=> NativeAPI.hierarchy_to_local_rotation(worldOrientation);
 
+
+		/// <summary>Converts a world pose relative to the current 
+		/// hierarchy stack into local space!</summary>
+		/// <param name="worldPose">A pose in world space.</param>
+		/// <returns>The provided pose now in world space!</returns>
+		public static Pose ToLocal(Pose worldPose)
+			=> NativeAPI.hierarchy_to_local_pose(worldPose);
+
 		/// <summary>Converts a local point relative to the current hierarchy
 		/// stack into world space!</summary>
 		/// <param name="localPoint">A point in local space.</param>
@@ -83,5 +91,12 @@
 		/// <returns>The provided rotation now in world space!</returns>
 		public static Quat ToWorld(Quat localOrientation)
 			=> NativeAPI.hierarchy_to_world_rotation(localOrientation);
+
+		/// <summary>Converts a local pose relative to the current 
+		/// hierarchy stack into world space!</summary>
+		/// <param name="localPose">A pose in local space.</param>
+		/// <returns>The provided pose now in world space!</returns>
+		public static Pose ToWorld(Pose localPose)
+			=> NativeAPI.hierarchy_to_world_pose(localPose);
 	}
 }
