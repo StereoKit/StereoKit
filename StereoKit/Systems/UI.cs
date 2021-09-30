@@ -207,8 +207,11 @@ namespace StereoKit
 		/// <param name="text">The text you wish to display, there's no 
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
-		public static void Text(string text)
-			=> NativeAPI.ui_text_16(text);
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most english text is
+		/// aligned.</param>
+		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
+			=> NativeAPI.ui_text_16(text, textAlign);
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>

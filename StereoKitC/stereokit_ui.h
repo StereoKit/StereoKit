@@ -103,8 +103,8 @@ SK_API void     ui_label          (const char     *text, bool32_t use_padding sk
 SK_API void     ui_label_16       (const char16_t *text, bool32_t use_padding sk_default(true));
 SK_API void     ui_label_sz       (const char     *text, vec2 size);
 SK_API void     ui_label_sz_16    (const char16_t *text, vec2 size);
-SK_API void     ui_text           (const char     *text);
-SK_API void     ui_text_16        (const char16_t *text);
+SK_API void     ui_text           (const char     *text, text_align_ text_align sk_default(text_align_top_left));
+SK_API void     ui_text_16        (const char16_t *text, text_align_ text_align sk_default(text_align_top_left));
 SK_API void     ui_image          (sprite_t image, vec2 size);
 SK_API bool32_t ui_button         (const char     *text);
 SK_API bool32_t ui_button_16      (const char16_t *text);

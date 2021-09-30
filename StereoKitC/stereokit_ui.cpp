@@ -1264,17 +1264,17 @@ void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16
 ///////////////////////////////////////////
 
 template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
-void ui_text_g(const C *text) {
+void ui_text_g(const C *text, text_align_ text_align) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_layout_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
-	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
+	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align, at.x, at.y, at.z);
 
 	ui_layout_reserve(size);
 }
-void ui_text   (const char     *text) { ui_text_g<char,     text_add_in   >(text); }
-void ui_text_16(const char16_t *text) { ui_text_g<char16_t, text_add_in_16>(text); }
+void ui_text   (const char     *text, text_align_ text_align) { ui_text_g<char,     text_add_in   >(text, text_align); }
+void ui_text_16(const char16_t *text, text_align_ text_align) { ui_text_g<char16_t, text_add_in_16>(text, text_align); }
 
 ///////////////////////////////////////////
 
