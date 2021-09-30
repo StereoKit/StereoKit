@@ -445,14 +445,18 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_area     (Vec3 start, Vec2 dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_layout_remaining();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   ui_layout_at       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0);
+
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_push_surface  (Pose surface_pose, Vec3 layout_start, Vec2 layout_dimensions);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_surface   ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_layout_area   (Vec3 start, Vec2 dimensions);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern Vec2  ui_area_remaining();
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_nextline      ();
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_sameline      ();
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern float ui_line_height   ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_reserve_box   (Vec2 size);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_space         (float space);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_push_id_16    (string id);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern ulong ui_push_idi      (int id);

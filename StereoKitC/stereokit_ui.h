@@ -58,14 +58,18 @@ SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, mat
 SK_API void     ui_push_text_style     (text_style_t  style);
 SK_API void     ui_pop_text_style      ();
 
+SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
+SK_API vec2     ui_layout_remaining();
+SK_API vec3     ui_layout_at       ();
+SK_API bounds_t ui_layout_last     ();
+SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false));
+
 SK_API void     ui_push_surface  (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
 SK_API void     ui_pop_surface   ();
-SK_API void     ui_layout_area   (vec3 start, vec2 dimensions);
-SK_API vec2     ui_area_remaining();
+SK_API vec2     ui_area_remaining(); // TODO: remove in v0.4, prefer ui_layout_remaining
 SK_API void     ui_nextline      ();
 SK_API void     ui_sameline      ();
 SK_API float    ui_line_height   ();
-SK_API void     ui_reserve_box   (vec2 size);
 SK_API void     ui_space         (float space);
 SK_API uint64_t ui_push_id       (const char     *id);
 SK_API uint64_t ui_push_id_16    (const char16_t *id);

@@ -108,6 +108,7 @@ float skui_fontsize = 10*mm2m;
 
 vec3  skui_prev_offset;
 float skui_prev_line_height;
+bounds_t skui_recent_layout;
 
 uint64_t skui_anim_id;
 float    skui_anim_time;
@@ -118,13 +119,7 @@ color128 skui_palette[5];
 ///////////////////////////////////////////
 
 // Layout
-void ui_layout_box (vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding = true);
-void ui_reserve_box(vec2 size);
-
-void ui_nextline    ();
-void ui_sameline    ();
-void ui_reserve_box (vec2 size);
-void ui_space       (float space);
+void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
 
 // Interaction
 bool32_t      ui_in_box                  (vec3 pt1, vec3 pt2, float radius, bounds_t box);
@@ -788,7 +783,7 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
-vec2 ui_area_remaining() {
+vec2 ui_layout_remaining() {
 	layer_t &layer = skui_layers.last();
 	return vec2{
 		fmaxf(-layer.max_x, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
@@ -798,40 +793,74 @@ vec2 ui_area_remaining() {
 
 ///////////////////////////////////////////
 
-void ui_layout_exact(vec2 content_size, vec3 &out_position) {
-	layer_t &layer = skui_layers.last();
-	out_position = layer.offset;
+vec2 ui_area_remaining() {
+	return ui_layout_remaining();
+}
 
-	// If this is not the first element, and it goes outside the active window
-	if (out_position.x != -skui_settings.padding &&
-		layer.size.x   != 0                      &&
-		out_position.x - content_size.x < layer.offset_initial.x - layer.size.x + skui_settings.padding)
+///////////////////////////////////////////
+
+vec3 ui_layout_at() {
+	return skui_layers.last().offset;
+}
+
+///////////////////////////////////////////
+
+bounds_t ui_layout_last() {
+	return skui_recent_layout;
+}
+
+///////////////////////////////////////////
+
+void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_size) {
+	if (size.x == 0) size.x = ui_layout_remaining().x - (add_padding ? skui_settings.padding*2 : 0);
+	if (size.y == 0) size.y = ui_line_height();
+
+	layer_t &layer = skui_layers.last();
+
+	vec3 final_pos  = layer.offset;
+	vec2 final_size = add_padding
+		? size + vec2{ skui_settings.padding, skui_settings.padding }*2
+		: size;
+
+	// If this is not the first element, and it goes outside the active window,
+	// then we'll want to start this element on the next line down
+	if (final_pos.x  != -skui_settings.padding &&
+		layer.size.x != 0                      &&
+		final_pos.x - final_size.x < layer.offset_initial.x - layer.size.x + skui_settings.padding)
 	{
 		ui_nextline();
-		out_position = layer.offset;
+		final_pos = layer.offset;
 	}
+
+	// Track the sizes for this line, for ui_layout_remaining, as well as
+	// window auto-sizing.
+	if (layer.max_x > layer.offset.x - final_size.x)
+		layer.max_x = layer.offset.x - final_size.x;
+	if (layer.line_height < final_size.y)
+		layer.line_height = final_size.y;
+
+	// Advance the UI layout position
+	layer.offset -= vec3{ final_size.x + skui_settings.gutter, 0, 0 };
+
+	ui_nextline();
+
+	// Store this as the most recent layout
+	skui_recent_layout = {
+		final_pos - vec3{final_size.x/2, final_size.y/2, 0}, 
+		{final_size.x, final_size.y, 0} 
+	};
+
+	*out_position = skui_recent_layout.center + skui_recent_layout.dimensions/2;
+	*out_size     = final_size;
 }
 
 ///////////////////////////////////////////
 
-void ui_layout_box(vec2 content_size, vec3 &out_position, vec2 &out_final_size, bool32_t use_content_padding) {
-	out_final_size = content_size;
-	if (use_content_padding)
-		out_final_size += vec2{ skui_settings.padding, skui_settings.padding }*2;
-
-	ui_layout_exact(out_final_size, out_position);
-}
-
-///////////////////////////////////////////
-
-void ui_reserve_box(vec2 size) {
-	layer_t &layer = skui_layers.last();
-	if (layer.max_x > layer.offset.x - size.x)
-		layer.max_x = layer.offset.x - size.x;
-	if (layer.line_height < size.y)
-		layer.line_height = size.y;
-
-	layer.offset -= vec3{ size.x + skui_settings.gutter, 0, 0 };
+bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding) {
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, add_padding, &final_pos, &final_size);
+	return skui_recent_layout;
 }
 
 ///////////////////////////////////////////
@@ -1153,15 +1182,12 @@ void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ positio
 ///////////////////////////////////////////
 
 void ui_hseparator() {
-	vec3 offset = skui_layers.last().offset;
-	vec2 size   = { ui_area_remaining().x, text_style_get_char_height(skui_font_stack.last()) * 0.4f };
-
-	// Draw the UI
-	ui_reserve_box(size);
-	ui_nextline();
+	vec3 pos;
+	vec2 size;
+	ui_layout_reserve_sz({ 0, skui_fontsize*0.4f }, false, &pos, &size);
 
 	ui_cube(
-		offset, vec3{ size.x, size.y, size.y/2.0f }, 
+		pos, vec3{ size.x, size.y, size.y/2.0f }, 
 		skui_mat, skui_palette[0]);
 }
 
@@ -1169,13 +1195,11 @@ void ui_hseparator() {
 
 template<typename C>
 void ui_label_sz_g(const C *text, vec2 size) {
-	vec3 offset;
-	size.x -= skui_settings.gutter;
-	ui_layout_exact(size, offset);
-	ui_reserve_box(size);
-	ui_nextline();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz({ size.x - skui_settings.gutter, size.y }, false, &final_pos, &final_size);
 
-	ui_text_in(offset - vec3{0,0,skui_settings.depth/2}, size, text, text_align_top_left, text_align_center_left);
+	ui_text_in(final_pos - vec3{0,0,skui_settings.depth/2}, final_size, text, text_align_top_left, text_align_center_left);
 }
 void ui_label_sz   (const char     *text, vec2 size) { ui_label_sz_g<char    >(text, size); }
 void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(text, size); }
@@ -1184,15 +1208,13 @@ void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(t
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_label_g(const C *text, bool32_t use_padding) {
-	vec3  offset   = skui_layers.last().offset;
-	vec2  txt_size = text_size_t(text, skui_font_stack.last());
-	vec2  size     = txt_size;
-	float pad      = use_padding ? skui_settings.gutter : 0;
+	vec3 final_pos;
+	vec2 final_size;
+	vec2 txt_size = text_size_t(text, skui_font_stack.last());
+	ui_layout_reserve_sz(txt_size, use_padding, &final_pos, &final_size);
 
-	ui_layout_box (size, offset, size, use_padding);
-	ui_reserve_box(size);
-	ui_nextline();
-	ui_text_in(offset - vec3{pad, pad, skui_settings.depth/2 }, txt_size, text, text_align_top_left, text_align_center_left);
+	float pad = use_padding ? skui_settings.gutter : 0;
+	ui_text_in(final_pos - vec3{pad,0,skui_settings.depth/2}, final_size, text, text_align_top_left, text_align_center_left);
 }
 void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char,     text_size   >(text, use_padding); }
 void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t, text_size_16>(text, use_padding); }
@@ -1202,13 +1224,12 @@ void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16
 template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
 void ui_text_g(const C *text) {
 	vec3  offset   = skui_layers.last().offset;
-	vec2  size     = { ui_area_remaining().x, 0 };
+	vec2  size     = { ui_layout_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
 	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align_top_left, at.x, at.y, at.z);
 
-	ui_reserve_box(size);
-	ui_nextline();
+	ui_layout_reserve(size);
 }
 void ui_text   (const char     *text) { ui_text_g<char,     text_add_in   >(text); }
 void ui_text_16(const char16_t *text) { ui_text_g<char16_t, text_add_in_16>(text); }
@@ -1216,18 +1237,16 @@ void ui_text_16(const char16_t *text) { ui_text_g<char16_t, text_add_in_16>(text
 ///////////////////////////////////////////
 
 void ui_image(sprite_t image, vec2 size) {
-	float aspect     = sprite_get_aspect(image);
-	vec3  offset     = skui_layers.last().offset;
-	vec2  final_size = vec2{
+	float aspect = sprite_get_aspect(image);
+	size = vec2{
 		size.x==0 ? size.y*aspect : size.x, 
 		size.y==0 ? size.x/aspect : size.y };
 
-	vec2 layout_size;
-	ui_layout_box (final_size, offset, layout_size, false);
-	ui_reserve_box(layout_size);
-	ui_nextline();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw(image, matrix_trs(offset - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }));
+	sprite_draw(image, matrix_trs(final_pos - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }));
 }
 
 ///////////////////////////////////////////
@@ -1260,12 +1279,11 @@ bool32_t ui_button_at_16(const char16_t *text, vec3 window_relative_pos, vec2 si
 
 template<typename C>
 bool32_t ui_button_sz_g(const C *text, vec2 size) {
-	vec3 offset;
-	ui_layout_exact(size, offset);
-	ui_reserve_box(size);
-	ui_nextline   ();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	return ui_button_at(text, offset, size);
+	return ui_button_at(text, final_pos, final_size);
 }
 bool32_t ui_button_sz   (const char     *text, vec2 size) { return ui_button_sz_g<char    >(text, size); }
 bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_sz_g<char16_t>(text, size); }
@@ -1274,13 +1292,11 @@ bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_sz_
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_button_g(const C *text) {
-	vec3 offset;
-	vec2 size;
-	ui_layout_box (text_size_t(text, skui_font_stack.last()), offset, size);
-	ui_reserve_box(size);
-	ui_nextline   ();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(text_size_t(text, skui_font_stack.last()), true, &final_pos, &final_size);
 
-	return ui_button_at(text, offset, size);
+	return ui_button_at(text, final_pos, final_size);
 }
 bool32_t ui_button   (const char     *text) { return ui_button_g<char,     text_size   >(text); }
 bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_size_16>(text); }
@@ -1320,13 +1336,11 @@ bool32_t ui_toggle_at_16(const char16_t *text, bool32_t &pressed, vec3 window_re
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_toggle_g(const C *text, bool32_t &pressed) {
-	vec3 offset;
-	vec2 size;
-	ui_layout_box (text_size_t(text, skui_font_stack.last()), offset, size);
-	ui_reserve_box(size);
-	ui_nextline   ();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(text_size_t(text, skui_font_stack.last()), true, &final_pos, &final_size);
 
-	return ui_toggle_at(text, pressed, offset, size);
+	return ui_toggle_at(text, pressed, final_pos, final_size);
 }
 bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_g<char,     text_size   >(text, pressed); }
 bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_g<char16_t, text_size_16>(text, pressed); }
@@ -1335,12 +1349,11 @@ bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggl
 
 template<typename C>
 bool32_t ui_toggle_sz_g(const C *text, bool32_t &pressed, vec2 size) {
-	vec3 offset;
-	ui_layout_exact(size, offset);
-	ui_reserve_box(size);
-	ui_nextline   ();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	return ui_toggle_at(text, pressed, offset, size);
+	return ui_toggle_at(text, pressed, final_pos, final_size);
 }
 bool32_t ui_toggle_sz   (const char     *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char    >(text, pressed, size); }
 bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char16_t>(text, pressed, size); }
@@ -1379,14 +1392,14 @@ template<typename C>
 bool32_t ui_button_round_g(const C *id, sprite_t image, float diameter) {
 	if (diameter == 0)
 		diameter = ui_line_height();
-	vec3 offset;
 	vec2 size = vec2{diameter, diameter};
 	size = vec2_one * fmaxf(size.x, size.y);
-	ui_layout_box (size, offset, size, false);
-	ui_reserve_box(size);
-	ui_nextline   ();
 
-	return ui_button_round_at(id, image, offset, size.x);
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
+
+	return ui_button_round_at(id, image, final_pos, final_size.x);
 }
 bool32_t ui_button_round   (const char     *id, sprite_t image, float diameter) { return ui_button_round_g<char>(id, image, diameter); }
 bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter) { return ui_button_round_g<char16_t>(id, image, diameter); }
@@ -1394,7 +1407,7 @@ bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter) 
 ///////////////////////////////////////////
 
 void ui_model(model_t model, vec2 ui_size, float model_scale) {
-	if (ui_size.x == 0) ui_size.x = ui_area_remaining().x - (skui_settings.padding*2);
+	if (ui_size.x == 0) ui_size.x = ui_layout_remaining().x - (skui_settings.padding*2);
 	if (ui_size.y == 0) {
 		bounds_t bounds = model_get_bounds(model);
 		ui_size.y = ui_size.x * (bounds.dimensions.x / bounds.dimensions.y);
@@ -1403,14 +1416,14 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 		bounds_t bounds = model_get_bounds(model);
 		model_scale = fminf(ui_size.x / bounds.dimensions.x, ui_size.y / bounds.dimensions.y);
 	}
+	vec2 size = ui_size + vec2{ skui_settings.padding, skui_settings.padding }*2;
 
-	vec3 offset = skui_layers.last().offset;
-	vec2 size   = ui_size + vec2{ skui_settings.padding, skui_settings.padding }*2;
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	ui_reserve_box(size);
-	size = size / 2;
-	ui_model_at(model, { offset.x - size.x, offset.y - size.y, offset.z }, vec3_one * model_scale, { 1,1,1,1 });
-	ui_nextline();
+	final_size = final_size / 2;
+	ui_model_at(model, { final_pos.x - final_size.x, final_pos.y - final_size.y, final_pos.z }, vec3_one * model_scale, { 1,1,1,1 });
 }
 
 ///////////////////////////////////////////
@@ -1422,18 +1435,18 @@ inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { r
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
-	if (size.x == 0) size.x = ui_area_remaining().x;
-	if (size.y == 0) size.y = ui_line_height();
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
 	uint64_t id_hash  = ui_stack_hash(id);
 	bool     result   = false;
-	vec3     offset   = skui_layers.last().offset;
-	vec3     box_size = vec3{ size.x, size.y, skui_settings.depth/2 };
+	vec3     box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
 
 	// Find out if the user is trying to focus this UI element
 	button_state_ focus;
 	int32_t       hand;
-	ui_box_interaction_1h_poke(id_hash, offset, box_size, offset, box_size, &focus, &hand);
+	ui_box_interaction_1h_poke(id_hash, final_pos, box_size, final_pos, box_size, &focus, &hand);
 	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
 
 	if (state & button_state_just_active) {
@@ -1497,17 +1510,15 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	}
 
 	// Render the input UI
-	ui_reserve_box(size);
-	ui_draw_el(ui_vis_input, offset, vec3{ size.x, size.y, skui_settings.depth/2 }, skui_palette[2] * color_blend);
-	ui_text_in(              offset - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {size.x-skui_settings.padding*2,size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
+	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, skui_palette[2] * color_blend);
+	ui_text_in(              final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {final_size.x-skui_settings.padding*2,final_size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
 	
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
-		float carat_at = skui_settings.padding + fminf(text_size_t(buffer, skui_font_stack.last()).x, size.x - skui_settings.padding * 2);
+		float carat_at = skui_settings.padding + fminf(text_size_t(buffer, skui_font_stack.last()).x, final_size.x - skui_settings.padding * 2);
 		float line     = ui_line_height() * 0.5f;
-		ui_cube(offset - vec3{ carat_at,size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
+		ui_cube(final_pos - vec3{ carat_at,final_size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
 	}
-	ui_nextline();
 
 	return result;
 }
@@ -1680,17 +1691,11 @@ bool32_t ui_hslider_at_f64_16(const char16_t *id_text, double &value, double min
 
 template<typename C, typename N>
 bool32_t ui_hslider_g(const C *name, N &value, N min, N max, N step, float width, ui_confirm_ confirm_method) {
-	vec3 offset = skui_layers.last().offset;
-	if (width == 0)
-		width = ui_area_remaining().x;
-	vec2 size = { width, ui_line_height() };
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz({width, 0}, false, &final_pos, &final_size);
 
-	// Draw the UI
-	ui_reserve_box(size);
-	ui_nextline();
-	
-	// return ui_hslider_at(name, value, min, max, step, offset, size, confirm_method);
-	return ui_hslider_at_g<C, N>(name, value, min, max, step, offset, size, confirm_method);
+	return ui_hslider_at_g<C, N>(name, value, min, max, step, final_pos, final_size, confirm_method);
 }
 
 bool32_t ui_hslider   (const char     *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method) { return ui_hslider_g<char, float>(name, value, min, max, step, width, confirm_method); }
