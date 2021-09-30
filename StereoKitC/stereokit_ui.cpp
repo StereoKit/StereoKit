@@ -503,6 +503,7 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, color128 color) {
 
 void ui_push_text_style(text_style_t style) {
 	skui_font_stack.add(style);
+	skui_fontsize = text_style_get_char_height(style);
 }
 
 ///////////////////////////////////////////
@@ -513,6 +514,7 @@ void ui_pop_text_style() {
 		return;
 	}
 	skui_font_stack.pop();
+	skui_fontsize = text_style_get_char_height(skui_font_stack.last());
 }
 
 ///////////////////////////////////////////
