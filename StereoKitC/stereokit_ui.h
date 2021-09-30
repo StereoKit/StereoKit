@@ -82,9 +82,11 @@ SK_API bool32_t ui_is_interacting (handed_ hand);
 SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, sk_ref(float) finger_offset, sk_ref(button_state_) button_state, sk_ref(button_state_) focus_state);
 
 SK_API void          ui_model_at          (model_t model, vec3 start, vec3 size, color128 color);
-SK_API bool32_t      ui_volume_at         (const char     *id, bounds_t bounds);
-SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds);
-SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);
+SK_API button_state_ ui_volumei_at        (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
+SK_API button_state_ ui_volumei_at_16     (const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
+SK_API bool32_t      ui_volume_at         (const char     *id, bounds_t bounds); // TODO: remove in v0.4
+SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds); // TODO: remove in v0.4
+SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);  // TODO: remove in v0.4
 SK_API bool32_t      ui_button_at         (const char     *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_at_16      (const char16_t *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter);

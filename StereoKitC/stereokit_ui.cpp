@@ -539,9 +539,6 @@ bool ui_init() {
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
 	skui_font_stack.add( text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[4] )) );
-	
-	skui_layers  .add({});
-	skui_id_stack.add({ HASH_FNV64_START });
 
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
@@ -552,19 +549,13 @@ bool ui_init() {
 	ui_set_element_visual(ui_vis_window_head, skui_win_top, nullptr);
 	ui_set_element_visual(ui_vis_window_body, skui_win_bot, nullptr);
 
+	skui_id_stack.add({ HASH_FNV64_START });
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void ui_update() {
-	if (skui_layers.count > 1 || skui_layers.count == 0)
-		log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack.count > 1 || skui_id_stack.count == 0)
-		log_err("ui: Mismatching number of id push/pop calls!");
-
-	skui_layers[0] = {};
-
 	skui_finger_radius = 0;
 	const matrix *to_local = hierarchy_to_local();
 	for (size_t i = 0; i < handed_max; i++) {
@@ -600,11 +591,6 @@ void ui_update() {
 			skui_hand[i].pinch_pt_world_prev = skui_hand[i].pinch_pt_world;
 		}
 
-		skui_layers[0].finger_pos   [i] = skui_hand[i].finger;
-		skui_layers[0].finger_prev  [i] = skui_hand[i].finger_prev;
-		skui_layers[0].pinch_pt_pos [i] = skui_hand[i].pinch_pt;
-		skui_layers[0].pinch_pt_prev[i] = skui_hand[i].pinch_pt_prev;
-
 		// draw hand rays
 		skui_hand[i].ray_visibility = math_lerp(skui_hand[i].ray_visibility,
 			was_ray_enabled && skui_enable_far_interact && skui_hand[i].ray_enabled && !skui_hand[i].ray_discard ? 1.0f : 0.0f,
@@ -624,6 +610,18 @@ void ui_update() {
 		skui_hand[i].ray_discard = false;
 	}
 	skui_finger_radius /= handed_max;
+
+	ui_push_surface(pose_identity);
+}
+
+///////////////////////////////////////////
+
+void ui_update_late() {
+	ui_pop_surface();
+	if (skui_layers.count != 0)
+		log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack.count > 1 || skui_id_stack.count == 0)
+		log_err("ui: Mismatching number of id push/pop calls!");
 }
 
 ///////////////////////////////////////////
@@ -1004,6 +1002,8 @@ button_state_ ui_focus_set(int32_t hand, uint64_t for_el_id, bool32_t focused, f
 ///////////////////////////////////////////
 
 button_state_ ui_active_set(int32_t hand, uint64_t for_el_id, bool32_t active) {
+	if (hand == -1) return button_state_inactive;
+
 	bool was_active = skui_hand[hand].active_prev == for_el_id;
 	bool is_active  = false;
 
@@ -1120,6 +1120,46 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 	matrix mx = matrix_trs(start, quat_identity, size);
 	render_add_model(model, mx, color);
 }
+
+///////////////////////////////////////////
+
+template<typename C>
+button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
+	uint64_t      id_hash = ui_stack_hash(id);
+	button_state_ result  = button_state_inactive;
+	button_state_ focus   = button_state_inactive;
+	int32_t       hand    = -1;
+
+	vec3 start = bounds.center + bounds.dimensions / 2;
+	if (interact_type == ui_confirm_push) {
+		ui_box_interaction_1h_poke(id_hash,
+			start, bounds.dimensions,
+			start, bounds.dimensions,
+			&focus, &hand);
+	} else {
+		ui_box_interaction_1h_pinch(id_hash,
+			start, bounds.dimensions,
+			start, bounds.dimensions,
+			&focus, &hand);
+	}
+
+	bool active = focus & button_state_active && !(focus & button_state_just_inactive);
+	if (interact_type != ui_confirm_push && hand != -1) {
+		active = input_hand((handed_)hand)->pinch_state & button_state_active;
+		// Focus can get lost if the user is dragging outside the box, so set
+		// it to focused if it's still active.
+		focus = ui_focus_set(hand, id_hash, active || focus & button_state_active, 0);
+	}
+	result = ui_active_set(hand, id_hash, active);
+
+	if (out_opt_hand        != nullptr) *out_opt_hand        = (handed_)hand;
+	if (out_opt_focus_state != nullptr) *out_opt_focus_state = focus;
+	return result;
+}
+button_state_ ui_volumei_at(const char *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) 
+{return ui_volumei_at_g<char>(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
+button_state_ ui_volumei_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state)
+{ return ui_volumei_at_g<char16_t>(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
 
 ///////////////////////////////////////////
 

@@ -148,8 +148,17 @@ namespace StereoKit
 		/// the current Hierarchy.</param>
 		/// <returns>True on the first frame a finger has entered the volume,
 		/// false otherwise.</returns>
+		[Obsolete("This overload will be removed in v0.4, prefer any other overload of this method.")]
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
+
+		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
+			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, out focusState);
+
+		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
+			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
+		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
+			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
 
 		/// <summary>This watches a volume of space for pinch interaction 
 		/// events! If a hand is inside the space indicated by the bounds,
@@ -167,6 +176,7 @@ namespace StereoKit
 		/// provides a pinch state within this volume. That means that if
 		/// both hands are pinching in this volume, it will provide the pinch
 		/// state of the Right hand.</returns>
+		[Obsolete("This method will be removed in v0.4, use UI.VolumeAt.")]
 		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
 			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
 
