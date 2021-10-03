@@ -4,8 +4,9 @@
 
 namespace sk {
 
-bool ui_init    ();
-void ui_update  ();
-void ui_shutdown();
+bool ui_init       ();
+void ui_update     ();
+void ui_update_late();
+void ui_shutdown   ();
 
 }

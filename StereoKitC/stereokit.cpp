@@ -114,7 +114,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_platform_begin  .func_update     = platform_step_begin;
 	sys_platform_render .func_update     = platform_step_end;
 
-	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World"};
+	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World", "UILate"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
 
@@ -133,7 +133,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	system_t sys_ui = { "UI" };
 	const char *ui_deps       [] = {"Defaults"};
-	const char *ui_update_deps[] = {"Input"};
+	const char *ui_update_deps[] = {"Input", "FrameBegin"};
 	sys_ui.init_dependencies       = ui_deps;
 	sys_ui.init_dependency_count   = _countof(ui_deps);
 	sys_ui.update_dependencies     = ui_update_deps;
@@ -142,6 +142,13 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_ui.func_update             = ui_update;
 	sys_ui.func_shutdown           = ui_shutdown;
 	systems_add(&sys_ui);
+
+	system_t sys_ui_late = { "UILate" };
+	const char *ui_late_update_deps[] = {"App"};
+	sys_ui_late.update_dependencies     = ui_late_update_deps;
+	sys_ui_late.update_dependency_count = _countof(ui_late_update_deps);
+	sys_ui_late.func_update             = ui_update_late;
+	systems_add(&sys_ui_late);
 
 	system_t sys_physics = { "Physics" };
 	const char *physics_deps       [] = {"Defaults"};

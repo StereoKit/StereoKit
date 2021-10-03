@@ -1571,15 +1571,37 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 
 ///////////////////////////////////////////
 
+bool skg_can_make_mips(skg_tex_fmt_ format) {
+	switch (format) {
+	case skg_tex_fmt_bgra32:
+	case skg_tex_fmt_bgra32_linear:
+	case skg_tex_fmt_rgba32:
+	case skg_tex_fmt_rgba32_linear: 
+	case skg_tex_fmt_rgba64u:
+	case skg_tex_fmt_rgba64s:
+	case skg_tex_fmt_rgba128:
+	case skg_tex_fmt_depth32:
+	case skg_tex_fmt_r32:
+	case skg_tex_fmt_depth16:
+	case skg_tex_fmt_r16:
+	case skg_tex_fmt_r8: return true;
+	default: return false;
+	}
+}
+
+///////////////////////////////////////////
+
 void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_tex_fmt_ format, int32_t width, int32_t height, uint32_t mip_levels) {
 	const void *mip_data = curr_data;
 	int32_t     mip_w    = width;
 	int32_t     mip_h    = height;
 	for (uint32_t m = 1; m < mip_levels; m++) {
 		tex_mem[m] = {};
-		switch (format) {
+		switch (format) { // When adding a new format here, also add it to skg_can_make_mips
+		case skg_tex_fmt_bgra32:
+		case skg_tex_fmt_bgra32_linear:
 		case skg_tex_fmt_rgba32:
-		case skg_tex_fmt_rgba32_linear: 
+		case skg_tex_fmt_rgba32_linear:
 			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_rgba64u:
@@ -1602,6 +1624,7 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 		case skg_tex_fmt_r8:
 			skg_downsample_1((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
+		default: skg_log(skg_log_warning, "Unsupported texture format for mip maps!"); break;
 		}
 		mip_data = (void*)tex_mem[m].pSysMem;
 		tex_mem[m].SysMemPitch = (UINT)(skg_tex_fmt_size(format) * mip_w);
@@ -1707,7 +1730,11 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	tex->height      = height;
 	tex->array_count = data_frame_count;
 	tex->multisample = multisample;
-	bool mips = tex->mips == skg_mip_generate && (width & (width - 1)) == 0 && (height & (height - 1)) == 0;
+	bool mips = 
+		tex->mips == skg_mip_generate
+		&& skg_can_make_mips(tex->format)
+		&& (width  & (width  - 1)) == 0
+		&& (height & (height - 1)) == 0;
 
 	uint32_t mip_levels = (mips ? skg_mip_count(width, height) : 1);
 	uint32_t px_size    = skg_tex_fmt_size(tex->format);

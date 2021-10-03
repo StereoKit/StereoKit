@@ -37,15 +37,15 @@ namespace StereoKit
 		/// on Default.ShaderFont.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeight">Height of a text glpyh in meters.
-		/// TODO: find what text glyph specifically!</param>
+		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="colorGamma">The gamma space color of the text
 		/// style. This will be embedded in the vertex color of the text
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeight, Color colorGamma)
-			=> NativeAPI.text_make_style(font._fontInst, characterHeight, colorGamma);
+		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Color colorGamma)
+			=> NativeAPI.text_make_style(font._fontInst, characterHeightMeters, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -56,8 +56,8 @@ namespace StereoKit
 		/// on the provided Shader.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeight">Height of a text glpyh in meters.
-		/// TODO: find what text glyph specifically!</param>
+		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="shader">This style will create and use a unique
 		/// Material based on the Shader that you provide here.</param>
 		/// <param name="colorGamma">The gamma space color of the text
@@ -65,8 +65,8 @@ namespace StereoKit
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeight, Shader shader, Color colorGamma)
-			=> NativeAPI.text_make_style_shader(font._fontInst, characterHeight, shader._inst, colorGamma);
+		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Shader shader, Color colorGamma)
+			=> NativeAPI.text_make_style_shader(font._fontInst, characterHeightMeters, shader._inst, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -80,8 +80,8 @@ namespace StereoKit
 		/// Shader, or takes neither a Shader nor a Material!</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeight">Height of a text glpyh in meters.
-		/// TODO: find what text glyph specifically!</param>
+		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="material">Which material should be used to render
 		/// the text with? Note that this does NOT duplicate the material, so
 		/// some parameters of this Material instance will get overwritten, 
@@ -93,8 +93,8 @@ namespace StereoKit
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeight, Material material, Color colorGamma)
-			=> NativeAPI.text_make_style_mat(font._fontInst, characterHeight, material._inst, colorGamma);
+		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Material material, Color colorGamma)
+			=> NativeAPI.text_make_style_mat(font._fontInst, characterHeightMeters, material._inst, colorGamma);
 
 		/// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
 		/// <param name="text">What text should be drawn?</param>
