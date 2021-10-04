@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -127,6 +127,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="asset_types\animation.cpp" />
     <ClCompile Include="asset_types\assets.cpp" />
     <ClCompile Include="asset_types\font.cpp" />
     <ClCompile Include="asset_types\material.cpp" />
@@ -187,6 +188,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File $(Soluti
     <ClCompile Include="tools\file_picker.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="asset_types\animation.h" />
     <ClInclude Include="asset_types\assets.h" />
     <ClInclude Include="asset_types\font.h" />
     <ClInclude Include="asset_types\material.h" />

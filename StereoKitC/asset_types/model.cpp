@@ -16,6 +16,7 @@ namespace sk {
 
 model_t model_create() {
 	model_t result = (_model_t*)assets_allocate(asset_type_model);
+	result->anim_inst.anim_id = -1;
 	return result;
 }
 
@@ -49,6 +50,7 @@ model_t model_copy(model_t model) {
 	result->nodes        = model->nodes  .copy();
 	result->bounds       = model->bounds;
 	result->nodes_used   = model->nodes_used;
+	result->anim_inst.anim_id = -1;
 	for (size_t i = 0; i < result->visuals.count; i++) {
 		material_addref(result->visuals[i].material);
 		mesh_addref    (result->visuals[i].mesh);
@@ -572,7 +574,7 @@ void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 
 void _model_node_update_transforms(model_t model, model_node_id node) {
 	if (model->nodes[node].parent >= 0)
-		model->nodes[node].transform_model = model->nodes[model->nodes[node].parent].transform_model * model->nodes[node].transform_local;
+		model->nodes[node].transform_model = model->nodes[node].transform_local * model->nodes[model->nodes[node].parent].transform_model;
 	else
 		model->nodes[node].transform_model = model->nodes[node].transform_local;
 
@@ -612,6 +614,45 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 void model_node_set_transform_local(model_t model, model_node_id node, matrix transform_local_space) {
 	model->nodes[node].transform_local = transform_local_space;
 	_model_node_update_transforms(model, node);
+}
+
+///////////////////////////////////////////
+
+bool32_t model_play_anim(model_t model, const char *animation_name) {
+	int32_t idx = -1;
+	for (size_t i = 0; i < model->anim_data.anims.count; i++) {
+		if (string_eq(model->anim_data.anims[i].name, animation_name)) 		{
+			idx = i;
+			break;
+		}
+	}
+	if (idx >= 0)
+		model_play_anim_id(model, idx);
+	return idx >= 0;
+}
+
+///////////////////////////////////////////
+
+void model_play_anim_id(model_t model, int32_t id) {
+	if (id < 0 || id >= model->anim_data.anims.count) {
+		log_err("Attempted to play an invalid animation id.");
+		return;
+	}
+	if (model->anim_inst.curve_last_keyframe == nullptr) {
+		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[id].curves.count);
+	}
+	if (model->anim_inst.node_transforms == nullptr) {
+		model->anim_inst.node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
+		for (size_t i = 0; i < model->nodes.count; i++) {
+			matrix_decompose(model->nodes[i].transform_local,
+				model->anim_inst.node_transforms[i].translation,
+				model->anim_inst.node_transforms[i].scale,
+				model->anim_inst.node_transforms[i].rotation);
+		}
+	}
+	model->anim_inst.start_time = time_getf();
+	model->anim_inst.last_update = model->anim_inst.start_time;
+	model->anim_inst.anim_id = id;
 }
 
 } // namespace sk

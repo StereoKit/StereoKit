@@ -6,6 +6,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../libraries/ferr_hash.h"
+#include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 
 #ifdef _MSC_VER
@@ -420,6 +421,55 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 ///////////////////////////////////////////
 
+anim_t gltf_parseanim(const cgltf_animation *anim, model_t model) {
+	anim_t result = {};
+	result.name = string_copy(anim->name);
+
+	for (size_t c = 0; c < anim->channels_count; c++) {
+		cgltf_animation_channel *ch = &anim->channels[c];
+
+		anim_curve_t curve = {};
+		curve.node_id = model_node_find(model, ch->target_node->name);
+
+		switch (ch->sampler->interpolation) {
+		case cgltf_interpolation_type_linear:       curve.interpolation = anim_interpolation_linear; break;
+		case cgltf_interpolation_type_step:         curve.interpolation = anim_interpolation_step;   break;
+		case cgltf_interpolation_type_cubic_spline: curve.interpolation = anim_interpolation_cubic;  break;
+		}
+		switch (ch->target_path) {
+		case cgltf_animation_path_type_translation: curve.applies_to = anim_element_translation; break;
+		case cgltf_animation_path_type_rotation:    curve.applies_to = anim_element_rotation;    break;
+		case cgltf_animation_path_type_scale:       curve.applies_to = anim_element_scale;       break;
+		case cgltf_animation_path_type_weights:     curve.applies_to = anim_element_weights;     break;
+		}
+
+		size_t output_size    = cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
+		curve.keyframe_count  = cgltf_accessor_unpack_floats(ch->sampler->input,  nullptr, 0);
+		curve.keyframe_times  = sk_malloc_t(float, curve.keyframe_count);
+		curve.keyframe_values = sk_malloc(sizeof(float) * output_size);
+		cgltf_accessor_unpack_floats(ch->sampler->input,                curve.keyframe_times,  curve.keyframe_count);
+		cgltf_accessor_unpack_floats(ch->sampler->output, (cgltf_float*)curve.keyframe_values, output_size);
+
+		if (result.duration < curve.keyframe_times[curve.keyframe_count-1])
+			result.duration = curve.keyframe_times[curve.keyframe_count-1];
+		result.curves.add(curve);
+	}
+
+	log_infof("Animation: %s, %.2fs", result.name, result.duration);
+	/*for (size_t s = 0; s < data->animations[i].samplers_count; s++) {
+	cgltf_animation_sampler *sm = &data->animations[i].samplers[s];
+	cgltf_size size = cgltf_accessor_unpack_floats(sm->output, nullptr, 0);
+	float *flts = sk_malloc_t(float, size);
+	cgltf_accessor_unpack_floats(sm->output, flts, size);
+	log_infof("%d", sm->interpolation);
+	free(flts);
+	}*/
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 matrix gltf_build_node_matrix(cgltf_node *curr) {
 	matrix mat;
 	if (!curr->has_matrix) {
@@ -503,19 +553,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	// Load each animation
 	for (int32_t i = 0; i < data->animations_count; i++) {
-		for (size_t c = 0; c < data->animations[i].channels_count; c++) {
-			cgltf_animation_channel *ch = &data->animations[i].channels[c];
-			log_info(ch->target_node->name);
-			ch->target_path
-		}
-		for (size_t s = 0; s < data->animations[i].samplers_count; s++) {
-			cgltf_animation_sampler *sm = &data->animations[i].samplers[s];
-			cgltf_size size = cgltf_accessor_unpack_floats(sm->output, nullptr, 0);
-			float *flts = sk_malloc_t(float, size);
-			cgltf_accessor_unpack_floats(sm->output, flts, size);
-			log_infof("%d", sm->interpolation);
-			free(flts);
-		}
+		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], model) );
 	}
 
 	cgltf_free(data);
