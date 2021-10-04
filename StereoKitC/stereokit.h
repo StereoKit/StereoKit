@@ -721,6 +721,7 @@ SK_API bounds_t   model_get_bounds        (model_t model);
 SK_API bool32_t   model_ray_intersect     (model_t model, ray_t model_space_ray, ray_t *out_pt);
 SK_API bool32_t   model_play_anim         (model_t model, const char *animation_name);
 SK_API void       model_play_anim_id      (model_t model, int32_t id);
+SK_API int32_t    model_anim_count        (model_t model);
 
 SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
 SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));

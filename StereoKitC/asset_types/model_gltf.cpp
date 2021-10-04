@@ -369,6 +369,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
+			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 			material_set_texture(result, "diffuse", parse_tex);
 			tex_release(parse_tex);
@@ -376,6 +377,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
+			if (material->pbr_metallic_roughness.metallic_roughness_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 			material_set_texture(result, "metal", parse_tex);
 			tex_release(parse_tex);
@@ -397,6 +399,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
+		if (material->normal_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "normal", parse_tex);
 		tex_release(parse_tex);
@@ -404,6 +407,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
+		if (material->occlusion_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "occlusion", parse_tex);
 		tex_release(parse_tex);
@@ -411,6 +415,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
+		if (material->emissive_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 		material_set_texture(result, "emission", parse_tex);
 		tex_release(parse_tex);
@@ -454,16 +459,6 @@ anim_t gltf_parseanim(const cgltf_animation *anim, model_t model) {
 			result.duration = curve.keyframe_times[curve.keyframe_count-1];
 		result.curves.add(curve);
 	}
-
-	log_infof("Animation: %s, %.2fs", result.name, result.duration);
-	/*for (size_t s = 0; s < data->animations[i].samplers_count; s++) {
-	cgltf_animation_sampler *sm = &data->animations[i].samplers[s];
-	cgltf_size size = cgltf_accessor_unpack_floats(sm->output, nullptr, 0);
-	float *flts = sk_malloc_t(float, size);
-	cgltf_accessor_unpack_floats(sm->output, flts, size);
-	log_infof("%d", sm->interpolation);
-	free(flts);
-	}*/
 
 	return result;
 }

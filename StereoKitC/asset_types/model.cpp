@@ -640,6 +640,7 @@ void model_play_anim_id(model_t model, int32_t id) {
 	}
 	if (model->anim_inst.curve_last_keyframe == nullptr) {
 		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[id].curves.count);
+		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[id].curves.count);
 	}
 	if (model->anim_inst.node_transforms == nullptr) {
 		model->anim_inst.node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
@@ -653,6 +654,12 @@ void model_play_anim_id(model_t model, int32_t id) {
 	model->anim_inst.start_time = time_getf();
 	model->anim_inst.last_update = model->anim_inst.start_time;
 	model->anim_inst.anim_id = id;
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_count(model_t model) {
+	return model->anim_data.anims.count;
 }
 
 } // namespace sk

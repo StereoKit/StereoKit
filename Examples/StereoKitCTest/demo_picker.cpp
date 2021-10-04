@@ -34,6 +34,9 @@ void demo_picker_on_pick(void *, bool32_t confirmed, const char *filename) {
 	picker_model  = model_create_file(filename);
 	picker_bounds = model_get_bounds(picker_model);
 
+	if (model_anim_count(picker_model) > 0)
+		model_play_anim_id(picker_model, 0);
+
 	float mag = vec3_magnitude(picker_bounds.dimensions);
 	picker_scale = (1.0f / mag) * 0.2f;
 	picker_bounds.center     *= picker_scale;

@@ -1,5 +1,6 @@
 #include "animation.h"
 #include "model.h"
+#include "../sk_math.h"
 
 namespace sk {
 
@@ -12,7 +13,8 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if (                                          curve->keyframe_times[prev_index  ] <= t && curve->keyframe_times[prev_index+1] > t) return prev_index;
 		if (prev_index + 2 < curve->keyframe_count && curve->keyframe_times[prev_index+1] <= t && curve->keyframe_times[prev_index+2] > t) return prev_index + 1;
 	}
-	if (t < curve->keyframe_times[0]) return 0;
+	if (t < curve->keyframe_times[0] || curve->keyframe_count == 1) return 0;
+	if (t > curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 1;
 
 	int32_t l = 0, r = curve->keyframe_count - 1;
 	while (l <= r) {
@@ -30,7 +32,7 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 
 vec3 anim_curve_sample_f3(const anim_curve_t *curve, int32_t *prev_index, float t) {
 	int32_t frame = anim_frame(curve, *prev_index, t);
-	float   pct   = (t - curve->keyframe_times[frame]) / (curve->keyframe_times[frame + 1] - curve->keyframe_times[frame]);
+	float   pct   = math_saturate((t - curve->keyframe_times[frame]) / (curve->keyframe_times[frame + 1] - curve->keyframe_times[frame]));
 	vec3   *pts   = (vec3*)curve->keyframe_values;
 	*prev_index = frame;
 
@@ -46,7 +48,7 @@ vec3 anim_curve_sample_f3(const anim_curve_t *curve, int32_t *prev_index, float 
 
 quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float t) {
 	int32_t frame = anim_frame(curve, *prev_index, t);
-	float   pct   = (t - curve->keyframe_times[frame]) / (curve->keyframe_times[frame + 1] - curve->keyframe_times[frame]);
+	float   pct   = math_saturate((t - curve->keyframe_times[frame]) / (curve->keyframe_times[frame + 1] - curve->keyframe_times[frame]));
 	quat   *pts   = (quat*)curve->keyframe_values;
 	*prev_index = frame;
 
