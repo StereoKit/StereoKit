@@ -60,39 +60,31 @@ quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float 
 
 ///////////////////////////////////////////
 
-static void anim_update_transforms(model_t model, model_node_id node, bool dirty_world) {
-	while (node != -1) {
-		// Only update this node if the animation touched the transform
-		bool dirty = dirty_world;
-		anim_transform_t *tr = &model->anim_inst.node_transforms[node];
+static void anim_update_transforms(model_t model, model_node_id node_id, bool dirty_world) {
+	while (node_id != -1) {
+		model_node_t     *node  = &model->nodes[node_id];
+		anim_transform_t *tr    = &model->anim_inst.node_transforms[node_id];
+		bool              dirty = dirty_world;
+
+		// Only update this node_id if the animation touched the transform
 		if (tr->dirty) {
-			model->nodes[node].transform_local = matrix_trs(tr->translation, tr->rotation, tr->scale);
-			tr->dirty = false;
-			dirty     = true;
+			node->transform_local = matrix_trs(tr->translation, tr->rotation, tr->scale);
+			tr->dirty             = false;
+			dirty                 = true;
 		}
 
-		// If this node or a parent node was touched, we need to update the world
+		// If this node_id or a parent node_id was touched, we need to update the world
 		// transform.
 		if (dirty == true) {
-			if (model->nodes[node].parent >= 0)
-				model->nodes[node].transform_model = model->nodes[node].transform_local * model->nodes[model->nodes[node].parent].transform_model;
-			else
-				model->nodes[node].transform_model = model->nodes[node].transform_local;
+			if (node->parent >= 0) node->transform_model = node->transform_local * model->nodes[node->parent].transform_model;
+			else                   node->transform_model = node->transform_local;
 
-			if (model->nodes[node].visual >= 0)
-				model->visuals[model->nodes[node].visual].transform_model = model->nodes[node].transform_model;
+			if (node->visual >= 0)
+				model->visuals[node->visual].transform_model = node->transform_model;
 		}
-		/*vec3 p1 = matrix_transform_pt (model->nodes[node].transform_model, vec3_zero);
-		vec3 p2 = matrix_transform_dir(model->nodes[node].transform_model, vec3_forward);
-		vec3 p3 = matrix_transform_dir(model->nodes[node].transform_model, vec3_right);
-		vec3 p4 = matrix_transform_dir(model->nodes[node].transform_model, vec3_up);
-		line_add(p1, p1 + p2*0.5f, { 0,0,255,255 }, {255,255,255,255}, 0.01f);
-		line_add(p1, p1 + p3*0.5f, { 255,0,0,255 }, {255,255,255,255}, 0.01f);
-		line_add(p1, p1 + p4*0.5f, { 0,255,0,255 }, {255,255,255,255}, 0.01f);
-		text_add_at(model->nodes[node].name, model->nodes[node].transform_model, 0, text_align_center_left); */
 
-		anim_update_transforms(model, model->nodes[node].child, dirty);
-		node = model->nodes[node].sibling;
+		anim_update_transforms(model, node->child, dirty);
+		node_id = node->sibling;
 	}
 }
 
