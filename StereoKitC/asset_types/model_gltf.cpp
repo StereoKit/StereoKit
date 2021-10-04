@@ -391,6 +391,20 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 			material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
 		if (material_has_param(result, "roughness", material_param_float))
 			material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
+	} else if (material->has_pbr_specular_glossiness) {
+		log_warnf("[%s] StereoKit doesn't fully support specular/glossy PBR yet.", filename);
+
+		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
+		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
+			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+			material_set_texture(result, "diffuse", parse_tex);
+			tex_release(parse_tex);
+		}
+
+		float *c = material->pbr_specular_glossiness.diffuse_factor;
+		if (material_has_param(result, "color", material_param_color128))
+			material_set_color(result, "color", color_to_gamma({ c[0], c[1], c[2], c[3] }));
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
