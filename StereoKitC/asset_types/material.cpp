@@ -62,20 +62,20 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		else
 			memset(material->args.buffer, 0, buff_size);
 	}
-	if (meta->texture_count > 0) {
-		material->args.texture_count = meta->texture_count;
-		material->args.textures      = sk_malloc_t(tex_t     , meta->texture_count);
-		material->args.texture_binds = sk_malloc_t(skg_bind_t, meta->texture_count);
-		memset(material->args.textures, 0, sizeof(tex_t) * meta->texture_count);
-		for (size_t i = 0; i < meta->texture_count; i++) {
-			material->args.texture_binds[i] = meta->textures[i].bind;
+	if (meta->resource_count > 0) {
+		material->args.texture_count = meta->resource_count;
+		material->args.textures      = sk_malloc_t(tex_t     , meta->resource_count);
+		material->args.texture_binds = sk_malloc_t(skg_bind_t, meta->resource_count);
+		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
+		for (size_t i = 0; i < meta->resource_count; i++) {
+			material->args.texture_binds[i] = meta->resources[i].bind;
 
-			if      (string_eq(meta->textures[i].extra, "white")) material->args.textures[i] = tex_find(default_id_tex);
-			else if (string_eq(meta->textures[i].extra, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
-			else if (string_eq(meta->textures[i].extra, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
-			else if (string_eq(meta->textures[i].extra, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
-			else if (string_eq(meta->textures[i].extra, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
-			else                                                  material->args.textures[i] = tex_find(default_id_tex);
+			if      (string_eq(meta->resources[i].extra, "white")) material->args.textures[i] = tex_find(default_id_tex);
+			else if (string_eq(meta->resources[i].extra, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
+			else if (string_eq(meta->resources[i].extra, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
+			else if (string_eq(meta->resources[i].extra, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
+			else if (string_eq(meta->resources[i].extra, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
+			else                                                   material->args.textures[i] = tex_find(default_id_tex);
 		}
 	}
 }
@@ -220,8 +220,8 @@ void material_set_shader(material_t material, shader_t shader) {
 		}
 
 		// Do the same for textures
-		for (uint32_t i = 0; i < old_shader->shader.meta->texture_count; i++) {
-			material_set_texture(material, old_shader->shader.meta->textures[i].name, old_textures[i]);
+		for (uint32_t i = 0; i < old_shader->shader.meta->resource_count; i++) {
+			material_set_texture(material, old_shader->shader.meta->resources[i].name, old_textures[i]);
 			tex_release(old_textures[i]);
 		}
 
@@ -440,8 +440,8 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 ///////////////////////////////////////////
 
 bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
-	for (uint32_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
-		if (material->shader->shader.meta->textures[i].name_hash == id) {
+	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		if (material->shader->shader.meta->resources[i].name_hash == id) {
 			if (material->args.textures[i] != value) {
 				if (material->args.textures[i] != nullptr)
 					tex_release(material->args.textures[i]);
@@ -476,8 +476,8 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 	uint64_t id = hash_fnv64_string(name);
 
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
-			if (material->shader->shader.meta->textures[i].name_hash == id)
+		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+			if (material->shader->shader.meta->resources[i].name_hash == id)
 				return true;
 		}
 	} else {
@@ -518,8 +518,8 @@ bool32_t material_get_param(material_t material, const char *name, material_para
 
 bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->texture_count; i++) {
-			if (material->shader->shader.meta->textures[i].name_hash == id) {
+		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+			if (material->shader->shader.meta->resources[i].name_hash == id) {
 				memcpy(out_value, &material->args.textures[i], sizeof(tex_t));
 				return true;
 			}

@@ -114,10 +114,10 @@ mesh_t                  render_last_mesh;
 array_t< render_list_t> render_list_stack       = {};
 array_t<_render_list_t> render_lists            = {};
 render_list_t           render_list_active      = -1;
-skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel };
+skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel,                    skg_register_resource };
 
 ///////////////////////////////////////////
 
@@ -408,7 +408,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	// Activate any material buffers we have
 	for (uint16_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel }, 0);
+			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
 	}
 
 	// Sky cubemap is global, and used for reflections with PBR materials
