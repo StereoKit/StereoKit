@@ -61,8 +61,7 @@
 
 		<!-- Shader compile tools -->
 		<Content Pack="true" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />
-		<Content Pack="true" Include="..\Tools\dxil.dll" PackagePath="tools\" />
-		<Content Pack="true" Include="..\Tools\dxcompiler.dll" PackagePath="tools\" />
+		<Content Pack="true" Include="..\Tools\skshaderc" PackagePath="tools\" />
 		<Content Pack="true" Include="..\Tools\include\*.*" PackagePath="tools\include\" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in
