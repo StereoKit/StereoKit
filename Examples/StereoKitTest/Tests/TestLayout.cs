@@ -11,35 +11,33 @@ class TestLayout : ITest
 		Pose pose = new Pose(Vec3.Zero, Quat.LookDir(0,0,1));
 		UI.WindowBegin("Layout", ref pose);
 
-		Bounds layout = UI.LayoutReserve(Vec2.Zero);
-		layout.dimensions.z = U.cm;
+		Bounds layout = UI.LayoutReserve(Vec2.Zero, false, U.cm);
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 		Lines.Add(UI.LayoutAt, UI.LayoutAt + V.XYZ( 0,0,-U.cm * 3 ), Color32.Black, 0.004f);
 
-		layout = UI.LayoutReserve(Vec2.Zero, false);
-		layout.dimensions.z = U.cm;
+		layout = UI.LayoutReserve(Vec2.Zero, false, U.cm);
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 
 
-		layout = UI.LayoutReserve(V.XY(4 * U.cm, 0), false);
-		layout.dimensions.z = U.cm;
+		layout = UI.LayoutReserve(V.XY(4 * U.cm, 0), false, U.cm);
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 
 		UI.SameLine();
-		UI.LayoutReserve(V.XY(4 * U.cm, 0), false);
+		UI.LayoutReserve(V.XY(4 * U.cm, 0), false, U.cm);
 		layout = UI.LayoutLast;
-		layout.dimensions.z = U.cm;
+		layout.center    .z -= U.cm / 2;
+		layout.dimensions.z  = U.cm;
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 
 
 		UI.LayoutReserve(V.XY(4 * U.cm, 0), true);
 		layout = UI.LayoutLast;
-		layout.dimensions.z = U.cm;
+		layout.center    .z -= U.cm / 2;
+		layout.dimensions.z  = U.cm;
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 
 		UI.SameLine();
-		layout = UI.LayoutReserve(V.XY(4 * U.cm, 0), true);
-		layout.dimensions.z = U.cm;
+		layout = UI.LayoutReserve(V.XY(4 * U.cm, 0), true, U.cm);
 		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
 
 

@@ -62,7 +62,7 @@ SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
 SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
-SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false));
+SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
 
 SK_API void     ui_push_surface  (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
 SK_API void     ui_pop_surface   ();

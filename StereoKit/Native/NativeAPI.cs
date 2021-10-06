@@ -449,7 +449,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_layout_remaining();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   ui_layout_at       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0, float depth = 0);
 
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_push_surface  (Pose surface_pose, Vec3 layout_start, Vec2 layout_dimensions);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_surface   ();

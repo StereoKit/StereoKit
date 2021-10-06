@@ -856,11 +856,15 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 
 ///////////////////////////////////////////
 
-bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding) {
+bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, add_padding, &final_pos, &final_size);
-	return skui_recent_layout;
+
+	bounds_t result = skui_recent_layout;
+	result.center.z -= depth/2;
+	result.dimensions.z = depth;
+	return result;
 }
 
 ///////////////////////////////////////////
