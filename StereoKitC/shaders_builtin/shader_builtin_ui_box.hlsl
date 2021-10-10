@@ -34,9 +34,9 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	// Extract scale from the matrix
 	float4x4 world_mat = sk_inst[id].world;
 	float3   scale     = float3(
-		length(world_mat._11_12_13),
-		length(world_mat._21_22_23),
-		length(world_mat._31_32_33));
+		length(float3(world_mat._11,world_mat._12,world_mat._13)),
+		length(float3(world_mat._21,world_mat._22,world_mat._23)),
+		length(float3(world_mat._31,world_mat._32,world_mat._33)));
 
 	// Switch scale axes based on the model's normal
 	if      (abs(input.norm.y) > 0.75) o.scale = scale.xz;

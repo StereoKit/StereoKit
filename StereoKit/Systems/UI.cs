@@ -71,10 +71,17 @@ namespace StereoKit
 		/// <param name="addPadding">If true, this will add the current padding
 		/// value to the total final dimensions of the space that is reserved.
 		/// </param>
+		/// <param name="depth">This allows you to quickly insert a depth into
+		/// the Bounds you're receiving. This will offset on the Z axis in
+		/// addition to increasing the dimensions, so that the bounds still
+		/// remain sitting on the surface of the UI.
+		/// 
+		/// This depth value will not be reflected in the bounds provided by 
+		/// LayouLast.</param>
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
-		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false)
-			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0);
+		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
+			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
 
 		/// <summary>Tells if the user is currently interacting with a UI
 		/// element! This will be true if the hand has an active or focused UI

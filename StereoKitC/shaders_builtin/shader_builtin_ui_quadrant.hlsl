@@ -27,8 +27,8 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	// Extract scale from the matrix
 	float4x4 world_mat = sk_inst[id].world;
 	float2   scale     = float2(
-		length(world_mat._11_12_13),
-		length(world_mat._21_22_23)
+		length(float3(world_mat._11,world_mat._12,world_mat._13)),
+		length(float3(world_mat._21,world_mat._22,world_mat._23))
 	);
 	// Restore scale to 1
 	world_mat[0] = world_mat[0] / scale.x;

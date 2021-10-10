@@ -402,8 +402,12 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" 
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include) 
+
+install(
+  PROGRAMS    "Tools/skshaderc"
+  DESTINATION ${CMAKE_INSTALL_BINDIR}) 
 
 install(
   EXPORT      StereoKitC-targets
