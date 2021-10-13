@@ -87,7 +87,7 @@ void radix_sort7(render_item_t *a, size_t count)
 			size_t index = (value.sort_id >> shift) & RADIX_MASK;
 			*queue_ptrs[index]++ = value;
 #ifdef _WIN32
-#ifdef _M_ARM
+#if defined(_M_ARM) || defined(_M_ARM64)
 			__prefetch (queue_ptrs[index] + 1);
 #elif !defined(WINDOWS_UWP)
 			_m_prefetch(queue_ptrs[index] + 1);
