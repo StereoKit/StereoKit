@@ -698,6 +698,12 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 SK_DeclarePrivateType(model_t);
 typedef int32_t model_node_id;
 
+typedef enum anim_mode_ {
+	anim_mode_loop,
+	anim_mode_once,
+	anim_mode_manual,
+} anim_mode_;
+
 SK_API model_t    model_find              (const char *id);
 SK_API model_t    model_copy              (model_t model);
 SK_API model_t    model_create            ();
@@ -707,6 +713,25 @@ SK_API model_t    model_create_file       (const char *filename, shader_t shader
 SK_API void       model_set_id            (model_t model, const char *id);
 SK_API void       model_addref            (model_t model);
 SK_API void       model_release           (model_t model);
+SK_API void       model_recalculate_bounds(model_t model);
+SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
+SK_API bounds_t   model_get_bounds        (model_t model);
+SK_API bool32_t   model_ray_intersect     (model_t model, ray_t model_space_ray, ray_t *out_pt);
+
+SK_API bool32_t   model_play_anim             (model_t model, const char *animation_name, anim_mode_ mode);
+SK_API void       model_play_anim_idx         (model_t model, int32_t index,              anim_mode_ mode);
+SK_API void       model_set_anim_time         (model_t model, float time);
+SK_API void       model_set_anim_completion   (model_t model, float percent);
+SK_API int32_t    model_anim_find             (model_t model, const char *animation_name);
+SK_API int32_t    model_anim_count            (model_t model);
+SK_API int32_t    model_anim_active           (model_t model);
+SK_API anim_mode_ model_anim_active_mode      (model_t model);
+SK_API float      model_anim_active_time      (model_t model);
+SK_API float      model_anim_active_completion(model_t model);
+SK_API const char*model_anim_get_name         (model_t model, int32_t index);
+SK_API float      model_anim_get_duration     (model_t model, int32_t index);
+
+// TODO: this whole section gets removed in v0.4, prefer the model_node api
 SK_API const char*model_get_name          (model_t model, int32_t subset);
 SK_API material_t model_get_material      (model_t model, int32_t subset);
 SK_API mesh_t     model_get_mesh          (model_t model, int32_t subset);
@@ -719,13 +744,7 @@ SK_API int32_t    model_add_named_subset  (model_t model, const char *name, mesh
 SK_API int32_t    model_add_subset        (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t    model_add_subset_n      (model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t    model_subset_count      (model_t model);
-SK_API void       model_recalculate_bounds(model_t model);
-SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
-SK_API bounds_t   model_get_bounds        (model_t model);
-SK_API bool32_t   model_ray_intersect     (model_t model, ray_t model_space_ray, ray_t *out_pt);
-SK_API bool32_t   model_play_anim         (model_t model, const char *animation_name);
-SK_API void       model_play_anim_id      (model_t model, int32_t id);
-SK_API int32_t    model_anim_count        (model_t model);
+
 
 SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
 SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));

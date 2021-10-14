@@ -192,9 +192,6 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 			bone_trs[i] = gltf_build_world_matrix(node->skin->joints[i], node->skin->skeleton ? node->skin->skeleton : node);
 		}
 	}
-	for (int32_t i = 0; i < bone_tr_ct; i++) {
-		//bone_trs[i] = bone_trs[i]*gltf_orientation_correction;
-	}
 
 	// And assign the skin!
 	mesh_set_skin(sk_mesh, bone_ids, bone_id_ct, weights, weight_ct, bone_trs, bone_tr_ct);
@@ -615,7 +612,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 anim_t gltf_parseanim(const cgltf_animation *anim, model_t model, hashmap_t<cgltf_node*, model_node_id> *node_map) {
 	anim_t result = {};
-	result.name = string_copy(anim->name);
+	result.name = anim->name ? string_copy(anim->name) : string_copy("(none)");
 
 	for (size_t c = 0; c < anim->channels_count; c++) {
 		cgltf_animation_channel *ch = &anim->channels[c];

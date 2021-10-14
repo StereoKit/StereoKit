@@ -618,29 +618,103 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 
 ///////////////////////////////////////////
 
-bool32_t model_play_anim(model_t model, const char *animation_name) {
-	int32_t idx = -1;
-	for (size_t i = 0; i < model->anim_data.anims.count; i++) {
-		if (string_eq(model->anim_data.anims[i].name, animation_name)) {
-			idx = i;
-			break;
-		}
-	}
+bool32_t model_play_anim(model_t model, const char *animation_name, anim_mode_ mode) {
+	int32_t idx = model_anim_find(model, animation_name);
 	if (idx >= 0)
-		model_play_anim_id(model, idx);
+		model_play_anim_idx(model, idx, mode);
 	return idx >= 0;
 }
 
 ///////////////////////////////////////////
 
-void model_play_anim_id(model_t model, int32_t id) {
-	anim_inst_play(model, id);
+void model_play_anim_idx(model_t model, int32_t index, anim_mode_ mode) {
+	anim_inst_play(model, index, mode);
+}
+
+///////////////////////////////////////////
+
+void model_set_anim_time(model_t model, float time) {
+	if (model->anim_inst.anim_id < 0)
+		return;
+
+	if (model->anim_inst.mode == anim_mode_manual) {
+		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
+		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
+	} else {
+		model->anim_inst.start_time = time_getf() - time;
+	}
+}
+
+///////////////////////////////////////////
+
+void model_set_anim_completion(model_t model, float percent) {
+	if (model->anim_inst.anim_id < 0)
+		return;
+	model_set_anim_time(model, model->anim_data.anims[model->anim_inst.anim_id].duration * percent);
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_find(model_t model, const char *animation_name) {
+	for (size_t i = 0; i < model->anim_data.anims.count; i++)
+		if (string_eq(model->anim_data.anims[i].name, animation_name))
+			return i;
+	return false;
 }
 
 ///////////////////////////////////////////
 
 int32_t model_anim_count(model_t model) {
 	return model->anim_data.anims.count;
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_active(model_t model) {
+	return model->anim_inst.anim_id;
+}
+
+///////////////////////////////////////////
+
+anim_mode_ model_anim_active_mode(model_t model) {
+	return model->anim_inst.mode;
+}
+
+///////////////////////////////////////////
+
+float model_anim_active_time(model_t model) {
+	if (model->anim_inst.anim_id < 0)
+		return 0;
+
+	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
+	switch (model->anim_inst.mode) {
+	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	default:               return 0;
+	}
+}
+
+///////////////////////////////////////////
+
+float model_anim_active_completion(model_t model) {
+	if (model->anim_inst.anim_id < 0)
+		return 0;
+	return model_anim_active_time(model) / model->anim_data.anims[model->anim_inst.anim_id].duration;
+}
+
+///////////////////////////////////////////
+
+const char *model_anim_get_name(model_t model, int32_t index) {
+	assert(index < model->anim_data.anims.count);
+	return model->anim_data.anims[index].name;
+}
+
+///////////////////////////////////////////
+
+float model_anim_get_duration(model_t model, int32_t index) {
+	assert(index < model->anim_data.anims.count);
+	return model->anim_data.anims[index].duration;
 }
 
 } // namespace sk

@@ -6,6 +6,7 @@ using namespace sk;
 
 #include <malloc.h>
 #include <string.h>
+#include <stdio.h>
 
 ///////////////////////////////////////////
 
@@ -35,10 +36,10 @@ void demo_picker_on_pick(void *, bool32_t confirmed, const char *filename) {
 	picker_bounds = model_get_bounds(picker_model);
 
 	if (model_anim_count(picker_model) > 0)
-		model_play_anim_id(picker_model, 0);
+		model_play_anim_idx(picker_model, 0, anim_mode_loop);
 
 	float mag = vec3_magnitude(picker_bounds.dimensions);
-	picker_scale = (1.0f / mag) * 0.2f;
+	picker_scale = (1.0f / mag) * 0.4f;
 	picker_bounds.center     *= picker_scale;
 	picker_bounds.dimensions *= picker_scale;
 
@@ -85,7 +86,25 @@ void demo_picker_update() {
 	if (picker_model) {
 		ui_label(picker_displayname == nullptr ? " " : picker_displayname);
 		ui_hseparator();
-		show_node(picker_model, -1, 0);
+		for (int32_t i = 0; i < model_anim_count(picker_model); i++) {
+			bool32_t pressed = i == model_anim_active(picker_model);
+			if (ui_toggle(model_anim_get_name(picker_model, i), pressed)) {
+				model_play_anim_idx(picker_model, i, anim_mode_loop);
+			}
+			ui_sameline();
+			char txt[32];
+			snprintf(txt, 32, "%.1fs", model_anim_get_duration(picker_model, i));
+			ui_label(txt);
+		}
+
+		ui_hseparator();
+		static float pct = 0;
+		if (ui_hslider("Scrubber", pct, 0, 1)) {
+			if (model_anim_active_mode(picker_model) != anim_mode_manual) {
+				model_play_anim_idx(picker_model, model_anim_active(picker_model), anim_mode_manual);
+			}
+			model_set_anim_completion(picker_model, pct);
+		}
 	}
 
 	ui_window_end();

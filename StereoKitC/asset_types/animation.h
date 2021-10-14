@@ -64,6 +64,7 @@ struct anim_inst_t {
 	int32_t             node_count;
 	float               start_time;
 	float               last_update;
+	anim_mode_          mode;
 	int32_t            *curve_last_keyframe;
 	anim_inst_subset_t *skinned_meshes;
 	anim_transform_t   *node_transforms;
@@ -72,6 +73,6 @@ struct anim_inst_t {
 void anim_update     (model_t model);
 void anim_update_skin(model_t model);
 
-void anim_inst_play(model_t model, int32_t anim_id);
+void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode);
 
 } // namespace sk

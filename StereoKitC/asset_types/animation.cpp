@@ -14,8 +14,8 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if (                                          curve->keyframe_times[prev_index  ] <= t && curve->keyframe_times[prev_index+1] > t) return prev_index;
 		if (prev_index + 2 < curve->keyframe_count && curve->keyframe_times[prev_index+1] <= t && curve->keyframe_times[prev_index+2] > t) return prev_index + 1;
 	}
-	if (t < curve->keyframe_times[0] || curve->keyframe_count == 1) return 0;
-	if (t > curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 1;
+	if (t <= curve->keyframe_times[0] || curve->keyframe_count == 1) return 0;
+	if (t >= curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 1;
 
 	int32_t l = 0, r = curve->keyframe_count - 1;
 	while (l <= r) {
@@ -85,15 +85,6 @@ static void anim_update_transforms(model_t model, model_node_id node_id, bool di
 			if (node->visual >= 0)
 				model->visuals[node->visual].transform_model = node->transform_model;
 		}
-		/*vec3 p1 = matrix_transform_pt (model->nodes[node_id].transform_model, vec3_zero);
-		vec3 p2 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_forward);
-		vec3 p3 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_right);
-		vec3 p4 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_up);
-		line_add(p1, p1 + p2*0.1f, { 0,0,255,255 }, {255,255,255,255}, 0.01f);
-		line_add(p1, p1 + p3*0.1f, { 255,0,0,255 }, {255,255,255,255}, 0.01f);
-		line_add(p1, p1 + p4*0.1f, { 0,255,0,255 }, {255,255,255,255}, 0.01f);
-		text_add_at(model->nodes[node_id].name, model->nodes[node_id].transform_model, 0, text_align_center_left);*/
-
 		anim_update_transforms(model, node->child, dirty);
 		node_id = node->sibling;
 	}
@@ -105,12 +96,15 @@ void anim_update(model_t model) {
 	if (model->anim_inst.anim_id < 0) return;
 
 	// Don't update more than once per frame
-	float curr_time = time_getf();
+	float curr_time = model->anim_inst.mode == anim_mode_manual 
+		? model->anim_inst.start_time
+		: time_getf();
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
+	
 
 	anim_t *anim = &model->anim_data.anims[model->anim_inst.anim_id];
-	float   time = fmodf(curr_time-model->anim_inst.start_time, anim->duration);
+	float   time = model_anim_active_time(model);
 
 	for (size_t i = 0; i < anim->curves.count; i++) {
 		model_node_id node = anim->curves[i].node_id;
@@ -122,7 +116,6 @@ void anim_update(model_t model) {
 		case anim_element_rotation:    model->anim_inst.node_transforms[node].rotation    = anim_curve_sample_f4(&anim->curves[i], &model->anim_inst.curve_last_keyframe[i], time); break;
 		}
 	}
-
 	anim_update_transforms(model, model_node_get_root(model), false);
 	anim_update_skin      (model);
 }
@@ -146,7 +139,7 @@ void anim_update_skin(model_t model) {
 
 ///////////////////////////////////////////
 
-void anim_inst_play(model_t model, int32_t anim_id) {
+void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 	if (anim_id < 0 || anim_id >= model->anim_data.anims.count) {
 		log_err("Attempted to play an invalid animation id.");
 		return;
@@ -175,6 +168,7 @@ void anim_inst_play(model_t model, int32_t anim_id) {
 	model->anim_inst.start_time  = time_getf();
 	model->anim_inst.last_update = model->anim_inst.start_time;
 	model->anim_inst.anim_id     = anim_id;
+	model->anim_inst.mode        = mode;
 }
 
 } // namespace sk
