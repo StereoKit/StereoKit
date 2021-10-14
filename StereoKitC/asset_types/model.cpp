@@ -621,7 +621,7 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 bool32_t model_play_anim(model_t model, const char *animation_name) {
 	int32_t idx = -1;
 	for (size_t i = 0; i < model->anim_data.anims.count; i++) {
-		if (string_eq(model->anim_data.anims[i].name, animation_name)) 		{
+		if (string_eq(model->anim_data.anims[i].name, animation_name)) {
 			idx = i;
 			break;
 		}
@@ -634,26 +634,7 @@ bool32_t model_play_anim(model_t model, const char *animation_name) {
 ///////////////////////////////////////////
 
 void model_play_anim_id(model_t model, int32_t id) {
-	if (id < 0 || id >= model->anim_data.anims.count) {
-		log_err("Attempted to play an invalid animation id.");
-		return;
-	}
-	if (model->anim_inst.curve_last_keyframe == nullptr) {
-		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[id].curves.count);
-		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[id].curves.count);
-	}
-	if (model->anim_inst.node_transforms == nullptr) {
-		model->anim_inst.node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
-		for (size_t i = 0; i < model->nodes.count; i++) {
-			matrix_decompose(model->nodes[i].transform_local,
-				model->anim_inst.node_transforms[i].translation,
-				model->anim_inst.node_transforms[i].scale,
-				model->anim_inst.node_transforms[i].rotation);
-		}
-	}
-	model->anim_inst.start_time = time_getf();
-	model->anim_inst.last_update = model->anim_inst.start_time;
-	model->anim_inst.anim_id = id;
+	anim_inst_play(model, id);
 }
 
 ///////////////////////////////////////////

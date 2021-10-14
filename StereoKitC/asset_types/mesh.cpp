@@ -1,5 +1,4 @@
 #include "../stereokit.h"
-#include "../sk_math.h"
 #include "../sk_memory.h"
 #include "mesh.h"
 #include "assets.h"
@@ -11,11 +10,18 @@
 #include <math.h>
 #include <float.h>
 
+using namespace DirectX;
+
 namespace sk {
 
 ///////////////////////////////////////////
 
 void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
+	if (mesh_has_skin(mesh) && !keep_data) {
+		log_warn("Skinned meshes must keep their data, ignoring mesh_set_keep_data call.");
+		return;
+	}
+
 	mesh->discard_data = !keep_data;
 	if (mesh->discard_data) {
 		free(mesh->verts); mesh->verts = nullptr;
@@ -31,9 +37,9 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
 	// Keep track of vertex data for use on CPU side
-	if (!mesh->discard_data) {
+	if (!mesh->discard_data && update_original) {
 		if (mesh->vert_capacity < vertex_count)
 			mesh->verts = sk_realloc_t(vert_t, mesh->verts, vertex_count);
 		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
@@ -80,6 +86,11 @@ void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, b
 		}
 		mesh->bounds = bounds_t{ min / 2 + max / 2, max - min };
 	}
+}
+///////////////////////////////////////////
+
+void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
+	_mesh_set_verts(mesh, vertices, vertex_count, calculate_bounds, true);
 }
 
 ///////////////////////////////////////////
@@ -178,6 +189,71 @@ void mesh_set_bounds(mesh_t mesh, const bounds_t &bounds) {
 
 bounds_t mesh_get_bounds(mesh_t mesh) {
 	return mesh->bounds;
+}
+
+bool32_t mesh_has_skin(mesh_t mesh) {
+	return mesh->skin_data.bone_ids != nullptr;
+}
+
+///////////////////////////////////////////
+
+void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
+	if (mesh->discard_data) {
+		log_err("mesh_set_skin: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
+		return;
+	}
+	if (bone_weight_count != bone_id_4_count || bone_weight_count != mesh->vert_count) {
+		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
+		return;
+	}
+
+	mesh->skin_data.bone_ids                = sk_malloc_t(uint16_t, bone_id_4_count * 4);
+	mesh->skin_data.weights                 = sk_malloc_t(vec4,     bone_weight_count);
+	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix,   bone_count);
+	mesh->skin_data.bone_transforms         = sk_malloc_t(XMMATRIX, bone_count);
+	mesh->skin_data.deformed_verts          = sk_malloc_t(vert_t,   mesh->vert_count);
+	memcpy(mesh->skin_data.bone_ids,       bone_ids_4,   sizeof(uint16_t) * bone_id_4_count * 4);
+	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_id_4_count);
+	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
+
+	mesh->skin_data.bone_count = bone_count;
+	for (int32_t i = 0; i < bone_count; i++) {
+		mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(bone_resting_transforms[i]);
+	}
+}
+
+///////////////////////////////////////////
+
+void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_count) {
+	for (int32_t i = 0; i < bone_count; i++) {
+		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
+	}
+
+	for (int32_t i = 0; i < mesh->vert_count; i++) {
+		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
+		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
+
+		const uint16_t *bones   = &mesh->skin_data.bone_ids[i*4];
+		const vec4      weights =  mesh->skin_data.weights [i];
+
+		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[0]]), weights.x);
+		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[0]]), weights.x);
+		if (weights.y != 0) {
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_norm);
+		}
+		if (weights.z != 0) {
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_norm);
+		}
+		if (weights.w != 0) {
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_norm);
+		}
+		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
+		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+	}
+	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
 }
 
 ///////////////////////////////////////////

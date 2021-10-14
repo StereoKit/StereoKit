@@ -175,7 +175,9 @@
     <ClCompile Include="rect_atlas.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="asset_types\animation.cpp" />
+    <ClCompile Include="asset_types\animation.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

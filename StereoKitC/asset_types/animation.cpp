@@ -1,5 +1,6 @@
 #include "animation.h"
 #include "model.h"
+#include "mesh.h"
 #include "../sk_math.h"
 
 namespace sk {
@@ -84,6 +85,14 @@ static void anim_update_transforms(model_t model, model_node_id node_id, bool di
 			if (node->visual >= 0)
 				model->visuals[node->visual].transform_model = node->transform_model;
 		}
+		/*vec3 p1 = matrix_transform_pt (model->nodes[node_id].transform_model, vec3_zero);
+		vec3 p2 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_forward);
+		vec3 p3 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_right);
+		vec3 p4 = matrix_transform_dir(model->nodes[node_id].transform_model, vec3_up);
+		line_add(p1, p1 + p2*0.1f, { 0,0,255,255 }, {255,255,255,255}, 0.01f);
+		line_add(p1, p1 + p3*0.1f, { 255,0,0,255 }, {255,255,255,255}, 0.01f);
+		line_add(p1, p1 + p4*0.1f, { 0,255,0,255 }, {255,255,255,255}, 0.01f);
+		text_add_at(model->nodes[node_id].name, model->nodes[node_id].transform_model, 0, text_align_center_left);*/
 
 		anim_update_transforms(model, node->child, dirty);
 		node_id = node->sibling;
@@ -115,6 +124,57 @@ void anim_update(model_t model) {
 	}
 
 	anim_update_transforms(model, model_node_get_root(model), false);
+	anim_update_skin      (model);
+}
+
+///////////////////////////////////////////
+
+void anim_update_skin(model_t model) {
+	if (model->anim_inst.anim_id < 0) return;
+
+	for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
+		matrix root = matrix_invert(model_node_get_transform_model(model, model->anim_data.skeletons[i].skin_node));
+		for (size_t b = 0; b < model->anim_data.skeletons[i].bone_count; b++) {
+			model->anim_inst.skinned_meshes[i].bone_transforms[b] = model_node_get_transform_model(model, model->anim_data.skeletons[i].bone_to_node_map[b]) * root;
+		}
+		mesh_update_skin(
+			model->anim_inst.skinned_meshes[i].modified_mesh,
+			model->anim_inst.skinned_meshes[i].bone_transforms,
+			model->anim_data.skeletons[i].bone_count);
+	}
+}
+
+///////////////////////////////////////////
+
+void anim_inst_play(model_t model, int32_t anim_id) {
+	if (anim_id < 0 || anim_id >= model->anim_data.anims.count) {
+		log_err("Attempted to play an invalid animation id.");
+		return;
+	}
+	if (model->anim_inst.curve_last_keyframe == nullptr) {
+		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[anim_id].curves.count);
+		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[anim_id].curves.count);
+	}
+	if (model->anim_inst.node_transforms == nullptr) {
+		model->anim_inst.node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
+		for (size_t i = 0; i < model->nodes.count; i++) {
+			matrix_decompose(model->nodes[i].transform_local,
+				model->anim_inst.node_transforms[i].translation,
+				model->anim_inst.node_transforms[i].scale,
+				model->anim_inst.node_transforms[i].rotation);
+		}
+	}
+	if (model->anim_inst.skinned_meshes == nullptr) {
+		model->anim_inst.skinned_mesh_count = model->anim_data.skeletons.count;
+		model->anim_inst.skinned_meshes     = sk_malloc_t(anim_inst_subset_t, model->anim_inst.skinned_mesh_count);
+		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
+			model->anim_inst.skinned_meshes[i].modified_mesh   = model_node_get_mesh(model, model->anim_data.skeletons[i].skin_node);
+			model->anim_inst.skinned_meshes[i].bone_transforms = sk_malloc_t(matrix, model->anim_data.skeletons[i].bone_count);
+		}
+	}
+	model->anim_inst.start_time  = time_getf();
+	model->anim_inst.last_update = model->anim_inst.start_time;
+	model->anim_inst.anim_id     = anim_id;
 }
 
 } // namespace sk

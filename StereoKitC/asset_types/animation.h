@@ -28,6 +28,12 @@ struct anim_curve_t {
 	anim_interpolation_ interpolation;
 };
 
+struct anim_skeleton_t {
+	model_node_id skin_node;
+	int32_t       bone_count;
+	int32_t      *bone_to_node_map;
+};
+
 struct anim_t {
 	char                 *name;
 	float                 duration;
@@ -36,7 +42,8 @@ struct anim_t {
 };
 
 struct anim_data_t {
-	array_t<anim_t> anims;
+	array_t<anim_t>          anims;
+	array_t<anim_skeleton_t> skeletons;
 };
 
 struct anim_transform_t {
@@ -47,19 +54,24 @@ struct anim_transform_t {
 };
 
 struct anim_inst_subset_t {
-	mesh_t modified_mesh;
-	matrix transform;
+	mesh_t  modified_mesh;
+	matrix *bone_transforms;
 };
 
 struct anim_inst_t {
 	int32_t             anim_id;
+	int32_t             skinned_mesh_count;
+	int32_t             node_count;
 	float               start_time;
 	float               last_update;
 	int32_t            *curve_last_keyframe;
-	anim_inst_subset_t *subsets;
+	anim_inst_subset_t *skinned_meshes;
 	anim_transform_t   *node_transforms;
 };
 
-void anim_update(model_t model);
+void anim_update     (model_t model);
+void anim_update_skin(model_t model);
+
+void anim_inst_play(model_t model, int32_t anim_id);
 
 } // namespace sk
