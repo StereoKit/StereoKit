@@ -12,6 +12,7 @@ namespace StereoKitTest
 
 		Model    model      = null;
 		float    modelScale = 1;
+		float    animScrub  = 0;
 		float    menuScale  = 1;
 		Pose     modelPose  = new Pose(0.6f,0,0, Quat.LookDir(-Vec3.Forward));
 		Pose     menuPose   = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
@@ -41,6 +42,24 @@ namespace StereoKitTest
 
 			UI.Label("Scale");
 			UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);
+
+			if (model != null)
+			{
+				UI.HSeparator();
+				foreach (Anim anim in model.Anims)
+				{
+					if (UI.Button(anim.Name))
+						model.PlayAnim(anim, AnimMode.Loop);
+				}
+				UI.HSeparator();
+				if (UI.HSlider("Scrub", ref animScrub, 0, 1, 0))
+				{
+					if (model.AnimMode != AnimMode.Manual)
+						model.PlayAnim(model.ActiveAnim, AnimMode.Manual);
+					model.AnimCompletion = animScrub;
+				}
+			}
+
 			UI.WindowEnd();
 
 			if (model != null) {
@@ -66,6 +85,8 @@ namespace StereoKitTest
 			{
 				model      = Model.FromFile(filename);
 				modelScale = 1 / model.Bounds.dimensions.Magnitude;
+				if (model.Anims.Count > 0)
+					model.PlayAnim(model.Anims[0], AnimMode.Loop);
 			});
 		}
 		/// :End:
