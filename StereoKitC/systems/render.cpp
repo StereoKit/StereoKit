@@ -355,7 +355,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		math_matrix_to_fast(transform, &root);
 	}
 
-	anim_update(model);
+	anim_update_model(model);
 	for (size_t i = 0; i < model->visuals.count; i++) {
 		render_item_t item;
 		item.mesh     = &model->visuals[i].mesh->gpu_mesh;

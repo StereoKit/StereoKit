@@ -70,9 +70,12 @@ struct anim_inst_t {
 	anim_transform_t   *node_transforms;
 };
 
-void anim_update     (model_t model);
-void anim_update_skin(model_t model);
+void anim_update_model(model_t model);
+void anim_update_skin (model_t model);
 
 void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode);
+
+void anim_update();
+void anim_shutdown();
 
 } // namespace sk

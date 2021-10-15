@@ -92,7 +92,7 @@ static void anim_update_transforms(model_t model, model_node_id node_id, bool di
 
 ///////////////////////////////////////////
 
-void anim_update(model_t model) {
+void anim_update_model(model_t model) {
 	if (model->anim_inst.anim_id < 0) return;
 
 	// Don't update more than once per frame
@@ -117,12 +117,12 @@ void anim_update(model_t model) {
 		}
 	}
 	anim_update_transforms(model, model_node_get_root(model), false);
-	anim_update_skin      (model);
+	animation_list.add(model);
 }
 
 ///////////////////////////////////////////
 
-void anim_update_skin(model_t model) {
+void anim_update_skin(model_t &model) {
 	if (model->anim_inst.anim_id < 0) return;
 
 	for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
@@ -133,7 +133,7 @@ void anim_update_skin(model_t model) {
 		mesh_update_skin(
 			model->anim_inst.skinned_meshes[i].modified_mesh,
 			model->anim_inst.skinned_meshes[i].bone_transforms,
-			model->anim_data.skeletons[i].bone_count);
+			model->anim_data.skeletons     [i].bone_count);
 	}
 }
 
@@ -169,6 +169,19 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 	model->anim_inst.last_update = model->anim_inst.start_time;
 	model->anim_inst.anim_id     = anim_id;
 	model->anim_inst.mode        = mode;
+}
+
+///////////////////////////////////////////
+
+void anim_update() {
+	animation_list.each(anim_update_skin);
+	animation_list.clear();
+}
+
+///////////////////////////////////////////
+
+void anim_shutdown() {
+	animation_list.free();
 }
 
 } // namespace sk
