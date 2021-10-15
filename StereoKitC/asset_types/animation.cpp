@@ -173,6 +173,37 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 
 ///////////////////////////////////////////
 
+void anim_inst_destroy(anim_inst_t *inst) {
+	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
+		free(inst->skinned_meshes[i].bone_transforms);
+	}
+	free(inst->skinned_meshes);
+	free(inst->curve_last_keyframe);
+	free(inst->node_transforms);
+
+	*inst = {};
+	inst->anim_id = -1;
+}
+
+///////////////////////////////////////////
+
+void anim_data_destroy(anim_data_t *data) {
+	for (size_t i = 0; i < data->anims.count; i++) {
+		for (size_t c = 0; c < data->anims[i].curves.count; c++) {
+			free(data->anims[i].curves[c].keyframe_values);
+			free(data->anims[i].curves[c].keyframe_times);
+		}
+		data->anims[i].curves.free();
+	}
+	for (size_t i = 0; i < data->skeletons.count; i++) {
+		free(data->skeletons[i].bone_to_node_map);
+	}
+	data->anims    .free();
+	data->skeletons.free();
+}
+
+///////////////////////////////////////////
+
 void anim_update() {
 	animation_list.each(anim_update_skin);
 	animation_list.clear();

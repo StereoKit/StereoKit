@@ -71,9 +71,9 @@ struct anim_inst_t {
 };
 
 void anim_update_model(model_t model);
-void anim_update_skin (model_t model);
-
-void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode);
+void anim_inst_play   (model_t model, int32_t anim_id, anim_mode_ mode);
+void anim_inst_destroy(anim_inst_t *inst);
+void anim_data_destroy(anim_data_t *data);
 
 void anim_update();
 void anim_shutdown();

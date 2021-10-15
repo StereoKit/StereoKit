@@ -311,6 +311,8 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 ///////////////////////////////////////////
 
 void model_destroy(model_t model) {
+	anim_inst_destroy(&model->anim_inst);
+	anim_data_destroy(&model->anim_data);
 	for (size_t i = 0; i < model->nodes.count; i++) {
 		free(model->nodes[i].name);
 	}
