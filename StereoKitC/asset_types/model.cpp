@@ -78,7 +78,8 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 
-		string_endswith(filename, ".gltf", false)) {
+		string_endswith(filename, ".gltf", false) ||
+		string_endswith(filename, ".vrm",  false)) {
 		if (!modelfmt_gltf(result, filename, data, data_size, shader))
 			log_errf("Issue loading GLTF file: %s!", filename);
 	} else if (string_endswith(filename, ".obj", false)) {
