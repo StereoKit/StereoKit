@@ -273,6 +273,13 @@ namespace StereoKit
 			if (animation._modelInst == _inst)
 				NativeAPI.model_play_anim_idx(_inst, animation._animIndex, mode);
 		}
+		/// <summary>Calling Draw will automatically step the Model's
+		/// animation, but if you don't draw the Model, or need access to the
+		/// animated nodes before drawing, then you can step the animation
+		/// early manually via this method. Animation will only ever be stepped
+		/// once per frame, so it's okay to call this multiple times, or in
+		/// addition to Draw.</summary>
+		public void StepAnim() => NativeAPI.model_step_anim(_inst);
 		/// <summary>Searches the list of animations for the first one matching
 		/// the given name.</summary>
 		/// <param name="name">Case sensitive name of the animation.</param>

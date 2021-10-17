@@ -259,6 +259,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_ray_intersect     (IntPtr model, Ray model_space_ray, out Ray out_pt);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_step_anim             (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      model_play_anim             (IntPtr model, string animation_name, AnimMode mode);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_play_anim_idx         (IntPtr model, int index,             AnimMode mode);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_set_anim_time         (IntPtr model, float time);

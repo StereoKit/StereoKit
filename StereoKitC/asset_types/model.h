@@ -30,6 +30,7 @@ struct _model_t {
 	array_t<model_visual_t> visuals;
 	array_t<model_node_t>   nodes;
 	int32_t                 nodes_used;
+	bool32_t                transforms_changed;
 	anim_data_t             anim_data;
 	anim_inst_t             anim_inst;
 	bounds_t                bounds;

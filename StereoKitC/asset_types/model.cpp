@@ -610,6 +610,7 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 		_model_node_update_transforms(model, curr);
 		curr = model->nodes[curr].sibling;
 	}
+	model->transforms_changed = true;
 }
 
 ///////////////////////////////////////////
@@ -617,6 +618,13 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 void model_node_set_transform_local(model_t model, model_node_id node, matrix transform_local_space) {
 	model->nodes[node].transform_local = transform_local_space;
 	_model_node_update_transforms(model, node);
+	model->transforms_changed = true;
+}
+
+///////////////////////////////////////////
+
+void model_step_anim(model_t model) {
+	anim_update_model(model);
 }
 
 ///////////////////////////////////////////

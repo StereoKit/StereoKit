@@ -101,7 +101,7 @@ void anim_update_model(model_t model) {
 		: time_getf();
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
-	
+	model->transforms_changed    = true;
 
 	anim_t *anim = &model->anim_data.anims[model->anim_inst.anim_id];
 	float   time = model_anim_active_time(model);
@@ -117,12 +117,17 @@ void anim_update_model(model_t model) {
 		}
 	}
 	anim_update_transforms(model, model_node_get_root(model), false);
+}
+
+///////////////////////////////////////////
+
+void anim_update_skin(model_t model) {
 	animation_list.add(model);
 }
 
 ///////////////////////////////////////////
 
-void anim_update_skin(model_t &model) {
+void _anim_update_skin(model_t &model) {
 	if (model->anim_inst.anim_id < 0) return;
 
 	for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
@@ -205,7 +210,7 @@ void anim_data_destroy(anim_data_t *data) {
 ///////////////////////////////////////////
 
 void anim_update() {
-	animation_list.each(anim_update_skin);
+	animation_list.each(_anim_update_skin);
 	animation_list.clear();
 }
 

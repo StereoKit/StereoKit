@@ -367,6 +367,11 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		matrix_mul(model->visuals[i].transform_model, root, item.transform);
 		render_list_add(&item);
 	}
+
+	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
+		model->transforms_changed = false;
+		anim_update_skin(model);
+	}
 }
 
 ///////////////////////////////////////////
