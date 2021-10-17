@@ -802,6 +802,7 @@ typedef struct line_point_t {
 
 SK_API void line_add      (vec3 start, vec3 end, color32 color_start, color32 color_end, float thickness);
 SK_API void line_addv     (line_point_t start, line_point_t end);
+SK_API void line_add_axis (pose_t pose, float size);
 SK_API void line_add_list (const vec3 *points, int32_t count, color32 color, float thickness);
 SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
