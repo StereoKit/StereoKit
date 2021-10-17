@@ -28,7 +28,7 @@ namespace StereoKit
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>Creates a shader asset from a precompiled StereoKit

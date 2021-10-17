@@ -175,6 +175,15 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_renderer.func_shutdown           = render_shutdown;
 	systems_add(&sys_renderer);
 
+	system_t sys_assets = { "Assets" };
+	const char *assets_update_deps[] = {"FrameRender"};
+	sys_assets.update_dependencies     = assets_update_deps;
+	sys_assets.update_dependency_count = _countof(assets_update_deps);
+	sys_assets.func_initialize         = assets_init;
+	sys_assets.func_update             = assets_update;
+	sys_assets.func_shutdown           = assets_shutdown;
+	systems_add(&sys_assets);
+
 	system_t sys_audio = { "Audio" };
 	const char *audio_deps       [] = {"Platform"};
 	const char *audio_update_deps[] = {"Platform"};

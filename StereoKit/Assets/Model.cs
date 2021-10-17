@@ -584,7 +584,7 @@ namespace StereoKit
 		~ModelNode()
 		{
 			if (_modelInst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.model_release(_modelInst));
+				NativeAPI.assets_releaseref_threadsafe(_modelInst);
 		}
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
@@ -738,7 +738,7 @@ namespace StereoKit
 		~Anim()
 		{
 			if (_modelInst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.model_release(_modelInst));
+				NativeAPI.assets_releaseref_threadsafe(_modelInst);
 		}
 
 		public string Name

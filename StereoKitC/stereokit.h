@@ -1097,6 +1097,10 @@ SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 
 ///////////////////////////////////////////
 
+SK_API void assets_releaseref_threadsafe(void *asset);
+
+///////////////////////////////////////////
+
 static const char *default_id_material             = "default/material";
 static const char *default_id_material_pbr         = "default/material_pbr";
 static const char *default_id_material_unlit       = "default/material_unlit";
