@@ -749,6 +749,7 @@ namespace StereoKit
 		public float Duration => NativeAPI.model_anim_get_duration(_modelInst, _animIndex);
 	}
 
+	/// <summary>An enumerable for Model's Anims</summary>
 	public class ModelAnimCollection : IEnumerable<Anim>
 	{
 		IntPtr _model;
