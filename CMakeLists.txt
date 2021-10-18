@@ -170,6 +170,8 @@ set(SK_SRC_CODE
 set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
+  StereoKitC/asset_types/animation.h
+  StereoKitC/asset_types/animation.cpp
   StereoKitC/asset_types/font.h
   StereoKitC/asset_types/font.cpp
   StereoKitC/asset_types/material.h
