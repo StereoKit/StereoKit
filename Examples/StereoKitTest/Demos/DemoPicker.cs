@@ -14,20 +14,28 @@ namespace StereoKitTest
 		float    modelScale = 1;
 		float    animScrub  = 0;
 		float    menuScale  = 1;
+		bool     showNodes  = false;
+		bool     editNodes  = false;
+		bool     showModel  = true;
 		Pose     modelPose  = new Pose(0.6f,0,0, Quat.LookDir(-Vec3.Forward));
 		Pose     menuPose   = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
 		Material volumeMat;
+		Material jointMaterial;
 
 		public void Initialize()
 		{
 			volumeMat = Default.MaterialUIBox.Copy();
 			volumeMat["border_size"] = 0;
 			volumeMat["border_affect_radius"] = 0.3f;
+
+			jointMaterial = Material.Unlit.Copy();
+			jointMaterial.DepthTest   = DepthTest.Always;
+			jointMaterial.QueueOffset = 1;
 		}
 		public void Shutdown() => Platform.FilePickerClose();
 
 		public void Update() {
-			UI.WindowBegin("Settings", ref menuPose, new Vec2(20,0) * U.cm);
+			UI.WindowBegin("Settings", ref menuPose);
 
 			/// :CodeSample: Platform.FilePicker Platform.FilePickerVisible
 			/// ### Opening a Model
@@ -42,6 +50,11 @@ namespace StereoKitTest
 
 			UI.Label("Scale");
 			UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);
+
+			UI.Toggle("Show Nodes", ref showNodes);
+			UI.SameLine();
+			UI.Toggle("Show Model", ref showModel);
+			UI.Toggle("Edit Nodes", ref editNodes);
 
 			if (model != null)
 			{
@@ -64,10 +77,21 @@ namespace StereoKitTest
 
 			if (model != null) {
 				Bounds scaled = model.Bounds * modelScale * menuScale;
-				UI.HandleBegin("Model", ref modelPose, scaled);
-				Default.MeshCube.Draw(volumeMat, Matrix.TS(scaled.center, scaled.dimensions));
-				model.Draw(Matrix.TS(Vec3.Zero, modelScale*menuScale));
-				UI.HandleEnd();
+				if (!editNodes)
+				{
+					UI.HandleBegin("Model", ref modelPose, scaled);
+					Default.MeshCube.Draw(volumeMat, Matrix.TS(scaled.center, scaled.dimensions));
+					UI.HandleEnd();
+				}
+
+				Hierarchy.Push(modelPose.ToMatrix(modelScale * menuScale));
+				// Step Animation manually in case showModel is false, and the
+				// call to Draw gets skipped.
+				model.StepAnim();
+				if (showModel) model.Draw(Matrix.Identity);
+				if (showNodes) ShowNodes(model, jointMaterial);
+				if (editNodes) PickNodes(model, jointMaterial);
+				Hierarchy.Pop();
 			}
 
 			Text.Add(title, titlePose);
@@ -90,5 +114,49 @@ namespace StereoKitTest
 			});
 		}
 		/// :End:
+
+		private static void ShowNodes(Model model, Material jointMaterial)
+		{
+			float scale = Hierarchy.ToLocal(Vec3.One).x;
+			for (int n = 0; n < model.Nodes.Count; n++)
+			{
+				var node = model.Nodes[n];
+				Mesh.Cube.Draw(jointMaterial, node.ModelTransform.Pose.ToMatrix(0.01f * scale));
+				Text.Add(node.Name, node.ModelTransform * Matrix.S(scale), TextAlign.TopCenter, TextAlign.TopCenter);
+			}
+		}
+
+		private static void PickNodes(Model model, Material jointMaterial)
+		{
+			float     scale       = Hierarchy.ToLocal(Vec3.One).x;
+			ModelNode closest     = null;
+			float     closestDist = (10 * U.cm * scale) * (10 * U.cm * scale);
+			for (int i = 0; i < 2; i += 1) {
+				Hand h  = Input.Hand(i);
+				Vec3 pt = Hierarchy.ToLocal(h.pinchPt);
+				if (!h.IsTracked) continue;
+				for (int n = 0; n < model.Nodes.Count; n++)
+				{
+					var   node = model.Nodes[n];
+					float distSq = Vec3.DistanceSq(pt, node.ModelTransform.Translation);
+					if (distSq < closestDist)
+					{
+						closestDist = distSq;
+						closest = node;
+					}
+				}
+			}
+			if (closest != null)
+			{
+				Mesh.Sphere.Draw(jointMaterial, closest.ModelTransform.Pose.ToMatrix(0.025f * scale), new Color(0,1,0));
+				Pose pose = closest.ModelTransform.Pose;
+				UI.PushSurface(Pose.Identity);
+				if (UI.Handle(closest.Name, ref pose, new Bounds(Vec3.One * 0.05f * scale)))
+				{
+					closest.ModelTransform = pose.ToMatrix(closest.ModelTransform.Scale);
+				}
+				UI.PopSurface();
+			}
+		}
 	}
 }
