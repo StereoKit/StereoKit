@@ -40,10 +40,10 @@ namespace StereoKit
 		/// <returns>A Pose representing the current orientation of the
 		/// spatial node.</returns>
 		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime);
+			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime);
 
 		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime, out pose) > 0;
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime, out pose) > 0;
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
 		/// into SteroKit's coordinate system. This can be great for
