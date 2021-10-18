@@ -642,7 +642,7 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
-pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
+pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
 		return pose_identity;
@@ -654,7 +654,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
 
 	XrSpace                               space;
 	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
-	space_info.nodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	space_info.nodeType = dynamic ? XR_SPATIAL_GRAPH_NODE_TYPE_DYNAMIC_MSFT : XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
 	space_info.pose     = { {0,0,0,1}, {0,0,0} };
 	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
 
@@ -663,14 +663,26 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16]) {
 		return pose_identity;
 	}
 
+	XrTime time = 0;
+#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
+	if (qpc_time > 0) {
+		LARGE_INTEGER li;
+		li.QuadPart = qpc_time;
+		xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &li, &time);
+	}
+#endif
+
 	pose_t result = {};
-	openxr_get_space(space, &result);
+	if (!openxr_get_space(space, &result)) {
+		log_warn("world_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
+		return pose_identity;
+	}
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], pose_t *out_pose) {
+bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
 		*out_pose = pose_identity;
@@ -684,7 +696,7 @@ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], pose_t 
 
 	XrSpace                               space;
 	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
-	space_info.nodeType = XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
+	space_info.nodeType = dynamic ? XR_SPATIAL_GRAPH_NODE_TYPE_DYNAMIC_MSFT : XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
 	space_info.pose     = { {0,0,0,1}, {0,0,0} };
 	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
 
@@ -693,8 +705,19 @@ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], pose_t 
 		return false;
 	}
 
-	pose_t result = {};
-	openxr_get_space(space, out_pose);
+	XrTime time = 0;
+#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
+	if (qpc_time > 0) {
+		LARGE_INTEGER li;
+		li.QuadPart = qpc_time;
+		xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &li, &time);
+	}
+#endif
+
+	if (!openxr_get_space(space, out_pose, time)) {
+		*out_pose = pose_identity;
+		return false;
+	}
 	return true;
 }
 
