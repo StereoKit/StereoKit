@@ -271,6 +271,12 @@ void model_release(model_t model) {
 
 ///////////////////////////////////////////
 
+void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model(model, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
 void model_set_bounds(model_t model, const bounds_t &bounds) {
 	model->bounds = bounds;
 }

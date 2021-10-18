@@ -333,6 +333,13 @@ void mesh_destroy(mesh_t mesh) {
 	*mesh = {};
 }
 
+
+///////////////////////////////////////////
+
+void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_mesh(mesh, material, transform, color_linear, layer);
+}
+
 ///////////////////////////////////////////
 
 bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {

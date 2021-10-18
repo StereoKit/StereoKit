@@ -92,6 +92,23 @@ typedef enum log_ {
 	log_error
 } log_;
 
+typedef enum render_layer_ {
+	render_layer_0 = 1 << 0,
+	render_layer_1 = 1 << 1,
+	render_layer_2 = 1 << 2,
+	render_layer_3 = 1 << 3,
+	render_layer_4 = 1 << 4,
+	render_layer_5 = 1 << 5,
+	render_layer_6 = 1 << 6,
+	render_layer_7 = 1 << 7,
+	render_layer_8 = 1 << 8,
+	render_layer_9 = 1 << 9,
+	render_layer_vfx         = 1 << 10,
+	render_layer_all         = 0xFFFF,
+	render_layer_all_regular = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
+} render_layer_;
+SK_MakeFlag(render_layer_);
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -374,11 +391,22 @@ static inline color128  operator*(const color128 &a, const float b) { return { a
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(gradient_t);
+SK_DeclarePrivateType(mesh_t);
+SK_DeclarePrivateType(tex_t);
+SK_DeclarePrivateType(font_t);
+SK_DeclarePrivateType(shader_t);
+SK_DeclarePrivateType(material_t);
+SK_DeclarePrivateType(model_t);
+SK_DeclarePrivateType(sprite_t);
+SK_DeclarePrivateType(sound_t);
+
+///////////////////////////////////////////
+
 typedef struct gradient_key_t {
 	color128 color;
 	float    position;
 } gradient_key_t;
-SK_DeclarePrivateType(gradient_t);
 
 SK_API gradient_t gradient_create     ();
 SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
@@ -395,6 +423,7 @@ SK_API void       gradient_release    (gradient_t gradient); // TODO v0.4, consi
 typedef struct spherical_harmonics_t {
 	vec3 coefficients[9];
 } spherical_harmonics_t;
+
 typedef struct sh_light_t {
 	vec3     dir_to;
 	color128 color;
@@ -421,13 +450,12 @@ typedef uint32_t vind_t;
 typedef uint16_t vind_t;
 #endif
 
-SK_DeclarePrivateType(mesh_t);
-
 SK_API mesh_t   mesh_find         (const char *name);
 SK_API mesh_t   mesh_create       ();
 SK_API void     mesh_set_id       (mesh_t mesh, const char *id);
 SK_API void     mesh_addref       (mesh_t mesh);
 SK_API void     mesh_release      (mesh_t mesh);
+SK_API void     mesh_draw         (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void     mesh_set_keep_data(mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data(mesh_t mesh);
 SK_API void     mesh_set_verts    (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
@@ -496,8 +524,6 @@ typedef enum tex_address_ {
 	tex_address_mirror,
 } tex_address_;
 
-SK_DeclarePrivateType(tex_t);
-
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_create_mem          (void *file_data, size_t file_size, bool32_t srgb_data sk_default(true));
@@ -529,8 +555,6 @@ SK_API int32_t      tex_get_anisotropy      (tex_t texture);
 
 ///////////////////////////////////////////
 
-SK_DeclarePrivateType(font_t);
-
 SK_API font_t font_find        (const char *id);
 SK_API font_t font_create      (const char *file);
 SK_API font_t font_create_files(const char **files, int32_t file_count);
@@ -540,8 +564,6 @@ SK_API void   font_release     (font_t font);
 SK_API tex_t  font_get_tex     (font_t font);
 
 ///////////////////////////////////////////
-
-SK_DeclarePrivateType(shader_t);
 
 SK_API shader_t    shader_find        (const char *id);
 SK_API shader_t    shader_create_file (const char *filename);
@@ -580,8 +602,6 @@ typedef enum material_param_ {
 	material_param_matrix,
 	material_param_texture,
 } material_param_;
-
-SK_DeclarePrivateType(material_t);
 
 SK_API material_t    material_find            (const char *id);
 SK_API material_t    material_create          (shader_t shader);
@@ -695,7 +715,6 @@ SK_API void    solid_get_pose        (const solid_t solid, sk_ref(pose_t) out_po
 
 ///////////////////////////////////////////
 
-SK_DeclarePrivateType(model_t);
 typedef int32_t model_node_id;
 
 typedef enum anim_mode_ {
@@ -713,6 +732,7 @@ SK_API model_t    model_create_file       (const char *filename, shader_t shader
 SK_API void       model_set_id            (model_t model, const char *id);
 SK_API void       model_addref            (model_t model);
 SK_API void       model_release           (model_t model);
+SK_API void       model_draw              (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void       model_recalculate_bounds(model_t model);
 SK_API void       model_set_bounds        (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t   model_get_bounds        (model_t model);
@@ -774,8 +794,6 @@ SK_API void          model_node_set_transform_local(model_t model, model_node_id
 
 ///////////////////////////////////////////
 
-SK_DeclarePrivateType(sprite_t);
-
 typedef enum sprite_type_ {
 	sprite_type_atlased = 0,
 	sprite_type_single
@@ -807,23 +825,6 @@ SK_API void line_add_list (const vec3 *points, int32_t count, color32 color, flo
 SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
-
-typedef enum render_layer_ {
-	render_layer_0 = 1 << 0,
-	render_layer_1 = 1 << 1,
-	render_layer_2 = 1 << 2,
-	render_layer_3 = 1 << 3,
-	render_layer_4 = 1 << 4,
-	render_layer_5 = 1 << 5,
-	render_layer_6 = 1 << 6,
-	render_layer_7 = 1 << 7,
-	render_layer_8 = 1 << 8,
-	render_layer_9 = 1 << 9,
-	render_layer_vfx         = 1 << 10,
-	render_layer_all         = 0xFFFF,
-	render_layer_all_regular = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
-} render_layer_;
-SK_MakeFlag(render_layer_);
 
 typedef enum render_clear_ {
 	render_clear_none  = 0,
@@ -870,8 +871,6 @@ SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat  ) local_ori
 SK_API pose_t        hierarchy_to_world_pose     (const sk_ref(pose_t) local_pose);
 
 ///////////////////////////////////////////
-
-SK_DeclarePrivateType(sound_t);
 
 typedef struct sound_inst_t {
 	uint16_t _id;
