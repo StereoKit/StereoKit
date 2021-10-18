@@ -59,7 +59,7 @@ namespace StereoKit
 		~Mesh()
 		{
 			if (_inst == IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.mesh_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a

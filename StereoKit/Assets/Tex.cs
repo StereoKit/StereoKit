@@ -71,7 +71,7 @@ namespace StereoKit
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.tex_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		#endregion

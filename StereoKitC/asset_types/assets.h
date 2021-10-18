@@ -37,5 +37,8 @@ void        assets_releaseref    (asset_header_t &asset);
 void        assets_safeswap_ref  (asset_header_t **asset_link, asset_header_t *asset);
 void        assets_shutdown_check();
 const char *assets_file          (const char *file_name);
+bool        assets_init          ();
+void        assets_update        ();
+void        assets_shutdown      ();
 
 } // namespace sk

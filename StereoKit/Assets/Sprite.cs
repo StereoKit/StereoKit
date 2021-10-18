@@ -47,7 +47,7 @@ namespace StereoKit
 		~Sprite()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.sprite_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>Draw the sprite on a quad with the provided transform!

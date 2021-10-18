@@ -15,6 +15,7 @@
 #include "systems/line_drawer.h"
 #include "systems/world.h"
 #include "systems/defaults.h"
+#include "asset_types/animation.h"
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
 #include "systems/platform/android.h"
@@ -114,7 +115,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_platform_begin  .func_update     = platform_step_begin;
 	sys_platform_render .func_update     = platform_step_end;
 
-	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World", "UILate"};
+	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World", "UILate", "Animation"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
 	sys_platform_render .update_dependency_count = _countof(frame_render_update_deps);
 
@@ -173,6 +174,15 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_renderer.func_update             = render_update;
 	sys_renderer.func_shutdown           = render_shutdown;
 	systems_add(&sys_renderer);
+
+	system_t sys_assets = { "Assets" };
+	const char *assets_update_deps[] = {"FrameRender"};
+	sys_assets.update_dependencies     = assets_update_deps;
+	sys_assets.update_dependency_count = _countof(assets_update_deps);
+	sys_assets.func_initialize         = assets_init;
+	sys_assets.func_update             = assets_update;
+	sys_assets.func_shutdown           = assets_shutdown;
+	systems_add(&sys_assets);
 
 	system_t sys_audio = { "Audio" };
 	const char *audio_deps       [] = {"Platform"};
@@ -244,6 +254,14 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_world.func_update             = world_update;
 	sys_world.func_shutdown           = world_shutdown;
 	systems_add(&sys_world);
+
+	system_t sys_anim = { "Animation" };
+	const char *anim_update_deps[] = {"App"};
+	sys_anim.update_dependencies     = anim_update_deps;
+	sys_anim.update_dependency_count = _countof(anim_update_deps);
+	sys_anim.func_update             = anim_update;
+	sys_anim.func_shutdown           = anim_shutdown;
+	systems_add(&sys_anim);
 
 	system_t sys_app = { "App" };
 	const char *app_update_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};

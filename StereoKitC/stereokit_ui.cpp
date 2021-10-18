@@ -1902,7 +1902,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 					} break;
 					case ui_move_face_user: {
-						dest_rot = quat_lookat(vec3{movement.position.x, finger_pos[i].y, movement.position.z }, matrix_transform_pt(to_local, input_head()->position));
+						vec3 look_from = vec3{ movement.position.x, finger_pos[i].y, movement.position.z };
+						dest_rot = quat_lookat_up(look_from, matrix_transform_pt(to_local, input_head()->position), matrix_transform_dir(to_local, vec3_up));
 						dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 					} break;
 					case ui_move_pos_only: {

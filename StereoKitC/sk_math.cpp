@@ -35,7 +35,6 @@ quat quat_mul(const quat &a, const quat &b) {
 quat quat_difference(const quat &a, const quat &b) {
 	XMVECTOR inv        = XMQuaternionInverse (XMLoadFloat4((XMFLOAT4 *)& a));
 	XMVECTOR difference = XMQuaternionMultiply(inv, XMLoadFloat4((XMFLOAT4 *)& b));
-	//difference = XMQuaternionNormalize(difference);
 	return math_fast_to_quat(difference);
 }
 
@@ -206,7 +205,7 @@ quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
 	math_matrix_to_fast(transform, &mat);
 	XMMatrixDecompose(&scale, &rot, &pos, mat);
 	XMVECTOR orient = math_quat_to_fast(orientation);
-	return math_fast_to_quat(XMQuaternionMultiply(rot, orient));
+	return math_fast_to_quat(XMQuaternionMultiply(orient, rot));
 }
 
 ///////////////////////////////////////////
@@ -219,7 +218,7 @@ pose_t matrix_mul_pose(const matrix& transform, const pose_t& pose) {
 	XMVECTOR orient = math_quat_to_fast(pose.orientation);
 	return pose_t{
 		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
-		math_fast_to_quat(XMQuaternionMultiply(rot, orient)) };
+		math_fast_to_quat(XMQuaternionMultiply(orient, rot)) };
 }
 
 ///////////////////////////////////////////
@@ -265,7 +264,7 @@ quat matrix_transform_quat(matrix transform, quat rotation) {
 	math_matrix_to_fast(transform, &mat);
 	XMMatrixDecompose(&scale, &rot, &pos, mat);
 	XMVECTOR orient = math_quat_to_fast(rotation);
-	return math_fast_to_quat(XMQuaternionMultiply(rot, orient));
+	return math_fast_to_quat(XMQuaternionMultiply(orient, rot));
 }
 
 ///////////////////////////////////////////
@@ -278,7 +277,7 @@ pose_t matrix_transform_pose(matrix transform, pose_t pose) {
 	XMVECTOR orient = math_quat_to_fast(pose.orientation);
 	return pose_t{
 		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
-		math_fast_to_quat(XMQuaternionMultiply(rot, orient)) };
+		math_fast_to_quat(XMQuaternionMultiply(orient, rot)) };
 }
 
 ///////////////////////////////////////////

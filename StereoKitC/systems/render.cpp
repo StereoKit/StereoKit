@@ -14,6 +14,7 @@
 #include "../asset_types/shader.h"
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
+#include "../asset_types/animation.h"
 #include "../systems/input.h"
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
@@ -354,6 +355,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		math_matrix_to_fast(transform, &root);
 	}
 
+	anim_update_model(model);
 	for (size_t i = 0; i < model->visuals.count; i++) {
 		render_item_t item;
 		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
@@ -364,6 +366,11 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		item.layer    = (uint16_t)layer;
 		matrix_mul(model->visuals[i].transform_model, root, item.transform);
 		render_list_add(&item);
+	}
+
+	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
+		model->transforms_changed = false;
+		anim_update_skin(model);
 	}
 }
 

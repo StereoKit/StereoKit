@@ -259,6 +259,20 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_ray_intersect     (IntPtr model, Ray model_space_ray, out Ray out_pt);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_step_anim             (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      model_play_anim             (IntPtr model, string animation_name, AnimMode mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_play_anim_idx         (IntPtr model, int index,             AnimMode mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_set_anim_time         (IntPtr model, float time);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_set_anim_completion   (IntPtr model, float percent);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      model_anim_find             (IntPtr model, string animation_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      model_anim_count            (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      model_anim_active           (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AnimMode model_anim_active_mode      (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float    model_anim_active_time      (IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float    model_anim_active_completion(IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   model_anim_get_name         (IntPtr model, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float    model_anim_get_duration     (IntPtr model, int index);
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add                (IntPtr model,             string name, Matrix model_transform, IntPtr mesh, IntPtr material, int solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_add_child          (IntPtr model, int parent, string name, Matrix local_transform, IntPtr mesh, IntPtr material, int solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_find               (IntPtr model, string name);
@@ -431,6 +445,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallback on_log);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_unsubscribe(LogCallback on_log);
+		
+		///////////////////////////////////////////
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void assets_releaseref_threadsafe(IntPtr asset);
 
 		///////////////////////////////////////////
 

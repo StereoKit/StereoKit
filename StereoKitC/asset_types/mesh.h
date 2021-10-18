@@ -4,6 +4,7 @@
 
 #include "../libraries/sk_gpu.h"
 #include "../stereokit.h"
+#include "../sk_math.h"
 #include "assets.h"
 
 namespace sk {
@@ -13,23 +14,33 @@ struct mesh_collision_t {
 	plane_t* planes;
 };
 
+struct mesh_weights_t {
+	uint16_t *bone_ids;
+	vec4     *weights;
+	matrix   *bone_inverse_transforms;
+	DirectX::XMMATRIX *bone_transforms;
+	vert_t   *deformed_verts;
+	int32_t   bone_count;
+};
+
 struct _mesh_t {
-	asset_header_t header;
-	int            vert_count;
-	int            vert_capacity;
-	bool32_t       vert_dynamic;
-	skg_buffer_t   vert_buffer;
-	int            ind_count;
-	int            ind_capacity;
-	bool32_t       ind_dynamic;
-	skg_buffer_t   ind_buffer;
-	int            ind_draw;
-	skg_mesh_t     gpu_mesh;
-	bounds_t       bounds;
-	bool32_t       discard_data;
-	vert_t*        verts;
-	vind_t*        inds;
+	asset_header_t   header;
+	int              vert_count;
+	int              vert_capacity;
+	bool32_t         vert_dynamic;
+	skg_buffer_t     vert_buffer;
+	int              ind_count;
+	int              ind_capacity;
+	bool32_t         ind_dynamic;
+	skg_buffer_t     ind_buffer;
+	int              ind_draw;
+	skg_mesh_t       gpu_mesh;
+	bounds_t         bounds;
+	bool32_t         discard_data;
+	vert_t*          verts;
+	vind_t*          inds;
 	mesh_collision_t collision_data;
+	mesh_weights_t   skin_data;
 };
 
 void                    mesh_calculate_normals (vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count);

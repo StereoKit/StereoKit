@@ -6,6 +6,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../libraries/ferr_hash.h"
+#include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
 
 #ifdef _MSC_VER
@@ -25,9 +26,178 @@
 
 namespace sk {
 
+// GLTF spec can be found here:
+// https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html
+
 // GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 
 // rotate the gltf matrices so that they use -Z as forward, simplifying lookat math
 matrix gltf_orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
+
+///////////////////////////////////////////
+
+matrix gltf_build_node_matrix (cgltf_node *curr);
+matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
+
+///////////////////////////////////////////
+
+bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
+	if (node->skin == nullptr)
+		return false;
+	if (node->mesh->primitives_count > 1) {
+		log_warnf("[%s] multimaterial skinned meshes not supported yet", filename);
+		return false;
+	}
+	
+	cgltf_mesh      *m = node->mesh;
+	cgltf_primitive *p = &m->primitives[0];
+
+	uint16_t *bone_ids   = nullptr;
+	int32_t   bone_id_ct = 0;
+	vec4     *weights    = nullptr;
+	int32_t   weight_ct  = 0;
+	matrix   *bone_trs   = nullptr;
+	int32_t   bone_tr_ct = 0;
+
+	// Load the mesh's joint bindings and weights
+	for (size_t a = 0; a < p->attributes_count; a++) {
+		cgltf_attribute   *attr      = &p->attributes[a];
+		cgltf_buffer_view *buff      = attr->data->buffer_view;
+		size_t             offset    = buff->offset + attr->data->offset;
+		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
+
+		if (attr->type == cgltf_attribute_type_joints && attr->index == 0) {
+			int32_t _components = 4;
+			if      (attr->data->type == cgltf_type_vec4  ) _components = 4;
+			else if (attr->data->type == cgltf_type_vec3  ) _components = 3;
+			else if (attr->data->type == cgltf_type_vec2  ) _components = 2;
+			else if (attr->data->type == cgltf_type_scalar) _components = 1;
+			const int32_t components = _components;
+
+			bone_id_ct = attr->data->count;
+			bone_ids   = sk_malloc_t(uint16_t, bone_id_ct * 4);
+			memset(bone_ids, 0, sizeof(uint16_t) * bone_id_ct * 4);
+
+			if (attr->data->is_sparse) {
+				log_errf("[%s] Sparse joints not implemented", filename);
+			} else if (attr->data->component_type == cgltf_component_type_r_8u){
+				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data[j];
+				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data[j*components];
+					bone_ids[j*4+1] = attr_data[j*components+1];
+				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data[j*components];
+					bone_ids[j*4+1] = attr_data[j*components+1];
+					bone_ids[j*4+2] = attr_data[j*components+2];
+				} else if (components == 4) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data[j*components];
+					bone_ids[j*4+1] = attr_data[j*components+1];
+					bone_ids[j*4+2] = attr_data[j*components+2];
+					bone_ids[j*4+3] = attr_data[j*components+3];
+				}
+			} else if (attr->data->component_type == cgltf_component_type_r_16u){
+				uint16_t *attr_data_16 = (uint16_t*)attr_data;
+				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_16[j];
+				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_16[j*components];
+					bone_ids[j*4+1] = attr_data_16[j*components+1];
+				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_16[j*components];
+					bone_ids[j*4+1] = attr_data_16[j*components+1];
+					bone_ids[j*4+2] = attr_data_16[j*components+2];
+				} else if (components == 4) memcpy(bone_ids, attr_data_16, sizeof(uint16_t)*bone_id_ct*components);
+			} else if (attr->data->component_type == cgltf_component_type_r_32u){
+				uint32_t *attr_data_32 = (uint32_t*)attr_data;
+				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_32[j];
+				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_32[j*components];
+					bone_ids[j*4+1] = attr_data_32[j*components+1];
+				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_32[j*components];
+					bone_ids[j*4+1] = attr_data_32[j*components+1];
+					bone_ids[j*4+2] = attr_data_32[j*components+2];
+				} else if (components == 4) for (size_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = attr_data_32[j*components];
+					bone_ids[j*4+1] = attr_data_32[j*components+1];
+					bone_ids[j*4+2] = attr_data_32[j*components+2];
+					bone_ids[j*4+3] = attr_data_32[j*components+3];
+				}
+			} else {
+				log_errf("[%s] joint format (%d) not implemented", filename, attr->data->component_type);
+				free(bone_ids);
+				bone_ids = nullptr;
+			}
+		} else if (attr->type == cgltf_attribute_type_weights && attr->index == 0) {
+			int32_t _components = 4;
+			if      (attr->data->type == cgltf_type_vec4  ) _components = 4;
+			else if (attr->data->type == cgltf_type_vec3  ) _components = 3;
+			else if (attr->data->type == cgltf_type_vec2  ) _components = 2;
+			else if (attr->data->type == cgltf_type_scalar) _components = 1;
+			const int32_t components = _components;
+
+			if (attr->data->component_type == cgltf_component_type_r_32f) {
+				size_t count = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
+				if (count != components * attr->data->count)
+					log_errf("[%s] mismatched weight count", filename); // Hostile asset?
+				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
+				cgltf_accessor_unpack_floats(attr->data, floats, count);
+
+				weight_ct = attr->data->count;
+				weights   = sk_malloc_t(vec4, weight_ct);
+
+				if (components == 1) for (size_t j = 0; j < weight_ct; j++) {
+					weights[j].x = floats[j];
+				} else if (components == 2) for (size_t j = 0; j < weight_ct; j++) {
+					weights[j].x = floats[j*components];
+					weights[j].y = floats[j*components+1];
+				} else if (components == 3) for (size_t j = 0; j < weight_ct; j++) {
+					weights[j].x = floats[j*components];
+					weights[j].y = floats[j*components+1];
+					weights[j].z = floats[j*components+2];
+				}
+				if (components == 4) {
+					weights = (vec4*)floats;
+				} else {
+					free(floats);
+				}
+			} else {
+				log_errf("[%s] weights format (%d) not implemented", filename, attr->data->component_type);
+			}
+		}
+	}
+
+	if (!bone_ids || !weights) {
+		log_errf("[%s] mesh skin incomplete", filename);
+		free(bone_ids);
+		free(weights);
+		return false;
+	}
+
+	// Find the skeleton for the mesh
+	bone_tr_ct = node->skin->joints_count;
+	bone_trs   = sk_malloc_t(matrix, bone_tr_ct);
+	if (node->skin->inverse_bind_matrices != nullptr) { 
+		cgltf_buffer_view *buff      = node->skin->inverse_bind_matrices->buffer_view;
+		size_t             offset    = buff->offset + node->skin->inverse_bind_matrices->offset;
+		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
+
+		memcpy(bone_trs, attr_data, sizeof(matrix) *bone_tr_ct);
+		for (int32_t i = 0; i < bone_tr_ct; i++) {
+			bone_trs[i] = matrix_invert(bone_trs[i]);
+		}
+	} else {
+		for (int32_t i = 0; i < bone_tr_ct; i++) {
+			bone_trs[i] = gltf_build_world_matrix(node->skin->joints[i], node->skin->skeleton ? node->skin->skeleton : node);
+		}
+	}
+
+	// And assign the skin!
+	mesh_set_skin(sk_mesh, bone_ids, bone_id_ct, weights, weight_ct, bone_trs, bone_tr_ct);
+
+	return true;
+}
 
 ///////////////////////////////////////////
 
@@ -55,6 +225,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	int     vert_count = 0;
 
 	bool has_normals = false;
+	bool has_skin    = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
@@ -89,7 +260,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].pos = *pos;
 					}
 				} else {
-					log_errf("[%s] Unimplemented vertex position format", filename);
+					log_errf("[%s] Unimplemented vertex position type (%d)", filename, attr->data->type);
 				}
 				free(floats);
 			}
@@ -113,7 +284,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].norm = *norm;
 					}
 				} else {
-					log_errf("[%s] Unimplemented vertex normal format", filename);
+					log_errf("[%s] Unimplemented vertex normal type (%d)", filename, attr->data->type);
 				}
 				free(floats);
 			}
@@ -136,7 +307,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].uv = *uv;
 					}
 				} else {
-					log_errf("[%s] Unimplemented vertex uv format", filename);
+					log_errf("[%s] Unimplemented vertex uv type (%d)", filename, attr->data->type);
 				}
 				free(floats);
 			}
@@ -171,7 +342,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 						verts[v].col = color_to_32({ col[0], col[1], col[2], 1 });
 					}
 				} else {
-					log_errf("[%s] Unimplemented vertex color format", filename);
+					log_errf("[%s] Unimplemented vertex color type (%d)", filename, attr->data->type);
 				}
 				free(floats);
 			}
@@ -368,6 +539,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
+			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 			material_set_texture(result, "diffuse", parse_tex);
 			tex_release(parse_tex);
@@ -375,6 +547,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
+			if (material->pbr_metallic_roughness.metallic_roughness_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 			material_set_texture(result, "metal", parse_tex);
 			tex_release(parse_tex);
@@ -388,6 +561,20 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 			material_set_float(result, "metallic",  material->pbr_metallic_roughness.metallic_factor);
 		if (material_has_param(result, "roughness", material_param_float))
 			material_set_float(result, "roughness", material->pbr_metallic_roughness.roughness_factor);
+	} else if (material->has_pbr_specular_glossiness) {
+		log_warnf("[%s] StereoKit doesn't fully support specular/glossy PBR yet.", filename);
+
+		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
+		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
+			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+			material_set_texture(result, "diffuse", parse_tex);
+			tex_release(parse_tex);
+		}
+
+		float *c = material->pbr_specular_glossiness.diffuse_factor;
+		if (material_has_param(result, "color", material_param_color128))
+			material_set_color(result, "color", color_to_gamma({ c[0], c[1], c[2], c[3] }));
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
@@ -396,6 +583,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
+		if (material->normal_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "normal", parse_tex);
 		tex_release(parse_tex);
@@ -403,6 +591,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
+		if (material->occlusion_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "occlusion", parse_tex);
 		tex_release(parse_tex);
@@ -410,9 +599,49 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
+		if (material->emissive_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 		material_set_texture(result, "emission", parse_tex);
 		tex_release(parse_tex);
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+anim_t gltf_parseanim(const cgltf_animation *anim, model_t model, hashmap_t<cgltf_node*, model_node_id> *node_map) {
+	anim_t result = {};
+	result.name = anim->name ? string_copy(anim->name) : string_copy("(none)");
+
+	for (size_t c = 0; c < anim->channels_count; c++) {
+		cgltf_animation_channel *ch = &anim->channels[c];
+
+		anim_curve_t curve = {};
+		curve.node_id = *node_map->get(ch->target_node);
+
+		switch (ch->sampler->interpolation) {
+		case cgltf_interpolation_type_linear:       curve.interpolation = anim_interpolation_linear; break;
+		case cgltf_interpolation_type_step:         curve.interpolation = anim_interpolation_step;   break;
+		case cgltf_interpolation_type_cubic_spline: curve.interpolation = anim_interpolation_cubic;  break;
+		}
+		switch (ch->target_path) {
+		case cgltf_animation_path_type_translation: curve.applies_to = anim_element_translation; break;
+		case cgltf_animation_path_type_rotation:    curve.applies_to = anim_element_rotation;    break;
+		case cgltf_animation_path_type_scale:       curve.applies_to = anim_element_scale;       break;
+		case cgltf_animation_path_type_weights:     curve.applies_to = anim_element_weights;     break;
+		}
+
+		size_t output_size    = cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
+		curve.keyframe_count  = cgltf_accessor_unpack_floats(ch->sampler->input,  nullptr, 0);
+		curve.keyframe_times  = sk_malloc_t(float, curve.keyframe_count);
+		curve.keyframe_values = sk_malloc(sizeof(float) * output_size);
+		cgltf_accessor_unpack_floats(ch->sampler->input,                curve.keyframe_times,  curve.keyframe_count);
+		cgltf_accessor_unpack_floats(ch->sampler->output, (cgltf_float*)curve.keyframe_values, output_size);
+
+		if (result.duration < curve.keyframe_times[curve.keyframe_count-1])
+			result.duration = curve.keyframe_times[curve.keyframe_count-1];
+		result.curves.add(curve);
 	}
 
 	return result;
@@ -435,7 +664,21 @@ matrix gltf_build_node_matrix(cgltf_node *curr) {
 
 ///////////////////////////////////////////
 
-void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const char *filename, cgltf_data *data, cgltf_node *node) {
+matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root) {
+	return curr->parent == nullptr || curr == root 
+		? gltf_build_node_matrix(curr)
+		: gltf_build_node_matrix(curr) * gltf_build_world_matrix(curr->parent, root);
+}
+
+///////////////////////////////////////////
+
+int32_t gltf_node_index(cgltf_data *data, cgltf_node *node) {
+	return ((uint8_t*)node - (uint8_t*)data->nodes)/sizeof(cgltf_node);
+}
+
+///////////////////////////////////////////
+
+void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const char *filename, cgltf_data *data, cgltf_node *node, hashmap_t<cgltf_node*, model_node_id> *node_map) {
 	int32_t       index   = node - data->nodes;
 	model_node_id node_id = -1;
 
@@ -447,8 +690,13 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		mesh_t mesh = gltf_parsemesh(node->mesh, index, p, filename);
 		if (mesh == nullptr) continue;
 
+		// If we're splitting this node into multiple meshes, then add the
+		// additional nodes as children of the first, which should help
+		// preserve animations and such.
+		model_node_id primitive_parent = node_id==-1 ? parent : node_id;
+
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader);
-		model_node_id new_node = model_node_add_child(model, parent, node->name, transform, mesh, material);
+		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, transform, mesh, material);
 		if (node_id == -1)
 			node_id = new_node;
 
@@ -456,12 +704,16 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		material_release(material);
 	}
 
+	if (node->skin && node_id != -1)
+		gltf_parseskin(model_node_get_mesh(model, node_id), node, filename);
+
 	if (node_id == -1) {
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
 	}
+	node_map->add(node, node_id);
 
 	for (size_t i = 0; i < node->children_count; i++) {
-		gltf_add_node(model, shader, node_id, filename, data, node->children[i]);
+		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map);
 	}
 }
 
@@ -484,6 +736,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);
 	if (result != cgltf_result_success) {
 		log_diagf("[%s] gltf parse err %d", filename, result);
+		cgltf_free(data);
 		return false;
 	}
 
@@ -495,11 +748,34 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	}
 
 	// Load each root node
+	hashmap_t<cgltf_node*, model_node_id> node_map = {};
 	for (int32_t i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
 		if (n->parent == nullptr)
-			gltf_add_node(model, shader, -1, filename, data, n);
+			gltf_add_node(model, shader, -1, filename, data, n, &node_map);
 	}
+
+	// Load each animation
+	for (int32_t i = 0; i < data->animations_count; i++) {
+		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], model, &node_map) );
+	}
+
+	// Load all the skeletons/skins
+	for (size_t i = 0; i < data->nodes_count; i++) {
+		if (data->nodes[i].skin == nullptr) continue;
+		cgltf_skin *skin = data->nodes[i].skin;
+
+		anim_skeleton_t skel = {};
+		skel.bone_count       = skin->joints_count;
+		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
+		skel.skin_node        = *node_map.get(&data->nodes[i]);
+		for (size_t b = 0; b < skel.bone_count; b++) {
+			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+		}
+		model->anim_data.skeletons.add(skel);
+	}
+
+	node_map.free();
 	cgltf_free(data);
 	return true;
 }
