@@ -663,8 +663,8 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 		return pose_identity;
 	}
 
-#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
 	XrTime time = 0;
+#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
 	if (qpc_time > 0) {
 		LARGE_INTEGER li;
 		li.QuadPart = qpc_time;
@@ -705,8 +705,8 @@ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_
 		return false;
 	}
 
-#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
 	XrTime time = 0;
+#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
 	if (qpc_time > 0) {
 		LARGE_INTEGER li;
 		li.QuadPart = qpc_time;
