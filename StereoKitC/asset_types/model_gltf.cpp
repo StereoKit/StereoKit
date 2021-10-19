@@ -693,10 +693,15 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		// If we're splitting this node into multiple meshes, then add the
 		// additional nodes as children of the first, which should help
 		// preserve animations and such.
-		model_node_id primitive_parent = node_id==-1 ? parent : node_id;
+		model_node_id primitive_parent = parent;
+		matrix        node_transform   = transform;
+		if (node_id != -1) {
+			primitive_parent = node_id;
+			node_transform   = matrix_identity;
+		}
 
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader);
-		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, transform, mesh, material);
+		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, node_transform, mesh, material);
 		if (node_id == -1)
 			node_id = new_node;
 
