@@ -31,6 +31,6 @@ class TestCopy : ITest
 		_model1.Draw(Matrix.T(-0.1f, 0, 0));
 		_model2.Draw(Matrix.T( 0.1f, 0, 0));
 
-		Tests.Screenshot(400, 400, "Tests/ModelCopy.jpg", new Vec3(0, 0, .2f), Vec3.Zero);
+		Tests.Screenshot("Tests/ModelCopy.jpg", 400, 400, new Vec3(0, 0, .2f), Vec3.Zero);
 	}
 }

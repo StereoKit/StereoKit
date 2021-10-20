@@ -49,8 +49,8 @@ class DemoUI : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(600, 400, "GuideUserInterface.jpg", new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
-		Tests.Screenshot(400, 600, "GuideUserInterfaceCustom.jpg", new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
+		Tests.Screenshot("GuideUserInterface.jpg", 600, 400, new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
+		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 600, new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
 
 		/// :CodeDoc: Guides User Interface
 		/// Then we'll move over to the application step where we'll do the
@@ -196,7 +196,7 @@ class DemoUI : ITest
 		}
 		/// :End:
 		
-		Tests.Screenshot(1, 600, 600, "InteractVolume.jpg", new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
+		Tests.Screenshot("InteractVolume.jpg", 1, 600, 600, 90, new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
 	}
 
 	public void Initialize() {

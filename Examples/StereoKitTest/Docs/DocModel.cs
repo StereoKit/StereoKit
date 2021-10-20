@@ -62,6 +62,6 @@ class DocModel : ITest
 	public void Update    ()
 	{
 		testModel.Draw(Matrix.Identity);
-		Tests.Screenshot(600,600,"Tests/ModelSubsets.jpg", new Vec3(0,0.5f,-2), new Vec3(0, 0.5f, 0));
+		Tests.Screenshot("Tests/ModelSubsets.jpg", 600, 600, new Vec3(0,0.5f,-2), new Vec3(0, 0.5f, 0));
 	}
 }

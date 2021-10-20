@@ -6,7 +6,7 @@ class TestLayout : ITest
 	public void Shutdown() { }
 	public void Update()
 	{
-		Tests.Screenshot(1, 400, 600, "Tests/Layout.jpg", V.XYZ(0, -0.1f, 0.25f), V.XYZ(0, -0.1f, 0));
+		Tests.Screenshot("Tests/Layout.jpg", 1, 400, 600, 90, V.XYZ(0, -0.1f, 0.25f), V.XYZ(0, -0.1f, 0));
 
 		Pose pose = new Pose(Vec3.Zero, Quat.LookDir(0,0,1));
 		UI.WindowBegin("Layout", ref pose);

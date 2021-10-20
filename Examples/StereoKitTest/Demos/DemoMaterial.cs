@@ -136,7 +136,7 @@ class DemoMaterial : ITest
 
 		Vec3 at = new Vec3(x, y, -0.5f);
 		mesh.Draw(material, Matrix.TS(at, 0.1f));
-		Tests.Screenshot(400, 400, screenshotName, at + (from ?? new Vec3(0, 0, -0.08f)), at);
+		Tests.Screenshot(screenshotName, 400, 400, at + (from ?? new Vec3(0, 0, -0.08f)), at);
 	}
 
 	public void Update()

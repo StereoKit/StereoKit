@@ -63,11 +63,12 @@ struct render_inst_buffer {
 	skg_buffer_t buffer;
 };
 struct render_screenshot_t {
-	char *filename;
-	vec3  from;
-	vec3  at;
-	int width;
-	int height;
+	char   *filename;
+	vec3    from;
+	vec3    at;
+	int32_t width;
+	int32_t height;
+	float   fov_degrees;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -449,7 +450,7 @@ void render_check_screenshots() {
 			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
 		matrix_inverse(view, view);
 
-		matrix proj = matrix_perspective(render_fov, (float)w/h, render_clip_planes.x, render_clip_planes.y);
+		matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w/h, render_clip_planes.x, render_clip_planes.y);
 
 		// Create the screenshot surface
 		
@@ -655,9 +656,9 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const char *file) {
+void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
 	char *file_copy = string_copy(file);
-	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height });
+	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
 }
 
 ///////////////////////////////////////////

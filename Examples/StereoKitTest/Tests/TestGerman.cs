@@ -10,6 +10,6 @@ class TestGerman : ITest
 			Matrix.TR(new Vec3(0, 0, 0), Quat.LookDir(0, 0, 1)),
 			new Vec2(40,100)*U.cm, TextFit.Wrap);
 		
-		Tests.Screenshot(400,400, "GermanText.jpg", new Vec3(0,0,.2f), Vec3.Zero);
+		Tests.Screenshot("GermanText.jpg", 400, 400, new Vec3(0,0,.2f), Vec3.Zero);
 	}
 }

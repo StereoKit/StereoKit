@@ -60,8 +60,8 @@ class DemoText : ITest
 		Hierarchy.Pop();
 
 		Hierarchy.Push(Matrix.T(0, -0.1f, 0));
-		if (Tests.IsTesting)
-			Renderer.Screenshot(Hierarchy.ToWorld(new Vec3(0, 0, 0.09f)), Hierarchy.ToWorld(Vec3.Zero), 600, 300, "../../../docs/img/screenshots/BasicText.jpg");
+		Tests.Screenshot("BasicText.jpg", 600, 300, Hierarchy.ToWorld(new Vec3(0, 0, 0.09f)), Hierarchy.ToWorld(Vec3.Zero));
+
 		/// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
 		/// Then it's pretty trivial to just draw some text on the screen! Just call
 		/// Text.Add on update. If you don't have a TextStyle available, calling it 

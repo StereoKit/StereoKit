@@ -335,7 +335,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_mesh       (IntPtr mesh, IntPtr material, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model      (IntPtr model, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_blit           (IntPtr to_rendertarget, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     (Vec3 from_viewpt, Vec3 at, int width, int height, string file);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     (string file, Vec3 from_viewpt, Vec3 at, int width, int height, float fov_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 

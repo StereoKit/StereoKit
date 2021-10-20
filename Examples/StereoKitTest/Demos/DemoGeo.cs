@@ -138,8 +138,8 @@ class DemoGeo : ITest
 	{
 		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
 
-		Tests.Screenshot(600, 600, "ProceduralGeometry.jpg", V.XYZ(0.3f, -0.25f, -0.3f), V.XYZ(0.5f, -0.25f, -0.5f));
-		Tests.Screenshot(600, 600, "ProceduralGrid.jpg", Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
+		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.3f, -0.25f, -0.3f), V.XYZ(0.5f, -0.25f, -0.5f));
+		Tests.Screenshot("ProceduralGrid.jpg",     600, 600, Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
 
 		// Plane!
 		Mesh  planeMesh  = demoPlaneMesh;
