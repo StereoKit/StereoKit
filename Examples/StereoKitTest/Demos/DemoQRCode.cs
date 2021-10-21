@@ -3,7 +3,7 @@ using StereoKit;
 using System;
 using System.Collections.Generic;
 
-/// :CodeDoc: Guides Using QR Codes
+/// :CodeDoc: Guides 4 Using QR Codes
 /// # Using QR Codes
 /// 
 /// ## Intro

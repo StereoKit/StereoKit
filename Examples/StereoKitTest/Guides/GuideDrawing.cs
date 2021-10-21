@@ -1,7 +1,7 @@
 ﻿using StereoKit;
 using System;
 
-/// :CodeDoc: Guides Drawing
+/// :CodeDoc: Guides 5 Drawing
 /// # Drawing content with StereoKit
 /// 
 /// Generally, the first thing you want to do is get content on-screen! Or

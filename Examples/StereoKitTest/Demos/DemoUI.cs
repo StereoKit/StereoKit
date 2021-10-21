@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides User Interface
+﻿/// :CodeDoc: Guides 2 User Interface
 /// # Building UI in StereoKit
 /// 
 /// ## Immediate Mode UI

@@ -21,10 +21,12 @@ namespace StereoKitDocumenter
 
 		bool skipBlanks = true;
 		int  skipIndent = -1;
+		int  sortIndex  = 0;
 
-		public string Name     => info;
-		public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
-		public string UrlName  => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
+		public string Name      => info;
+		public string FileName  => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
+		public string UrlName   => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
+		public int    SortIndex => sortIndex;
 
 		public DocExample(ExampleType aType, string aInfo)
 		{
@@ -43,9 +45,10 @@ namespace StereoKitDocumenter
 					}
 				}
 			} else if (type == ExampleType.Document) {
-				int split = info.IndexOf(' ');
-				category = info.Substring(0, split);
-				info     = info.Substring(split+1);
+				string[] words = info.Split(' ');
+				category  = words[0];
+				sortIndex = int.Parse(words[1]);
+				info      = String.Join(" ", words, 2, words.Length - 2);
 				Program.items.Add(this);
 			}
 		}

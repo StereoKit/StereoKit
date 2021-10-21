@@ -23,7 +23,7 @@ description: >- # this means to ignore newlines until "baseurl:"
   StereoKit is A lightweight low-dependency C# rendering library for MR / AR / VR / Desktop using OpenXR!
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://stereokit.net" # the base hostname & protocol for your site, e.g. http://example.com
-screen_url: "https://stereokit.net/img/screenshots"
+screen_url: "/img/screenshots"
 twitter_username: koujaku
 github_username:  maluoi
 

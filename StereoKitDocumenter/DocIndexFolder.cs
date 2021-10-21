@@ -6,11 +6,13 @@ namespace StereoKitDocumenter
 	class DocIndexFolder
 	{
 		public string name;
+		public int    order;
 		public List<DocIndexFolder> folders = new List<DocIndexFolder>();
 
-		public DocIndexFolder(string aName)
+		public DocIndexFolder(string aName, int aOrder = 0)
 		{
-			name = aName;
+			name  = aName;
+			order = aOrder;
 		}
 
 		public override string ToString()
@@ -38,7 +40,7 @@ namespace StereoKitDocumenter
 				result.Append($"{ind}]\n{ind}");
 			}
 			result.Append($"}},\n");
-            
+
 			return result.ToString();
 		}
 	}

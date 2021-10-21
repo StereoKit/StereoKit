@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides Using Hands
+﻿/// :CodeDoc: Guides 3 Using Hands
 /// # Using Hands
 /// 
 /// StereoKit uses a hands first approach to user input! Even when hand-sensors

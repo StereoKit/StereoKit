@@ -55,12 +55,12 @@ body {
     padding:0px;
     background-color: #222;
 }
-a {
-    color: #3794FF;
-    text-decoration: none;
+a, a code {
+    color: #3794FF !important;
+    text-decoration: none !important;
 }
-a:hover {
-    text-decoration: underline;
+a:hover, a code:hover {
+    text-decoration: underline !important;
 }
 header {
     background-color: #222;
