@@ -2,7 +2,7 @@
 
 namespace StereoKit
 {
-	/// <summary>An better way to access standard shader paramter names,
+	/// <summary>A better way to access standard shader paramter names,
 	/// instead of using just strings! If you have your own custom
 	/// parameters, you can still access them via the string methods, but
 	/// this is checked and verified by the compiler!</summary>

@@ -221,8 +221,8 @@ class GuideDrawing : ITest
 		/// So that's the highlights! There's plenty more to draw and more
 		/// tricks to be learned, but this is a great start! There's treasures
 		/// in the documentation, so hunt around in there for more samples. You
-		/// may also be interested in the [Materials and Shaders]({{site.url}}/Pages/Guides/Materials-and-Shaders.html)
-		/// guide for advanced rendering code, or [the Model guide]({{site.url}}/Pages/Guides/Working-with-Models.html)
+		/// may also be interested in the [Materials guide]({{site.url}}/Pages/Guides/Working-with-Materials.html)
+		/// for advanced rendering code, or [the Model guide]({{site.url}}/Pages/Guides/Working-with-Models.html)
 		/// for managing your visible content!
 		/// 
 		/// If you'd like to see all the code for this document,
