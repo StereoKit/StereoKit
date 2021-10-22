@@ -9,12 +9,6 @@ using System;
 /// looking application! Fortunately, StereoKit comes with some great tools
 /// built-in, and Materials can be a _lot_ of fun to work with!
 /// 
-/// At the core of every Material is a piece of code called a Shader. The
-/// Shader runs on the GPU, describes how each vertex is projected onto the
-/// screen, and calculates the color of every pixel. This sounds like a lot
-/// of responsibility, but Shader code is usually quite short, and the math
-/// involved is often more creative than technical!
-/// 
 /// :End:
 
 
@@ -89,12 +83,18 @@ class GuideWorkingWithMaterials : ITest
 	/// _It's uh... not the most glamorous material!_
 	/// 
 	/// Not all Materials will have the same parameters, and in fact,
-	/// parameters come directly from the Shader code and can vary wildly!
+	/// parameters can vary wildly from Material to Material! This comes from
+	/// the Shader code that each Material has embedded at its core. The
+	/// Shader runs on the GPU, describes how each vertex is projected onto the
+	/// screen, and calculates the color of every pixel. Since each shader
+	/// program is different, each one has different parameters it works with!
+	/// 
 	/// While [`MatParamName`]({{site.url}}/Pages/Reference/MatParamName.html)
 	/// helps to codify and standardize common parameter names, it's always
-	/// best to be somewhat familiar with the Shader you're using.
+	/// best to be somewhat familiar with the Shader that the Material is
+	/// using.
 	/// 
-	/// For example, Material.Default uses [this shader](https://github.com/maluoi/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
+	/// For example, Material.Default uses [this Shader](https://github.com/maluoi/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
 	/// and you can see the parameters listed at the top:
 	/// ```csharp
 	/// //--color:color = 1,1,1,1
