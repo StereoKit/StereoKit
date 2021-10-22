@@ -54,6 +54,7 @@ struct anim_transform_t {
 };
 
 struct anim_inst_subset_t {
+	mesh_t  original_mesh;
 	mesh_t  modified_mesh;
 	matrix *bone_transforms;
 };
@@ -75,6 +76,7 @@ void anim_update_skin (model_t model);
 void anim_inst_play   (model_t model, int32_t anim_id, anim_mode_ mode);
 void anim_inst_destroy(anim_inst_t *inst);
 void anim_data_destroy(anim_data_t *data);
+anim_data_t anim_data_copy(anim_data_t *data);
 
 void anim_update();
 void anim_shutdown();

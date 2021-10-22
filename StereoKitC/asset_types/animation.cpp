@@ -2,6 +2,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "../sk_math.h"
+#include "../libraries/stref.h"
 
 namespace sk {
 
@@ -166,8 +167,10 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 		model->anim_inst.skinned_mesh_count = model->anim_data.skeletons.count;
 		model->anim_inst.skinned_meshes     = sk_malloc_t(anim_inst_subset_t, model->anim_inst.skinned_mesh_count);
 		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
-			model->anim_inst.skinned_meshes[i].modified_mesh   = model_node_get_mesh(model, model->anim_data.skeletons[i].skin_node);
+			model->anim_inst.skinned_meshes[i].original_mesh   = model_node_get_mesh(model, model->anim_data.skeletons[i].skin_node);
+			model->anim_inst.skinned_meshes[i].modified_mesh   = mesh_copy(model->anim_inst.skinned_meshes[i].original_mesh);
 			model->anim_inst.skinned_meshes[i].bone_transforms = sk_malloc_t(matrix, model->anim_data.skeletons[i].bone_count);
+			model_node_set_mesh(model, model->anim_data.skeletons[i].skin_node, model->anim_inst.skinned_meshes[i].modified_mesh);
 		}
 	}
 	model->anim_inst.start_time  = time_getf();
@@ -181,6 +184,7 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 void anim_inst_destroy(anim_inst_t *inst) {
 	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
 		free(inst->skinned_meshes[i].bone_transforms);
+		mesh_release(inst->skinned_meshes[i].original_mesh);
 	}
 	free(inst->skinned_meshes);
 	free(inst->curve_last_keyframe);
@@ -205,6 +209,63 @@ void anim_data_destroy(anim_data_t *data) {
 	}
 	data->anims    .free();
 	data->skeletons.free();
+}
+
+///////////////////////////////////////////
+
+anim_data_t anim_data_copy(anim_data_t *data) {
+	anim_data_t result = {};
+	
+	if (data->anims.count > 0) {
+		result.anims.resize(data->anims.count);
+		for (size_t i = 0; i < data->anims.count; i++) {
+			anim_t &anim_src = data->anims[i];
+			anim_t  anim = {};
+			anim.duration = anim_src.duration;
+			anim.name     = string_copy(anim_src.name);
+			anim.curves.resize(anim_src.curves.count);
+			for (size_t c = 0; c < anim_src.curves.count; c++) {
+				anim_curve_t &curve_src = anim_src.curves[c];
+				anim_curve_t  curve = {};
+				curve.applies_to     = curve_src.applies_to;
+				curve.interpolation  = curve_src.interpolation;
+				curve.keyframe_count = curve_src.keyframe_count;
+				curve.node_id        = curve_src.node_id;
+
+				curve.keyframe_times = sk_malloc_t(float, curve.keyframe_count);
+				memcpy(curve.keyframe_times, curve_src.keyframe_times, sizeof(float) * curve.keyframe_count);
+
+				size_t value_size = 0;
+				switch (curve.applies_to) {
+				case anim_element_rotation:    value_size = sizeof(quat) * curve.keyframe_count; break;
+				case anim_element_scale:       value_size = sizeof(vec3) * curve.keyframe_count; break;
+				case anim_element_translation: value_size = sizeof(vec3) * curve.keyframe_count; break;
+				default: log_errf("anim_data_copy doesn't implement anim_element_weights yet!");
+				}
+				curve.keyframe_values = sk_malloc(value_size);
+				memcpy(curve.keyframe_values, curve_src.keyframe_values, value_size);
+
+				anim.curves.add(curve);
+			}
+			result.anims.add(anim);
+		}
+	}
+
+	if (data->skeletons.count > 0) {
+		result.skeletons.resize(data->skeletons.count);
+		for (size_t i = 0; i < data->skeletons.count; i++) {
+			anim_skeleton_t &skel_src = data->skeletons[i];
+			anim_skeleton_t  skel     = {};
+			skel.bone_count       = skel_src.bone_count;
+			skel.skin_node        = skel_src.skin_node;
+			skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
+			memcpy(skel.bone_to_node_map, skel_src.bone_to_node_map, sizeof(int32_t) * skel.bone_count);
+
+			result.skeletons.add(skel);
+		}
+	}
+
+	return result;
 }
 
 ///////////////////////////////////////////

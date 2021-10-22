@@ -197,14 +197,14 @@ bool32_t mesh_has_skin(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
+bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, int32_t bone_count) {
 	if (mesh->discard_data) {
 		log_err("mesh_set_skin: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
-		return;
+		return false;
 	}
 	if (bone_weight_count != bone_id_4_count || bone_weight_count != mesh->vert_count) {
 		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
-		return;
+		return false;
 	}
 
 	mesh->skin_data.bone_ids                = sk_malloc_t(uint16_t, bone_id_4_count * 4);
@@ -217,8 +217,25 @@ void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_co
 	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
 
 	mesh->skin_data.bone_count = bone_count;
-	for (int32_t i = 0; i < bone_count; i++) {
-		mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(bone_resting_transforms[i]);
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
+	if (_mesh_set_skin(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count, bone_count)) {
+		for (int32_t i = 0; i < bone_count; i++) {
+			mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(bone_resting_transforms[i]);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void mesh_set_skin_inv(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms_inverted, int32_t bone_count) {
+	if (_mesh_set_skin(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count, bone_count)) {
+		memcpy(mesh->skin_data.bone_inverse_transforms, bone_resting_transforms_inverted, sizeof(matrix) * bone_count);
 	}
 }
 
@@ -284,6 +301,31 @@ void mesh_addref(mesh_t mesh) {
 mesh_t mesh_create() {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
 	result->gpu_mesh = skg_mesh_create(nullptr, nullptr);
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_copy(mesh_t mesh) {
+	if (mesh == nullptr) {
+		log_err("mesh_copy was provided a null mesh!");
+		return nullptr;
+	}
+
+	mesh_t result = (mesh_t)assets_allocate(asset_type_mesh);
+	result->bounds       = mesh->bounds;
+	result->discard_data = mesh->discard_data;
+	result->ind_draw     = mesh->ind_draw;
+
+	if (mesh->discard_data) {
+		log_err("mesh_copy not yet implemented for meshes with discard data set!");
+	} else {
+		mesh_set_inds (result, mesh->inds,  mesh->ind_count);
+		mesh_set_verts(result, mesh->verts, mesh->vert_count, false);
+		if (mesh_has_skin(mesh))
+			mesh_set_skin_inv(result, mesh->skin_data.bone_ids, mesh->vert_count, mesh->skin_data.weights, mesh->vert_count, mesh->skin_data.bone_inverse_transforms, mesh->skin_data.bone_count);
+	}
+
 	return result;
 }
 

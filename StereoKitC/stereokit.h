@@ -452,6 +452,7 @@ typedef uint16_t vind_t;
 
 SK_API mesh_t   mesh_find            (const char *name);
 SK_API mesh_t   mesh_create          ();
+SK_API mesh_t   mesh_copy            (mesh_t mesh);
 SK_API void     mesh_set_id          (mesh_t mesh, const char *id);
 SK_API void     mesh_addref          (mesh_t mesh);
 SK_API void     mesh_release         (mesh_t mesh);

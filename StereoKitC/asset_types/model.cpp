@@ -59,6 +59,19 @@ model_t model_copy(model_t model) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
 	}
 
+	// If the original Model is animating, we want to set this Model up with
+	// the original meshes, not the active, modified meshes.
+	if (model->anim_inst.skinned_meshes != nullptr) {
+		for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
+			model_node_id node   = model->anim_data.skeletons[i].skin_node;
+			int32_t       visual = result->nodes[node].visual;
+			assets_safeswap_ref(
+				(asset_header_t**)&result->visuals[visual].mesh,
+				(asset_header_t* ) model ->anim_inst.skinned_meshes[i].original_mesh);
+		}
+	}
+	result->anim_data = anim_data_copy(&model->anim_data);
+
 	return result;
 }
 
