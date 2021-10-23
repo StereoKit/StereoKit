@@ -174,7 +174,7 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 		}
 	}
 	model->anim_inst.start_time  = time_getf();
-	model->anim_inst.last_update = model->anim_inst.start_time;
+	model->anim_inst.last_update = -1;
 	model->anim_inst.anim_id     = anim_id;
 	model->anim_inst.mode        = mode;
 }
