@@ -314,6 +314,48 @@ bool openxr_init() {
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
 
+	// Exception for the articulated WMR hand simulation, and the Vive Index
+	// controller equivalent. These simulations are insufficient to treat them
+	// like true articulated hands.
+	// 
+	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
+	// tracking layer is present.
+	//
+	// TODO: Remove this when the hand tracking extension is improved.
+#if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
+	// We don't need to ask for the Ultraleap layer above so we don't have it
+	// stored anywhere. Gotta check it again.
+	bool     has_leap_layer = false;
+	uint32_t xr_layer_count = 0;
+	xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
+	XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
+	for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
+	xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
+	for (uint32_t i = 0; i < xr_layer_count; i++) {
+		if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
+			has_leap_layer = true;
+			break;
+		}
+	}
+	free(xr_layers);
+
+	// Get the runtime name so we're less likely to invalidate something we
+	// don't kow about.
+	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+		"xrGetInstanceProperties failed [%s]");
+
+	// The Leap hand tracking layer seems to supercede the built-in extensions.
+	if (has_leap_layer == false) {
+		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
+			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
+			xr_has_articulated_hands = false;
+			xr_has_hand_meshes       = false;
+		}
+	}
+#endif
+
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
 	if (xr_has_depth_lsr)                  log_diag("OpenXR depth LSR ext enabled!");
