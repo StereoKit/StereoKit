@@ -147,18 +147,37 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 				weight_ct = attr->data->count;
 				weights   = sk_malloc_t(vec4, weight_ct);
 
-				if (components == 1) for (size_t j = 0; j < weight_ct; j++) {
-					weights[j].x = floats[j];
-				} else if (components == 2) for (size_t j = 0; j < weight_ct; j++) {
-					weights[j].x = floats[j*components];
-					weights[j].y = floats[j*components+1];
-				} else if (components == 3) for (size_t j = 0; j < weight_ct; j++) {
-					weights[j].x = floats[j*components];
-					weights[j].y = floats[j*components+1];
-					weights[j].z = floats[j*components+2];
+				if (components == 1) for (int32_t j = 0; j < weight_ct; j++) {
+					weights[j].x = 1; // one weight? Must be 1
+				} else if (components == 2) for (int32_t j = 0; j < weight_ct; j++) {
+					int32_t jc = j * components;
+					vec4   *w  = &weights[j];
+					w->x = floats[jc];
+					w->y = floats[jc+1];
+					float sum = 1/(w->x + w->y);
+					w->x = w->x * sum;
+					w->y = w->y * sum;
+				} else if (components == 3) for (int32_t j = 0; j < weight_ct; j++) {
+					int32_t jc = j * components;
+					vec4   *w  = &weights[j];
+					w->x = floats[jc];
+					w->y = floats[jc+1];
+					w->z = floats[jc+2];
+					float sum = 1/(w->x + w->y + w->z);
+					w->x = w->x * sum;
+					w->y = w->y * sum;
+					w->z = w->z * sum;
 				}
 				if (components == 4) {
 					weights = (vec4*)floats;
+					for (int32_t j = 0; j < weight_ct; j++) {
+						vec4 *w   = &weights[j];
+						float sum = 1/(w->x + w->y + w->z + w->w);
+						w->x = w->x * sum;
+						w->y = w->y * sum;
+						w->z = w->z * sum;
+						w->w = w->w * sum;
+					}
 				} else {
 					free(floats);
 				}
