@@ -711,8 +711,36 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 	// Create the interface to the graphics card
 	D3D_FEATURE_LEVEL feature_levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0 };
-	if (FAILED(D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, feature_levels, _countof(feature_levels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context))) {
-		return -1;
+	HRESULT           hr               = D3D11CreateDevice(final_adapter, final_adapter == nullptr ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, 0, creation_flags, feature_levels, _countof(feature_levels), D3D11_SDK_VERSION, &d3d_device, nullptr, &d3d_context);
+	if (FAILED(hr)) {
+
+		// Message that we failed to initialize with the selected adapter.
+		char d3d_info_txt[128];
+		if (final_adapter != nullptr) {
+			DXGI_ADAPTER_DESC1 final_adapter_info;
+			final_adapter->GetDesc1(&final_adapter_info);
+			snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Failed starting Direct3D 11 adapter '%ls': 0x%08X", &final_adapter_info.Description, hr);
+			final_adapter->Release();
+		} else {
+			snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Failed starting Direct3D 11 adapter 'Default adapter': 0x%08X", hr);
+		}
+		skg_log(skg_log_critical, d3d_info_txt);
+
+		// Get a human readable description of that error message.
+		LPTSTR error_text = NULL;
+		FormatMessage(
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,
+			hr,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)&error_text, 0,
+			NULL);
+		skg_log(skg_log_critical, error_text);
+		LocalFree(error_text);
+
+		return 0;
 	}
 
 	// Notify what device and API we're using
