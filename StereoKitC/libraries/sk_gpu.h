@@ -675,8 +675,9 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 
 int32_t skg_init(const char *app_name, void *adapter_id) {
 	UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#if !defined(NDEBUG)
+#if defined(_DEBUG)
 	creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
+	skg_log(skg_log_info, "Requesting debug Direct3D context");
 #endif
 
 	// Find the right adapter to use:
