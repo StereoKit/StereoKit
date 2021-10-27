@@ -5,7 +5,7 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 4
-#define SK_VERSION_PRERELEASE 2
+#define SK_VERSION_PRERELEASE 3
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
