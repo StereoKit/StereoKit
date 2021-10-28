@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides 0 Getting Started
+/// :CodeDoc: Guides 0 Getting Started
 /// # Getting Started with StereoKit
 /// 
 /// ## Prerequisites
@@ -16,6 +16,11 @@
 /// - **Enable Developer Mode (for UWP/HoloLens)**
 ///   - Windows Settings->Update and Security->For Developers->Developer Mode
 /// 
+/// This short video goes through the pre-requisites for building StereoKit's
+/// hello world! You can find a [UWP/HoloLens specific version here](https://www.youtube.com/watch?v=U_7VNIcPQaM)
+/// as well.
+/// <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/lOYs8seoRpc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+/// 
 /// ## The Templates
 /// 
 /// ![Create New Project]({{site.url}}/img/screenshots/VSNewProject.png)
@@ -28,6 +33,10 @@
 ///   - This is an early version still in project format. It works with .Net Core, UWP, and Xamarin(Android/Quest) all at once via a DLL shared between multiple platform specific projects.
 /// - _[Native C++ Template (in development)](https://github.com/maluoi/StereoKit/tree/master/StereoKitTemplates/SKNative)_
 ///   - StereoKit does provide a C API, but experienced developers should only choose this if the benefits outweigh the lack of C API documentation.
+/// 
+/// For an overview of the initial code in the .Net Core and UWP templates,
+/// check out this video!
+/// <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/apcWlHNJ5kM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 /// 
 /// ## Minimum "Hello Cube" Application
 /// 
