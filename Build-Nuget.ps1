@@ -87,12 +87,12 @@ function Get-Key {
 ###########################################
 
 function Build-Sizes {
-    $size_x64       = (Get-Item "bin/x64_Release/StereoKitC/StereoKitC.dll").length
-    $size_x64_linux = (Get-Item "bin/x64_Release/StereoKitC_Linux/libStereoKitC.so").length
-    $size_x64_uwp   = (Get-Item "bin/x64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
-    $size_arm64     = (Get-Item "bin/ARM64_Release/StereoKitC_Android/libStereoKitC.so").length
-    $size_arm64_uwp = (Get-Item "bin/ARM64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
-    $size_arm_uwp   = (Get-Item "bin/ARM_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
+    $size_x64       = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
+    $size_x64_linux = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
+    $size_x64_uwp   = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
+    $size_arm64     = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
+    $size_arm64_uwp = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
+    $size_arm_uwp   = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
 
     $text = (@"
 ## Build Sizes:
