@@ -25,6 +25,11 @@ namespace StereoKit
 		public float z { get => q.Z; set => q.Z = value; }
 		public float w { get => q.W; set => q.W = value; }
 
+		/// <summary>Sometimes you want to do weird stuff with your
+		/// Quaternions. I won't judge. This just turns the Quat into a Vec4,
+		/// makes some types of math easier!</summary>
+		public Vec4 Vec4 => new Vec4(x, y, z, w);
+
 		/// <summary>You may want to use static creation methods, like
 		/// Quat.LookAt, or Quat.Identity instead of this one! Unless you
 		/// know what you're doing.</summary>
