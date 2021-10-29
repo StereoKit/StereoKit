@@ -164,7 +164,7 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 		}
 	}
 	if (model->anim_inst.skinned_meshes == nullptr) {
-		model->anim_inst.skinned_mesh_count = model->anim_data.skeletons.count;
+		model->anim_inst.skinned_mesh_count = (int32_t)model->anim_data.skeletons.count;
 		model->anim_inst.skinned_meshes     = sk_malloc_t(anim_inst_subset_t, model->anim_inst.skinned_mesh_count);
 		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
 			model->anim_inst.skinned_meshes[i].original_mesh   = model_node_get_mesh(model, model->anim_data.skeletons[i].skin_node);

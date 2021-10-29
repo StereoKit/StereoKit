@@ -73,7 +73,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 			else if (attr->data->type == cgltf_type_scalar) _components = 1;
 			const int32_t components = _components;
 
-			bone_id_ct = attr->data->count;
+			bone_id_ct = (int32_t)attr->data->count;
 			bone_ids   = sk_malloc_t(uint16_t, bone_id_ct * 4);
 			memset(bone_ids, 0, sizeof(uint16_t) * bone_id_ct * 4);
 
@@ -144,7 +144,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
-				weight_ct = attr->data->count;
+				weight_ct = (int32_t)attr->data->count;
 				weights   = sk_malloc_t(vec4, weight_ct);
 
 				if (components == 1) for (int32_t j = 0; j < weight_ct; j++) {
@@ -195,7 +195,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 	}
 
 	// Find the skeleton for the mesh
-	bone_tr_ct = node->skin->joints_count;
+	bone_tr_ct = (int32_t)node->skin->joints_count;
 	bone_trs   = sk_malloc_t(matrix, bone_tr_ct);
 	if (node->skin->inverse_bind_matrices != nullptr) { 
 		cgltf_buffer_view *buff      = node->skin->inverse_bind_matrices->buffer_view;
@@ -651,8 +651,8 @@ anim_t gltf_parseanim(const cgltf_animation *anim, model_t model, hashmap_t<cglt
 		case cgltf_animation_path_type_weights:     curve.applies_to = anim_element_weights;     break;
 		}
 
-		size_t output_size    = cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
-		curve.keyframe_count  = cgltf_accessor_unpack_floats(ch->sampler->input,  nullptr, 0);
+		size_t output_size    =          cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
+		curve.keyframe_count  = (int32_t)cgltf_accessor_unpack_floats(ch->sampler->input,  nullptr, 0);
 		curve.keyframe_times  = sk_malloc_t(float, curve.keyframe_count);
 		curve.keyframe_values = sk_malloc(sizeof(float) * output_size);
 		cgltf_accessor_unpack_floats(ch->sampler->input,                curve.keyframe_times,  curve.keyframe_count);
@@ -692,13 +692,13 @@ matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root) {
 ///////////////////////////////////////////
 
 int32_t gltf_node_index(cgltf_data *data, cgltf_node *node) {
-	return ((uint8_t*)node - (uint8_t*)data->nodes)/sizeof(cgltf_node);
+	return (int32_t)(((uint8_t*)node - (uint8_t*)data->nodes)/sizeof(cgltf_node));
 }
 
 ///////////////////////////////////////////
 
 void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const char *filename, cgltf_data *data, cgltf_node *node, hashmap_t<cgltf_node*, model_node_id> *node_map) {
-	int32_t       index   = node - data->nodes;
+	int32_t       index   = (int32_t)(node - data->nodes);
 	model_node_id node_id = -1;
 
 	matrix transform = gltf_build_node_matrix(node);
@@ -790,7 +790,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		cgltf_skin *skin = data->nodes[i].skin;
 
 		anim_skeleton_t skel = {};
-		skel.bone_count       = skin->joints_count;
+		skel.bone_count       = (int32_t)skin->joints_count;
 		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
 		skel.skin_node        = *node_map.get(&data->nodes[i]);
 		for (size_t b = 0; b < skel.bone_count; b++) {

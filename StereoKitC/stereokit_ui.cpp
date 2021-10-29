@@ -990,7 +990,7 @@ button_state_ ui_focus_set(int32_t hand, uint64_t for_el_id, bool32_t focused, f
 		if      (skui_hand[0].active_prev == for_el_id) hand = 0;
 		else if (skui_hand[1].active_prev == for_el_id) hand = 1;
 	}
-	if (focused && priority <= skui_hand[hand].focus_priority) {
+	if (focused && hand >= 0 && hand < 2 && priority <= skui_hand[hand].focus_priority) {
 		is_focused = focused;
 		skui_hand[hand].focused        = for_el_id;
 		skui_hand[hand].focus_priority = priority;
@@ -1606,7 +1606,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	button_state_ focus_state   = button_state_inactive;
 	button_state_ button_state  = button_state_inactive;
 	float         finger_offset = button_depth;
-	float         finger_x;
+	float         finger_x      = 0;
 	int32_t       hand          = -1;
 	if (confirm_method == ui_confirm_push) {
 		ui_box_interaction_1h_poke(id,
@@ -1644,7 +1644,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			// it to focused if it's still active.
 			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
 			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
-			int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
+			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 			finger_x = pinch_local.x;
 
 			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
@@ -1654,7 +1654,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	}
 
 	if (button_state & button_state_active) {
-		float pos_in_slider = fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_x) / (size.x-button_size.x)));
+		float pos_in_slider = (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_x) / (size.x-button_size.x)));
 		N new_val = (N)min + (N)pos_in_slider*(N)(max-min);
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
@@ -1675,7 +1675,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
 	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
-	float slide_x_rel = ((value-min) / (max-min)) * (size.x-button_size.x);
+	float slide_x_rel = (float)(((value-min) / (max-min)) * (size.x-button_size.x));
 	float slide_y     = window_relative_pos.y - (size.y-button_size.y)/2;
 	// Slide line
 	ui_box(
@@ -1696,7 +1696,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			skui_mat_quad, skui_palette[0] * color_blend);
 
 		vec3    pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
-		int32_t scale_step  = (-pinch_local.z-activation_plane) / snap_dist;
+		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
 			float scale    = 1 + scale_step * snap_scale;
 			float z        = -activation_plane - (scale_step * snap_dist) + button_depth/2;
@@ -1717,11 +1717,12 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		}
 	}
 	
-
-	if (button_state & button_state_just_active)
-		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
-	else if (button_state & button_state_just_inactive)
-		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+	if (hand >= 0 || hand < 2) {
+		if (button_state & button_state_just_active)
+			sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
+		else if (button_state & button_state_just_inactive)
+			sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+	}
 
 	return result;
 }

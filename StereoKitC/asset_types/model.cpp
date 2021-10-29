@@ -230,7 +230,7 @@ void model_set_transform(model_t model, int32_t subset, const matrix &transform)
 ///////////////////////////////////////////
 
 int32_t model_subset_count(model_t model) {
-	return model->visuals.count;
+	return (int32_t)model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -360,7 +360,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		return -1;
 	}
 
-	model_node_id node_id = model->nodes.count;
+	model_node_id node_id = (model_node_id)model->nodes.count;
 	char          tmp_name[32];
 	if (name == nullptr) {
 		snprintf(tmp_name, sizeof(tmp_name), "node%d", node_id);
@@ -406,7 +406,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.mesh            = mesh;
 		visual.transform_model = node.transform_model;
 		visual.node            = node_id;
-		node.visual = model->visuals.add(visual);
+		node.visual = (int32_t)model->visuals.add(visual);
 		model_recalculate_bounds(model);
 	}
 
@@ -419,7 +419,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 model_node_id model_node_find(model_t model, const char *name) {
 	for (size_t i = 0; i < model->nodes.count; i++) {
 		if (string_eq(model->nodes[i].name, name))
-			return i;
+			return (model_node_id)i;
 	}
 	return -1;
 }
@@ -447,7 +447,7 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 int32_t model_node_count(model_t model) {
-	return model->nodes.count;
+	return (int32_t)model->nodes.count;
 }
 
 ///////////////////////////////////////////
@@ -459,7 +459,7 @@ model_node_id model_node_index(model_t model, int32_t index) {
 ///////////////////////////////////////////
 
 int32_t model_node_visual_count(model_t model){
-	return model->visuals.count;
+	return (int32_t)model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -568,7 +568,7 @@ void model_node_set_solid(model_t model, model_node_id node, bool32_t solid) {
 void model_node_set_material(model_t model, model_node_id node, material_t material) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = model->visuals.add({});
+		vis = (int32_t)model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	assets_safeswap_ref(
@@ -581,7 +581,7 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = model->visuals.add({});
+		vis = (int32_t)model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
@@ -688,14 +688,14 @@ void model_set_anim_completion(model_t model, float percent) {
 int32_t model_anim_find(model_t model, const char *animation_name) {
 	for (size_t i = 0; i < model->anim_data.anims.count; i++)
 		if (string_eq(model->anim_data.anims[i].name, animation_name))
-			return i;
+			return (int32_t)i;
 	return false;
 }
 
 ///////////////////////////////////////////
 
 int32_t model_anim_count(model_t model) {
-	return model->anim_data.anims.count;
+	return (int32_t)model->anim_data.anims.count;
 }
 
 ///////////////////////////////////////////
