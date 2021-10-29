@@ -94,7 +94,7 @@ bool openxr_create_swapchain (swapchain_t &out_swapchain, XrViewConfigurationTyp
 void openxr_preferred_format (int64_t &out_color, int64_t &out_depth);
 bool openxr_preferred_blend  (XrViewConfigurationType view_type, XrEnvironmentBlendMode &out_blend);
 bool openxr_update_swapchains(device_display_t &display);
-bool openxr_render_layer     (XrTime predictedTime, device_display_t &layer);
+bool openxr_render_layer     (XrTime predictedTime, device_display_t &layer, render_layer_ render_filter);
 
 ///////////////////////////////////////////
 
@@ -553,6 +553,7 @@ bool openxr_render_frame() {
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
+		render_layer_ filter = render_get_filter();
 		if (xr_displays[i].type != xr_display_primary) {
 			XrSecondaryViewConfigurationLayerInfoMSFT layer = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
 			layer.viewConfigurationType = xr_displays[i].type;
@@ -560,8 +561,9 @@ bool openxr_render_frame() {
 			layer.layerCount            = 1;
 			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
 			xr_display_2nd_layers.add(layer);
+			filter = render_get_capture_filter();
 		}
-		openxr_render_layer(xr_time, xr_displays[i]);
+		openxr_render_layer(xr_time, xr_displays[i], filter);
 	}
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
@@ -607,7 +609,7 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 
 ///////////////////////////////////////////
 
-bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
+bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_layer_ render_filter) {
 
 	// Find the state and location of each viewpoint at the predicted time
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
@@ -676,7 +678,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);
 
-		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers);
+		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers, render_filter);
 	}
 
 	// And tell OpenXR we're done with rendering to this one!

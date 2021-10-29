@@ -44,6 +44,16 @@ namespace StereoKit
 			get => NativeAPI.render_get_filter();
 		}
 
+		/// <summary>This tells if CaptureFilter has been overridden to a
+		/// specific value via `Renderer.OverrideCaptureFilter`.<summary>
+		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
+
+		/// <summary>This is the current render layer mask for Mixed Reality
+		/// Capture, or 2nd person observer rendering. By default, this is
+		/// directly linked to Renderer.LayerFilter, but this behaviour can be
+		/// overriden via `Renderer.OverrideCaptureFilter`.</summary>
+		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
+
 		/// <summary>This is the gamma space color the renderer will clear
 		/// the screen to when beginning to draw a new frame. This is ignored
 		/// on displays with transparent screens</summary>
@@ -62,6 +72,21 @@ namespace StereoKit
 			get => NativeAPI.render_get_cam_root();
 			set => NativeAPI.render_set_cam_root(value);
 		}
+
+		/// <summary>The CaptureFilter is a layer mask for Mixed Reality
+		/// Capture, or 2nd person observer rendering. On HoloLens and WMR,
+		/// this is the video rendering feature. This allows you to hide, or
+		/// reveal certain draw calls when rendering video output.
+		/// 
+		/// By default, the CaptureFilter will always be the same as
+		/// `Render.LayerFilter`, overriding this will mean this filter no
+		/// longer updates with `LayerFilter`.</summary>
+		/// <param name="useOverrideFilter">Enables (true) or disables (false)
+		/// the overridden filter value provided here.</param>
+		/// <param name="overrideFilter">The filter for capture rendering to
+		/// use. This is ignored if useOverrideFilter is false.</param>
+		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
+			=> NativeAPI.render_override_capture_filter(useOverrideFilter ? 1 : 0, overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with

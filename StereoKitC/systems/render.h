@@ -55,7 +55,7 @@ matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
 color128      render_get_clear_color      ();
 vec2          render_get_clip             ();
-void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count);
+void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count, render_layer_ render_filter);
 void          render_clear                ();
 vec3          render_unproject_pt         (vec3 normalized_screen_pt);
 void          render_update_projection    ();

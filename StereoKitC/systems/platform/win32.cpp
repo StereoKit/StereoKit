@@ -265,7 +265,7 @@ void win32_step_end_flat() {
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1);
+	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
 
 	// This copies the color data over to the swapchain, and resolves any

@@ -100,6 +100,8 @@ spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
 render_layer_           render_primary_filter  = render_layer_all;
+render_layer_           render_capture_filter  = render_layer_all;
+bool                    render_use_capture_filter = false;
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
@@ -306,6 +308,27 @@ void render_set_filter(render_layer_ layer_filter) {
 
 ///////////////////////////////////////////
 
+void render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter) {
+	render_use_capture_filter = use_override_filter;
+	render_capture_filter    = layer_filter;
+}
+
+///////////////////////////////////////////
+
+render_layer_ render_get_capture_filter() {
+	return render_use_capture_filter
+		? render_capture_filter
+		: render_primary_filter;
+}
+
+///////////////////////////////////////////
+
+bool32_t render_has_capture_filter() {
+	return render_use_capture_filter;
+}
+
+///////////////////////////////////////////
+
 void render_enable_skytex(bool32_t show_sky) {
 	render_sky_show = show_sky;
 }
@@ -429,9 +452,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count) {
+void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, render_primary_filter, count);
+	render_draw_queue(views, projections, render_filter, count);
 	render_check_screenshots();
 }
 
