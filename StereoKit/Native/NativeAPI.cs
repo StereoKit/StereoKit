@@ -496,6 +496,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_round_at_16(string text, IntPtr image_sprite, Vec3 window_relative_pos, float diameter);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_at_16      (string text, ref bool pressed, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_16     (string id,   ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_f64_16 (string id,   ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method);
 
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_hseparator     ();
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16       (string text, bool use_padding);
@@ -510,6 +511,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model          (IntPtr model, Vec2 ui_size, float model_scale);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16     (string id,   ref float value, float min, float max, float step, float width, UIConfirm confirm_method);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_f64_16 (string id,   ref double value, double min, double max, double step, float width, UIConfirm confirm_method);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16(string text, ref Pose movement, Bounds handle, bool draw, UIMove move_type);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end     ();
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16(string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);

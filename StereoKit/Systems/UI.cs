@@ -347,8 +347,32 @@ namespace StereoKit
 		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
 			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
 
+		/// <summary>A horizontal slider element! You can stick your finger 
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">A per-window unique id for tracking element 
+		/// state.</param>
+		/// <param name="value">The value that the slider will store slider 
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, left side 
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, right 
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts 
+		/// at min, and increments by step.</param>
+		/// <param name="width">Physical width of the slider on the window.
+		/// </param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push)
+			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod);
+
 		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 windowRelativeCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
 			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
+
+		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 windowRelativeCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
+			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, windowRelativeCorner, size, confirmMethod);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
