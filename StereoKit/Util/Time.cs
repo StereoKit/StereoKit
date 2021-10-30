@@ -1,7 +1,7 @@
 ﻿namespace StereoKit
 {
 	/// <summary>This class contains time information for the current session and frame!</summary>
-	public class Time
+	public static class Time
 	{
 		/// <summary> How much time has elapsed since StereoKit was initialized? 64 bit time precision. </summary>
 		public static double Total    { get { return NativeAPI.time_get     (); } }

@@ -6,7 +6,7 @@ namespace StereoKit
 	/// This static class includes a variety of different drawing methods, from rendering 
 	/// Models and Meshes, to setting rendering options and drawing to offscreen surfaces!
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
-	public class Renderer
+	public static class Renderer
 	{
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
@@ -45,7 +45,7 @@ namespace StereoKit
 		}
 
 		/// <summary>This tells if CaptureFilter has been overridden to a
-		/// specific value via `Renderer.OverrideCaptureFilter`.<summary>
+		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
 		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
 
 		/// <summary>This is the current render layer mask for Mixed Reality

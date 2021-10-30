@@ -118,7 +118,7 @@ namespace StereoKitTest
 
 		private static void ShowNodes(Model model, Material jointMaterial)
 		{
-			float scale = Hierarchy.ToLocal(Vec3.One).x;
+			float scale = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
 			for (int n = 0; n < model.Nodes.Count; n++)
 			{
 				var node = model.Nodes[n];
@@ -129,7 +129,7 @@ namespace StereoKitTest
 
 		private static void PickNodes(Model model, Material jointMaterial)
 		{
-			float     scale       = Math.Abs(Hierarchy.ToLocal(Vec3.One).x);
+			float     scale       = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
 			ModelNode closest     = null;
 			float     closestDist = (10 * U.cm * scale) * (10 * U.cm * scale);
 			for (int i = 0; i < 2; i += 1) {
