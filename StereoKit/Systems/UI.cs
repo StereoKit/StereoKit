@@ -316,8 +316,16 @@ namespace StereoKit
 			return false;
 		}
 
-		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
-			=> NativeAPI.ui_toggle_at_16(text, ref pressed, windowRelativeCorner, size);
+		public static bool ToggleAt(string text, ref bool value, Vec3 windowRelativeCorner, Vec2 size)
+		{
+			int iVal = value ? 1 : 0;
+			if (NativeAPI.ui_toggle_at_16(text, ref iVal, windowRelativeCorner, size))
+			{
+				value = iVal > 0 ? true : false;
+				return true;
+			}
+			return false;
+		}
 
 		public static void Model(Model model)
 			=> NativeAPI.ui_model(model._inst, Vec2.Zero, 0);
@@ -412,7 +420,7 @@ namespace StereoKit
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn.</summary>
@@ -437,7 +445,7 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 		{
-			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
