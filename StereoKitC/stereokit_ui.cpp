@@ -1802,7 +1802,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 					vec3  window_world = hierarchy_to_world_point(vec3_zero);
 					float curr_mag     = vec3_magnitude_sq(input_head_pose_world.position - window_world);
 
-					if (curr_mag < 0.75f * 0.75f) {
+					if (curr_mag < 0.6f * 0.6f) {
 						// Reset id to zero if we found a window that's within touching distance
 						ui_focus_set(i, 0, true, 10);
 						skui_hand[i].ray_discard = true;
