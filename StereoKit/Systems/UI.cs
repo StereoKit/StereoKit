@@ -255,11 +255,17 @@ namespace StereoKit
 		/// <param name="active">Does this button look like it's pressed?</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool Radio (string text, bool active) 
-			=> NativeAPI.ui_toggle_16(text, ref active) && active;
+		public static bool Radio (string text, bool active)
+		{
+			int iActive = active?1:0;
+			return NativeAPI.ui_toggle_16(text, ref iActive) && iActive>0;
+		}
 
 		public static bool Radio(string text, bool active, Vec2 size)
-			=> NativeAPI.ui_toggle_sz_16(text, ref active, size) && active;
+		{
+			int iActive = active ? 1 : 0;
+			return NativeAPI.ui_toggle_sz_16(text, ref iActive, size) && iActive>0;
+		}
 
 		/// <summary>A pressable button! A button will expand to fit the text
 		/// provided to it, vertically and horizontally. Text is re-used as the
@@ -289,10 +295,26 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes!
 		/// </returns>
 		public static bool Toggle (string text, ref bool value)
-			=> NativeAPI.ui_toggle_16(text, ref value);
+		{
+			int iVal = value?1:0;
+			if (NativeAPI.ui_toggle_16(text, ref iVal))
+			{
+				value = iVal>0?true:false;
+				return true;
+			}
+			return false;
+		}
 
 		public static bool Toggle(string text, ref bool value, Vec2 size)
-			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
+		{
+			int iVal = value?1:0;
+			if (NativeAPI.ui_toggle_sz_16(text, ref iVal, size))
+			{
+				value = iVal>0?true:false;
+				return true;
+			}
+			return false;
+		}
 
 		public static bool ToggleAt(string text, ref bool pressed, Vec3 windowRelativeCorner, Vec2 size)
 			=> NativeAPI.ui_toggle_at_16(text, ref pressed, windowRelativeCorner, size);
