@@ -38,6 +38,8 @@ private void OnLoadModel(string filename)
 	{
 		model      = Model.FromFile(filename);
 		modelScale = 1 / model.Bounds.dimensions.Magnitude;
+		if (model.Anims.Count > 0)
+			model.PlayAnim(model.Anims[0], AnimMode.Loop);
 	});
 }
 ```

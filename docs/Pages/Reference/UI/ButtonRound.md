@@ -16,9 +16,9 @@ static bool ButtonRound(string id, [Sprite]({{site.url}}/Pages/Reference/Sprite.
 |float diameter|The diameter of the button's visual.|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 
-A pressable button! A button will expand to fit the text provided to it,
-vertically and horizontally. Text is re-used as the id. Will return true only on
-the first frame it is pressed!
+A pressable button! A button will expand to fit the text
+provided to it, vertically and horizontally. Text is re-used as the
+id. Will return true only on the first frame it is pressed!
 
 
 

@@ -6,12 +6,14 @@ description: Converts a Windows Mirage spatial node GUID into a Pose based on it
 # [World]({{site.url}}/Pages/Reference/World.html).FromSpatialNode
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) FromSpatialNode(Guid spatialNodeGuid)
+static [Pose]({{site.url}}/Pages/Reference/Pose.html) FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType, Int64 qpcTime)
 </div>
 
 |  |  |
 |--|--|
 |Guid spatialNodeGuid|A Windows Mirage spatial node GUID             aquired from a windows MR API call.|
+|SpatialNodeType spatialNodeType|Type of spatial node to locate.|
+|Int64 qpcTime|A windows performance counter timestamp at             which the node should be located, obtained from another API or             with System.Diagnostics.Stopwatch.GetTimestamp().|
 |RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|A Pose representing the current orientation of the spatial node.|
 
 Converts a Windows Mirage spatial node GUID into a Pose

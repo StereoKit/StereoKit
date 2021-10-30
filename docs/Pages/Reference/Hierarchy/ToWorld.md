@@ -27,6 +27,17 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) ToWorld([Quat]({{site.url}
 
 Converts a local rotation relative to the current
 hierarchy stack into world space!
+<div class='signature' markdown='1'>
+static [Pose]({{site.url}}/Pages/Reference/Pose.html) ToWorld([Pose]({{site.url}}/Pages/Reference/Pose.html) localPose)
+</div>
+
+|  |  |
+|--|--|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) localPose|A pose in local space.|
+|RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|The provided pose now in world space!|
+
+Converts a local pose relative to the current
+hierarchy stack into world space!
 
 
 

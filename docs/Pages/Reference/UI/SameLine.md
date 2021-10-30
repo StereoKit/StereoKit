@@ -9,8 +9,9 @@ description: Moves the current layout position back to the end of the line that 
 static void SameLine()
 </div>
 
-Moves the current layout position back to the end of the line that just finished,
-so it can continue on the same line as the last element!
+Moves the current layout position back to the end of the
+line that just finished, so it can continue on the same line as the
+last element!
 
 
 

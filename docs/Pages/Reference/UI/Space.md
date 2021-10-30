@@ -13,8 +13,9 @@ static void Space(float space)
 |--|--|
 |float space|Physical space to shift the layout by.|
 
-Adds some space! If we're at the start of a new line, space is added vertically,
-otherwise, space is added horizontally.
+Adds some space! If we're at the start of a new line,
+space is added vertically, otherwise, space is added
+horizontally.
 
 
 

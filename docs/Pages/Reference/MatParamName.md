@@ -1,11 +1,11 @@
 ---
 layout: default
 title: MatParamName
-description: An better way to access standard shader paramter names, instead of using just strings! If you have your own custom parameters, you can still access them via the string methods, but this is checked and verified by the compiler!
+description: A better way to access standard shader paramter names, instead of using just strings! If you have your own custom parameters, you can still access them via the string methods, but this is checked and verified by the compiler!
 ---
 # enum MatParamName
 
-An better way to access standard shader paramter names,
+A better way to access standard shader paramter names,
 instead of using just strings! If you have your own custom
 parameters, you can still access them via the string methods, but
 this is checked and verified by the compiler!
@@ -17,6 +17,7 @@ this is checked and verified by the compiler!
 
 |  |  |
 |--|--|
+|ClipCutoff|In clip shaders, this is the cutoff value below which pixels are discarded. Typically, the diffuse/albedo's alpha component is sampled for comparison here.  This represents the float param 'cutoff'.|
 |ColorTint|A per-material color tint, behavior could vary from shader to shader, but often this is just multiplied against the diffuse texture right at the start.  This represents the Color param 'color'.|
 |DiffuseTex|The primary color texture for the shader! Diffuse, Albedo, 'The Texture', or whatever you want to call it, this is usually the base color that the shader works with.  This represents the texture param 'diffuse'.|
 |EmissionTex|This texture is unaffected by lighting, and is frequently just added in on top of the material's final color! Tends to look really glowy.  This represents the texture param 'emission'.|

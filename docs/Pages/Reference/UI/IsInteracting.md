@@ -14,8 +14,9 @@ static bool IsInteracting([Handed]({{site.url}}/Pages/Reference/Handed.html) han
 |[Handed]({{site.url}}/Pages/Reference/Handed.html) hand|Which hand is interacting?|
 |RETURNS: bool|True if the hand has an active or focused UI element. False otherwise.|
 
-Tells if the user is currently interacting with a UI element! This will be true
-if the hand has an active or focused UI element.
+Tells if the user is currently interacting with a UI
+element! This will be true if the hand has an active or focused UI
+element.
 
 
 

@@ -9,9 +9,10 @@ description: This will advance the layout to the next line. If there's nothing o
 static void NextLine()
 </div>
 
-This will advance the layout to the next line. If there's nothing on the current
-line, it'll advance to the start of the next on. But this won't have any affect on an
-empty line, try UI.Space for that.
+This will advance the layout to the next line. If there's
+nothing on the current line, it'll advance to the start of the next
+on. But this won't have any affect on an empty line, try UI.Space
+for that.
 
 
 

@@ -14,13 +14,13 @@ here, just let us know!
 
 ## Sample Projects
 
-### [Finger Paint Sample](https://github.com/maluoi/StereoKit-PaintTutorial)
+### [StereoKit Ink](https://github.com/maluoi/StereoKit-PaintTutorial)
 
-![Finger Paint Sample]({{site.screen_url}}/SKPaintTutorial.png)
+![StereoKit Ink]({{site.screen_url}}/StereoKitInk.jpg)
 
 A well documented repository that illustrates creating a complete but
-simplified finger painting application. It includes functionality like
-custom and standard UI, line rendering, file save/load, and hand menus.
+simplified inking application. It includes functionality like custom and
+standard UI, line rendering, file save/load, and hand menus.
 
 ### [Bing Maps API and Terrain Sample](https://github.com/maluoi/StereoKit-BingMaps)
 
