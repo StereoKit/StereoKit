@@ -192,6 +192,9 @@ void log_write(log_ level, const char *text) {
 	free(colored_text);
 
 	free(full_text);
+
+	if (level == log_error)
+		platform_print_callstack();
 }
 
 ///////////////////////////////////////////
