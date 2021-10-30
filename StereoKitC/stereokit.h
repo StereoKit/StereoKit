@@ -1110,6 +1110,7 @@ SK_API void assets_releaseref_threadsafe(void *asset);
 
 static const char *default_id_material             = "default/material";
 static const char *default_id_material_pbr         = "default/material_pbr";
+static const char *default_id_material_pbr_clip    = "default/material_pbr_clip";
 static const char *default_id_material_unlit       = "default/material_unlit";
 static const char *default_id_material_unlit_clip  = "default/material_unlit_clip";
 static const char *default_id_material_equirect    = "default/equirect_convert";
@@ -1134,6 +1135,7 @@ static const char *default_id_mesh_righthand       = "default/mesh_righthand";
 static const char *default_id_mesh_ui_button       = "default/mesh_ui_button";
 static const char *default_id_shader               = "default/shader";
 static const char *default_id_shader_pbr           = "default/shader_pbr";
+static const char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 static const char *default_id_shader_unlit         = "default/shader_unlit";
 static const char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
 static const char *default_id_shader_font          = "default/shader_font";

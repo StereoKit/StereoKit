@@ -63,7 +63,13 @@ namespace StereoKit
 		/// This is great for tiling textures!
 		/// 
 		/// This represents the float param 'tex_scale'.</summary>
-		TexScale
+		TexScale,
+		/// <summary>In clip shaders, this is the cutoff value below which
+		/// pixels are discarded. Typically, the diffuse/albedo's alpha
+		/// component is sampled for comparison here.
+		/// 
+		/// This represents the float param 'cutoff'.</summary>
+		ClipCutoff
 	}
 
 	/// <summary>A Material describes the surface of anything drawn on the 
@@ -192,6 +198,7 @@ namespace StereoKit
 				case MatParamName.OcclusionTex:    return "occlusion";
 				case MatParamName.RoughnessAmount: return "roughness";
 				case MatParamName.TexScale:        return "tex_scale";
+				case MatParamName.ClipCutoff:      return "cutoff";
 				default: Log.Err("Unimplemented Material Parameter Name! " + parameter); return "";
 			}
 		}
@@ -299,6 +306,8 @@ namespace StereoKit
 		public static Material Default => StereoKit.Default.Material;
 		/// <inheritdoc cref="StereoKit.Default.MaterialPBR" />
 		public static Material PBR => StereoKit.Default.MaterialPBR;
+		/// <inheritdoc cref="StereoKit.Default.MaterialPBRClip" />
+		public static Material PBRClip => StereoKit.Default.MaterialPBRClip;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUI" />
 		public static Material UI => StereoKit.Default.MaterialUI;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUIBox" />

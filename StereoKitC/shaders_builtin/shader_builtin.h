@@ -2,6 +2,7 @@
 
 #include "shader_builtin_skybox.hlsl.h"
 #include "shader_builtin_pbr.hlsl.h"
+#include "shader_builtin_pbr_clip.hlsl.h"
 #include "shader_builtin_default.hlsl.h"
 #include "shader_builtin_unlit.hlsl.h"
 #include "shader_builtin_unlit_clip.hlsl.h"

@@ -86,6 +86,7 @@ set(SK_SRC_SHADERS_HLSL
   StereoKitC/shaders_builtin/shader_builtin_font.hlsl
   StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
   StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl

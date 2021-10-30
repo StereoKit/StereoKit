@@ -76,6 +76,8 @@ namespace StereoKit
 		public static Shader Default => StereoKit.Default.Shader;
 		/// <inheritdoc cref="StereoKit.Default.ShaderPbr" />
 		public static Shader PBR => StereoKit.Default.ShaderPbr;
+		/// <inheritdoc cref="StereoKit.Default.ShaderPbrClip" />
+		public static Shader PBRClip => StereoKit.Default.ShaderPbrClip;
 		/// <inheritdoc cref="StereoKit.Default.ShaderUI" />
 		public static Shader UI => StereoKit.Default.ShaderUI;
 		/// <inheritdoc cref="StereoKit.Default.ShaderUIBox" />

@@ -535,9 +535,15 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		if (material == nullptr) {
 			result = material_copy_id(default_id_material);
 		} else if (material->unlit) {
-			result = material_copy_id(default_id_material_unlit);
+			if (material->alpha_mode == cgltf_alpha_mode_mask)
+				result = material_copy_id(default_id_material_unlit_clip);
+			else
+				result = material_copy_id(default_id_material_unlit);
 		} else if (material->has_pbr_metallic_roughness) {
-			result = material_copy_id(default_id_material_pbr);
+			if (material->alpha_mode == cgltf_alpha_mode_mask)
+				result = material_copy_id(default_id_material_pbr_clip);
+			else
+				result = material_copy_id(default_id_material_pbr);
 		} else {
 			result = material_copy_id(default_id_material);
 		}
@@ -597,8 +603,10 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	}
 	if (material->double_sided)
 		material_set_cull(result, cull_none);
-	if (material->alpha_mode == cgltf_alpha_mode_blend || material->alpha_mode == cgltf_alpha_mode_mask)
+	if (material->alpha_mode == cgltf_alpha_mode_blend)
 		material_set_transparency(result, transparency_blend);
+	if (material->alpha_mode == cgltf_alpha_mode_mask && material_has_param(result, "cutoff", material_param_float))
+		material_set_float(result, "cutoff", material->alpha_cutoff);
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {

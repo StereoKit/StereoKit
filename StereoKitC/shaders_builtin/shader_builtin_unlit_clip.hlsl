@@ -3,7 +3,9 @@
 //--name = sk/unlit_clip
 //--color:color = 1, 1, 1, 1
 //--diffuse     = white
+//--cutoff      = 0.01
 float4       color;
+float        cutoff;
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -34,7 +36,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = diffuse.Sample(diffuse_s, input.uv);
-	clip(col.a-0.01);
+	if (col.a < cutoff) discard;
 
 	col = col * input.color;
 
