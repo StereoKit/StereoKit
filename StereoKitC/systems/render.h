@@ -27,9 +27,9 @@ struct render_item_t {
 	DirectX::XMMATRIX transform;
 	color128    color;
 	skg_mesh_t *mesh;
-	int32_t     mesh_inds;
 	material_t  material;
 	uint64_t    sort_id;
+	int32_t     mesh_inds;
 	uint16_t    layer;
 };
 

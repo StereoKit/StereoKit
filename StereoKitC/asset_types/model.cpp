@@ -62,7 +62,7 @@ model_t model_copy(model_t model) {
 	// If the original Model is animating, we want to set this Model up with
 	// the original meshes, not the active, modified meshes.
 	if (model->anim_inst.skinned_meshes != nullptr) {
-		for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
+		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
 			model_node_id node   = model->anim_data.skeletons[i].skin_node;
 			int32_t       visual = result->nodes[node].visual;
 			assets_safeswap_ref(
@@ -148,7 +148,7 @@ void model_recalculate_bounds(model_t model) {
 	min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
-	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+	for (size_t m = 0; m < model->visuals.count; m += 1) {
 		for (int32_t i = 0; i < 8; i += 1) {
 			vec3 corner = bounds_corner      (mesh_get_bounds(model->visuals[m].mesh), i);
 			vec3 pt     = matrix_transform_pt(model->visuals[m].transform_model, corner);
@@ -240,7 +240,7 @@ int32_t model_add_named_subset(model_t model, const char *name, mesh_t mesh, mat
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
-	model_node_id id = model_node_add(model, nullptr, transform, mesh, material);
+	model_node_id id = model_node_add(model, name, transform, mesh, material);
 	return model->nodes[id].visual;
 }
 
@@ -452,7 +452,7 @@ int32_t model_node_count(model_t model) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_index(model_t model, int32_t index) {
+model_node_id model_node_index(model_t, int32_t index) {
 	return index;
 }
 
@@ -493,7 +493,7 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_get_root(model_t model) {
+model_node_id model_node_get_root(model_t) {
 	return 0;
 }
 

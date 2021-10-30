@@ -131,9 +131,9 @@ void anim_update_skin(model_t model) {
 void _anim_update_skin(model_t &model) {
 	if (model->anim_inst.anim_id < 0) return;
 
-	for (size_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
+	for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
 		matrix root = matrix_invert(model_node_get_transform_model(model, model->anim_data.skeletons[i].skin_node));
-		for (size_t b = 0; b < model->anim_data.skeletons[i].bone_count; b++) {
+		for (int32_t b = 0; b < model->anim_data.skeletons[i].bone_count; b++) {
 			model->anim_inst.skinned_meshes[i].bone_transforms[b] = model_node_get_transform_model(model, model->anim_data.skeletons[i].bone_to_node_map[b]) * root;
 		}
 		mesh_update_skin(
@@ -146,7 +146,7 @@ void _anim_update_skin(model_t &model) {
 ///////////////////////////////////////////
 
 void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
-	if (anim_id < 0 || anim_id >= model->anim_data.anims.count) {
+	if (anim_id < 0 || anim_id >= (int32_t)model->anim_data.anims.count) {
 		log_err("Attempted to play an invalid animation id.");
 		return;
 	}

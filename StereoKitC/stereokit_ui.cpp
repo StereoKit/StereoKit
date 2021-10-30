@@ -1966,9 +1966,9 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		ui_window_t new_window = {};
 		new_window.hash = id;
 		new_window.size = window_size;
-		skui_sl_windows.insert(index, new_window);
+		skui_sl_windows.insert((size_t)index, new_window);
 	}
-	ui_window_t &window = skui_sl_windows[index];
+	ui_window_t &window = skui_sl_windows[(size_t)index];
 	window.type = window_type;
 	
 	// figure out the size of it, based on its window type

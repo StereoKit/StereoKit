@@ -74,22 +74,22 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 			const int32_t components = _components;
 
 			bone_id_ct = (int32_t)attr->data->count;
-			bone_ids   = sk_malloc_t(uint16_t, bone_id_ct * 4);
+			bone_ids   = sk_malloc_t(uint16_t, (size_t)bone_id_ct * 4);
 			memset(bone_ids, 0, sizeof(uint16_t) * bone_id_ct * 4);
 
 			if (attr->data->is_sparse) {
 				log_errf("[%s] Sparse joints not implemented", filename);
 			} else if (attr->data->component_type == cgltf_component_type_r_8u){
-				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
+				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data[j];
-				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
+				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data[j*components];
 					bone_ids[j*4+1] = attr_data[j*components+1];
-				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
+				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data[j*components];
 					bone_ids[j*4+1] = attr_data[j*components+1];
 					bone_ids[j*4+2] = attr_data[j*components+2];
-				} else if (components == 4) for (size_t j = 0; j < bone_id_ct; j++) {
+				} else if (components == 4) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data[j*components];
 					bone_ids[j*4+1] = attr_data[j*components+1];
 					bone_ids[j*4+2] = attr_data[j*components+2];
@@ -97,32 +97,32 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 				}
 			} else if (attr->data->component_type == cgltf_component_type_r_16u){
 				uint16_t *attr_data_16 = (uint16_t*)attr_data;
-				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
+				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data_16[j];
-				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
+				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data_16[j*components];
 					bone_ids[j*4+1] = attr_data_16[j*components+1];
-				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
+				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
 					bone_ids[j*4  ] = attr_data_16[j*components];
 					bone_ids[j*4+1] = attr_data_16[j*components+1];
 					bone_ids[j*4+2] = attr_data_16[j*components+2];
 				} else if (components == 4) memcpy(bone_ids, attr_data_16, sizeof(uint16_t)*bone_id_ct*components);
 			} else if (attr->data->component_type == cgltf_component_type_r_32u){
 				uint32_t *attr_data_32 = (uint32_t*)attr_data;
-				if (components == 1) for (size_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_32[j];
-				} else if (components == 2) for (size_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_32[j*components];
-					bone_ids[j*4+1] = attr_data_32[j*components+1];
-				} else if (components == 3) for (size_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_32[j*components];
-					bone_ids[j*4+1] = attr_data_32[j*components+1];
-					bone_ids[j*4+2] = attr_data_32[j*components+2];
-				} else if (components == 4) for (size_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_32[j*components];
-					bone_ids[j*4+1] = attr_data_32[j*components+1];
-					bone_ids[j*4+2] = attr_data_32[j*components+2];
-					bone_ids[j*4+3] = attr_data_32[j*components+3];
+				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = (uint16_t)attr_data_32[j];
+				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
+					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
+				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
+					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
+					bone_ids[j*4+2] = (uint16_t)attr_data_32[j*components+2];
+				} else if (components == 4) for (int32_t j = 0; j < bone_id_ct; j++) {
+					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
+					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
+					bone_ids[j*4+2] = (uint16_t)attr_data_32[j*components+2];
+					bone_ids[j*4+3] = (uint16_t)attr_data_32[j*components+3];
 				}
 			} else {
 				log_errf("[%s] joint format (%d) not implemented", filename, attr->data->component_type);
@@ -241,18 +241,17 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	vert_t *verts = nullptr;
-	int     vert_count = 0;
+	int32_t vert_count = 0;
 
 	bool has_normals = false;
-	bool has_skin    = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute   *attr   = &p->attributes[a];
 		cgltf_buffer_view *buff   = attr->data->buffer_view;
 		size_t             offset = buff->offset + attr->data->offset;
 		
 		// Make sure we have memory for our verts
-		if (vert_count < attr->data->count) {
-			vert_count = (int)attr->data->count;
+		if (vert_count < (int32_t)attr->data->count) {
+			vert_count = (int32_t)attr->data->count;
 			verts      = sk_realloc_t(vert_t, verts, vert_count);
 			for (size_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
@@ -263,7 +262,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		if (attr->type == cgltf_attribute_type_position) {
 			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
-				for (size_t v = 0; v < attr->data->count; v++) {
+				for (cgltf_size v = 0; v < attr->data->count; v++) {
 					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
 					verts[v].pos = *pos;
 				}
@@ -274,7 +273,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				cgltf_accessor_unpack_floats(attr->data, floats, count);
 
 				if (attr->data->type == cgltf_type_vec3) {
-					for (size_t v = 0; v < attr->data->count; v++) {
+					for (cgltf_size v = 0; v < attr->data->count; v++) {
 						vec3 *pos = (vec3*)&floats[v * 3];
 						verts[v].pos = *pos;
 					}
@@ -369,7 +368,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	// Now grab the mesh indices
-	int     ind_count = (int)p->indices->count;
+	size_t  ind_count = p->indices->count;
 	vind_t *inds      = sk_malloc_t(vind_t, ind_count);
 	if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
@@ -401,13 +400,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	if (!has_normals) {
-		mesh_calculate_normals(verts, vert_count, inds, ind_count);
+		mesh_calculate_normals(verts, vert_count, inds, (int32_t)ind_count);
 	}
 
 	result = mesh_create();
 	mesh_set_id   (result, id);
 	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_inds (result, inds,  (int32_t)ind_count);
 	free(verts);
 	free(inds );
 
@@ -629,7 +628,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 ///////////////////////////////////////////
 
-anim_t gltf_parseanim(const cgltf_animation *anim, model_t model, hashmap_t<cgltf_node*, model_node_id> *node_map) {
+anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_node_id> *node_map) {
 	anim_t result = {};
 	result.name = anim->name ? string_copy(anim->name) : string_copy("(none)");
 
@@ -781,7 +780,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	// Load each animation
 	for (int32_t i = 0; i < data->animations_count; i++) {
-		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], model, &node_map) );
+		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], &node_map) );
 	}
 
 	// Load all the skeletons/skins
