@@ -51,8 +51,8 @@ Window                  x_root;
 // Start input
 ///////////////////////////////////////////
 
-key_  linux_xk_map_upper[255] = {};
-key_  linux_xk_map_lower[255] = {};
+key_  linux_xk_map_upper[256] = {};
+key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
@@ -68,7 +68,7 @@ void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_Home] = key_home;
 	linux_xk_map_upper[0xFF & XK_Left] = key_left;
 	linux_xk_map_upper[0xFF & XK_Up] = key_up;
-	linux_xk_map_upper[0xFF & XK_Right] = key_down;
+	linux_xk_map_upper[0xFF & XK_Right] = key_right;
 	linux_xk_map_upper[0xFF & XK_Down] = key_down;
 	linux_xk_map_upper[0xFF & XK_End] = key_end;
 	linux_xk_map_upper[0xFF & XK_Begin] = key_home;
@@ -500,7 +500,7 @@ void linux_step_end_flat() {
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1);
+	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
 
 	skg_swapchain_present(&linux_swapchain);

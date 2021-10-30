@@ -42,7 +42,7 @@ bool platform_init() {
 		case skg_log_critical: log_errf ("sk_gpu: %s", text); break;
 		}
 	});
-	if (!skg_init(sk_app_name, luid)) {
+	if (skg_init(sk_app_name, luid) <= 0) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
 		return false;
 	}

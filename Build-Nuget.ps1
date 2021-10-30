@@ -41,12 +41,6 @@ function Replace-In-File {
 
 ###########################################
 
-function Clean {
-    & $vsExe 'StereoKit.sln' '/Clean' | Out-Null
-}
-
-###########################################
-
 function Build {
     param([parameter(Mandatory)][string] $mode, [parameter(Mandatory)][string] $project)
     & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' $project | Write-Host
@@ -56,11 +50,11 @@ function Build {
 ###########################################
 
 function Test {
-    & $vsExe 'StereoKit.sln' '/Build' 'Debug|X64' '/Project' 'StereoKitDocumenter' | Out-Null
+    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitDocumenter' | Out-Null
     if ($LASTEXITCODE -ne 0) {
         return $LASTEXITCODE
     }
-    & 'cd' 'StereoKitDocumenter/bin/Debug/';
+    & 'cd' 'StereoKitDocumenter/bin/Release/';
     & '.\StereoKitDocumenter.exe' | Write-Host
     & 'cd' '../../../';
     return $LASTEXITCODE
@@ -87,12 +81,12 @@ function Get-Key {
 ###########################################
 
 function Build-Sizes {
-    $size_x64       = (Get-Item "bin/x64_Release/StereoKitC/StereoKitC.dll").length
-    $size_x64_linux = (Get-Item "bin/x64_Release/StereoKitC_Linux/libStereoKitC.so").length
-    $size_x64_uwp   = (Get-Item "bin/x64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
-    $size_arm64     = (Get-Item "bin/ARM64_Release/StereoKitC_Android/libStereoKitC.so").length
-    $size_arm64_uwp = (Get-Item "bin/ARM64_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
-    $size_arm_uwp   = (Get-Item "bin/ARM_Release_UWP/StereoKitC_UWP/StereoKitC.dll").length
+    $size_x64       = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
+    $size_x64_linux = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
+    $size_x64_uwp   = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
+    $size_arm64     = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
+    $size_arm64_uwp = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
+    $size_arm_uwp   = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
 
     $text = (@"
 ## Build Sizes:
@@ -124,10 +118,11 @@ if ($fast -eq $true -and $upload -eq $true) {
     Write-Host "Let's not upload a fast build, just in case! Try again without the fast flag :)" -ForegroundColor yellow
     exit
 }
+Write-Host 'Building... ' -NoNewline
 if ($upload -eq $false) {
-    Write-Host 'Local package build only.'
+    Write-Host 'local only.' -ForegroundColor White
 } else {
-    Write-Host 'Will attempt to upload package when finished!'
+    Write-Host 'AND UPLOADING!' -ForegroundColor Green
 }
 if ($fast -eq $true) {
     Write-Host 'Making a "fast" build, incremental build issues may be present.'
@@ -137,42 +132,140 @@ if ($fast -eq $true) {
 
 # Print version, so we know we're building the right version right away
 $version = Get-Version
-Write-Host "v$version"
+
+# Notify of build, and output the version
+Write-Host @"
+   _____ _                      _  ___ _   
+  / ____| |                    | |/ (_) |  
+ | (___ | |_ ___ _ __ ___  ___ | ' / _| |_ 
+  \___ \| __/ _ \ '__/ _ \/ _ \|  < | | __|
+  ____) | ||  __/ | |  __/ (_) | . \| | |_ 
+ |_____/ \__\___|_|  \___|\___/|_|\_\_|\__| 
+"@ -NoNewline -ForegroundColor White
+Write-Host "v$version`n" -ForegroundColor Cyan
 
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
 
-#### Execute Tests ########################
+#### Clean Project ########################
 
-# Run tests before anything else!
+# Clean out the old files, do a full build
+if (Test-Path 'bin\distribute') {
+    Remove-Item 'bin\distribute' -Recurse
+}
+Write-Host 'Cleaning old files...'
 if ($fast -eq $false) {
-    Write-Host 'Running tests...'
+    & $vsExe 'StereoKit.sln' '/Clean' 'Release|X64' | Out-Null
+    Write-Host '..cleaned Release x64'
+    & $vsExe 'StereoKit.sln' '/Clean' 'Release|ARM64' | Out-Null
+    Write-Host '..cleaned Release ARM64'
+    & $vsExe 'StereoKit.sln' '/Clean' 'Release|ARM' | Out-Null
+    Write-Host '..cleaned Release ARM'
+}
+Write-Host 'Cleaned'
+
+#### Build Windows ########################
+
+Write-Host @"
+
+__      ___         _               
+\ \    / (_)_ _  __| |_____ __ _____
+ \ \/\/ /| | ' \/ _` / _ \ V  V (_-<
+  \_/\_/ |_|_||_\__,_\___/\_/\_//__/
+
+"@ -ForegroundColor White
+
+# Build Win32 first
+Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
+$result = Build -mode "Release|X64" -project "StereoKitC"
+if ($result -ne 0) {
+    Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
+#Write-Host "--- Beginning build: Win32 ARM64 ---" -ForegroundColor green
+#$result = Build -mode "Release|ARM64" -project "StereoKitC"
+#if ($result -ne 0) {
+#    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
+#    exit
+#}
+#Write-Host "--- Finished building: Win32 ARM64 ---" -ForegroundColor green
+
+# Build UWP next
+Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
+$result = Build -mode "Release|X64" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
+Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
+$result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
+Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
+$result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
+if ($result -ne 0) {
+    Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
+
+#### Execute Windows Tests ########################
+
+# Run tests!
+if ($fast -eq $false) {
+    Write-Host "`nRunning Windows Tests!"
     if ( Test -ne 0 ) {
         Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
         exit
     }
     Write-Host 'Tests passed!' -ForegroundColor green
 } else {
-    Write-Host 'Skipping tests for fast build!' -ForegroundColor yellow
+    Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
 }
 
-#### Clean Project ########################
+#### Build Linux ##########################
 
-# Notify of build, and output the version
-Write-Host 'Beginning a full build!'
+Write-Host @"
 
-# Clean out the old files, do a full build
-Remove-Item 'bin\distribute' -Recurse
+  _    _              
+ | |  (_)_ _ _  ___ __
+ | |__| | ' \ || \ \ /
+ |____|_|_||_\_,_/_\_\
+                      
+"@ -ForegroundColor White
+
+# Linux, via WSL
+Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
 if ($fast -eq $false) {
-    Clean
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake -r"
+} else {
+    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake"
 }
-Write-Host 'Cleaned'
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
 
 #### Build Android ########################
 
+Write-Host @"
+
+    _           _         _    _ 
+   /_\  _ _  __| |_ _ ___(_)__| |
+  / _ \| ' \/ _` | '_/ _ \ / _` |
+ /_/ \_\_||_\__,_|_| \___/_\__,_|
+                      
+"@ -ForegroundColor White
+
 # Do cross platform build code first
-Write-Host 'Beginning Android build!'
+Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
 xmake f -p android -a arm64-v8a -m release
 if ($fast -eq $false) {
     xmake -r
@@ -183,61 +276,20 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
     exit
 }
-
-#### Build Linux ##########################
-
-# Linux, via WSL
-Write-Host 'Beginning Linux build via WSL!'
-if ($fast -eq $false) {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake -r"
-} else {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake"
-}
-if ($LASTEXITCODE -ne 0) {
-    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-
-#### Build Windows ########################
-
-# Build ARM64 first
-$result = Build -mode "Release|ARM64" -project "StereoKitC"
-if ($result -ne 0) {
-    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-Write-Host "Finished building: Win32 ARM64" -ForegroundColor green
-$result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-Write-Host "Finished building: UWP ARM64" -ForegroundColor green
-
-# Build x64 next
-$result = Build -mode "Release|X64" -project "StereoKitC"
-if ($result -ne 0) {
-    Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-Write-Host "Finished building: Win32 X64" -ForegroundColor green
-$result = Build -mode "Release|X64" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-Write-Host "Finished building: UWP X64" -ForegroundColor green
-
-# Build ARM (UWP only) next
-$result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
-    exit
-}
-Write-Host "Finished building: UWP ARM" -ForegroundColor green
+Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
 
 #### Assemble NuGet Package ###############
 
+Write-Host @"
+
+  _  _       ___     _   
+ | \| |_  _ / __|___| |_ 
+ | .` | || | (_ / -_)  _|
+ |_|\_|\_,_|\___\___|\__|
+                      
+"@ -ForegroundColor White
+
+Write-Host "--- Beginning build: NuGet package ---" -ForegroundColor green
 # Turn on NuGet package generation, build, then turn it off again
 $packageOff = '<GeneratePackageOnBuild>false</GeneratePackageOnBuild>'
 $packageOn  = '<GeneratePackageOnBuild>true</GeneratePackageOnBuild>'
@@ -248,7 +300,7 @@ if ($result -ne 0) {
     Write-Host '--- NuGet build failed! Stopping build! ---' -ForegroundColor red
     exit
 }
-Write-Host "Finished building: NuGet package" -ForegroundColor green
+Write-Host "--- Finished building: NuGet package ---"-ForegroundColor green
 
 #### Create Build Info File ###############
 

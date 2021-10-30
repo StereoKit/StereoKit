@@ -111,6 +111,14 @@ void line_addv(line_point_t start, line_point_t end) {
 
 ///////////////////////////////////////////
 
+void line_add_axis(pose_t pose, float size) {
+	line_add(pose.position, pose.position + pose.orientation * vec3_right   * size, { 255,0,0,255 }, { 255,0,0,255 }, size * 0.1f);
+	line_add(pose.position, pose.position + pose.orientation * vec3_up      * size, { 0,255,0,255 }, { 0,255,0,255 }, size * 0.1f);
+	line_add(pose.position, pose.position + pose.orientation * vec3_forward * size, { 0,0,255,255 }, { 0,0,255,255 }, size * 0.1f);
+}
+
+///////////////////////////////////////////
+
 void line_add_list(const vec3 *points, int32_t count, color32 color, float thickness) {
 	if (count < 2) return;
 	line_ensure_cap(count*2, (count-1)*6);

@@ -16,6 +16,7 @@ namespace sk {
 
 model_t model_create() {
 	model_t result = (_model_t*)assets_allocate(asset_type_model);
+	result->anim_inst.anim_id = -1;
 	return result;
 }
 
@@ -49,6 +50,7 @@ model_t model_copy(model_t model) {
 	result->nodes        = model->nodes  .copy();
 	result->bounds       = model->bounds;
 	result->nodes_used   = model->nodes_used;
+	result->anim_inst.anim_id = -1;
 	for (size_t i = 0; i < result->visuals.count; i++) {
 		material_addref(result->visuals[i].material);
 		mesh_addref    (result->visuals[i].mesh);
@@ -56,6 +58,19 @@ model_t model_copy(model_t model) {
 	for (size_t i = 0; i < result->nodes.count; i++) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
 	}
+
+	// If the original Model is animating, we want to set this Model up with
+	// the original meshes, not the active, modified meshes.
+	if (model->anim_inst.skinned_meshes != nullptr) {
+		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
+			model_node_id node   = model->anim_data.skeletons[i].skin_node;
+			int32_t       visual = result->nodes[node].visual;
+			assets_safeswap_ref(
+				(asset_header_t**)&result->visuals[visual].mesh,
+				(asset_header_t* ) model ->anim_inst.skinned_meshes[i].original_mesh);
+		}
+	}
+	result->anim_data = anim_data_copy(&model->anim_data);
 
 	return result;
 }
@@ -76,7 +91,8 @@ model_t model_create_mem(const char *filename, void *data, size_t data_size, sha
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 
-		string_endswith(filename, ".gltf", false)) {
+		string_endswith(filename, ".gltf", false) ||
+		string_endswith(filename, ".vrm",  false)) {
 		if (!modelfmt_gltf(result, filename, data, data_size, shader))
 			log_errf("Issue loading GLTF file: %s!", filename);
 	} else if (string_endswith(filename, ".obj", false)) {
@@ -132,7 +148,7 @@ void model_recalculate_bounds(model_t model) {
 	min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
-	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+	for (size_t m = 0; m < model->visuals.count; m += 1) {
 		for (int32_t i = 0; i < 8; i += 1) {
 			vec3 corner = bounds_corner      (mesh_get_bounds(model->visuals[m].mesh), i);
 			vec3 pt     = matrix_transform_pt(model->visuals[m].transform_model, corner);
@@ -214,7 +230,7 @@ void model_set_transform(model_t model, int32_t subset, const matrix &transform)
 ///////////////////////////////////////////
 
 int32_t model_subset_count(model_t model) {
-	return model->visuals.count;
+	return (int32_t)model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -224,7 +240,7 @@ int32_t model_add_named_subset(model_t model, const char *name, mesh_t mesh, mat
 	assert(mesh     != nullptr);
 	assert(material != nullptr);
 
-	model_node_id id = model_node_add(model, nullptr, transform, mesh, material);
+	model_node_id id = model_node_add(model, name, transform, mesh, material);
 	return model->nodes[id].visual;
 }
 
@@ -264,6 +280,12 @@ void model_release(model_t model) {
 		return;
 
 	assets_releaseref(model->header);
+}
+
+///////////////////////////////////////////
+
+void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model(model, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -309,6 +331,8 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 ///////////////////////////////////////////
 
 void model_destroy(model_t model) {
+	anim_inst_destroy(&model->anim_inst);
+	anim_data_destroy(&model->anim_data);
 	for (size_t i = 0; i < model->nodes.count; i++) {
 		free(model->nodes[i].name);
 	}
@@ -336,7 +360,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		return -1;
 	}
 
-	model_node_id node_id = model->nodes.count;
+	model_node_id node_id = (model_node_id)model->nodes.count;
 	char          tmp_name[32];
 	if (name == nullptr) {
 		snprintf(tmp_name, sizeof(tmp_name), "node%d", node_id);
@@ -382,7 +406,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.mesh            = mesh;
 		visual.transform_model = node.transform_model;
 		visual.node            = node_id;
-		node.visual = model->visuals.add(visual);
+		node.visual = (int32_t)model->visuals.add(visual);
 		model_recalculate_bounds(model);
 	}
 
@@ -395,7 +419,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 model_node_id model_node_find(model_t model, const char *name) {
 	for (size_t i = 0; i < model->nodes.count; i++) {
 		if (string_eq(model->nodes[i].name, name))
-			return i;
+			return (model_node_id)i;
 	}
 	return -1;
 }
@@ -423,19 +447,19 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 int32_t model_node_count(model_t model) {
-	return model->nodes.count;
+	return (int32_t)model->nodes.count;
 }
 
 ///////////////////////////////////////////
 
-model_node_id model_node_index(model_t model, int32_t index) {
+model_node_id model_node_index(model_t, int32_t index) {
 	return index;
 }
 
 ///////////////////////////////////////////
 
 int32_t model_node_visual_count(model_t model){
-	return model->visuals.count;
+	return (int32_t)model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -469,7 +493,7 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_get_root(model_t model) {
+model_node_id model_node_get_root(model_t) {
 	return 0;
 }
 
@@ -544,7 +568,7 @@ void model_node_set_solid(model_t model, model_node_id node, bool32_t solid) {
 void model_node_set_material(model_t model, model_node_id node, material_t material) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = model->visuals.add({});
+		vis = (int32_t)model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	assets_safeswap_ref(
@@ -557,7 +581,7 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = model->visuals.add({});
+		vis = (int32_t)model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
@@ -572,7 +596,7 @@ void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 
 void _model_node_update_transforms(model_t model, model_node_id node) {
 	if (model->nodes[node].parent >= 0)
-		model->nodes[node].transform_model = model->nodes[model->nodes[node].parent].transform_model * model->nodes[node].transform_local;
+		model->nodes[node].transform_model = model->nodes[node].transform_local * model->nodes[model->nodes[node].parent].transform_model;
 	else
 		model->nodes[node].transform_model = model->nodes[node].transform_local;
 
@@ -605,6 +629,7 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 		_model_node_update_transforms(model, curr);
 		curr = model->nodes[curr].sibling;
 	}
+	model->transforms_changed = true;
 }
 
 ///////////////////////////////////////////
@@ -612,6 +637,114 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 void model_node_set_transform_local(model_t model, model_node_id node, matrix transform_local_space) {
 	model->nodes[node].transform_local = transform_local_space;
 	_model_node_update_transforms(model, node);
+	model->transforms_changed = true;
+}
+
+///////////////////////////////////////////
+
+void model_step_anim(model_t model) {
+	anim_update_model(model);
+}
+
+///////////////////////////////////////////
+
+bool32_t model_play_anim(model_t model, const char *animation_name, anim_mode_ mode) {
+	int32_t idx = model_anim_find(model, animation_name);
+	if (idx >= 0)
+		model_play_anim_idx(model, idx, mode);
+	return idx >= 0;
+}
+
+///////////////////////////////////////////
+
+void model_play_anim_idx(model_t model, int32_t index, anim_mode_ mode) {
+	anim_inst_play(model, index, mode);
+}
+
+///////////////////////////////////////////
+
+void model_set_anim_time(model_t model, float time) {
+	if (model->anim_inst.anim_id < 0)
+		return;
+
+	if (model->anim_inst.mode == anim_mode_manual) {
+		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
+		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
+	} else {
+		model->anim_inst.start_time = time_getf() - time;
+	}
+}
+
+///////////////////////////////////////////
+
+void model_set_anim_completion(model_t model, float percent) {
+	if (model->anim_inst.anim_id < 0)
+		return;
+	model_set_anim_time(model, model->anim_data.anims[model->anim_inst.anim_id].duration * percent);
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_find(model_t model, const char *animation_name) {
+	for (size_t i = 0; i < model->anim_data.anims.count; i++)
+		if (string_eq(model->anim_data.anims[i].name, animation_name))
+			return (int32_t)i;
+	return false;
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_count(model_t model) {
+	return (int32_t)model->anim_data.anims.count;
+}
+
+///////////////////////////////////////////
+
+int32_t model_anim_active(model_t model) {
+	return model->anim_inst.anim_id;
+}
+
+///////////////////////////////////////////
+
+anim_mode_ model_anim_active_mode(model_t model) {
+	return model->anim_inst.mode;
+}
+
+///////////////////////////////////////////
+
+float model_anim_active_time(model_t model) {
+	if (model->anim_inst.anim_id < 0)
+		return 0;
+
+	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
+	switch (model->anim_inst.mode) {
+	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	default:               return 0;
+	}
+}
+
+///////////////////////////////////////////
+
+float model_anim_active_completion(model_t model) {
+	if (model->anim_inst.anim_id < 0)
+		return 0;
+	return model_anim_active_time(model) / model->anim_data.anims[model->anim_inst.anim_id].duration;
+}
+
+///////////////////////////////////////////
+
+const char *model_anim_get_name(model_t model, int32_t index) {
+	assert(index < model->anim_data.anims.count);
+	return model->anim_data.anims[index].name;
+}
+
+///////////////////////////////////////////
+
+float model_anim_get_duration(model_t model, int32_t index) {
+	assert(index < model->anim_data.anims.count);
+	return model->anim_data.anims[index].duration;
 }
 
 } // namespace sk

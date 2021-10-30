@@ -62,7 +62,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
-			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, frames_read * sizeof(float));
+			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
 		} break;
 		}
@@ -162,14 +162,14 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
-			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, frames_read * sizeof(float));
+			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
 		} break;
 		}
 		if (frames_read <= 1) break;
 
 		// Read the data into the buffer provided by ISAC
-		memcpy(&output[total_frames_read], au_mix_temp, frames_read * sizeof(float));
+		memcpy(&output[total_frames_read], au_mix_temp, (size_t)frames_read * sizeof(float));
 
 		total_frames_read += frames_read;
 		if (frames_read < frames_to_read) {

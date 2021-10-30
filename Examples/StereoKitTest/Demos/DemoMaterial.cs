@@ -14,6 +14,7 @@ class DemoMaterial : ITest
 	Material matParameters;
 	Material matPBR;
 	Material matUIBox;
+	Material matUI;
 
 	Tex                oldSkyTex;
 	SphericalHarmonics oldSkyLight;
@@ -22,8 +23,18 @@ class DemoMaterial : ITest
 	{
 		oldSkyTex         = Renderer.SkyTex;
 		oldSkyLight       = Renderer.SkyLight;
+
+		/// :CodeSample: Renderer.SkyTex Renderer.SkyLight Tex.FromCubemapEquirectangular
+		/// ## Setting lighting to an equirect cubemap
+		/// Changing the environment's lighting based on an image is a really
+		/// great way to instantly get a particular feel to your scene! A neat
+		/// place to find compatible equirectangular images for this is
+		/// [Poly Haven](https://polyhaven.com/hdris)
 		Renderer.SkyTex   = Tex.FromCubemapEquirectangular("old_depot.hdr", out SphericalHarmonics lighting);
 		Renderer.SkyLight = lighting;
+		/// And here's what it looks like applied to the default Material!
+		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
+		/// :End:
 
 		meshSphere = Mesh.GenerateSphere(1,8);
 
@@ -33,6 +44,16 @@ class DemoMaterial : ITest
 		matDefault = Default.Material.Copy();
 		/// And here's what it looks like:
 		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
+		/// :End:
+
+		/// :CodeSample: Default.MaterialUI
+		/// This Material is basically the same as Default.Material, except it
+		/// also adds some glow to the surface near the user's fingers. It
+		/// works best on flat surfaces, and in StereoKit's design language,
+		/// can be used to indicate that something is interactive.
+		matUI = Default.MaterialUI.Copy();
+		/// And here's what it looks like:
+		/// ![UI Material example]({{site.screen_url}}/MaterialUI.jpg)
 		/// :End:
 
 		/// :CodeSample: Material.Wireframe
@@ -136,7 +157,7 @@ class DemoMaterial : ITest
 
 		Vec3 at = new Vec3(x, y, -0.5f);
 		mesh.Draw(material, Matrix.TS(at, 0.1f));
-		Tests.Screenshot(400, 400, screenshotName, at + (from ?? new Vec3(0, 0, -0.08f)), at);
+		Tests.Screenshot(screenshotName, 400, 400, at + (from ?? new Vec3(0, 0, -0.08f)), at);
 	}
 
 	public void Update()
@@ -151,7 +172,8 @@ class DemoMaterial : ITest
 		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");
-		ShowMaterial(Default.MeshCube, matUIBox,"MaterialUIBox.jpg", new Vec3(0.07f, 0.07f, -0.08f));
+		ShowMaterial(Default.MeshCube, matUIBox,"MaterialUIBox.jpg", new Vec3( 0.07f, 0.07f, -0.08f));
+		ShowMaterial(Default.MeshCube, matUI,   "MaterialUI.jpg",    new Vec3(-0.07f, 0.07f, -0.08f));
 	}
 
 	public void Shutdown()

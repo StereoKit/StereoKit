@@ -40,7 +40,7 @@ class DemoPBR : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(1024, 1024, "PBRBalls.jpg", new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
+		Tests.Screenshot("PBRBalls.jpg", 1024, 1024, new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
 
 		Hierarchy.Push(Matrix.T(0,0,-1));
 

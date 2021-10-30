@@ -37,6 +37,7 @@ bool  platform_get_cursor(vec2 &out_pos);
 void  platform_set_cursor(vec2 window_pos);
 float platform_get_scroll();
 void  platform_debug_output(log_ level, const char *text);
+void  platform_print_callstack();
 void  platform_sleep       (int ms);
 font_t platform_default_font();
 char *platform_working_dir ();

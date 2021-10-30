@@ -68,26 +68,26 @@ class TestProceduralGeo : ITest
 
 		meshCube.Draw(material, Matrix.T(at));
 		meshCube.Draw(materialWire, Matrix.T(at));
-		Tests.Screenshot(600,600, "ProcGeoCube.jpg", at+from, at);
+		Tests.Screenshot("ProcGeoCube.jpg", 600,600, at+from, at);
 
 		at += Vec3.Right * 100;
 		meshRoundedCube.Draw(material, Matrix.T(at));
 		meshRoundedCube.Draw(materialWire, Matrix.T(at));
-		Tests.Screenshot(600, 600, "ProcGeoRoundedCube.jpg", at + from, at);
+		Tests.Screenshot("ProcGeoRoundedCube.jpg", 600, 600, at + from, at);
 
 		at += Vec3.Right * 100;
 		meshSphere.Draw(material, Matrix.T(at));
 		meshSphere.Draw(materialWire, Matrix.T(at));
-		Tests.Screenshot(600, 600, "ProcGeoSphere.jpg", at + from, at);
+		Tests.Screenshot("ProcGeoSphere.jpg", 600, 600, at + from, at);
 
 		at += Vec3.Right * 100;
 		meshCylinder.Draw(material, Matrix.T(at));
 		meshCylinder.Draw(materialWire, Matrix.T(at));
-		Tests.Screenshot(600, 600, "ProcGeoCylinder.jpg", at + from, at);
+		Tests.Screenshot("ProcGeoCylinder.jpg", 600, 600, at + from, at);
 
 		at += Vec3.Right * 100;
 		meshPlane.Draw(material, Matrix.T(at));
 		meshPlane.Draw(materialWire, Matrix.T(at));
-		Tests.Screenshot(600, 600, "ProcGeoPlane.jpg", at + from, at);
+		Tests.Screenshot("ProcGeoPlane.jpg", 600, 600, at + from, at);
 	}
 }

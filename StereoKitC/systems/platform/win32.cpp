@@ -32,6 +32,12 @@ bool win32_check_resize = true;
 UINT win32_resize_x     = 0;
 UINT win32_resize_y     = 0;
 
+#if defined(SKG_OPENGL);
+const int32_t win32_multisample = 1;
+#else
+const int32_t win32_multisample = 8;
+#endif
+
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
@@ -42,7 +48,7 @@ void win32_resize(int width, int height) {
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
 	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
-	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
 	render_update_projection();
 }
 
@@ -87,22 +93,25 @@ bool win32_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool win32_start_post_xr() {
+	wchar_t app_name_w[256];
+	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+
 	// Create a window just to grab input
-	WNDCLASS wc = {0}; 
+	WNDCLASSW wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProcW(hWnd, message, wParam, lParam);
 		}
 		return (LRESULT)0;
 	};
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = sk_app_name;
-	if( !RegisterClass(&wc) ) return false;
+	wc.lpszClassName = app_name_w;
+	if( !RegisterClassW(&wc) ) return false;
 
-	win32_window = CreateWindow(
-		wc.lpszClassName, 
-		sk_app_name, 
+	win32_window = CreateWindowW(
+		app_name_w, 
+		app_name_w, 
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		0, 0, 0, 0,
 		0, 0, 
@@ -207,11 +216,14 @@ bool win32_start_flat() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+#if defined(SKG_OPENGL)
+	depth_fmt = skg_tex_fmt_depthstencil;
+#endif
 	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, skg_tex_fmt_none, width, height);
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
 	tex_add_zbuffer  (win32_target, (tex_format_)depth_fmt);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -254,7 +266,11 @@ void win32_step_end_flat() {
 	skg_draw_begin();
 
 	color128 col = render_get_clear_color();
+#if defined(SKG_OPENGL)
+	skg_swapchain_bind(&win32_swapchain);
+#else
 	skg_tex_target_bind(&win32_target->tex);
+#endif
 	skg_target_clear(true, &col.r);
 
 	input_update_predicted();
@@ -262,12 +278,14 @@ void win32_step_end_flat() {
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1);
+	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
 
+#if !defined(SKG_OPENGL)
 	// This copies the color data over to the swapchain, and resolves any
 	// multisampling on the primary target texture.
 	skg_tex_copy_to_swapchain(&win32_target->tex, &win32_swapchain);
+#endif
 
 	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
 	skg_swapchain_present(&win32_swapchain);

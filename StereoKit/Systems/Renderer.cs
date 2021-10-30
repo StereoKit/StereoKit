@@ -6,7 +6,7 @@ namespace StereoKit
 	/// This static class includes a variety of different drawing methods, from rendering 
 	/// Models and Meshes, to setting rendering options and drawing to offscreen surfaces!
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
-	public class Renderer
+	public static class Renderer
 	{
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
@@ -44,6 +44,16 @@ namespace StereoKit
 			get => NativeAPI.render_get_filter();
 		}
 
+		/// <summary>This tells if CaptureFilter has been overridden to a
+		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
+		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
+
+		/// <summary>This is the current render layer mask for Mixed Reality
+		/// Capture, or 2nd person observer rendering. By default, this is
+		/// directly linked to Renderer.LayerFilter, but this behaviour can be
+		/// overriden via `Renderer.OverrideCaptureFilter`.</summary>
+		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
+
 		/// <summary>This is the gamma space color the renderer will clear
 		/// the screen to when beginning to draw a new frame. This is ignored
 		/// on displays with transparent screens</summary>
@@ -62,6 +72,21 @@ namespace StereoKit
 			get => NativeAPI.render_get_cam_root();
 			set => NativeAPI.render_set_cam_root(value);
 		}
+
+		/// <summary>The CaptureFilter is a layer mask for Mixed Reality
+		/// Capture, or 2nd person observer rendering. On HoloLens and WMR,
+		/// this is the video rendering feature. This allows you to hide, or
+		/// reveal certain draw calls when rendering video output.
+		/// 
+		/// By default, the CaptureFilter will always be the same as
+		/// `Render.LayerFilter`, overriding this will mean this filter no
+		/// longer updates with `LayerFilter`.</summary>
+		/// <param name="useOverrideFilter">Enables (true) or disables (false)
+		/// the overridden filter value provided here.</param>
+		/// <param name="overrideFilter">The filter for capture rendering to
+		/// use. This is ignored if useOverrideFilter is false.</param>
+		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
+			=> NativeAPI.render_override_capture_filter(useOverrideFilter ? 1 : 0, overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -165,8 +190,27 @@ namespace StereoKit
 		/// <param name="height">Size of the screenshot vertically, in pixels.</param>
 		/// <param name="filename">Filename to write the screenshot to! Note this'll be a 
 		/// .jpg regardless of what file extension you use right now.</param>
+		[Obsolete("For removal in v0.4. Use the overload that takes filename first.")]
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
-			=> NativeAPI.render_screenshot(from, at, width, height, filename);
+			=> NativeAPI.render_screenshot(filename, from, at, width, height, 90);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. It'll be saved as
+		/// a .jpg file at the filename provided.</summary>
+		/// <param name="filename">Filename to write the screenshot to! Note
+		/// this'll be a .jpg regardless of what file extension you use right
+		/// now.</param>
+		/// <param name="from">Viewpoint location.</param>
+		/// <param name="at">Direction the viewpoint is looking at.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
 
 		/// <summary>This renders the current scene to the indicated 
 		/// rendertarget texture, from the specified viewpoint. This call 

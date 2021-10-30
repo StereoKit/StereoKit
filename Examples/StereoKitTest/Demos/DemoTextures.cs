@@ -76,7 +76,7 @@ class DemoTextures : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(600, 600, "ProceduralTexture.jpg", new Vec3(0, 0, -.25f), new Vec3(0, 0, -1));
+		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0, 0, -.25f), new Vec3(0, 0, -1));
 
 		quad.Draw(exampleMaterial, Matrix.T(0,0,-0.5f));
 	}

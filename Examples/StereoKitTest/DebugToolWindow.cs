@@ -130,7 +130,7 @@ class DebugToolWindow
 		BtnState left  = Input.Hand(Handed.Left ).grip;
 		if (valid && left.IsActive() && right.IsActive() && (left.IsJustActive() || right.IsJustActive()))
 		{
-			Renderer.Screenshot(Input.Head.position, Input.Head.Forward, 1920 * 2, 1080 * 2, "Screenshot" + screenshotId + ".jpg");
+			Renderer.Screenshot("Screenshot" + screenshotId + ".jpg", Input.Head.position, Input.Head.Forward, 1920 * 2, 1080 * 2);
 			screenshotId += 1;
 		}
 	}
@@ -259,7 +259,7 @@ class DebugToolWindow
 	{
 		string path = Path.GetTempFileName();
 		path = Path.ChangeExtension(path, "jpg");
-		Renderer.Screenshot(from, at, 600, 600, path);
+		Renderer.Screenshot(path, from, at, 600, 600);
 		Task.Run(()=> { 
 			Task.Delay(1000).Wait();
 			screenshot = Sprite.FromTex(Tex.FromFile(path));

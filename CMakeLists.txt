@@ -86,6 +86,7 @@ set(SK_SRC_SHADERS_HLSL
   StereoKitC/shaders_builtin/shader_builtin_font.hlsl
   StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
   StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
@@ -170,6 +171,8 @@ set(SK_SRC_CODE
 set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
+  StereoKitC/asset_types/animation.h
+  StereoKitC/asset_types/animation.cpp
   StereoKitC/asset_types/font.h
   StereoKitC/asset_types/font.cpp
   StereoKitC/asset_types/material.h
@@ -402,8 +405,12 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" 
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include) 
+
+install(
+  PROGRAMS    "Tools/skshaderc"
+  DESTINATION ${CMAKE_INSTALL_BINDIR}) 
 
 install(
   EXPORT      StereoKitC-targets

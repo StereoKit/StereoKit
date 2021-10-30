@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
+	public enum SpatialNodeType { Static, Dynamic }
+
 	/// <summary>World contains information about the real world around the 
 	/// user. This includes things like play boundaries, scene understanding,
 	/// and other various things.</summary>
@@ -31,13 +33,17 @@ namespace StereoKit
 		/// QR code package.</summary>
 		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
 		/// aquired from a windows MR API call.</param>
+		/// <param name="spatialNodeType">Type of spatial node to locate.</param>
+		/// <param name="qpcTime">A windows performance counter timestamp at
+		/// which the node should be located, obtained from another API or
+		/// with System.Diagnostics.Stopwatch.GetTimestamp().</param>
 		/// <returns>A Pose representing the current orientation of the
 		/// spatial node.</returns>
-		public static Pose FromSpatialNode(Guid spatialNodeGuid)
-			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray());
+		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
+			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime);
 
-		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose)
-			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), out pose) > 0;
+		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime, out pose) > 0;
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
 		/// into SteroKit's coordinate system. This can be great for

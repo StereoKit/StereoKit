@@ -46,6 +46,11 @@ namespace StereoKit
 		/// <summary>This extracts a Vec3 from the X, Y, and Z axes.</summary>
 		public Vec3 XYZ { get => new Vec3(x, y, z); set { x = value.x; y = value.y; z = value.z; } }
 
+		/// <summary>A Vec4 and a Quat are only really different by name and
+		/// purpose. So, if you need to do Quat math with your Vec4, or visa
+		/// versa, who am I to judge?</summary>
+		public Quat Quat => new Quat(x, y, z, w);
+
 		/// <summary>A basic constructor, just copies the values in!</summary>
 		/// <param name="x">X component of the vector.</param>
 		/// <param name="y">Y component of the vector.</param>

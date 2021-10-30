@@ -23,9 +23,10 @@ namespace StereoKit
 	/// faster to render a Mesh instead of a Model!</summary>
 	public class Model
 	{
-		internal IntPtr                _inst;
-		private  ModelNodeCollection   _nodeCollection;
-		private  ModelVisualCollection _visualCollection;
+		internal IntPtr _inst;
+		private ModelNodeCollection _nodeCollection;
+		private ModelVisualCollection _visualCollection;
+		private ModelAnimCollection _animCollection;
 
 		/// <summary>The number of mesh subsets attached to this model.
 		/// </summary>
@@ -36,19 +37,24 @@ namespace StereoKit
 		/// Model, ordered non-heirarchically by when they were added. You can
 		/// do Linq stuff with it, foreach it, or just treat it like a List or
 		/// array!</summary>
-		public ModelNodeCollection   Nodes   => _nodeCollection;
+		public ModelNodeCollection Nodes => _nodeCollection;
 		/// <summary>This is an enumerable collection of all the nodes with
 		/// Mesh/Material data in this Model, ordered non-heirarchically by
 		/// when they were added. You can do Linq stuff with it, foreach it, or
 		/// just treat it like a List or array!</summary>
 		public ModelVisualCollection Visuals => _visualCollection;
+		/// <summary>An enumerable collection of animations attached to this
+		/// Model. You can do Linq stuff with it, foreach it, or just treat it
+		/// like a List or array!</summary>
+		public ModelAnimCollection Anims => _animCollection;
 
 		/// <summary>This is a bounding box that encapsulates the Model and
 		/// all its subsets! It's used for collision, visibility testing, UI
 		/// layout, and probably other things. While it's normally cacluated
 		/// from the mesh bounds, you can also override this to suit your
 		/// needs.</summary>
-		public Bounds Bounds {
+		public Bounds Bounds
+		{
 			get => NativeAPI.model_get_bounds(_inst);
 			set => NativeAPI.model_set_bounds(_inst, value);
 		}
@@ -57,12 +63,16 @@ namespace StereoKit
 		/// There may be additional root nodes, and these will be Siblings
 		/// of this ModelNode. If there are no nodes present on the Model,
 		/// this will be null.</summary>
-		public ModelNode RootNode { get {
-			int nodeId = NativeAPI.model_node_get_root(_inst);
-			return nodeId >= 0 
-				? new ModelNode(_inst, nodeId)
-				: null;
-		} }
+		public ModelNode RootNode
+		{
+			get
+			{
+				int nodeId = NativeAPI.model_node_get_root(_inst);
+				return nodeId >= 0
+					? new ModelNode(_inst, nodeId)
+					: null;
+			}
+		}
 
 		#region Constructors
 		/// <summary>Creates a single mesh subset Model using the indicated
@@ -72,8 +82,8 @@ namespace StereoKit
 		/// <param name="material">Any Material asset.</param>
 		public Model(Mesh mesh, Material material)
 		{
-			_inst             = NativeAPI.model_create_mesh(mesh._inst, material._inst);
-			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_nodeCollection = new ModelNodeCollection(_inst);
 			_visualCollection = new ModelVisualCollection(_inst);
 		}
 
@@ -82,8 +92,8 @@ namespace StereoKit
 		/// </summary>
 		public Model()
 		{
-			_inst             = NativeAPI.model_create();
-			_nodeCollection   = new ModelNodeCollection  (_inst);
+			_inst = NativeAPI.model_create();
+			_nodeCollection = new ModelNodeCollection(_inst);
 			_visualCollection = new ModelVisualCollection(_inst);
 		}
 
@@ -95,9 +105,10 @@ namespace StereoKit
 		/// <param name="material">Any Material asset.</param>
 		public Model(string id, Mesh mesh, Material material)
 		{
-			_inst             = NativeAPI.model_create_mesh(mesh._inst, material._inst);
+			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
 			_nodeCollection   = new ModelNodeCollection  (_inst);
 			_visualCollection = new ModelVisualCollection(_inst);
+			_animCollection   = new ModelAnimCollection  (_inst);
 			if (_inst != IntPtr.Zero)
 			{
 				NativeAPI.material_set_id(_inst, id);
@@ -105,9 +116,10 @@ namespace StereoKit
 		}
 		internal Model(IntPtr model)
 		{
-			_inst             = model;
+			_inst = model;
 			_nodeCollection   = new ModelNodeCollection  (_inst);
 			_visualCollection = new ModelVisualCollection(_inst);
+			_animCollection   = new ModelAnimCollection  (_inst);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty model!");
 		}
@@ -241,6 +253,77 @@ namespace StereoKit
 		[Obsolete("For removal in v0.4.")]
 		public void RemoveSubset(int subsetIndex)
 			=> NativeAPI.model_remove_subset(_inst, subsetIndex);
+
+		/// <summary>Searches for an animation with the given name, and if it's
+		/// found, sets it up as the active animation and begins playing it
+		/// with the animation mode.</summary>
+		/// <param name="animationName">Case sensitive name of the animation.
+		/// </param>
+		/// <param name="mode">The mode with which to play the animation.
+		/// </param>
+		public void PlayAnim(string animationName, AnimMode mode)
+			=> NativeAPI.model_play_anim(_inst, animationName, mode);
+		/// <summary>Sets the animation up as the active animation, and begins
+		/// playing it with the animation mode.</summary>
+		/// <param name="animation">The new active animation.</param>
+		/// <param name="mode">The mode with which to play the animation.
+		/// </param>
+		public void PlayAnim(Anim animation, AnimMode mode)
+		{
+			if (animation._modelInst == _inst)
+				NativeAPI.model_play_anim_idx(_inst, animation._animIndex, mode);
+		}
+		/// <summary>Calling Draw will automatically step the Model's
+		/// animation, but if you don't draw the Model, or need access to the
+		/// animated nodes before drawing, then you can step the animation
+		/// early manually via this method. Animation will only ever be stepped
+		/// once per frame, so it's okay to call this multiple times, or in
+		/// addition to Draw.</summary>
+		public void StepAnim() => NativeAPI.model_step_anim(_inst);
+		/// <summary>Searches the list of animations for the first one matching
+		/// the given name.</summary>
+		/// <param name="name">Case sensitive name of the animation.</param>
+		/// <returns>A link to the animation, or null if none is found.</returns>
+		public Anim FindAnim(string name)
+		{
+			int idx = NativeAPI.model_anim_find(_inst, name);
+			return idx == -1
+				? null
+				: new Anim(_inst, idx);
+		}
+		/// <summary> This is a link to the currently active animation. If no
+		/// animation is active, this value will be null. To set the active
+		/// animation, use `PlayAnim`.</summary>
+		public Anim ActiveAnim { 
+			get
+			{
+				int idx = NativeAPI.model_anim_active(_inst);
+				return idx == -1
+					? null
+					: new Anim(_inst, idx);
+			}
+		}
+		/// <summary> This is the current time of the active animation in
+		/// seconds, from the start of the animation. If no animation is
+		/// active, this will be zero. This will always be a value between
+		/// zero and the active animation's `Duration`. For a percentage of
+		/// completion, see `AnimCompletion` instead.</summary>
+		public float AnimTime
+		{
+			get => NativeAPI.model_anim_active_time(_inst);
+			set => NativeAPI.model_set_anim_time(_inst, value);
+		}
+		/// <summary> This is the percentage of completion of the active
+		/// animation. This will always be a value between 0-1. If no animation
+		/// is active, this will be zero. </summary>
+		public float AnimCompletion
+		{
+			get => NativeAPI.model_anim_active_completion(_inst);
+			set => NativeAPI.model_set_anim_completion(_inst, value);
+		}
+		/// <summary> The playback mode of the active animation.</summary>
+		public AnimMode AnimMode => NativeAPI.model_anim_active_mode(_inst);
+
 
 		/// <summary>Checks the intersection point of this ray and a Model's 
 		/// visual nodes. This will skip any node that is not flagged as Solid,
@@ -425,8 +508,9 @@ namespace StereoKit
 	/// hierarchy tree. It's composed of node information, and links to
 	/// the directly adjacent tree nodes.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public class ModelNode {
-		internal int    _nodeId;
+	public class ModelNode
+	{
+		internal int _nodeId;
 		internal IntPtr _modelInst;
 
 		/// <summary>The next ModelNode in the heirarchy, at the same level as
@@ -435,24 +519,26 @@ namespace StereoKit
 		public ModelNode Sibling => From(NativeAPI.model_node_sibling(_modelInst, _nodeId));
 		/// <summary>The ModelNode above this one ("up") in the hierarchy tree,
 		/// or null if this is a root node.</summary>
-		public ModelNode Parent  => From(NativeAPI.model_node_parent (_modelInst, _nodeId));
+		public ModelNode Parent => From(NativeAPI.model_node_parent(_modelInst, _nodeId));
 		/// <summary>The first child node "below" on the hierarchy tree, or
 		/// null if there are none. To see all children, get the Child and then
 		/// iterate through its Siblings.</summary>
-		public ModelNode Child   => From(NativeAPI.model_node_child  (_modelInst, _nodeId));
+		public ModelNode Child => From(NativeAPI.model_node_child(_modelInst, _nodeId));
 
 		/// <summary>This is the ASCII name that identifies this ModelNode. It
 		/// is generally provided by the Model's file, but in the event no name
 		/// (or null name) is provided, the name will default to "node"+index.
 		/// Names are not required to be unique.</summary>
-		public string Name {
+		public string Name
+		{
 			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_modelInst, _nodeId));
 			set => NativeAPI.model_node_set_name(_modelInst, _nodeId, value);
 		}
 		/// <summary>A flag that indicates the Mesh for this node will be used
 		/// in ray intersection tests. This flag is ignored if no Mesh is 
 		/// attached.</summary>
-		public bool Solid {
+		public bool Solid
+		{
 			get => NativeAPI.model_node_get_solid(_modelInst, _nodeId) > 0;
 			set => NativeAPI.model_node_set_solid(_modelInst, _nodeId, value ? 1 : 0);
 		}
@@ -460,26 +546,30 @@ namespace StereoKit
 		/// This incorporates transforms from all parent nodes. Setting this
 		/// transform will update the LocalTransform, as well as all Child
 		/// nodes below this one.</summary>
-		public Matrix ModelTransform {
+		public Matrix ModelTransform
+		{
 			get => NativeAPI.model_node_get_transform_model(_modelInst, _nodeId);
 			set => NativeAPI.model_node_set_transform_model(_modelInst, _nodeId, value);
 		}
 		/// <summary>The transform of this node relative to the Parent node.
 		/// Setting this transform will update the ModelTransform, as well as
 		/// all Child nodes below this one.</summary>
-		public Matrix LocalTransform { 
+		public Matrix LocalTransform
+		{
 			get => NativeAPI.model_node_get_transform_local(_modelInst, _nodeId);
 			set => NativeAPI.model_node_set_transform_local(_modelInst, _nodeId, value);
 		}
 		/// <summary>The Mesh associated with this node. May be null, or may
 		/// also be re-used elsewhere.</summary>
-		public Mesh Mesh {
+		public Mesh Mesh
+		{
 			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_modelInst, _nodeId); return new Mesh(ptr); }
 			set => NativeAPI.model_node_set_mesh(_modelInst, _nodeId, value._inst);
 		}
 		/// <summary>The Model associated with this node. May be null, or may
 		/// also be re-used elsewhere.</summary>
-		public Material Material { 
+		public Material Material
+		{
 			get { IntPtr ptr = NativeAPI.model_node_get_material(_modelInst, _nodeId); return ptr == IntPtr.Zero ? null : new Material(ptr); }
 			set => NativeAPI.model_node_set_material(_modelInst, _nodeId, value._inst);
 		}
@@ -487,14 +577,14 @@ namespace StereoKit
 		internal ModelNode(IntPtr model, int nodeId)
 		{
 			_modelInst = model;
-			_nodeId    = nodeId;
+			_nodeId = nodeId;
 			if (_modelInst != IntPtr.Zero)
 				NativeAPI.model_addref(_modelInst);
 		}
 		~ModelNode()
 		{
 			if (_modelInst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.model_release(_modelInst));
+				NativeAPI.assets_releaseref_threadsafe(_modelInst);
 		}
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
@@ -515,7 +605,7 @@ namespace StereoKit
 		/// tree. If it cannot, then it remains the same. </summary>
 		/// <returns>True if it moved to the Parent, false if there was no
 		/// Parent to move to.</returns>
-		public bool MoveParent ()
+		public bool MoveParent()
 		{
 			int sibling = NativeAPI.model_node_parent(_modelInst, _nodeId);
 			if (sibling >= 0)
@@ -529,7 +619,7 @@ namespace StereoKit
 		/// node. If it cannot, then it remains the same. </summary>
 		/// <returns>True if it moved to the Child, false if there was no
 		/// Child to move to.</returns>
-		public bool MoveChild  ()
+		public bool MoveChild()
 		{
 			int sibling = NativeAPI.model_node_child(_modelInst, _nodeId);
 			if (sibling >= 0)
@@ -562,7 +652,7 @@ namespace StereoKit
 		{
 			return new ModelNode(
 				_modelInst,
-				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
+				NativeAPI.model_node_add_child(_modelInst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
 		}
 
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_modelInst, nodeId) : null;
@@ -607,8 +697,8 @@ namespace StereoKit
 		/// result will also be null.</returns>
 		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
-			return new ModelNode( _model,
-				NativeAPI.model_node_add(_model, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1:0));
+			return new ModelNode(_model,
+				NativeAPI.model_node_add(_model, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
 		}
 	}
 
@@ -628,6 +718,53 @@ namespace StereoKit
 			int count = Count;
 			for (int i = 0; i < count; i++)
 				yield return new ModelNode(_model, NativeAPI.model_node_visual_index(_model, i));
+		}
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public class Anim
+	{
+		internal int _animIndex;
+		internal IntPtr _modelInst;
+
+		internal Anim(IntPtr model, int animIndex)
+		{
+			_modelInst = model;
+			_animIndex = animIndex;
+			if (_modelInst != IntPtr.Zero)
+				NativeAPI.model_addref(_modelInst);
+		}
+		~Anim()
+		{
+			if (_modelInst != IntPtr.Zero)
+				NativeAPI.assets_releaseref_threadsafe(_modelInst);
+		}
+
+		public string Name
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.model_anim_get_name(_modelInst, _animIndex));
+		}
+
+		public float Duration => NativeAPI.model_anim_get_duration(_modelInst, _animIndex);
+	}
+
+	/// <summary>An enumerable for Model's Anims</summary>
+	public class ModelAnimCollection : IEnumerable<Anim>
+	{
+		IntPtr _model;
+		/// <summary>This is the total number of animations attached to the
+		/// model.</summary>
+		public int Count => NativeAPI.model_anim_count(_model);
+		public Anim this[int index] => new Anim(_model, index);
+
+		internal ModelAnimCollection(IntPtr model) { _model = model; }
+
+		public IEnumerator<Anim> GetEnumerator()
+		{
+			int count = Count;
+			for (int i = 0; i < count; i++)
+				yield return new Anim(_model, i);
 		}
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}

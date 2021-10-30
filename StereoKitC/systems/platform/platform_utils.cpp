@@ -127,6 +127,17 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	if (file_picker_cache_read(filename, out_data, out_size))
 		return true;
 #endif
+
+#if defined(SK_OS_LINUX)
+	// Linux thinks folders are files, but then fails in a bad way when
+	// treating them like files.
+	struct stat buffer;
+	if (stat(filename, &buffer) != 0 || (S_ISDIR(buffer.st_mode))) {
+		log_diagf("platform_read_file can't read folders: %s", filename);
+		return false;
+	}
+#endif
+
 	FILE *fp = fopen(filename, "rb");
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't find %s", filename);
@@ -237,6 +248,63 @@ void platform_debug_output(log_ level, const char *text) {
 	(void)text;
 #endif
 }
+
+///////////////////////////////////////////
+
+#if defined(SK_OS_ANDROID)
+#include <unwind.h>
+#include <dlfcn.h>
+#include <cxxabi.h>
+
+struct android_backtrace_state {
+	void **current;
+	void **end;
+};
+
+void platform_print_callstack() {
+	const int max = 100;
+	void* buffer[max];
+
+	android_backtrace_state state;
+	state.current = buffer;
+	state.end = buffer + max;
+
+	_Unwind_Backtrace([](struct _Unwind_Context* context, void* arg) {
+		android_backtrace_state* state = (android_backtrace_state *)arg;
+		uintptr_t pc = _Unwind_GetIP(context);
+		if (pc) {
+			if (state->current == state->end)
+				return (_Unwind_Reason_Code)_URC_END_OF_STACK;
+			else
+				*state->current++ = reinterpret_cast<void*>(pc);
+		}
+		return (_Unwind_Reason_Code)_URC_NO_REASON;
+	}, &state);
+
+	int count = (int)(state.current - buffer);
+
+	for (int idx = 0; idx < count; idx++)  {
+		const void* addr   = buffer[idx];
+		const char* symbol = "";
+
+		Dl_info info;
+		if (dladdr(addr, &info) && info.dli_sname)
+			symbol = info.dli_sname;
+		int   status    = 0; 
+		char *demangled = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status); 
+
+		sk::log_diagf("%03d: 0x%p %s", idx, addr,
+			(nullptr != demangled && 0 == status) ?
+			demangled : symbol);
+
+		if (nullptr != demangled)
+			free(demangled);
+	}
+}
+#else
+void platform_print_callstack() {
+}
+#endif
 
 ///////////////////////////////////////////
 

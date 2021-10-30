@@ -145,6 +145,6 @@ class TestNodes : ITest
 		if (_model.Intersect(new Ray(V.XYZ(SKMath.Cos(Time.Totalf)*0.15f, 1, 0), -Vec3.Up), out Ray at))
 			Lines.Add(at, 0.3f, new Color32(0, 255, 0, 255), 0.005f);
 
-		Tests.Screenshot(400, 400, "Tests/NodeUI.jpg", center+Vec3.One*0.15f, center);
+		Tests.Screenshot("Tests/NodeUI.jpg", 400, 400, center+Vec3.One*0.15f, center);
 	}
 }

@@ -13,6 +13,7 @@
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
+#include "../libraries/tinycthread.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -22,6 +23,8 @@ namespace sk {
 ///////////////////////////////////////////
 
 array_t<asset_header_t *> assets = {};
+array_t<asset_header_t *> assets_multithread_destroy = {};
+mtx_t                     assets_multithread_destroy_lock;
 
 ///////////////////////////////////////////
 
@@ -109,15 +112,30 @@ void  assets_addref(asset_header_t &asset) {
 
 ///////////////////////////////////////////
 
-void  assets_releaseref(asset_header_t &asset) {
+void assets_releaseref_threadsafe(void *asset) {
+	asset_header_t *asset_header = (asset_header_t *)asset;
+
 	// Manage the reference count
-	asset.refs -= 1;
-	if (asset.refs < 0) {
+	asset_header->refs -= 1;
+	if (asset_header->refs < 0) {
 		log_err("Released too many references to asset!");
 		abort();
 	}
-	if (asset.refs != 0)
+	if (asset_header->refs != 0)
 		return;
+
+	mtx_lock(&assets_multithread_destroy_lock);
+	assets_multithread_destroy.add(asset_header);
+	mtx_unlock(&assets_multithread_destroy_lock);
+}
+
+///////////////////////////////////////////
+
+void assets_destroy(asset_header_t &asset) {
+	if (asset.refs != 0) {
+		log_err("Destroying an asset that still has references!");
+		return;
+	}
 
 	// Call asset specific destroy function
 	switch(asset.type) {
@@ -145,6 +163,21 @@ void  assets_releaseref(asset_header_t &asset) {
 	free(asset.id_text);
 #endif
 	free(&asset);
+}
+
+///////////////////////////////////////////
+
+void assets_releaseref(asset_header_t &asset) {
+	// Manage the reference count
+	asset.refs -= 1;
+	if (asset.refs < 0) {
+		log_err("Released too many references to asset!");
+		abort();
+	}
+	if (asset.refs != 0)
+		return;
+
+	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
@@ -205,6 +238,31 @@ const char *assets_file(const char *file_name) {
 
 	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
 	return assets_file_buffer;
+}
+
+///////////////////////////////////////////
+
+bool assets_init() {
+	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
+	return true;
+}
+
+///////////////////////////////////////////
+
+void assets_update() {
+	mtx_lock(&assets_multithread_destroy_lock);
+	for (size_t i = 0; i < assets_multithread_destroy.count; i++) {
+		assets_destroy(*assets_multithread_destroy[i]);
+	}
+	assets_multithread_destroy.free();
+	mtx_unlock(&assets_multithread_destroy_lock);
+}
+
+///////////////////////////////////////////
+
+void assets_shutdown() {
+	assets_multithread_destroy.free();
+	mtx_destroy(&assets_multithread_destroy_lock);
 }
 
 } // namespace sk

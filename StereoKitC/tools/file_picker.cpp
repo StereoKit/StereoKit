@@ -282,7 +282,7 @@ void file_picker_update() {
 			free(path);
 		}
 		ui_sameline();
-		ui_label_sz(fp_folder, {ui_area_remaining().x, ui_line_height()});
+		ui_label_sz(fp_folder, {ui_layout_remaining().x, ui_line_height()});
 
 		// Show the active item
 		switch (fp_mode) {
@@ -298,7 +298,7 @@ void file_picker_update() {
 				fp_call_status = true;
 			}
 			ui_sameline();
-			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_area_remaining().x, ui_line_height() });
+			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
 			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }

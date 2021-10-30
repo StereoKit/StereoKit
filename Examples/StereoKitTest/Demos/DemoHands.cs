@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides Using Hands
+﻿/// :CodeDoc: Guides 3 Using Hands
 /// # Using Hands
 /// 
 /// StereoKit uses a hands first approach to user input! Even when hand-sensors
@@ -171,7 +171,7 @@ class DemoHands : ITest
 			DrawHandMenu(Handed.Left);
 		}
 
-		Tests.Screenshot(1, 600, 600, "HandAxes.jpg", new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
+		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
 		if (!Tests.IsTesting) { 
 			Text.Add(title, titlePose);

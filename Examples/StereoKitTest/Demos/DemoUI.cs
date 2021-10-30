@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides User Interface
+﻿/// :CodeDoc: Guides 2 User Interface
 /// # Building UI in StereoKit
 /// 
 /// ## Immediate Mode UI
@@ -49,8 +49,8 @@ class DemoUI : ITest
 
 	public void Update()
 	{
-		Tests.Screenshot(600, 400, "GuideUserInterface.jpg", new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
-		Tests.Screenshot(400, 600, "GuideUserInterfaceCustom.jpg", new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
+		Tests.Screenshot("GuideUserInterface.jpg", 600, 400, new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
+		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 600, new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
 
 		/// :CodeDoc: Guides User Interface
 		/// Then we'll move over to the application step where we'll do the
@@ -174,9 +174,9 @@ class DemoUI : ITest
 		/// :End:
 
 
-		/// :CodeSample: UI.InteractVolume
+		/// :CodeSample: UI.VolumeAt
 		/// This code will draw an axis at the index finger's location when
-		/// the user pinches while inside an InteractVolume.
+		/// the user pinches while inside a VolumeAt.
 		/// 
 		/// ![UI.InteractVolume]({{site.screen_url}}/InteractVolume.jpg)
 		/// 
@@ -185,7 +185,7 @@ class DemoUI : ITest
 		float volumeSize = 0.2f;
 		Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(volumeAt, volumeSize));
 
-		BtnState volumeState = UI.InteractVolume(new Bounds(volumeAt, Vec3.One*volumeSize), out Handed hand);
+		BtnState volumeState = UI.VolumeAt("Volume", new Bounds(volumeAt, Vec3.One*volumeSize), UIConfirm.Pinch, out Handed hand);
 		if (volumeState != BtnState.Inactive)
 		{
 			// If it just changed interaction state, make it jump in size
@@ -196,7 +196,7 @@ class DemoUI : ITest
 		}
 		/// :End:
 		
-		Tests.Screenshot(1, 600, 600, "InteractVolume.jpg", new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
+		Tests.Screenshot("InteractVolume.jpg", 1, 600, 600, 90, new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
 	}
 
 	public void Initialize() {

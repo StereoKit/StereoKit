@@ -71,7 +71,7 @@ namespace StereoKit
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.tex_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		#endregion
@@ -151,11 +151,6 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in byte[] data)
 		{
-			if (Format != TexFormat.R8)
-			{
-				Log.Err("Can't set a {0} format texture from byte data!", Format);
-				return;
-			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This 
@@ -173,7 +168,7 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in ushort[] data)
 		{
-			if (Format != TexFormat.R16)
+			if (Format != TexFormat.R16 && Format != TexFormat.Rgba64)
 			{
 				Log.Err("Can't set a {0} format texture from ushort data!", Format);
 				return;

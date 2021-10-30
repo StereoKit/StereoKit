@@ -40,6 +40,6 @@ class TestFont : ITest
 		Lines.Add(new Vec3(0, .06f, 0), new Vec3(0, -.06f, 0), col, 0.001f);
 		Hierarchy.Pop();
 
-		Tests.Screenshot(600, 600, "Tests/FontSizing.jpg", new Vec3(0, 0, .15f), Vec3.Zero);
+		Tests.Screenshot("Tests/FontSizing.jpg", 600, 600, new Vec3(0, 0, .15f), Vec3.Zero);
 	}
 }

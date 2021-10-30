@@ -128,14 +128,16 @@ public static class Tests
 	public static void RunForSeconds(float seconds)
 		=> runSeconds = seconds;
 
-	public static void Screenshot(int width, int height, string name, Vec3 from, Vec3 at) 
-		=> Screenshot(0, width, height, name, from, at);
-	public static void Screenshot(int frame, int width, int height, string name, Vec3 from, Vec3 at)
+	public static void Screenshot(string name, int width, int height, float fov, Vec3 from, Vec3 at)
+		=> Screenshot(name, 0, width, height, fov, from, at);
+	public static void Screenshot(string name, int width, int height, Vec3 from, Vec3 at) 
+		=> Screenshot(name, 0, width, height, 90, from, at);
+	public static void Screenshot(string name, int frame, int width, int height, float fov, Vec3 from, Vec3 at)
 	{
 		if (!IsTesting || frame != sceneFrame || screens.Contains(name))
 			return;
 		screens.Add(name);
-		Renderer.Screenshot(from, at, width, height, $"../../../docs/img/screenshots/{name}");
+		Renderer.Screenshot($"../../../docs/img/screenshots/{name}", from, at, width, height, fov);
 	}
 	public static void Hand(in HandJoint[] joints)
 	{

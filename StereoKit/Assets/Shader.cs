@@ -28,7 +28,7 @@ namespace StereoKit
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(()=>NativeAPI.shader_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>Creates a shader asset from a precompiled StereoKit
@@ -76,6 +76,8 @@ namespace StereoKit
 		public static Shader Default => StereoKit.Default.Shader;
 		/// <inheritdoc cref="StereoKit.Default.ShaderPbr" />
 		public static Shader PBR => StereoKit.Default.ShaderPbr;
+		/// <inheritdoc cref="StereoKit.Default.ShaderPbrClip" />
+		public static Shader PBRClip => StereoKit.Default.ShaderPbrClip;
 		/// <inheritdoc cref="StereoKit.Default.ShaderUI" />
 		public static Shader UI => StereoKit.Default.ShaderUI;
 		/// <inheritdoc cref="StereoKit.Default.ShaderUIBox" />

@@ -14,6 +14,7 @@
 #include "../asset_types/shader.h"
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
+#include "../asset_types/animation.h"
 #include "../systems/input.h"
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
@@ -62,11 +63,12 @@ struct render_inst_buffer {
 	skg_buffer_t buffer;
 };
 struct render_screenshot_t {
-	char *filename;
-	vec3  from;
-	vec3  at;
-	int width;
-	int height;
+	char   *filename;
+	vec3    from;
+	vec3    at;
+	int32_t width;
+	int32_t height;
+	float   fov_degrees;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -98,6 +100,8 @@ spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
 render_layer_           render_primary_filter  = render_layer_all;
+render_layer_           render_capture_filter  = render_layer_all;
+bool                    render_use_capture_filter = false;
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
@@ -114,10 +118,10 @@ mesh_t                  render_last_mesh;
 array_t< render_list_t> render_list_stack       = {};
 array_t<_render_list_t> render_lists            = {};
 render_list_t           render_list_active      = -1;
-skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel };
-skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel };
+skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel,                    skg_register_resource };
 
 ///////////////////////////////////////////
 
@@ -304,6 +308,27 @@ void render_set_filter(render_layer_ layer_filter) {
 
 ///////////////////////////////////////////
 
+void render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter) {
+	render_use_capture_filter = use_override_filter;
+	render_capture_filter    = layer_filter;
+}
+
+///////////////////////////////////////////
+
+render_layer_ render_get_capture_filter() {
+	return render_use_capture_filter
+		? render_capture_filter
+		: render_primary_filter;
+}
+
+///////////////////////////////////////////
+
+bool32_t render_has_capture_filter() {
+	return render_use_capture_filter;
+}
+
+///////////////////////////////////////////
+
 void render_enable_skytex(bool32_t show_sky) {
 	render_sky_show = show_sky;
 }
@@ -354,6 +379,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		math_matrix_to_fast(transform, &root);
 	}
 
+	anim_update_model(model);
 	for (size_t i = 0; i < model->visuals.count; i++) {
 		render_item_t item;
 		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
@@ -364,6 +390,11 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		item.layer    = (uint16_t)layer;
 		matrix_mul(model->visuals[i].transform_model, root, item.transform);
 		render_list_add(&item);
+	}
+
+	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
+		model->transforms_changed = false;
+		anim_update_skin(model);
 	}
 }
 
@@ -408,7 +439,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	// Activate any material buffers we have
 	for (uint16_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel }, 0);
+			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
 	}
 
 	// Sky cubemap is global, and used for reflections with PBR materials
@@ -421,9 +452,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count) {
+void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, render_primary_filter, count);
+	render_draw_queue(views, projections, render_filter, count);
 	render_check_screenshots();
 }
 
@@ -442,7 +473,7 @@ void render_check_screenshots() {
 			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
 		matrix_inverse(view, view);
 
-		matrix proj = matrix_perspective(render_fov, (float)w/h, render_clip_planes.x, render_clip_planes.y);
+		matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w/h, render_clip_planes.x, render_clip_planes.y);
 
 		// Create the screenshot surface
 		
@@ -648,9 +679,9 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(vec3 from_viewpt, vec3 at, int width, int height, const char *file) {
+void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
 	char *file_copy = string_copy(file);
-	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height });
+	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
 }
 
 ///////////////////////////////////////////

@@ -26,8 +26,10 @@
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
 	<ItemGroup>
 		<ProjectReference Include="..\..\StereoKit\StereoKit.csproj" />
-		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
-		<None CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.sym" Include="../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
 	</ItemGroup>
 	<Import Project="..\..\StereoKit\SKShaders.targets" />
 

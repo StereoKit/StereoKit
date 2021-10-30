@@ -546,6 +546,22 @@ namespace StereoKit
 		Texture,
 	}
 
+	/// <summary>Describes how an animation is played back, and what to do when
+	/// the animation hits the end.</summary>
+	public enum AnimMode
+	{
+		/// <summary> If the animation reaches the end, it will always loop
+		/// back around to the start again.</summary>
+		Loop,
+		/// <summary> When the animation reaches the end, it will freeze
+		/// in-place.</summary>
+		Once,
+		/// <summary> The animation will not progress on its own, and instead
+		/// must be driven by providing information to the model's AnimTime
+		/// or AnimCompletion properties.</summary>
+		Manual,
+	}
+
 	/// <summary>A bit-flag enum for describing alignment or positioning. 
 	/// Items can be combined using the '|' operator, like so:
 	/// 
@@ -960,9 +976,9 @@ namespace StereoKit
 		/// require the user to make a precise pinch gesture. You can pretty
 		/// much be sure that's what the user meant to do!</summary>
 		Pinch,
-		/// <summary>Same as Pinch, but pulling out from the slider creates a
-		/// scaled slider that lets you adjust the slider at a more granular
-		/// resolution.</summary>
+		/// <summary>HSlider specific. Same as Pinch, but pulling out from the
+		/// slider creates a scaled slider that lets you adjust the slider at a
+		/// more granular resolution.</summary>
 		VariablePinch
 	}
 

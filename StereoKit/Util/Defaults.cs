@@ -22,6 +22,9 @@
 		/// where you do it! Note that the shader used by default here is
 		/// much more costly than Default.Material.</summary>
 		public static Material MaterialPBR      { get; private set; }
+		/// <summary>Same as MaterialPBR, but it uses a discard clip for
+		/// transparency.</summary>
+		public static Material MaterialPBRClip  { get; private set; }
 		/// <summary>The default unlit material! This is used by StereoKit 
 		/// any time a mesh or model needs to be rendered with an unlit 
 		/// surface. Its shader may change based on system performance 
@@ -125,6 +128,9 @@
 		public static Shader Shader         { get; private set; }
 		/// <summary>A physically based shader.</summary>
 		public static Shader ShaderPbr      { get; private set; }
+		/// <summary>Same as ShaderPBR, but with a discard clip for
+		/// transparency.</summary>
+		public static Shader ShaderPbrClip  { get; private set; }
 		/// <summary>Sometimes lighting just gets in the way! This is an
 		/// extremely simple and fast shader that uses a 'diffuse' texture 
 		/// and a 'color' tint property to draw a model without any lighting
@@ -185,6 +191,7 @@
 		{
 			Material         = Material.Find(DefaultIds.material);
 			MaterialPBR      = Material.Find(DefaultIds.materialPBR);
+			MaterialPBRClip  = Material.Find(DefaultIds.materialPBRClip);
 			MaterialUnlit    = Material.Find(DefaultIds.materialUnlit);
 			MaterialUnlitClip= Material.Find(DefaultIds.materialUnlitClip);
 			MaterialEquirect = Material.Find(DefaultIds.materialEquirect);
@@ -209,6 +216,7 @@
 
 			Shader         = Shader.Find(DefaultIds.shader);
 			ShaderPbr      = Shader.Find(DefaultIds.shaderPbr);
+			ShaderPbrClip  = Shader.Find(DefaultIds.shaderPbrClip);
 			ShaderUnlit    = Shader.Find(DefaultIds.shaderUnlit);
 			ShaderUnlitClip= Shader.Find(DefaultIds.shaderUnlitClip);
 			ShaderFont     = Shader.Find(DefaultIds.shaderFont);
@@ -224,6 +232,7 @@
 		{
 			Material         = null;
 			MaterialPBR      = null;
+			MaterialPBRClip  = null;
 			MaterialUnlit    = null;
 			MaterialUnlitClip= null;
 			MaterialEquirect = null;
@@ -247,6 +256,7 @@
 
 			Shader         = null;
 			ShaderPbr      = null;
+			ShaderPbrClip  = null;
 			ShaderUnlit    = null;
 			ShaderUnlitClip= null;
 			ShaderFont     = null;

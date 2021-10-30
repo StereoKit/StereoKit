@@ -163,7 +163,7 @@ namespace StereoKitDocumenter
 			segs = nameSignature.Split('.');
 			if (paramSignature.Length > 0)
 				paramSignature = paramSignature.Substring(0, paramSignature.Length-1);
-            
+
 			DocMethod method = methods.Find(a => a.name == segs[segs.Length-1] && a.parent.name == segs[segs.Length-2]);
 			if (method == null)
 			{
@@ -229,11 +229,16 @@ namespace StereoKitDocumenter
 						folder = root.folders.Find((a) => a.name == ex.category);
 					if (folder == null)
 					{
-						folder = new DocIndexFolder(ex.category);
+						folder = new DocIndexFolder(ex.category, ex.SortIndex);
 						root.folders.Add(folder);
 					}
-					folder.folders.Add(new DocIndexFolder( ex.Name ));
+					folder.folders.Add(new DocIndexFolder( ex.Name, ex.SortIndex));
 				}
+			}
+			for (int i = 0; i < root.folders.Count; i++)
+			{
+				if (root.folders[i] == reference) continue;
+				root.folders[i].folders.Sort((a, b) => a.order - b.order);
 			}
 
 			root     .folders.Sort((a,b)=>string.Compare(a.name,b.name));
