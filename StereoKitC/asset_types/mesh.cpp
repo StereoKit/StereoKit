@@ -209,12 +209,15 @@ bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_c
 
 	mesh->skin_data.bone_ids                = sk_malloc_t(uint16_t, bone_id_4_count * 4);
 	mesh->skin_data.weights                 = sk_malloc_t(vec4,     bone_weight_count);
-	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix,   bone_count);
-	mesh->skin_data.bone_transforms         = sk_malloc_t(XMMATRIX, bone_count);
 	mesh->skin_data.deformed_verts          = sk_malloc_t(vert_t,   mesh->vert_count);
 	memcpy(mesh->skin_data.bone_ids,       bone_ids_4,   sizeof(uint16_t) * bone_id_4_count * 4);
-	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_id_4_count);
+	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_weight_count);
 	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
+
+	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix,   bone_count);
+	mesh->skin_data.bone_transforms         = sk_malloc_t(XMMATRIX, bone_count);
+	memset(mesh->skin_data.bone_inverse_transforms, 0, sizeof(matrix  ) * bone_count);
+	memset(mesh->skin_data.bone_transforms,         0, sizeof(XMMATRIX) * bone_count);
 
 	mesh->skin_data.bone_count = bone_count;
 

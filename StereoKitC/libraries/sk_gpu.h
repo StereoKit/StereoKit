@@ -3895,6 +3895,8 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 ///////////////////////////////////////////
 
 void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy) {
+	if (!skg_tex_is_valid(tex)) return;
+
 	glBindTexture(tex->_target, tex->_texture);
 
 	uint32_t mode;
@@ -4067,17 +4069,19 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	switch (format) {
 	case skg_tex_fmt_rgba32:        return GL_SRGB8_ALPHA8;
 	case skg_tex_fmt_rgba32_linear: return GL_RGBA8;
+	case skg_tex_fmt_bgra32:        return GL_RGBA8;
+	case skg_tex_fmt_bgra32_linear: return GL_RGBA8;
 	case skg_tex_fmt_rg11b10:       return GL_R11F_G11F_B10F;
 	case skg_tex_fmt_rgb10a2:       return GL_RGB10_A2;
-	case skg_tex_fmt_rgba64u:       return GL_RGBA16UI;
-	case skg_tex_fmt_rgba64s:       return GL_RGBA16I;
+	case skg_tex_fmt_rgba64u:       return GL_RGBA16F;
+	case skg_tex_fmt_rgba64s:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba64f:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba128:       return GL_RGBA32F;
 	case skg_tex_fmt_depth16:       return GL_DEPTH_COMPONENT16;
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT32F;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH24_STENCIL8;
 	case skg_tex_fmt_r8:            return GL_R8;
-	case skg_tex_fmt_r16:           return GL_R16UI;
+	case skg_tex_fmt_r16:           return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
 	default: return 0;
 	}

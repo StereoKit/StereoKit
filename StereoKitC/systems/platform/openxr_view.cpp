@@ -567,8 +567,9 @@ bool openxr_render_frame() {
 	}
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
-	end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
-	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
+	end_second.viewConfigurationCount = (uint32_t)xr_display_2nd_layers.count;
+	if (xr_display_2nd_layers.count > 0)
+		end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
 
 	// We're finished with rendering our layer, so send it off for display!
 	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];

@@ -146,6 +146,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 
 				weight_ct = (int32_t)attr->data->count;
 				weights   = sk_malloc_t(vec4, weight_ct);
+				memset(weights, 0, sizeof(vec4) *weight_ct);
 
 				if (components == 1) for (int32_t j = 0; j < weight_ct; j++) {
 					weights[j].x = 1; // one weight? Must be 1
