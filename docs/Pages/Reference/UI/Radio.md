@@ -11,7 +11,7 @@ static bool Radio(string text, bool active)
 
 |  |  |
 |--|--|
-|string text|Text to display on the radio, should be             per-window unique as it will be used as the element id.|
+|string text|Text to display on the Radio and id for             tracking element state. MUST be unique within current hierarchy.|
 |bool active|Does this button look like it's pressed?|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 

@@ -11,7 +11,7 @@ static bool HandleBegin(string id, Pose& pose, [Bounds]({{site.url}}/Pages/Refer
 
 |  |  |
 |--|--|
-|string id|Id of the handle group.|
+|string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |Pose& pose|The pose state for the handle! The user will              be able to grab this handle and move it around.|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) handle|Size and location of the handle, relative to              the pose.|
 |bool drawHandle|Should this function draw the handle              visual for you, or will you draw that yourself?|

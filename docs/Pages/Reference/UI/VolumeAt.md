@@ -11,7 +11,7 @@ static bool VolumeAt(string id, [Bounds]({{site.url}}/Pages/Reference/Bounds.htm
 
 |  |  |
 |--|--|
-|string id|A per-window unique id for tracking element state.|
+|string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) bounds|Size and position of the volume, relative to             the current Hierarchy.|
 |RETURNS: bool|True on the first frame a finger has entered the volume, false otherwise.|
 

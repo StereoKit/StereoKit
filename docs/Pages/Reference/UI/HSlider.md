@@ -11,7 +11,7 @@ static bool HSlider(string id, Single& value, float min, float max, float step, 
 
 |  |  |
 |--|--|
-|string id|A per-window unique id for tracking element              state.|
+|string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |Single& value|The value that the slider will store slider              state in.|
 |float min|The minimum value the slider can set, left side              of the slider.|
 |float max|The maximum value the slider can set, right              side of the slider.|
@@ -28,7 +28,7 @@ static bool HSlider(string id, Double& value, double min, double max, double ste
 
 |  |  |
 |--|--|
-|string id|A per-window unique id for tracking element              state.|
+|string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |Double& value|The value that the slider will store slider              state in.|
 |double min|The minimum value the slider can set, left side              of the slider.|
 |double max|The maximum value the slider can set, right              side of the slider.|

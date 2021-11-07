@@ -11,7 +11,7 @@ static void PushId(string rootId)
 
 |  |  |
 |--|--|
-|string rootId|The root id to use until the following PopId              call.|
+|string rootId|The root id to use until the following PopId              call. MUST be unique within current hierarchy.|
 
 Adds a root id to the stack for the following UI
 elements! This id is combined when hashing any following ids, to
@@ -22,7 +22,7 @@ static void PushId(int rootId)
 
 |  |  |
 |--|--|
-|int rootId|The root id to use until the following PopId              call.|
+|int rootId|The root id to use until the following PopId              call. MUST be unique within current hierarchy.|
 
 Adds a root id to the stack for the following UI
 elements! This id is combined when hashing any following ids, to

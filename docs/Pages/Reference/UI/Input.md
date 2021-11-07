@@ -11,7 +11,7 @@ static bool Input(string id, String& value, [Vec2]({{site.url}}/Pages/Reference/
 
 |  |  |
 |--|--|
-|string id|A per-window unique id for tracking element              state.|
+|string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |String& value|The string that will store the Input's              content in.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|Size of the Input in Hierarchy local meters.             Zero axes will auto-size.|
 |RETURNS: bool|Returns true every time the contents of 'value' change.|

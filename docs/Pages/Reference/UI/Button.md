@@ -11,7 +11,7 @@ static bool Button(string text)
 
 |  |  |
 |--|--|
-|string text|Text to display on the button, should be             per-window unique as it will be used as the element id.|
+|string text|Text to display on the button and id for             tracking element state. MUST be unique within current hierarchy.|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 
 A pressable button! A button will expand to fit the text

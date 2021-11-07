@@ -7,6 +7,7 @@ var documents =
 			{name : 'Learning Resources'},
 			{name : 'User Interface'},
 			{name : 'Using Hands'},
+			{name : 'Using The Simulator'},
 			{name : 'Using QR Codes'},
 			{name : 'Drawing'},
 			{name : 'Working with Materials'},
