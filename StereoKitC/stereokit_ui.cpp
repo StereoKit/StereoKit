@@ -1872,6 +1872,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						case ui_move_pos_only: {
 							dest_rot = quat_identity;
 						} break;
+						case ui_move_none: {
+							dest_rot = quat_identity;
+						} break;
 						default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 						}
 
@@ -1882,6 +1885,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 						dest_pos = dest_pos + dest_rot * (start_2h_handle_pos - start_2h_pos);
 						dest_rot = start_2h_handle_rot * dest_rot;
+						if (move_type == ui_move_none) {
+							dest_pos = movement.position;
+							dest_rot = movement.orientation;
+						}
 
 						movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 						movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
@@ -1910,11 +1917,16 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 					case ui_move_pos_only: {
 						dest_rot = quat_identity;
 					} break;
+					case ui_move_none: {
+						dest_rot = quat_identity;
+					} break;
 					default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 					}
 
 					vec3 curr_pos = finger_pos[i];
 					dest_pos = curr_pos + dest_rot * (start_handle_pos[i] - start_palm_pos[i]);
+					if (move_type == ui_move_none) dest_pos = movement.position;
+
 					movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 					movement.orientation = quat_slerp(movement.orientation, start_handle_rot[i] * dest_rot, 0.4f); 
 				}

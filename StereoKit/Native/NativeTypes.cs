@@ -942,6 +942,9 @@ namespace StereoKit
 		/// <summary>This element follows the hand's position only, completely
 		/// discarding any rotation information.</summary>
 		PosOnly,
+		/// <summary>Do not allow user input to change the element's pose at
+		/// all!</summary>
+		None,
 	}
 
 	/// <summary>A description of what type of window to draw! This is a bit
