@@ -1,4 +1,5 @@
 #include "../../stereokit.h"
+#include "../../_stereokit.h"
 #include "../input.h"
 #include "../platform/flatscreen_input.h"
 #include "input_hand.h"
@@ -7,19 +8,24 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int   mouse_pointer_id;
-float mouse_hand_scroll = 0;
+int     mouse_pointer_id;
+float   mouse_hand_scroll  = 0;
+handed_ mouse_active_hand  = handed_right;
+int     mouse_active_state = 0;
 
 ///////////////////////////////////////////
 
 bool hand_mouse_available() {
-	return sk_active_display_mode() == display_mode_flatscreen;
+	return sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim;
 }
 
 ///////////////////////////////////////////
 
 void hand_mouse_init() {
 	mouse_pointer_id = input_hand_pointer_id[handed_right];
+
+	input_hand_sim(handed_left,  true, vec3_zero, quat_identity, false, false, false);
+	input_hand_sim(handed_right, true, vec3_zero, quat_identity, false, false, false);
 }
 
 ///////////////////////////////////////////
@@ -30,9 +36,22 @@ void hand_mouse_shutdown() {
 ///////////////////////////////////////////
 
 void hand_mouse_update_frame() {
-	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
+	if ((input_key(key_shift) & button_state_just_active) && (input_key(key_ctrl) & button_state_active)) {
+		mouse_active_state = (mouse_active_state + 1) % 4;
+		switch (mouse_active_state) {
+		case 0: mouse_active_hand = handed_right; break;
+		case 1: mouse_active_hand = handed_max;   break;
+		case 2: mouse_active_hand = handed_left;  break;
+		case 3: mouse_active_hand = handed_max;   break;
+		}
+	}
 
-	const hand_t *hand = input_hand(handed_right);
+	if (mouse_active_hand == handed_max) return;
+
+	mouse_pointer_id = input_hand_pointer_id[mouse_active_hand];
+
+	pointer_t    *pointer_cursor = input_get_pointer(mouse_pointer_id);
+	const hand_t *hand           = input_hand       (mouse_active_hand);
 	vec3 hand_pos     = hand->palm.position;
 	quat hand_rot     = hand->palm.orientation;
 	bool l_pressed    = false;
@@ -50,7 +69,9 @@ void hand_mouse_update_frame() {
 		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
 
 		hand_pos     = ray.pos + ray.dir * (0.6f + mouse_hand_scroll * 0.00025f);
-		hand_rot     = quat_from_angles(40,30,90) * pointer_rot;
+		hand_rot     = (mouse_active_hand == handed_right
+			? quat_from_angles(40, 30, 90)
+			: quat_from_angles(40,-30,-90)) * pointer_rot;
 		hand_tracked = true;
 		l_pressed    = input_key(key_mouse_left ) & button_state_active;
 		r_pressed    = flatscreen_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
@@ -62,8 +83,7 @@ void hand_mouse_update_frame() {
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
 	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);
 
-	input_hand_sim(handed_right, true, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
-	input_hand_sim(handed_left,  true, vec3_zero, quat_identity, false, false, false);
+	input_hand_sim(mouse_active_hand, true, hand_pos, hand_rot, hand_tracked, l_pressed, r_pressed);
 
 	input_source_ src = input_source_hand | input_source_hand_right;
 	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? button_state_just_active : button_state_just_inactive, *pointer_cursor);

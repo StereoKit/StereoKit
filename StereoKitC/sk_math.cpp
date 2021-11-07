@@ -41,6 +41,9 @@ quat quat_difference(const quat &a, const quat &b) {
 ///////////////////////////////////////////
 
 quat quat_lookat(const vec3 &from, const vec3 &at) {
+	if (from.x == at.x && from.y == at.y && from.z == at.z)
+		return quat_identity;
+
 	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), XMVectorSet(0, 1, 0, 0));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
@@ -48,6 +51,9 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 ///////////////////////////////////////////
 
 quat quat_lookat_up(const vec3 &from, const vec3 &at, const vec3 &up) {
+	if (from.x == at.x && from.y == at.y && from.z == at.z)
+		return quat_identity;
+
 	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), math_vec3_to_fast(up));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
