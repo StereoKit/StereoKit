@@ -888,6 +888,7 @@ SK_API sound_t      sound_find           (const char *id);
 SK_API void         sound_set_id         (sound_t sound, const char *id);
 SK_API sound_t      sound_create         (const char *filename);
 SK_API sound_t      sound_create_stream  (float buffer_duration);
+SK_API sound_t      sound_create_samples (const float *samples_at_48000s, uint64_t sample_count);
 SK_API sound_t      sound_generate       (float (*function)(float sample_time), float duration);
 SK_API void         sound_write_samples  (sound_t sound, const float *samples,     uint64_t sample_count);
 SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_samples, uint64_t sample_count);

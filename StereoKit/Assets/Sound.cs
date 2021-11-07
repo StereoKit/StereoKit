@@ -144,14 +144,31 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
 
-		/// <summary>This function will generate a sound from a function you provide! The
-		/// function is called once for each sample in the duration. As an example, it 
-		/// may be called 48,000 times for each second of duration.</summary>
-		/// <param name="generator">This function takes a time value as an argument, which
-		/// will range from 0-duration, and should return a value from -1 - +1 representing
-		/// the audio wave at that point in time.</param>
-		/// <param name="duration">In seconds, how long should the sound be?</param>
-		/// <returns>Returns a generated sound effect! Or null if something went wrong.</returns>
+		/// <summary>This function will create a sound from an array of
+		/// samples. Values should range from -1 to +1, and there should be
+		/// 48,000 values per second of audio.</summary>
+		/// <param name="samplesAt48000s">Values should range from -1 to +1, 
+		/// and there should be 48,000 per second of audio.</param>
+		/// <returns>Returns a sound effect from the samples provided! Or
+		/// null if something went wrong.</returns>
+		public static Sound FromSamples(float[] samplesAt48000s)
+		{
+			IntPtr inst = NativeAPI.sound_create_samples(samplesAt48000s, (ulong)samplesAt48000s.Length);
+			return inst == IntPtr.Zero ? null : new Sound(inst);
+		}
+
+		/// <summary>This function will generate a sound from a function you
+		/// provide! The function is called once for each sample in the
+		/// duration. As an example, it may be called 48,000 times for each
+		/// second of duration.</summary>
+		/// <param name="generator">This function takes a time value as an
+		/// argument, which will range from 0-duration, and should return a
+		/// value from -1 - +1 representing the audio wave at that point in
+		/// time.</param>
+		/// <param name="duration">In seconds, how long should the sound be?
+		/// </param>
+		/// <returns>Returns a generated sound effect! Or null if something
+		/// went wrong.</returns>
 		public static Sound Generate(AudioGenerator generator, float duration)
 		{
 			AudioGenerator tmpGen = generator;

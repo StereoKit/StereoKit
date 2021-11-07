@@ -365,6 +365,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      sound_set_id        (IntPtr sound, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create        (string filename);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create_stream (float buffer_duration);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create_samples([In] float[] samples_at_48000s, ulong sample_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_generate      ([MarshalAs(UnmanagedType.FunctionPtr)] AudioGenerator function, float duration);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      sound_write_samples (IntPtr sound, [In ] float[] samples,     ulong sample_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong     sound_read_samples  (IntPtr sound, [Out] float[] out_samples, ulong sample_count);

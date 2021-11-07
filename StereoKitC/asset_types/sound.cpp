@@ -71,6 +71,26 @@ sound_t sound_create_stream(float buffer_duration) {
 
 ///////////////////////////////////////////
 
+sound_t sound_create_samples(const float *samples_at_48000s, uint64_t sample_count) {
+	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
+
+	result->type = sound_type_buffer;
+	result->buffer.capacity = sample_count;
+	result->buffer.count    = sample_count;
+	result->buffer.data     = sk_malloc_t(float, sample_count);
+	memcpy(result->buffer.data, samples_at_48000s, sample_count * sizeof(float));
+
+	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
+	if (ma_decoder_init_memory_raw(result->buffer.data, sizeof(float) * result->buffer.capacity, &config, &config, &result->decoder) != MA_SUCCESS) {
+		log_err("Failed to create sound!");
+		free(result->buffer.data);
+		return nullptr;
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
 sound_t sound_generate(float (*function)(float sample_time), float duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
