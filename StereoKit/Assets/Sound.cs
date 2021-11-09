@@ -5,7 +5,7 @@ namespace StereoKit
 	/// <summary>This class represents a sound effect! Excellent for blips
 	/// and bloops and little clips that you might play around your scene.
 	/// Not great for long streams of audio like you might see in a podcast.
-	/// Right now, this only supports .wav files, and procedurally generated
+	/// Right now, this supports .wav, .mp3, and procedurally generated 
 	/// noises!
 	/// 
 	/// On HoloLens 2, sounds are automatically processed on the HPU, freeing
@@ -119,7 +119,8 @@ namespace StereoKit
 
 		/// <summary>Loads a sound effect from file! Currently, StereoKit
 		/// supports .wav and .mp3 files. Audio is converted to mono.</summary>
-		/// <param name="filename">Name of the audio file! Supports .wav files.</param>
+		/// <param name="filename">Name of the audio file! Supports .wav and
+		/// .mp3 files.</param>
 		/// <returns>A sound object, or null if something went wrong.</returns>
 		public static Sound FromFile(string filename)
 		{
