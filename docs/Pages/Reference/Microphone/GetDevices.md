@@ -6,13 +6,9 @@ description: Constructs a list of valid Microphone devices attached to the syste
 # [Microphone]({{site.url}}/Pages/Reference/Microphone.html).GetDevices
 
 <div class='signature' markdown='1'>
+```csharp
 static String[] GetDevices()
-</div>
-
-|  |  |
-|--|--|
-|RETURNS: String[]|List of human readable microphone device names.|
-
+```
 Constructs a list of valid Microphone devices attached
 to the system. These names can be passed into Start to select
 a specific device to record from. It's recommended to cache this
@@ -22,6 +18,12 @@ each time you call it.
 It's good to note that a user might occasionally plug or unplug
 microphone devices from their system, so this list may
 occasionally change.
+</div>
+
+|  |  |
+|--|--|
+|RETURNS: String[]|List of human readable microphone device names.|
+
 
 
 

@@ -6,7 +6,10 @@ description: Loads a font and creates a font asset from it.
 # [Font]({{site.url}}/Pages/Reference/Font.html).FromFile
 
 <div class='signature' markdown='1'>
-static [Font]({{site.url}}/Pages/Reference/Font.html) FromFile(String[] fontFiles)
+```csharp
+static Font FromFile(String[] fontFiles)
+```
+Loads a font and creates a font asset from it.
 </div>
 
 |  |  |
@@ -14,7 +17,6 @@ static [Font]({{site.url}}/Pages/Reference/Font.html) FromFile(String[] fontFile
 |String[] fontFiles|A list of file addresses for the font! For             example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,             StereoKit will look in the next font file in the list.|
 |RETURNS: [Font]({{site.url}}/Pages/Reference/Font.html)|A font from the given files, or null if all of the files failed to load properly! If any of the given files sucessfully loads, then this font will be a valid asset.|
 
-Loads a font and creates a font asset from it.
 
 
 

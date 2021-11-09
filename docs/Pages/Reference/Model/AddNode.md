@@ -6,7 +6,14 @@ description: This adds a root node to the Model's node hierarchy! If There is al
 # [Model]({{site.url}}/Pages/Reference/Model.html).AddNode
 
 <div class='signature' markdown='1'>
-[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) AddNode(string name, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) modelTransform, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material, bool solid)
+```csharp
+ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh, Material material, bool solid)
+```
+This adds a root node to the `Model`'s node hierarchy! If
+There is already an initial root node, this node will still be a
+root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
+this is the first root node added, you'll be able to access it via
+`RootNode`.
 </div>
 
 |  |  |
@@ -18,11 +25,6 @@ description: This adds a root node to the Model's node hierarchy! If There is al
 |bool solid|A flag that indicates the Mesh for this node             will be used in ray intersection tests. This flag is ignored if no             Mesh is attached.|
 |RETURNS: [ModelNode]({{site.url}}/Pages/Reference/ModelNode.html)|This returns the newly added ModelNode, or if there's an issue with mesh and material being inconsistently null, then this result will also be null.|
 
-This adds a root node to the `Model`'s node hierarchy! If
-There is already an initial root node, this node will still be a
-root node, but will be a `Sibling` of the `Model`'s `RootNode`. If
-this is the first root node added, you'll be able to access it via
-`RootNode`.
 
 
 

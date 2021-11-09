@@ -6,7 +6,13 @@ description: This creates a matrix used for projecting 3D geometry onto a 2D sur
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Perspective
 
 <div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) Perspective(float fovDegrees, float aspectRatio, float nearClip, float farClip)
+```csharp
+static Matrix Perspective(float fovDegrees, float aspectRatio, float nearClip, float farClip)
+```
+This creates a matrix used for projecting 3D geometry
+onto a 2D surface for rasterization. Perspective projection
+matrices will cause parallel lines to converge at the horizon.
+This is great for normal looking content.
 </div>
 
 |  |  |
@@ -17,10 +23,6 @@ static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) Perspective(float fovD
 |float farClip|Anything further than this distance (in             meters) will be discarded. For low resolution depth buffers, this             should not be too far away, or you'll see bad z-fighting              artifacts.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|The final perspective matrix.|
 
-This creates a matrix used for projecting 3D geometry
-onto a 2D surface for rasterization. Perspective projection
-matrices will cause parallel lines to converge at the horizon.
-This is great for normal looking content.
 
 
 

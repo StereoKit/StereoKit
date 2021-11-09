@@ -1,14 +1,14 @@
 ---
 layout: default
 title: Sound
-description: This class represents a sound effect! Excellent for blips and bloops and little clips that you might play around your scene. Not great for long streams of audio like you might see in a podcast. Right now, this only supports .wav files, and procedurally generated noises!  On HoloLens 2, sounds are automatically processed on the HPU, freeing up the CPU for more of your app's code. To simulate this same effect on your development PC, you need to enable spatial sound on your audio endpoint. To do this, right click the speaker icon in your system tray, navigate to "Spatial sound", and choose "Windows Sonic for Headphones." For more information, visit https.//docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
+description: This class represents a sound effect! Excellent for blips and bloops and little clips that you might play around your scene. Not great for long streams of audio like you might see in a podcast. Right now, this supports .wav, .mp3, and procedurally generated noises!  On HoloLens 2, sounds are automatically processed on the HPU, freeing up the CPU for more of your app's code. To simulate this same effect on your development PC, you need to enable spatial sound on your audio endpoint. To do this, right click the speaker icon in your system tray, navigate to "Spatial sound", and choose "Windows Sonic for Headphones." For more information, visit https.//docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 ---
 # class Sound
 
 This class represents a sound effect! Excellent for blips
 and bloops and little clips that you might play around your scene.
 Not great for long streams of audio like you might see in a podcast.
-Right now, this only supports .wav files, and procedurally generated
+Right now, this supports .wav, .mp3, and procedurally generated
 noises!
 
 On HoloLens 2, sounds are automatically processed on the HPU, freeing

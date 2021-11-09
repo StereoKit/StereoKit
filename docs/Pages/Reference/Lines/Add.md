@@ -6,7 +6,10 @@ description: Adds a line to the environment for the current frame.
 # [Lines]({{site.url}}/Pages/Reference/Lines.html).Add
 
 <div class='signature' markdown='1'>
-static void Add([Vec3]({{site.url}}/Pages/Reference/Vec3.html) start, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) end, [Color32]({{site.url}}/Pages/Reference/Color32.html) color, float thickness)
+```csharp
+static void Add(Vec3 start, Vec3 end, Color32 color, float thickness)
+```
+Adds a line to the environment for the current frame.
 </div>
 
 |  |  |
@@ -16,9 +19,11 @@ static void Add([Vec3]({{site.url}}/Pages/Reference/Vec3.html) start, [Vec3]({{s
 |[Color32]({{site.url}}/Pages/Reference/Color32.html) color|Color for the line, this is embedded in the             vertex color of the line.|
 |float thickness|Thickness of the line in meters.|
 
-Adds a line to the environment for the current frame.
 <div class='signature' markdown='1'>
-static void Add([Vec3]({{site.url}}/Pages/Reference/Vec3.html) start, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) end, [Color32]({{site.url}}/Pages/Reference/Color32.html) colorStart, [Color32]({{site.url}}/Pages/Reference/Color32.html) colorEnd, float thickness)
+```csharp
+static void Add(Vec3 start, Vec3 end, Color32 colorStart, Color32 colorEnd, float thickness)
+```
+Adds a line to the environment for the current frame.
 </div>
 
 |  |  |
@@ -29,9 +34,12 @@ static void Add([Vec3]({{site.url}}/Pages/Reference/Vec3.html) start, [Vec3]({{s
 |[Color32]({{site.url}}/Pages/Reference/Color32.html) colorEnd|Color for the end of the line, this is             embedded in the vertex color of the line.|
 |float thickness|Thickness of the line in meters.|
 
-Adds a line to the environment for the current frame.
 <div class='signature' markdown='1'>
-static void Add([Ray]({{site.url}}/Pages/Reference/Ray.html) ray, float length, [Color32]({{site.url}}/Pages/Reference/Color32.html) color, float thickness)
+```csharp
+static void Add(Ray ray, float length, Color32 color, float thickness)
+```
+Adds a line based on a ray to the environment for the
+current frame.
 </div>
 
 |  |  |
@@ -41,20 +49,20 @@ static void Add([Ray]({{site.url}}/Pages/Reference/Ray.html) ray, float length, 
 |[Color32]({{site.url}}/Pages/Reference/Color32.html) color|Color for the line, this is embedded in the             vertex color of the line.|
 |float thickness|Thickness of the line in meters.|
 
-Adds a line based on a ray to the environment for the
-current frame.
 <div class='signature' markdown='1'>
+```csharp
 static void Add(LinePoint[]& points)
+```
+Adds a line from a list of line points to the
+environment. This does not close the path, so if you want it
+closed, you'll have to add an extra point or two at the end
+yourself!
 </div>
 
 |  |  |
 |--|--|
 |LinePoint[]& points|An array of line points.|
 
-Adds a line from a list of line points to the
-environment. This does not close the path, so if you want it
-closed, you'll have to add an extra point or two at the end
-yourself!
 
 
 

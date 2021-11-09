@@ -6,7 +6,12 @@ description: Adds a new subset to the Model, and recalculates the bounds. A defa
 # [Model]({{site.url}}/Pages/Reference/Model.html).AddSubset
 
 <div class='signature' markdown='1'>
-int AddSubset([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material, Matrix& transform)
+```csharp
+int AddSubset(Mesh mesh, Material material, Matrix& transform)
+```
+Adds a new subset to the Model, and recalculates the
+bounds. A default subset name of "subsetX" will be used, where X
+is the subset's index.
 </div>
 
 |  |  |
@@ -16,11 +21,12 @@ int AddSubset([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{
 |Matrix& transform|A transform Matrix representing the              Mesh's location relative to the origin of the Model.|
 |RETURNS: int|The index of the subset that was just added.|
 
-Adds a new subset to the Model, and recalculates the
-bounds. A default subset name of "subsetX" will be used, where X
-is the subset's index.
 <div class='signature' markdown='1'>
-int AddSubset(string name, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material, Matrix& transform)
+```csharp
+int AddSubset(string name, Mesh mesh, Material material, Matrix& transform)
+```
+Adds a new subset to the Model, and recalculates the
+bounds.
 </div>
 
 |  |  |
@@ -31,8 +37,6 @@ int AddSubset(string name, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, 
 |Matrix& transform|A transform Matrix representing the              Mesh's location relative to the origin of the Model.|
 |RETURNS: int|The index of the subset that was just added.|
 
-Adds a new subset to the Model, and recalculates the
-bounds.
 
 
 

@@ -3,7 +3,7 @@
 class DemoRayMesh : ITest
 {
 	/// :CodeSample: Ray.Intersect Mesh.Intersect
-	/// ## Ray Mesh Intersection
+	/// ### Ray Mesh Intersection
 	/// Here's an example of casting a Ray at a mesh someplace in world space,
 	/// transforming it into model space, calculating the intersection point,
 	/// and displaying it back in world space.

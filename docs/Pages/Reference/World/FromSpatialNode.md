@@ -6,7 +6,14 @@ description: Converts a Windows Mirage spatial node GUID into a Pose based on it
 # [World]({{site.url}}/Pages/Reference/World.html).FromSpatialNode
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType, Int64 qpcTime)
+```csharp
+static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType, Int64 qpcTime)
+```
+Converts a Windows Mirage spatial node GUID into a Pose
+based on its current position and rotation! Check
+SK.System.spatialBridgePresent to see if this is available to
+use. Currently only on HoloLens, good for use with the Windows
+QR code package.
 </div>
 
 |  |  |
@@ -16,11 +23,6 @@ static [Pose]({{site.url}}/Pages/Reference/Pose.html) FromSpatialNode(Guid spati
 |Int64 qpcTime|A windows performance counter timestamp at             which the node should be located, obtained from another API or             with System.Diagnostics.Stopwatch.GetTimestamp().|
 |RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|A Pose representing the current orientation of the spatial node.|
 
-Converts a Windows Mirage spatial node GUID into a Pose
-based on its current position and rotation! Check
-SK.System.spatialBridgePresent to see if this is available to
-use. Currently only on HoloLens, good for use with the Windows
-QR code package.
 
 
 

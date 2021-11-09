@@ -6,16 +6,18 @@ description: Converts the gamma space RGB color to a CIE LAB color space value! 
 # [Color]({{site.url}}/Pages/Reference/Color.html).ToLAB
 
 <div class='signature' markdown='1'>
-[Vec3]({{site.url}}/Pages/Reference/Vec3.html) ToLAB()
+```csharp
+Vec3 ToLAB()
+```
+Converts the gamma space RGB color to a CIE LAB color
+space value! Conversion back and forth from LAB space could be
+somewhat lossy.
 </div>
 
 |  |  |
 |--|--|
 |RETURNS: [Vec3]({{site.url}}/Pages/Reference/Vec3.html)|An LAB vector where x=L, y=A, z=B.|
 
-Converts the gamma space RGB color to a CIE LAB color
-space value! Conversion back and forth from LAB space could be
-somewhat lossy.
 
 
 

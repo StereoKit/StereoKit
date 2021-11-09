@@ -6,16 +6,18 @@ description: If you subscribed to the log callback, you can unsubscribe that cal
 # [Log]({{site.url}}/Pages/Reference/Log.html).Unsubscribe
 
 <div class='signature' markdown='1'>
+```csharp
 static void Unsubscribe(LogCallback onLog)
+```
+If you subscribed to the log callback, you can
+unsubscribe that callback here!
+This method can safely be called before initialization.
 </div>
 
 |  |  |
 |--|--|
 |LogCallback onLog|The subscribed callback to remove.|
 
-If you subscribed to the log callback, you can
-unsubscribe that callback here!
-This method can safely be called before initialization.
 
 
 

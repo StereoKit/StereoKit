@@ -6,7 +6,14 @@ description: Creates a cubemap texture from a single equirectangular image! You 
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).FromCubemapEquirectangular
 
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData)
+```csharp
+static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData)
+```
+Creates a cubemap texture from a single equirectangular
+image! You know, the ones that look like an unwrapped globe with
+the poles all streetched out. It uses some fancy shaders and
+texture blitting to create 6 faces from the equirectangular
+image.
 </div>
 
 |  |  |
@@ -15,13 +22,14 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapEquirectangular(s
 |bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?             sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Cubemap texture asset!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Tex FromCubemapEquirectangular(string equirectangularCubemap, SphericalHarmonics& lightingInfo, bool sRGBData)
+```
 Creates a cubemap texture from a single equirectangular
 image! You know, the ones that look like an unwrapped globe with
-the poles all streetched out. It uses some fancy shaders and
-texture blitting to create 6 faces from the equirectangular
-image.
-<div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapEquirectangular(string equirectangularCubemap, SphericalHarmonics& lightingInfo, bool sRGBData)
+the poles all streetched out. It uses some fancy shaders and texture
+blitting to create 6 faces from the equirectangular image.
 </div>
 
 |  |  |
@@ -31,17 +39,13 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapEquirectangular(s
 |bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?              sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Cubemap texture asset!|
 
-Creates a cubemap texture from a single equirectangular
-image! You know, the ones that look like an unwrapped globe with
-the poles all streetched out. It uses some fancy shaders and texture
-blitting to create 6 faces from the equirectangular image.
 
 
 
 
 ## Examples
 
-## Setting lighting to an equirect cubemap
+### Setting lighting to an equirect cubemap
 Changing the environment's lighting based on an image is a really
 great way to instantly get a particular feel to your scene! A neat
 place to find compatible equirectangular images for this is

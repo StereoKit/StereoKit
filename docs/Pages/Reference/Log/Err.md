@@ -6,7 +6,11 @@ description: Writes a formatted line to the log using a LogLevel.Error severity 
 # [Log]({{site.url}}/Pages/Reference/Log.html).Err
 
 <div class='signature' markdown='1'>
+```csharp
 static void Err(string text, Object[] items)
+```
+Writes a formatted line to the log using a
+LogLevel.Error severity level!
 </div>
 
 |  |  |
@@ -14,18 +18,18 @@ static void Err(string text, Object[] items)
 |string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
 |Object[] items|Format arguments.|
 
+<div class='signature' markdown='1'>
+```csharp
+static void Err(string text)
+```
 Writes a formatted line to the log using a
 LogLevel.Error severity level!
-<div class='signature' markdown='1'>
-static void Err(string text)
 </div>
 
 |  |  |
 |--|--|
 |string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
 
-Writes a formatted line to the log using a
-LogLevel.Error severity level!
 
 
 

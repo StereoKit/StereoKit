@@ -17,7 +17,7 @@ draw order. Check the Transparency enum for details.
 
 ## Examples
 
-## Additive Transparency
+### Additive Transparency
 Here's an example material with additive transparency.
 Transparent materials typically don't write to the depth buffer,
 but this may vary from case to case. Note that the material's
@@ -29,7 +29,7 @@ matAlphaAdd.Transparency = Transparency.Add;
 matAlphaAdd.DepthWrite   = false;
 ```
 ![Additive transparency example]({{site.screen_url}}/MaterialAlphaAdd.jpg)
-## Alpha Blending
+### Alpha Blending
 Here's an example material with an alpha blend transparency.
 Transparent materials typically don't write to the depth buffer,
 but this may vary from case to case. Here we're setting the alpha

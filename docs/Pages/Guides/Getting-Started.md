@@ -6,8 +6,6 @@ description: Getting Started
 
 # Getting Started with StereoKit
 
-## Prerequisites
-
 Here's a quick list of what you'll need to start developing with StereoKit:
 
 - **[Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - Use these workloads:**

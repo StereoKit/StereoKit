@@ -1,8 +1,6 @@
 ﻿/// :CodeDoc: Guides 2 User Interface
 /// # Building UI in StereoKit
 /// 
-/// ## Immediate Mode UI
-/// 
 /// StereoKit uses an immediate mode UI system. Basically, you define the UI 
 /// every single frame you want to see it! Sounds a little odd at first, but
 /// it does have some pretty tremendous advantages. Since very little state

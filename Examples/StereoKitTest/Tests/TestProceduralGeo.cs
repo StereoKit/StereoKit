@@ -23,35 +23,35 @@ class TestProceduralGeo : ITest
 		materialWire.DepthTest = DepthTest.Always;
 
 		/// :CodeSample: Mesh.GenerateCube
-		/// ## UV and Face layout
+		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
 		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCube.jpg)
 		meshCube = Mesh.GenerateCube(Vec3.One);
 		/// :End:
 		/// :CodeSample: Mesh.GenerateRoundedCube
-		/// ## UV and Face layout
+		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
 		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoRoundedCube.jpg)
 		meshRoundedCube = Mesh.GenerateRoundedCube(Vec3.One, 0.05f);
 		/// :End:
 		/// :CodeSample: Mesh.GenerateSphere
-		/// ## UV and Face layout
+		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
 		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoSphere.jpg)
 		meshSphere = Mesh.GenerateSphere(1);
 		/// :End:
 		/// :CodeSample: Mesh.GenerateCylinder
-		/// ## UV and Face layout
+		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
 		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCylinder.jpg)
 		meshCylinder = Mesh.GenerateCylinder(1, 1, Vec3.Up);
 		/// :End:
 		/// :CodeSample: Mesh.GeneratePlane
-		/// ## UV and Face layout
+		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
 		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoPlane.jpg)

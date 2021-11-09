@@ -6,7 +6,13 @@ description: Set the texture's pixels using a pointer to a chunk of memory! This
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).SetColors
 
 <div class='signature' markdown='1'>
+```csharp
 void SetColors(int width, int height, IntPtr data)
+```
+Set the texture's pixels using a pointer to a chunk of
+memory! This is great if you're pulling in some color data from
+native code, and don't want to pay the cost of trying to marshal
+that data around.
 </div>
 
 |  |  |
@@ -15,20 +21,10 @@ void SetColors(int width, int height, IntPtr data)
 |int height|Height in pixels of the texture. Powers of              two are generally best!|
 |IntPtr data|A pointer to a chunk of memory containing color              data! Should be  width*height*size_of_texture_format bytes large.              Color data should definitely match the format provided when              constructing the texture!|
 
-Set the texture's pixels using a pointer to a chunk of
-memory! This is great if you're pulling in some color data from
-native code, and don't want to pay the cost of trying to marshal
-that data around.
 <div class='signature' markdown='1'>
+```csharp
 void SetColors(int width, int height, Color32[]& data)
-</div>
-
-|  |  |
-|--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|Color32[]& data|An array of 32 bit colors, should be a length              of `width*height`.|
-
+```
 Set the texture's pixels using a color array! This
 function should only be called on textures with a format of
 Rgba32 or Rgba32Linear. You can call this as many times as you'd
@@ -37,8 +33,25 @@ multiple times will mark it as dynamic on the graphics card.
 Calling this function can also result in building mip-maps, which
 has a non-zero cost: use TexType.ImageNomips when creating the
 Tex to avoid this.
+</div>
+
+|  |  |
+|--|--|
+|int width|Width in pixels of the texture. Powers of two              are generally best!|
+|int height|Height in pixels of the texture. Powers of              two are generally best!|
+|Color32[]& data|An array of 32 bit colors, should be a length              of `width*height`.|
+
 <div class='signature' markdown='1'>
+```csharp
 void SetColors(int width, int height, Color[]& data)
+```
+Set the texture's pixels using a color array! This
+function sould only be called on textures with a format of Rgba128.
+You can call this as many times as you'd like, even with different
+widths and heights. Calling this multiple times will mark it as
+dynamic on the graphics card. Calling this function can also
+result in building mip-maps, which has a non-zero cost: use
+TexType.ImageNomips when creating the Tex to avoid this.
 </div>
 
 |  |  |
@@ -47,15 +60,17 @@ void SetColors(int width, int height, Color[]& data)
 |int height|Height in pixels of the texture. Powers of              two are generally best!|
 |Color[]& data|An array of 128 bit colors, should be a length              of `width*height`.|
 
-Set the texture's pixels using a color array! This
-function sould only be called on textures with a format of Rgba128.
+<div class='signature' markdown='1'>
+```csharp
+void SetColors(int width, int height, Byte[]& data)
+```
+Set the texture's pixels using a scalar array! This
+function sould only be called on textures with a format of R8.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
 result in building mip-maps, which has a non-zero cost: use
 TexType.ImageNomips when creating the Tex to avoid this.
-<div class='signature' markdown='1'>
-void SetColors(int width, int height, Byte[]& data)
 </div>
 
 |  |  |
@@ -64,15 +79,17 @@ void SetColors(int width, int height, Byte[]& data)
 |int height|Height in pixels of the texture. Powers of              two are generally best!|
 |Byte[]& data|An array of 8 bit values, should be a length              of `width*height`.|
 
+<div class='signature' markdown='1'>
+```csharp
+void SetColors(int width, int height, UInt16[]& data)
+```
 Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R8.
+function sould only be called on textures with a format of R16.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
 result in building mip-maps, which has a non-zero cost: use
 TexType.ImageNomips when creating the Tex to avoid this.
-<div class='signature' markdown='1'>
-void SetColors(int width, int height, UInt16[]& data)
 </div>
 
 |  |  |
@@ -81,15 +98,17 @@ void SetColors(int width, int height, UInt16[]& data)
 |int height|Height in pixels of the texture. Powers of              two are generally best!|
 |UInt16[]& data|An array of 16 bit values, should be a length              of `width*height`.|
 
+<div class='signature' markdown='1'>
+```csharp
+void SetColors(int width, int height, Single[]& data)
+```
 Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R16.
+function sould only be called on textures with a format of R32.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
 result in building mip-maps, which has a non-zero cost: use
 TexType.ImageNomips when creating the Tex to avoid this.
-<div class='signature' markdown='1'>
-void SetColors(int width, int height, Single[]& data)
 </div>
 
 |  |  |
@@ -98,20 +117,13 @@ void SetColors(int width, int height, Single[]& data)
 |int height|Height in pixels of the texture. Powers of              two are generally best!|
 |Single[]& data|An array of 32 bit values, should be a length              of `width*height`.|
 
-Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R32.
-You can call this as many times as you'd like, even with different
-widths and heights. Calling this multiple times will mark it as
-dynamic on the graphics card. Calling this function can also
-result in building mip-maps, which has a non-zero cost: use
-TexType.ImageNomips when creating the Tex to avoid this.
 
 
 
 
 ## Examples
 
-## Creating a texture procedurally
+### Creating a texture procedurally
 It's pretty easy to create an array of colors, and
 just pass that into an empty texture! Here, we're
 building a simple grid texture, like so:

@@ -6,7 +6,12 @@ description: Searches for an animation with the given name, and if it's found, s
 # [Model]({{site.url}}/Pages/Reference/Model.html).PlayAnim
 
 <div class='signature' markdown='1'>
-void PlayAnim(string animationName, [AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) mode)
+```csharp
+void PlayAnim(string animationName, AnimMode mode)
+```
+Searches for an animation with the given name, and if it's
+found, sets it up as the active animation and begins playing it
+with the animation mode.
 </div>
 
 |  |  |
@@ -14,11 +19,12 @@ void PlayAnim(string animationName, [AnimMode]({{site.url}}/Pages/Reference/Anim
 |string animationName|Case sensitive name of the animation.|
 |[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) mode|The mode with which to play the animation.|
 
-Searches for an animation with the given name, and if it's
-found, sets it up as the active animation and begins playing it
-with the animation mode.
 <div class='signature' markdown='1'>
-void PlayAnim(Anim animation, [AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) mode)
+```csharp
+void PlayAnim(Anim animation, AnimMode mode)
+```
+Sets the animation up as the active animation, and begins
+playing it with the animation mode.
 </div>
 
 |  |  |
@@ -26,8 +32,6 @@ void PlayAnim(Anim animation, [AnimMode]({{site.url}}/Pages/Reference/AnimMode.h
 |Anim animation|The new active animation.|
 |[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) mode|The mode with which to play the animation.|
 
-Sets the animation up as the active animation, and begins
-playing it with the animation mode.
 
 
 

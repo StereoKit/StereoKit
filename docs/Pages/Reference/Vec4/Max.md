@@ -6,7 +6,11 @@ description: Returns a vector where each elements is the maximum value for each 
 # [Vec4]({{site.url}}/Pages/Reference/Vec4.html).Max
 
 <div class='signature' markdown='1'>
-static [Vec4]({{site.url}}/Pages/Reference/Vec4.html) Max([Vec4]({{site.url}}/Pages/Reference/Vec4.html) a, [Vec4]({{site.url}}/Pages/Reference/Vec4.html) b)
+```csharp
+static Vec4 Max(Vec4 a, Vec4 b)
+```
+Returns a vector where each elements is the maximum
+value for each corresponding pair.
 </div>
 
 |  |  |
@@ -15,8 +19,6 @@ static [Vec4]({{site.url}}/Pages/Reference/Vec4.html) Max([Vec4]({{site.url}}/Pa
 |[Vec4]({{site.url}}/Pages/Reference/Vec4.html) b|Order isn't important here.|
 |RETURNS: [Vec4]({{site.url}}/Pages/Reference/Vec4.html)|The maximum value for each corresponding vector pair.|
 
-Returns a vector where each elements is the maximum
-value for each corresponding pair.
 
 
 

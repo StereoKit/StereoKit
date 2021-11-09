@@ -73,7 +73,7 @@ class DemoGeo : ITest
 		demoPlaneModel = planeModel;
 
 		/// :CodeSample: Mesh.SetVerts Mesh.SetInds
-		/// ## Procedurally generating a wavy grid
+		/// ### Procedurally generating a wavy grid
 		/// ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
 		/// Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
 		/// is a common example of creating a grid using code, we're using a sin wave

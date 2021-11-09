@@ -6,7 +6,12 @@ description: This will read samples from the sound stream, starting from the fir
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).ReadSamples
 
 <div class='signature' markdown='1'>
+```csharp
 int ReadSamples(Single[]& samples)
+```
+This will read samples from the sound stream, starting
+from the first unread sample. Check UnreadSamples for how many
+samples are available to read.
 </div>
 
 |  |  |
@@ -14,9 +19,6 @@ int ReadSamples(Single[]& samples)
 |Single[]& samples|A pre-allocated buffer to read the samples             into! This function will stop reading when this buffer is full,              or when it runs out of unread samples.|
 |RETURNS: int|Returns the number of samples that were read from the stream's buffer and written to the provided sample buffer.|
 
-This will read samples from the sound stream, starting
-from the first unread sample. Check UnreadSamples for how many
-samples are available to read.
 
 
 

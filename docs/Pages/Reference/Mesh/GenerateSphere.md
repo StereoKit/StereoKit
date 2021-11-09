@@ -6,7 +6,12 @@ description: Generates a sphere mesh, pre-sized to the given diameter, created b
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateSphere
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diameter, int subdivisions)
+```csharp
+static Mesh GenerateSphere(float diameter, int subdivisions)
+```
+Generates a sphere mesh, pre-sized to the given
+diameter, created by sphereifying a subdivided cube! UV
+coordinates are taken from the initial unspherified cube.
 </div>
 
 |  |  |
@@ -15,9 +20,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateSphere(float diame
 |int subdivisions|How many times should the initial cube             be subdivided?|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.|
 
-Generates a sphere mesh, pre-sized to the given
-diameter, created by sphereifying a subdivided cube! UV
-coordinates are taken from the initial unspherified cube.
 
 
 
@@ -41,7 +43,7 @@ Renderer.Add(sphereMesh, Default.Material, sphereTransform);
 sphereTransform = Matrix.T(.5f, .5f, 0);
 Renderer.Add(sphereModel, sphereTransform);
 ```
-## UV and Face layout
+### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is
 laid out.
 ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoSphere.jpg)

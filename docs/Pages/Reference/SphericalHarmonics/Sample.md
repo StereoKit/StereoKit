@@ -6,7 +6,10 @@ description: Look up the color information in a particular direction!
 # [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html).Sample
 
 <div class='signature' markdown='1'>
-[Color]({{site.url}}/Pages/Reference/Color.html) Sample([Vec3]({{site.url}}/Pages/Reference/Vec3.html) normal)
+```csharp
+Color Sample(Vec3 normal)
+```
+Look up the color information in a particular direction!
 </div>
 
 |  |  |
@@ -14,7 +17,6 @@ description: Look up the color information in a particular direction!
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) normal|The direction to look in. Should be normalized.|
 |RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|The Color represented by the SH in the given direction.|
 
-Look up the color information in a particular direction!
 
 
 

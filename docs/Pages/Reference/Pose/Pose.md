@@ -6,7 +6,10 @@ description: Basic initialization constructor! Just copies in the provided value
 # [Pose]({{site.url}}/Pages/Reference/Pose.html).Pose
 
 <div class='signature' markdown='1'>
- Pose([Vec3]({{site.url}}/Pages/Reference/Vec3.html) position, [Quat]({{site.url}}/Pages/Reference/Quat.html) orientation)
+```csharp
+void Pose(Vec3 position, Quat orientation)
+```
+Basic initialization constructor! Just copies in the provided values directly.
 </div>
 
 |  |  |
@@ -14,9 +17,11 @@ description: Basic initialization constructor! Just copies in the provided value
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|Location of the pose.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) orientation|Orientation of the pose, stored as a rotation from Vec3.Forward.|
 
-Basic initialization constructor! Just copies in the provided values directly.
 <div class='signature' markdown='1'>
- Pose(float x, float y, float z, [Quat]({{site.url}}/Pages/Reference/Quat.html) orientation)
+```csharp
+void Pose(float x, float y, float z, Quat orientation)
+```
+Basic initialization constructor! Just copies in the provided values directly.
 </div>
 
 |  |  |
@@ -26,7 +31,6 @@ Basic initialization constructor! Just copies in the provided values directly.
 |float z|Z location of the pose.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) orientation|Orientation of the pose, stored as a rotation from Vec3.Forward.|
 
-Basic initialization constructor! Just copies in the provided values directly.
 
 
 

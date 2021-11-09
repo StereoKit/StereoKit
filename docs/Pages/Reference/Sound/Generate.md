@@ -6,7 +6,12 @@ description: This function will generate a sound from a function you provide! Th
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).Generate
 
 <div class='signature' markdown='1'>
-static [Sound]({{site.url}}/Pages/Reference/Sound.html) Generate(AudioGenerator generator, float duration)
+```csharp
+static Sound Generate(AudioGenerator generator, float duration)
+```
+This function will generate a sound from a function you provide! The
+function is called once for each sample in the duration. As an example, it
+may be called 48,000 times for each second of duration.
 </div>
 
 |  |  |
@@ -15,9 +20,6 @@ static [Sound]({{site.url}}/Pages/Reference/Sound.html) Generate(AudioGenerator 
 |float duration|In seconds, how long should the sound be?|
 |RETURNS: [Sound]({{site.url}}/Pages/Reference/Sound.html)|Returns a generated sound effect! Or null if something went wrong.|
 
-This function will generate a sound from a function you provide! The
-function is called once for each sample in the duration. As an example, it
-may be called 48,000 times for each second of duration.
 
 
 

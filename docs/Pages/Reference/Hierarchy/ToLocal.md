@@ -6,7 +6,11 @@ description: Converts a world space point into the local space of the current Hi
 # [Hierarchy]({{site.url}}/Pages/Reference/Hierarchy.html).ToLocal
 
 <div class='signature' markdown='1'>
-static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) ToLocal([Vec3]({{site.url}}/Pages/Reference/Vec3.html) worldPoint)
+```csharp
+static Vec3 ToLocal(Vec3 worldPoint)
+```
+Converts a world space point into the local space of the
+current Hierarchy stack!
 </div>
 
 |  |  |
@@ -14,10 +18,12 @@ static [Vec3]({{site.url}}/Pages/Reference/Vec3.html) ToLocal([Vec3]({{site.url}
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) worldPoint|A point in world space.|
 |RETURNS: [Vec3]({{site.url}}/Pages/Reference/Vec3.html)|The provided point now in local hierarchy space!|
 
-Converts a world space point into the local space of the
-current Hierarchy stack!
 <div class='signature' markdown='1'>
-static [Quat]({{site.url}}/Pages/Reference/Quat.html) ToLocal([Quat]({{site.url}}/Pages/Reference/Quat.html) worldOrientation)
+```csharp
+static Quat ToLocal(Quat worldOrientation)
+```
+Converts a world space rotation into the local space of
+the current Hierarchy stack!
 </div>
 
 |  |  |
@@ -25,10 +31,12 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) ToLocal([Quat]({{site.url}
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) worldOrientation|A rotation in world space.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|The provided rotation now in local hierarchy space!|
 
-Converts a world space rotation into the local space of
-the current Hierarchy stack!
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) ToLocal([Pose]({{site.url}}/Pages/Reference/Pose.html) worldPose)
+```csharp
+static Pose ToLocal(Pose worldPose)
+```
+Converts a world pose relative to the current
+hierarchy stack into local space!
 </div>
 
 |  |  |
@@ -36,8 +44,6 @@ static [Pose]({{site.url}}/Pages/Reference/Pose.html) ToLocal([Pose]({{site.url}
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) worldPose|A pose in world space.|
 |RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|The provided pose now in world space!|
 
-Converts a world pose relative to the current
-hierarchy stack into local space!
 
 
 

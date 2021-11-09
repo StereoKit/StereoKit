@@ -6,7 +6,12 @@ description: Reads the entire contents of the file as a UTF-8 string, taking adv
 # [Platform]({{site.url}}/Pages/Reference/Platform.html).ReadFileText
 
 <div class='signature' markdown='1'>
+```csharp
 static string ReadFileText(string filename)
+```
+Reads the entire contents of the file as a UTF-8 string,
+taking advantage of any permissions that may have been granted by
+Platform.FilePicker. Returns null on failure.
 </div>
 
 |  |  |
@@ -14,9 +19,6 @@ static string ReadFileText(string filename)
 |string filename|Path to the file. Not affected by Assets             folder path.|
 |RETURNS: string|A UTF-8 encoded string if successful, null if not.|
 
-Reads the entire contents of the file as a UTF-8 string,
-taking advantage of any permissions that may have been granted by
-Platform.FilePicker. Returns null on failure.
 
 
 

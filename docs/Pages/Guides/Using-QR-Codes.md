@@ -6,8 +6,6 @@ description: Using QR Codes
 
 # Using QR Codes
 
-## Intro
-
 QR codes are a super fast and easy way to to locate an object,
 provide information from the environment, or `localize` two
 devices to the same coordinate space! HoloLens 2 and WMR headsets

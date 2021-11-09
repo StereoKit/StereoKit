@@ -6,7 +6,11 @@ description: Searches the list of animations for the first one matching the give
 # [Model]({{site.url}}/Pages/Reference/Model.html).FindAnim
 
 <div class='signature' markdown='1'>
+```csharp
 Anim FindAnim(string name)
+```
+Searches the list of animations for the first one matching
+the given name.
 </div>
 
 |  |  |
@@ -14,8 +18,6 @@ Anim FindAnim(string name)
 |string name|Case sensitive name of the animation.|
 |RETURNS: Anim|A link to the animation, or null if none is found.|
 
-Searches the list of animations for the first one matching
-the given name.
 
 
 

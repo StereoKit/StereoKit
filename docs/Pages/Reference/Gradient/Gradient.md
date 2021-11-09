@@ -6,19 +6,23 @@ description: Creates a new, completely empty gradient.
 # [Gradient]({{site.url}}/Pages/Reference/Gradient.html).Gradient
 
 <div class='signature' markdown='1'>
- Gradient()
+```csharp
+void Gradient()
+```
+Creates a new, completely empty gradient.
 </div>
 
-Creates a new, completely empty gradient.
 <div class='signature' markdown='1'>
- Gradient(GradientKey[] keys)
+```csharp
+void Gradient(GradientKey[] keys)
+```
+Creates a new gradient from the list of color keys!
 </div>
 
 |  |  |
 |--|--|
 |GradientKey[] keys|These can be in any order that you like, they'll             be sorted by their GradientKey.position value regardless!|
 
-Creates a new gradient from the list of color keys!
 
 
 

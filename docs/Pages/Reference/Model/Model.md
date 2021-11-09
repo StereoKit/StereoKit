@@ -6,7 +6,12 @@ description: Creates a single mesh subset Model using the indicated Mesh and Mat
 # [Model]({{site.url}}/Pages/Reference/Model.html).Model
 
 <div class='signature' markdown='1'>
- Model([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+void Model(Mesh mesh, Material material)
+```
+Creates a single mesh subset Model using the indicated
+Mesh and Material! An id will be automatically generated for this
+asset.
 </div>
 
 |  |  |
@@ -14,17 +19,20 @@ description: Creates a single mesh subset Model using the indicated Mesh and Mat
 |[Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh|Any Mesh asset.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|Any Material asset.|
 
-Creates a single mesh subset Model using the indicated
-Mesh and Material! An id will be automatically generated for this
-asset.
 <div class='signature' markdown='1'>
- Model()
-</div>
-
+```csharp
+void Model()
+```
 Creates an empty Model object with an automatically
 generated id. Use the AddSubset methods to fill this model out.
+</div>
+
 <div class='signature' markdown='1'>
- Model(string id, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+void Model(string id, Mesh mesh, Material material)
+```
+Creates a single mesh subset Model using the indicated
+Mesh and Material!
 </div>
 
 |  |  |
@@ -33,8 +41,6 @@ generated id. Use the AddSubset methods to fill this model out.
 |[Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh|Any Mesh asset.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|Any Material asset.|
 
-Creates a single mesh subset Model using the indicated
-Mesh and Material!
 
 
 

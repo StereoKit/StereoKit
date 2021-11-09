@@ -6,9 +6,9 @@ description: Resets the Input.TextConsume read list back to the start. For examp
 # [Input]({{site.url}}/Pages/Reference/Input.html).TextReset
 
 <div class='signature' markdown='1'>
+```csharp
 static void TextReset()
-</div>
-
+```
 Resets the `Input.TextConsume` read list back to the
 start.
 For example, `UI.Input` will _not_ call `TextReset`, so it
@@ -18,6 +18,8 @@ current frame's text, but still allow `UI.Input` to work later on
 in the frame, you would read everything with `TextConsume`, and
 then `TextReset` afterwards to reset the read list for the
 following `UI.Input`.
+</div>
+
 
 
 

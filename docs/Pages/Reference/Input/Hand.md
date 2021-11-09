@@ -6,14 +6,9 @@ description: Retreives all the information about the user's hand! StereoKit will
 # [Input]({{site.url}}/Pages/Reference/Input.html).Hand
 
 <div class='signature' markdown='1'>
-static [Hand]({{site.url}}/Pages/Reference/Hand.html) Hand([Handed]({{site.url}}/Pages/Reference/Handed.html) handed)
-</div>
-
-|  |  |
-|--|--|
-|[Handed]({{site.url}}/Pages/Reference/Handed.html) handed|Do you want the left or the right hand?|
-|RETURNS: [Hand]({{site.url}}/Pages/Reference/Hand.html)|A copy of the entire set of hand data!|
-
+```csharp
+static Hand Hand(Handed handed)
+```
 Retreives all the information about the user's hand!
 StereoKit will always provide hand information, however sometimes
 that information is simulated, like in the case of a mouse, or
@@ -23,6 +18,13 @@ Note that this is a copy of the hand information, and it's a good
 chunk of data, so it's a good idea to grab it once and keep it
 around for the frame, or at least function, rather than asking
 for it again and again each time you want to touch something.
+</div>
+
+|  |  |
+|--|--|
+|[Handed]({{site.url}}/Pages/Reference/Handed.html) handed|Do you want the left or the right hand?|
+|RETURNS: [Hand]({{site.url}}/Pages/Reference/Hand.html)|A copy of the entire set of hand data!|
+
 
 
 

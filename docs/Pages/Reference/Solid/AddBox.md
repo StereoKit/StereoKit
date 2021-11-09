@@ -6,7 +6,11 @@ description: This adds a box to this solid's physical shape! This is in addition
 # [Solid]({{site.url}}/Pages/Reference/Solid.html).AddBox
 
 <div class='signature' markdown='1'>
-void AddBox([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, float kilograms, Nullable`1 offset)
+```csharp
+void AddBox(Vec3 dimensions, float kilograms, Nullable`1 offset)
+```
+This adds a box to this solid's physical shape! This is
+in addition to any other shapes you've added to this solid.
 </div>
 
 |  |  |
@@ -15,8 +19,6 @@ void AddBox([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, float kil
 |float kilograms|How many kilograms does this shape weigh?|
 |Nullable`1 offset|Offset of this shape from the center of the             solid.|
 
-This adds a box to this solid's physical shape! This is
-in addition to any other shapes you've added to this solid.
 
 
 

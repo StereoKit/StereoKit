@@ -6,7 +6,14 @@ description: This begins and ends a handle so you can just use  its grabbable/mo
 # [UI]({{site.url}}/Pages/Reference/UI.html).Handle
 
 <div class='signature' markdown='1'>
-static bool Handle(string id, Pose& pose, [Bounds]({{site.url}}/Pages/Reference/Bounds.html) handle, bool drawHandle, [UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType)
+```csharp
+static bool Handle(string id, Pose& pose, Bounds handle, bool drawHandle, UIMove moveType)
+```
+This begins and ends a handle so you can just use  its
+grabbable/moveable functionality! Behaves much like a window,
+except with a more flexible handle, and no header. You can draw
+the handle, but it will have no text on it. Returns true for
+every frame the user is grabbing the handle.
 </div>
 
 |  |  |
@@ -18,11 +25,6 @@ static bool Handle(string id, Pose& pose, [Bounds]({{site.url}}/Pages/Reference/
 |[UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType|Describes how the handle will move when              dragged around.|
 |RETURNS: bool|Returns true for every frame the user is grabbing the handle.|
 
-This begins and ends a handle so you can just use  its
-grabbable/moveable functionality! Behaves much like a window,
-except with a more flexible handle, and no header. You can draw
-the handle, but it will have no text on it. Returns true for
-every frame the user is grabbing the handle.
 
 
 

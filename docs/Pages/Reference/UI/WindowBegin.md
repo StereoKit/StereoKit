@@ -6,7 +6,13 @@ description: Begins a new window! This will push a pose onto the transform stack
 # [UI]({{site.url}}/Pages/Reference/UI.html).WindowBegin
 
 <div class='signature' markdown='1'>
-static void WindowBegin(string text, Pose& pose, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) size, [UIWin]({{site.url}}/Pages/Reference/UIWin.html) windowType, [UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType)
+```csharp
+static void WindowBegin(string text, Pose& pose, Vec2 size, UIWin windowType, UIMove moveType)
+```
+Begins a new window! This will push a pose onto the
+transform stack, and all UI elements will be relative to that new
+pose. The pose is actually the top-center of the window. Must be
+finished with a call to UI.WindowEnd().
 </div>
 
 |  |  |
@@ -17,12 +23,16 @@ static void WindowBegin(string text, Pose& pose, [Vec2]({{site.url}}/Pages/Refer
 |[UIWin]({{site.url}}/Pages/Reference/UIWin.html) windowType|Describes how the window should be drawn,             use a header, a body, neither, or both?|
 |[UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType|Describes how the window will move when              dragged around.|
 
+<div class='signature' markdown='1'>
+```csharp
+static void WindowBegin(string text, Pose& pose, UIWin windowType, UIMove moveType)
+```
 Begins a new window! This will push a pose onto the
 transform stack, and all UI elements will be relative to that new
 pose. The pose is actually the top-center of the window. Must be
-finished with a call to UI.WindowEnd().
-<div class='signature' markdown='1'>
-static void WindowBegin(string text, Pose& pose, [UIWin]({{site.url}}/Pages/Reference/UIWin.html) windowType, [UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType)
+finished with a call to UI.WindowEnd(). This override omits the
+size value, so the size will be auto-calculated based on the
+content provided during the previous frame.
 </div>
 
 |  |  |
@@ -32,12 +42,6 @@ static void WindowBegin(string text, Pose& pose, [UIWin]({{site.url}}/Pages/Refe
 |[UIWin]({{site.url}}/Pages/Reference/UIWin.html) windowType|Describes how the window should be drawn,             use a header, a body, neither, or both?|
 |[UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType|Describes how the window will move when              dragged around.|
 
-Begins a new window! This will push a pose onto the
-transform stack, and all UI elements will be relative to that new
-pose. The pose is actually the top-center of the window. Must be
-finished with a call to UI.WindowEnd(). This override omits the
-size value, so the size will be auto-calculated based on the
-content provided during the previous frame.
 
 
 

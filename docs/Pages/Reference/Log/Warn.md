@@ -6,7 +6,11 @@ description: Writes a formatted line to the log using a LogLevel.Warn severity l
 # [Log]({{site.url}}/Pages/Reference/Log.html).Warn
 
 <div class='signature' markdown='1'>
+```csharp
 static void Warn(string text, Object[] items)
+```
+Writes a formatted line to the log using a LogLevel.Warn
+severity level!
 </div>
 
 |  |  |
@@ -14,18 +18,18 @@ static void Warn(string text, Object[] items)
 |string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
 |Object[] items|Format arguments.|
 
+<div class='signature' markdown='1'>
+```csharp
+static void Warn(string text)
+```
 Writes a formatted line to the log using a LogLevel.Warn
 severity level!
-<div class='signature' markdown='1'>
-static void Warn(string text)
 </div>
 
 |  |  |
 |--|--|
 |string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
 
-Writes a formatted line to the log using a LogLevel.Warn
-severity level!
 
 
 

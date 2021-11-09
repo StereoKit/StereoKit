@@ -6,17 +6,19 @@ description: Allows you to listen in on log events! Any callback subscribed here
 # [Log]({{site.url}}/Pages/Reference/Log.html).Subscribe
 
 <div class='signature' markdown='1'>
+```csharp
 static void Subscribe(LogCallback onLog)
+```
+Allows you to listen in on log events! Any callback
+subscribed here will be called when something is logged. This
+does honor the Log.Filter, so filtered logs will not be received
+here. This method can safely be called before SK initialization.
 </div>
 
 |  |  |
 |--|--|
 |LogCallback onLog|The function to call when a log event occurs.|
 
-Allows you to listen in on log events! Any callback
-subscribed here will be called when something is logged. This
-does honor the Log.Filter, so filtered logs will not be received
-here. This method can safely be called before SK initialization.
 
 
 

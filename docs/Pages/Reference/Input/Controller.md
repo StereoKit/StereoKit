@@ -6,7 +6,13 @@ description: Gets raw controller input data from the system. Note that not all b
 # [Input]({{site.url}}/Pages/Reference/Input.html).Controller
 
 <div class='signature' markdown='1'>
-static [Controller]({{site.url}}/Pages/Reference/Controller.html) Controller([Handed]({{site.url}}/Pages/Reference/Handed.html) handed)
+```csharp
+static Controller Controller(Handed handed)
+```
+Gets raw controller input data from the system. Note that
+not all buttons provided here are guaranteed to be present on the
+user's physical controller. Controllers are also not guaranteed to
+be available on the system, and are never simulated.
 </div>
 
 |  |  |
@@ -14,10 +20,6 @@ static [Controller]({{site.url}}/Pages/Reference/Controller.html) Controller([Ha
 |[Handed]({{site.url}}/Pages/Reference/Handed.html) handed|The handedness of the controller to get the             state of.|
 |RETURNS: [Controller]({{site.url}}/Pages/Reference/Controller.html)|A reference to a class that contains state information about the indicated controller.|
 
-Gets raw controller input data from the system. Note that
-not all buttons provided here are guaranteed to be present on the
-user's physical controller. Controllers are also not guaranteed to
-be available on the system, and are never simulated.
 
 
 

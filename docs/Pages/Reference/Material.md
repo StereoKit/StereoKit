@@ -63,7 +63,7 @@ can be extremely beneficial for performance!
 
 ## Examples
 
-## Material parameter access
+### Material parameter access
 Material does have an array operator overload for setting
 shader parameters really quickly! You can do this with strings
 representing shader parameter names, or use the MatParamName

@@ -25,7 +25,7 @@ class DemoMaterial : ITest
 		oldSkyLight       = Renderer.SkyLight;
 
 		/// :CodeSample: Renderer.SkyTex Renderer.SkyLight Tex.FromCubemapEquirectangular
-		/// ## Setting lighting to an equirect cubemap
+		/// ### Setting lighting to an equirect cubemap
 		/// Changing the environment's lighting based on an image is a really
 		/// great way to instantly get a particular feel to your scene! A neat
 		/// place to find compatible equirectangular images for this is
@@ -75,7 +75,7 @@ class DemoMaterial : ITest
 		/// :End:
 
 		/// :CodeSample: Material.Transparency Transparency.Add
-		/// ## Additive Transparency
+		/// ### Additive Transparency
 		/// Here's an example material with additive transparency. 
 		/// Transparent materials typically don't write to the depth buffer,
 		/// but this may vary from case to case. Note that the material's 
@@ -88,7 +88,7 @@ class DemoMaterial : ITest
 		/// :End:
 
 		/// :CodeSample: Material.Transparency Transparency.Blend
-		/// ## Alpha Blending
+		/// ### Alpha Blending
 		/// Here's an example material with an alpha blend transparency. 
 		/// Transparent materials typically don't write to the depth buffer,
 		/// but this may vary from case to case. Here we're setting the alpha

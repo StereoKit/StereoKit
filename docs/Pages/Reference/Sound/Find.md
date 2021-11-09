@@ -6,7 +6,10 @@ description: Looks for a Sound asset that's already loaded, matching the given i
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).Find
 
 <div class='signature' markdown='1'>
-static [Sound]({{site.url}}/Pages/Reference/Sound.html) Find(string modelId)
+```csharp
+static Sound Find(string modelId)
+```
+Looks for a Sound asset that's already loaded, matching the given id!
 </div>
 
 |  |  |
@@ -14,7 +17,6 @@ static [Sound]({{site.url}}/Pages/Reference/Sound.html) Find(string modelId)
 |string modelId|Which Sound are you looking for?|
 |RETURNS: [Sound]({{site.url}}/Pages/Reference/Sound.html)|A link to the sound matching 'soundId', null if none is found.|
 
-Looks for a Sound asset that's already loaded, matching the given id!
 
 
 

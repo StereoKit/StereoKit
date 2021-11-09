@@ -17,7 +17,7 @@ from `Tex.FromEquirectangular` or `Tex.GenCubemap`
 
 ## Examples
 
-## Setting lighting to an equirect cubemap
+### Setting lighting to an equirect cubemap
 Changing the environment's lighting based on an image is a really
 great way to instantly get a particular feel to your scene! A neat
 place to find compatible equirectangular images for this is

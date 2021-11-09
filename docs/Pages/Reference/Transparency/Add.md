@@ -17,7 +17,7 @@ particles or lighting effects.
 
 ## Examples
 
-## Additive Transparency
+### Additive Transparency
 Here's an example material with additive transparency.
 Transparent materials typically don't write to the depth buffer,
 but this may vary from case to case. Note that the material's

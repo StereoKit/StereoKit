@@ -6,7 +6,13 @@ description: This begins a new UI group with its own layout! Much like a window,
 # [UI]({{site.url}}/Pages/Reference/UI.html).HandleBegin
 
 <div class='signature' markdown='1'>
-static bool HandleBegin(string id, Pose& pose, [Bounds]({{site.url}}/Pages/Reference/Bounds.html) handle, bool drawHandle, [UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType)
+```csharp
+static bool HandleBegin(string id, Pose& pose, Bounds handle, bool drawHandle, UIMove moveType)
+```
+This begins a new UI group with its own layout! Much
+like a window, except with a more flexible handle, and no header.
+You can draw the handle, but it will have no text on it. Returns
+true for every frame the user is grabbing the handle.
 </div>
 
 |  |  |
@@ -18,10 +24,6 @@ static bool HandleBegin(string id, Pose& pose, [Bounds]({{site.url}}/Pages/Refer
 |[UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType|Describes how the handle will move when              dragged around.|
 |RETURNS: bool|Returns true for every frame the user is grabbing the handle.|
 
-This begins a new UI group with its own layout! Much
-like a window, except with a more flexible handle, and no header.
-You can draw the handle, but it will have no text on it. Returns
-true for every frame the user is grabbing the handle.
 
 
 

@@ -6,7 +6,12 @@ description: Creates a single mesh subset Model using the indicated Mesh and Mat
 # [Model]({{site.url}}/Pages/Reference/Model.html).FromMesh
 
 <div class='signature' markdown='1'>
-static [Model]({{site.url}}/Pages/Reference/Model.html) FromMesh([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+static Model FromMesh(Mesh mesh, Material material)
+```
+Creates a single mesh subset Model using the indicated
+Mesh and Material! An id will be automatically generated for this
+asset.
 </div>
 
 |  |  |
@@ -15,11 +20,12 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromMesh([Mesh]({{site.u
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|Any Material asset.|
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model composed of a single mesh and Material.|
 
-Creates a single mesh subset Model using the indicated
-Mesh and Material! An id will be automatically generated for this
-asset.
 <div class='signature' markdown='1'>
-static [Model]({{site.url}}/Pages/Reference/Model.html) FromMesh(string id, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+static Model FromMesh(string id, Mesh mesh, Material material)
+```
+Creates a single mesh subset Model using the indicated
+Mesh and Material!
 </div>
 
 |  |  |
@@ -29,8 +35,6 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromMesh(string id, [Mes
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|Any Material asset.|
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model composed of a single mesh and Material.|
 
-Creates a single mesh subset Model using the indicated
-Mesh and Material!
 
 
 

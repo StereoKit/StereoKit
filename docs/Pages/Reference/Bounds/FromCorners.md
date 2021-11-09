@@ -6,7 +6,10 @@ description: Create a bounding box between two corner points.
 # [Bounds]({{site.url}}/Pages/Reference/Bounds.html).FromCorners
 
 <div class='signature' markdown='1'>
-static [Bounds]({{site.url}}/Pages/Reference/Bounds.html) FromCorners([Vec3]({{site.url}}/Pages/Reference/Vec3.html) bottomLeftBack, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) topRightFront)
+```csharp
+static Bounds FromCorners(Vec3 bottomLeftBack, Vec3 topRightFront)
+```
+Create a bounding box between two corner points.
 </div>
 
 |  |  |
@@ -15,7 +18,6 @@ static [Bounds]({{site.url}}/Pages/Reference/Bounds.html) FromCorners([Vec3]({{s
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) topRightFront|The +X,+Y,+Z corner of the box.|
 |RETURNS: [Bounds]({{site.url}}/Pages/Reference/Bounds.html)|A Bounds object that extends from bottomLeftBack to topRightFront.|
 
-Create a bounding box between two corner points.
 
 
 

@@ -6,7 +6,12 @@ description: Sets a shader parameter with the given name to the provided value. 
 # [Material]({{site.url}}/Pages/Reference/Material.html).SetMatrix
 
 <div class='signature' markdown='1'>
-void SetMatrix(string name, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) value)
+```csharp
+void SetMatrix(string name, Matrix value)
+```
+Sets a shader parameter with the given name to the
+provided value. If no parameter is found, nothing happens, and
+the value is not set!
 </div>
 
 |  |  |
@@ -14,9 +19,6 @@ void SetMatrix(string name, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) v
 |string name|Name of the shader parameter.|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) value|New value for the parameter.|
 
-Sets a shader parameter with the given name to the
-provided value. If no parameter is found, nothing happens, and
-the value is not set!
 
 
 

@@ -6,7 +6,13 @@ description: Schedules a screenshot for the end of the frame! The view will be r
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).Screenshot
 
 <div class='signature' markdown='1'>
-static void Screenshot([Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) at, int width, int height, string filename)
+```csharp
+static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
+```
+Schedules a screenshot for the end of the frame! The view will be
+rendered from the given position at the given point, with a resolution the same
+size as the screen's surface. It'll be saved as a .jpg file at the filename
+provided.
 </div>
 
 |  |  |
@@ -17,12 +23,14 @@ static void Screenshot([Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec
 |int height|Size of the screenshot vertically, in pixels.|
 |string filename|Filename to write the screenshot to! Note this'll be a              .jpg regardless of what file extension you use right now.|
 
-Schedules a screenshot for the end of the frame! The view will be
-rendered from the given position at the given point, with a resolution the same
-size as the screen's surface. It'll be saved as a .jpg file at the filename
-provided.
 <div class='signature' markdown='1'>
-static void Screenshot(string filename, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) from, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) at, int width, int height, float fieldOfViewDegrees)
+```csharp
+static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees)
+```
+Schedules a screenshot for the end of the frame! The view
+will be rendered from the given position at the given point, with a
+resolution the same size as the screen's surface. It'll be saved as
+a .jpg file at the filename provided.
 </div>
 
 |  |  |
@@ -34,10 +42,6 @@ static void Screenshot(string filename, [Vec3]({{site.url}}/Pages/Reference/Vec3
 |int height|Size of the screenshot vertically, in pixels.|
 |float fieldOfViewDegrees|The angle of the viewport, in              degrees.|
 
-Schedules a screenshot for the end of the frame! The view
-will be rendered from the given position at the given point, with a
-resolution the same size as the screen's surface. It'll be saved as
-a .jpg file at the filename provided.
 
 
 
