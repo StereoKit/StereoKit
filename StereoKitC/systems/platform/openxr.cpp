@@ -1,3 +1,7 @@
+
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
@@ -15,7 +19,6 @@
 #include "linux.h"
 #include "uwp.h"
 #include "win32.h"
-#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
@@ -847,3 +850,4 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 }
 
 } // namespace sk
+#endif

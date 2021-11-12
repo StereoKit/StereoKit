@@ -1,3 +1,5 @@
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
 #include "openxr_input.h"
@@ -11,7 +13,6 @@
 #include "../../systems/input.h"
 #include "../../libraries/sokol_time.h"
 #include "../system.h"
-#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -696,3 +697,4 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 }
 
 } // namespace sk
+#endif

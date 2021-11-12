@@ -36,10 +36,12 @@ package_end()
 --------------------------------------------------
 
 -- On Android, we have a precompiled binary provided by Oculus
-if not is_plat("android") then
+if not is_plat("android") and not is_plat("wasm") then
     add_requires("openxr_loader 1.0.17", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
-add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
+if not is_plat("wasm") then
+    add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
+end
 
 option("uwp")
     set_default(false)
@@ -91,7 +93,7 @@ target("StereoKitC")
     if is_plat("android") then
         add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
         add_links("openxr_loader")
-    else
+    elseif not is_plat("wasm") then
         add_packages("openxr_loader")
     end
 
@@ -110,7 +112,8 @@ target("StereoKitC")
 
     -- Emscripten stuff, this doesn't actually work yet
     if is_plat("wasm") then
-        add_cxflags("-msimd128", "-msse4", "-s", "SIMD=1")
+        add_cxflags("-msimd128", "-msse4")
+        add_defines("_XM_NO_INTRINSICS_")
     end
 
     -- Copy finished files over to the bin directory

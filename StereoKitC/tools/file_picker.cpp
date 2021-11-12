@@ -8,11 +8,13 @@
 #include "../systems/platform/platform_utils.h"
 
 #if defined(SK_OS_WINDOWS)
+
 #include "../systems/platform/win32.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commdlg.h>
 #include <stdio.h>
+
 #elif defined(SK_OS_WINDOWS_UWP)
 
 #define WIN32_LEAN_AND_MEAN
@@ -29,6 +31,11 @@ using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage::Streams;
+
+#elif defined(SK_OS_WEB)
+
+#include <stdio.h>
+
 #endif
 
 namespace sk {

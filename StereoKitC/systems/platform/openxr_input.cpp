@@ -1,3 +1,6 @@
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "openxr_extensions.h"
 #include "openxr_input.h"
@@ -6,7 +9,6 @@
 #include "../render.h"
 #include "../hand/input_hand.h"
 
-#include "platform_utils.h"
 #include "../../libraries/array.h"
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -678,3 +680,4 @@ void oxri_update_interaction_profile() {
 }
 
 } // namespace sk
+#endif

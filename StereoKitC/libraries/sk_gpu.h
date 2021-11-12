@@ -3352,9 +3352,9 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 			}
 		}
 		glUseProgram(result._program);
-		for (size_t i = 0; i < meta->texture_count; i++) {
-			uint32_t loc = glGetUniformLocation(result._program, meta->textures[i].name);
-			glUniform1i(loc , meta->textures[i].bind.slot);
+		for (size_t i = 0; i < meta->resource_count; i++) {
+			uint32_t loc = glGetUniformLocation(result._program, meta->resources[i].name);
+			glUniform1i(loc , meta->resources[i].bind.slot);
 		}
 #endif
 	}
@@ -3634,11 +3634,11 @@ void main() {
 
 	skg_shader_meta_t *meta = (skg_shader_meta_t *)malloc(sizeof(skg_shader_meta_t));
 	*meta = {};
-	meta->texture_count = 1;
-	meta->textures = (skg_shader_texture_t*)malloc(sizeof(skg_shader_texture_t));
-	meta->textures[0].bind = { 0, skg_stage_pixel };
-	strcpy(meta->textures[0].name, "tex");
-	meta->textures[0].name_hash = skg_hash(meta->textures[0].name);
+	meta->resource_count = 1;
+	meta->resources = (skg_shader_resource_t*)malloc(sizeof(skg_shader_resource_t));
+	meta->resources[0].bind = { 0, skg_stage_pixel };
+	strcpy(meta->resources[0].name, "tex");
+	meta->resources[0].name_hash = skg_hash(meta->resources[0].name);
 
 	skg_shader_stage_t v_stage = skg_shader_stage_create(vs, strlen(vs), skg_stage_vertex);
 	skg_shader_stage_t p_stage = skg_shader_stage_create(ps, strlen(ps), skg_stage_pixel);

@@ -1,3 +1,6 @@
+#include "platform/platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -441,3 +444,5 @@ void world_refresh_transforms() {
 }
 
 } // namespace sk
+
+#endif

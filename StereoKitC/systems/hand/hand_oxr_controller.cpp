@@ -1,3 +1,6 @@
+#include "../platform/platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../platform/openxr.h"
@@ -92,3 +95,5 @@ void hand_oxrc_update_predicted() {
 }
 
 }
+
+#endif
