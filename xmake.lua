@@ -151,7 +151,7 @@ option("tests")
     set_description("Build native test project")
     set_values(true, false)
 
-if has_config("tests") and is_plat("linux", "windows") then
+if has_config("tests") and is_plat("linux", "windows", "wasm") then
     target("StereoKitCTest")
         add_options("uwp")
         set_kind("binary")

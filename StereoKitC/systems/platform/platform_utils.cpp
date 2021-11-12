@@ -53,6 +53,11 @@
 #include <fontconfig/fontconfig.h>
 #endif
 
+#ifdef SK_OS_WEB
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -313,6 +318,8 @@ void platform_sleep(int ms) {
 	Sleep(ms);
 #elif defined(SK_OS_LINUX)
     sleep(ms / 1000);
+#elif defined(SK_OS_WEB)
+	emscripten_sleep(ms);
 #else
 	usleep(ms * 1000);
 #endif
@@ -440,6 +447,8 @@ char *platform_working_dir() {
 	int32_t len    = GetCurrentDirectoryA(0, nullptr);
 	char   *result = sk_malloc_t(char, len);
 	GetCurrentDirectoryA(len, result);
+#elif defined(SK_OS_WEB)
+	char *result = string_copy("/");
 #else
 	int32_t len    = 260;
 	char   *result = sk_malloc_t(char, len);

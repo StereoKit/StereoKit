@@ -70,7 +70,7 @@ bool web_start_flat() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
-	web_swapchain = skg_swapchain_create(nullptr, color_fmt, skg_tex_fmt_none, width, height);
+	web_swapchain = skg_swapchain_create(nullptr, color_fmt, skg_tex_fmt_none, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = web_swapchain.width;
 	sk_info.display_height = web_swapchain.height;
 	
