@@ -25,6 +25,8 @@ bool platform_init() {
 	bool result = uwp_init    ();
 #elif defined(SK_OS_WINDOWS)
 	bool result = win32_init  ();
+#elif defined(SK_OS_WEB)
+	bool result = web_init  ();
 #endif
 	if (!result) {
 		log_fail_reason(80, log_error, "Platform initialization failed!");
