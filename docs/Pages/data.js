@@ -642,6 +642,7 @@ var documents =
 				{name : 'CreateStream'},
 				{name : 'Find'},
 				{name : 'FromFile'},
+				{name : 'FromSamples'},
 				{name : 'Generate'},
 				{name : 'Play'},
 				{name : 'ReadSamples'},
@@ -944,6 +945,7 @@ var documents =
 				{name : 'norm'},
 				{name : 'pos'},
 				{name : 'uv'},
+				{name : 'Vertex'},
 			]
 			},
 			{name : 'World',

@@ -19,7 +19,7 @@ just copies in the data!
 
 |  |  |
 |--|--|
-|Vertex[] verts|An array of vertices to add to the mesh.|
+|Vertex[] verts|An array of vertices to add to the mesh.             Remember to set all the relevant values! Your material will often             show black if the Normals or Colors are left at their default             values.|
 
 
 
