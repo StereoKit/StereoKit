@@ -6,7 +6,11 @@ description: Looks for a Material asset that's already loaded, matching the give
 # [Material]({{site.url}}/Pages/Reference/Material.html).Find
 
 <div class='signature' markdown='1'>
-static [Material]({{site.url}}/Pages/Reference/Material.html) Find(string materialId)
+```csharp
+static Material Find(string materialId)
+```
+Looks for a Material asset that's already loaded,
+matching the given id!
 </div>
 
 |  |  |
@@ -14,8 +18,6 @@ static [Material]({{site.url}}/Pages/Reference/Material.html) Find(string materi
 |string materialId|Which Material are you looking for?|
 |RETURNS: [Material]({{site.url}}/Pages/Reference/Material.html)|A link to the Material matching 'id', null if none is found.|
 
-Looks for a Material asset that's already loaded,
-matching the given id!
 
 
 

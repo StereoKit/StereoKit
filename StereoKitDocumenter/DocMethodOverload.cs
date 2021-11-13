@@ -35,8 +35,8 @@ namespace StereoKitDocumenter
 			string returnName = m is MethodInfo ? StringHelper.TypeName(returnType.Name) : "";
 			List<ParameterInfo> param = m == null ? new List<ParameterInfo>() : new List<ParameterInfo>(m.GetParameters());
 
-			string paramList = string.Join(", ", param.Select(a => $"{StringHelper.TypeName(a.ParameterType.Name)} {a.Name}"));
-			string signature = (m.IsStatic ? "static " : "") + $"{returnName} {methodName}({paramList})";
+			string paramList = string.Join(", ", param.Select(a => $"{StringHelper.TypeName(a.ParameterType.Name, false)} {a.Name}"));
+			string signature = (m.IsStatic ? "static " : "") + $"{StringHelper.TypeName(returnType.Name, false)} {methodName}({paramList})";
 
 			string paramText = "";
 			if (parameters.Count > 0 || returnType != typeof(void))
@@ -58,10 +58,12 @@ namespace StereoKitDocumenter
 			}
 
 			return $@"<div class='signature' markdown='1'>
+```csharp
 {signature}
+```
+{summary}
 </div>
 {paramText}
-{summary}
 ";
 		}
 

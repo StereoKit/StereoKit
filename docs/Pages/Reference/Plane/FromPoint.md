@@ -6,7 +6,11 @@ description: Creates a plane from a normal, and any point on the plane!
 # [Plane]({{site.url}}/Pages/Reference/Plane.html).FromPoint
 
 <div class='signature' markdown='1'>
-static [Plane]({{site.url}}/Pages/Reference/Plane.html) FromPoint([Vec3]({{site.url}}/Pages/Reference/Vec3.html) pointOnPlane, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) planeNormal)
+```csharp
+static Plane FromPoint(Vec3 pointOnPlane, Vec3 planeNormal)
+```
+Creates a plane from a normal, and any point on the
+plane!
 </div>
 
 |  |  |
@@ -15,8 +19,6 @@ static [Plane]({{site.url}}/Pages/Reference/Plane.html) FromPoint([Vec3]({{site.
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) planeNormal|Direction the plane is facing.|
 |RETURNS: [Plane]({{site.url}}/Pages/Reference/Plane.html)|A plane that contains pointOnPlane, and faces planeNormal.|
 
-Creates a plane from a normal, and any point on the
-plane!
 
 
 

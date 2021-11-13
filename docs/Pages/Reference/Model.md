@@ -27,6 +27,11 @@ faster to render a Mesh instead of a Model!
 
 |  |  |
 |--|--|
+|Anim [ActiveAnim]({{site.url}}/Pages/Reference/Model/ActiveAnim.html)|This is a link to the currently active animation. If no animation is active, this value will be null. To set the active animation, use `PlayAnim`.|
+|float [AnimCompletion]({{site.url}}/Pages/Reference/Model/AnimCompletion.html)|This is the percentage of completion of the active animation. This will always be a value between 0-1. If no animation is active, this will be zero.|
+|[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) [AnimMode]({{site.url}}/Pages/Reference/Model/AnimMode.html)|The playback mode of the active animation.|
+|[ModelAnimCollection]({{site.url}}/Pages/Reference/ModelAnimCollection.html) [Anims]({{site.url}}/Pages/Reference/Model/Anims.html)|An enumerable collection of animations attached to this Model. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
+|float [AnimTime]({{site.url}}/Pages/Reference/Model/AnimTime.html)|This is the current time of the active animation in seconds, from the start of the animation. If no animation is active, this will be zero. This will always be a value between zero and the active animation's `Duration`. For a percentage of completion, see `AnimCompletion` instead.|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh bounds, you can also override this to suit your needs.|
 |[ModelNodeCollection]({{site.url}}/Pages/Reference/ModelNodeCollection.html) [Nodes]({{site.url}}/Pages/Reference/Model/Nodes.html)|This is an enumerable collection of all the nodes in this Model, ordered non-heirarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
 |[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) [RootNode]({{site.url}}/Pages/Reference/Model/RootNode.html)|Returns the first root node in the Model's hierarchy. There may be additional root nodes, and these will be Siblings of this ModelNode. If there are no nodes present on the Model, this will be null.|
@@ -43,17 +48,20 @@ faster to render a Mesh instead of a Model!
 |[AddSubset]({{site.url}}/Pages/Reference/Model/AddSubset.html)|Adds a new subset to the Model, and recalculates the bounds. A default subset name of "subsetX" will be used, where X is the subset's index.|
 |[Copy]({{site.url}}/Pages/Reference/Model/Copy.html)|Creates a shallow copy of a Model asset! Meshes and Materials referenced by this Model will be referenced, not copied.|
 |[Draw]({{site.url}}/Pages/Reference/Model/Draw.html)|Adds this Model to the render queue for this frame! If the Hierarchy has a transform on it, that transform is combined with the Matrix provided here.|
+|[FindAnim]({{site.url}}/Pages/Reference/Model/FindAnim.html)|Searches the list of animations for the first one matching the given name.|
 |[FindNode]({{site.url}}/Pages/Reference/Model/FindNode.html)|Searches the entire list of Nodes, and will return the first on that matches this name exactly. If no ModelNode is found, then this will return null. Node Names are not guaranteed to be unique.|
 |[GetMaterial]({{site.url}}/Pages/Reference/Model/GetMaterial.html)|Gets a link to the Material asset used by the model subset! Note that this is not necessarily a unique material, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
 |[GetMesh]({{site.url}}/Pages/Reference/Model/GetMesh.html)|Gets a link to the Mesh asset used by the model subset! Note that this is not necessarily a unique mesh, and could be shared in a number of other places. Consider copying and replacing it if you intend to modify it!|
 |[GetName]({{site.url}}/Pages/Reference/Model/GetName.html)|Returns the name of the specific subset! This will be the node name of your model asset. If no node name is available, SteroKit will generate a name in the format of "subsetX", where X would be the subset index. Note that names are not guaranteed to be unique (users may assign the same name to multiple nodes). Some nodes may also produce multiple subsets with the same name, such as when a node contains a Mesh with multiple Materials, each Mesh/Material combination will receive a subset with the same name.|
 |[GetTransform]({{site.url}}/Pages/Reference/Model/GetTransform.html)|Gets the transform matrix used by the model subset!|
 |[Intersect]({{site.url}}/Pages/Reference/Model/Intersect.html)|Checks the intersection point of this ray and a Model's visual nodes. This will skip any node that is not flagged as Solid, as well as any Mesh without collision data. Ray must be in model space, intersection point will be in model space too. You can use the inverse of the mesh's world transform matrix to bring the ray into model space, see the example in the docs!|
+|[PlayAnim]({{site.url}}/Pages/Reference/Model/PlayAnim.html)|Searches for an animation with the given name, and if it's found, sets it up as the active animation and begins playing it with the animation mode.|
 |[RecalculateBounds]({{site.url}}/Pages/Reference/Model/RecalculateBounds.html)|Examines the visuals as they currently are, and rebuilds the bounds based on that! This is normally done automatically, but if you modify a Mesh that this Model is using, the Model can't see it, and you should call this manually.|
 |[RemoveSubset]({{site.url}}/Pages/Reference/Model/RemoveSubset.html)|Removes and dereferences a subset from the model.|
 |[SetMaterial]({{site.url}}/Pages/Reference/Model/SetMaterial.html)|Changes the Material for the subset to a new one!|
 |[SetMesh]({{site.url}}/Pages/Reference/Model/SetMesh.html)|Changes the mesh for the subset to a new one!|
 |[SetTransform]({{site.url}}/Pages/Reference/Model/SetTransform.html)|Changes the transform for the subset to a new one! This is in Model space, so it's relative to the origin of the model.|
+|[StepAnim]({{site.url}}/Pages/Reference/Model/StepAnim.html)|Calling Draw will automatically step the Model's animation, but if you don't draw the Model, or need access to the animated nodes before drawing, then you can step the animation early manually via this method. Animation will only ever be stepped once per frame, so it's okay to call this multiple times, or in addition to Draw.|
 
 
 
@@ -68,6 +76,50 @@ faster to render a Mesh instead of a Model!
 
 
 ## Examples
+
+### Loading an animated Model
+Here, we're loading a Model that we know has the animations "Idle"
+and "Jump". This sample shows some options, but only a single call
+to PlayAnim is necessary to start an animation.
+```csharp
+Model model = Model.FromFile("Cosmonaut.glb");
+
+// You can look at the model's animations:
+foreach (Anim anim in model.Anims)
+	Log.Info($"Animation: {anim.Name} {anim.Duration}s");
+
+// You can play an animation like this
+model.PlayAnim("Jump", AnimMode.Once);
+
+// Or you can find and store the animations in advance
+Anim jumpAnim = model.FindAnim("Idle");
+if (jumpAnim != null)
+	model.PlayAnim(jumpAnim, AnimMode.Loop);
+```
+
+### Animation progress bar
+A really simple progress bar visualization for the Model's active
+animation.
+
+![Model with progress bar]({{site.screen_url}}/AnimProgress.jpg)
+```csharp
+model.Draw(Matrix.Identity);
+
+Hierarchy.Push(Matrix.T(0.5f, 1, -.25f));
+
+// This is a pair of green lines that show the current progress through
+// the animation.
+float progress = model.AnimCompletion;
+Lines.Add(V.XY0(0, 0), V.XY0(-progress, 0),  new Color(0,1,0,1.0f), 2*U.cm);
+Lines.Add(V.XY0(-progress, 0), V.XY0(-1, 0), new Color(0,1,0,0.2f), 2*U.cm);
+
+// These are some labels for the progress bar that tell us more about
+// the active animation.
+Text.Add($"{model.ActiveAnim.Name} : {model.AnimMode}", Matrix.TS(0, -2*U.cm, 0, 3),        TextAlign.TopLeft);
+Text.Add($"{model.AnimTime:F1}s",                       Matrix.TS(-progress, 2*U.cm, 0, 3), TextAlign.BottomCenter);
+
+Hierarchy.Pop();
+```
 
 ### Assembling a Model
 While normally you'll load Models from file, you can also assemble

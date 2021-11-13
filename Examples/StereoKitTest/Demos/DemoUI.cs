@@ -1,8 +1,6 @@
 ﻿/// :CodeDoc: Guides 2 User Interface
 /// # Building UI in StereoKit
 /// 
-/// ## Immediate Mode UI
-/// 
 /// StereoKit uses an immediate mode UI system. Basically, you define the UI 
 /// every single frame you want to see it! Sounds a little odd at first, but
 /// it does have some pretty tremendous advantages. Since very little state
@@ -164,6 +162,53 @@ class DemoUI : ITest
 		/// As with windows, Handles need an End call.
 		/// 
 		UI.HandleEnd();
+		/// :End:
+
+		// Just moving this UI out of the way so it doesn't show in
+		// screenshots or anything.
+		UI.PushSurface(new Pose(0,1000,0, Quat.Identity));
+
+		/// :CodeDoc: Guides User Interface
+		/// 
+		/// ## An Important Note About IDs
+		/// 
+		/// StereoKit does store a small amount of information about the UI's
+		/// state behind the scenes, like which elements are active and for
+		/// how long. This internal data is attached to the UI elements via
+		/// a combination of their own ids, and the parent Window/Handle's 
+		/// id!
+		/// 
+		/// This means you should be careful to NOT re-use ids within a
+		/// Window/Handle, otherwise you may find ghost interactions with
+		/// elements that share the same ids. If you need to have elements
+		/// with the same id, or if perhaps you don't know in advance that
+		/// all your elements will certainly be unique, UI.PushId and
+		/// UI.PopId can be used to mitigate the issue by using the same
+		/// hierarchy id mixing that the Windows use to prevent collisions
+		/// with the same ids in other Windows/Handles.
+		/// 
+		/// Here's the same set of radio options, but all of them have the 
+		/// same name/id!
+		///
+		UI.PushId(1);
+		if (UI.Radio("Radio", clipOption == 1)) clipOption = 1;
+		UI.PopId();
+
+		UI.SameLine();
+		UI.PushId(2);
+		if (UI.Radio("Radio", clipOption == 2)) clipOption = 2;
+		UI.PopId();
+
+		UI.SameLine();
+		UI.PushId(3);
+		if (UI.Radio("Radio", clipOption == 3)) clipOption = 3;
+		UI.PopId();
+		/// :End:
+		
+		UI.PopSurface();
+
+		/// :CodeDoc: Guides User Interface
+		/// ## What's Next?
 		/// 
 		/// And there you go! That's how UI works in StereoKit, pretty 
 		/// simple, huh? For further reference, and more UI methods, check 

@@ -6,7 +6,11 @@ description: Adds a Child node below this node, at the end of the child chain!
 # [ModelNode]({{site.url}}/Pages/Reference/ModelNode.html).AddChild
 
 <div class='signature' markdown='1'>
-[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) AddChild(string name, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) localTransform, [Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, [Material]({{site.url}}/Pages/Reference/Material.html) material, bool solid)
+```csharp
+ModelNode AddChild(string name, Matrix localTransform, Mesh mesh, Material material, bool solid)
+```
+Adds a Child node below this node, at the end of the child
+chain!
 </div>
 
 |  |  |
@@ -18,8 +22,6 @@ description: Adds a Child node below this node, at the end of the child chain!
 |bool solid|A flag that indicates the Mesh for this node             will be used in ray intersection tests. This flag is ignored if no             Mesh is attached.|
 |RETURNS: [ModelNode]({{site.url}}/Pages/Reference/ModelNode.html)|The new child ModelNode.|
 
-Adds a Child node below this node, at the end of the child
-chain!
 
 
 

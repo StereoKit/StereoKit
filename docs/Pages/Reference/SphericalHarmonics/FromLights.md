@@ -6,7 +6,11 @@ description: Creates a SphericalHarmonics approximation of the irradiance given 
 # [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html).FromLights
 
 <div class='signature' markdown='1'>
-static [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html) FromLights(SHLight[] directional_lights)
+```csharp
+static SphericalHarmonics FromLights(SHLight[] directional_lights)
+```
+Creates a SphericalHarmonics approximation of the
+irradiance given from a set of directional lights!
 </div>
 
 |  |  |
@@ -14,8 +18,6 @@ static [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html
 |SHLight[] directional_lights|A list of directional lights!|
 |RETURNS: [SphericalHarmonics]({{site.url}}/Pages/Reference/SphericalHarmonics.html)|A SphericalHarmonics approximation of the irradiance given from a set of directional lights!|
 
-Creates a SphericalHarmonics approximation of the
-irradiance given from a set of directional lights!
 
 
 

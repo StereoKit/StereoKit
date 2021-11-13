@@ -47,6 +47,7 @@ can be extremely beneficial for performance!
 |--|--|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [Default]({{site.url}}/Pages/Reference/Material/Default.html)|See `Default.Material`|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [PBR]({{site.url}}/Pages/Reference/Material/PBR.html)|See `Default.MaterialPBR`|
+|[Material]({{site.url}}/Pages/Reference/Material.html) [PBRClip]({{site.url}}/Pages/Reference/Material/PBRClip.html)|See `Default.MaterialPBRClip`|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [UI]({{site.url}}/Pages/Reference/Material/UI.html)|See `Default.MaterialUI`|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [UIBox]({{site.url}}/Pages/Reference/Material/UIBox.html)|See `Default.MaterialUIBox`|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [Unlit]({{site.url}}/Pages/Reference/Material/Unlit.html)|See `Default.MaterialUnlit`|
@@ -62,7 +63,7 @@ can be extremely beneficial for performance!
 
 ## Examples
 
-## Material parameter access
+### Material parameter access
 Material does have an array operator overload for setting
 shader parameters really quickly! You can do this with strings
 representing shader parameter names, or use the MatParamName

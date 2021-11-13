@@ -6,7 +6,16 @@ description: World.RaycastEnabled must be set to true first! SK.System.worldRayc
 # [World]({{site.url}}/Pages/Reference/World.html).Raycast
 
 <div class='signature' markdown='1'>
-static bool Raycast([Ray]({{site.url}}/Pages/Reference/Ray.html) ray, Ray& intersection)
+```csharp
+static bool Raycast(Ray ray, Ray& intersection)
+```
+World.RaycastEnabled must be set to true first!
+SK.System.worldRaycastPresent must also be true. This does a ray
+intersection with whatever represents the environment at the
+moment! In this case, it's a watertight collection of low
+resolution meshes calculated by the Scene Understanding
+extension, which is only provided by the Microsoft HoloLens
+runtime.
 </div>
 
 |  |  |
@@ -15,13 +24,6 @@ static bool Raycast([Ray]({{site.url}}/Pages/Reference/Ray.html) ray, Ray& inter
 |Ray& intersection|The location of the intersection, and             direction of the world's surface at that point. This is only             valid if the method returns true.|
 |RETURNS: bool|True if an intersection is detected, false if raycasting is disabled, or there was no intersection.|
 
-World.RaycastEnabled must be set to true first!
-SK.System.worldRaycastPresent must also be true. This does a ray
-intersection with whatever represents the environment at the
-moment! In this case, it's a watertight collection of low
-resolution meshes calculated by the Scene Understanding
-extension, which is only provided by the Microsoft HoloLens
-runtime.
 
 
 

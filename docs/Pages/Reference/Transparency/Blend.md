@@ -17,7 +17,7 @@ than opaque materials.
 
 ## Examples
 
-## Alpha Blending
+### Alpha Blending
 Here's an example material with an alpha blend transparency.
 Transparent materials typically don't write to the depth buffer,
 but this may vary from case to case. Here we're setting the alpha

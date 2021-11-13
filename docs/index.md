@@ -6,7 +6,7 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 <table style="max-width:34em;">
 <tr><td style="width:25%;">
 <img src="{{site.url}}/img/StereoKitLogoLight.svg" alt="StereoKit Logo" />
-</td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates">Install</a> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/maluoi/StereoKit/">View Source</a></p></td></tr></table>
+</td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><b><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates" target="_blank">Install</a></b> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/maluoi/StereoKit/" target="_blank">View Source</a></p></td></tr></table>
 
 <video autoplay loop muted><source src='{{site.url}}/img/SKHighlightReel.mp4' type='video/mp4'>Your browser doesn't seem to play .mp4s!</video>
 
@@ -22,7 +22,8 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 - Physics
 - Performance-by-default instanced render pipeline
 - Flexible shader/material system with built-in PBR
-- Documentation is generated directly from the source code, including screenshots
+- Skeletal/skinned animation
+- Documentation generated directly from the source code, including screenshots
 
 ## About
 

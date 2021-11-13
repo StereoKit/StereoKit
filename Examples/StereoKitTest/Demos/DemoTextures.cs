@@ -8,7 +8,7 @@ class DemoTextures : ITest
 	public void Initialize()
 	{
 		/// :CodeSample: Tex.SetColors
-		/// ## Creating a texture procedurally
+		/// ### Creating a texture procedurally
 		/// It's pretty easy to create an array of colors, and
 		/// just pass that into an empty texture! Here, we're 
 		/// building a simple grid texture, like so:
@@ -62,7 +62,7 @@ class DemoTextures : ITest
 		/// :End:
 
 		/// :CodeSample: Material MatParamName
-		/// ## Material parameter access
+		/// ### Material parameter access
 		/// Material does have an array operator overload for setting 
 		/// shader parameters really quickly! You can do this with strings
 		/// representing shader parameter names, or use the MatParamName

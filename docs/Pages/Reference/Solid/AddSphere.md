@@ -6,7 +6,11 @@ description: This adds a sphere to this solid's physical shape! This is in addit
 # [Solid]({{site.url}}/Pages/Reference/Solid.html).AddSphere
 
 <div class='signature' markdown='1'>
+```csharp
 void AddSphere(float diameter, float kilograms, Nullable`1 offset)
+```
+This adds a sphere to this solid's physical shape! This
+is in addition to any other shapes you've added to this solid.
 </div>
 
 |  |  |
@@ -15,8 +19,6 @@ void AddSphere(float diameter, float kilograms, Nullable`1 offset)
 |float kilograms|How many kilograms does this shape weigh?|
 |Nullable`1 offset|Offset ot this shape from the center of the             solid.|
 
-This adds a sphere to this solid's physical shape! This
-is in addition to any other shapes you've added to this solid.
 
 
 

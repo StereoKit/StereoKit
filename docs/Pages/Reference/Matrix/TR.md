@@ -6,7 +6,11 @@ description: Translate, Rotate. Creates a transform Matrix using these component
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).TR
 
 <div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR([Vec3]({{site.url}}/Pages/Reference/Vec3.html) translation, [Quat]({{site.url}}/Pages/Reference/Quat.html) rotation)
+```csharp
+static Matrix TR(Vec3 translation, Quat rotation)
+```
+Translate, Rotate. Creates a transform Matrix using
+these components!
 </div>
 
 |  |  |
@@ -15,10 +19,12 @@ static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR([Vec3]({{site.url}}
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) rotation|A Quaternion describing the rotation for              this transform.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that combines translation and rotation information into a single Matrix!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Matrix TR(float x, float y, float z, Quat rotation)
+```
 Translate, Rotate. Creates a transform Matrix using
 these components!
-<div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR(float x, float y, float z, [Quat]({{site.url}}/Pages/Reference/Quat.html) rotation)
 </div>
 
 |  |  |
@@ -29,10 +35,12 @@ static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR(float x, float y, f
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) rotation|A Quaternion describing the rotation for              this transform.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that combines translation and rotation information into a single Matrix!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Matrix TR(Vec3 translation, Vec3 pitchYawRollDeg)
+```
 Translate, Rotate. Creates a transform Matrix using
 these components!
-<div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR([Vec3]({{site.url}}/Pages/Reference/Vec3.html) translation, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg)
 </div>
 
 |  |  |
@@ -41,10 +49,12 @@ static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR([Vec3]({{site.url}}
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg|Pitch (x-axis), yaw (y-axis), and              roll (z-axis) stored as x, y and z respectively in this Vec3.             Units are in degrees.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that combines translation and rotation information into a single Matrix!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Matrix TR(float x, float y, float z, Vec3 pitchYawRollDeg)
+```
 Translate, Rotate. Creates a transform Matrix using
 these components!
-<div class='signature' markdown='1'>
-static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR(float x, float y, float z, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg)
 </div>
 
 |  |  |
@@ -55,8 +65,6 @@ static [Matrix]({{site.url}}/Pages/Reference/Matrix.html) TR(float x, float y, f
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg|Pitch (x-axis), yaw (y-axis), and              roll (z-axis) stored as x, y and z respectively in this Vec3.             Units are in degrees.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that combines translation and rotation information into a single Matrix!|
 
-Translate, Rotate. Creates a transform Matrix using
-these components!
 
 
 

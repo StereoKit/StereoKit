@@ -6,7 +6,12 @@ description: Loads an image file stored in memory directly into a texture! Suppo
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).FromMemory
 
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromMemory(Byte[]& imageFileData, bool sRGBData)
+```csharp
+static Tex FromMemory(Byte[]& imageFileData, bool sRGBData)
+```
+Loads an image file stored in memory directly into a
+texture! Supported formats are: jpg, png, tga, bmp, psd, gif,
+hdr, pic. Asset Id will be the same as the filename.
 </div>
 
 |  |  |
@@ -15,9 +20,6 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromMemory(Byte[]& imageFile
 |bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?              sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Tex asset from the given file, or null if it failed to load.|
 
-Loads an image file stored in memory directly into a
-texture! Supported formats are: jpg, png, tga, bmp, psd, gif,
-hdr, pic. Asset Id will be the same as the filename.
 
 
 

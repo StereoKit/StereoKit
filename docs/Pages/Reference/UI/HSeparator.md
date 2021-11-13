@@ -6,11 +6,13 @@ description: This draws a line horizontally across the current layout. Makes a g
 # [UI]({{site.url}}/Pages/Reference/UI.html).HSeparator
 
 <div class='signature' markdown='1'>
+```csharp
 static void HSeparator()
-</div>
-
+```
 This draws a line horizontally across the current
 layout. Makes a good separator between sections of UI!
+</div>
+
 
 
 

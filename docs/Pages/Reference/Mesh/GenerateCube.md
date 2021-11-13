@@ -6,7 +6,12 @@ description: Generates a flat-shaded cube mesh, pre-sized to the given dimension
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCube
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCube([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, int subdivisions)
+```csharp
+static Mesh GenerateCube(Vec3 dimensions, int subdivisions)
+```
+Generates a flat-shaded cube mesh, pre-sized to the
+given dimensions. UV coordinates are projected flat on each face,
+0,0 -> 1,1.
 </div>
 
 |  |  |
@@ -15,9 +20,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCube([Vec3]({{site
 |int subdivisions|Use this to add extra slices of             vertices across the cube's              faces. This can be useful for some types of vertex-based effects             !|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A flat-shaded cube mesh, pre-sized to the given dimensions.|
 
-Generates a flat-shaded cube mesh, pre-sized to the
-given dimensions. UV coordinates are projected flat on each face,
-0,0 -> 1,1.
 
 
 
@@ -41,7 +43,7 @@ Renderer.Add(cubeMesh, Default.Material, cubeTransform);
 cubeTransform = Matrix.T(.5f, -.5f, 0);
 Renderer.Add(cubeModel, cubeTransform);
 ```
-## UV and Face layout
+### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is
 laid out.
 ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCube.jpg)

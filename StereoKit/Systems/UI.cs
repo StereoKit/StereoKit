@@ -149,8 +149,8 @@ namespace StereoKit
 
 		/// <summary>An invisible volume that will trigger when a finger enters
 		/// it!</summary>
-		/// <param name="id">A per-window unique id for tracking element state.
-		/// </param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="bounds">Size and position of the volume, relative to
 		/// the current Hierarchy.</param>
 		/// <returns>True on the first frame a finger has entered the volume,
@@ -232,8 +232,9 @@ namespace StereoKit
 		/// provided to it, vertically and horizontally. Text is re-used as the
 		/// id. Will return true only on the first frame it is pressed!
 		/// </summary>
-		/// <param name="text">Text to display on the button, should be
-		/// per-window unique as it will be used as the element id.</param>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool Button (string text) 
@@ -250,8 +251,9 @@ namespace StereoKit
 		/// useful for radio-like behavior! Check an enum for a value, and use
 		/// that as the 'active' state, Then switch to that enum value if Radio
 		/// returns true.</summary>
-		/// <param name="text">Text to display on the radio, should be
-		/// per-window unique as it will be used as the element id.</param>
+		/// <param name="text">Text to display on the Radio and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
 		/// <param name="active">Does this button look like it's pressed?</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
@@ -271,8 +273,8 @@ namespace StereoKit
 		/// provided to it, vertically and horizontally. Text is re-used as the
 		/// id. Will return true only on the first frame it is pressed!
 		/// </summary>
-		/// <param name="id">A per-window unique id for tracking element state.
-		/// </param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="image">An image to display as the face of the button.
 		/// </param>
 		/// <param name="diameter">The diameter of the button's visual.</param>
@@ -288,8 +290,9 @@ namespace StereoKit
 		/// text provided to it, vertically and horizontally. Text is re-used 
 		/// as the id. Will return true any time the toggle value changes!
 		/// </summary>
-		/// <param name="text">Text to display on the button, should be per-
-		/// window unique as it will be used as the element id.</param>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
 		/// <param name="value">The current state of the toggle button! True 
 		/// means it's toggled on, and false means it's toggled off.</param>
 		/// <returns>Will return true any time the toggle value changes!
@@ -336,8 +339,8 @@ namespace StereoKit
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI
 		/// element will remove focus from this Input.</summary>
-		/// <param name="id">A per-window unique id for tracking element 
-		/// state.</param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="value">The string that will store the Input's 
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
@@ -358,8 +361,8 @@ namespace StereoKit
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
-		/// <param name="id">A per-window unique id for tracking element 
-		/// state.</param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="value">The value that the slider will store slider 
 		/// state in.</param>
 		/// <param name="min">The minimum value the slider can set, left side 
@@ -379,8 +382,8 @@ namespace StereoKit
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
-		/// <param name="id">A per-window unique id for tracking element 
-		/// state.</param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="value">The value that the slider will store slider 
 		/// state in.</param>
 		/// <param name="min">The minimum value the slider can set, left side 
@@ -408,7 +411,8 @@ namespace StereoKit
 		/// like a window, except with a more flexible handle, and no header.
 		/// You can draw the handle, but it will have no text on it. Returns 
 		/// true for every frame the user is grabbing the handle.</summary>
-		/// <param name="id">Id of the handle group.</param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
 		/// be able to grab this handle and move it around.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
@@ -432,7 +436,8 @@ namespace StereoKit
 		/// except with a more flexible handle, and no header. You can draw 
 		/// the handle, but it will have no text on it. Returns true for 
 		/// every frame the user is grabbing the handle.</summary>
-		/// <param name="id">Id of the handle group.</param>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
 		/// be able to grab this handle and move it around.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
@@ -454,8 +459,9 @@ namespace StereoKit
 		/// transform stack, and all UI elements will be relative to that new 
 		/// pose. The pose is actually the top-center of the window. Must be 
 		/// finished with a call to UI.WindowEnd().</summary>
-		/// <param name="text">Text to display on the window title, should be 
-		/// unique as it will be used as the window's id.</param>
+		/// <param name="text">Text to display on the window title and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
 		/// <param name="pose">The pose state for the window! If showHeader 
 		/// is true, the user will be able to grab this header and move it 
 		/// around.</param>
@@ -476,8 +482,9 @@ namespace StereoKit
 		/// finished with a call to UI.WindowEnd(). This override omits the
 		/// size value, so the size will be auto-calculated based on the
 		/// content provided during the previous frame.</summary>
-		/// <param name="text">Text to display on the window title, should be 
-		/// unique as it will be used as the window's id.</param>
+		/// <param name="text">Text to display on the window title and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
 		/// <param name="pose">The pose state for the window! If showHeader 
 		/// is true, the user will be able to grab this header and move it 
 		/// around.</param>
@@ -495,9 +502,9 @@ namespace StereoKit
 
 		/// <summary>Adds a root id to the stack for the following UI 
 		/// elements! This id is combined when hashing any following ids, to
-		/// prevent id collisions in separate groups.</summary>
+		/// prevent id collisions in separate groups. </summary>
 		/// <param name="rootId">The root id to use until the following PopId 
-		/// call.</param>
+		/// call. MUST be unique within current hierarchy.</param>
 		public static void PushId(string rootId) 
 			=> NativeAPI.ui_push_id_16(rootId);
 
@@ -505,7 +512,7 @@ namespace StereoKit
 		/// elements! This id is combined when hashing any following ids, to
 		/// prevent id collisions in separate groups.</summary>
 		/// <param name="rootId">The root id to use until the following PopId 
-		/// call.</param>
+		/// call. MUST be unique within current hierarchy.</param>
 		public static void PushId(int rootId)
 			=> NativeAPI.ui_push_idi(rootId);
 

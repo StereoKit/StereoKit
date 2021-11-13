@@ -6,8 +6,6 @@ description: Using QR Codes
 
 # Using QR Codes
 
-## Intro
-
 QR codes are a super fast and easy way to to locate an object,
 provide information from the environment, or `localize` two
 devices to the same coordinate space! HoloLens 2 and WMR headsets
@@ -62,7 +60,9 @@ struct QRData
 	public static QRData FromCode(QRCode qr)
 	{
 		QRData result = new QRData();
-		result.pose = World.FromSpatialNode(qr.SpatialGraphNodeId);
+		// It's not unusual for this to fail to find a pose, especially on
+		// the first frame it's been seen.
+		World.FromSpatialNode(qr.SpatialGraphNodeId, out result.pose);
 		result.size = qr.PhysicalSideLength;
 		result.text = qr.Data == null ? "" : qr.Data;
 		return result;
@@ -128,12 +128,12 @@ public void Update()
 		Lines.AddAxis(d.pose, d.size);
 		Text .Add(
 			d.text, 
-			Matrix.TR(
-				d.pose.position + d.pose.Forward*d.size*0.1f, 
-				Quat.FromAngles(0, 0, 180)*d.pose.orientation),
+			d.pose.ToMatrix(),
 			Vec2.One * d.size,
 			TextFit.Squeeze,
-			TextAlign.XLeft | TextAlign.YTop);
+			TextAlign.XLeft | TextAlign.YTop,
+			TextAlign.Center,
+			d.size, d.size);
 	}
 }
 ```

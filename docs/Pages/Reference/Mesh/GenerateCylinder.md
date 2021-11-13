@@ -6,7 +6,13 @@ description: Generates a cylinder mesh, pre-sized to the given diameter and dept
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCylinder
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float diameter, float depth, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction, int subdivisions)
+```csharp
+static Mesh GenerateCylinder(float diameter, float depth, Vec3 direction, int subdivisions)
+```
+Generates a cylinder mesh, pre-sized to the given
+diameter and depth, UV coordinates are from a flattened top view
+right now. Additional development is needed for making better UVs
+for the edges.
 </div>
 
 |  |  |
@@ -17,10 +23,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateCylinder(float dia
 |int subdivisions|How many vertices compose the edges of             the cylinder? More is smoother, but less performant.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|Returns a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now.|
 
-Generates a cylinder mesh, pre-sized to the given
-diameter and depth, UV coordinates are from a flattened top view
-right now. Additional development is needed for making better UVs
-for the edges.
 
 
 
@@ -44,7 +46,7 @@ Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
 cylinderTransform = Matrix.T(.5f, 1, 0);
 Renderer.Add(cylinderModel, cylinderTransform);
 ```
-## UV and Face layout
+### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is
 laid out.
 ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCylinder.jpg)

@@ -6,7 +6,11 @@ description: Creates a Roll/Pitch/Yaw rotation (applied in that order) from the 
 # [Quat]({{site.url}}/Pages/Reference/Quat.html).FromAngles
 
 <div class='signature' markdown='1'>
-static [Quat]({{site.url}}/Pages/Reference/Quat.html) FromAngles(float pitchXDeg, float yawYDeg, float rollZDeg)
+```csharp
+static Quat FromAngles(float pitchXDeg, float yawYDeg, float rollZDeg)
+```
+Creates a Roll/Pitch/Yaw rotation (applied in that
+order) from the provided angles in degrees!
 </div>
 
 |  |  |
@@ -16,10 +20,12 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) FromAngles(float pitchXDeg
 |float rollZDeg|Roll is rotation around the z axis,              measured in degrees.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw roatation!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Quat FromAngles(Vec3 pitchYawRollDeg)
+```
 Creates a Roll/Pitch/Yaw rotation (applied in that
 order) from the provided angles in degrees!
-<div class='signature' markdown='1'>
-static [Quat]({{site.url}}/Pages/Reference/Quat.html) FromAngles([Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg)
 </div>
 
 |  |  |
@@ -27,8 +33,6 @@ static [Quat]({{site.url}}/Pages/Reference/Quat.html) FromAngles([Vec3]({{site.u
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg|Pitch, yaw, and roll stored as             X, Y, and Z in this Vector. Angle values are in degrees.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw roatation!|
 
-Creates a Roll/Pitch/Yaw rotation (applied in that
-order) from the provided angles in degrees!
 
 
 

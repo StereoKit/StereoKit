@@ -17,6 +17,7 @@ and can be cast to and from implicitly.
 
 |  |  |
 |--|--|
+|[Quat]({{site.url}}/Pages/Reference/Quat.html) [Quat]({{site.url}}/Pages/Reference/Vec4/Quat.html)|A Vec4 and a Quat are only really different by name and purpose. So, if you need to do Quat math with your Vec4, or visa versa, who am I to judge?|
 |Vector4 [v]({{site.url}}/Pages/Reference/Vec4/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [XY]({{site.url}}/Pages/Reference/Vec4/XY.html)|This extracts a Vec2 from the X and Y axes.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XYZ]({{site.url}}/Pages/Reference/Vec4/XYZ.html)|This extracts a Vec3 from the X, Y, and Z axes.|

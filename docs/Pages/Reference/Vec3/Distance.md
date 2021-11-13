@@ -6,7 +6,12 @@ description: Calculates the distance between two points in space! Make sure they
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).Distance
 
 <div class='signature' markdown='1'>
-static float Distance([Vec3]({{site.url}}/Pages/Reference/Vec3.html) a, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) b)
+```csharp
+static float Distance(Vec3 a, Vec3 b)
+```
+Calculates the distance between two points in space!
+Make sure they're in the same coordinate space! Uses a Sqrt, so
+it's not blazing fast, prefer DistanceSq when possible.
 </div>
 
 |  |  |
@@ -15,9 +20,6 @@ static float Distance([Vec3]({{site.url}}/Pages/Reference/Vec3.html) a, [Vec3]({
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) b|And the second point!|
 |RETURNS: float|Distance between the two points.|
 
-Calculates the distance between two points in space!
-Make sure they're in the same coordinate space! Uses a Sqrt, so
-it's not blazing fast, prefer DistanceSq when possible.
 
 
 

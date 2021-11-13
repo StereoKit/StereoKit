@@ -6,7 +6,10 @@ description: Checks the intersection of this ray with a plane!
 # [Ray]({{site.url}}/Pages/Reference/Ray.html).Intersect
 
 <div class='signature' markdown='1'>
-bool Intersect([Plane]({{site.url}}/Pages/Reference/Plane.html) plane, Vec3& at)
+```csharp
+bool Intersect(Plane plane, Vec3& at)
+```
+Checks the intersection of this ray with a plane!
 </div>
 
 |  |  |
@@ -15,9 +18,11 @@ bool Intersect([Plane]({{site.url}}/Pages/Reference/Plane.html) plane, Vec3& at)
 |Vec3& at|An out parameter that will hold the intersection              point. If there's no intersection, this will be (0,0,0).|
 |RETURNS: bool|True if there's an intersetion, false if not. Refer to the 'at' parameter for intersection information!|
 
-Checks the intersection of this ray with a plane!
 <div class='signature' markdown='1'>
-bool Intersect([Sphere]({{site.url}}/Pages/Reference/Sphere.html) sphere, Vec3& at)
+```csharp
+bool Intersect(Sphere sphere, Vec3& at)
+```
+Checks the intersection of this ray with a sphere!
 </div>
 
 |  |  |
@@ -26,9 +31,11 @@ bool Intersect([Sphere]({{site.url}}/Pages/Reference/Sphere.html) sphere, Vec3& 
 |Vec3& at|An out parameter that will hold the closest              intersection point to the ray's origin. If there's no              intersection, this will be (0,0,0).|
 |RETURNS: bool|True if intersection occurs, false if it doesn't. Refer to the 'at' parameter for intersection information!|
 
-Checks the intersection of this ray with a sphere!
 <div class='signature' markdown='1'>
-bool Intersect([Bounds]({{site.url}}/Pages/Reference/Bounds.html) bounds, Vec3& at)
+```csharp
+bool Intersect(Bounds bounds, Vec3& at)
+```
+Checks the intersection of this ray with a bounding box!
 </div>
 
 |  |  |
@@ -37,9 +44,16 @@ bool Intersect([Bounds]({{site.url}}/Pages/Reference/Bounds.html) bounds, Vec3& 
 |Vec3& at|If the return is true, this point will be the              closest intersection point to the origin of the Ray. If there's              no intersection, this will be (0,0,0).|
 |RETURNS: bool|True if intersection occurs, false if it doesn't. Refer to the 'at' parameter for intersection information!|
 
-Checks the intersection of this ray with a bounding box!
 <div class='signature' markdown='1'>
-bool Intersect([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, Ray& modelSpaceAt)
+```csharp
+bool Intersect(Mesh mesh, Ray& modelSpaceAt)
+```
+Checks the intersection point of this ray and a Mesh
+with collision data stored on the CPU. A mesh without collision
+data will always return false. Ray must be in model space,
+intersection point will be in model space too. You can use the
+inverse of the mesh's world transform matrix to bring the ray
+into model space, see the example in the docs!
 </div>
 
 |  |  |
@@ -48,14 +62,15 @@ bool Intersect([Mesh]({{site.url}}/Pages/Reference/Mesh.html) mesh, Ray& modelSp
 |Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
-Checks the intersection point of this ray and a Mesh
-with collision data stored on the CPU. A mesh without collision
-data will always return false. Ray must be in model space,
-intersection point will be in model space too. You can use the
-inverse of the mesh's world transform matrix to bring the ray
-into model space, see the example in the docs!
 <div class='signature' markdown='1'>
-bool Intersect([Model]({{site.url}}/Pages/Reference/Model.html) model, Ray& modelSpaceAt)
+```csharp
+bool Intersect(Model model, Ray& modelSpaceAt)
+```
+Checks the intersection point of this ray and the Solid
+flagged Meshes in the Model's visual nodes. Ray must be in model
+space, intersection point will be in model space too. You can use
+the inverse of the mesh's world transform matrix to bring the ray
+into model space, see the example in the docs!
 </div>
 
 |  |  |
@@ -64,18 +79,13 @@ bool Intersect([Model]({{site.url}}/Pages/Reference/Model.html) model, Ray& mode
 |Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
-Checks the intersection point of this ray and the Solid
-flagged Meshes in the Model's visual nodes. Ray must be in model
-space, intersection point will be in model space too. You can use
-the inverse of the mesh's world transform matrix to bring the ray
-into model space, see the example in the docs!
 
 
 
 
 ## Examples
 
-## Ray Mesh Intersection
+### Ray Mesh Intersection
 Here's an example of casting a Ray at a mesh someplace in world space,
 transforming it into model space, calculating the intersection point,
 and displaying it back in world space.

@@ -6,7 +6,12 @@ description: Create a sprite from an image file! This loads a Texture from file,
 # [Sprite]({{site.url}}/Pages/Reference/Sprite.html).FromFile
 
 <div class='signature' markdown='1'>
-static [Sprite]({{site.url}}/Pages/Reference/Sprite.html) FromFile(string file, [SpriteType]({{site.url}}/Pages/Reference/SpriteType.html) type, string atlasId)
+```csharp
+static Sprite FromFile(string file, SpriteType type, string atlasId)
+```
+Create a sprite from an image file! This loads a Texture
+from file, and then uses that Texture as the source for the
+Sprite.
 </div>
 
 |  |  |
@@ -16,9 +21,6 @@ static [Sprite]({{site.url}}/Pages/Reference/Sprite.html) FromFile(string file, 
 |string atlasId|The name of which atlas the sprite should             belong to, this is only relevant if the SpriteType is Atlased.|
 |RETURNS: [Sprite]({{site.url}}/Pages/Reference/Sprite.html)|A Sprite asset, or null if the image failed to load!|
 
-Create a sprite from an image file! This loads a Texture
-from file, and then uses that Texture as the source for the
-Sprite.
 
 
 

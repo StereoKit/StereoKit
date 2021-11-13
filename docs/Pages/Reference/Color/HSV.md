@@ -6,7 +6,11 @@ description: Creates a Red/Green/Blue gamma space color from Hue/Saturation/Valu
 # [Color]({{site.url}}/Pages/Reference/Color.html).HSV
 
 <div class='signature' markdown='1'>
-static [Color]({{site.url}}/Pages/Reference/Color.html) HSV(float hue, float saturation, float value, float opacity)
+```csharp
+static Color HSV(float hue, float saturation, float value, float opacity)
+```
+Creates a Red/Green/Blue gamma space color from
+Hue/Saturation/Value information.
 </div>
 
 |  |  |
@@ -17,10 +21,12 @@ static [Color]({{site.url}}/Pages/Reference/Color.html) HSV(float hue, float sat
 |float opacity|Also known as alpha! This is does not             affect the rgb components of the resulting color, it'll just get             slotted into the colors opacity value.|
 |RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|A gamma space RGB color!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Color HSV(Vec3 hsvColor, float opacity)
+```
 Creates a Red/Green/Blue gamma space color from
 Hue/Saturation/Value information.
-<div class='signature' markdown='1'>
-static [Color]({{site.url}}/Pages/Reference/Color.html) HSV([Vec3]({{site.url}}/Pages/Reference/Vec3.html) hsvColor, float opacity)
 </div>
 
 |  |  |
@@ -29,8 +35,6 @@ static [Color]({{site.url}}/Pages/Reference/Color.html) HSV([Vec3]({{site.url}}/
 |float opacity|Also known as alpha! This is does not             affect the rgb components of the resulting color, it'll just get             slotted into the colors opacity value.|
 |RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|A gamma space RGB color!|
 
-Creates a Red/Green/Blue gamma space color from
-Hue/Saturation/Value information.
 
 
 

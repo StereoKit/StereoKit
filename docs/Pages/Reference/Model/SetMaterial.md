@@ -6,7 +6,10 @@ description: Changes the Material for the subset to a new one!
 # [Model]({{site.url}}/Pages/Reference/Model.html).SetMaterial
 
 <div class='signature' markdown='1'>
-void SetMaterial(int subsetIndex, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+void SetMaterial(int subsetIndex, Material material)
+```
+Changes the Material for the subset to a new one!
 </div>
 
 |  |  |
@@ -14,7 +17,6 @@ void SetMaterial(int subsetIndex, [Material]({{site.url}}/Pages/Reference/Materi
 |int subsetIndex|Index of the model subset to replace,              should be less than SubsetCount.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|The new Material, cannot be null.|
 
-Changes the Material for the subset to a new one!
 
 
 

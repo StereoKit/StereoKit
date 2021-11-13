@@ -100,23 +100,44 @@ h1:after
     content:' ';
     display:block;
     padding-top: 0.3em;
-    border-bottom:1px solid #555;
+    border-bottom:2px solid #888;
 }
+h2:after
+{
+    content:' ';
+    display:block;
+    padding-top: 0.3em;
+    border-bottom:2px solid #888;
+}
+hr {
+    border-style: inset;
+    border:0px;
+    border-bottom:2px solid #888;
+}
+
 table {
     border-collapse: collapse;
+    border: 1px solid #555;
     width:100%;
 }
 td {
     padding: 0.5em;
 }
 thead tr th {
-    
     display:none;
 }
-tbody tr td {
-    border-top:1px solid #555;
-    border-bottom:1px solid #555;
+tr:nth-child(even) {
+    background-color: #181818;
 }
+tr:nth-child(odd) {
+    background-color: #282828;
+}
+td:nth-child(1) {
+    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    white-space: nowrap;
+    width: 1%;
+}
+
 main img {
     max-width: 100%;
     max-height: 20em;
@@ -198,11 +219,20 @@ main img {
 /* Code styling */
 
 .signature { 
-    background-color: #282828; 
-    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    background-color: #151515;
+    border: 1px solid #555;
+    padding:1em;
+    margin-top: 2em;
+}
+.signature p { padding-left:1em; margin:0em;}
+.signature .highlight pre { white-space: pre-wrap; padding:0em; padding-left:1em;}
+.summary { 
+    background-color: #151515;
+    border-left: 1px solid #555;
+    border-right: 1px solid #555;
     padding:1em;
 }
-.signature p { margin:0px; padding-left:0em; max-width: 100%;}
+.summary p { margin:0px; padding-left:0em; max-width: 100%;}
 
 .language-plaintext { 
     background: #151515; 

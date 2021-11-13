@@ -6,7 +6,12 @@ description: Try Color.HSV instead! But if you really need to create a color fro
 # [Color]({{site.url}}/Pages/Reference/Color.html).Color
 
 <div class='signature' markdown='1'>
- Color(float red, float green, float blue, float opacity)
+```csharp
+void Color(float red, float green, float blue, float opacity)
+```
+Try Color.HSV instead! But if you really need to create a color from RGB
+values, I suppose you're in the right place. All parameter values are generally in
+the range of 0-1.
 </div>
 
 |  |  |
@@ -16,9 +21,6 @@ description: Try Color.HSV instead! But if you really need to create a color fro
 |float blue|Blue component, 0-1.|
 |float opacity|Opacity, or the alpha component, 0-1 where 0 is completely              transparent, and 1 is completely opaque.|
 
-Try Color.HSV instead! But if you really need to create a color from RGB
-values, I suppose you're in the right place. All parameter values are generally in
-the range of 0-1.
 
 
 

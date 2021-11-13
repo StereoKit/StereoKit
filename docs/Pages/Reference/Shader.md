@@ -29,6 +29,7 @@ sometimes!
 |--|--|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Default]({{site.url}}/Pages/Reference/Shader/Default.html)|See `Default.Shader`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBR]({{site.url}}/Pages/Reference/Shader/PBR.html)|See `Default.ShaderPbr`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBRClip]({{site.url}}/Pages/Reference/Shader/PBRClip.html)|See `Default.ShaderPbrClip`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [UI]({{site.url}}/Pages/Reference/Shader/UI.html)|See `Default.ShaderUI`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [UIBox]({{site.url}}/Pages/Reference/Shader/UIBox.html)|See `Default.ShaderUIBox`|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Unlit]({{site.url}}/Pages/Reference/Shader/Unlit.html)|See `Default.ShaderUnlit`|

@@ -6,7 +6,11 @@ description: Checks if a point is within a certain radius of this one. This is a
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).InRadius
 
 <div class='signature' markdown='1'>
-bool InRadius([Vec3]({{site.url}}/Pages/Reference/Vec3.html) pt, float radius)
+```csharp
+bool InRadius(Vec3 pt, float radius)
+```
+Checks if a point is within a certain radius of this one.
+This is an easily readable shorthand of the squared distance check.
 </div>
 
 |  |  |
@@ -15,10 +19,13 @@ bool InRadius([Vec3]({{site.url}}/Pages/Reference/Vec3.html) pt, float radius)
 |float radius|The distance to check against.|
 |RETURNS: bool|True if the points are within radius of eachother, false not.|
 
-Checks if a point is within a certain radius of this one.
-This is an easily readable shorthand of the squared distance check.
 <div class='signature' markdown='1'>
-static bool InRadius([Vec3]({{site.url}}/Pages/Reference/Vec3.html) a, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) b, float radius)
+```csharp
+static bool InRadius(Vec3 a, Vec3 b, float radius)
+```
+Checks if two points are within a certain radius of
+eachother. This is an easily readable shorthand of the squared
+distance check.
 </div>
 
 |  |  |
@@ -28,9 +35,6 @@ static bool InRadius([Vec3]({{site.url}}/Pages/Reference/Vec3.html) a, [Vec3]({{
 |float radius|The distance to check against.|
 |RETURNS: bool|True if a and b are within radius of eachother, false not.|
 
-Checks if two points are within a certain radius of
-eachother. This is an easily readable shorthand of the squared
-distance check.
 
 
 

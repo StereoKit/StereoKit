@@ -100,7 +100,7 @@ class GuideDrawing : ITest
 		///  
 		/// And where do you get a Material? Well, 
 		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylisic surfaces.
-		///  - A Material [constructor]({{site.url}}/Pages/Reference/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Materials-and-Shaders.html) for in-depth usage (Materials and Shaders are a lot of fun!).
+		///  - A Material [constructor]({{site.url}}/Pages/Reference/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html) for in-depth usage (Materials and Shaders are a lot of fun!).
 		///  - You can call [`Material.Copy`]({{site.url}}/Pages/Reference/Material/Copy.html) to create a duplicate of an existing Material.
 		/// 
 		/// ## Matrix basics
@@ -173,7 +173,7 @@ class GuideDrawing : ITest
 		/// So... that was also pretty simple! The only real trick with Models
 		/// is getting one in the first place, but even that's not too hard.
 		/// There's a lot you can do with a Model beyond just drawing it, so
-		/// for more details on that, check out [the Model guide]({{site.url}}/Pages/Guides/Working-with-Models.html)!
+		/// for more details on that, check out [the Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
 		/// 
 		/// But here's the quick list of where you can get a Model to begin
 		/// with:
@@ -222,8 +222,8 @@ class GuideDrawing : ITest
 		/// tricks to be learned, but this is a great start! There's treasures
 		/// in the documentation, so hunt around in there for more samples. You
 		/// may also be interested in the [Materials guide]({{site.url}}/Pages/Guides/Working-with-Materials.html)
-		/// for advanced rendering code, or [the Model guide]({{site.url}}/Pages/Guides/Working-with-Models.html)
-		/// for managing your visible content!
+		/// for advanced rendering code, or the [Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) 
+		/// (coming soon), for managing your visible content!
 		/// 
 		/// If you'd like to see all the code for this document,
 		/// [check it out here!](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideDrawing.cs)

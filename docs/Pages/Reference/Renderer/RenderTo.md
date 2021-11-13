@@ -6,7 +6,13 @@ description: This renders the current scene to the indicated rendertarget textur
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).RenderTo
 
 <div class='signature' markdown='1'>
-static void RenderTo([Tex]({{site.url}}/Pages/Reference/Tex.html) toRendertarget, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) camera, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) projection, RenderLayer layerFilter, RenderClear clear, Rect viewport)
+```csharp
+static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter, RenderClear clear, Rect viewport)
+```
+This renders the current scene to the indicated
+rendertarget texture, from the specified viewpoint. This call
+enqueues a render that occurs immediately before the screen
+itself is rendered.
 </div>
 
 |  |  |
@@ -18,10 +24,6 @@ static void RenderTo([Tex]({{site.url}}/Pages/Reference/Tex.html) toRendertarget
 |RenderClear clear|Describes if an how the rendertarget should             be cleared before rendering. Note that clearing the target is             unaffected by the viewport, so this will clean the entire              surface!|
 |Rect viewport|Allows you to specify a region of the             rendertarget to draw to! This is in normalized coordinates, 0-1.             If the width of this value is zero, then this will render to the             entire texture.|
 
-This renders the current scene to the indicated
-rendertarget texture, from the specified viewpoint. This call
-enqueues a render that occurs immediately before the screen
-itself is rendered.
 
 
 

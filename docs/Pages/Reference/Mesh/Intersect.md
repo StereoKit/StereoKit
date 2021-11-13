@@ -6,7 +6,15 @@ description: Checks the intersection point of this ray and a Mesh with collision
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Intersect
 
 <div class='signature' markdown='1'>
-bool Intersect([Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay, Ray& modelSpaceAt)
+```csharp
+bool Intersect(Ray modelSpaceRay, Ray& modelSpaceAt)
+```
+Checks the intersection point of this ray and a Mesh
+with collision data stored on the CPU. A mesh without collision
+data will always return false. Ray must be in model space,
+intersection point will be in model space too. You can use the
+inverse of the mesh's world transform matrix to bring the ray
+into model space, see the example in the docs!
 </div>
 
 |  |  |
@@ -15,19 +23,13 @@ bool Intersect([Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay, Ray& 
 |Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
-Checks the intersection point of this ray and a Mesh
-with collision data stored on the CPU. A mesh without collision
-data will always return false. Ray must be in model space,
-intersection point will be in model space too. You can use the
-inverse of the mesh's world transform matrix to bring the ray
-into model space, see the example in the docs!
 
 
 
 
 ## Examples
 
-## Ray Mesh Intersection
+### Ray Mesh Intersection
 Here's an example of casting a Ray at a mesh someplace in world space,
 transforming it into model space, calculating the intersection point,
 and displaying it back in world space.
