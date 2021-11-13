@@ -68,7 +68,14 @@ namespace StereoKit
 		/// and re-allocated. If you're calling this a third time, the buffer
 		/// will only re-allocate if the buffer is too small, otherwise it 
 		/// just copies in the data!</summary>
-		/// <param name="verts">An array of vertices to add to the mesh.</param>
+		/// 
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.
+		/// <param name="verts">An array of vertices to add to the mesh.
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.</param>
 		public void SetVerts(Vertex[] verts)
 			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
 
