@@ -444,6 +444,8 @@ typedef struct vert_t {
 	color32 col;
 } vert_t;
 
+static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { return vert_t{ position, normal, texture_coordinates, vertex_color }; }
+
 #ifdef SK_32BIT_INDICES
 typedef uint32_t vind_t;
 #else
