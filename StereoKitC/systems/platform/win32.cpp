@@ -32,7 +32,7 @@ bool win32_check_resize = true;
 UINT win32_resize_x     = 0;
 UINT win32_resize_y     = 0;
 
-#if defined(SKG_OPENGL);
+#if defined(SKG_OPENGL)
 const int32_t win32_multisample = 1;
 #else
 const int32_t win32_multisample = 8;
