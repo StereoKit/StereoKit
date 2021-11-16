@@ -29,14 +29,9 @@ once it fills the entire layout!
 
 ![A window with text and a separator]({{site.screen_url}}/UI/SeparatorWindow.jpg)
 
-Toggle buttons swap between true and false when you press them! The
-function requires a reference to a bool variable where the toggle's
-state is stored. This allows you to manage the state yourself, and
-it's completely valid for you to change the toggle state separately,
-the UI element will update to match.
-
-Note that `UI.Toggle` returns true _only_ when the toggle state has
-changed, and does _not_ return the current state.
+A separator is a simple visual element that fills the window
+horizontally. It's nothing complicated, but can help create visual
+association between groups of UI elements.
 
 ```csharp
 Pose windowPoseSeparator = new Pose(.6f, 0, 0, Quat.Identity);

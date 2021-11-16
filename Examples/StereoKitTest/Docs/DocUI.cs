@@ -84,14 +84,9 @@ class DocUI : ITest
 	/// 
 	/// ![A window with text and a separator]({{site.screen_url}}/UI/SeparatorWindow.jpg)
 	/// 
-	/// Toggle buttons swap between true and false when you press them! The
-	/// function requires a reference to a bool variable where the toggle's
-	/// state is stored. This allows you to manage the state yourself, and
-	/// it's completely valid for you to change the toggle state separately,
-	/// the UI element will update to match.
-	/// 
-	/// Note that `UI.Toggle` returns true _only_ when the toggle state has
-	/// changed, and does _not_ return the current state.
+	/// A separator is a simple visual element that fills the window
+	/// horizontally. It's nothing complicated, but can help create visual
+	/// association between groups of UI elements.
 	/// 
 	Pose windowPoseSeparator = new Pose(.6f, 0, 0, Quat.Identity);
 	void ShowWindowSeparator()
@@ -139,17 +134,18 @@ class DocUI : ITest
 	/// 
 	/// ![A window with a text input]({{site.screen_url}}/UI/InputWindow.jpg)
 	/// 
-	/// A slider will slide between two values at increments. The function
-	/// requires a reference to a float variable where the slider's state is
-	/// stored. This allows you to manage the state yourself, and it's
-	/// completely valid for you to change the slider state separately, the
-	/// UI element will update to match.
+	/// The `UI.Input` element allows users to enter text. Upon selecting the
+	/// element, a virtual keyboard will appear on platforms that provide
+	/// one.  The function requires a reference to a string variable where
+	/// the input's state is stored. This allows you to manage the state
+	/// yourself, and it's completely valid for you to change the input state
+	/// separately, the UI element will update to match.
 	/// 
-	/// Note that `UI.HSlider` returns true _only_ when the slider state has
-	/// changed, and does _not_ return the current state.
+	/// `UI.Input` will return true on frames where the text has _just_
+	/// changed.
 	/// 
 	Pose   windowPoseInput = new Pose(1.2f, 0, 0, Quat.Identity);
-	string inputState = "Initial text";
+	string inputState      = "Initial text";
 	void ShowWindowInput()
 	{
 		UI.WindowBegin("Window Input", ref windowPoseInput);
