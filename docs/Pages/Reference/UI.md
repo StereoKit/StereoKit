@@ -72,3 +72,28 @@ re-use the same id, but a window cannot use the same id twice.
 |[WindowBegin]({{site.url}}/Pages/Reference/UI/WindowBegin.html)|Begins a new window! This will push a pose onto the transform stack, and all UI elements will be relative to that new pose. The pose is actually the top-center of the window. Must be finished with a call to UI.WindowEnd().|
 |[WindowEnd]({{site.url}}/Pages/Reference/UI/WindowEnd.html)|Finishes a window! Must be called after UI.WindowBegin() and all elements have been drawn.|
 
+
+## Examples
+
+### A simple button
+
+![A window with a button]({{site.screen_url}}/UI/ButtonWindow.jpg)
+
+This is a complete window with a simple button on it! `UI.Button`
+returns true only for the very first frame the button is pressed, so
+using the `if(UI.Button())` pattern works very well for executing
+code on button press!
+
+```csharp
+Pose windowPoseButton = new Pose(0, 0, 0, Quat.Identity);
+void ShowWindowButton()
+{
+	UI.WindowBegin("Window Button", ref windowPoseButton);
+
+	if (UI.Button("Press me!"))
+		Log.Info("Button was pressed.");
+
+	UI.WindowEnd();
+}
+```
+

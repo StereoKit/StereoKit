@@ -46,3 +46,33 @@ in it, and slide the value up and down.
 
 
 
+
+## Examples
+
+### Horizontal Sliders
+
+![A window with a slider]({{site.screen_url}}/UI/HSliderWindow.jpg)
+
+A slider will slide between two values at increments. The function
+requires a reference to a float variable where the slider's state is
+stored. This allows you to manage the state yourself, and it's
+completely valid for you to change the slider state separately, the
+UI element will update to match.
+
+Note that `UI.HSlider` returns true _only_ when the slider state has
+changed, and does _not_ return the current state.
+
+```csharp
+Pose  windowPoseSlider = new Pose(.9f, 0, 0, Quat.Identity);
+float sliderState      = 0.5f;
+void ShowWindowSlider()
+{
+	UI.WindowBegin("Window Slider", ref windowPoseSlider);
+
+	if (UI.HSlider("Slider", ref sliderState, 0, 1, 0.1f))
+		Log.Info($"Slider value just changed: {sliderState}");
+
+	UI.WindowEnd();
+}
+```
+

@@ -944,6 +944,7 @@ var documents =
 				{name : 'norm'},
 				{name : 'pos'},
 				{name : 'uv'},
+				{name : 'Vertex'},
 			]
 			},
 			{name : 'World',
