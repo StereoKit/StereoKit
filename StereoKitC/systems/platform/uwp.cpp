@@ -201,12 +201,12 @@ public:
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 
 				vec2 new_point = uwp_mouse_set_delta + vec2{ 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 
 				CoreWindow::GetForCurrentThread().PointerPosition(Point(
-					pixels_to_dips(new_point.x, ViewProvider::inst->m_DPI) + win.X,
-					pixels_to_dips(new_point.y, ViewProvider::inst->m_DPI) + win.Y));
+					pixels_to_dips(new_point.x, m_DPI) + win.X,
+					pixels_to_dips(new_point.y, m_DPI) + win.Y));
 
 				ViewProvider::inst->mouse_point = new_point;
 				uwp_mouse_set = false;
@@ -214,8 +214,8 @@ public:
 				Point pos = CoreWindow::GetForCurrentThread().PointerPosition();
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 				mouse_point = { 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 			}
 
 			Sleep(1);
