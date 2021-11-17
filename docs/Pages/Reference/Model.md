@@ -123,6 +123,8 @@ Hierarchy.Pop();
 
 ### An Interactive Model
 
+![A grabbable GLTF Model using UI.Handle]({{site.screen_url}}/HandleBox.jpg)
+
 If you want to grab a Model and move it around, then you can use a
 `UI.Handle` to do it! Here's an example of loading a GLTF from file,
 and using its information to create a Handle and a UI 'cage' box that
