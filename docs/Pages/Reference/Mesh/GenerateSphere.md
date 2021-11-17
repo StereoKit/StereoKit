@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.GenerateSphere
-description: Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.
+description: Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.  NOTE. This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated Mesh.Sphere asset if it already meets your needs.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateSphere
 
@@ -12,6 +12,11 @@ static Mesh GenerateSphere(float diameter, int subdivisions)
 Generates a sphere mesh, pre-sized to the given
 diameter, created by sphereifying a subdivided cube! UV
 coordinates are taken from the initial unspherified cube.
+
+NOTE: This generates a completely new Mesh asset on the GPU, and
+is best done during 'initialization' of your app/scene. You may
+also be interested in using the pre-generated `Mesh.Sphere` asset
+if it already meets your needs.
 </div>
 
 |  |  |
@@ -26,10 +31,14 @@ coordinates are taken from the initial unspherified cube.
 
 ## Examples
 
+### Generating a Mesh and Model
+
 ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
+// Do this in your initialization
 Mesh  sphereMesh  = Mesh.GenerateSphere(0.4f);
 Model sphereModel = Model.FromMesh(sphereMesh, Default.Material);
 ```
@@ -37,11 +46,13 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
+// Call this code every Step
+
 Matrix sphereTransform = Matrix.T(-.5f, .5f, 0);
-Renderer.Add(sphereMesh, Default.Material, sphereTransform);
+sphereMesh.Draw(Default.Material, sphereTransform);
 
 sphereTransform = Matrix.T(.5f, .5f, 0);
-Renderer.Add(sphereModel, sphereTransform);
+sphereModel.Draw(sphereTransform);
 ```
 ### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is

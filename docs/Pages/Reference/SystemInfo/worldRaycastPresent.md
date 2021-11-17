@@ -17,6 +17,8 @@ set to true, and World.Raycast can be used.
 
 ## Examples
 
+### Basic World Raycasting
+
 World.RaycastEnabled must be true before calling World.Raycast, or
 you won't ever intersect with any world geometry.
 ```csharp

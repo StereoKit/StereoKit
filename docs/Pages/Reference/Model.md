@@ -121,6 +121,28 @@ Text.Add($"{model.AnimTime:F1}s",                       Matrix.TS(-progress, 2*U
 Hierarchy.Pop();
 ```
 
+### An Interactive Model
+
+If you want to grab a Model and move it around, then you can use a
+`UI.Handle` to do it! Here's an example of loading a GLTF from file,
+and using its information to create a Handle and a UI 'cage' box that
+indicates an interactive element.
+
+```csharp
+Model model      = Model.FromFile("DamagedHelmet.gltf");
+Pose  handlePose = new Pose(0,0,0, Quat.Identity);
+float scale      = .15f;
+
+public void Step() {
+	UI.HandleBegin("Model Handle", ref handlePose, model.Bounds*scale);
+
+	model.Draw(Matrix.S(scale));
+	Mesh.Cube.Draw(Material.UIBox, Matrix.TS(model.Bounds.center*scale, model.Bounds.dimensions*scale));
+
+	UI.HandleEnd();
+}
+```
+
 ### Assembling a Model
 While normally you'll load Models from file, you can also assemble
 them yourself procedurally! This example shows assembling a simple

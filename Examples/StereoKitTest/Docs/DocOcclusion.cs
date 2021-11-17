@@ -3,6 +3,8 @@
 class DocOcclusion : ITest
 {
 	/// :CodeSample: World.OcclusionEnabled World.OcclusionMaterial SystemInfo.worldOcclusionPresent
+	/// ### Basic World Occlusion
+	/// 
 	/// A simple example of turning on the occlusion mesh and overriding the
 	/// default material so it's visible. For normal usage where you just 
 	/// want to let the real world occlude geometry, the only important

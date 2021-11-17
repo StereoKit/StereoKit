@@ -5,6 +5,8 @@ class DocBounds : ITest
 	public void Initialize()
 	{
 		/// :CodeSample: Bounds Bounds.FromCorner Bounds.FromCorners Bounds.Intersect
+		/// ### General Usage
+		/// 
 		// All these create bounds for a 1x1x1m cube around the origin!
 		Bounds bounds = new Bounds(Vec3.One);
 		bounds = Bounds.FromCorner(new Vec3(-0.5f, -0.5f, -0.5f), Vec3.One);

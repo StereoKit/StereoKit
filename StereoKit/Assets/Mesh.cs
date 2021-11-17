@@ -176,7 +176,12 @@ namespace StereoKit
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
 		/// coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
-		/// +X,+Z corner!</summary>
+		/// +X,+Z corner!
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene. You may
+		/// also be interested in using the pre-generated `Mesh.Quad` asset
+		/// if it already meets your needs.</summary>
 		/// <param name="dimensions">How large is this plane on the XZ axis,
 		/// in meters?</param>
 		/// <param name="subdivisions">Use this to add extra slices of 
@@ -189,7 +194,12 @@ namespace StereoKit
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
 		/// coordinates start at the top left indicated with 
-		/// 'planeTopDirection'.</summary>
+		/// 'planeTopDirection'.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene. You may
+		/// also be interested in using the pre-generated `Mesh.Quad` asset
+		/// if it already meets your needs.</summary>
 		/// <param name="dimensions">How large is this plane on the XZ axis, 
 		/// in meters?</param>
 		/// <param name="planeNormal">What is the normal of the surface this
@@ -209,7 +219,12 @@ namespace StereoKit
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,
-		/// 0,0 -> 1,1. </summary>
+		/// 0,0 -> 1,1.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene. You may
+		/// also be interested in using the pre-generated `Mesh.Cube` asset
+		/// if it already meets your needs.</summary>
 		/// <param name="dimensions">How large is this cube on each axis, in 
 		/// meters?</param>
 		/// <param name="subdivisions">Use this to add extra slices of
@@ -223,7 +238,10 @@ namespace StereoKit
 
 		/// <summary>Generates a cube mesh with rounded corners, pre-sized to
 		/// the given dimensions. UV coordinates are 0,0 -> 1,1 on each face,
-		/// meeting at the middle of the rounded corners.</summary>
+		/// meeting at the middle of the rounded corners.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
 		/// <param name="dimensions">How large is this cube on each axis, in
 		/// meters?</param>
 		/// <param name="edgeRadius">Radius of the corner rounding, in
@@ -240,6 +258,11 @@ namespace StereoKit
 		/// <summary>Generates a sphere mesh, pre-sized to the given
 		/// diameter, created by sphereifying a subdivided cube! UV
 		/// coordinates are taken from the initial unspherified cube.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene. You may
+		/// also be interested in using the pre-generated `Mesh.Sphere` asset
+		/// if it already meets your needs.
 		/// </summary>
 		/// <param name="diameter">The diameter of the sphere in meters, or 
 		/// 2*radius. This is the full length from one side to the other.
@@ -255,7 +278,10 @@ namespace StereoKit
 		/// <summary>Generates a cylinder mesh, pre-sized to the given 
 		/// diameter and depth, UV coordinates are from a flattened top view
 		/// right now. Additional development is needed for making better UVs
-		/// for the edges.</summary>
+		/// for the edges.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
 		/// <param name="diameter">Diameter of the circular part of the
 		/// cylinder in meters. Diameter is 2*radius.</param>
 		/// <param name="depth">How tall is this cylinder, in meters?</param>

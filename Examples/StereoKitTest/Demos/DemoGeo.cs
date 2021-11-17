@@ -23,7 +23,10 @@ class DemoGeo : ITest
 	public void Initialize()
 	{
 		/// :CodeSample: Mesh.GenerateCube
+		/// ### Generating a Mesh and Model
+		/// 
 		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
 		/// Here's a quick example of generating a mesh! You can store it in just a
 		/// Mesh, or you can attach it to a Model for easier rendering later on.
 		Mesh  cubeMesh  = Mesh.GenerateCube(Vec3.One * 0.4f);
@@ -32,10 +35,14 @@ class DemoGeo : ITest
 		demoCubeMesh  = cubeMesh;
 		demoCubeModel = cubeModel;
 
-		/// :CodeSample: Mesh.GenerateRoundedCube
+		/// :CodeSample: Mesh Mesh.GenerateRoundedCube Mesh.Draw
+		/// ### Generating a Mesh and Model
+		/// 
 		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
 		/// Here's a quick example of generating a mesh! You can store it in just a
 		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
 		Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
 		Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Default.Material);
 		/// :End:
@@ -43,9 +50,13 @@ class DemoGeo : ITest
 		demoRoundedCubeModel = roundedCubeModel;
 
 		/// :CodeSample: Mesh.GenerateSphere
+		/// ### Generating a Mesh and Model
+		/// 
 		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
 		/// Here's a quick example of generating a mesh! You can store it in just a
 		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
 		Mesh  sphereMesh  = Mesh.GenerateSphere(0.4f);
 		Model sphereModel = Model.FromMesh(sphereMesh, Default.Material);
 		/// :End:
@@ -53,9 +64,13 @@ class DemoGeo : ITest
 		demoSphereModel = sphereModel;
 
 		/// :CodeSample: Mesh.GenerateCylinder
+		/// ### Generating a Mesh and Model
+		/// 
 		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
 		/// Here's a quick example of generating a mesh! You can store it in just a
 		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
 		Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.4f, 0.4f, Vec3.Up);
 		Model cylinderModel = Model.FromMesh(cylinderMesh, Default.Material);
 		/// :End:
@@ -63,9 +78,13 @@ class DemoGeo : ITest
 		demoCylinderModel = cylinderModel;
 
 		/// :CodeSample: Mesh.GeneratePlane
+		/// ### Generating a Mesh and Model
+		/// 
 		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
 		/// Here's a quick example of generating a mesh! You can store it in just a
 		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
 		Mesh  planeMesh  = Mesh.GeneratePlane(Vec2.One*0.4f);
 		Model planeModel = Model.FromMesh(planeMesh, Default.Material);
 		/// :End:
@@ -74,7 +93,9 @@ class DemoGeo : ITest
 
 		/// :CodeSample: Mesh.SetVerts Mesh.SetInds
 		/// ### Procedurally generating a wavy grid
+		/// 
 		/// ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
+		/// 
 		/// Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
 		/// is a common example of creating a grid using code, we're using a sin wave
 		/// to make it more visually interesting, but you could also substitute this for
@@ -150,10 +171,10 @@ class DemoGeo : ITest
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
 		Matrix planeTransform = Matrix.T(-.5f, -1, 0);
-		Renderer.Add(planeMesh, Default.Material, planeTransform);
+		planeMesh.Draw(Default.Material, planeTransform);
 
 		planeTransform = Matrix.T(.5f, -1, 0);
-		Renderer.Add(planeModel, planeTransform);
+		planeModel.Draw(planeTransform);
 		/// :End:
 		
 
@@ -165,11 +186,13 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
+		// Call this code every Step
+
 		Matrix cubeTransform = Matrix.T(-.5f, -.5f, 0);
-		Renderer.Add(cubeMesh, Default.Material, cubeTransform);
+		cubeMesh.Draw(Default.Material, cubeTransform);
 
 		cubeTransform = Matrix.T(.5f, -.5f, 0);
-		Renderer.Add(cubeModel, cubeTransform);
+		cubeModel.Draw(cubeTransform);
 		/// :End:
 
 
@@ -177,15 +200,17 @@ class DemoGeo : ITest
 		Mesh  roundedCubeMesh  = demoRoundedCubeMesh;
 		Model roundedCubeModel = demoRoundedCubeModel;
 
-		/// :CodeSample: Mesh.GenerateRoundedCube
+		/// :CodeSample: Mesh Mesh.GenerateRoundedCube Mesh.Draw
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
+		// Call this code every Step
+
 		Matrix roundedCubeTransform = Matrix.T(-.5f, 0, 0);
-		Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
+		roundedCubeMesh.Draw(Default.Material, roundedCubeTransform);
 
 		roundedCubeTransform = Matrix.T(.5f, 0, 0);
-		Renderer.Add(roundedCubeModel, roundedCubeTransform);
+		roundedCubeModel.Draw(roundedCubeTransform);
 		/// :End:
 
 
@@ -197,11 +222,13 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
+		// Call this code every Step
+
 		Matrix sphereTransform = Matrix.T(-.5f, .5f, 0);
-		Renderer.Add(sphereMesh, Default.Material, sphereTransform);
+		sphereMesh.Draw(Default.Material, sphereTransform);
 
 		sphereTransform = Matrix.T(.5f, .5f, 0);
-		Renderer.Add(sphereModel, sphereTransform);
+		sphereModel.Draw(sphereTransform);
 		/// :End:
 
 
@@ -213,11 +240,13 @@ class DemoGeo : ITest
 		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
 		/// here's a short example! For the Mesh, you'll need to create your own material, 
 		/// we just loaded up the default Material here.
+		// Call this code every Step
+
 		Matrix cylinderTransform = Matrix.T(-.5f, 1, 0);
-		Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
+		cylinderMesh.Draw(Default.Material, cylinderTransform);
 
 		cylinderTransform = Matrix.T(.5f, 1, 0);
-		Renderer.Add(cylinderModel, cylinderTransform);
+		cylinderModel.Draw(cylinderTransform);
 		/// :End:
 
 		demoProcMesh.Draw(Default.Material, Matrix.TR(-2,0,0, Quat.FromAngles(-90,0,0)));
