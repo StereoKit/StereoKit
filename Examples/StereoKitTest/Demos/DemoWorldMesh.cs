@@ -18,6 +18,10 @@ class DemoWorldMesh : ITest
 
 		oldMaterial             = World.OcclusionMaterial;
 		World.OcclusionMaterial = occlusionMaterial;
+
+		World.RefreshType     = WorldRefresh.Timer;
+		World.RefreshInterval = 2;
+		World.RefreshRadius   = 5;
 	}
 
 	public void Shutdown()

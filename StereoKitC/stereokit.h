@@ -1068,20 +1068,31 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
-SK_API bool32_t   world_has_bounds                ();
-SK_API vec2       world_get_bounds_size           ();
-SK_API pose_t     world_get_bounds_pose           ();
-SK_API pose_t     world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
-SK_API pose_t     world_from_perception_anchor    (void *perception_spatial_anchor);
-SK_API bool32_t   world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
-SK_API bool32_t   world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
-SK_API bool32_t   world_raycast                   (ray_t ray, ray_t *out_intersection);
-SK_API void       world_set_occlusion_enabled     (bool32_t enabled);
-SK_API bool32_t   world_get_occlusion_enabled     ();
-SK_API void       world_set_raycast_enabled       (bool32_t enabled);
-SK_API bool32_t   world_get_raycast_enabled       ();
-SK_API void       world_set_occlusion_material    (material_t material);
-SK_API material_t world_get_occlusion_material    ();
+typedef enum world_refresh_ {
+	world_refresh_area,
+	world_refresh_timer,
+} world_refresh_;
+
+SK_API bool32_t       world_has_bounds                ();
+SK_API vec2           world_get_bounds_size           ();
+SK_API pose_t         world_get_bounds_pose           ();
+SK_API pose_t         world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
+SK_API pose_t         world_from_perception_anchor    (void *perception_spatial_anchor);
+SK_API bool32_t       world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
+SK_API bool32_t       world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
+SK_API bool32_t       world_raycast                   (ray_t ray, ray_t *out_intersection);
+SK_API void           world_set_occlusion_enabled     (bool32_t enabled);
+SK_API bool32_t       world_get_occlusion_enabled     ();
+SK_API void           world_set_raycast_enabled       (bool32_t enabled);
+SK_API bool32_t       world_get_raycast_enabled       ();
+SK_API void           world_set_occlusion_material    (material_t material);
+SK_API material_t     world_get_occlusion_material    ();
+SK_API void           world_set_refresh_type          (world_refresh_ refresh_type);
+SK_API world_refresh_ world_get_refresh_type          ();
+SK_API void           world_set_refresh_radius        (float radius_meters);
+SK_API float          world_get_refresh_radius        ();
+SK_API void           world_set_refresh_interval      (float every_seconds);
+SK_API float          world_get_refresh_interval      ();
 
 ///////////////////////////////////////////
 
