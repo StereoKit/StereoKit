@@ -62,7 +62,7 @@ class Program
 
 ## Building or Contributing
 
-For those that wish to build the test project, or perhaps the whole library, there's a [guide to building StereoKit's repository](/Building.md)! For those that wish to contribute features or fixes to StereoKit, awesome! There will soon be a contributor guide to help you navigate style and architecture requirements. In the meantime, check with the maintainer on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
+For those that wish to build the test project, or perhaps the whole library, there's a [guide to building StereoKit's repository](/BUILDING.md)! For those that wish to contribute features or fixes to StereoKit, awesome! There will soon be a contributor guide to help you navigate style and architecture requirements. In the meantime, check with the maintainer on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
 
 ## Dependencies
 
