@@ -5,7 +5,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="StereoKit" Version="0.3.3-preview.5" />
+        <PackageReference Include="StereoKit" Version="0.3.*" />
     </ItemGroup>
 
 	<!-- Exclude the subfolders for different platform projects -->
