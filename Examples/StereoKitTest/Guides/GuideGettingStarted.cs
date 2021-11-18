@@ -3,7 +3,7 @@
 /// 
 /// Here's a quick list of what you'll need to start developing with StereoKit:
 /// 
-/// - **[Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - Use these workloads:**
+/// - **[Visual Studio 2019 or 2022](https://visualstudio.microsoft.com/vs/) - Use these workloads:**
 ///   - .NET Desktop development
 ///   - Universal Windows Platform development (for HoloLens)
 ///   - Mobile development with .Net (for Quest)
