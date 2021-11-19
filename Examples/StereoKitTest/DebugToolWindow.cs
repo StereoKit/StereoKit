@@ -155,7 +155,7 @@ class DebugToolWindow
 			{
 				recordingHead[i] = (recordingHead[i].time - rootTime, recordingHead[i].pose);
 				var f = recordingHead[i];
-				result += $"({f.time}f, new Pose(new Vec3({f.pose.position.x:0.000}f,{f.pose.position.y:0.000}f,{f.pose.position.z:0.000}f), new Quat({f.pose.orientation.x:0.000}f,{f.pose.orientation.y:0.000}f,{f.pose.orientation.z:0.000}f,{f.pose.orientation.w:0.000}f)))";
+				result += $"({f.time}f, new Pose(V.XYZ({f.pose.position.x:0.000}f,{f.pose.position.y:0.000}f,{f.pose.position.z:0.000}f), new Quat({f.pose.orientation.x:0.000}f,{f.pose.orientation.y:0.000}f,{f.pose.orientation.z:0.000}f,{f.pose.orientation.w:0.000}f)))";
 				if (i < recordingHead.Count-1)
 					result += ",";
 			}
@@ -218,7 +218,7 @@ class DebugToolWindow
 	{
 		Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
 		Vec3 fwd = pos + Input.Head.Forward;
-		Log.Info($"Tests.Screenshot(600, 600, \"image.jpg\", new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+		Log.Info($"Tests.Screenshot(\"image.jpg\", 600, 600, new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
 	static void HandshotPose()
@@ -233,7 +233,7 @@ class DebugToolWindow
 		string result = ($"Tests.Hand(new HandJoint[]{{");
 		for (int j = 0; j < joints.Length; j++)
 		{
-			result += $"new HandJoint(new Vec3({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quat({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
+			result += $"new HandJoint(V.XYZ({joints[j].position.x:0.000}f,{joints[j].position.y:0.000}f,{joints[j].position.z:0.000}f), new Quat({joints[j].orientation.x:0.000}f,{joints[j].orientation.y:0.000}f,{joints[j].orientation.z:0.000}f,{joints[j].orientation.w:0.000}f), {joints[j].radius:0.000}f)";
 			if (j < joints.Length - 1)
 				result += ",";
 		}

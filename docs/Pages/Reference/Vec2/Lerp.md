@@ -6,7 +6,12 @@ description: Blends (Linear Interpolation) between two vectors, based on a 'blen
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).Lerp
 
 <div class='signature' markdown='1'>
-static [Vec2]({{site.url}}/Pages/Reference/Vec2.html) Lerp([Vec2]({{site.url}}/Pages/Reference/Vec2.html) a, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) b, float blend)
+```csharp
+static Vec2 Lerp(Vec2 a, Vec2 b, float blend)
+```
+Blends (Linear Interpolation) between two vectors, based
+on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp
+percent for you.
 </div>
 
 |  |  |
@@ -16,9 +21,6 @@ static [Vec2]({{site.url}}/Pages/Reference/Vec2.html) Lerp([Vec2]({{site.url}}/P
 |float blend|A blend value between 0 and 1. Can be outside             this range, it'll just interpolate outside of the a, b range.|
 |RETURNS: [Vec2]({{site.url}}/Pages/Reference/Vec2.html)|An unclamped blend of a and b.|
 
-Blends (Linear Interpolation) between two vectors, based
-on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp
-percent for you.
 
 
 

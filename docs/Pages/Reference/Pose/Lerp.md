@@ -6,7 +6,11 @@ description: Interpolates between two poses! t is unclamped, so values outside o
 # [Pose]({{site.url}}/Pages/Reference/Pose.html).Lerp
 
 <div class='signature' markdown='1'>
-static [Pose]({{site.url}}/Pages/Reference/Pose.html) Lerp([Pose]({{site.url}}/Pages/Reference/Pose.html) a, [Pose]({{site.url}}/Pages/Reference/Pose.html) b, float percent)
+```csharp
+static Pose Lerp(Pose a, Pose b, float percent)
+```
+Interpolates between two poses! t is unclamped, so values outside of (0,1) will
+extrapolate their position.
 </div>
 
 |  |  |
@@ -16,8 +20,6 @@ static [Pose]({{site.url}}/Pages/Reference/Pose.html) Lerp([Pose]({{site.url}}/P
 |float percent|A value usually 0->1 that tells the blend between a and b.|
 |RETURNS: [Pose]({{site.url}}/Pages/Reference/Pose.html)|A new pose, blended between a and b based on percent!|
 
-Interpolates between two poses! t is unclamped, so values outside of (0,1) will
-extrapolate their position.
 
 
 

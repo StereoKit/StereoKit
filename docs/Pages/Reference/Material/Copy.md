@@ -6,18 +6,25 @@ description: Creates a new Material asset with the same shader and properties! D
 # [Material]({{site.url}}/Pages/Reference/Material.html).Copy
 
 <div class='signature' markdown='1'>
-[Material]({{site.url}}/Pages/Reference/Material.html) Copy()
+```csharp
+Material Copy()
+```
+Creates a new Material asset with the same shader and
+properties! Draw calls with the new Material will not batch
+together with this one.
 </div>
 
 |  |  |
 |--|--|
 |RETURNS: [Material]({{site.url}}/Pages/Reference/Material.html)|A new Material asset with the same shader and properties.|
 
+<div class='signature' markdown='1'>
+```csharp
+static Material Copy(string materialId)
+```
 Creates a new Material asset with the same shader and
 properties! Draw calls with the new Material will not batch
-together with this one.
-<div class='signature' markdown='1'>
-static [Material]({{site.url}}/Pages/Reference/Material.html) Copy(string materialId)
+together with the source Material.
 </div>
 
 |  |  |
@@ -25,16 +32,13 @@ static [Material]({{site.url}}/Pages/Reference/Material.html) Copy(string materi
 |string materialId|Which Material are you looking for?|
 |RETURNS: [Material]({{site.url}}/Pages/Reference/Material.html)|A new Material asset with the same shader and properties. Returns null if no materials are found with the given id.|
 
-Creates a new Material asset with the same shader and
-properties! Draw calls with the new Material will not batch
-together with the source Material.
 
 
 
 
 ## Examples
 
-## Copying assets
+### Copying assets
 Modifying an asset will affect everything that uses that asset!
 Often you'll want to copy an asset before modifying it, to
 ensure other parts of your application look the same. In

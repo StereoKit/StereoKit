@@ -17,6 +17,7 @@ around by a user!
 |--|--|
 |Exact|The element follows the position and orientation of the user's hand exactly.|
 |FaceUser|The element follows the position of the user's hand, but orients to face the user's head instead of just using the hand's rotation.|
+|None|Do not allow user input to change the element's pose at all!|
 |PosOnly|This element follows the hand's position only, completely discarding any rotation information.|
 
 

@@ -5,6 +5,23 @@ namespace StereoKit
 {
 	public enum SpatialNodeType { Static, Dynamic }
 
+	/// <summary>A settings flag that lets you describe the behavior of how
+	/// StereoKit will refresh data about the world mesh, if applicable. This
+	/// is used with `World.RefreshType`.</summary>
+	public enum WorldRefresh
+	{
+		/// <summary>Refreshing occurs when the user leaves the area that was
+		/// most recently scanned. This area is a sphere that is 0.5 of the
+		/// World.RefreshRadius.</summary>
+		Area,
+		/// <summary>Refreshing happens at timer intervals. If an update
+		/// doesn't happen in time, the next update will happen as soon as
+		/// possible. The timer interval is configurable via
+		/// `World.RefreshInterval`.
+		/// </summary>
+		Timer,
+	}
+
 	/// <summary>World contains information about the real world around the 
 	/// user. This includes things like play boundaries, scene understanding,
 	/// and other various things.</summary>
@@ -25,6 +42,32 @@ namespace StereoKit
 		/// Not all systems have a boundary, so be sure to check 
 		/// `World.HasBounds` first.</summary>
 		public static Pose BoundsPose => NativeAPI.world_get_bounds_pose();
+
+		/// <summary>What information should StereoKit use to determine when
+		/// the next world data refresh happens? See the `WorldRefresh` enum
+		/// for details.</summary>
+		public static WorldRefresh RefreshType { 
+			get => NativeAPI.world_get_refresh_type(); 
+			set => NativeAPI.world_set_refresh_type(value); }
+
+		/// <summary>Radius, in meters, of the area that StereoKit should
+		/// scan for world data. Default is 4. When using the 
+		/// `WorldRefresh.Area` refresh type, the world data will refresh
+		/// when the user has traveled half this radius from the center of
+		/// where the most recent refresh occurred. </summary>
+		public static float RefreshRadius {
+			get => NativeAPI.world_get_refresh_radius();
+			set => NativeAPI.world_set_refresh_radius(value); }
+
+		/// <summary>The refresh interval speed, in seconds. This is only
+		/// applicable when using `WorldRefresh.Timer` for the refresh type.
+		/// Note that the system may not be able to refresh as fast as you
+		/// wish, and in that case, StereoKit will always refresh as soon as 
+		/// the previous refresh finishes.</summary>
+		public static float RefreshInterval {
+			get => NativeAPI.world_get_refresh_interval();
+			set => NativeAPI.world_set_refresh_interval(value);
+		}
 
 		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
 		/// based on its current position and rotation! Check

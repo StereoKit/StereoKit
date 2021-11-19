@@ -6,7 +6,13 @@ description: Gets a link to the Material asset used by the model subset! Note th
 # [Model]({{site.url}}/Pages/Reference/Model.html).GetMaterial
 
 <div class='signature' markdown='1'>
-[Material]({{site.url}}/Pages/Reference/Material.html) GetMaterial(int subsetIndex)
+```csharp
+Material GetMaterial(int subsetIndex)
+```
+Gets a link to the Material asset used by the model
+subset! Note that this is not necessarily a unique material, and
+could be shared in a number of other places. Consider copying and
+replacing it if you intend to modify it!
 </div>
 
 |  |  |
@@ -14,10 +20,6 @@ description: Gets a link to the Material asset used by the model subset! Note th
 |int subsetIndex|Index of the model subset to get the              Material for, should be less than SubsetCount.|
 |RETURNS: [Material]({{site.url}}/Pages/Reference/Material.html)|A link to the Material asset used by the model subset at subsetIndex|
 
-Gets a link to the Material asset used by the model
-subset! Note that this is not necessarily a unique material, and
-could be shared in a number of other places. Consider copying and
-replacing it if you intend to modify it!
 
 
 

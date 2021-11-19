@@ -6,7 +6,11 @@ description: Basic initialization constructor! Just copies the parameters into t
 # [Ray]({{site.url}}/Pages/Reference/Ray.html).Ray
 
 <div class='signature' markdown='1'>
- Ray([Vec3]({{site.url}}/Pages/Reference/Vec3.html) position, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction)
+```csharp
+void Ray(Vec3 position, Vec3 direction)
+```
+Basic initialization constructor! Just copies the
+parameters into the fields.
 </div>
 
 |  |  |
@@ -14,8 +18,6 @@ description: Basic initialization constructor! Just copies the parameters into t
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) position|The position or origin point of the Ray.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) direction|The direction the ray is facing,              typically does not require being a unit vector, or normalized              direction.|
 
-Basic initialization constructor! Just copies the
-parameters into the fields.
 
 
 

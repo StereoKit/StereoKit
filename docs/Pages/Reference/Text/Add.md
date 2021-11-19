@@ -6,7 +6,10 @@ description: Renders text at the given location! Must be called every frame you 
 # [Text]({{site.url}}/Pages/Reference/Text.html).Add
 
 <div class='signature' markdown='1'>
-static void Add(string text, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform, [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) style, [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position, [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align, float offX, float offY, float offZ)
+```csharp
+static void Add(string text, Matrix transform, TextStyle style, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every frame you want this text to be visible.
 </div>
 
 |  |  |
@@ -20,9 +23,11 @@ static void Add(string text, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) 
 |float offY|An additional offset on the Y axis.|
 |float offZ|An additional offset on the Z axis.|
 
-Renders text at the given location! Must be called every frame you want this text to be visible.
 <div class='signature' markdown='1'>
-static void Add(string text, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform, [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position, [TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align, float offX, float offY, float offZ)
+```csharp
+static void Add(string text, Matrix transform, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every frame you want this text to be visible.
 </div>
 
 |  |  |
@@ -35,7 +40,6 @@ static void Add(string text, [Matrix]({{site.url}}/Pages/Reference/Matrix.html) 
 |float offY|An additional offset on the Y axis.|
 |float offZ|An additional offset on the Z axis.|
 
-Renders text at the given location! Must be called every frame you want this text to be visible.
 
 
 

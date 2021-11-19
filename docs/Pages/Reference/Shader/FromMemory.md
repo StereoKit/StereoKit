@@ -6,7 +6,11 @@ description: Creates a shader asset from a precompiled StereoKit Shader file sto
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).FromMemory
 
 <div class='signature' markdown='1'>
-static [Shader]({{site.url}}/Pages/Reference/Shader.html) FromMemory(Byte[]& data)
+```csharp
+static Shader FromMemory(Byte[]& data)
+```
+Creates a shader asset from a precompiled StereoKit
+Shader file stored as bytes!
 </div>
 
 |  |  |
@@ -14,8 +18,6 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) FromMemory(Byte[]& dat
 |Byte[]& data|A precompiled StereoKit Shader file as bytes.|
 |RETURNS: [Shader]({{site.url}}/Pages/Reference/Shader.html)|A shader from the given data, or null if it failed to load/compile.|
 
-Creates a shader asset from a precompiled StereoKit
-Shader file stored as bytes!
 
 
 

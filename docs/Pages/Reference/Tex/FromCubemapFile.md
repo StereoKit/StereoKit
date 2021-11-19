@@ -6,7 +6,12 @@ description: Creates a cubemap texture from 6 different image files! If you have
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).FromCubemapFile
 
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapFile(String[] cubeFaceFiles_xxyyzz, bool sRGBData)
+```csharp
+static Tex FromCubemapFile(String[] cubeFaceFiles_xxyyzz, bool sRGBData)
+```
+Creates a cubemap texture from 6 different image files!
+If you have a single equirectangular image, use Tex.FromEquirectangular
+instead. Asset Id will be the first filename.
 </div>
 
 |  |  |
@@ -15,11 +20,13 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapFile(String[] cub
 |bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?              sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Tex asset from the given files, or null if any failed to load.|
 
+<div class='signature' markdown='1'>
+```csharp
+static Tex FromCubemapFile(String[] cubeFaceFiles_xxyyzz, SphericalHarmonics& lightingInfo, bool sRGBData)
+```
 Creates a cubemap texture from 6 different image files!
 If you have a single equirectangular image, use Tex.FromEquirectangular
 instead. Asset Id will be the first filename.
-<div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapFile(String[] cubeFaceFiles_xxyyzz, SphericalHarmonics& lightingInfo, bool sRGBData)
 </div>
 
 |  |  |
@@ -29,9 +36,6 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) FromCubemapFile(String[] cub
 |bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?              sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Tex asset from the given files, or null if any failed to load.|
 
-Creates a cubemap texture from 6 different image files!
-If you have a single equirectangular image, use Tex.FromEquirectangular
-instead. Asset Id will be the first filename.
 
 
 

@@ -6,7 +6,12 @@ description: Generates a cube mesh with rounded corners, pre-sized to the given 
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateRoundedCube
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateRoundedCube([Vec3]({{site.url}}/Pages/Reference/Vec3.html) dimensions, float edgeRadius, int subdivisions)
+```csharp
+static Mesh GenerateRoundedCube(Vec3 dimensions, float edgeRadius, int subdivisions)
+```
+Generates a cube mesh with rounded corners, pre-sized to
+the given dimensions. UV coordinates are 0,0 -> 1,1 on each face,
+meeting at the middle of the rounded corners.
 </div>
 
 |  |  |
@@ -16,9 +21,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GenerateRoundedCube([Vec3]
 |int subdivisions|How many subdivisions should be used             for creating the corners?              A larger value results in smoother corners, but can decrease             performance.|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A cube mesh with rounded corners, pre-sized to the given dimensions.|
 
-Generates a cube mesh with rounded corners, pre-sized to
-the given dimensions. UV coordinates are 0,0 -> 1,1 on each face,
-meeting at the middle of the rounded corners.
 
 
 
@@ -42,7 +44,7 @@ Renderer.Add(roundedCubeMesh, Default.Material, roundedCubeTransform);
 roundedCubeTransform = Matrix.T(.5f, 0, 0);
 Renderer.Add(roundedCubeModel, roundedCubeTransform);
 ```
-## UV and Face layout
+### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is
 laid out.
 ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoRoundedCube.jpg)

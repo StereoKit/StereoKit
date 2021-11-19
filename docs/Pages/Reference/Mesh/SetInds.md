@@ -6,13 +6,9 @@ description: Assigns the face indices for this Mesh! Faces are always triangles,
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).SetInds
 
 <div class='signature' markdown='1'>
+```csharp
 void SetInds(UInt32[] inds)
-</div>
-
-|  |  |
-|--|--|
-|UInt32[] inds|A list of face indices, must be a multiple of             3. Each index represents a vertex from the array assigned using             SetVerts.|
-
+```
 Assigns the face indices for this Mesh! Faces are always
 triangles, there are only ever three indices per face. This
 function will create a index buffer object on the graphics card
@@ -20,13 +16,19 @@ right away. If you're calling this a second time, the buffer will
 be marked as dynamic and re-allocated. If you're calling this a
 third time, the buffer will only re-allocate if the buffer is too
 small, otherwise it just copies in the data!
+</div>
+
+|  |  |
+|--|--|
+|UInt32[] inds|A list of face indices, must be a multiple of             3. Each index represents a vertex from the array assigned using             SetVerts.|
+
 
 
 
 
 ## Examples
 
-## Procedurally generating a wavy grid
+### Procedurally generating a wavy grid
 ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
 Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
 is a common example of creating a grid using code, we're using a sin wave

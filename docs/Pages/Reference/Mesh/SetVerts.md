@@ -6,26 +6,28 @@ description: Assigns the vertices for this Mesh! This will create a vertex buffe
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).SetVerts
 
 <div class='signature' markdown='1'>
+```csharp
 void SetVerts(Vertex[] verts)
-</div>
-
-|  |  |
-|--|--|
-|Vertex[] verts|An array of vertices to add to the mesh.|
-
+```
 Assigns the vertices for this Mesh! This will create a
 vertex buffer object on the graphics card right away. If you're
 calling this a second time, the buffer will be marked as dynamic
 and re-allocated. If you're calling this a third time, the buffer
 will only re-allocate if the buffer is too small, otherwise it
 just copies in the data!
+</div>
+
+|  |  |
+|--|--|
+|Vertex[] verts|An array of vertices to add to the mesh.             Remember to set all the relevant values! Your material will often             show black if the Normals or Colors are left at their default             values.|
+
 
 
 
 
 ## Examples
 
-## Procedurally generating a wavy grid
+### Procedurally generating a wavy grid
 ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
 Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
 is a common example of creating a grid using code, we're using a sin wave

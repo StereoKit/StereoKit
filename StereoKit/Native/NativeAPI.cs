@@ -422,21 +422,26 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_has_bounds                ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   world_get_bounds_size           ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_get_bounds_pose           ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_spatial_graph        ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id, int dynamic, long time);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   world_from_perception_anchor    (IntPtr perception_spatial_anchor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    world_try_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id, int dynamic, long time, out Pose out_pose);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    world_try_from_perception_anchor(IntPtr perception_spatial_anchor, out Pose out_pose);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_raycast                   (Ray ray, out Ray out_intersection);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_enabled     (bool enabled);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_occlusion_enabled     ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_raycast_enabled       (bool enabled);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   world_get_raycast_enabled       ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   world_set_occlusion_material    (IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr world_get_occlusion_material    ();
-
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_has_bounds                ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         world_get_bounds_size           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         world_get_bounds_pose           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         world_from_spatial_graph        ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id, int dynamic, long time);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         world_from_perception_anchor    (IntPtr perception_spatial_anchor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          world_try_from_spatial_graph    ([MarshalAs(UnmanagedType.LPArray, SizeConst = 16)] byte[] spatial_graph_node_id, int dynamic, long time, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          world_try_from_perception_anchor(IntPtr perception_spatial_anchor, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_raycast                   (Ray ray, out Ray out_intersection);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_occlusion_enabled     (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_get_occlusion_enabled     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_raycast_enabled       (bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_get_raycast_enabled       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_occlusion_material    (IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       world_get_occlusion_material    ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_refresh_type          (WorldRefresh refresh_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern WorldRefresh world_get_refresh_type          ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_refresh_radius        (float radius_meters);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        world_get_refresh_radius        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_refresh_interval      (float every_seconds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        world_get_refresh_interval      ();
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);

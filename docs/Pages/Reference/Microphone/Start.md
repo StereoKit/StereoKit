@@ -6,14 +6,9 @@ description: This begins recording audio from the Microphone! Audio is stored in
 # [Microphone]({{site.url}}/Pages/Reference/Microphone.html).Start
 
 <div class='signature' markdown='1'>
+```csharp
 static bool Start(string deviceName)
-</div>
-
-|  |  |
-|--|--|
-|string deviceName|The name of the microphone device to             use, as seen in the GetDevices list. null will use the system's             default device preference.|
-|RETURNS: bool|True if recording started successfully, false for failure. This could fail if the app does not have mic permissions, or if the deviceName is for a mic that has since been unplugged.|
-
+```
 This begins recording audio from the Microphone! Audio
 is stored in Microphone.Sound as a stream of audio. If the
 Microphone is already recording with a different device, it will
@@ -22,6 +17,13 @@ stop the previous recording and start again with the new device.
 If null is provided as the device, then they system's default
 input device will be used. Some systems may not provide access
 to devices other than the system's default.
+</div>
+
+|  |  |
+|--|--|
+|string deviceName|The name of the microphone device to             use, as seen in the GetDevices list. null will use the system's             default device preference.|
+|RETURNS: bool|True if recording started successfully, false for failure. This could fail if the app does not have mic permissions, or if the deviceName is for a mic that has since been unplugged.|
+
 
 
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UIConfirm.VariablePinch
-description: Same as Pinch, but pulling out from the slider creates a scaled slider that lets you adjust the slider at a more granular resolution.
+description: HSlider specific. Same as Pinch, but pulling out from the slider creates a scaled slider that lets you adjust the slider at a more granular resolution.
 ---
 # [UIConfirm]({{site.url}}/Pages/Reference/UIConfirm.html).VariablePinch
 
@@ -10,7 +10,7 @@ static [UIConfirm]({{site.url}}/Pages/Reference/UIConfirm.html) VariablePinch
 </div>
 
 ## Description
-Same as Pinch, but pulling out from the slider creates a
-scaled slider that lets you adjust the slider at a more granular
-resolution.
+HSlider specific. Same as Pinch, but pulling out from the
+slider creates a scaled slider that lets you adjust the slider at a
+more granular resolution.
 

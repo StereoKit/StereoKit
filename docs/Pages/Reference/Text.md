@@ -3,7 +3,7 @@ layout: default
 title: Text
 description: A collection of functions for rendering and working with text.
 ---
-# class Text
+# static class Text
 
 A collection of functions for rendering and working with text.
 

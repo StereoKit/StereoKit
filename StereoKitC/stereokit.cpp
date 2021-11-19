@@ -318,7 +318,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		platform_sleep(sk_focused ? 1 : 100);
+		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
 	return sk_run;
 }
 

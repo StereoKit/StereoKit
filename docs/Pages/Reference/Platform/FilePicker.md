@@ -6,16 +6,9 @@ description: Starts a file picker window! This will create a native file picker 
 # [Platform]({{site.url}}/Pages/Reference/Platform.html).FilePicker
 
 <div class='signature' markdown='1'>
-static void FilePicker([PickerMode]({{site.url}}/Pages/Reference/PickerMode.html) mode, Action`1 onSelectFile, Action onCancel, String[] filters)
-</div>
-
-|  |  |
-|--|--|
-|[PickerMode]({{site.url}}/Pages/Reference/PickerMode.html) mode|Are we trying to Open a file, or Save a file?             This changes the appearance and behavior of the picker to support             the specified action.|
-|Action`1 onSelectFile|This Action will be called with the             proper filename when the picker has successfully completed! On a             cancel or close event, this Action is not called.|
-|Action onCancel|If the user cancels the file picker, or              the picker is closed via FilePickerClose, this Action is called.|
-|String[] filters|A list of file extensions that the picker             should filter for. This is in the format of ".glb" and is case             insensitive.|
-
+```csharp
+static void FilePicker(PickerMode mode, Action`1 onSelectFile, Action onCancel, String[] filters)
+```
 Starts a file picker window! This will create a native
 file picker window if one is available in the current setup, and
 if it is not, it'll create a fallback filepicker build using
@@ -32,16 +25,19 @@ files on UWP, but may have issues with files that reference other
 files, such as .gltf files with external textures. See
 Platform.WriteFile and Platform.ReadFile for manually reading and
 writing files in a cross-platfom manner.
-<div class='signature' markdown='1'>
-static void FilePicker([PickerMode]({{site.url}}/Pages/Reference/PickerMode.html) mode, Action`2 onComplete, String[] filters)
 </div>
 
 |  |  |
 |--|--|
 |[PickerMode]({{site.url}}/Pages/Reference/PickerMode.html) mode|Are we trying to Open a file, or Save a file?             This changes the appearance and behavior of the picker to support             the specified action.|
-|Action`2 onComplete|This action will be called when the file             picker has finished, either via a cancel event, or from a confirm             event. First parameter is a bool, where true indicates the              presence of a valid filename, and false indicates a failure or              cancel event.|
+|Action`1 onSelectFile|This Action will be called with the             proper filename when the picker has successfully completed! On a             cancel or close event, this Action is not called.|
+|Action onCancel|If the user cancels the file picker, or              the picker is closed via FilePickerClose, this Action is called.|
 |String[] filters|A list of file extensions that the picker             should filter for. This is in the format of ".glb" and is case             insensitive.|
 
+<div class='signature' markdown='1'>
+```csharp
+static void FilePicker(PickerMode mode, Action`2 onComplete, String[] filters)
+```
 Starts a file picker window! This will create a native
 file picker window if one is available in the current setup, and
 if it is not, it'll create a fallback filepicker build using
@@ -60,6 +56,14 @@ files on UWP, but may have issues with files that reference other
 files, such as .gltf files with external textures. See
 Platform.WriteFile and Platform.ReadFile for manually reading and
 writing files in a cross-platfom manner.
+</div>
+
+|  |  |
+|--|--|
+|[PickerMode]({{site.url}}/Pages/Reference/PickerMode.html) mode|Are we trying to Open a file, or Save a file?             This changes the appearance and behavior of the picker to support             the specified action.|
+|Action`2 onComplete|This action will be called when the file             picker has finished, either via a cancel event, or from a confirm             event. First parameter is a bool, where true indicates the              presence of a valid filename, and false indicates a failure or              cancel event.|
+|String[] filters|A list of file extensions that the picker             should filter for. This is in the format of ".glb" and is case             insensitive.|
+
 
 
 
@@ -87,6 +91,8 @@ private void OnLoadModel(string filename)
 	{
 		model      = Model.FromFile(filename);
 		modelScale = 1 / model.Bounds.dimensions.Magnitude;
+		if (model.Anims.Count > 0)
+			model.PlayAnim(model.Anims[0], AnimMode.Loop);
 	});
 }
 ```

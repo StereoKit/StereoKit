@@ -18,6 +18,7 @@ namespace sk {
 
 HWND            uwp_window     = nullptr;
 skg_swapchain_t uwp_swapchain  = {};
+tex_t           uwp_target     = {};
 system_t       *uwp_render_sys = nullptr;
 
 bool uwp_mouse_set;
@@ -200,12 +201,12 @@ public:
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 
 				vec2 new_point = uwp_mouse_set_delta + vec2{ 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 
 				CoreWindow::GetForCurrentThread().PointerPosition(Point(
-					pixels_to_dips(new_point.x, ViewProvider::inst->m_DPI) + win.X,
-					pixels_to_dips(new_point.y, ViewProvider::inst->m_DPI) + win.Y));
+					pixels_to_dips(new_point.x, m_DPI) + win.X,
+					pixels_to_dips(new_point.y, m_DPI) + win.Y));
 
 				ViewProvider::inst->mouse_point = new_point;
 				uwp_mouse_set = false;
@@ -213,8 +214,8 @@ public:
 				Point pos = CoreWindow::GetForCurrentThread().PointerPosition();
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 				mouse_point = { 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 			}
 
 			Sleep(1);
@@ -485,6 +486,10 @@ bool uwp_start_flat() {
 	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
+	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
@@ -510,7 +515,7 @@ void uwp_step_end_flat() {
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	color128 color = render_get_clear_color();
-	skg_swapchain_bind(&uwp_swapchain);
+	skg_tex_target_bind(&uwp_target->tex);
 	skg_target_clear(true, &color.r);
 
 	input_update_predicted();
@@ -520,6 +525,10 @@ void uwp_step_end_flat() {
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
+
+	// This copies the color data over to the swapchain, and resolves any
+	// multisampling on the primary target texture.
+	skg_tex_copy_to_swapchain(&uwp_target->tex, &uwp_swapchain);
 
 	uwp_render_sys->profile_frame_duration = stm_since(uwp_render_sys->profile_frame_start);
 	skg_swapchain_present(&uwp_swapchain);
@@ -531,6 +540,7 @@ void uwp_stop_flat() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
+	tex_release          (uwp_target);
 	skg_swapchain_destroy(&uwp_swapchain);
 }
 

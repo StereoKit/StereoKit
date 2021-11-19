@@ -6,7 +6,13 @@ description: Returns this transformation matrix to its original translation, rot
 # [Matrix]({{site.url}}/Pages/Reference/Matrix.html).Decompose
 
 <div class='signature' markdown='1'>
+```csharp
 bool Decompose(Vec3& translation, Quat& rotation, Vec3& scale)
+```
+Returns this transformation matrix to its original
+translation, rotation and scale components. Not exactly a cheap
+function. If this is not a transform matrix, there's a chance
+this call will fail, and return false.
 </div>
 
 |  |  |
@@ -16,10 +22,6 @@ bool Decompose(Vec3& translation, Quat& rotation, Vec3& scale)
 |Vec3& scale|XYZ scale components.|
 |RETURNS: bool|If this is not a transform matrix, there's a chance this call will fail, and return false.|
 
-Returns this transformation matrix to its original
-translation, rotation and scale components. Not exactly a cheap
-function. If this is not a transform matrix, there's a chance
-this call will fail, and return false.
 
 
 

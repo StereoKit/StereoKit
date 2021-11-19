@@ -6,7 +6,12 @@ description: Set the Material used to render the hand! The default material uses
 # [Input]({{site.url}}/Pages/Reference/Input.html).HandMaterial
 
 <div class='signature' markdown='1'>
-static void HandMaterial([Handed]({{site.url}}/Pages/Reference/Handed.html) hand, [Material]({{site.url}}/Pages/Reference/Material.html) material)
+```csharp
+static void HandMaterial(Handed hand, Material material)
+```
+Set the Material used to render the hand! The default
+material uses an offset of 10 to ensure it gets drawn overtop of
+other elements.
 </div>
 
 |  |  |
@@ -14,9 +19,6 @@ static void HandMaterial([Handed]({{site.url}}/Pages/Reference/Handed.html) hand
 |[Handed]({{site.url}}/Pages/Reference/Handed.html) hand|If Handed.Max, this will set the value for              both hands.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|The new Material!|
 
-Set the Material used to render the hand! The default
-material uses an offset of 10 to ensure it gets drawn overtop of
-other elements.
 
 
 

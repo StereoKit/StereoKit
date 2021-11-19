@@ -6,7 +6,10 @@ description: Create a sprite from a Texture object!
 # [Sprite]({{site.url}}/Pages/Reference/Sprite.html).FromTex
 
 <div class='signature' markdown='1'>
-static [Sprite]({{site.url}}/Pages/Reference/Sprite.html) FromTex([Tex]({{site.url}}/Pages/Reference/Tex.html) image, [SpriteType]({{site.url}}/Pages/Reference/SpriteType.html) type, string atlasId)
+```csharp
+static Sprite FromTex(Tex image, SpriteType type, string atlasId)
+```
+Create a sprite from a Texture object!
 </div>
 
 |  |  |
@@ -16,7 +19,6 @@ static [Sprite]({{site.url}}/Pages/Reference/Sprite.html) FromTex([Tex]({{site.u
 |string atlasId|The name of which atlas the sprite should              belong to, this is only relevant if the SpriteType is Atlased.|
 |RETURNS: [Sprite]({{site.url}}/Pages/Reference/Sprite.html)|A Sprite asset, or null if the image failed when adding to the sprite system!|
 
-Create a sprite from a Texture object!
 
 
 

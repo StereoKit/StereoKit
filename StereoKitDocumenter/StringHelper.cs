@@ -27,7 +27,7 @@ namespace StereoKitDocumenter
 				.ToArray());
 		}
 
-		public static string TypeName(string type)
+		public static string TypeName(string type, bool embedLink = true)
 		{
 			switch(type)
 			{
@@ -39,7 +39,7 @@ namespace StereoKitDocumenter
 				case "Boolean": return "bool";
 				case "Void"   : return "void";
 				default: {
-					return Program.TryGetClass(type, out DocClass typeDoc)
+					return embedLink && Program.TryGetClass(type, out DocClass typeDoc)
 						? $"[{type}]({typeDoc.UrlName})"
 						: type;
 				}

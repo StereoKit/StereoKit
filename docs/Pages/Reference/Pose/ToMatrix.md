@@ -6,7 +6,10 @@ description: Converts this pose into a transform matrix, incorporating a provide
 # [Pose]({{site.url}}/Pages/Reference/Pose.html).ToMatrix
 
 <div class='signature' markdown='1'>
-[Matrix]({{site.url}}/Pages/Reference/Matrix.html) ToMatrix([Vec3]({{site.url}}/Pages/Reference/Vec3.html) scale)
+```csharp
+Matrix ToMatrix(Vec3 scale)
+```
+Converts this pose into a transform matrix, incorporating a provided scale value.
 </div>
 
 |  |  |
@@ -14,9 +17,11 @@ description: Converts this pose into a transform matrix, incorporating a provide
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) scale|A scale vector! Vec3.One would be an identity scale.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that transforms to the given pose.|
 
-Converts this pose into a transform matrix, incorporating a provided scale value.
 <div class='signature' markdown='1'>
-[Matrix]({{site.url}}/Pages/Reference/Matrix.html) ToMatrix(float scale)
+```csharp
+Matrix ToMatrix(float scale)
+```
+Converts this pose into a transform matrix, incorporating a provided scale value.
 </div>
 
 |  |  |
@@ -24,16 +29,17 @@ Converts this pose into a transform matrix, incorporating a provided scale value
 |float scale|A uniform scale factor! 1 would be an identity scale.|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that transforms to the given pose.|
 
-Converts this pose into a transform matrix, incorporating a provided scale value.
 <div class='signature' markdown='1'>
-[Matrix]({{site.url}}/Pages/Reference/Matrix.html) ToMatrix()
+```csharp
+Matrix ToMatrix()
+```
+Converts this pose into a transform matrix.
 </div>
 
 |  |  |
 |--|--|
 |RETURNS: [Matrix]({{site.url}}/Pages/Reference/Matrix.html)|A Matrix that transforms to the given pose.|
 
-Converts this pose into a transform matrix.
 
 
 

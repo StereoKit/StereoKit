@@ -3,7 +3,7 @@ layout: default
 title: Time
 description: This class contains time information for the current session and frame!
 ---
-# class Time
+# static class Time
 
 This class contains time information for the current session and frame!
 

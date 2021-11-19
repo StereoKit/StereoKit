@@ -110,6 +110,13 @@ namespace StereoKit
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
+		/// <summary>By default, StereoKit will slow down when the 
+		/// application is out of focus. This is useful for saving processing
+		/// power while the app is out-of-focus, but may not always be
+		/// desired. In particular, running multiple copies of a SK app for
+		/// testing networking code may benefit from this setting.</summary>
+		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
+		private int _disableUnfocusedSleep;
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
@@ -269,7 +276,12 @@ namespace StereoKit
 	}
 
 	/// <summary>This represents a single vertex in a Mesh, all StereoKit
-	/// Meshes currently use this exact layout!</summary>
+	/// Meshes currently use this exact layout!
+	/// 
+	/// It's good to fill out all values of a Vertex explicitly, as default
+	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
+	/// mesh to appear completely black, or even transparent in most shaders!
+	/// </summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Vertex
 	{
@@ -284,10 +296,49 @@ namespace StereoKit
 		/// white.</summary>
 		public Color32 col;
 
+		/// <summary>Create a new Vertex, use the overloads to take advantage
+		/// of default values. Vertex color defaults to White. UV defaults to
+		/// (0,0).</summary>
+		/// <param name="position">Location of the Vertex, this is typically
+		/// meters in Model space.</param>
+		/// <param name="normal">The direction the Vertex is facing. Never
+		/// leave this as zero, or your lighting may turn out black! A good
+		/// default value if you _don't_ know what to put here is (0,1,0),
+		/// but a Mesh composed entirely of this value will have flat
+		/// lighting.</param>
 		public Vertex(Vec3 position, Vec3 normal)
 			: this(position, normal, Vec2.Zero, Color32.White) { }
+		/// <summary>Create a new Vertex, use the overloads to take advantage
+		/// of default values. Vertex color defaults to White.</summary>
+		/// <param name="position">Location of the Vertex, this is typically
+		/// meters in Model space.</param>
+		/// <param name="normal">The direction the Vertex is facing. Never
+		/// leave this as zero, or your lighting may turn out black! A good
+		/// default value if you _don't_ know what to put here is (0,1,0),
+		/// but a Mesh composed entirely of this value will have flat
+		/// lighting.</param>
+		/// <param name="textureCoordinates">What part of a texture is this
+		/// Vertex anchored to? (0,0) is top left of the texture, and (1,1)
+		/// is the bottom right.</param>
 		public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates)
 			: this(position, normal, textureCoordinates, Color32.White) { }
+		/// <summary>Create a new Vertex, use the overloads to take advantage
+		/// of default values.</summary>
+		/// <param name="position">Location of the Vertex, this is typically
+		/// meters in Model space.</param>
+		/// <param name="normal">The direction the Vertex is facing. Never
+		/// leave this as zero, or your lighting may turn out black! A good
+		/// default value if you _don't_ know what to put here is (0,1,0),
+		/// but a Mesh composed entirely of this value will have flat
+		/// lighting.</param>
+		/// <param name="textureCoordinates">What part of a texture is this
+		/// Vertex anchored to? (0,0) is top left of the texture, and (1,1)
+		/// is the bottom right.</param>
+		/// <param name="color">The color of the Vertex, StereoKit's default
+		/// shaders treat this as a multiplicative modifier for the
+		/// Material's albedo/diffuse color, but different shaders sometimes
+		/// treat this value differently. A good default here is white, black
+		/// will cause your model to turn out completely black.</param>
 		public Vertex(Vec3 position, Vec3 normal, Vec2 textureCoordinates, Color32 color)
 		{
 			pos  = position;
@@ -300,7 +351,10 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Rect
 	{
-		public float x, y, width, height;
+		public float x;
+		public float y;
+		public float width;
+		public float height;
 		public Rect(float x, float y, float width, float height)
 		{
 			this.x = x;

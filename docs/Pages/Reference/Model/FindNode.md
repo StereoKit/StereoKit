@@ -6,7 +6,13 @@ description: Searches the entire list of Nodes, and will return the first on tha
 # [Model]({{site.url}}/Pages/Reference/Model.html).FindNode
 
 <div class='signature' markdown='1'>
-[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) FindNode(string name)
+```csharp
+ModelNode FindNode(string name)
+```
+Searches the entire list of Nodes, and will return the
+first on that matches this name exactly. If no ModelNode is found,
+then this will return null. Node Names are not guaranteed to be
+unique.
 </div>
 
 |  |  |
@@ -14,10 +20,6 @@ description: Searches the entire list of Nodes, and will return the first on tha
 |string name|Exact name to match against. ASCII only for now.|
 |RETURNS: [ModelNode]({{site.url}}/Pages/Reference/ModelNode.html)|The first matching ModelNode, or null if none are found.|
 
-Searches the entire list of Nodes, and will return the
-first on that matches this name exactly. If no ModelNode is found,
-then this will return null. Node Names are not guaranteed to be
-unique.
 
 
 

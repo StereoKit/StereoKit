@@ -4,8 +4,8 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 4
-#define SK_VERSION_PRERELEASE 0
+#define SK_VERSION_PATCH 5
+#define SK_VERSION_PRERELEASE 1
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
@@ -44,6 +44,7 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 
 #include <stdint.h>
 #include <math.h>
+#include <uchar.h>
 
 #ifdef __cplusplus
 namespace sk {
@@ -124,6 +125,7 @@ typedef struct sk_settings_t {
 	int32_t        flatscreen_width;
 	int32_t        flatscreen_height;
 	bool32_t       disable_flatscreen_mr_sim;
+	bool32_t       disable_unfocused_sleep;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -400,6 +402,7 @@ SK_DeclarePrivateType(material_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
+SK_DeclarePrivateType(solid_t);
 
 ///////////////////////////////////////////
 
@@ -443,6 +446,8 @@ typedef struct vert_t {
 	vec2    uv;
 	color32 col;
 } vert_t;
+
+static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { vert_t v = { position, normal, texture_coordinates, vertex_color }; return v;  }
 
 #ifdef SK_32BIT_INDICES
 typedef uint32_t vind_t;
@@ -702,8 +707,6 @@ typedef enum solid_type_ {
 	solid_type_unaffected,
 } solid_type_;
 
-typedef void* solid_t;
-
 SK_API solid_t       solid_create                  (const sk_ref(vec3) position, const sk_ref(quat) rotation, solid_type_ type sk_default(solid_type_normal));
 SK_API void          solid_release                 (solid_t solid);
 SK_API void          solid_add_sphere              (solid_t solid, float diameter sk_default(1), float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
@@ -858,6 +861,7 @@ SK_API void                  render_add_model      (model_t model, const sk_ref(
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int width, int height, float field_of_view_degrees);
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_material_to    (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////
@@ -1066,20 +1070,31 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
-SK_API bool32_t   world_has_bounds                ();
-SK_API vec2       world_get_bounds_size           ();
-SK_API pose_t     world_get_bounds_pose           ();
-SK_API pose_t     world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
-SK_API pose_t     world_from_perception_anchor    (void *perception_spatial_anchor);
-SK_API bool32_t   world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
-SK_API bool32_t   world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
-SK_API bool32_t   world_raycast                   (ray_t ray, ray_t *out_intersection);
-SK_API void       world_set_occlusion_enabled     (bool32_t enabled);
-SK_API bool32_t   world_get_occlusion_enabled     ();
-SK_API void       world_set_raycast_enabled       (bool32_t enabled);
-SK_API bool32_t   world_get_raycast_enabled       ();
-SK_API void       world_set_occlusion_material    (material_t material);
-SK_API material_t world_get_occlusion_material    ();
+typedef enum world_refresh_ {
+	world_refresh_area,
+	world_refresh_timer,
+} world_refresh_;
+
+SK_API bool32_t       world_has_bounds                ();
+SK_API vec2           world_get_bounds_size           ();
+SK_API pose_t         world_get_bounds_pose           ();
+SK_API pose_t         world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
+SK_API pose_t         world_from_perception_anchor    (void *perception_spatial_anchor);
+SK_API bool32_t       world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
+SK_API bool32_t       world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
+SK_API bool32_t       world_raycast                   (ray_t ray, ray_t *out_intersection);
+SK_API void           world_set_occlusion_enabled     (bool32_t enabled);
+SK_API bool32_t       world_get_occlusion_enabled     ();
+SK_API void           world_set_raycast_enabled       (bool32_t enabled);
+SK_API bool32_t       world_get_raycast_enabled       ();
+SK_API void           world_set_occlusion_material    (material_t material);
+SK_API material_t     world_get_occlusion_material    ();
+SK_API void           world_set_refresh_type          (world_refresh_ refresh_type);
+SK_API world_refresh_ world_get_refresh_type          ();
+SK_API void           world_set_refresh_radius        (float radius_meters);
+SK_API float          world_get_refresh_radius        ();
+SK_API void           world_set_refresh_interval      (float every_seconds);
+SK_API float          world_get_refresh_interval      ();
 
 ///////////////////////////////////////////
 

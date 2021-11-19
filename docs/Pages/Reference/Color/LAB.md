@@ -6,7 +6,18 @@ description: Creates a gamma space RGB color from a CIE-L*ab color space. CIE-L*
 # [Color]({{site.url}}/Pages/Reference/Color.html).LAB
 
 <div class='signature' markdown='1'>
-static [Color]({{site.url}}/Pages/Reference/Color.html) LAB(float l, float a, float b, float opacity)
+```csharp
+static Color LAB(float l, float a, float b, float opacity)
+```
+Creates a gamma space RGB color from a CIE-L*ab color
+space. CIE-L*ab is a color space that models human perception,
+and has significantly more accurate to perception lightness
+values, so this is an excellent color space for color operations
+that wish to preserve color brightness properly.
+
+Traditionally, values are L [0,100], a,b [-200,+200] but here we
+normalize them all to the 0-1 range. If you hate it, let me know
+why!
 </div>
 
 |  |  |
@@ -17,6 +28,10 @@ static [Color]({{site.url}}/Pages/Reference/Color.html) LAB(float l, float a, fl
 |float opacity|The opacity copied into the final color!|
 |RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|A gamma space RGBA color constructed from the LAB values.|
 
+<div class='signature' markdown='1'>
+```csharp
+static Color LAB(Vec3 lab, float opacity)
+```
 Creates a gamma space RGB color from a CIE-L*ab color
 space. CIE-L*ab is a color space that models human perception,
 and has significantly more accurate to perception lightness
@@ -26,8 +41,6 @@ that wish to preserve color brightness properly.
 Traditionally, values are L [0,100], a,b [-200,+200] but here we
 normalize them all to the 0-1 range. If you hate it, let me know
 why!
-<div class='signature' markdown='1'>
-static [Color]({{site.url}}/Pages/Reference/Color.html) LAB([Vec3]({{site.url}}/Pages/Reference/Vec3.html) lab, float opacity)
 </div>
 
 |  |  |
@@ -36,15 +49,6 @@ static [Color]({{site.url}}/Pages/Reference/Color.html) LAB([Vec3]({{site.url}}/
 |float opacity|The opacity copied into the final color!|
 |RETURNS: [Color]({{site.url}}/Pages/Reference/Color.html)|A gamma space RGBA color constructed from the LAB values.|
 
-Creates a gamma space RGB color from a CIE-L*ab color
-space. CIE-L*ab is a color space that models human perception,
-and has significantly more accurate to perception lightness
-values, so this is an excellent color space for color operations
-that wish to preserve color brightness properly.
-
-Traditionally, values are L [0,100], a,b [-200,+200] but here we
-normalize them all to the 0-1 range. If you hate it, let me know
-why!
 
 
 

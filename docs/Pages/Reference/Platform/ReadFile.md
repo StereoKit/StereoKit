@@ -6,7 +6,12 @@ description: Reads the entire contents of the file as a UTF-8 string, taking adv
 # [Platform]({{site.url}}/Pages/Reference/Platform.html).ReadFile
 
 <div class='signature' markdown='1'>
+```csharp
 static bool ReadFile(string filename, String& data)
+```
+Reads the entire contents of the file as a UTF-8 string,
+taking advantage of any permissions that may have been granted by
+Platform.FilePicker.
 </div>
 
 |  |  |
@@ -15,11 +20,13 @@ static bool ReadFile(string filename, String& data)
 |String& data|A UTF-8 encoded string representing the             contents of the file. Will be null on failure.|
 |RETURNS: bool|True on success, False on failure.|
 
-Reads the entire contents of the file as a UTF-8 string,
+<div class='signature' markdown='1'>
+```csharp
+static bool ReadFile(string filename, Byte[]& data)
+```
+Reads the entire contents of the file as a byte array,
 taking advantage of any permissions that may have been granted by
 Platform.FilePicker.
-<div class='signature' markdown='1'>
-static bool ReadFile(string filename, Byte[]& data)
 </div>
 
 |  |  |
@@ -28,9 +35,6 @@ static bool ReadFile(string filename, Byte[]& data)
 |Byte[]& data|A UTF-8 encoded string representing the             contents of the file. Will be null on failure.|
 |RETURNS: bool|True on success, False on failure.|
 
-Reads the entire contents of the file as a byte array,
-taking advantage of any permissions that may have been granted by
-Platform.FilePicker.
 
 
 

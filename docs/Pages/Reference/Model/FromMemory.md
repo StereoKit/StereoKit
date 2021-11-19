@@ -6,7 +6,13 @@ description: Loads a list of mesh and material subsets from a .obj, .stl, .ply (
 # [Model]({{site.url}}/Pages/Reference/Model.html).FromMemory
 
 <div class='signature' markdown='1'>
-static [Model]({{site.url}}/Pages/Reference/Model.html) FromMemory(string filename, Byte[]& data, [Shader]({{site.url}}/Pages/Reference/Shader.html) shader)
+```csharp
+static Model FromMemory(string filename, Byte[]& data, Shader shader)
+```
+Loads a list of mesh and material subsets from a .obj,
+.stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
+that this function won't work well on files that reference other
+files, such as .gltf files with references in them.
 </div>
 
 |  |  |
@@ -16,10 +22,6 @@ static [Model]({{site.url}}/Pages/Reference/Model.html) FromMemory(string filena
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|The shader to use for the model's materials!             If null, this will automatically determine the best shader              available to use.|
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A Model created from the file, or null if the file failed to load!|
 
-Loads a list of mesh and material subsets from a .obj,
-.stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
-that this function won't work well on files that reference other
-files, such as .gltf files with references in them.
 
 
 

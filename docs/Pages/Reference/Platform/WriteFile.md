@@ -6,7 +6,12 @@ description: Writes a text file to the filesystem, taking advantage of any permi
 # [Platform]({{site.url}}/Pages/Reference/Platform.html).WriteFile
 
 <div class='signature' markdown='1'>
+```csharp
 static bool WriteFile(string filename, string data)
+```
+Writes a text file to the filesystem, taking advantage
+of any permissions that may have been granted by
+Platform.FilePicker.
 </div>
 
 |  |  |
@@ -15,11 +20,13 @@ static bool WriteFile(string filename, string data)
 |string data|A UTF-8 string to write to the file.|
 |RETURNS: bool|True on success, False on failure.|
 
-Writes a text file to the filesystem, taking advantage
-of any permissions that may have been granted by
-Platform.FilePicker.
 <div class='signature' markdown='1'>
+```csharp
 static bool WriteFile(string filename, Byte[] data)
+```
+Writes an array of bytes to the filesystem, taking
+advantage of any permissions that may have been granted by
+Platform.FilePicker.
 </div>
 
 |  |  |
@@ -28,9 +35,6 @@ static bool WriteFile(string filename, Byte[] data)
 |Byte[] data|An array of bytes to write to the file.|
 |RETURNS: bool|True on success, False on failure.|
 
-Writes an array of bytes to the filesystem, taking
-advantage of any permissions that may have been granted by
-Platform.FilePicker.
 
 
 

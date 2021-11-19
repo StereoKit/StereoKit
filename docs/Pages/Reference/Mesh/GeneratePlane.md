@@ -6,7 +6,13 @@ description: Generates a plane on the XZ axis facing up that is optionally subdi
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GeneratePlane
 
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GeneratePlane([Vec2]({{site.url}}/Pages/Reference/Vec2.html) dimensions, int subdivisions)
+```csharp
+static Mesh GeneratePlane(Vec2 dimensions, int subdivisions)
+```
+Generates a plane on the XZ axis facing up that is
+optionally subdivided, pre-sized to the given dimensions. UV
+coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
++X,+Z corner!
 </div>
 
 |  |  |
@@ -15,12 +21,14 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GeneratePlane([Vec2]({{sit
 |int subdivisions|Use this to add extra slices of              vertices across the plane. This can be useful for some types of             vertex-based effects!|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A plane mesh, pre-sized to the given dimensions.|
 
-Generates a plane on the XZ axis facing up that is
-optionally subdivided, pre-sized to the given dimensions. UV
-coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
-+X,+Z corner!
 <div class='signature' markdown='1'>
-static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GeneratePlane([Vec2]({{site.url}}/Pages/Reference/Vec2.html) dimensions, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) planeNormal, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) planeTopDirection, int subdivisions)
+```csharp
+static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions)
+```
+Generates a plane with an arbitrary orientation that is
+optionally subdivided, pre-sized to the given dimensions. UV
+coordinates start at the top left indicated with
+'planeTopDirection'.
 </div>
 
 |  |  |
@@ -31,10 +39,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) GeneratePlane([Vec2]({{sit
 |int subdivisions|Use this to add extra slices of              vertices across the plane. This can be useful for some types of             vertex-based effects!|
 |RETURNS: [Mesh]({{site.url}}/Pages/Reference/Mesh.html)|A plane mesh, pre-sized to the given dimensions.|
 
-Generates a plane with an arbitrary orientation that is
-optionally subdivided, pre-sized to the given dimensions. UV
-coordinates start at the top left indicated with
-'planeTopDirection'.
 
 
 
@@ -58,7 +62,7 @@ Renderer.Add(planeMesh, Default.Material, planeTransform);
 planeTransform = Matrix.T(.5f, -1, 0);
 Renderer.Add(planeModel, planeTransform);
 ```
-## UV and Face layout
+### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is
 laid out.
 ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoPlane.jpg)

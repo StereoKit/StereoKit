@@ -6,7 +6,12 @@ description: Generates a cubemap texture from a gradient and a direction! These 
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).GenCubemap
 
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap([Gradient]({{site.url}}/Pages/Reference/Gradient.html) gradient, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) gradientDirection, int resolution)
+```csharp
+static Tex GenCubemap(Gradient gradient, Vec3 gradientDirection, int resolution)
+```
+Generates a cubemap texture from a gradient and a
+direction! These are entirely suitable for skyboxes, which you
+can set via Renderer.SkyTex.
 </div>
 
 |  |  |
@@ -16,11 +21,13 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap([Gradient]({{site
 |int resolution|The square size in pixels of each cubemap              face! This generally doesn't need to be large, unless you have a              really complicated gradient.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A procedurally generated cubemap texture!|
 
+<div class='signature' markdown='1'>
+```csharp
+static Tex GenCubemap(Gradient gradient, SphericalHarmonics& lightingInfo, Vec3 gradientDirection, int resolution)
+```
 Generates a cubemap texture from a gradient and a
 direction! These are entirely suitable for skyboxes, which you
-can set via Renderer.SkyTex.
-<div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap([Gradient]({{site.url}}/Pages/Reference/Gradient.html) gradient, SphericalHarmonics& lightingInfo, [Vec3]({{site.url}}/Pages/Reference/Vec3.html) gradientDirection, int resolution)
+can set via `Renderer.SkyTex`.
 </div>
 
 |  |  |
@@ -31,11 +38,13 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap([Gradient]({{site
 |int resolution|The square size in pixels of each cubemap             face! This generally doesn't need to be large, unless you have a             really complicated gradient.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A procedurally generated cubemap texture!|
 
-Generates a cubemap texture from a gradient and a
-direction! These are entirely suitable for skyboxes, which you
-can set via `Renderer.SkyTex`.
 <div class='signature' markdown='1'>
-static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap(SphericalHarmonics& lighting, int resolution, float lightSpotSizePct, float lightSpotIntensity)
+```csharp
+static Tex GenCubemap(SphericalHarmonics& lighting, int resolution, float lightSpotSizePct, float lightSpotIntensity)
+```
+Creates a cubemap from SphericalHarmonics lookups! These
+are entirely suitable for skyboxes, which you can set via
+`Renderer.SkyTex`.
 </div>
 
 |  |  |
@@ -46,9 +55,6 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) GenCubemap(SphericalHarmonic
 |float lightSpotIntensity|The glowing spot's color is the             primary light direction's color, but multiplied by this value.             Since this method generates a 128bpp texture, this is not clamped             between 0-1, so feel free to go nuts here! Remember that              reflections will often cut down some reflection intensity.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A procedurally generated cubemap texture!|
 
-Creates a cubemap from SphericalHarmonics lookups! These
-are entirely suitable for skyboxes, which you can set via
-`Renderer.SkyTex`.
 
 
 

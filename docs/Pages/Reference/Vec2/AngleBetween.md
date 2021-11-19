@@ -6,7 +6,13 @@ description: Calculates a signed angle between two vectors! Sign will be positiv
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).AngleBetween
 
 <div class='signature' markdown='1'>
-static float AngleBetween([Vec2]({{site.url}}/Pages/Reference/Vec2.html) a, [Vec2]({{site.url}}/Pages/Reference/Vec2.html) b)
+```csharp
+static float AngleBetween(Vec2 a, Vec2 b)
+```
+Calculates a signed angle between two vectors! Sign will
+be positive if B is counter-clockwise (left) of A, and negative
+if B is clockwise (right) of A. Vectors do not need to be
+normalized.
 </div>
 
 |  |  |
@@ -15,10 +21,6 @@ static float AngleBetween([Vec2]({{site.url}}/Pages/Reference/Vec2.html) a, [Vec
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) b|The second vector, B, that we're finding the              angle to. Does not need to be normalized.|
 |RETURNS: float|a signed angle between two vectors! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A.|
 
-Calculates a signed angle between two vectors! Sign will
-be positive if B is counter-clockwise (left) of A, and negative
-if B is clockwise (right) of A. Vectors do not need to be
-normalized.
 
 
 

@@ -23,6 +23,7 @@ about them!
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Inverse]({{site.url}}/Pages/Reference/Quat/Inverse.html)|The reverse rotation! If this quat goes from A to B, the inverse will go from B to A.|
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Normalized]({{site.url}}/Pages/Reference/Quat/Normalized.html)|A normalized quaternion has the same orientation, and a length of 1.|
 |Quaternion [q]({{site.url}}/Pages/Reference/Quat/q.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
+|[Vec4]({{site.url}}/Pages/Reference/Vec4.html) [Vec4]({{site.url}}/Pages/Reference/Quat/Vec4.html)|Sometimes you want to do weird stuff with your Quaternions. I won't judge. This just turns the Quat into a Vec4, makes some types of math easier!|
 
 
 ## Instance Methods

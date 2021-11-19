@@ -6,16 +6,9 @@ description: Create a text style for use with other text functions! A text style
 # [Text]({{site.url}}/Pages/Reference/Text.html).MakeStyle
 
 <div class='signature' markdown='1'>
-static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
-</div>
-
-|  |  |
-|--|--|
-|[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
-|[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
-|RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
-
+```csharp
+static TextStyle MakeStyle(Font font, float characterHeightMeters, Color colorGamma)
+```
 Create a text style for use with other text functions! A
 text style is a font plus size/color/material parameters, and are
 used to keep text looking more consistent through the application
@@ -23,18 +16,19 @@ by encouraging devs to re-use styles throughout the project.
 
 This overload will create a unique Material for this style based
 on Default.ShaderFont.
-<div class='signature' markdown='1'>
-static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Shader]({{site.url}}/Pages/Reference/Shader.html) shader, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
 </div>
 
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|This style will create and use a unique             Material based on the Shader that you provide here.|
+|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
 
+<div class='signature' markdown='1'>
+```csharp
+static TextStyle MakeStyle(Font font, float characterHeightMeters, Shader shader, Color colorGamma)
+```
 Create a text style for use with other text functions! A
 text style is a font plus size/color/material parameters, and are
 used to keep text looking more consistent through the application
@@ -42,18 +36,20 @@ by encouraging devs to re-use styles throughout the project.
 
 This overload will create a unique Material for this style based
 on the provided Shader.
-<div class='signature' markdown='1'>
-static [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) MakeStyle([Font]({{site.url}}/Pages/Reference/Font.html) font, float characterHeight, [Material]({{site.url}}/Pages/Reference/Material.html) material, [Color]({{site.url}}/Pages/Reference/Color.html) colorGamma)
 </div>
 
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeight|Height of a text glpyh in meters.             TODO: find what text glyph specifically!|
-|[Material]({{site.url}}/Pages/Reference/Material.html) material|Which material should be used to render             the text with? Note that this does NOT duplicate the material, so             some parameters of this Material instance will get overwritten,              like the texture used for the glyph atlas. You should either use             a new Material, or a Material that was already used with this             same font.|
+|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|This style will create and use a unique             Material based on the Shader that you provide here.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
 
+<div class='signature' markdown='1'>
+```csharp
+static TextStyle MakeStyle(Font font, float characterHeightMeters, Material material, Color colorGamma)
+```
 Create a text style for use with other text functions! A
 text style is a font plus size/color/material parameters, and are
 used to keep text looking more consistent through the application
@@ -64,6 +60,16 @@ used. This can be helpful if you're keeping styles similar enough
 to re-use the material and save on draw calls. If you don't know
 what that means, then prefer using the overload that takes a
 Shader, or takes neither a Shader nor a Material!
+</div>
+
+|  |  |
+|--|--|
+|[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
+|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
+|[Material]({{site.url}}/Pages/Reference/Material.html) material|Which material should be used to render             the text with? Note that this does NOT duplicate the material, so             some parameters of this Material instance will get overwritten,              like the texture used for the glyph atlas. You should either use             a new Material, or a Material that was already used with this             same font.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
+|RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
+
 
 
 

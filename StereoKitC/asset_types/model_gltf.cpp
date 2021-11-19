@@ -226,11 +226,11 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	cgltf_primitive *p = &m->primitives[primitive_id];
 
 	if (p->type != cgltf_primitive_type_triangles) {
-		log_warnf("[%s] Unimplemented GLTF primitive mode: %d", filename, p->type);
+		log_errf("[%s] Unimplemented GLTF primitive mode: %d", filename, p->type);
 		return nullptr;
 	}
 	if (p->has_draco_mesh_compression) {
-		log_warnf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
+		log_errf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
 		return nullptr;
 	}
 
@@ -261,7 +261,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 
 		// Check what info is in this attribute, and copy it over to our mesh
 		if (attr->type == cgltf_attribute_type_position) {
-			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
+			if (attr->index != 0) {
+				log_warnf("[%s] Too many vertex position channels! Only one supported, the rest will be ignored.", filename);
+			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (cgltf_size v = 0; v < attr->data->count; v++) {
 					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
@@ -285,7 +287,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			has_normals = true;
-			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
+			if (attr->index != 0) {
+				log_warnf("[%s] Too many vertex normal channels! Only one supported, the rest will be ignored.", filename);
+			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
 					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
@@ -308,7 +312,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
-			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
+			if (attr->index != 0) {
+				log_warnf("[%s] Too many texture coordinate channels! Only one supported, the rest will be ignored.", filename);
+			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
 				// Ideal case is vec2 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
 					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
@@ -331,7 +337,9 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
-			if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
+			if (attr->index != 0) {
+				log_warnf("[%s] Too many vertex color channels! Only one supported, the rest will be ignored.", filename);
+			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
 					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
@@ -591,7 +599,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
-			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support multiple texture coordinate channels yet.", filename);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 			material_set_texture(result, "diffuse", parse_tex);
 			tex_release(parse_tex);
@@ -610,7 +618,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
-		if (material->normal_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+		if (material->normal_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "normal", parse_tex);
 		tex_release(parse_tex);
@@ -618,7 +626,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
-		if (material->occlusion_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+		if (material->occlusion_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
 		material_set_texture(result, "occlusion", parse_tex);
 		tex_release(parse_tex);
@@ -626,7 +634,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
-		if (material->emissive_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support loading multiple texture coordinate channels yet.", filename);
+		if (material->emissive_texture.texcoord != 0) log_warnf("[%s] StereoKit doesn't support multiple texture coordinate channels yet.", filename);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
 		material_set_texture(result, "emission", parse_tex);
 		tex_release(parse_tex);

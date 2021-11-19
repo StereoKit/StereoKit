@@ -6,23 +6,25 @@ description: Creates a shallow copy of a Model asset! Meshes and Materials refer
 # [Model]({{site.url}}/Pages/Reference/Model.html).Copy
 
 <div class='signature' markdown='1'>
-[Model]({{site.url}}/Pages/Reference/Model.html) Copy()
+```csharp
+Model Copy()
+```
+Creates a shallow copy of a Model asset! Meshes and
+Materials referenced by this Model will be referenced, not
+copied.
 </div>
 
 |  |  |
 |--|--|
 |RETURNS: [Model]({{site.url}}/Pages/Reference/Model.html)|A new shallow copy of a Model.|
 
-Creates a shallow copy of a Model asset! Meshes and
-Materials referenced by this Model will be referenced, not
-copied.
 
 
 
 
 ## Examples
 
-## Copying assets
+### Copying assets
 Modifying an asset will affect everything that uses that asset!
 Often you'll want to copy an asset before modifying it, to
 ensure other parts of your application look the same. In

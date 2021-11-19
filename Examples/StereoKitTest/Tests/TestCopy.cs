@@ -7,7 +7,7 @@ class TestCopy : ITest
 
 	public void Initialize() {
 		/// :CodeSample: Model.Copy Material.Copy
-		/// ## Copying assets
+		/// ### Copying assets
 		/// Modifying an asset will affect everything that uses that asset!
 		/// Often you'll want to copy an asset before modifying it, to
 		/// ensure other parts of your application look the same. In

@@ -6,11 +6,13 @@ description: Finishes a handle! Must be called after UI.HandleBegin() and all el
 # [UI]({{site.url}}/Pages/Reference/UI.html).HandleEnd
 
 <div class='signature' markdown='1'>
+```csharp
 static void HandleEnd()
-</div>
-
+```
 Finishes a handle! Must be called after UI.HandleBegin()
 and all elements have been drawn.
+</div>
+
 
 
 
