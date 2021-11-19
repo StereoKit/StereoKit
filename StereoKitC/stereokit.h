@@ -402,6 +402,7 @@ SK_DeclarePrivateType(material_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
+SK_DeclarePrivateType(solid_t);
 
 ///////////////////////////////////////////
 
@@ -705,8 +706,6 @@ typedef enum solid_type_ {
 	solid_type_immovable,
 	solid_type_unaffected,
 } solid_type_;
-
-typedef void* solid_t;
 
 SK_API solid_t       solid_create                  (const sk_ref(vec3) position, const sk_ref(quat) rotation, solid_type_ type sk_default(solid_type_normal));
 SK_API void          solid_release                 (solid_t solid);

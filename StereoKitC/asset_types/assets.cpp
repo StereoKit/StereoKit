@@ -10,6 +10,7 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
+#include "../systems/physics.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
@@ -69,6 +70,7 @@ void *assets_allocate(asset_type_ type) {
 	case asset_type_font:     size = sizeof(_font_t);     break;
 	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
 	case asset_type_sound:    size = sizeof(_sound_t);    break;
+	case asset_type_solid:    size = sizeof(_solid_t);    break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -147,6 +149,7 @@ void assets_destroy(asset_header_t &asset) {
 	case asset_type_font:     font_destroy    ((font_t    )&asset); break;
 	case asset_type_sprite:   sprite_destroy  ((sprite_t  )&asset); break;
 	case asset_type_sound:    sound_destroy   ((sound_t   )&asset); break;
+	case asset_type_solid:    solid_destroy   ((solid_t   )&asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 

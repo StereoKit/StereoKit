@@ -14,6 +14,7 @@ enum asset_type_ {
 	asset_type_font,
 	asset_type_sprite,
 	asset_type_sound,
+	asset_type_solid,
 };
 
 struct asset_header_t {
