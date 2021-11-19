@@ -9,32 +9,32 @@
 
 #if defined(SK_OS_WINDOWS)
 
-#include "../systems/platform/win32.h"
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <commdlg.h>
-#include <stdio.h>
+	#include "../systems/platform/win32.h"
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <commdlg.h>
+	#include <stdio.h>
 
 #elif defined(SK_OS_WINDOWS_UWP)
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.ApplicationModel.Core.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Storage.Pickers.h>
-#include <winrt/Windows.Storage.Streams.h>
-#include <vector>
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <winrt/Windows.UI.Core.h>
+	#include <winrt/Windows.ApplicationModel.Core.h>
+	#include <winrt/Windows.Foundation.Collections.h>
+	#include <winrt/Windows.Storage.Pickers.h>
+	#include <winrt/Windows.Storage.Streams.h>
+	#include <vector>
 
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::ApplicationModel::Core;
-using namespace winrt::Windows::Storage;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Storage::Streams;
+	using namespace winrt::Windows::UI::Core;
+	using namespace winrt::Windows::ApplicationModel::Core;
+	using namespace winrt::Windows::Storage;
+	using namespace winrt::Windows::Foundation;
+	using namespace winrt::Windows::Storage::Streams;
 
 #elif defined(SK_OS_WEB)
 
-#include <stdio.h>
+	#include <stdio.h>
 
 #endif
 

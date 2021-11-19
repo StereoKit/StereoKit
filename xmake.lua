@@ -113,7 +113,7 @@ target("StereoKitC")
     -- Emscripten stuff, this doesn't actually work yet
     if is_plat("wasm") then
         add_cxflags("-msimd128", "-msse4")
-        add_defines("_XM_NO_INTRINSICS_")
+        add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
     end
 
     -- Copy finished files over to the bin directory

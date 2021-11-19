@@ -37,9 +37,13 @@ bool platform_init() {
 	}
 
 	// Initialize graphics
-	void *luid = sk_display_mode == display_mode_mixedreality 
+#if defined(SK_XR_OPENXR)
+	void *luid = sk_display_mode == display_mode_mixedreality
 		? openxr_get_luid() 
 		: nullptr;
+#else
+	void *luid = nullptr;
+#endif
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
 		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;

@@ -4029,7 +4029,9 @@ void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
 	//	glUniform1i(bind.slot, bind.slot);
 	
 	if (bind.stage_bits & skg_stage_compute) {
+#if !defined(_SKG_GL_WEB)
 		glBindImageTexture(bind.slot, texture->_texture, 0, false, 0, texture->_access, skg_tex_fmt_to_native( texture->format ));
+#endif
 	} else {
 		glActiveTexture(GL_TEXTURE0 + bind.slot);
 		glBindTexture(texture->_target, texture->_texture);

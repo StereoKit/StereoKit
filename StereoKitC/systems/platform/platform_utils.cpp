@@ -56,6 +56,7 @@
 #ifdef SK_OS_WEB
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <stdio.h>
 #endif
 
 namespace sk {
@@ -248,6 +249,8 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
+#elif defined(SK_OS_WEB)
+	printf(text);
 #else
 	(void)level;
 	(void)text;
