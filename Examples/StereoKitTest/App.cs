@@ -28,7 +28,10 @@ class App
 		if (!Tests.IsTesting && args.Length > 0)
 			startTest = args[0];
 		if (Tests.IsTesting)
-			settings.displayPreference = DisplayMode.Flatscreen;
+		{
+			settings.displayPreference     = DisplayMode.Flatscreen;
+			settings.disableUnfocusedSleep = true;
+		}
 
 		// Preload the StereoKit library for access to Time.Scale before
 		// initialization occurs.

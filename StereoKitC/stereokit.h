@@ -124,6 +124,7 @@ typedef struct sk_settings_t {
 	int32_t        flatscreen_width;
 	int32_t        flatscreen_height;
 	bool32_t       disable_flatscreen_mr_sim;
+	bool32_t       disable_unfocused_sleep;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject

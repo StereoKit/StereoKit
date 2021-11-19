@@ -110,6 +110,13 @@ namespace StereoKit
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
+		/// <summary>By default, StereoKit will slow down when the 
+		/// application is out of focus. This is useful for saving processing
+		/// power while the app is out-of-focus, but may not always be
+		/// desired. In particular, running multiple copies of a SK app for
+		/// testing networking code may benefit from this setting.</summary>
+		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
+		private int _disableUnfocusedSleep;
 
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
