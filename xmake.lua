@@ -112,7 +112,10 @@ target("StereoKitC")
 
     -- Emscripten stuff, this doesn't actually work yet
     if is_plat("wasm") then
-        add_cxflags("-msimd128", "-msse4")
+        add_ldflags(
+            "-s FULL_ES3=1",
+            "-s -Oz",
+            "-s ENVIRONMENT=web")
         add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
     end
 
@@ -158,6 +161,13 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
         add_files("Examples/StereoKitCTest/*.cpp")
         add_includedirs("StereoKitC/")
         add_deps("StereoKitC")
+
+        if is_plat("wasm") then
+            add_ldflags(
+                "-s FULL_ES3=1",
+                "-s -Oz",
+                "-s ENVIRONMENT=web")
+        end
 
         after_build(function (target)
             local assets_folder = path.join(target:targetdir(), "Assets")
