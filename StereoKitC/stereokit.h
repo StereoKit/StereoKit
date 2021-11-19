@@ -44,6 +44,7 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 
 #include <stdint.h>
 #include <math.h>
+#include <uchar.h>
 
 #ifdef __cplusplus
 namespace sk {
@@ -445,7 +446,7 @@ typedef struct vert_t {
 	color32 col;
 } vert_t;
 
-static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { return vert_t{ position, normal, texture_coordinates, vertex_color }; }
+static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { vert_t v = { position, normal, texture_coordinates, vertex_color }; return v;  }
 
 #ifdef SK_32BIT_INDICES
 typedef uint32_t vind_t;
@@ -861,6 +862,7 @@ SK_API void                  render_add_model      (model_t model, const sk_ref(
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int width, int height, float field_of_view_degrees);
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_material_to    (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 
 ///////////////////////////////////////////
