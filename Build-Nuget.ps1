@@ -176,6 +176,10 @@ __      ___         _
 
 "@ -ForegroundColor White
 
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+
 # Build Win32 first
 Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
 $result = Build -mode "Release|X64" -project "StereoKitC"
@@ -240,6 +244,10 @@ Write-Host @"
                       
 "@ -ForegroundColor White
 
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+
 # Linux, via WSL
 Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
 if ($fast -eq $false) {
@@ -263,6 +271,10 @@ Write-Host @"
  /_/ \_\_||_\__,_|_| \___/_\__,_|
                       
 "@ -ForegroundColor White
+
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 # Do cross platform build code first
 Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
@@ -321,5 +333,9 @@ if ($upload) {
         Write-Host 'No key, cancelling upload'
     }
 }
+
+# Put the shaders back to cross-platform to make dev a little nicer!
+Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green
