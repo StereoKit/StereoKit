@@ -127,4 +127,4 @@ Pop-Location
 # more builds of react physics than strictly necessary, but we do
 # tap into the OXR build-if-necessary logic.
 Write-Host 'Building ReactPhysics3D too!'
-C:update_physics_win.bat
+& .\update_physics_win.bat
