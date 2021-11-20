@@ -484,5 +484,6 @@
     <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

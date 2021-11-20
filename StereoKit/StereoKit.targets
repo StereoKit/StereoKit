@@ -8,6 +8,13 @@
 	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP')">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
 
+		<!-- The managed .pdb is not copied by default, so we copy it here to
+		     enable debugging of the managed dll.-->
+		<Copy
+			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/netstandard2.0/StereoKit.pdb"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
+		
 		<ItemGroup>
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/**/*.*" />
 		</ItemGroup>
