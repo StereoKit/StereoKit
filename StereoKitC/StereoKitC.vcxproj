@@ -203,6 +203,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
     <ClInclude Include="hierarchy.h" />
+    <ClInclude Include="libraries\aileron_font_data.h" />
     <ClInclude Include="libraries\array.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\ferr_hash.h" />

@@ -122,14 +122,8 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	scene_set_active(demos[6]);
 
-	while (sk_step( []() {
-		scene_update();
-		common_update();
-	}));
+	sk_run(common_update, common_shutdown);
 
-	scene_shutdown();
-	common_shutdown();
-	sk_shutdown();
 	return 0;
 }
 
@@ -164,6 +158,8 @@ void common_init() {
 }
 
 void common_update() {
+	scene_update();
+
 	// Render floor
 	if (sk_system_info().display_type == display_opaque)
 		render_add_model(floor_model, floor_tr);
@@ -185,6 +181,8 @@ void common_update() {
 }
 
 void common_shutdown() {
+	scene_shutdown();
+
 	solid_release   (floor_solid);
 	material_release(floor_mat);
 	model_release   (floor_model);

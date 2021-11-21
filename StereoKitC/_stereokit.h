@@ -17,7 +17,7 @@ extern float   sk_timev_elapsedf;
 extern uint64_t sk_timev_raw;
 
 extern bool32_t sk_focused;
-extern bool32_t sk_run;
+extern bool32_t sk_running;
 
 void sk_update_timer();
 

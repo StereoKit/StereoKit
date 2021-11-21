@@ -148,7 +148,7 @@ public:
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
 		
-		window.Closed([this](auto &&, auto &&) { m_exit = true; sk_run = false; log_info("OnClosed!"); });
+		window.Closed([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
 
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
 		// which can result in the app being suspended if unhandled

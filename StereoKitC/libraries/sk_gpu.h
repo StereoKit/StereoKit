@@ -3194,6 +3194,8 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	if (shader_size > 0 && file_chars[shader_size-1] != '\0')
 		shader_size += 1;
 
+	skg_log(skg_log_info, file_chars);
+
 	uint32_t gl_type = 0;
 	switch (type) {
 	case skg_stage_pixel:   gl_type = GL_FRAGMENT_SHADER; break;
@@ -3331,24 +3333,32 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 #ifdef _SKG_GL_WEB
 		for (size_t i = 0; i < meta->buffer_count; i++) {
 			char t_name[64];
-			snprintf(t_name, 64, "type_%s", meta->buffers[i].name);
+			snprintf(t_name, 64, "%s", meta->buffers[i].name);
 			// $Global is a near universal buffer name, we need to scrape the
 			// '$' character out.
-			char *pr = t_name, *pw = t_name;
+			char *pr = t_name;
 			while (*pr) {
-				*pw = *pr++;
-				pw += (*pw != '$');
+				if (*pr == '$')
+					*pr = '_';
+				pr++;
 			}
-			*pw = '\0';
 
 			uint32_t slot = glGetUniformBlockIndex(result._program, t_name);
-			glUniformBlockBinding(result._program, slot, slot);
+			glUniformBlockBinding(result._program, slot, meta->buffers[i].bind.slot);
+
+			char binding[256];
+			snprintf(binding, 256, "binding %s at %d to %d", meta->buffers[i].name, slot, meta->buffers[i].bind.slot);
+			skg_log(skg_log_info, binding);
 
 			if (slot == GL_INVALID_INDEX) {
-				skg_log(skg_log_warning, "Couldn't find uinform block index for:");
+				skg_log(skg_log_warning, "Couldn't find uniform block index for:");
 				skg_log(skg_log_warning, meta->buffers[i].name);
 			} else {
-				meta->buffers[i].bind.slot = (uint16_t)slot;
+				/*meta->buffers[i].bind.slot = (uint16_t)slot;
+
+				char binding[256];
+				snprintf(binding, 256, "buffer %s:b%d", meta->buffers[i].name, meta->buffers[i].bind.slot);
+				skg_log(skg_log_info, binding);*/
 			}
 		}
 		glUseProgram(result._program);
@@ -3645,12 +3655,14 @@ void main() {
 	result._convert_shader = skg_shader_create_manual(meta, v_stage, p_stage, {});
 	result._convert_pipe   = skg_pipeline_create(&result._convert_shader);
 
-	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, skg_tex_fmt_rgba32, skg_mip_none);
+	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, skg_tex_fmt_rgba32_linear, skg_mip_none);
 	skg_tex_set_contents(&result._surface, nullptr, result.width, result.height);
+	skg_log(skg_log_info, "Created color surface");
 
-	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_format, skg_mip_none);
+	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
 	skg_tex_set_contents(&result._surface_depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
+	skg_log(skg_log_info, "Created depth surface");
 
 	skg_vert_t quad_verts[] = { 
 		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
@@ -3681,10 +3693,10 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 	skg_tex_destroy(&swapchain->_surface);
 	skg_tex_destroy(&swapchain->_surface_depth);
 
-	swapchain->_surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, color_fmt, skg_mip_none);
+	swapchain->_surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, color_fmt, skg_mip_none);
 	skg_tex_set_contents(&swapchain->_surface, nullptr, swapchain->width, swapchain->height);
 
-	swapchain->_surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_fmt, skg_mip_none);
+	swapchain->_surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_fmt, skg_mip_none);
 	skg_tex_set_contents(&swapchain->_surface_depth, nullptr, swapchain->width, swapchain->height);
 	skg_tex_attach_depth(&swapchain->_surface, &swapchain->_surface_depth);
 #endif

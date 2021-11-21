@@ -114,7 +114,12 @@ target("StereoKitC")
     if is_plat("wasm") then
         add_ldflags(
             "-s FULL_ES3=1",
-            "-s -Oz",
+            "-s ASSERTIONS=1",
+            "-s ALLOW_MEMORY_GROWTH=1",
+            "-g",
+            "-gsource-map",
+            "--profiling",
+            --"-s -Oz",
             "-s ENVIRONMENT=web")
         add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
     end
@@ -165,7 +170,13 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
         if is_plat("wasm") then
             add_ldflags(
                 "-s FULL_ES3=1",
-                "-s -Oz",
+                "-s ASSERTIONS=1",
+                "-s ALLOW_MEMORY_GROWTH=1",
+                "--profiling",
+                "-g",
+                "-gsource-map",
+                "-gseparate-dwarf=StereoKitC.dwarf",
+                --"-s -Oz",
                 "-s ENVIRONMENT=web")
         end
 

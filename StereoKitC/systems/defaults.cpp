@@ -2,6 +2,7 @@
 #include "platform/platform_utils.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
+#include "../asset_types/font.h"
 
 #include <string.h>
 
@@ -222,11 +223,13 @@ bool defaults_init() {
 
 	// Text!
 	sk_default_font = platform_default_font();
+	if (sk_default_font != nullptr) font_set_id(sk_default_font, default_id_font);
+	else                            sk_default_font = font_create_default();
 	if (sk_default_font == nullptr)
 		return false;
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
 
-	font_set_id(sk_default_font, default_id_font);
+	
 
 	// Sounds
 	sk_default_click = sound_generate([](float t){

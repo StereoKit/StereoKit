@@ -37,8 +37,9 @@ struct _font_t {
 	uint8_t       *atlas_data;
 };
 
-void font_destroy     (font_t font);
-void font_update_fonts();
+font_t font_create_default();
+void   font_destroy       (font_t font);
+void   font_update_fonts  ();
 
 const font_char_t *font_get_glyph(font_t font, char32_t character);
 

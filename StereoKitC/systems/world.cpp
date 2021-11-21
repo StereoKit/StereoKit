@@ -521,6 +521,7 @@ void world_refresh_transforms() {
 #else
 
 bool world_init() {
+	return true;
 }
 
 void world_update() {

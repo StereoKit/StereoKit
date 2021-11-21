@@ -416,6 +416,9 @@
     <ClInclude Include="systems\platform\web.h">
       <Filter>systems\platform</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\aileron_font_data.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

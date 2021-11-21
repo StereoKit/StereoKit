@@ -15,6 +15,8 @@ void web_step_end_flat  ();
 void web_stop_flat      ();
 void web_shutdown       ();
 
+void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void));
+
 } // namespace sk
 
 #endif // defined(SK_OS_WEB)

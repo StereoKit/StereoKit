@@ -1,4 +1,4 @@
-#include "win32.h"
+#include "web.h"
 
 #if defined(SK_OS_WEB)
 
@@ -25,7 +25,7 @@ system_t       *web_render_sys = nullptr;
 
 ///////////////////////////////////////////
 
-void web_resize(int width, int height) {
+WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
 	if (width == sk_info.display_width && height == sk_info.display_height)
 		return;
 	sk_info.display_width  = width;
@@ -70,15 +70,13 @@ bool web_start_flat() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
-	web_swapchain = skg_swapchain_create(nullptr, color_fmt, skg_tex_fmt_none, sk_info.display_width, sk_info.display_height);
+	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	sk_info.display_width  = web_swapchain.width;
 	sk_info.display_height = web_swapchain.height;
 	
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", web_swapchain.width, web_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
-
-	//emscripten_request_animation_frame_loop(&main_step, 0);
 
 	return true;
 }
@@ -93,7 +91,6 @@ void web_stop_flat() {
 ///////////////////////////////////////////
 
 void web_step_begin_xr() {
-	//emscripten_request_animation_frame_loop(&main_step, 0);
 }
 
 ///////////////////////////////////////////
@@ -121,6 +118,23 @@ void web_step_end_flat() {
 
 	web_render_sys->profile_frame_duration = stm_since(web_render_sys->profile_frame_start);
 	skg_swapchain_present(&web_swapchain);
+}
+
+///////////////////////////////////////////
+
+void (*web_app_update  )(void);
+void (*web_app_shutdown)(void);
+bool32_t web_anim_callback(double t, void *) {
+	sk_step(web_app_update);
+	return sk_running ? true : false;
+}
+
+///////////////////////////////////////////
+
+void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
+	web_app_update   = app_update;
+	web_app_shutdown = app_shutdown;
+	emscripten_request_animation_frame_loop(web_anim_callback, 0);
 }
 
 } // namespace sk

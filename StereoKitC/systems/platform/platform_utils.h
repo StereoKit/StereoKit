@@ -5,6 +5,7 @@
 #if   defined(__EMSCRIPTEN__)
 	#define SK_OS_WEB
 	#define SK_XR_WEBXR
+	#define WEB_EXPORT EMSCRIPTEN_KEEPALIVE extern "C"
 #elif defined(__ANDROID__)
 	#define SK_OS_ANDROID
 	#define SK_XR_OPENXR

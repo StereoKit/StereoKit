@@ -150,7 +150,7 @@ bool win32_start_flat() {
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
-			case WM_CLOSE:      sk_run     = false; PostQuitMessage(0); break;
+			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
 			case WM_SETFOCUS:   sk_focused = true;  break;
 			case WM_KILLFOCUS:  sk_focused = false; break;
 			case WM_MOUSEWHEEL: if (sk_focused) win32_scroll += (short)HIWORD(wParam); break;
