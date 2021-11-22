@@ -47,10 +47,11 @@
 		public static void Add(in LinePoint[] points)
 			=> NativeAPI.line_add_listv(points, points.Length);
 
-		/// <summary>Displays an RGB/XYZ axis widget at the pose! Note that
-		/// this draws lines along 'Right/Up/Forward' vectors, rather than
-		/// 'UnitX/UnitY/UnitZ'. Notably, Forward is (0,0,-1), and UnitZ is
-		/// (0,0,1)</summary>
+		/// <summary>Displays an RGB/XYZ axis widget at the pose! Each line
+		/// is extended along the positive direction of each axis, so the red
+		/// line is +X, green is +Y, and blue is +Z. A white line is drawn
+		/// along -Z to indicate the Forward vector of the pose (-Z is 
+		/// forward in StereoKit).
 		/// <param name="atPose">What position and orientation do we want
 		/// this axis widget at?</param>
 		/// <param name="size">How long should the widget lines be, in
@@ -59,9 +60,10 @@
 		/// meters?</param>
 		public static void AddAxis(Pose atPose, float size, float thickness)
 		{
-			Add(atPose.position, atPose.position + Vec3.Forward * atPose.orientation * size, new Color32(0, 0, 255, 255), thickness);
-			Add(atPose.position, atPose.position + Vec3.Right   * atPose.orientation * size, new Color32(255, 0, 0, 255), thickness);
-			Add(atPose.position, atPose.position + Vec3.Up      * atPose.orientation * size, new Color32(0, 255, 0, 255), thickness);
+			Add(atPose.position, atPose.position + Vec3.UnitX   * atPose.orientation * size,        new Color32(255,0,  0,  255), thickness);
+			Add(atPose.position, atPose.position + Vec3.UnitY   * atPose.orientation * size,        new Color32(0,  255,0,  255), thickness);
+			Add(atPose.position, atPose.position + Vec3.UnitZ   * atPose.orientation * size,        new Color32(0,  0,  255,255), thickness);
+			Add(atPose.position, atPose.position + Vec3.Forward * atPose.orientation * size * 0.5f, new Color32(255,255,255,255), thickness);
 		}
 
 		/// <summary>Displays an RGB/XYZ axis widget at the pose! Note that
