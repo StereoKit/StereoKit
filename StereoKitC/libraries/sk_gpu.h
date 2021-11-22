@@ -3194,8 +3194,6 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	if (shader_size > 0 && file_chars[shader_size-1] != '\0')
 		shader_size += 1;
 
-	skg_log(skg_log_info, file_chars);
-
 	uint32_t gl_type = 0;
 	switch (type) {
 	case skg_stage_pixel:   gl_type = GL_FRAGMENT_SHADER; break;
@@ -3346,19 +3344,9 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 			uint32_t slot = glGetUniformBlockIndex(result._program, t_name);
 			glUniformBlockBinding(result._program, slot, meta->buffers[i].bind.slot);
 
-			char binding[256];
-			snprintf(binding, 256, "binding %s at %d to %d", meta->buffers[i].name, slot, meta->buffers[i].bind.slot);
-			skg_log(skg_log_info, binding);
-
 			if (slot == GL_INVALID_INDEX) {
 				skg_log(skg_log_warning, "Couldn't find uniform block index for:");
 				skg_log(skg_log_warning, meta->buffers[i].name);
-			} else {
-				/*meta->buffers[i].bind.slot = (uint16_t)slot;
-
-				char binding[256];
-				snprintf(binding, 256, "buffer %s:b%d", meta->buffers[i].name, meta->buffers[i].bind.slot);
-				skg_log(skg_log_info, binding);*/
 			}
 		}
 		glUseProgram(result._program);

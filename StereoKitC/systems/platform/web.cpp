@@ -9,6 +9,8 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../../libraries/sokol_time.h"
+#include "../../libraries/unicode.h"
+#include "../../libraries/stref.h"
 #include "../system.h"
 #include "../render.h"
 #include "../input.h"
@@ -20,8 +22,122 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+typedef struct web_key_map_t {
+	const char* name;
+	key_        key;
+} web_key_map_t;
+
 skg_swapchain_t web_swapchain  = {};
 system_t       *web_render_sys = nullptr;
+vec2            web_mouse_pos  = { 0,0 };
+bool            web_mouse_tracked = false;
+float           web_mouse_scroll  = 0;
+
+web_key_map_t web_keymap[] = {
+	{ "Backspace",      key_backspace },
+	{ "Tab",            key_tab },
+	{ "Enter",          key_return },
+	{ "ShiftLeft",      key_shift },
+	{ "ShiftRight",     key_shift },
+	{ "ControlLeft",    key_ctrl },
+	{ "ControlRight",   key_ctrl },
+	{ "AltLeft",        key_alt },
+	{ "AltRight",       key_alt },
+	//{ "Pause",          key_pause },
+	{ "CapsLock",       key_caps_lock },
+	{ "Escape",         key_esc },
+	{ "Space",          key_space },
+	{ "PageUp",         key_page_up },
+	{ "PageDown",       key_page_down },
+	{ "End",            key_end },
+	{ "Home",           key_home },
+	{ "ArrowLeft",      key_left },
+	{ "ArrowUp",        key_up },
+	{ "ArrowRight",     key_right },
+	{ "ArrowDown",      key_down },
+	{ "PrintScreen",    key_printscreen },
+	{ "Insert",         key_insert },
+	{ "Delete",         key_del },
+	{ "Digit0",         key_0 },
+	{ "Digit1",         key_1 },
+	{ "Digit2",         key_2 },
+	{ "Digit3",         key_3 },
+	{ "Digit4",         key_4 },
+	{ "Digit5",         key_5 },
+	{ "Digit6",         key_6 },
+	{ "Digit7",         key_7 },
+	{ "Digit8",         key_8 },
+	{ "Digit9",         key_9 },
+	{ "KeyA",           key_a },
+	{ "KeyB",           key_b },
+	{ "KeyC",           key_c },
+	{ "KeyD",           key_d },
+	{ "KeyE",           key_e },
+	{ "KeyF",           key_f },
+	{ "KeyG",           key_g },
+	{ "KeyH",           key_h },
+	{ "KeyI",           key_i },
+	{ "KeyJ",           key_j },
+	{ "KeyK",           key_k },
+	{ "KeyL",           key_l },
+	{ "KeyM",           key_m },
+	{ "KeyN",           key_n },
+	{ "KeyO",           key_o },
+	{ "KeyP",           key_p },
+	{ "KeyQ",           key_q },
+	{ "KeyR",           key_r },
+	{ "KeyS",           key_s },
+	{ "KeyT",           key_t },
+	{ "KeyU",           key_u },
+	{ "KeyV",           key_v },
+	{ "KeyW",           key_w },
+	{ "KeyX",           key_x },
+	{ "KeyY",           key_y },
+	{ "KeyZ",           key_z },
+	//{ "MetaLeft",       key_metaleft },
+	//{ "MetaRight",      key_metaright },
+	{ "Numpad0",        key_num0 },
+	{ "Numpad1",        key_num1 },
+	{ "Numpad2",        key_num2 },
+	{ "Numpad3",        key_num3 },
+	{ "Numpad4",        key_num4 },
+	{ "Numpad5",        key_num5 },
+	{ "Numpad6",        key_num6 },
+	{ "Numpad7",        key_num7 },
+	{ "Numpad8",        key_num8 },
+	{ "Numpad9",        key_num9 },
+	{ "NumpadMultiply", key_multiply },
+	{ "NumpadAdd",      key_add },
+	{ "NumpadSubtract", key_subtract },
+	{ "NumpadDecimal",  key_decimal },
+	{ "NumpadDivide",   key_divide },
+	{ "F1",             key_f1 },
+	{ "F2",             key_f2 },
+	{ "F3",             key_f3 },
+	{ "F4",             key_f4 },
+	{ "F5",             key_f5 },
+	{ "F6",             key_f6 },
+	{ "F7",             key_f7 },
+	{ "F8",             key_f8 },
+	{ "F9",             key_f9 },
+	{ "F10",            key_f10 },
+	{ "F11",            key_f11 },
+	{ "F12",            key_f12 },
+	//{ "NumLock",        key_NUM_LOCK },
+	//{ "ScrollLock",     key_SCROLL_LOCK },
+	{ "Semicolon",      key_semicolon },
+	{ "Equal",          key_equals },
+	{ "Comma",          key_comma },
+	{ "Minus",          key_minus },
+	{ "Period",         key_period },
+	{ "Slash",          key_slash_fwd },
+	{ "Backquote",      key_apostrophe }, // GRAVE_ACCENT
+	{ "BracketLeft",    key_bracket_open },
+	{ "Backslash",      key_slash_back },
+	{ "BracketRight",   key_bracket_close },
+	{ "Quote",          key_backtick }, // GRAVE_ACCENT
+	{ 0, key_none },
+};
 
 ///////////////////////////////////////////
 
@@ -122,11 +238,86 @@ void web_step_end_flat() {
 
 ///////////////////////////////////////////
 
+bool web_get_cursor(vec2 &out_pos) {
+	out_pos = web_mouse_pos;
+	return web_mouse_tracked;
+}
+
+///////////////////////////////////////////
+
+float web_get_scroll() {
+	return web_mouse_scroll;
+}
+
+///////////////////////////////////////////
+
 void (*web_app_update  )(void);
 void (*web_app_shutdown)(void);
 bool32_t web_anim_callback(double t, void *) {
 	sk_step(web_app_update);
+	
 	return sk_running ? true : false;
+}
+
+///////////////////////////////////////////
+
+int web_on_mouse(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
+	web_mouse_pos     = {(float)mouse_event->targetX, (float)mouse_event->targetY};
+	web_mouse_tracked = true;
+	return 0;
+}
+
+///////////////////////////////////////////
+
+EM_BOOL web_on_scroll(int event_type, const EmscriptenWheelEvent *wheel_event, void *user_data) {
+	web_mouse_scroll -= wheel_event->deltaY;
+	return 0;
+}
+
+///////////////////////////////////////////
+
+EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, void *user_data) {
+	if (event_type == EMSCRIPTEN_EVENT_KEYPRESS) {
+		const char *next;
+		char32_t    ch = utf8_decode_fast(key_event->charValue, &next);
+		input_text_inject_char(ch);
+		return 1;
+	}
+
+	key_ keycode = key_none;
+	for (size_t i = 0; i < _countof(web_keymap); i++) {
+		if (string_eq(web_keymap[i].name, key_event->code)) {
+			keycode = web_keymap[i].key;
+			break;
+		}
+	}
+	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_keyboard_inject_press  (keycode);
+	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_keyboard_inject_release(keycode);
+	return 1;
+}
+
+///////////////////////////////////////////
+
+EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
+	key_ key = key_none;
+	switch (mouse_event->button) {
+	case 0: key = key_mouse_left;   break;
+	case 1: key = key_mouse_center; break;
+	case 2: key = key_mouse_right;  break;
+	}
+	if (key != key_none) {
+		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_keyboard_inject_press  (key);
+		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_keyboard_inject_release(key);
+	}
+	return 1;
+}
+
+///////////////////////////////////////////
+
+EM_BOOL web_on_mouse_enter(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
+	if      (event_type == EMSCRIPTEN_EVENT_MOUSEENTER) web_mouse_tracked = true;
+	else if (event_type == EMSCRIPTEN_EVENT_MOUSELEAVE) web_mouse_tracked = false;
+	return 1;
 }
 
 ///////////////////////////////////////////
@@ -135,6 +326,16 @@ void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
 	web_app_update   = app_update;
 	web_app_shutdown = app_shutdown;
 	emscripten_request_animation_frame_loop(web_anim_callback, 0);
+
+	emscripten_set_mousemove_callback ("canvas", nullptr, false, web_on_mouse);
+	emscripten_set_wheel_callback     ("canvas", nullptr, false, web_on_scroll);
+	emscripten_set_keydown_callback   (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
+	emscripten_set_keyup_callback     (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
+	emscripten_set_keypress_callback  (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
+	emscripten_set_mousedown_callback ("canvas", nullptr, false, web_on_mouse_press);
+	emscripten_set_mouseup_callback   ("canvas", nullptr, false, web_on_mouse_press);
+	emscripten_set_mouseenter_callback("canvas", nullptr, false, web_on_mouse_enter);
+	emscripten_set_mouseleave_callback("canvas", nullptr, false, web_on_mouse_enter);
 }
 
 } // namespace sk

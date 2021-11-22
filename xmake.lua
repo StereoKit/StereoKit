@@ -119,6 +119,7 @@ target("StereoKitC")
             "-g",
             "-gsource-map",
             "--profiling",
+            "-s FORCE_FILESYSTEM=1",
             --"-s -Oz",
             "-s ENVIRONMENT=web")
         add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
@@ -175,7 +176,7 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
                 "--profiling",
                 "-g",
                 "-gsource-map",
-                "-gseparate-dwarf=StereoKitC.dwarf",
+                "-s FORCE_FILESYSTEM=1",
                 --"-s -Oz",
                 "-s ENVIRONMENT=web")
         end

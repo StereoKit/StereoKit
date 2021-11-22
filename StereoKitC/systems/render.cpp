@@ -82,8 +82,9 @@ struct render_viewpoint_t {
 
 ///////////////////////////////////////////
 
-array_t<render_transform_buffer_t> render_instance_list      = {};
-render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, { 10 }, { 20 }, { 50 }, { 100 }, { 250 }, { 500 }, { 819 } };
+array_t<render_transform_buffer_t> render_instance_list   = {};
+skg_buffer_t                       render_instance_buffer = {};
+const int32_t                      render_instance_max    = 819;
 
 material_buffer_t       render_shader_globals;
 skg_buffer_t            render_shader_blit;
@@ -572,12 +573,11 @@ void render_clear() {
 ///////////////////////////////////////////
 
 bool render_init() {
-	render_shader_globals = material_buffer_create(1, sizeof(render_global_buffer));
-	render_shader_blit    = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
-
-	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
-		render_instance_buffers[i].buffer = skg_buffer_create(nullptr, render_instance_buffers[i].max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-	}
+	render_shader_globals  = material_buffer_create(1, sizeof(render_global_buffer));
+	render_shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
+	
+	render_instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
+	render_instance_list.resize(render_instance_max);
 
 	// Setup a default camera
 	render_set_clip(render_clip_planes.x, render_clip_planes.y);
@@ -639,9 +639,7 @@ void render_shutdown() {
 	mesh_release           (render_blit_quad);
 	material_buffer_release(render_shader_globals);
 
-	for (size_t i = 0; i < _countof(render_instance_buffers); i++) {
-		skg_buffer_destroy(&render_instance_buffers[i].buffer);
-	}
+	skg_buffer_destroy(&render_instance_buffer);
 	skg_buffer_destroy(&render_shader_blit);
 }
 
@@ -737,18 +735,12 @@ void render_set_material(material_t material) {
 skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
 	int32_t size  = (int32_t)list.count - offset;
-	int32_t index = 0;
-	for (int32_t i = 0; i < _countof(render_instance_buffers); i++) {
-		index = i;
-		if (render_instance_buffers[i].max >= size)
-			break;
-	}
 	int32_t start = offset;
 
 	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
-	if (size > render_instance_buffers[index].max) {
-		offset   += render_instance_buffers[index].max;
-		out_count = render_instance_buffers[index].max;
+	if (size > render_instance_max) {
+		offset   += render_instance_max;
+		out_count = render_instance_max;
 	} else {
 		// this means we've gotten through the whole list :)
 		offset    = 0;
@@ -756,8 +748,8 @@ skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, 
 	}
 
 	// Copy data into the buffer, and return it!
-	skg_buffer_set_contents(&render_instance_buffers[index].buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
-	return &render_instance_buffers[index].buffer;
+	skg_buffer_set_contents(&render_instance_buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
+	return &render_instance_buffer;
 }
 
 ///////////////////////////////////////////

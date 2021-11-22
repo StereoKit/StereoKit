@@ -54,6 +54,7 @@
 #endif
 
 #ifdef SK_OS_WEB
+#include "web.h"
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <stdio.h>
@@ -203,6 +204,8 @@ bool platform_get_cursor(vec2 &out_pos) {
 	out_pos.y = (float)cursor_pos.y;
 #elif defined(SK_OS_LINUX)
 	result = linux_get_cursor(out_pos);
+#elif defined(SK_OS_WEB)
+	result = web_get_cursor(out_pos);
 #else
 #endif
 	return result;
@@ -231,6 +234,8 @@ float platform_get_scroll() {
 	return win32_scroll;
 #elif defined(SK_OS_LINUX)
 	return linux_get_scroll();
+#elif defined(SK_OS_WEB)
+	return web_get_scroll();
 #else
 	return 0;
 #endif

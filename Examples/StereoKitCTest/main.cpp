@@ -12,6 +12,7 @@ using namespace sk;
 #include "demo_picker.h"
 #include "demo_world.h"
 #include "demo_lighting.h"
+#include "demo_draw.h"
 
 #include <stdio.h>
 
@@ -64,6 +65,11 @@ scene_t demos[] = {
 		demo_lighting_init,
 		demo_lighting_update,
 		demo_lighting_shutdown,
+	}, {
+		"Draw",
+		demo_draw_init,
+		demo_draw_update,
+		demo_draw_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
@@ -120,7 +126,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[6]);
+	scene_set_active(demos[8]);
 
 	sk_run(common_update, common_shutdown);
 

@@ -12,6 +12,7 @@
     <ClCompile Include="demo_world.cpp" />
     <ClCompile Include="skt_lighting.cpp" />
     <ClCompile Include="demo_lighting.cpp" />
+    <ClCompile Include="demo_draw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -30,6 +31,7 @@
     <ClInclude Include="Shaders\skt_light_only.hlsl.h">
       <Filter>Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="demo_draw.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

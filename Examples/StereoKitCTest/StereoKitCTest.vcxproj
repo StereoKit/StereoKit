@@ -89,6 +89,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="demo_draw.cpp" />
     <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
@@ -102,6 +103,7 @@
     <ClCompile Include="skt_lighting.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="demo_draw.h" />
     <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />

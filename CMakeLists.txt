@@ -195,6 +195,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/texture.cpp )
 
 set(SK_SRC_LIBRARIES
+  StereoKitC/libraries/aileron_font_data.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/ferr_hash.h
@@ -274,6 +275,8 @@ set(SK_SRC_PLATFORM
   StereoKitC/systems/platform/platform.cpp
   StereoKitC/systems/platform/platform_utils.h
   StereoKitC/systems/platform/platform_utils.cpp
+  StereoKitC/systems/platform/web.h
+  StereoKitC/systems/platform/web.cpp  
   StereoKitC/systems/platform/uwp.h
   StereoKitC/systems/platform/uwp.cpp  
   StereoKitC/systems/platform/win32.h
