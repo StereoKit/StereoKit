@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System;
 
 class TestMath : ITest
 {
@@ -70,10 +71,33 @@ class TestMath : ITest
 		return true;
 	}
 
+	bool TestAngleDist()
+	{
+		float angleDistA = SKMath.AngleDist(0, 359);
+		float angleDistB = SKMath.AngleDist(359, 0);
+		float angleDistC = SKMath.AngleDist(359, 720);
+		float angleDistD = SKMath.AngleDist(-60, 70);
+		float angleDistE = SKMath.AngleDist(-60, 140);
+
+		Log.Info($"AngleDist 0 to 359: {angleDistA}");
+		Log.Info($"AngleDist 359 to 0: {angleDistB}");
+		Log.Info($"AngleDist 359 to 720: {angleDistC}");
+		Log.Info($"AngleDist -60 to 70: {angleDistD}");
+		Log.Info($"AngleDist -60 to 140: {angleDistE}");
+
+		if (MathF.Abs(angleDistA - angleDistB) > tolerance) return false;
+		if (MathF.Abs(angleDistA - angleDistC) > tolerance) return false;
+		if (MathF.Abs(angleDistA - 1)          > tolerance) return false;
+		if (MathF.Abs(angleDistD - 130)        > tolerance) return false;
+		if (MathF.Abs(angleDistE - 160)        > tolerance) return false;
+		return true;
+	}
+
 	public void Initialize()
 	{
 		Tests.Test(TestMatrixDecompose);
 		Tests.Test(TestMatrixTransform);
+		Tests.Test(TestAngleDist);
 	}
 
 	public void Shutdown() { }
