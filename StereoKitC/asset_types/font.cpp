@@ -178,13 +178,13 @@ bool font_setup(font_t font) {
 ///////////////////////////////////////////
 
 font_t font_create_default() { 
-	font_t result = font_find(default_id_font);
+	font_t result = font_find("sk_font::default");
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, default_id_font);
+	assets_set_id(result->header, "sk_font::default");
 
-	int32_t id = font_source_add_data(default_id_font, aileron_font_ttf, aileron_font_ttf_len);
+	int32_t id = font_source_add_data("sk_font::default", aileron_font_ttf, aileron_font_ttf_len);
 	if (id >= 0)
 		result->font_ids.add(id);
 

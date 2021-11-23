@@ -223,13 +223,10 @@ bool defaults_init() {
 
 	// Text!
 	sk_default_font = platform_default_font();
-	if (sk_default_font != nullptr) font_set_id(sk_default_font, default_id_font);
-	else                            sk_default_font = font_create_default();
 	if (sk_default_font == nullptr)
 		return false;
+	font_set_id(sk_default_font, default_id_font);
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
-
-	
 
 	// Sounds
 	sk_default_click = sound_generate([](float t){

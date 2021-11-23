@@ -11,6 +11,7 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
+#include "../../asset_types/font.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -255,7 +256,10 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
 #elif defined(SK_OS_WEB)
-	printf(text);
+	if      (level == log_diagnostic) emscripten_console_log(text);
+	else if (level == log_inform    ) emscripten_console_log(text);
+	else if (level == log_warning   ) emscripten_console_warn(text);
+	else if (level == log_error     ) emscripten_console_error(text);
 #else
 	(void)level;
 	(void)text;
@@ -429,6 +433,8 @@ font_t platform_default_font() {
 	fonts.each(free);
 	fonts.free();
 	return result;
+#elif defined(SK_OS_WEB)
+	return font_create_default();
 #else
 	array_t<const char *> fonts = array_t<const char *>::make(3);
 	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
