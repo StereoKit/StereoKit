@@ -169,6 +169,7 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
         add_deps("StereoKitC")
 
         if is_plat("wasm") then
+            set_policy("check.auto_ignore_flags", false)
             add_ldflags(
                 "-s FULL_ES3=1",
                 "-s ASSERTIONS=1",
@@ -177,6 +178,8 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
                 "-g",
                 "-gsource-map",
                 "-s FORCE_FILESYSTEM=1",
+                "--preload-file Examples/Assets",
+                "--source-map-base http://127.0.0.1:8000/",
                 --"-s -Oz",
                 "-s ENVIRONMENT=web")
         end

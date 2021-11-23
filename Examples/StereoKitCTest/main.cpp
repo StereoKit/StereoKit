@@ -119,8 +119,8 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	sk_settings_t settings = {};
 	settings.app_name           = "StereoKit C";
-	settings.assets_folder      = "Assets";
-	settings.display_preference = display_mode_mixedreality;
+	settings.assets_folder      = "Examples/Assets";
+	settings.display_preference = display_mode_flatscreen;
 	if (!sk_init(settings))
 		return 1;
 
@@ -136,16 +136,16 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 void common_init() {
 	// Create a PBR floor material
 	tex_t tex_color = tex_create_file("test.png");
-	tex_t tex_norm  = tex_create_file("test_normal.png");
+	//tex_t tex_norm  = tex_create_file("test_normal.png");
 	floor_mat = material_copy_id("default/material");
 	material_set_texture(floor_mat, "diffuse",   tex_color);
-	material_set_texture(floor_mat, "normal",    tex_norm);
+	//material_set_texture(floor_mat, "normal",    tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);
 	material_set_float  (floor_mat, "roughness", 1.0f);
 	material_set_float  (floor_mat, "metallic",  0.5f);
 	material_set_queue_offset(floor_mat, 1);
 	if (tex_color != nullptr) tex_release(tex_color);
-	if (tex_norm  != nullptr) tex_release(tex_norm);
+	//if (tex_norm  != nullptr) tex_release(tex_norm);
 
 	// Procedurally create a cube model
 	mesh_t mesh_cube = mesh_gen_cube(vec3_one, 0);
