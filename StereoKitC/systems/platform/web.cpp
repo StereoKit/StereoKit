@@ -263,7 +263,6 @@ bool32_t web_anim_callback(double t, void *) {
 
 int web_on_mouse(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
 	web_mouse_pos     = {(float)mouse_event->targetX, (float)mouse_event->targetY};
-	web_mouse_tracked = true;
 	return 0;
 }
 
@@ -332,8 +331,8 @@ void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
 	emscripten_set_keydown_callback   (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
 	emscripten_set_keyup_callback     (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
 	emscripten_set_keypress_callback  (EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, web_on_key);
-	emscripten_set_mousedown_callback ("canvas", nullptr, false, web_on_mouse_press);
-	emscripten_set_mouseup_callback   ("canvas", nullptr, false, web_on_mouse_press);
+	emscripten_set_mousedown_callback ("canvas", nullptr, true, web_on_mouse_press);
+	emscripten_set_mouseup_callback   ("canvas", nullptr, true, web_on_mouse_press);
 	emscripten_set_mouseenter_callback("canvas", nullptr, false, web_on_mouse_enter);
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, web_on_mouse_enter);
 }

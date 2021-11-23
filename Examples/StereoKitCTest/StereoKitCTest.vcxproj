@@ -67,7 +67,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -85,7 +85,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
