@@ -172,16 +172,25 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
             set_policy("check.auto_ignore_flags", false)
             add_ldflags(
                 "-s FULL_ES3=1",
-                "-s ASSERTIONS=1",
                 "-s ALLOW_MEMORY_GROWTH=1",
-                "--profiling",
-                "-g",
-                "-gsource-map",
                 "-s FORCE_FILESYSTEM=1",
                 "--preload-file Examples/Assets",
-                "--source-map-base http://127.0.0.1:8000/",
-                --"-s -Oz",
+                "-s -Oz",
                 "-s ENVIRONMENT=web")
+
+            if is_mode("debug") then
+                add_ldflags(
+                    "-s ASSERTIONS=1",
+                    "--profiling",
+                    "-g",
+                    "-gsource-map",
+                    "--source-map-base http://127.0.0.1:8000/")
+            end
+            if is_mode("release") then
+                add_ldflags(
+                    "-s -Oz",
+                    "-fno-rtti")
+            end
         end
 
         after_build(function (target)
