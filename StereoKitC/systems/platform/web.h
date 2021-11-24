@@ -18,6 +18,7 @@ void web_shutdown       ();
 void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void));
 
 bool  web_get_cursor(vec2 &out_pos);
+void  web_set_cursor(vec2 window_pos);
 float web_get_scroll();
 
 } // namespace sk

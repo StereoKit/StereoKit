@@ -32,6 +32,7 @@ system_t       *web_render_sys = nullptr;
 vec2            web_mouse_pos  = { 0,0 };
 bool            web_mouse_tracked = false;
 float           web_mouse_scroll  = 0;
+bool            web_mouse_locked  = false;
 
 web_key_map_t web_keymap[] = {
 	{ "Backspace",      key_backspace },
@@ -245,6 +246,12 @@ bool web_get_cursor(vec2 &out_pos) {
 
 ///////////////////////////////////////////
 
+void web_set_cursor(vec2 window_pos) {
+	web_mouse_pos = window_pos;
+}
+
+///////////////////////////////////////////
+
 float web_get_scroll() {
 	return web_mouse_scroll;
 }
@@ -262,7 +269,9 @@ bool32_t web_anim_callback(double t, void *) {
 ///////////////////////////////////////////
 
 int web_on_mouse(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
-	web_mouse_pos     = {(float)mouse_event->targetX, (float)mouse_event->targetY};
+	if (web_mouse_locked) web_mouse_pos += vec2 { (float)mouse_event->movementX, (float)mouse_event->movementY };
+	else                  web_mouse_pos  = vec2 { (float)mouse_event->targetX,   (float)mouse_event->targetY };
+
 	return 0;
 }
 
@@ -308,7 +317,24 @@ EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_eve
 		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_keyboard_inject_press  (key);
 		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_keyboard_inject_release(key);
 	}
+
+	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right && input_key(key_shift) & button_state_active) {
+		if (web_mouse_locked == false && event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
+			emscripten_request_pointerlock("canvas", false);
+			web_mouse_locked = true;
+		}
+		else if (web_mouse_locked == true && event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
+			emscripten_exit_pointerlock();
+			web_mouse_locked = false;
+		}
+	}
 	return 1;
+}
+
+///////////////////////////////////////////
+
+EM_BOOL web_on_pointerlock(int event_type, const EmscriptenPointerlockChangeEvent *pointerlock_change_event, void *user_data) {
+	web_mouse_locked = pointerlock_change_event->isActive;
 }
 
 ///////////////////////////////////////////
@@ -335,6 +361,7 @@ void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
 	emscripten_set_mouseup_callback   ("canvas", nullptr, true, web_on_mouse_press);
 	emscripten_set_mouseenter_callback("canvas", nullptr, false, web_on_mouse_enter);
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, web_on_mouse_enter);
+	emscripten_set_pointerlockchange_callback("canvas", nullptr, false, web_on_pointerlock);
 }
 
 } // namespace sk

@@ -223,6 +223,8 @@ void platform_set_cursor(vec2 window_pos) {
 	SetCursorPos  (pt.x, pt.y);
 #elif defined(SK_OS_LINUX)
 	linux_set_cursor(window_pos);
+#elif defined(SK_OS_WEB)
+	web_set_cursor(window_pos);
 #endif
 }
 
