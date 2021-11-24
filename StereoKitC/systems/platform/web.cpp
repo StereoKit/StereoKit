@@ -301,6 +301,18 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 	}
 	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_keyboard_inject_press  (keycode);
 	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_keyboard_inject_release(keycode);
+
+	// Disable/enable pointer lock if shift is released/pressed
+	if (web_mouse_locked                                    &&
+		sk_active_display_mode() == display_mode_flatscreen && 
+		!sk_settings.disable_flatscreen_mr_sim              &&
+		event_type               == EMSCRIPTEN_EVENT_KEYUP  &&
+		keycode                  == key_shift)
+	{
+		emscripten_exit_pointerlock();
+		web_mouse_locked = false;
+	}
+
 	return 1;
 }
 
@@ -318,10 +330,9 @@ EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_eve
 		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_keyboard_inject_release(key);
 	}
 
-	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right && input_key(key_shift) & button_state_active) {
-		if (web_mouse_locked == false && event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
-			emscripten_request_pointerlock("canvas", false);
-			web_mouse_locked = true;
+	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right) {
+		if (web_mouse_locked == false && event_type == EMSCRIPTEN_EVENT_MOUSEDOWN && input_key(key_shift) & button_state_active) {
+			web_mouse_locked = emscripten_request_pointerlock("canvas", false) == EMSCRIPTEN_RESULT_SUCCESS;
 		}
 		else if (web_mouse_locked == true && event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
 			emscripten_exit_pointerlock();
