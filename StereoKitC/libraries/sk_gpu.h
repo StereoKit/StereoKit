@@ -3645,12 +3645,10 @@ void main() {
 
 	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, skg_tex_fmt_rgba32_linear, skg_mip_none);
 	skg_tex_set_contents(&result._surface, nullptr, result.width, result.height);
-	skg_log(skg_log_info, "Created color surface");
 
 	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
 	skg_tex_set_contents(&result._surface_depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
-	skg_log(skg_log_info, "Created depth surface");
 
 	skg_vert_t quad_verts[] = { 
 		{ {-1, 1,0}, {0,0,1}, {0,1}, {255,255,255,255} },
