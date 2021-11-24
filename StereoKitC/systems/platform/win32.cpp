@@ -245,7 +245,7 @@ void win32_stop_flat() {
 
 void win32_step_begin_xr() {
 	MSG msg = {0};
-	if (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
+	while (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
@@ -253,7 +253,7 @@ void win32_step_begin_xr() {
 
 void win32_step_begin_flat() {
 	MSG msg = {0};
-	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
