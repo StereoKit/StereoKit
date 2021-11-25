@@ -49,7 +49,7 @@ about them!
 |[Difference]({{site.url}}/Pages/Reference/Quat/Difference.html)|This gives a relative rotation between the first and second quaternion rotations. Remember that order is important here!|
 |[FromAngles]({{site.url}}/Pages/Reference/Quat/FromAngles.html)|Creates a Roll/Pitch/Yaw rotation (applied in that order) from the provided angles in degrees!|
 |[LookAt]({{site.url}}/Pages/Reference/Quat/LookAt.html)|Creates a rotation that describes looking from a point, to another point! This is a great function for camera style rotation, or other facing behavior when you know where an object is, and where you want it to look at. This rotation works best when applied to objects that face Vec3.Forward in their resting/model space pose.|
-|[LookDir]({{site.url}}/Pages/Reference/Quat/LookDir.html)|Creates a rotation that describes looking in direction. This is great for quickly describing facing behavior! This rotation works best when applied to objects that face Vec3.Forward in their resting/model space pose.|
+|[LookDir]({{site.url}}/Pages/Reference/Quat/LookDir.html)|Creates a rotation that describes looking towards a direction. This is great for quickly describing facing behavior! This rotation works best when applied to objects that face Vec3.Forward in their resting/model space pose.|
 |[Slerp]({{site.url}}/Pages/Reference/Quat/Slerp.html)|Spherical Linear intERPolation. Interpolates between two quaternions! Both Quats should be normalized/unit quaternions, or you may get unexpected results.|
 
 

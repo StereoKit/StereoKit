@@ -20,9 +20,9 @@ resting/model space pose.
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookFromPoint|Position of where the 'object' is.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookAtPoint|Position of where the object should be             looking!|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookAtPoint|Position of where the 'object' should             be looking towards!|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) upDirection|A direction indicating where 'up' is             from this rotation's persepective. A 'normal' up direction would             be (0,1,0).|
-|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that describes looking from a point, to another point.|
+|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that describes looking from a point, towards another point.|
 
 <div class='signature' markdown='1'>
 ```csharp
@@ -42,8 +42,8 @@ most common way of using this type of rotation.
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookFromPoint|Position of where the 'object' is.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookAtPoint|Position of where the object should be             looking!|
-|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that describes looking from a point, to another point.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookAtPoint|Position of where the 'object' should             be looking towards!|
+|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that describes looking from a point, towards another point.|
 
 
 

@@ -84,12 +84,12 @@ namespace StereoKit
 		/// resting/model space pose.</summary>
 		/// <param name="lookFromPoint">Position of where the 'object' is.
 		/// </param>
-		/// <param name="lookAtPoint">Position of where the object should be
-		/// looking!</param>
+		/// <param name="lookAtPoint">Position of where the 'object' should
+		/// be looking towards!</param>
 		/// <param name="upDirection">A direction indicating where 'up' is
 		/// from this rotation's persepective. A 'normal' up direction would
 		/// be (0,1,0).</param>
-		/// <returns>A rotation that describes looking from a point, to
+		/// <returns>A rotation that describes looking from a point, towards
 		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint, Vec3 upDirection) 
@@ -106,28 +106,29 @@ namespace StereoKit
 		/// most common way of using this type of rotation.</summary>
 		/// <param name="lookFromPoint">Position of where the 'object' is.
 		/// </param>
-		/// <param name="lookAtPoint">Position of where the object should be
-		/// looking!</param>
-		/// <returns>A rotation that describes looking from a point, to
+		/// <param name="lookAtPoint">Position of where the 'object' should
+		/// be looking towards!</param>
+		/// <returns>A rotation that describes looking from a point, towards
 		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint) 
 			=> NativeAPI.quat_lookat_up(lookFromPoint, lookAtPoint, Vec3.Up);
 
-		/// <summary>Creates a rotation that describes looking in direction.
-		/// This is great for quickly describing facing behavior! This
-		/// rotation works best when applied to objects that face
+		/// <summary>Creates a rotation that describes looking towards a
+		/// direction. This is great for quickly describing facing behavior!
+		/// This rotation works best when applied to objects that face
 		/// Vec3.Forward in their resting/model space pose.</summary>
 		/// <param name="direction">Direction the rotation should be looking.
 		/// Doesn't need to be normalized.</param>
-		/// <returns>A rotation that describes looking in direction.</returns>
+		/// <returns>A rotation that describes looking towards a direction.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookDir(Vec3 direction) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, direction);
 
-		/// <summary>Creates a rotation that describes looking in direction.
-		/// This is great for quickly describing facing behavior! This
-		/// rotation works best when applied to objects that face
+		/// <summary>Creates a rotation that describes looking towards a
+		/// direction. This is great for quickly describing facing behavior!
+		/// This rotation works best when applied to objects that face
 		/// Vec3.Forward in their resting/model space pose.</summary>
 		/// <param name="x">X component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
@@ -135,7 +136,8 @@ namespace StereoKit
 		/// be looking. Doesn't need to be normalized.</param>
 		/// <param name="z">Z component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
-		/// <returns>A rotation that describes looking in direction.</returns>
+		/// <returns>A rotation that describes looking towards a direction.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookDir(float x, float y, float z) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, new Vec3(x, y, z));
