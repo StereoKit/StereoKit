@@ -5,7 +5,7 @@
 	<!-- Copy the package's native libraries into the project, since it doesn't
 	     seem you can link directly to libraries in the package folder. Except
 	     for UWP, this is the one thing UWP seems to get right automatically. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP')">
+	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP') or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
@@ -41,8 +41,8 @@
 			SkipUnchangedFiles = "true"/>
 	</Target>
 
-	<!-- Link libraries to Xamarin projects.  -->
-	<ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'">
+	<!-- Link libraries to Xamarin or Maui Android projects.  -->
+	<ItemGroup Condition= "'$(TargetFrameworkIdentifier)'=='MonoAndroid' or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so"/>
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so" />
 	</ItemGroup>
