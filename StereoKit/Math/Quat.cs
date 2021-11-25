@@ -86,9 +86,11 @@ namespace StereoKit
 		/// </param>
 		/// <param name="lookAtPoint">Position of where the 'object' should
 		/// be looking towards!</param>
-		/// <param name="upDirection">A direction indicating where 'up' is
-		/// from this rotation's persepective. A 'normal' up direction would
-		/// be (0,1,0).</param>
+		/// <param name="upDirection">Look From/At positions describe X and Y
+		/// axis rotation well, but leave Z Axiz/Roll undefined. Providing an
+		/// upDirection vector helps to indicate roll around the From/At
+		/// line. A common up direction would be (0,1,0), to prevent roll.
+		/// </param>
 		/// <returns>A rotation that describes looking from a point, towards
 		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -102,8 +104,10 @@ namespace StereoKit
 		/// when applied to objects that face Vec3.Forward in their 
 		/// resting/model space pose.
 		/// 
-		/// This overload automatically defines 'up' as (0,1,0), which is the
-		/// most common way of using this type of rotation.</summary>
+		/// This overload automatically defines 'upDirection' as (0,1,0).
+		/// This indicates the rotation should contain no roll around the Z
+		/// axis, and is the most common way of using this type of rotation.
+		/// </summary>
 		/// <param name="lookFromPoint">Position of where the 'object' is.
 		/// </param>
 		/// <param name="lookAtPoint">Position of where the 'object' should
