@@ -647,7 +647,6 @@ namespace StereoKit
 		/// <returns>This returns the newly added ModelNode, or if there's an
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
-		/// <returns>The new child ModelNode.</returns>
 		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
 			return new ModelNode(
