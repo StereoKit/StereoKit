@@ -547,9 +547,11 @@ void oxri_update_frame() {
 		// rotation or position are tracked independently of eachother.
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		bool tracked_pos = false;
+		bool tracked_rot = false;
 		if (XR_UNQUALIFIED_SUCCESS(res)) {
-			bool tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT)    != 0;
-			bool tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
+			tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT)    != 0;
+			tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
 			bool valid_pos   = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)      != 0;
 			bool valid_rot   = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)   != 0;
 			if (valid_pos) {
@@ -565,7 +567,7 @@ void oxri_update_frame() {
 			input_controllers[hand].tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
 			input_controllers[hand].tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
 		}
-		input_controllers[hand].tracked = button_make_state(input_controllers[hand].tracked & button_state_active, state_grip.isActive);
+		input_controllers[hand].tracked = button_make_state(input_controllers[hand].tracked & button_state_active, (tracked_pos || tracked_rot));
 
 		// Controller aim pose
 		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };
