@@ -14,6 +14,9 @@ namespace StereoKit
 			// Mono uses a different strategy for linking the DLL
 			if (RuntimeInformation.FrameworkDescription.StartsWith("Mono "))
 				return true;
+			// Browsers should also have their own strategy for linking
+			if (RuntimeInformation.OSDescription == "Browser")
+				return true;
 
 			string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64
 				? "arm64"
