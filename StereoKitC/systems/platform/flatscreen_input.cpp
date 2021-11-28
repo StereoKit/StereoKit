@@ -15,6 +15,7 @@ vec2   fltscr_rot_speed  = {10.f, 5.f}; // converting mouse pixel movement to ro
 matrix fltscr_transform  = matrix_identity;
 vec3   fltscr_head_rot   = { -21, 0.0001f, 0 };
 vec3   fltscr_head_pos   = {  0, 0.2f, 0.0f };
+bool   fltscr_mouse_look = false;
 
 ///////////////////////////////////////////
 
@@ -53,7 +54,10 @@ void flatscreen_input_update() {
 
 		// head rotation
 		quat orientation;
-		if (input_key(key_mouse_right) & button_state_active) {
+		if (input_key(key_mouse_right) & button_state_just_active) {
+			fltscr_mouse_look = true;
+		}
+		if (fltscr_mouse_look) {
 			const mouse_t *mouse = input_mouse();
 			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
 			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
@@ -70,6 +74,11 @@ void flatscreen_input_update() {
 		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
 		fltscr_transform = matrix_trs(fltscr_head_pos, orientation);
 		render_set_cam_root(render_get_cam_root());
+	} else {
+		fltscr_mouse_look = false;
+	}
+	if (input_key(key_mouse_right) & button_state_just_inactive) {
+		fltscr_mouse_look = false;
 	}
 
 	if (sk_settings.disable_flatscreen_mr_sim) {

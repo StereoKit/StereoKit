@@ -1,3 +1,5 @@
+#include "platform/platform_utils.h"
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -8,6 +10,8 @@
 #include <float.h>
 
 namespace sk {
+
+#if defined(SK_XR_OPENXR)
 
 ///////////////////////////////////////////
 
@@ -35,22 +39,22 @@ struct su_mesh_inst_t {
 	matrix   inv_transform;
 };
 
-XrSceneObserverMSFT  xr_scene_observer    = {};
-bool                 xr_scene_updating    = false;
-bool                 xr_scene_update_requested = false;
-XrSceneMSFT          xr_scene;
-scene_request_info_t xr_scene_last_req     = {};
-scene_request_info_t xr_scene_next_req     = {};
-float                xr_scene_last_refresh = -1000;
+XrSceneObserverMSFT     xr_scene_observer         = {};
+bool                    xr_scene_updating         = false;
+bool                    xr_scene_update_requested = false;
+XrSceneMSFT             xr_scene;
+scene_request_info_t    xr_scene_last_req         = {};
+scene_request_info_t    xr_scene_next_req         = {};
+float                   xr_scene_last_refresh     = -1000;
 
-array_t<scene_mesh_t>   xr_meshes         = {};
-array_t<su_mesh_inst_t> xr_scene_colliders= {};
-array_t<su_mesh_inst_t> xr_scene_visuals  = {};
-material_t              xr_scene_material = {};
+array_t<scene_mesh_t>   xr_meshes                 = {};
+array_t<su_mesh_inst_t> xr_scene_colliders        = {};
+array_t<su_mesh_inst_t> xr_scene_visuals          = {};
+material_t              xr_scene_material         = {};
 
-array_t<vert_t>     world_verts_tmp   = {};
-array_t<XrVector3f> world_vbuffer_tmp = {};
-array_t<uint32_t>   world_ibuffer_tmp = {};
+array_t<vert_t>         world_verts_tmp           = {};
+array_t<XrVector3f>     world_vbuffer_tmp         = {};
+array_t<uint32_t>       world_ibuffer_tmp         = {};
 
 ///////////////////////////////////////////
 
@@ -513,5 +517,87 @@ void world_refresh_transforms() {
 	xr_scene_colliders.each(world_update_inst);
 	xr_scene_visuals  .each(world_update_inst);
 }
+
+#else
+
+bool world_init() {
+	return true;
+}
+
+void world_update() {
+}
+
+void world_shutdown() {
+}
+
+void world_refresh_transforms() {
+}
+
+bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
+	return false;
+}
+
+void world_set_occlusion_enabled(bool32_t enabled) {
+}
+
+bool32_t world_get_occlusion_enabled() {
+	return false;
+}
+
+void world_set_raycast_enabled(bool32_t enabled) {
+}
+
+bool32_t world_get_raycast_enabled() {
+	return false;
+}
+
+void world_set_occlusion_material(material_t material) {
+}
+
+material_t world_get_occlusion_material() {
+	return nullptr;
+}
+
+void world_set_refresh_type(world_refresh_ refresh_type) {
+}
+
+world_refresh_ world_get_refresh_type() {
+	return world_refresh_area;
+}
+
+void world_set_refresh_radius(float radius_meters) {
+}
+
+float world_get_refresh_radius() {
+	return 0;
+}
+
+void world_set_refresh_interval(float every_seconds) {
+}
+
+float world_get_refresh_interval() {
+	return 0;
+}
+
+
+///////////////////////////////////////////
+
+bool32_t world_has_bounds() {
+	return false;
+}
+
+///////////////////////////////////////////
+
+vec2 world_get_bounds_size() {
+	return vec2_zero;
+}
+
+///////////////////////////////////////////
+
+pose_t world_get_bounds_pose() {
+	return pose_identity;
+}
+
+#endif
 
 } // namespace sk

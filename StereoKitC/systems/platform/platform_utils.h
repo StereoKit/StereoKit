@@ -4,14 +4,20 @@
 
 #if   defined(__EMSCRIPTEN__)
 	#define SK_OS_WEB
+	#define SK_XR_WEBXR
+	#define WEB_EXPORT EMSCRIPTEN_KEEPALIVE extern "C"
 #elif defined(__ANDROID__)
 	#define SK_OS_ANDROID
+	#define SK_XR_OPENXR
 #elif defined(__linux__)
 	#define SK_OS_LINUX
+	#define SK_XR_OPENXR
 #elif defined(WINDOWS_UWP)
 	#define SK_OS_WINDOWS_UWP
+	#define SK_XR_OPENXR
 #elif defined(_WIN32)
 	#define SK_OS_WINDOWS
+	#define SK_XR_OPENXR
 #endif
 
 #if !defined(NDEBUG)

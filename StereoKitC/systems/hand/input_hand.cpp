@@ -55,6 +55,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		nullptr,
 		hand_override_update_frame,
 		hand_override_update_predicted },
+#if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
 		0.2f,
 		hand_oxra_available,
@@ -71,6 +72,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		nullptr,
 		hand_oxrc_update_frame,
 		hand_oxrc_update_predicted },
+#endif
 	{ hand_system_mouse,
 		1,
 		hand_mouse_available,

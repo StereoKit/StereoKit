@@ -7,7 +7,10 @@
 #include "uwp.h"
 #include "linux.h"
 #include "android.h"
+#include "web.h"
 #include "openxr.h"
+
+#include "../../libraries/sk_gpu.h"
 
 namespace sk {
 
@@ -25,6 +28,8 @@ bool platform_init() {
 	bool result = uwp_init    ();
 #elif defined(SK_OS_WINDOWS)
 	bool result = win32_init  ();
+#elif defined(SK_OS_WEB)
+	bool result = web_init    ();
 #endif
 	if (!result) {
 		log_fail_reason(80, log_error, "Platform initialization failed!");
@@ -32,9 +37,13 @@ bool platform_init() {
 	}
 
 	// Initialize graphics
-	void *luid = sk_display_mode == display_mode_mixedreality 
+#if defined(SK_XR_OPENXR)
+	void *luid = sk_display_mode == display_mode_mixedreality
 		? openxr_get_luid() 
 		: nullptr;
+#else
+	void *luid = nullptr;
+#endif
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
 		case skg_log_info:     log_diagf("sk_gpu: %s", text); break;
@@ -75,6 +84,8 @@ void platform_shutdown() {
 	uwp_shutdown    ();
 #elif defined(SK_OS_WINDOWS)
 	win32_shutdown  ();
+#elif defined(SK_OS_WEB)
+	web_shutdown    ();
 #endif
 }
 
@@ -119,16 +130,22 @@ bool platform_set_mode(display_mode_ mode) {
 #if defined(SK_OS_ANDROID)
 			result = android_start_pre_xr();
 #elif defined(SK_OS_LINUX)
-			result = linux_start_pre_xr();
+			result = linux_start_pre_xr  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-			result = uwp_start_pre_xr();
+			result = uwp_start_pre_xr    ();
 #elif defined(SK_OS_WINDOWS)
-			result = win32_start_pre_xr();
+			result = win32_start_pre_xr  ();
+#elif defined(SK_OS_WEB)
+			result = web_start_pre_xr    ();
 #endif
 
 		// Init OpenXR
 		if (result) {
+#if defined(SK_XR_OPENXR)
 			result = openxr_init ();
+#else
+			result = true;
+#endif
 		}
 
 		// Platform init after OpenXR
@@ -136,11 +153,13 @@ bool platform_set_mode(display_mode_ mode) {
 #if defined(SK_OS_ANDROID)
 			result = android_start_post_xr();
 #elif defined(SK_OS_LINUX)
-			result = linux_start_post_xr();
+			result = linux_start_post_xr  ();
 #elif defined(SK_OS_WINDOWS_UWP)
-			result = uwp_start_post_xr();
+			result = uwp_start_post_xr    ();
 #elif defined(SK_OS_WINDOWS)
-			result = win32_start_post_xr();
+			result = win32_start_post_xr  ();
+#elif defined(SK_OS_WEB)
+			result = web_start_post_xr    ();
 #endif
 		}
 	} else if (mode == display_mode_flatscreen) {
@@ -152,6 +171,8 @@ bool platform_set_mode(display_mode_ mode) {
 		result = uwp_start_flat    ();
 #elif defined(SK_OS_WINDOWS)
 		result = win32_start_flat  ();
+#elif defined(SK_OS_WEB)
+		result = web_start_flat    ();
 #endif
 	}
 
@@ -173,8 +194,14 @@ void platform_step_begin() {
 		uwp_step_begin_xr    ();
 #elif defined(SK_OS_WINDOWS)
 		win32_step_begin_xr  ();
+#elif defined(SK_OS_WEB)
+		web_step_begin_xr    ();
 #endif
+
+#if defined(SK_XR_OPENXR)
 		openxr_step_begin();
+#else
+#endif
 	} break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
@@ -185,6 +212,8 @@ void platform_step_begin() {
 		uwp_step_begin_flat    ();
 #elif defined(SK_OS_WINDOWS)
 		win32_step_begin_flat  ();
+#elif defined(SK_OS_WEB)
+		web_step_begin_flat    ();
 #endif
 	} break;
 	}
@@ -196,16 +225,23 @@ void platform_step_begin() {
 void platform_step_end() {
 	switch (platform_mode) {
 	case display_mode_none: break;
-	case display_mode_mixedreality: openxr_step_end(); break;
+	case display_mode_mixedreality:
+#if defined(SK_XR_OPENXR)
+		openxr_step_end();
+#else
+#endif
+		break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
-		linux_step_end_flat    ();
+		linux_step_end_flat  ();
 #elif defined(SK_OS_WINDOWS_UWP)
 		uwp_step_end_flat    ();
 #elif defined(SK_OS_WINDOWS)
 		win32_step_end_flat  ();
+#elif defined(SK_OS_WEB)
+		web_step_end_flat    ();
 #endif
 	} break;
 	}
@@ -216,7 +252,12 @@ void platform_step_end() {
 void platform_stop_mode() {
 	switch (platform_mode) {
 	case display_mode_none: break;
-	case display_mode_mixedreality: openxr_shutdown(); break;
+	case display_mode_mixedreality:
+#if defined(SK_XR_OPENXR)
+		openxr_shutdown();
+#else
+#endif
+		break;
 	case display_mode_flatscreen: {
 #if   defined(SK_OS_ANDROID)
 		android_stop_flat();
@@ -226,6 +267,8 @@ void platform_stop_mode() {
 		uwp_stop_flat    ();
 #elif defined(SK_OS_WINDOWS)
 		win32_stop_flat  ();
+#elif defined(SK_OS_WEB)
+		web_stop_flat    ();
 #endif
 	} break;
 	}

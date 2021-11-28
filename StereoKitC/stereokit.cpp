@@ -19,6 +19,7 @@
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
 #include "systems/platform/android.h"
+#include "systems/platform/web.h"
 #include "systems/platform/openxr.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
@@ -34,7 +35,7 @@ bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings = {};
 system_info_t sk_info     = {};
 bool32_t      sk_focused  = true;
-bool32_t      sk_run      = true;
+bool32_t      sk_running  = true;
 
 bool sk_initialized = false;
 
@@ -303,7 +304,7 @@ void sk_shutdown() {
 ///////////////////////////////////////////
 
 void sk_quit() {
-	sk_run = false;
+	sk_running = false;
 }
 
 ///////////////////////////////////////////
@@ -319,7 +320,21 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	if (!sk_focused)
 		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
-	return sk_run;
+	return sk_running;
+}
+
+///////////////////////////////////////////
+
+void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
+#if defined(SK_OS_WEB)
+	web_start_main_loop(app_update, app_shutdown);
+#else
+	while (sk_step(app_update));
+
+	if (app_shutdown != nullptr)
+		app_shutdown();
+	sk_shutdown();
+#endif
 }
 
 ///////////////////////////////////////////

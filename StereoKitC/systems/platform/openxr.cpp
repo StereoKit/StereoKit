@@ -1,3 +1,7 @@
+
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
@@ -15,7 +19,6 @@
 #include "linux.h"
 #include "uwp.h"
 #include "win32.h"
-#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
@@ -633,8 +636,8 @@ void openxr_poll_events() {
 				xr_check_bounds = true;
 			} break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_run = false;              break;
-			case XR_SESSION_STATE_LOSS_PENDING: sk_run = false;              break;
+			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
@@ -643,7 +646,7 @@ void openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, pending->changeTime);
@@ -847,3 +850,4 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 }
 
 } // namespace sk
+#endif

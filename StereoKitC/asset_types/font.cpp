@@ -6,6 +6,7 @@
 #include "../libraries/stb_truetype.h"
 #pragma warning(pop)
 
+#include "../libraries/aileron_font_data.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../rect_atlas.h"
@@ -42,8 +43,9 @@ void         font_upsize_texture(font_t font);
 void         font_update_texture(font_t font);
 void         font_update_cache  (font_t font);
 
-int32_t      font_source_add    (const char *filename);
-void         font_source_release(int32_t id);
+int32_t      font_source_add     (const char *filename);
+int32_t      font_source_add_data(const char *name, void *data, size_t data_size);
+void         font_source_release (int32_t id);
 
 ///////////////////////////////////////////
 
@@ -70,6 +72,37 @@ int32_t font_source_add(const char *filename) {
 			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
 			font_sources[id].char_height = y1 * font_sources[id].scale;
 		}
+	}
+
+	return font_sources[id].file == nullptr
+		? -1
+		: id;
+}
+
+///////////////////////////////////////////
+
+int32_t font_source_add_data(const char *name, void *data, size_t data_size) {
+	int64_t hash = hash_fnv64_string(name);
+	int32_t id   = (int32_t)font_sources.index_where(&font_source_t::name_hash, hash);
+
+	if (id == -1) {
+		font_source_t new_file = {};
+		new_file.name_hash = hash;
+		new_file.name      = string_copy(name);
+		id = (int32_t)font_sources.add(new_file);
+	}
+	font_sources[id].references += 1;
+
+	if (font_sources[id].references == 1) {
+		size_t length;
+		font_sources[id].file = sk_malloc(data_size);
+		memcpy(font_sources[id].file, data, data_size);
+
+		stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
+		font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+		int32_t x0, y0, x1, y1;
+		stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
+		font_sources[id].char_height = y1 * font_sources[id].scale;
 	}
 
 	return font_sources[id].file == nullptr
@@ -109,6 +142,63 @@ font_t font_create(const char *file) {
 
 ///////////////////////////////////////////
 
+bool font_setup(font_t font) {
+	if (font->font_ids.count == 0) {
+		log_err("All font files provided to font_create_files were invalid!");
+		return false;
+	}
+
+	const int32_t atlas_resolution_x = 256;
+	const int32_t atlas_resolution_y = 256;
+	font->atlas      = rect_atlas_create( atlas_resolution_x, atlas_resolution_y );
+	font->atlas_data = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
+	memset(font->atlas_data, 0, font->atlas.w * font->atlas.h);
+
+	for (char32_t i = 65; i < 128; i++) font_add_character(font, i);
+	for (char32_t i = 32; i < 65;  i++) font_add_character(font, i);
+	font_update_cache(font);
+
+	// Get information about character sizes for this font
+	font_source_t *src = &font_sources[font->font_ids[0]];
+	int32_t x0, y0, x1, y1;
+	stbtt_GetCodepointBox(&src->info, 'T', &x0, &y0, &x1, &y1);
+	int32_t ascend, descend, gap;
+	stbtt_GetFontVMetrics(&src->info, &ascend, &descend, &gap);
+	int32_t advance, lsb; 
+	stbtt_GetGlyphHMetrics(&src->info, ' ', &advance, &lsb);
+	font->space_width       = advance / (float)y1;
+	font->character_ascend  = ascend  / (float)y1;
+	font->character_descend = descend / (float)y1;
+	font->line_gap          = gap     / (float)y1;
+	font->characters['\t'].xadvance = font->space_width * 2;
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+font_t font_create_default() { 
+	font_t result = font_find("sk_font::default");
+	if (result != nullptr)
+		return result;
+	result = (font_t)assets_allocate(asset_type_font);
+	assets_set_id(result->header, "sk_font::default");
+
+	int32_t id = font_source_add_data("sk_font::default", aileron_font_ttf, aileron_font_ttf_len);
+	if (id >= 0)
+		result->font_ids.add(id);
+
+	if (!font_setup(result)) {
+		font_release(result);
+		return nullptr;
+	}
+
+	font_list.add(result);
+	return result;
+}
+
+///////////////////////////////////////////
+
 font_t font_create_files(const char **files, int32_t file_count) {
 	if (file_count <= 0) {
 		log_err("No font files provided to font_create_files");
@@ -137,35 +227,10 @@ font_t font_create_files(const char **files, int32_t file_count) {
 			result->font_ids.add(id);
 	}
 
-	if (result->font_ids.count == 0) {
-		log_err("All font files provided to font_create_files were invalid!");
+	if (!font_setup(result)) {
 		font_release(result);
 		return nullptr;
 	}
-
-	const int32_t atlas_resolution_x = 256;
-	const int32_t atlas_resolution_y = 256;
-	result->atlas                = rect_atlas_create( atlas_resolution_x, atlas_resolution_y );
-	result->atlas_data           = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
-	memset(result->atlas_data, 0, result->atlas.w * result->atlas.h);
-
-	for (char32_t i = 65; i < 128; i++) font_add_character(result, i);
-	for (char32_t i = 32; i < 65;  i++) font_add_character(result, i);
-	font_update_cache(result);
-
-	// Get information about character sizes for this font
-	font_source_t *font = &font_sources[result->font_ids[0]];
-	int32_t x0, y0, x1, y1;
-	stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
-	int32_t ascend, descend, gap;
-	stbtt_GetFontVMetrics(&font->info, &ascend, &descend, &gap);
-	int32_t advance, lsb; 
-	stbtt_GetGlyphHMetrics(&font->info, ' ', &advance, &lsb);
-	result->space_width       = advance / (float)y1;
-	result->character_ascend  = ascend  / (float)y1;
-	result->character_descend = descend / (float)y1;
-	result->line_gap          = gap     / (float)y1;
-	result->characters['\t'].xadvance = result->space_width * 2;
 
 	font_list.add(result);
 	return result;

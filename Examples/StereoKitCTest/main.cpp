@@ -12,6 +12,7 @@ using namespace sk;
 #include "demo_picker.h"
 #include "demo_world.h"
 #include "demo_lighting.h"
+#include "demo_draw.h"
 
 #include <stdio.h>
 
@@ -64,6 +65,11 @@ scene_t demos[] = {
 		demo_lighting_init,
 		demo_lighting_update,
 		demo_lighting_shutdown,
+	}, {
+		"Draw",
+		demo_draw_init,
+		demo_draw_update,
+		demo_draw_shutdown,
 	}, {
 		"Exit",
 		sk_quit,
@@ -120,32 +126,26 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[6]);
+	scene_set_active(demos[8]);
 
-	while (sk_step( []() {
-		scene_update();
-		common_update();
-	}));
+	sk_run(common_update, common_shutdown);
 
-	scene_shutdown();
-	common_shutdown();
-	sk_shutdown();
 	return 0;
 }
 
 void common_init() {
 	// Create a PBR floor material
 	tex_t tex_color = tex_create_file("test.png");
-	tex_t tex_norm  = tex_create_file("test_normal.png");
+	//tex_t tex_norm  = tex_create_file("test_normal.png");
 	floor_mat = material_copy_id("default/material");
 	material_set_texture(floor_mat, "diffuse",   tex_color);
-	material_set_texture(floor_mat, "normal",    tex_norm);
+	//material_set_texture(floor_mat, "normal",    tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);
 	material_set_float  (floor_mat, "roughness", 1.0f);
 	material_set_float  (floor_mat, "metallic",  0.5f);
 	material_set_queue_offset(floor_mat, 1);
 	if (tex_color != nullptr) tex_release(tex_color);
-	if (tex_norm  != nullptr) tex_release(tex_norm);
+	//if (tex_norm  != nullptr) tex_release(tex_norm);
 
 	// Procedurally create a cube model
 	mesh_t mesh_cube = mesh_gen_cube(vec3_one, 0);
@@ -164,6 +164,8 @@ void common_init() {
 }
 
 void common_update() {
+	scene_update();
+
 	// Render floor
 	if (sk_system_info().display_type == display_opaque)
 		render_add_model(floor_model, floor_tr);
@@ -185,6 +187,8 @@ void common_update() {
 }
 
 void common_shutdown() {
+	scene_shutdown();
+
 	solid_release   (floor_solid);
 	material_release(floor_mat);
 	model_release   (floor_model);

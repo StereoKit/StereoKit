@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../platform/platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../../stereokit.h"
 #include "../../libraries/sk_gpu.h"
-#include "../platform/platform_utils.h"
 
 #if defined(SK_OS_ANDROID)
 	#include <android/native_activity.h>
@@ -155,3 +157,4 @@ extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
 
 } // namespace sk
+#endif

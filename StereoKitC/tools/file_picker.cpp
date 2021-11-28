@@ -8,27 +8,34 @@
 #include "../systems/platform/platform_utils.h"
 
 #if defined(SK_OS_WINDOWS)
-#include "../systems/platform/win32.h"
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <commdlg.h>
-#include <stdio.h>
+
+	#include "../systems/platform/win32.h"
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <commdlg.h>
+	#include <stdio.h>
+
 #elif defined(SK_OS_WINDOWS_UWP)
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.ApplicationModel.Core.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Storage.Pickers.h>
-#include <winrt/Windows.Storage.Streams.h>
-#include <vector>
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <winrt/Windows.UI.Core.h>
+	#include <winrt/Windows.ApplicationModel.Core.h>
+	#include <winrt/Windows.Foundation.Collections.h>
+	#include <winrt/Windows.Storage.Pickers.h>
+	#include <winrt/Windows.Storage.Streams.h>
+	#include <vector>
 
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::ApplicationModel::Core;
-using namespace winrt::Windows::Storage;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Storage::Streams;
+	using namespace winrt::Windows::UI::Core;
+	using namespace winrt::Windows::ApplicationModel::Core;
+	using namespace winrt::Windows::Storage;
+	using namespace winrt::Windows::Foundation;
+	using namespace winrt::Windows::Storage::Streams;
+
+#elif defined(SK_OS_WEB)
+
+	#include <stdio.h>
+
 #endif
 
 namespace sk {
@@ -224,8 +231,10 @@ void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus sta
 ///////////////////////////////////////////
 
 void file_picker_open_folder(const char *folder) {
+	char *dir_mem = nullptr;
 	if (folder == nullptr) {
-		folder = platform_working_dir();
+		dir_mem = platform_working_dir();
+		folder  = dir_mem;
 	}
 
 	fp_items.each([](fp_item_t &item) { free(item.name); });
@@ -253,6 +262,7 @@ void file_picker_open_folder(const char *folder) {
 
 	char *new_folder = string_copy(folder);
 	free(fp_folder);
+	free(dir_mem);
 	fp_folder = new_folder;
 	fp_active = nullptr;
 }

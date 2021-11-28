@@ -18,17 +18,16 @@ void demo_sprites_init() {
 	sprite_text_style = text_make_style(font, 0.1f, { 1,1,1,1 });
 	font_release(font);
 
-	sprite = sprite_create_file("test.png");
+	sprite = sprite_create_file("power.png");
 }
 
 ///////////////////////////////////////////
 
 void demo_sprites_update() {
-	static int frame = 0;
-	frame++;
-	int ct = (frame/30) % 10;
-	for (size_t i = 0; i < ct; i++) {
-		sprite_draw(sprite, matrix_trs(vec3_up * 0.1f + vec3{rand() / (float)RAND_MAX, 0, rand() / (float)RAND_MAX}, quat_lookat(vec3_zero, -vec3_up), vec3_one*0.1f));
+	for (int32_t x = -2; x <= 2; x++) {
+		for (int32_t y = -2; y <= 2; y++) {
+			sprite_draw(sprite, matrix_trs({x*0.1f,y*0.1f,-0.5f}, quat_lookat(vec3_zero, -vec3_forward), vec3_one * 0.1f));
+		}
 	}
 }
 

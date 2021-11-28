@@ -149,6 +149,7 @@ SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           ();
 SK_API void          sk_quit               ();
 SK_API bool32_t      sk_step               (void (*app_update)(void));
+SK_API void          sk_run                (void (*app_update)(void), void (*app_shutdown)(void));
 SK_API display_mode_ sk_active_display_mode();
 SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();

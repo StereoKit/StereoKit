@@ -63,7 +63,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -88,7 +88,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
+      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -99,7 +99,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26812</DisableSpecificWarnings>
@@ -125,7 +125,7 @@ xcopy "$(ProjectDir)stereokit*.h" "$(SolutionDir)bin\distribute\include\" /d /k 
       </Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
+      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -180,6 +180,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\platform\platform.cpp" />
     <ClCompile Include="systems\platform\platform_utils.cpp" />
     <ClCompile Include="systems\platform\uwp.cpp" />
+    <ClCompile Include="systems\platform\web.cpp" />
     <ClCompile Include="systems\platform\win32.cpp" />
     <ClCompile Include="systems\platform\flatscreen_input.cpp" />
     <ClCompile Include="systems\render.cpp" />
@@ -202,6 +203,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
     <ClInclude Include="hierarchy.h" />
+    <ClInclude Include="libraries\aileron_font_data.h" />
     <ClInclude Include="libraries\array.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
@@ -258,6 +260,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="systems\platform\platform.h" />
     <ClInclude Include="systems\platform\platform_utils.h" />
     <ClInclude Include="systems\platform\uwp.h" />
+    <ClInclude Include="systems\platform\web.h" />
     <ClInclude Include="systems\platform\win32.h" />
     <ClInclude Include="systems\platform\flatscreen_input.h" />
     <ClInclude Include="systems\render.h" />

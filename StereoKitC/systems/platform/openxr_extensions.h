@@ -1,5 +1,8 @@
 #pragma once
 
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "platform_utils.h"
 #include "../../stereokit.h"
@@ -194,3 +197,5 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 
 #pragma warning( pop )
 }
+
+#endif

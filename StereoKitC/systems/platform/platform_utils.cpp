@@ -11,6 +11,7 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
+#include "../../asset_types/font.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +52,13 @@
 #include <dirent.h> 
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
+#endif
+
+#ifdef SK_OS_WEB
+#include "web.h"
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <stdio.h>
 #endif
 
 namespace sk {
@@ -197,6 +205,8 @@ bool platform_get_cursor(vec2 &out_pos) {
 	out_pos.y = (float)cursor_pos.y;
 #elif defined(SK_OS_LINUX)
 	result = linux_get_cursor(out_pos);
+#elif defined(SK_OS_WEB)
+	result = web_get_cursor(out_pos);
 #else
 #endif
 	return result;
@@ -213,6 +223,8 @@ void platform_set_cursor(vec2 window_pos) {
 	SetCursorPos  (pt.x, pt.y);
 #elif defined(SK_OS_LINUX)
 	linux_set_cursor(window_pos);
+#elif defined(SK_OS_WEB)
+	web_set_cursor(window_pos);
 #endif
 }
 
@@ -225,6 +237,8 @@ float platform_get_scroll() {
 	return win32_scroll;
 #elif defined(SK_OS_LINUX)
 	return linux_get_scroll();
+#elif defined(SK_OS_WEB)
+	return web_get_scroll();
 #else
 	return 0;
 #endif
@@ -243,6 +257,11 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
+#elif defined(SK_OS_WEB)
+	if      (level == log_diagnostic) emscripten_console_log(text);
+	else if (level == log_inform    ) emscripten_console_log(text);
+	else if (level == log_warning   ) emscripten_console_warn(text);
+	else if (level == log_error     ) emscripten_console_error(text);
 #else
 	(void)level;
 	(void)text;
@@ -313,6 +332,8 @@ void platform_sleep(int ms) {
 	Sleep(ms);
 #elif defined(SK_OS_LINUX)
     sleep(ms / 1000);
+#elif defined(SK_OS_WEB)
+	emscripten_sleep(ms);
 #else
 	usleep(ms * 1000);
 #endif
@@ -414,6 +435,8 @@ font_t platform_default_font() {
 	fonts.each(free);
 	fonts.free();
 	return result;
+#elif defined(SK_OS_WEB)
+	return font_create_default();
 #else
 	array_t<const char *> fonts = array_t<const char *>::make(3);
 	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
@@ -440,6 +463,8 @@ char *platform_working_dir() {
 	int32_t len    = GetCurrentDirectoryA(0, nullptr);
 	char   *result = sk_malloc_t(char, len);
 	GetCurrentDirectoryA(len, result);
+#elif defined(SK_OS_WEB)
+	char *result = string_copy("/");
 #else
 	int32_t len    = 260;
 	char   *result = sk_malloc_t(char, len);
