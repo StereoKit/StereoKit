@@ -641,6 +641,8 @@ void render_shutdown() {
 
 	skg_buffer_destroy(&render_instance_buffer);
 	skg_buffer_destroy(&render_shader_blit);
+
+	radix_sort_clean();
 }
 
 ///////////////////////////////////////////
