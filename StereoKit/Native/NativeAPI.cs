@@ -450,6 +450,16 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendXRType backend_xr_get_type        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong         backend_openxr_get_instance();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong         backend_openxr_get_session ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong         backend_openxr_get_space   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr        backend_openxr_get_function(string function_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int           backend_openxr_ext_enabled (string extension_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_ext_request (string extension_name);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_write      (LogLevel level, string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallback on_log);

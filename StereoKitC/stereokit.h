@@ -1102,6 +1102,25 @@ SK_API float          world_get_refresh_interval      ();
 
 ///////////////////////////////////////////
 
+typedef enum backend_xr_type_ {
+	backend_xr_type_none,
+	backend_xr_type_simulator,
+	backend_xr_type_openxr,
+	backend_xr_type_webxr,
+} backend_xr_type_;
+
+typedef uint64_t openxr_handle_t;
+
+SK_API backend_xr_type_ backend_xr_get_type        ();
+SK_API openxr_handle_t  backend_openxr_get_instance();
+SK_API openxr_handle_t  backend_openxr_get_session ();
+SK_API openxr_handle_t  backend_openxr_get_space   ();
+SK_API void            *backend_openxr_get_function(const char *function_name);
+SK_API bool32_t         backend_openxr_ext_enabled (const char *extension_name);
+SK_API void             backend_openxr_ext_request (const char *extension_name);
+
+///////////////////////////////////////////
+
 typedef enum log_colors_ {
 	log_colors_ansi = 0,
 	log_colors_none

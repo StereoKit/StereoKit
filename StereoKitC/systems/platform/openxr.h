@@ -142,6 +142,7 @@ const char* openxr_string   (XrResult result);
 
 extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;
+extern XrSpace    xr_head_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
@@ -152,7 +153,6 @@ extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
 extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
-extern XrSpace    xrc_space_grip[2];
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
 

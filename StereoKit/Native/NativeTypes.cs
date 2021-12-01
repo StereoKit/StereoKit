@@ -982,6 +982,14 @@ namespace StereoKit
 		Tip          = 4
 	}
 
+	public enum BackendXRType
+	{
+		None,
+		Simulator,
+		Openxr,
+		Webxr,
+	}
+
 	/// <summary>This describes how a UI element moves when being dragged 
 	/// around by a user!</summary>
 	public enum UIMove

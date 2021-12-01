@@ -12,6 +12,7 @@
 #include "../../log.h"
 #include "../../asset_types/texture.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/ferr_hash.h"
 #include "../render.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
@@ -53,6 +54,9 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 
+array_t<const char*> xr_exts_user   = {};
+array_t<uint64_t>    xr_exts_loaded = {};
+
 bool   xr_has_bounds   = false;
 vec2   xr_bounds_size  = {};
 pose_t xr_bounds_pose  = { {}, quat_identity };
@@ -62,10 +66,9 @@ XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-XrReferenceSpaceType openxr_preferred_space     ();
-bool                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
-void                 openxr_preferred_layers    (uint32_t &out_layer_count, const char **out_layers);
-XrTime               openxr_acquire_time        ();
+XrReferenceSpaceType openxr_preferred_space ();
+void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
+XrTime               openxr_acquire_time    ();
 
 ///////////////////////////////////////////
 
@@ -190,8 +193,11 @@ bool openxr_init() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions([](const char *ext) {log_diagf("available: %s", ext);});
-	extensions.each([](const char *&ext) { log_diagf("REQUESTED: <~grn>%s<~clr>", ext); });
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, [](const char *ext) {log_diagf("available: %s", ext);});
+	extensions.each([](const char *&ext) { 
+		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
+		xr_exts_loaded.add(hash_fnv64_string(ext));
+	});
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);
@@ -838,6 +844,70 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 	*out_pose = pose_identity;
 	return false;
 #endif
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_instance() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_instance;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_session() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_session;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_space() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_app_space;
+}
+
+///////////////////////////////////////////
+
+void *backend_openxr_get_function(const char *function_name) {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	if (xr_instance == XR_NULL_HANDLE)
+		log_err("backend_openxr_get_function must be called after StereoKit initialization!");
+
+	void   (*fn)()  = nullptr;
+	XrResult result = xrGetInstanceProcAddr(xr_instance, function_name, &fn);
+	if (XR_FAILED(result)) {
+		log_errf("Failed to find OpenXR function '%s' [%s]", function_name, openxr_string(result));
+		return nullptr;
+	}
+
+	return (void*)fn;
+}
+
+///////////////////////////////////////////
+
+bool32_t backend_openxr_ext_enabled(const char *extension_name) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return false;
+	}
+	uint64_t hash = hash_fnv64_string(extension_name);
+	return xr_exts_loaded.index_of(hash) >= 0;
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_ext_request(const char *extension_name) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+
+	xr_exts_user.add(string_copy(extension_name));
 }
 
 } // namespace sk

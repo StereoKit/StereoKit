@@ -32,12 +32,11 @@ const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
 display_mode_ sk_display_mode           = display_mode_mixedreality;
 bool          sk_no_flatscreen_fallback = false;
-sk_settings_t sk_settings = {};
-system_info_t sk_info     = {};
-bool32_t      sk_focused  = true;
-bool32_t      sk_running  = true;
-
-bool sk_initialized = false;
+sk_settings_t sk_settings    = {};
+system_info_t sk_info        = {};
+bool32_t      sk_focused     = true;
+bool32_t      sk_running     = true;
+bool32_t      sk_initialized = false;
 
 double  sk_timev_scale       = 1;
 float   sk_timevf            = 0;

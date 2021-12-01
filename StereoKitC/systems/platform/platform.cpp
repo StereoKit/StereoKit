@@ -274,4 +274,21 @@ void platform_stop_mode() {
 	}
 }
 
+///////////////////////////////////////////
+
+backend_xr_type_ backend_xr_get_type() {
+	if (platform_mode == display_mode_mixedreality) {
+#if defined(SK_XR_OPENXR)
+		return backend_xr_type_openxr;
+#elif defined(SK_XR_WEBXR)
+		return backend_xr_type_webxr;
+#else
+		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
+#endif
+	} else {
+		if (sk_settings.disable_flatscreen_mr_sim) return backend_xr_type_none;
+		else                                       return backend_xr_type_simulator;
+	}
+}
+
 } // namespace sk
