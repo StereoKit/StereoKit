@@ -24,7 +24,6 @@
 	#include <winrt/Windows.Foundation.Collections.h>
 	#include <winrt/Windows.Storage.Pickers.h>
 	#include <winrt/Windows.Storage.Streams.h>
-	#include <vector>
 
 	using namespace winrt::Windows::UI::Core;
 	using namespace winrt::Windows::ApplicationModel::Core;
@@ -53,7 +52,7 @@ public:
 	uint64_t    name_hash;
 	StorageFile file = nullptr;
 };
-std::vector<fp_file_cache_t> fp_file_cache = {};
+array_t<fp_file_cache_t> fp_file_cache = {};
 #endif
 
 char                         fp_filename[1024];
@@ -218,7 +217,7 @@ void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus sta
 		fp_file_cache_t item;
 		item.file      = file;
 		item.name_hash = hash_fnv64_string(fp_filename);
-		fp_file_cache.push_back(item);
+		fp_file_cache.add(item);
 		fp_call        = true;
 		fp_call_status = true;
 	} else {
@@ -355,6 +354,10 @@ void file_picker_shutdown() {
 	free(fp_title ); fp_title  = nullptr;
 	free(fp_folder); fp_folder = nullptr;
 	fp_items.free();
+
+#if defined(SK_OS_WINDOWS_UWP)
+	fp_file_cache.free();
+#endif
 }
 
 ///////////////////////////////////////////
@@ -362,7 +365,7 @@ void file_picker_shutdown() {
 bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_size) {
 #if defined(SK_OS_WINDOWS_UWP)
 	uint64_t hash = hash_fnv64_string(filename);
-	for (size_t i = 0; i < fp_file_cache.size(); i++) {
+	for (size_t i = 0; i < fp_file_cache.count; i++) {
 		if (fp_file_cache[i].name_hash == hash) {
 			IRandomAccessStreamWithContentType stream = fp_file_cache[i].file.OpenReadAsync().get();
 			Buffer buffer((uint32_t)stream.Size());
@@ -375,7 +378,7 @@ bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_s
 
 			stream.Close();
 			fp_file_cache[i].file = nullptr;
-			fp_file_cache.erase(fp_file_cache.begin() + i);
+			fp_file_cache.remove(i);
 			i--;
 
 			return true;
@@ -390,13 +393,13 @@ bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_s
 bool file_picker_cache_save(const char *filename, void *data, size_t size) {
 #if defined(SK_OS_WINDOWS_UWP)
 	uint64_t hash = hash_fnv64_string(filename);
-	for (size_t i = 0; i < fp_file_cache.size(); i++) {
+	for (size_t i = 0; i < fp_file_cache.count; i++) {
 		if (fp_file_cache[i].name_hash == hash) {
 			winrt::array_view<uint8_t const> view{ (uint8_t *)data, (uint8_t *)data + size };
 			FileIO::WriteBytesAsync(fp_file_cache[i].file, view);
 
 			fp_file_cache[i].file = nullptr;
-			fp_file_cache.erase(fp_file_cache.begin() + i);
+			fp_file_cache.remove(i);
 			i--;
 
 			return true;

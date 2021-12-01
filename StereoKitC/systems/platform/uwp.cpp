@@ -165,7 +165,9 @@ public:
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			std::swap(sk_info.display_width, sk_info.display_height);
+			int32_t swap_tmp = sk_info.display_width;
+			sk_info.display_width  = sk_info.display_height;
+			sk_info.display_height = swap_tmp;
 		}
 
 		// Get the HWND of the UWP window
@@ -377,8 +379,11 @@ private:
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 
-		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270)
-			std::swap(outputWidth, outputHeight);
+		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
+			int swap_tmp = outputWidth;
+			outputWidth  = outputHeight;
+			outputHeight = swap_tmp;
+		}
 
 		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
 			return;
