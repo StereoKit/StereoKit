@@ -53,7 +53,6 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 
-bool   xr_check_bounds = false;
 bool   xr_has_bounds   = false;
 vec2   xr_bounds_size  = {};
 pose_t xr_bounds_pose  = { {}, quat_identity };
@@ -479,7 +478,8 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time = openxr_acquire_time();
+	xr_time       = openxr_acquire_time();
+	xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, xr_time);
 
 	return true;
 }
@@ -592,13 +592,6 @@ void openxr_step_end() {
 		openxr_render_frame();
 
 	render_clear();
-
-	// Check if the bounds have changed. This needs a valid xr_time, which is
-	// why we have this on a flag delay. xr_time is set in openxr_render_frame
-	if (xr_check_bounds) {
-		xr_check_bounds = false;
-		xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, xr_time);
-	}
 }
 
 ///////////////////////////////////////////
@@ -632,9 +625,7 @@ void openxr_poll_events() {
 				xr_running = true;
 				log_diag("OpenXR session begin.");
 			} break;
-			case XR_SESSION_STATE_SYNCHRONIZED: {
-				xr_check_bounds = true;
-			} break;
+			case XR_SESSION_STATE_SYNCHRONIZED: break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
 			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
 			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
