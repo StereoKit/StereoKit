@@ -81,7 +81,7 @@ void physics_update() {
 		move.old_rot_velocity = vec3_rp_to_sk(body->getAngularVelocity());
 		quat rot = quat_rp_to_sk(body->getTransform().getOrientation());
 		if (rot.x != move.dest_rot.x || rot.y != move.dest_rot.y || rot.z != move.dest_rot.z || rot.w != move.dest_rot.w) {
-			Quaternion delta = quat_sk_to_rp(move.dest_rot * quat_inverse(rot));
+			Quaternion delta = quat_sk_to_rp(quat_difference(rot, move.dest_rot));
 			float      angle;
 			Vector3    axis;
 			delta.getRotationAngleAxis(angle, axis);
