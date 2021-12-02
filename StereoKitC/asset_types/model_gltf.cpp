@@ -676,6 +676,32 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 
 		if (result.duration < curve.keyframe_times[curve.keyframe_count-1])
 			result.duration = curve.keyframe_times[curve.keyframe_count-1];
+
+		// We only need to apply transform corrections to this if it's a root node!
+		if (ch->target_node->parent == nullptr) {
+			const int32_t skip   = curve.interpolation == anim_interpolation_cubic?3:1;
+			const int32_t offset = curve.interpolation == anim_interpolation_cubic?1:0;
+
+			switch (curve.applies_to) {
+			case anim_element_translation: {
+				vec3 *tr = (vec3*)curve.keyframe_values + offset;
+				for (size_t k = 0; k < curve.keyframe_count; k++)
+					tr[k*skip] = matrix_transform_pt(gltf_orientation_correction, tr[k*skip]);
+			} break;
+			case anim_element_scale: {
+				vec3 *sc = (vec3*)curve.keyframe_values + offset;
+				for (size_t k = 0; k < curve.keyframe_count; k++)
+					sc[k*skip] = matrix_transform_dir(gltf_orientation_correction, sc[k*skip]);
+			} break;
+			case anim_element_rotation: {
+				quat *rot = (quat*)curve.keyframe_values + offset;
+				quat r = matrix_extract_rotation(gltf_orientation_correction);
+				for (size_t k = 0; k < curve.keyframe_count; k++)
+					rot[k*skip] = r * rot[k*skip];
+			} break;
+			}
+		}
+
 		result.curves.add(curve);
 	}
 
