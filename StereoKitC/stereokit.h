@@ -276,6 +276,7 @@ SK_API plane_t  plane_from_ray            (ray_t ray);
 
 #ifdef __cplusplus
 static inline vec2   operator* (vec2 a, float b) { return { a.x * b, a.y * b }; }
+static inline vec2   operator* (float b, vec2 a) { return { a.x * b, a.y * b }; }
 static inline vec2   operator/ (vec2 a, float b) { return { a.x / b, a.y / b }; }
 static inline vec2   operator+ (vec2 a, vec2  b) { return { a.x + b.x, a.y + b.y }; }
 static inline vec2   operator- (vec2 a, vec2  b) { return { a.x - b.x, a.y - b.y }; }
@@ -287,6 +288,7 @@ static inline vec2  &operator*=(vec2 &a, float b) { a.x *= b; a.y *= b; return a
 static inline vec2  &operator/=(vec2 &a, float b) { a.x /= b; a.y /= b; return a; }
 
 static inline vec3   operator* (vec3 a, float b) { return { a.x * b, a.y * b, a.z * b }; }
+static inline vec3   operator* (float b, vec3 a) { return { a.x * b, a.y * b, a.z * b }; }
 static inline vec3   operator/ (vec3 a, float b) { return { a.x / b, a.y / b, a.z / b }; }
 static inline vec3   operator+ (vec3 a, vec3  b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
 static inline vec3   operator- (vec3 a, vec3  b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
@@ -297,6 +299,10 @@ static inline vec3  &operator+=(vec3 &a, vec3  b) { a.x += b.x; a.y += b.y; a.z 
 static inline vec3  &operator-=(vec3 &a, vec3  b) { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
 static inline vec3  &operator*=(vec3 &a, float b) { a.x *= b; a.y *= b; a.z *= b; return a; }
 static inline vec3  &operator/=(vec3 &a, float b) { a.x /= b; a.y /= b; a.z /= b; return a; }
+
+static inline vec4   operator* (vec4 a, float b) { return { a.x * b, a.y * b, a.z * b, a.w * b }; }
+static inline vec4   operator* (float b, vec4 a) { return { a.x * b, a.y * b, a.z * b, a.w * b }; }
+static inline vec4   operator+ (vec4 a, vec4  b) { return { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w }; }
 
 static inline vec3   operator* (quat a, vec3 b) { return quat_mul_vec(a, b); }
 static inline quat   operator* (quat a, quat b) { return quat_mul(a, b); }
