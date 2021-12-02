@@ -900,7 +900,7 @@ void ui_space(float space) {
 	if (layer.offset.x == layer.offset_initial.x - skui_settings.padding)
 		layer.offset.y -= space;
 	else
-		layer.offset.x += space;
+		layer.offset.x -= space;
 }
 
 ///////////////////////////////////////////
