@@ -96,10 +96,18 @@ bool32_t bounds_line_contains(bounds_t bounds, vec3 pt1, vec3 pt2) {
 	if (vec3_dot(delta, delta) <= 0.0001f)
 		return bounds_point_contains(bounds, pt1);
 
-	vec3  rayRelative = pt1 - bounds.center;
+	// If any of these is 0, then m becomes inf, and that axis is then
+	// ignored from the calculation. This is a bit of a hack, and I should
+	// probably find a better way to fix this? But it shouldn't be too
+	// terrible
+	if (delta.x == 0) delta.x = 0.000000000001f;
+	if (delta.y == 0) delta.y = 0.000000000001f;
+	if (delta.z == 0) delta.z = 0.000000000001f;
+
+	vec3  ray_origin = pt1 - bounds.center;
 	vec3  m  = { 1.f / delta.x, 1.f / delta.y, 1.f / delta.z };
-	vec3  n  = m * rayRelative;
-	vec3  k  = vec3_abs(m) * bounds.dimensions / 2;
+	vec3  n  = m * ray_origin;
+	vec3  k  = vec3_abs(m) * (bounds.dimensions / 2);
 	vec3  t1 = -n - k;
 	vec3  t2 = -n + k;
 	float tN = fmaxf(fmaxf(t1.x, t1.y), t1.z);
