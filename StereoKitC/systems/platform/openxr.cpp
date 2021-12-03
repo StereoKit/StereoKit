@@ -872,6 +872,14 @@ openxr_handle_t backend_openxr_get_space() {
 
 ///////////////////////////////////////////
 
+int64_t backend_openxr_get_time() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return xr_time;
+}
+
+///////////////////////////////////////////
+
 void *backend_openxr_get_function(const char *function_name) {
 	if (backend_xr_get_type() != backend_xr_type_openxr)
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
