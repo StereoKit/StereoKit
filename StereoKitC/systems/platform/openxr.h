@@ -155,6 +155,7 @@ extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
+extern pose_t     xr_bounds_pose_local;
 
 } // namespace sk
 #endif

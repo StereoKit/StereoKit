@@ -215,7 +215,7 @@ void android_step_begin_flat() {
 ///////////////////////////////////////////
 
 void android_step_end_flat() {
-	input_update_predicted();
+	input_update_poses(true);
 
 	if (!android_window)
 		return;

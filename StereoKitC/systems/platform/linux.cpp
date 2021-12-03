@@ -495,7 +495,7 @@ void linux_step_end_flat() {
 
 	linux_render_sys->profile_frame_start = stm_now();
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();

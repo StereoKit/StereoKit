@@ -57,9 +57,10 @@ XrTime         xr_time          = 0;
 array_t<const char*> xr_exts_user   = {};
 array_t<uint64_t>    xr_exts_loaded = {};
 
-bool   xr_has_bounds   = false;
-vec2   xr_bounds_size  = {};
-pose_t xr_bounds_pose  = { {}, quat_identity };
+bool   xr_has_bounds        = false;
+vec2   xr_bounds_size       = {};
+pose_t xr_bounds_pose       = pose_identity;
+pose_t xr_bounds_pose_local = pose_identity;
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
@@ -484,8 +485,9 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time       = openxr_acquire_time();
-	xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, xr_time);
+	xr_time        = openxr_acquire_time();
+	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
+	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
 	return true;
 }
@@ -646,7 +648,8 @@ void openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
-			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, pending->changeTime);
+			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 			break;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
@@ -658,11 +661,6 @@ void openxr_poll_events() {
 void openxr_poll_actions() {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
 		return;
-
-	// Track the head location
-	openxr_get_space(xr_head_space, &input_head_pose_local);
-	matrix root = render_get_cam_final();
-	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	oxri_update_frame();
 }

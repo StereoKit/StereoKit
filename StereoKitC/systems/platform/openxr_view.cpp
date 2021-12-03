@@ -544,7 +544,7 @@ bool openxr_render_frame() {
 
 	// Execute any code that's dependant on the predicted time, such as updating the location of
 	// controller models.
-	input_update_predicted();
+	input_update_poses(true);
 
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!

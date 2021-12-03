@@ -516,6 +516,7 @@ inline void world_update_inst(su_mesh_inst_t &inst) {
 void world_refresh_transforms() {
 	xr_scene_colliders.each(world_update_inst);
 	xr_scene_visuals  .each(world_update_inst);
+	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 }
 
 #else

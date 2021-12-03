@@ -523,7 +523,7 @@ void uwp_step_end_flat() {
 	skg_tex_target_bind(&uwp_target->tex);
 	skg_target_clear(true, &color.r);
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();

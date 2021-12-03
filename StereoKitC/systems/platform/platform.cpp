@@ -122,6 +122,7 @@ bool platform_set_mode(display_mode_ mode) {
 	}
 
 	platform_stop_mode();
+	platform_mode = mode;
 
 	bool result = true;
 	if (mode == display_mode_mixedreality) {
@@ -176,7 +177,6 @@ bool platform_set_mode(display_mode_ mode) {
 #endif
 	}
 
-	platform_mode = mode;
 	return result;
 }
 ///////////////////////////////////////////

@@ -38,13 +38,11 @@ void hand_oxrc_shutdown() {
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_frame() {
-	// Now we'll get the current states of our actions, and store them for later use
+void hand_oxrc_update_pose(bool animate) {
 	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
 		const controller_t *controller = input_controller ((handed_)hand_id);
 		const hand_t       *hand       = input_hand       ((handed_)hand_id);
 		pointer_t          *pointer    = input_get_pointer(input_hand_pointer_id[hand_id]);
-
 		// Update the hand point pose
 		pointer->tracked = controller->tracked;
 		if (pointer->tracked > 0) {
@@ -60,7 +58,22 @@ void hand_oxrc_update_frame() {
 			hand_pose.orientation = xrc_offset_rot[hand_id] * controller->pose.orientation;
 			hand_pose.position    = controller->pose.position + hand_pose.orientation * xrc_offset_pos[hand_id];
 		}
-		input_hand_sim((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
+		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
+		else         input_hand_sim_poses((handed_)hand_id, false, hand_pose.position, hand_pose.orientation);
+	}
+}
+
+///////////////////////////////////////////
+
+void hand_oxrc_update_frame() {
+	hand_oxrc_update_pose(true);
+
+	// Now we'll get the current states of our actions, and store them for later use
+	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
+		const controller_t *controller = input_controller ((handed_)hand_id);
+		const hand_t       *hand       = input_hand       ((handed_)hand_id);
+		pointer_t          *pointer    = input_get_pointer(input_hand_pointer_id[hand_id]);
+		bool                tracked    = controller->tracked & button_state_active;
 
 		// Get event poses, and fire our own events for them
 		pointer->state = button_make_state(pointer->state & button_state_active, controller->trigger > 0.5f);
@@ -85,13 +98,14 @@ void hand_oxrc_update_frame() {
 			input_fire_event(pointer->source, pointer->tracked & ~button_state_active, *pointer);
 		}
 	}
-
-	input_hand_update_meshes();
 }
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_predicted() {
+void hand_oxrc_update_poses(bool update_visuals) {
+	hand_oxrc_update_pose(false);
+	if (update_visuals)
+		input_hand_update_meshes();
 }
 
 }

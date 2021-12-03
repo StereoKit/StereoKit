@@ -261,13 +261,12 @@ void hand_oxra_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_oxra_update_predicted() {
+void hand_oxra_update_poses(bool update_visuals) {
 	hand_oxra_update_joints();
 
-	if (xr_has_hand_meshes) {
-		hand_oxra_update_system_meshes();
-	} else {
-		input_hand_update_meshes();
+	if (update_visuals) {
+		if (xr_has_hand_meshes) hand_oxra_update_system_meshes();
+		else                    input_hand_update_meshes();
 	}
 }
 

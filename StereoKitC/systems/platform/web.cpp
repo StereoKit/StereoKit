@@ -225,7 +225,7 @@ void web_step_end_flat() {
 	skg_swapchain_bind(&web_swapchain);
 	skg_target_clear(true, &col.r);
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
