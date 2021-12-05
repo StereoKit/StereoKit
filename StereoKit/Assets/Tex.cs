@@ -48,6 +48,12 @@ namespace StereoKit
 			get => NativeAPI.tex_get_anisotropy(_inst);
 			set => NativeAPI.tex_set_anisotropy(_inst, value); }
 
+		/// <summary>ONLY valid for cubemap textures! This will calculate a
+		/// spherical harmonics representation of the cubemap for use with 
+		/// StereoKit's lighting. First call may take a frame or two of time,
+		/// but subsequent calls will pull from a cached value.</summary>
+		public SphericalHarmonics CubemapLighting => NativeAPI.tex_get_cubemap_lighting(_inst);
+
 		#endregion
 
 		#region Constructors

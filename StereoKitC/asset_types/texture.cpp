@@ -201,8 +201,8 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
 	if (result != nullptr) {
-		if (result->light_info && out_sh_lighting_info)
-			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
+		if (out_sh_lighting_info != nullptr)
+			*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 		return result;
 	}
 
@@ -245,10 +245,8 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, out_sh_lighting_info);
 	tex_set_id       (result, file_id);
 
-	if (out_sh_lighting_info) {
-		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		memcpy(result->light_info, out_sh_lighting_info, sizeof(spherical_harmonics_t));
-	}
+	if (out_sh_lighting_info != nullptr)
+		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 
 	for (size_t i = 0; i < file_count; i++) {
 		free(data[i]);
@@ -278,8 +276,8 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 	tex_t result = tex_find(equirect_id);
 	if (result != nullptr) {
-		if (result->light_info && out_sh_lighting_info)
-			memcpy(out_sh_lighting_info, result->light_info, sizeof(spherical_harmonics_t));
+		if (out_sh_lighting_info != nullptr)
+			*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 		return result;
 	}
 
@@ -310,16 +308,23 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 		render_blit (face, convert_material);
 		data[i] = sk_malloc(size);
 		tex_get_data(face, data[i], size);
+#if defined(SKG_OPENGL)
+		int32_t line_size = tex_format_size(equirect->format) * width;
+		void   *tmp       = sk_malloc(line_size);
+		for (int32_t y = 0; y < height/2; y++) {
+			void *top_line = ((uint8_t*)data[i]) + line_size * y;
+			void *bot_line = ((uint8_t*)data[i]) + line_size * ((height-1) - y);
+			memcpy(tmp,      top_line, line_size);
+			memcpy(top_line, bot_line, line_size);
+			memcpy(bot_line, tmp,      line_size);
+		}
+		free(tmp);
+#endif
 	}
 
 	result = tex_create(tex_type_image | tex_type_cubemap, equirect->format);
 	tex_set_color_arr(result, width, height, (void**)&data, 6, out_sh_lighting_info);
 	tex_set_id       (result, equirect_id);
-
-	if (out_sh_lighting_info) {
-		result->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		memcpy(result->light_info, out_sh_lighting_info, sizeof(spherical_harmonics_t));
-	}
 
 	material_release(convert_material);
 	tex_release(equirect);
@@ -359,20 +364,6 @@ void tex_destroy(tex_t tex) {
 ///////////////////////////////////////////
 
 void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
-	// If they want spherical harmonics, lets calculate it for them, or give
-	// them a good error message!
-	if (sh_lighting_info != nullptr) {
-		if (width != height || data_count != 6) {
-			log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
-			*sh_lighting_info = {};
-		} else if (!(texture->format == tex_format_rgba32 || texture->format == tex_format_rgba32_linear || texture->format == tex_format_rgba128)) {
-			log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
-			*sh_lighting_info = {};
-		} else {
-			*sh_lighting_info = sh_calculate(data, texture->format, width);
-		}
-	}
-
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->tex.width != width || texture->tex.height != height || texture->tex.array_count != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
@@ -402,6 +393,45 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
+	}
+
+	if (sh_lighting_info != nullptr)
+		*sh_lighting_info = tex_get_cubemap_lighting(texture);
+}
+
+///////////////////////////////////////////
+
+spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
+	skg_tex_t *tex = &cubemap_texture->tex;
+	
+	if (cubemap_texture->light_info != nullptr)
+		return *cubemap_texture->light_info;
+
+	// If they want spherical harmonics, lets calculate it for them, or give
+	// them a good error message!
+	if (tex->width != tex->height || tex->array_count != 6) {
+		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
+		return {};
+	} else if (!(tex->format == tex_format_rgba32 || tex->format == tex_format_rgba32_linear || tex->format == tex_format_rgba128)) {
+		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
+		return {};
+	} else {
+		int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(cubemap_texture->tex.width, cubemap_texture->tex.height) - 6);
+		int32_t  mip_w, mip_h;
+		skg_mip_dimensions(tex->width, tex->height, mip_level, &mip_w, &mip_h);
+		size_t   face_size       = skg_tex_fmt_size(tex->format) * mip_w * mip_h;
+		size_t   cube_size       = face_size * 6;
+		uint8_t *cube_color_data = (uint8_t*)sk_malloc(cube_size);
+		void    *data[6];
+		for (size_t f = 0; f < 6; f++) {
+			data[f] = cube_color_data + face_size * f;
+			skg_tex_get_mip_contents_arr(tex, mip_level, f, data[f], face_size);
+		}
+
+		cubemap_texture ->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+		*cubemap_texture->light_info = sh_calculate(data, cubemap_texture->format, mip_w);
+		free(cube_color_data);
+		return *cubemap_texture->light_info;
 	}
 }
 
