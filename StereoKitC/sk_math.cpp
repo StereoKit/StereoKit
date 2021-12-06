@@ -316,6 +316,45 @@ matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &sca
 
 ///////////////////////////////////////////
 
+matrix matrix_t(vec3 position) {
+	return {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		position.x, position.y, position.z, 1 };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_r(quat orientation) {
+	XMMATRIX mat = XMMatrixRotationQuaternion(XMLoadFloat4((XMFLOAT4*)&orientation));
+	matrix result;
+	math_fast_to_matrix(mat, &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
+matrix matrix_s(vec3 scale) {
+	return {
+		scale.x,0,0,0,
+		0,scale.y,0,0,
+		0,0,scale.z,0,
+		0,0,0,1 };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_ts(vec3 position, vec3 scale) {
+	return {
+		scale.x,0,0,0,
+		0,scale.y,0,0,
+		0,0,scale.z,0,
+		position.x, position.y, position.z, 1 };
+}
+
+///////////////////////////////////////////
+
 void matrix_trs_out(matrix &out_result, const vec3 &position, const quat &orientation, const vec3 &scale) {
 	XMMATRIX mat = XMMatrixAffineTransformation(
 		XMLoadFloat3((XMFLOAT3 *)& scale), DirectX::g_XMZero,
