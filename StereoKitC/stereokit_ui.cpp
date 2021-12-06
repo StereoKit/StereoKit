@@ -1288,11 +1288,13 @@ void ui_image(sprite_t image, vec2 size) {
 		size.x==0 ? size.y*aspect : size.x, 
 		size.y==0 ? size.x/aspect : size.y };
 
+	float scale = fminf(size.x / aspect, size.y);
+
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw(image, matrix_trs(final_pos - vec3{ final_size.x, 0, 2*mm2m }, quat_identity, vec3{ final_size.x, final_size.y, 1 }));
+	sprite_draw_at(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
 }
 
 ///////////////////////////////////////////
@@ -1424,7 +1426,10 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 
 	ui_cylinder(window_relative_pos, diameter, finger_offset, skui_mat, skui_palette[2] * color_blend);
 	ui_cylinder(window_relative_pos + vec3{back_size, back_size, mm2m}, diameter+back_size*2, skui_settings.backplate_depth*skui_settings.depth+mm2m, skui_mat, skui_color_border * color_blend);
-	sprite_draw(image, matrix_trs(window_relative_pos + vec3{ -diameter, 0, -(finger_offset + 2*mm2m) }, quat_identity, vec3{ diameter, diameter, 1 }));
+
+	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
+	float sprite_size  = (diameter * 0.8f) / sprite_scale;
+	sprite_draw_at(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
 
 	return state & button_state_just_active;
 }

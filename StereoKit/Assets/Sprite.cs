@@ -56,6 +56,7 @@ namespace StereoKit
 		/// model space to world space.</param>
 		/// <param name="color">Per-instance color data for this render item.
 		/// </param>
+		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
 		public void Draw(in Matrix transform, Color32 color) 
 			=> NativeAPI.sprite_draw(_inst, transform, color);
 
@@ -63,8 +64,44 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="transform">A Matrix describing a transform from 
 		/// model space to world space.</param>
+		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
 		public void Draw(in Matrix transform)
 			=> NativeAPI.sprite_draw(_inst, transform, Color32.White);
+
+		/// <summary>Draws the sprite at the location specified by the
+		/// transform matrix. A sprite is always sized in model space as 1 x
+		/// Aspect meters on the x and y axes respectively, so scale
+		/// appropriately. The 'position' attribute describes what corner of
+		/// the sprite you're specifying the transform of.</summary>
+		/// <param name="transform">A Matrix describing a transform from 
+		/// model space to world space. A sprite is always sized in model
+		/// space as 1 x Aspect meters on the x and y axes respectively, so
+		/// scale appropriately and remember that your anchor position may
+		/// affect the transform as well.</param>
+		/// <param name="anchorPosition">Describes what corner of the sprite
+		/// you're specifying the transform of. The 'Anchor' point or
+		/// 'Origin' of the Sprite.</param>
+		public void Draw(in Matrix transform, TextAlign anchorPosition)
+			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, Color32.White);
+
+		/// <summary>Draws the sprite at the location specified by the
+		/// transform matrix. A sprite is always sized in model space as 1 x
+		/// Aspect meters on the x and y axes respectively, so scale
+		/// appropriately. The 'position' attribute describes what corner of
+		/// the sprite you're specifying the transform of.</summary>
+		/// <param name="transform">A Matrix describing a transform from 
+		/// model space to world space. A sprite is always sized in model
+		/// space as 1 x Aspect meters on the x and y axes respectively, so
+		/// scale appropriately and remember that your anchor position may
+		/// affect the transform as well.</param>
+		/// <param name="anchorPosition">Describes what corner of the sprite
+		/// you're specifying the transform of. The 'Anchor' point or
+		/// 'Origin' of the Sprite.</param>
+		/// <param name="linearColor">Per-instance color data for this render
+		/// item. It is unmodified by StereoKit, and is generally interpreted
+		/// as linear.</param>
+		public void Draw(in Matrix transform, TextAlign anchorPosition, Color32 linearColor)
+			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, linearColor);
 
 		/// <summary>Create a sprite from an image file! This loads a Texture
 		/// from file, and then uses that Texture as the source for the 
