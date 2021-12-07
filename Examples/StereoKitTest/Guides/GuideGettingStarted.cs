@@ -19,6 +19,12 @@
 /// as well.
 /// <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/lOYs8seoRpc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 /// 
+/// For Mac developers: while StereoKit's _simulator_ does not run on Mac OS,
+/// you can still deploy to standalone Android headsets such as Quest!
+/// [See here](https://www.youtube.com/watch?v=UMwTLecVATU) for a quick video
+/// by community member Raphaël about how to do this with the experimental
+/// cross platform template.
+/// 
 /// ## The Templates
 /// 
 /// ![Create New Project]({{site.url}}/img/screenshots/VSNewProject.png)
