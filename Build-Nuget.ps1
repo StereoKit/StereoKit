@@ -4,7 +4,11 @@ param(
     [string]$key = ''
 )
 
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
+$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[15.0,16.0)'
+if (!$vsExe) {
+    Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
+    exit 
+}
 $vsExe = [io.path]::ChangeExtension($vsExe, '.com')
 
 ###########################################
@@ -147,6 +151,7 @@ Write-Host "v$version`n" -ForegroundColor Cyan
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
+Replace-In-File -file 'CMakeLists.txt' -text 'StereoKit VERSION "(.*)"' -with "StereoKit VERSION `"$version`""
 
 #### Clean Project ########################
 
