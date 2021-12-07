@@ -27,7 +27,7 @@ as well.
 For Mac developers: while StereoKit's _simulator_ does not run on Mac OS,
 you can still deploy to standalone Android headsets such as Quest!
 [See here](https://www.youtube.com/watch?v=UMwTLecVATU) for a quick video
-by community member Rapha�l about how to do this with the experimental
+by community member Raphael about how to do this with the experimental
 cross platform template.
 
 ## The Templates
