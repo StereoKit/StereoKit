@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="StereoKit" Version="0.3.3" />
+		<PackageReference Include="StereoKit" Version="0.3.4" />
 	</ItemGroup>
 
 	<ItemGroup>

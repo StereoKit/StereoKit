@@ -99,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.9" />
-    <PackageReference Include="StereoKit" Version="0.3.3" />
+    <PackageReference Include="StereoKit" Version="0.3.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\StereoKitApp.csproj">
