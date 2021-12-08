@@ -67,7 +67,7 @@ target("StereoKitC")
     if is_plat("windows") then
         set_languages("cxx17")
         add_cxflags(is_mode("debug") and "/MDd" or "/MD")
-        add_links("windowsapp", "user32")
+        add_links("windowsapp", "user32", "comdlg32")
         if has_config("uwp") then
             add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
         end
