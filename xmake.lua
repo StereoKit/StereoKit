@@ -2,6 +2,8 @@ add_rules("mode.release", "mode.debug")
 
 --------------------------------------------------
 
+-- For defining packages like these, check out these docs:
+-- https://xmake.io/#/package/remote_package?id=package-description
 package("reactphysics3d")
     set_homepage("http://www.reactphysics3d.com/")
     set_description("Open source C++ physics engine library in 3D")

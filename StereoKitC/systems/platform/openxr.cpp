@@ -1,13 +1,15 @@
 
+#include "../../stereokit.h"
+#include "../../_stereokit.h"
+
 #include "platform_utils.h"
+
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
 #include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../asset_types/texture.h"
@@ -917,4 +919,61 @@ void backend_openxr_ext_request(const char *extension_name) {
 }
 
 } // namespace sk
+
+#else
+
+namespace sk {
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_instance() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_session() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_space() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+int64_t backend_openxr_get_time() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+void *backend_openxr_get_function(const char *function_name) {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
+bool32_t backend_openxr_ext_enabled(const char *extension_name) {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return false;
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_ext_request(const char *extension_name) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+}
 #endif

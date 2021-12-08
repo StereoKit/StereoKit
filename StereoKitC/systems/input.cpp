@@ -121,8 +121,10 @@ void input_update() {
 ///////////////////////////////////////////
 
 void input_update_poses(bool update_visuals) {
+#if defined(SK_XR_OPENXR)
 	if (backend_xr_get_type() == backend_xr_type_openxr)
 		oxri_update_poses();
+#endif
 	input_hand_update_poses(update_visuals);
 }
 
