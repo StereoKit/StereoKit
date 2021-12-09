@@ -25,7 +25,9 @@ void flatscreen_mouse_update();
 
 void flatscreen_input_init() {
 	fltscr_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
-	fltscr_transform    = matrix_trs( fltscr_head_pos, quat_from_angles( fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z ));
+	fltscr_transform    = sk_settings.disable_flatscreen_mr_sim
+		? matrix_identity
+		: matrix_trs( fltscr_head_pos, quat_from_angles( fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z ));
 	render_set_cam_root(render_get_cam_root());
 }
 
