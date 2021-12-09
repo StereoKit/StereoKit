@@ -56,7 +56,7 @@ key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
-bool  linux_mouse_avail = true;
+bool  linux_mouse_avail = false;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -315,7 +315,7 @@ bool setup_x_window() {
 
 	x_swa.colormap   = x_cmap;
 	x_swa.event_mask = ExposureMask | KeyPressMask;
-	x_win = XCreateWindow(x_dpy, x_root, 0, 0, 1280, 720, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
+	x_win = XCreateWindow(x_dpy, x_root, 0, 0, sk_settings.flatscreen_width, sk_settings.flatscreen_height, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
 
 	XSizeHints *hints = XAllocSizeHints();
 	if (hints == nullptr) {
