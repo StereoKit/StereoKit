@@ -118,7 +118,7 @@ void tex_set_id(tex_t tex, const char *id) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
+tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data) {
 	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size);
 	int      channels = 0;
 	int      width    = 0;
@@ -134,11 +134,17 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
 	tex_format_ format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 	if (is_hdr) format = tex_format_rgba128;
 
-	tex_t result = tex_create(tex_type_image, format);
+	tex_t result = tex_create(type, format);
 
 	tex_set_colors(result, width, height, col_data);
 	free(col_data);
 	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
+	return tex_create_mem_type(tex_type_image, data, data_size, srgb_data);
 }
 
 ///////////////////////////////////////////
@@ -163,7 +169,7 @@ tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file(const char *file, bool32_t srgb_data) {
+tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data) {
 	tex_t result = tex_find(file);
 	if (result != nullptr)
 		return result;
@@ -175,7 +181,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 		return nullptr;
 	}
 
-	result = tex_create_mem(file_data, file_size, srgb_data);
+	result = tex_create_mem_type(type, file_data, file_size, srgb_data);
 	free(file_data);
 
 	if (result == nullptr) {
@@ -185,6 +191,12 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 	tex_set_id(result, file);
 	
 	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_file(const char *file, bool32_t srgb_data) {
+	return tex_create_file_type(file, tex_type_image, srgb_data);
 }
 
 ///////////////////////////////////////////
@@ -285,7 +297,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
 	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
 
-	tex_t equirect = tex_create_file(equirectangular_file, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
+	tex_t equirect = tex_create_file_type(equirectangular_file, tex_type_image_nomips, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	tex_set_address(equirect, tex_address_clamp);
 	if (equirect == nullptr)
 		return nullptr;
