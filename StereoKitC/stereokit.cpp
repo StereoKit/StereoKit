@@ -338,6 +338,33 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 ///////////////////////////////////////////
 
+void (*_sk_run_data_app_update)(void *);
+void  *_sk_run_data_update_data;
+void (*_sk_run_data_app_shutdown)(void *);
+void  *_sk_run_data_shutdown_data;
+void sk_run_data(void (*app_update)(void *update_data), void *update_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
+	_sk_run_data_app_update    = app_update;
+	_sk_run_data_update_data   = update_data;
+	_sk_run_data_app_shutdown  = app_shutdown;
+	_sk_run_data_shutdown_data = shutdown_data;
+
+#if defined(SK_OS_WEB)
+	web_start_main_loop(
+		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); },
+		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
+#else
+	while (sk_step(
+		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); }));
+
+	if (_sk_run_data_app_shutdown)
+		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);
+
+	sk_shutdown();
+#endif
+}
+
+///////////////////////////////////////////
+
 void sk_update_timer() {
 	sk_timev_raw = stm_now();
 	double time_curr = stm_sec(sk_timev_raw);
