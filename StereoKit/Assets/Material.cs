@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -276,6 +277,30 @@ namespace StereoKit
 		/// <param name="value">New value for the parameter.</param>
 		public void SetTexture(string name, Tex value)
 			=> NativeAPI.material_set_texture(_inst, name, value._inst);
+
+		/// <summary>Gets all shader parameters Name and Type</summary>
+		public IEnumerable<(string Name,MaterialParam Type)> GetAllParametersInfo()
+        {
+			var count = NativeAPI.material_get_param_count(_inst);
+            for (int i = 0; i < count; i++)
+            {
+				NativeAPI.material_get_param_info(_inst, i, out var name, out var type);
+				yield return (name, type);
+			}
+		}
+		/// <summary>Gets shader parameter Name and Type</summary>
+		/// <param name="index">Index of the shader parameter.</param>
+		public (string Name, MaterialParam Type) GetParameterInfo(int index)
+		{
+			var count = NativeAPI.material_get_param_count(_inst);
+			if(count <= index)
+            {
+				throw new IndexOutOfRangeException("Param not found");
+            }
+			NativeAPI.material_get_param_info(_inst, index, out var name, out var type);
+			return (name, type);
+		}
+
 
 		/// <summary>Looks for a Material asset that's already loaded,
 		/// matching the given id!</summary>
