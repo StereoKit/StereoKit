@@ -141,6 +141,30 @@ namespace StereoKit
 			_mainThreadInvoke.Clear();
 		}
 
+		private static Action _shutdownCallback = null;
+		/// <summary>This passes application execution over to StereoKit. 
+		/// This continuously steps all StereoKit systems, and inserts user
+		/// code via callback between the appropriate system updates. Once
+		/// execution completes, it properly calls the shutdown callback and
+		/// shuts down StereoKit for you.
+		/// 
+		/// Using this method is important for compatability with WASM and is
+		/// the preferred method of controlling the main loop, over 
+		/// `SK.Step`.</summary>
+		/// <param name="onStep">A callback where you put your application 
+		/// code! This gets called between StereoKit systems, after frame 
+		/// setup, but before render.</param>
+		/// <param name="onShutdown">A callback that gives you the
+		/// opportunity to shut things down while StereoKit is still active.
+		/// This is called after the last Step completes, and before
+		/// StereoKit shuts down.</param>
+		public static void Run(Action onStep = null, Action onShutdown = null)
+		{
+			_stepCallback = onStep;
+			_shutdownCallback = onShutdown;
+			NativeAPI.sk_run(_stepAction, _shutdownCallback);
+		}
+
 		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
 		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
 		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);

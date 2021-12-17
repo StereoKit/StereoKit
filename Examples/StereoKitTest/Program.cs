@@ -20,9 +20,7 @@ class Program
 			Environment.Exit(1);
 		app.Init();
 
-		// Now loop until finished, and then shut down
-		Action step = app.Step; // Storing this separately reduces allocations
-		while (SK.Step(step)) { }
-		SK.Shutdown();
+		// Now pass execution over to StereoKit
+		SK.Run(app.Step, () => Log.Info("Bye!") );
 	}
 }
