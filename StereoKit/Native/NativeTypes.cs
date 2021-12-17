@@ -1005,7 +1005,7 @@ namespace StereoKit
 		/// discarding any rotation information.</summary>
 		PosOnly,
 		/// <summary>Do not allow user input to change the element's pose at
-		/// all!</summary>
+		/// all! You may also be interested in UI.Push/PopSurface.</summary>
 		None,
 	}
 
@@ -1017,8 +1017,10 @@ namespace StereoKit
 		/// <summary>A normal window has a head and a body to it. Both can be
 		/// grabbed.</summary>
 		Normal = Head | Body,
-		/// <summary>No body, no head, none of the window will be grabbable.
-		/// Not really a flag, just set to this value.</summary>
+		/// <summary>No body, no head. Not really a flag, just set to this
+		/// value. The Window will still be grab/moveable. To prevent it from
+		/// being grabbable, combine with the UIMove.None option, or switch
+		/// to UI.Push/PopSurface.</summary>
 		Empty = 0,
 		/// <summary>Flag to include a head on the window.</summary>
 		Head = 1 << 0,
