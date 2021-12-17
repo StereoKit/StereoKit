@@ -648,19 +648,19 @@ void render_shutdown() {
 
 ///////////////////////////////////////////
 
-void render_blit(tex_t to, material_t material) {
+void render_blit_to_bound(material_t material) {
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	skg_tex_t *old_target = skg_tex_target_get();
-	float      color[4]   = { 0,0,0,0 };
-	skg_tex_target_bind(&to->tex);
+	float color[4] = { 0,0,0,0 };
 	skg_target_clear(true, color);
+
+	skg_tex_t *target = skg_tex_target_get();
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
-	data.width  = (float)to->tex.width;
-	data.height = (float)to->tex.height;
-	data.pixel_width  = 1.0f / to->tex.width;
-	data.pixel_height = 1.0f / to->tex.height;
+	data.width  = (float)target->width;
+	data.height = (float)target->height;
+	data.pixel_width  = 1.0f / target->width;
+	data.pixel_height = 1.0f / target->height;
 
 	// Setup render states for blitting
 	skg_buffer_set_contents(&render_shader_blit, &data, sizeof(render_blit_data_t));
@@ -671,11 +671,19 @@ void render_blit(tex_t to, material_t material) {
 	// And draw to it!
 	skg_draw(0, 0, render_blit_quad->ind_count, 1);
 
-	skg_tex_target_bind(old_target);
-
 	render_last_material = nullptr;
 	render_last_mesh     = nullptr;
 	render_last_shader   = nullptr;
+}
+
+///////////////////////////////////////////
+
+void render_blit(tex_t to, material_t material) {
+	skg_tex_t *old_target = skg_tex_target_get();
+
+	skg_tex_target_bind (&to->tex  );
+	render_blit_to_bound(material  );
+	skg_tex_target_bind (old_target);
 }
 
 ///////////////////////////////////////////
@@ -688,21 +696,28 @@ void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, i
 ///////////////////////////////////////////
 
 void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+	render_material_to(to_rendertarget, nullptr, camera, projection, layer_filter, clear, viewport);
+}
+
+///////////////////////////////////////////
+
+void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
 	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
 	tex_addref(to_rendertarget);
-	
+
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
 	render_viewpoint_t viewpoint = {};
-	viewpoint.rendertarget = to_rendertarget;
-	viewpoint.camera       = inv_cam;
-	viewpoint.projection   = projection;
-	viewpoint.layer_filter = layer_filter;
-	viewpoint.viewport     = viewport;
-	viewpoint.clear        = clear;
+	viewpoint.rendertarget      = to_rendertarget;
+	viewpoint.camera            = inv_cam;
+	viewpoint.projection        = projection;
+	viewpoint.layer_filter      = layer_filter;
+	viewpoint.viewport          = viewport;
+	viewpoint.clear             = clear;
+	viewpoint.override_material = override_material;
 	render_viewpoint_list.add(viewpoint);
 }
 

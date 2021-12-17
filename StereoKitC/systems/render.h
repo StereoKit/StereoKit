@@ -61,6 +61,7 @@ vec3          render_unproject_pt         (vec3 normalized_screen_pt);
 void          render_update_projection    ();
 const char   *render_fmt_name             (tex_format_ format);
 skg_tex_fmt_  render_preferred_depth_fmt  ();
+void          render_blit_to_bound        (material_t material);
 
 bool          render_init                 ();
 void          render_update               ();
