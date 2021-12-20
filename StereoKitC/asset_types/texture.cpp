@@ -435,7 +435,7 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 		size_t   cube_size       = face_size * 6;
 		uint8_t *cube_color_data = (uint8_t*)sk_malloc(cube_size);
 		void    *data[6];
-		for (size_t f = 0; f < 6; f++) {
+		for (int32_t f = 0; f < 6; f++) {
 			data[f] = cube_color_data + face_size * f;
 			skg_tex_get_mip_contents_arr(tex, mip_level, f, data[f], face_size);
 		}

@@ -1722,7 +1722,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		}
 	}
 	
-	if (hand >= 0 || hand < 2) {
+	if (hand >= 0 && hand < 2) {
 		if (button_state & button_state_just_active)
 			sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 		else if (button_state & button_state_just_inactive)
