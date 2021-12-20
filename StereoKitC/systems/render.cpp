@@ -103,14 +103,16 @@ render_list_t           render_list_primary    = -1;
 render_layer_           render_primary_filter  = render_layer_all;
 render_layer_           render_capture_filter  = render_layer_all;
 bool                    render_use_capture_filter = false;
+tex_t                   render_global_textures[16] = {};
 
 array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
 
+const int32_t           render_skytex_register = 11;
 mesh_t                  render_sky_mesh    = nullptr;
 material_t              render_sky_mat     = nullptr;
-tex_t                   render_sky_cubemap = nullptr;
 bool32_t                render_sky_show    = false;
+vec4                    render_sky_dims    = {};
 
 material_t              render_last_material;
 shader_t                render_last_shader;
@@ -122,7 +124,6 @@ render_list_t           render_list_active      = -1;
 skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-skg_bind_t              render_list_sky_bind    = { 11, skg_stage_pixel,                    skg_register_resource };
 
 ///////////////////////////////////////////
 
@@ -264,23 +265,19 @@ void render_set_skytex(tex_t sky_texture) {
 		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
 		return;
 	}
-	if (sky_texture == render_sky_cubemap) return;
 
-	if (render_sky_cubemap != nullptr)
-		tex_release(render_sky_cubemap);
-
-	render_sky_cubemap = sky_texture;
-	if (render_sky_cubemap == nullptr)
-		return;
-
-	tex_addref(render_sky_cubemap);
+	render_global_texture(render_skytex_register, sky_texture);
+	render_sky_dims = sky_texture != nullptr 
+		? vec4{ (float)sky_texture->tex.width, (float)sky_texture->tex.height, floorf(log2f((float)sky_texture->tex.width)), 0 }
+		: vec4{};
 }
 
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
-	tex_addref(render_sky_cubemap);
-	return render_sky_cubemap;
+	if (render_global_textures[render_skytex_register] != nullptr)
+		tex_addref(render_global_textures[render_skytex_register]);
+	return render_global_textures[render_skytex_register];
 }
 
 ///////////////////////////////////////////
@@ -339,6 +336,25 @@ void render_enable_skytex(bool32_t show_sky) {
 
 bool32_t render_enabled_skytex() {
 	return render_sky_show;
+}
+
+///////////////////////////////////////////
+
+void render_global_texture(int32_t register_slot, tex_t texture) {
+	if (register_slot < 0 || register_slot >= _countof(render_global_textures)) {
+		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
+		return;
+	}
+
+	if (render_global_textures[register_slot] == texture) return;
+
+	if (render_global_textures[register_slot] != nullptr)
+		tex_release(render_global_textures[register_slot]);
+
+	render_global_textures[register_slot] = texture;
+
+	if (render_global_textures[register_slot] != nullptr)
+		tex_addref(render_global_textures[register_slot]);
 }
 
 ///////////////////////////////////////////
@@ -431,22 +447,21 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
-	render_global_buffer.cubemap_i    = render_sky_cubemap != nullptr 
-		? vec4{ (float)render_sky_cubemap->tex.width, (float)render_sky_cubemap->tex.height, floorf(log2f((float)render_sky_cubemap->tex.width)), 0 }
-		: vec4{};
+	render_global_buffer.cubemap_i    = render_sky_dims;
 
 	// Upload shader globals and set them active!
 	material_buffer_set_data(render_shader_globals, &render_global_buffer);
 
 	// Activate any material buffers we have
-	for (uint16_t i = 0; i < _countof(material_buffers); i++) {
+	for (size_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
+			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
 	}
 
-	// Sky cubemap is global, and used for reflections with PBR materials
-	if (render_sky_cubemap != nullptr) {
-		skg_tex_bind(&render_sky_cubemap->tex, render_list_sky_bind);
+	// Activate any global textures we have
+	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+		if (render_global_textures[i] != nullptr)
+			skg_tex_bind(&render_global_textures[i]->tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource});
 	}
 
 	render_list_execute(render_list_primary, filter, view_count);
@@ -634,9 +649,11 @@ void render_shutdown() {
 	render_viewpoint_list .free();
 	render_instance_list  .free();
 
+	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+		tex_release(render_global_textures[i]);
+	}
 	material_release       (render_sky_mat);
 	mesh_release           (render_sky_mesh);
-	tex_release            (render_sky_cubemap);
 	mesh_release           (render_blit_quad);
 	material_buffer_release(render_shader_globals);
 
@@ -740,7 +757,7 @@ void render_set_material(material_t material) {
 
 	// Bind the material textures
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (material->args.texture_binds[i].slot != render_list_sky_bind.slot)
+		if (render_global_textures[material->args.texture_binds[i].slot] == nullptr)
 			skg_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
 	}
 
