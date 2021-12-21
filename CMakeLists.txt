@@ -205,6 +205,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
+  StereoKitC/libraries/qoi.h
+  StereoKitC/libraries/qoi.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sokol_time.h

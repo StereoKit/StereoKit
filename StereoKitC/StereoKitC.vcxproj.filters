@@ -181,6 +181,9 @@
     <ClCompile Include="systems\platform\web.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\qoi.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -417,6 +420,9 @@
       <Filter>systems\platform</Filter>
     </ClInclude>
     <ClInclude Include="libraries\aileron_font_data.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\qoi.h">
       <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>

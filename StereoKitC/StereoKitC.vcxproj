@@ -150,6 +150,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniaudio.cpp" />
+    <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
@@ -210,6 +211,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
+    <ClInclude Include="libraries\qoi.h" />
     <ClInclude Include="libraries\sk_gpu.h" />
     <ClInclude Include="libraries\sokol_time.h" />
     <ClInclude Include="libraries\stb_image.h" />
