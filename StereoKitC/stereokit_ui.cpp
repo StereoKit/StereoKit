@@ -1710,7 +1710,9 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			vec3{ button_size.x, button_size.y, button_depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
 
-		vec3    pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
+		vec3 pinch_local = hand < 0
+			? vec3_zero
+			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
 		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
 			float scale    = 1 + scale_step * snap_scale;
