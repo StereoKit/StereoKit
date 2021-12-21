@@ -140,6 +140,9 @@ void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_
 	if (result != nullptr) {
 		*out_width    = q_desc.width;
 		*out_height   = q_desc.height;
+		// If QOI claims it's linear, then we'll go with that!
+		if (q_desc.colorspace == QOI_LINEAR)
+			*out_format = tex_format_rgba32_linear;
 		return result;
 	}
 
