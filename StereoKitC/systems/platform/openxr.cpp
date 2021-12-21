@@ -715,7 +715,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 #endif
 
 	pose_t result = {};
-	if (!openxr_get_space(space, &result)) {
+	if (!openxr_get_space(space, &result, time)) {
 		log_warn("world_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
 		return pose_identity;
 	}
