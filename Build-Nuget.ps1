@@ -4,7 +4,7 @@ param(
     [string]$key = ''
 )
 
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[15.0,16.0)'
+$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[16.0,17.0)'
 if (!$vsExe) {
     Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
     exit 
@@ -180,7 +180,7 @@ Write-Host @"
 
 __      ___         _               
 \ \    / (_)_ _  __| |_____ __ _____
- \ \/\/ /| | ' \/ _` / _ \ V  V (_-<
+ \ \/\/ /| | ' \/ _' / _ \ V  V (_-<
   \_/\_/ |_|_||_\__,_\___/\_/\_//__/
 
 "@ -ForegroundColor White
@@ -289,7 +289,7 @@ Write-Host @"
 
     _           _         _    _ 
    /_\  _ _  __| |_ _ ___(_)__| |
-  / _ \| ' \/ _` | '_/ _ \ / _` |
+  / _ \| ' \/ _' | '_/ _ \ / _' |
  /_/ \_\_||_\__,_|_| \___/_\__,_|
                       
 "@ -ForegroundColor White
@@ -318,7 +318,7 @@ Write-Host @"
 
   _  _       ___     _   
  | \| |_  _ / __|___| |_ 
- | .` | || | (_ / -_)  _|
+ | .' | || | (_ / -_)  _|
  |_|\_|\_,_|\___\___|\__|
                       
 "@ -ForegroundColor White
