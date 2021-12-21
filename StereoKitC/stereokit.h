@@ -620,7 +620,8 @@ typedef enum depth_test_ {
 } depth_test_;
 
 typedef enum material_param_ {
-	material_param_float = 0,
+	material_param_unknown = 0,
+	material_param_float,
 	material_param_color128,
 	material_param_vector,
 	material_param_matrix,

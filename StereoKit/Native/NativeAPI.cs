@@ -197,7 +197,7 @@ namespace StereoKit
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_param_id    (IntPtr material, ulong    id,   MaterialParam type, const void *value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_param       (IntPtr material, string name, MaterialParam type, void *out_value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_param_id    (IntPtr material, ulong    id, MaterialParam type, void *out_value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_get_param_info  (IntPtr material, int index, out string out_name, out MaterialParam out_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_get_param_info  (IntPtr material, int index, out IntPtr out_name, out MaterialParam out_type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_param_count (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_shader      (IntPtr material, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_get_shader      (IntPtr material);

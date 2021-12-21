@@ -538,19 +538,45 @@ bool32_t material_get_param_id(material_t material, uint64_t id, material_param_
 ///////////////////////////////////////////
 
 void material_get_param_info(material_t material, int32_t index, char **out_name, material_param_ *out_type) {
-	skg_shader_var_t *info = &material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].vars[index];
-	if (out_type != nullptr) *out_type = (material_param_)0; //TODO: implement this // info->type;
-	if (out_name != nullptr) *out_name = info->name;
-	log_warn("material_get_param_info doesn't implement type yet.");
+	const skg_shader_meta_t *meta = material->shader->shader.meta;
+
+	int32_t buffer_id = meta->global_buffer_id;
+	int32_t buffer_ct = buffer_id >= 0
+		? meta->buffers[buffer_id].var_count
+		: 0;
+
+	if (index < buffer_ct) {
+		skg_shader_var_t *info = &meta->buffers[buffer_id].vars[index];
+		if (out_type != nullptr) {
+			*out_type = material_param_unknown;
+			if (info->type == skg_shader_var_float) {
+				if      (info->type_count == 16) *out_type = material_param_matrix;
+				else if (info->type_count == 1 ) *out_type = material_param_float;
+				else if (info->type_count == 4) {
+					if (string_eq_nocase(info->extra, "color"))
+						*out_type = material_param_color128;
+					else
+						*out_type = material_param_vector;
+				}
+			}
+		}
+		if (out_name != nullptr) *out_name = info->name;
+	} else {
+		if (out_type != nullptr) *out_type = material_param_texture;
+		if (out_name != nullptr) *out_name = meta->resources[index-buffer_ct].name;
+	}
 }
 
 ///////////////////////////////////////////
 
 int material_get_param_count(material_t material) {
-	if (material->shader->shader.meta->global_buffer_id == -1)
-		return 0;
+	int32_t buffer_id = material->shader->shader.meta->global_buffer_id;
+	if (buffer_id == -1)
+		return material->shader->shader.meta->resource_count;
 
-	return material->shader->shader.meta->buffers[material->shader->shader.meta->global_buffer_id].var_count;
+	return
+		material->shader->shader.meta->buffers[buffer_id].var_count +
+		material->shader->shader.meta->resource_count;
 }
 
 ///////////////////////////////////////////

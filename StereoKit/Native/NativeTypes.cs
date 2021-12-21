@@ -584,12 +584,16 @@ namespace StereoKit
 		Never,
 	}
 
+	// TODO: v0.4 This may need significant revision?
 	/// <summary>What type of data does this material parameter need? This is used to tell the 
 	/// shader how large the data is, and where to attach it to on the shader.</summary>
 	public enum MaterialParam
 	{
+		/// <summary>This data type is not currently recognized. Please
+		/// report your case on Github Issues!</summary>
+		Unknown = 0,
 		/// <summary>A single 32 bit float value.</summary>
-		Float = 0,
+		Float,
 		/// <summary>A color value described by 4 floating point values.</summary>
 		Color128,
 		/// <summary>A 4 component vector composed of loating point values.</summary>
