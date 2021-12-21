@@ -54,6 +54,9 @@
 		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\libStereoKitC.so" PackagePath="runtimes\linux-x64\native\" />
 		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\StereoKitC.sym" PackagePath="runtimes\linux-x64\native\" />
 
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\libStereoKitC.so" PackagePath="runtimes\linux-arm64\native\" />
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\StereoKitC.sym" PackagePath="runtimes\linux-arm64\native\" />
+
 		<!-- UWP DLLs -->
 		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\native\" />
 		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-x64\native\" />
