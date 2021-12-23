@@ -16,6 +16,8 @@ namespace StereoKitDocumenter
 		public static List<DocMethod> methods = new List<DocMethod>();
 		public static List<DocField>  fields  = new List<DocField>();
 		public static List<IDocItem>  items   = new List<IDocItem>();
+		public static List<DocInheritMethod> inheritMethods = new List<DocInheritMethod>();
+		public static List<DocInheritField>  inheritFields  = new List<DocInheritField>();
 
 		public static DocClass GetClass(string name) {
 			DocClass result = classes.Find((a) => a.name == name);
@@ -83,6 +85,10 @@ namespace StereoKitDocumenter
 				}
 			}
 
+			// Check inheritdoc references, and update their values
+			inheritFields .ForEach(f=>f.Resolve(fields));
+			inheritMethods.ForEach(f=>f.Resolve(methods));
+
 			DocExampleFinder.FindExamples(samplesProj);
 		}
 
@@ -146,12 +152,13 @@ namespace StereoKitDocumenter
 						int    start     = reference.IndexOf('.');
 						start = start == -1 ? 0 : start+1;
 						result.summary = $"See `{reference.Substring(start)}`";
+						inheritFields.Add(new DocInheritField(result, reader.GetAttribute("cref")));
 					} break;
 				}
 			}
 
 			fields.Add(result);
-			items.Add(result);
+			items .Add(result);
 		}
 
 		static void ReadMethod(string signature, XmlReader reader)
@@ -185,7 +192,10 @@ namespace StereoKitDocumenter
 						DocParam p = new DocParam();
 						p.name    = reader.GetAttribute("name");
 						p.summary = reader.ReadElementContentAsString().Trim();
-							variant.parameters.Add(p);
+						variant.parameters.Add(p);
+					} break;
+					case "inheritdoc": {
+						inheritMethods.Add(new DocInheritMethod(variant, reader.GetAttribute("cref")));
 					} break;
 				}
 			}
