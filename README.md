@@ -19,7 +19,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 ![Screenshot](/Tools/img/FeatureImage.jpg)
 
 ## StereoKit Features:
-- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado Linux, and eventually everywhere OpenXR is!
+- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado (Linux), and eventually everywhere OpenXR is!
 - Flat screen MR simulator with input emulation for easy development
 - Builds your application to device in seconds, not minutes
 - Mixed Reality inputs like hands and eyes are trivial to access
