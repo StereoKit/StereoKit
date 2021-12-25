@@ -59,7 +59,13 @@ namespace StereoKit
 		public Vec4(float x, float y, float z, float w) 
 			=> v = new Vector4(x, y, z, w);
 
-		/// <summary>A basic constructor, just copies the values in!</summary>
+
+		/// <summary>A basic constructor, just copies the value in as x,y,z and,w component!</summary>
+		/// <param name="xyzw">X,Y,Z,and W component of the vector.</param>
+		public Vec4(float xyzw)
+			=> v = new Vector4(xyzw, xyzw, xyzw, xyzw);
+
+		/// <summary>A short hand constructor, just copies the values in!</summary>
 		/// <param name="xyz">X, Y and Z components of the vector.</param>
 		/// <param name="w">W component of the vector.</param>
 		public Vec4(Vec3 xyz, float w)
