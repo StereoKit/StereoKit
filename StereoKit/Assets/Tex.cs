@@ -376,7 +376,7 @@ namespace StereoKit
 		/// `TexType.Image`, and a format of `TexFormat.Rgba32` or
 		/// `TexFormat.Rgba32Linear` depending on the value of the sRGBData
 		/// parameter.</summary>
-		/// <param name="colors">An array of 32 bit colors, should be a
+		/// <param name="colors">An array of 128 bit colors, should be a
 		/// length of `width*height`.</param>
 		/// <param name="width">Width in pixels of the texture. Powers of two
 		/// are generally best!</param>

@@ -84,19 +84,8 @@ namespace StereoKit
 		public void Draw(in Matrix transform, TextAlign anchorPosition)
 			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, Color32.White);
 
-		/// <summary>Draws the sprite at the location specified by the
-		/// transform matrix. A sprite is always sized in model space as 1 x
-		/// Aspect meters on the x and y axes respectively, so scale
-		/// appropriately. The 'position' attribute describes what corner of
-		/// the sprite you're specifying the transform of.</summary>
-		/// <param name="transform">A Matrix describing a transform from 
-		/// model space to world space. A sprite is always sized in model
-		/// space as 1 x Aspect meters on the x and y axes respectively, so
-		/// scale appropriately and remember that your anchor position may
-		/// affect the transform as well.</param>
-		/// <param name="anchorPosition">Describes what corner of the sprite
-		/// you're specifying the transform of. The 'Anchor' point or
-		/// 'Origin' of the Sprite.</param>
+
+		/// <inheritdoc cref="Draw(in Matrix, TextAlign)"/>
 		/// <param name="linearColor">Per-instance color data for this render
 		/// item. It is unmodified by StereoKit, and is generally interpreted
 		/// as linear.</param>
