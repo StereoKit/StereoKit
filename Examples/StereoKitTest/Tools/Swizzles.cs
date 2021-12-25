@@ -4,7 +4,7 @@ namespace StereoKit.Swizzels
 {
 
 	/// <summary>Swizzels for Vec4</summary>
-	public static class Vec4Swizzel
+	public static class Vec4Swizzels
 	{
 
 		/// <summary>A transpose swizzle property, returns (0,x)</summary>
@@ -2326,7 +2326,7 @@ namespace StereoKit.Swizzels
 	}
 
 	/// <summary>Swizzels for Vec3</summary>
-	public static class Vec3Swizzel
+	public static class Vec3Swizzels
 	{
 
 		/// <summary>A transpose swizzle property, returns (0,x)</summary>
@@ -3330,10 +3330,8 @@ namespace StereoKit.Swizzels
 
 	}
 
-
-
 	/// <summary>Swizzels for Vec2</summary>
-	public static class Vec2Swizzel
+	public static class Vec2Swizzels
 	{
 
 		/// <summary>A transpose swizzle property, returns (0,x)</summary>
@@ -3680,9 +3678,8 @@ namespace StereoKit.Swizzels
 
 	}
 
-
 	/// <summary>Swizzels to expand float</summary>
-	public static class FloatSwizzel
+	public static class FloatSwizzels
 	{
 
 		/// <summary>A transpose swizzle property, returns (0,x)</summary>
