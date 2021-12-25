@@ -128,7 +128,7 @@ namespace StereoKit
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.model_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 		#endregion
 
