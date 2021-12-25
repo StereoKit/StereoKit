@@ -414,6 +414,7 @@ SK_DeclarePrivateType(tex_t);
 SK_DeclarePrivateType(font_t);
 SK_DeclarePrivateType(shader_t);
 SK_DeclarePrivateType(material_t);
+SK_DeclarePrivateType(material_buffer_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
@@ -627,8 +628,6 @@ typedef enum material_param_ {
 	material_param_matrix,
 	material_param_texture,
 } material_param_;
-
-SK_DeclarePrivateType(material_buffer_t);
 
 SK_API material_t        material_find            (const char *id);
 SK_API material_t        material_create          (shader_t shader);
