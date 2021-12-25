@@ -9,7 +9,7 @@ namespace StereoKit
 	/// 
 	/// This is a wrapper on System.Numerics.Vector4, so it's SIMD optimized,
 	/// and can be cast to and from implicitly.</summary>
-	public partial struct Vec4
+	public struct Vec4
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
 		/// nice to have around so you can pass its fields as 'ref', which
@@ -34,6 +34,18 @@ namespace StereoKit
 		/// <summary>A normalized Vector that points down the W axis, this is
 		/// the same as `new Vec4(0,1,0,0)`.</summary>
 		public static readonly Vec4 UnitW = new Vec4(0, 0, 0, 1);
+
+		/// <summary>This extracts a Vec2 from the X and Y axes.</summary>
+		public Vec2 XY { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
+		/// <summary>This extracts a Vec2 from the Y and Z axes.</summary>
+		public Vec2 YZ { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
+		/// <summary>This extracts a Vec2 from the Z and W axes.</summary>
+		public Vec2 ZW { get => new Vec2(z, w); set { z = value.x; w = value.y; } }
+		/// <summary>This extracts a Vec2 from the X and Z axes.</summary>
+		public Vec2 XZ { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
+		/// <summary>This extracts a Vec3 from the X, Y, and Z axes.</summary>
+		public Vec3 XYZ { get => new Vec3(x, y, z); set { x = value.x; y = value.y; z = value.z; } }
+
 
 		/// <summary>A Vec4 and a Quat are only really different by name and
 		/// purpose. So, if you need to do Quat math with your Vec4, or visa
