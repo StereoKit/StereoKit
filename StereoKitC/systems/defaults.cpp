@@ -51,17 +51,9 @@ sound_t      sk_default_ungrab;
 
 ///////////////////////////////////////////
 
-tex_t defaults_texture(const char *id, color32 color) {
-	tex_t result = tex_create();
-	if (result == nullptr) {
-		return nullptr;
-	}
-	color32 tex_colors[2*2];
-	for (size_t i = 0; i < 2 * 2; i++)
-		tex_colors[i] = color;
-	tex_set_colors(result, 2, 2, tex_colors);
-	tex_set_id    (result, id);
-
+tex_t defaults_texture(const char *id, color128 color) {
+	tex_t result = tex_gen_color(color, 2, 2, tex_type_image_nomips, tex_format_rgba32_linear);
+	tex_set_id(result, id);
 	return result;
 }
 
@@ -69,11 +61,11 @@ tex_t defaults_texture(const char *id, color32 color) {
 
 bool defaults_init() {
 	// Textures
-	sk_default_tex       = defaults_texture(default_id_tex,       {255,255,255,255});
-	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,255}      );
-	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {128,128,128,255});
-	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {128,128,255,255}); // Default for normal maps
-	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,0,255,255}    ); // Default for metal/roughness maps
+	sk_default_tex       = defaults_texture(default_id_tex,       {1,1,1,1}         );
+	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,1}         );
+	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {0.5f,0.5f,0.5f,1});
+	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {0.5f,0.5f,1,1}   ); // Default for normal maps
+	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,0,1,1}         ); // Default for metal/roughness maps
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||

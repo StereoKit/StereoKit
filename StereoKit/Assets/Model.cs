@@ -128,7 +128,7 @@ namespace StereoKit
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.model_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 		#endregion
 
@@ -397,11 +397,7 @@ namespace StereoKit
 		public void RecalculateBounds()
 			=> NativeAPI.model_recalculate_bounds(_inst);
 
-		/// <summary>Adds this Model to the render queue for this frame! If
-		/// the Hierarchy has a transform on it, that transform is combined
-		/// with the Matrix provided here.</summary>
-		/// <param name="transform">A Matrix that will transform the Model
-		/// from Model Space into the current Hierarchy Space.</param>
+		/// <inheritdoc cref="Model.Draw(Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
 		/// to pass into the shader! Normally this gets used like a material
 		/// tint. If you're  adventurous and don't need per-instance colors,
@@ -716,6 +712,10 @@ namespace StereoKit
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
+	/// <summary>A link to a Model's animation! You can use this to get some
+	/// basic information about the animation, or store it for reference. This
+	/// maintains a link to the Model asset, and will keep it alive as long as
+	/// this object lives.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public class Anim
 	{
@@ -728,11 +728,12 @@ namespace StereoKit
 			_animIndex = animIndex;
 		}
 
-		public string Name
-		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.model_anim_get_name(_model._inst, _animIndex));
-		}
+		/// <summary>The name of the animation as provided by the original
+		/// asset.</summary>
+		public string Name => Marshal.PtrToStringAnsi(NativeAPI.model_anim_get_name(_model._inst, _animIndex));
 
+		/// <summary>The duration of the animation at normal playback speed, in
+		/// seconds.</summary>
 		public float Duration => NativeAPI.model_anim_get_duration(_model._inst, _animIndex);
 	}
 

@@ -1252,7 +1252,7 @@ template<typename C>
 void ui_label_sz_g(const C *text, vec2 size) {
 	vec3 final_pos;
 	vec2 final_size;
-	ui_layout_reserve_sz({ size.x - skui_settings.gutter, size.y }, false, &final_pos, &final_size);
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
 	ui_text_in(final_pos - vec3{0,0,skui_settings.depth/2}, final_size, text, text_align_top_left, text_align_center_left);
 }

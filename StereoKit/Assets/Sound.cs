@@ -82,15 +82,7 @@ namespace StereoKit
 		/// sample is between -1 and +1.</param>
 		public void WriteSamples(in float[] samples)
 			=> NativeAPI.sound_write_samples(_inst, samples, (ulong)samples.Length);
-		/// <summary>Only works if this Sound is a stream type! This writes
-		/// a number of audio samples to the sample buffer, and samples 
-		/// should be between -1 and +1. Streams are stored as ring buffers
-		/// of a fixed size, so writing beyond the capacity of the ring
-		/// buffer will overwrite the oldest samples.
-		/// 
-		/// StereoKit uses 48,000 samples per second of audio.</summary>
-		/// <param name="samples">An array of audio samples, where each 
-		/// sample is between -1 and +1.</param>
+		/// <inheritdoc cref="WriteSamples(in float[])"/>
 		/// <param name="sampleCount">You can use this to write only a subset
 		/// of the samples in the array, rather than the entire array!</param>
 		public void WriteSamples(in float[] samples, int sampleCount)

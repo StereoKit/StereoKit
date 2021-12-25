@@ -414,6 +414,7 @@ SK_DeclarePrivateType(tex_t);
 SK_DeclarePrivateType(font_t);
 SK_DeclarePrivateType(shader_t);
 SK_DeclarePrivateType(material_t);
+SK_DeclarePrivateType(material_buffer_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
@@ -561,6 +562,7 @@ SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
+SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
 SK_API tex_format_  tex_get_format          (tex_t texture);
@@ -627,8 +629,6 @@ typedef enum material_param_ {
 	material_param_matrix,
 	material_param_texture,
 } material_param_;
-
-SK_DeclarePrivateType(material_buffer_t);
 
 SK_API material_t        material_find            (const char *id);
 SK_API material_t        material_create          (shader_t shader);

@@ -611,6 +611,40 @@ void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 
 ///////////////////////////////////////////
 
+tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ type, tex_format_ format) {
+	uint8_t data[sizeof(color128)] = {};
+	size_t  data_step = 0;
+	switch (format) {
+	case tex_format_rgba32:
+	case tex_format_rgba32_linear: { color32  c = color_to_32(color);                             memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	case tex_format_bgra32_linear:
+	case tex_format_bgra32:        { color32  c = color_to_32({color.b,color.g,color.r,color.a}); memcpy(data, &c,     sizeof(c)); data_step = sizeof(c);} break;
+	case tex_format_rgba128:       {                                                              memcpy(data, &color, sizeof(color)); data_step = sizeof(color); } break;
+	case tex_format_r32:           { float    c = color.r;                                        memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	case tex_format_r16:           { uint16_t c = (uint16_t)(color.r*USHRT_MAX);                  memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	case tex_format_r8:            { uint8_t  c = (uint8_t )(color.r*255.0f   );                  memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	default: log_err("tex_gen_color doesn't support the provided color format."); return nullptr;
+	}
+
+	// Create an array of color values the size of our texture
+	uint8_t *color_data = (uint8_t *)sk_malloc(data_step * width * height);
+	uint8_t *color_curr = color_data;
+	for (size_t i = 0; i < width*height; i++) {
+		memcpy(color_curr, data, data_step);
+		color_curr += data_step;
+	}
+
+	// And upload it to the GPU
+	tex_t result = tex_create(type, format);
+	tex_set_colors(result, width, height, color_data);
+
+	free(color_data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {
