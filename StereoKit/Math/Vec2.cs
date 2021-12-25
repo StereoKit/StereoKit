@@ -23,6 +23,10 @@ namespace StereoKit
 		/// <param name="y">Y component of the vector.</param>
 		public Vec2(float x, float y) => v = new Vector2(x, y);
 
+		/// <summary>A short hand constructor, just sets all values as the same!</summary>
+		/// <param name="xy">X and Y component of the vector.</param>
+		public Vec2(float xy) => v = new Vector2(xy, xy);
+
 		public static implicit operator Vec2(Vector2 v) => new Vec2(v.X, v.Y);
 		public static implicit operator Vector2(Vec2 v) => v.v;
 

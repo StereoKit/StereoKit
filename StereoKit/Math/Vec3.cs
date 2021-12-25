@@ -29,6 +29,12 @@ namespace StereoKit
 		/// <param name="z">The z axis.</param>
 		public Vec3(float x, float y, float z) => v = new Vector3(x, y, z);
 
+		/// <summary>Creates a vector with all values the same! StereoKit uses
+		/// a right-handed metric coordinate system, where +x is to the 
+		/// right, +y is upwards, and -z is forward.</summary>
+		/// <param name="xyz">The x,y,and z axis.</param>
+		public Vec3(float xyz) => v = new Vector3(xyz, xyz, xyz);
+
 		public static implicit operator Vec3(Vector3 v) => new Vec3(v.X, v.Y, v.Z);
 		public static implicit operator Vector3(Vec3 v) => v.v;
 
