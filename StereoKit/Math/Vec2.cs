@@ -7,7 +7,7 @@ namespace StereoKit
 	/// <summary>A vector with 2 components: x and y. This can represent a 
 	/// point in 2D space, a directional vector, or any other sort of value 
 	/// with 2 dimensions to it!</summary>
-	public struct Vec2
+	public partial struct Vec2
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
 		/// nice to have around so you can pass its fields as 'ref', which
@@ -51,15 +51,6 @@ namespace StereoKit
 		/// <summary>A normalized Vector that points down the Y axis, this is
 		/// the same as `new Vec2(0,1)`.</summary>
 		public static readonly Vec2 UnitY = new Vec2(0,1);
-
-		/// <summary>A transpose swizzle property, returns (y,x)</summary>
-		public Vec2 YX  => new Vec2(y, x);
-		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Z axis.
-		/// </summary>
-		public Vec3 XY0 => new Vec3(x, y, 0);
-		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Y axis.
-		/// </summary>
-		public Vec3 X0Y => new Vec3(x, 0, y);
 
 		/// <summary>Magnitude is the length of the vector! Or the distance 
 		/// from the origin to this point. Uses Math.Sqrt, so it's not dirt 

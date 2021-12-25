@@ -9,7 +9,7 @@ namespace StereoKit
 	/// 
 	/// This is a wrapper on System.Numerics.Vector4, so it's SIMD optimized,
 	/// and can be cast to and from implicitly.</summary>
-	public struct Vec4
+	public partial struct Vec4
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
 		/// nice to have around so you can pass its fields as 'ref', which

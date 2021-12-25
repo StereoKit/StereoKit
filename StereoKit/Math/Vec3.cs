@@ -9,7 +9,7 @@ namespace StereoKit
 	/// 
 	/// StereoKit uses a right-handed coordinate system, where +x is to the
 	/// right, +y is upwards, and -z is forward.</summary>
-	public struct Vec3
+	public partial struct Vec3
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
 		/// nice to have around so you can pass its fields as 'ref', which
