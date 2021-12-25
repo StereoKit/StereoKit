@@ -147,23 +147,65 @@ namespace StereoKit
 		public static void Space (float space) 
 			=> NativeAPI.ui_space(space);
 
-		/// <summary>An invisible volume that will trigger when a finger enters
-		/// it!</summary>
-		/// <param name="id">An id for tracking element state. MUST be unique
-		/// within current hierarchy.</param>
-		/// <param name="bounds">Size and position of the volume, relative to
-		/// the current Hierarchy.</param>
-		/// <returns>True on the first frame a finger has entered the volume,
-		/// false otherwise.</returns>
 		[Obsolete("This overload will be removed in v0.4, prefer any other overload of this method.")]
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
 
+		/// <summary>A volume for helping to build one handed interactions.
+		/// This checks for the presence of a hand inside the bounds, and if
+		/// found, return that hand along with activation and focus 
+		/// information defined by the interactType.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		/// <param name="interactType">UIConfirm.Pinch will activate when the
+		/// hand performs a 'pinch' gesture. UIConfirm.Push will activate 
+		/// when the hand enters the volume, and behave the same as element's
+		/// focusState.</param>
+		/// <param name="hand">This will be the last unpreoccupied hand found
+		/// inside the volume, and is the hand controlling the interaction.
+		/// </param>
+		/// <param name="focusState">The focus state tells if the element has
+		/// a hand inside of the volume that qualifies for focus.</param>
+		/// <returns>Based on the interactType, this is a BtnState that tells
+		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
 			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, out focusState);
 
+		/// <summary>A volume for helping to build one handed interactions.
+		/// This checks for the presence of a hand inside the bounds, and if
+		/// found, return that hand along with activation and focus 
+		/// information defined by the interactType.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		/// <param name="interactType">UIConfirm.Pinch will activate when the
+		/// hand performs a 'pinch' gesture. UIConfirm.Push will activate 
+		/// when the hand enters the volume, and behave the same as element's
+		/// focusState.</param>
+		/// <param name="hand">This will be the last unpreoccupied hand found
+		/// inside the volume, and is the hand controlling the interaction.
+		/// </param>
+		/// <returns>Based on the interactType, this is a BtnState that tells
+		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
 			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
+		/// <summary>A volume for helping to build one handed interactions.
+		/// This checks for the presence of a hand inside the bounds, and if
+		/// found, return that hand along with activation and focus 
+		/// information defined by the interactType.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		/// <param name="interactType">UIConfirm.Pinch will activate when the
+		/// hand performs a 'pinch' gesture. UIConfirm.Push will activate 
+		/// when the hand enters the volume, and behave the same as element's
+		/// focusState.</param>
+		/// <returns>Based on the interactType, this is a BtnState that tells
+		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
 			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
 

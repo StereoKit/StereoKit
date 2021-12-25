@@ -232,7 +232,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 	int32_t  last_count = 0;
 	const C *last_at    = start;
 	const C *ch         = start;
-	char32_t curr;
+	char32_t curr       = 0;
 	bool     was_break  = false;
 	int32_t  count      = 0;
 
@@ -471,7 +471,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	// Core loop for drawing the text
 	vec2     bounds_min = step.start - step.bounds;
 	bool     clip       = fit & text_fit_clip;
-	char32_t c;
+	char32_t c          = 0;
 	text_step_next_line<C, char_decode_b_T>(text, step);
 	while(char_decode_b_T(text, &text, &c)) {
 		const font_char_t *char_info = font_get_glyph(step.style->font, c);

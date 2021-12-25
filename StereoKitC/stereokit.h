@@ -5,7 +5,7 @@
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 5
-#define SK_VERSION_PRERELEASE 3
+#define SK_VERSION_PRERELEASE 4
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
@@ -620,7 +620,8 @@ typedef enum depth_test_ {
 } depth_test_;
 
 typedef enum material_param_ {
-	material_param_float = 0,
+	material_param_unknown = 0,
+	material_param_float,
 	material_param_color128,
 	material_param_vector,
 	material_param_matrix,

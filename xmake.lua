@@ -61,7 +61,7 @@ option("linux-graphics-backend")
 target("StereoKitC")
     add_options("uwp")
     add_options("linux-graphics-backend")
-    set_version("0.3.5-preview.3")
+    set_version("0.3.5-preview.4")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then

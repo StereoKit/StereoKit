@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.2" LANGUAGES CXX C)
+project(StereoKit VERSION "0.3.5-preview.4" LANGUAGES CXX C)
 
 # Default build configuration to RelWithDebInfo 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
@@ -205,6 +205,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
+  StereoKitC/libraries/qoi.h
+  StereoKitC/libraries/qoi.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sokol_time.h

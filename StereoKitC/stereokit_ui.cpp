@@ -86,7 +86,7 @@ material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 font_t          skui_font;
 material_t      skui_font_mat;
-ui_hand_t       skui_hand[2];
+ui_hand_t       skui_hand[2] = {};
 float           skui_finger_radius = 0;
 bool32_t        skui_show_volumes = false;
 bool32_t        skui_enable_far_interact = true;
@@ -752,12 +752,21 @@ void ui_pop_surface() {
 	hierarchy_pop();
 	skui_layers.pop();
 
-	layer_t &layer = skui_layers.last();
-	for (size_t i = 0; i < handed_max; i++) {
-		skui_hand[i].finger        = layer.finger_pos[i];
-		skui_hand[i].finger_prev   = layer.finger_prev[i];
-		skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
-		skui_hand[i].pinch_pt_prev = layer.pinch_pt_prev[i];
+	if (skui_layers.count <= 0) {
+		for (size_t i = 0; i < handed_max; i++) {
+			skui_hand[i].finger        = skui_hand[i].finger_world;
+			skui_hand[i].finger_prev   = skui_hand[i].finger_world_prev;
+			skui_hand[i].pinch_pt      = skui_hand[i].pinch_pt_world;
+			skui_hand[i].pinch_pt_prev = skui_hand[i].pinch_pt_world_prev;
+		}
+	} else {
+		layer_t &layer = skui_layers.last();
+		for (size_t i = 0; i < handed_max; i++) {
+			skui_hand[i].finger        = layer.finger_pos[i];
+			skui_hand[i].finger_prev   = layer.finger_prev[i];
+			skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
+			skui_hand[i].pinch_pt_prev = layer.pinch_pt_prev[i];
+		}
 	}
 }
 
@@ -1629,7 +1638,8 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		} else if (focus_state & button_state_just_inactive) {
 			button_state = ui_active_set(hand, id, false);
 		}
-		finger_x = skui_hand[hand].finger.x;
+		if (hand != -1)
+			finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		activation_size.x *= 2;
 		sustain_size  = vec3{ activation_size.x,  activation_size.y, activation_plane };
@@ -1700,7 +1710,9 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			vec3{ button_size.x, button_size.y, button_depth}, 
 			skui_mat_quad, skui_palette[0] * color_blend);
 
-		vec3    pinch_local = hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
+		vec3 pinch_local = hand < 0
+			? vec3_zero
+			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
 		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
 			float scale    = 1 + scale_step * snap_scale;
@@ -1722,7 +1734,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		}
 	}
 	
-	if (hand >= 0 || hand < 2) {
+	if (hand >= 0 && hand < 2) {
 		if (button_state & button_state_just_active)
 			sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 		else if (button_state & button_state_just_inactive)

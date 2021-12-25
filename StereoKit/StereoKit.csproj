@@ -21,7 +21,7 @@
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.5-preview.3</Version>
+		<Version>0.3.5-preview.4</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -53,6 +53,9 @@
 		<!-- Linux Libraries -->
 		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\libStereoKitC.so" PackagePath="runtimes\linux-x64\native\" />
 		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\StereoKitC.sym" PackagePath="runtimes\linux-x64\native\" />
+
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\libStereoKitC.so" PackagePath="runtimes\linux-arm64\native\" />
+		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\StereoKitC.sym" PackagePath="runtimes\linux-arm64\native\" />
 
 		<!-- UWP DLLs -->
 		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-x64\native\" />

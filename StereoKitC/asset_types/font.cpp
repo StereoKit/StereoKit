@@ -94,7 +94,6 @@ int32_t font_source_add_data(const char *name, void *data, size_t data_size) {
 	font_sources[id].references += 1;
 
 	if (font_sources[id].references == 1) {
-		size_t length;
 		font_sources[id].file = sk_malloc(data_size);
 		memcpy(font_sources[id].file, data, data_size);
 
@@ -151,7 +150,7 @@ bool font_setup(font_t font) {
 	const int32_t atlas_resolution_x = 256;
 	const int32_t atlas_resolution_y = 256;
 	font->atlas      = rect_atlas_create( atlas_resolution_x, atlas_resolution_y );
-	font->atlas_data = sk_malloc_t(uint8_t, atlas_resolution_x * atlas_resolution_y);
+	font->atlas_data = sk_malloc_t(uint8_t, font->atlas.w * font->atlas.h);
 	memset(font->atlas_data, 0, font->atlas.w * font->atlas.h);
 
 	for (char32_t i = 65; i < 128; i++) font_add_character(font, i);

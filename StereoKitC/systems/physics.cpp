@@ -75,7 +75,7 @@ void physics_update() {
 		// Position
 		move.old_velocity = vec3_rp_to_sk( body->getLinearVelocity() );
 		vec3 pos      = vec3_rp_to_sk(body->getTransform().getPosition());
-		vec3 velocity = (move.dest - pos) / (physics_step * frames);
+		vec3 velocity = (move.dest - pos) / (float)(physics_step * frames);
 		body->setLinearVelocity(vec3_sk_to_rp(velocity));
 		// Rotation
 		move.old_rot_velocity = vec3_rp_to_sk(body->getAngularVelocity());

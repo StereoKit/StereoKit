@@ -2,6 +2,7 @@
 #include "../shaders_builtin/shader_builtin.h"
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/ferr_hash.h"
+#include "../libraries/qoi.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -118,25 +119,50 @@ void tex_set_id(tex_t tex, const char *id) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data) {
-	bool     is_hdr   = stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size);
-	int      channels = 0;
-	int      width    = 0;
-	int      height   = 0;
-	uint8_t *col_data = is_hdr ? 
-		(uint8_t *)stbi_loadf_from_memory((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4):
-		(uint8_t *)stbi_load_from_memory ((stbi_uc*)data, (int)data_size, &width, &height, &channels, 4);
+void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height) {
+	int32_t channels = 0;
+	*out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 
+	// Check for an stbi HDR image
+	if (stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size)) {
+		*out_format = tex_format_rgba128;
+		return (uint8_t *)stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
+	}
+
+	// Check through stbi's list of image formats
+	void *result = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
+	if (result != nullptr)
+		return result;
+
+	// Check for qoi images
+	qoi_desc q_desc = {};
+	result = qoi_decode(data, (int)data_size, &q_desc, 4);
+	if (result != nullptr) {
+		*out_width    = q_desc.width;
+		*out_height   = q_desc.height;
+		// If QOI claims it's linear, then we'll go with that!
+		if (q_desc.colorspace == QOI_LINEAR)
+			*out_format = tex_format_rgba32_linear;
+		return result;
+	}
+
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data) {
+	tex_format_ format;
+	int32_t     width, height;
+	void       *col_data = tex_load_image_data(data, data_size, srgb_data, &format, &width, &height);
 	if (col_data == nullptr) {
-		log_warn("Couldn't parse image data!");
+		log_warn("No compatible image format found!");
 		return nullptr;
 	}
-	tex_format_ format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
-	if (is_hdr) format = tex_format_rgba128;
 
 	tex_t result = tex_create(type, format);
-
 	tex_set_colors(result, width, height, col_data);
+
 	free(col_data);
 	return result;
 }
@@ -219,28 +245,38 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	}
 
 	// Load all files
-	uint8_t **data = sk_malloc_t(uint8_t*, file_count);
+	void **data = sk_malloc_t(void*, file_count);
 	int  final_width  = 0;
 	int  final_height = 0;
+	tex_format_ final_format = tex_format_none;
 	bool loaded       = true;
 	for (size_t i = 0; i < file_count; i++) {
-		int channels = 0;
 		int width    = 0;
 		int height   = 0;
+		tex_format_ format = tex_format_none;
 
 		// TODO: this will fail on weird file systems! Also support HDRs
-		data[i] = stbi_load(assets_file(files[i]), &width, &height, &channels, 4);
+		void  *file_data;
+		size_t file_size;
+		if (!platform_read_file(assets_file(files[i]), &file_data, &file_size)) {
+			log_warnf("Texture file failed to load: %s", files[i]);
+			loaded = false;
+			break;
+		}
+		data[i] = tex_load_image_data(file_data, file_size, srgb_data, &format, &width, &height);
 
 		// Check if there were issues, or one of the images is the wrong size!
 		if (data[i] == nullptr || 
 			(final_width  != 0 && final_width  != width ) ||
-			(final_height != 0 && final_height != height)) {
+			(final_height != 0 && final_height != height) ||
+			(final_format != tex_format_none && final_format != format)) {
 			loaded = false;
-			log_errf("Issue loading image array '%s', file not found, invalid image format, or images of different sizes?", files[i]);
+			log_errf("Issue loading image array '%s', incompatible format, or images are of mismatching formats or sizes.", files[i]);
 			break;
 		}
 		final_width  = width;
 		final_height = height;
+		final_format = format;
 	}
 
 	// free memory if we failed
@@ -254,7 +290,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 
 	// Create with the data we have
 	result = tex_create(type, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
-	tex_set_color_arr(result, final_width, final_height, (void**)data, file_count, out_sh_lighting_info);
+	tex_set_color_arr(result, final_width, final_height, data, file_count, out_sh_lighting_info);
 	tex_set_id       (result, file_id);
 
 	if (out_sh_lighting_info != nullptr)
@@ -435,7 +471,7 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 		size_t   cube_size       = face_size * 6;
 		uint8_t *cube_color_data = (uint8_t*)sk_malloc(cube_size);
 		void    *data[6];
-		for (size_t f = 0; f < 6; f++) {
+		for (int32_t f = 0; f < 6; f++) {
 			data[f] = cube_color_data + face_size * f;
 			skg_tex_get_mip_contents_arr(tex, mip_level, f, data[f], face_size);
 		}

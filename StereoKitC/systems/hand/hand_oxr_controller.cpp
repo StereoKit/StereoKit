@@ -53,7 +53,7 @@ void hand_oxrc_update_pose(bool animate) {
 
 		// Simulate the hand based on the state of the controller
 		bool   tracked   = controller->tracked & button_state_active;
-		pose_t hand_pose = input_hand((handed_)hand_id)->palm;
+		pose_t hand_pose = hand->palm;
 		if (tracked) {
 			hand_pose.orientation = xrc_offset_rot[hand_id] * controller->pose.orientation;
 			hand_pose.position    = controller->pose.position + hand_pose.orientation * xrc_offset_pos[hand_id];

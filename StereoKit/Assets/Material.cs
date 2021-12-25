@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -73,6 +74,34 @@ namespace StereoKit
 		ClipCutoff
 	}
 
+	/// <summary>Information and details about the shader parameters
+	/// available on a Material. Currently only the text name and data type
+	/// of the parameter are surfaced here. This contains textures as well as
+	/// global constant buffer variables.</summary>
+	public struct MatParamInfo
+	{
+		/// <summary>The name of the shader parameter, as provided inside of
+		/// the shader file itself. These are the 'global' variables defined
+		/// in the shader, as well as textures. The shader compiler will
+		/// output a list of parameter names when compiling, so check the
+		/// output window after building if you're uncertain what you'll
+		/// find.
+		/// 
+		/// See `MatParamName` for a list of "standardized" parameter names.
+		/// </summary>
+		public string name;
+
+		/// <summary>This is the data type that StereoKit recognizes the
+		/// parameter to be.</summary>
+		public MaterialParam type;
+
+		internal MatParamInfo(string name, MaterialParam type)
+		{
+			this.name = name;
+			this.type = type;
+		}
+	}
+
 	/// <summary>A Material describes the surface of anything drawn on the 
 	/// graphics card! It is typically composed of a Shader, and shader 
 	/// properties like colors, textures, transparency info, etc.
@@ -134,7 +163,8 @@ namespace StereoKit
 			get => NativeAPI.material_get_queue_offset(_inst);
 			set => NativeAPI.material_set_queue_offset(_inst, value); }
 		/// <summary>The number of shader parameters available to this 
-		/// material.</summary>
+		/// material, includes global shader variables as well as textures.
+		/// </summary>
 		public int ParamCount => NativeAPI.material_get_param_count(_inst);
 		/// <summary>Gets a link to the Shader that the Material is currently 
 		/// using, or overrides the Shader this material uses.</summary>
@@ -204,54 +234,37 @@ namespace StereoKit
 			}
 		}
 
-		/// <summary>
-		/// The name and type of a Parameter on a Material
-		/// </summary>
-		public struct ParamInfo
+		/// <summary>Gets an enumerable list of all parameter information on
+		/// the Material. This includes all global shader variables and
+		/// textures.</summary>
+		/// <returns>A pretty standard IEnumarable of MatParamInfo that can
+		/// be used with foreach.</returns>
+		public IEnumerable<MatParamInfo> GetAllParamInfo()
 		{
-			/// <summary>
-			/// The name of the param
-			/// </summary>
-			public string Name;
-
-			/// <summary>
-			/// The type of the param 
-			/// </summary>
-			public MaterialParam Type;
-			/// <summary>
-			/// Parameter Info constructor 
-			/// </summary>
-			/// <param name="name">Name of the shader parameter.</param>
-			/// <param name="type">New type for the parameter.</param>
-			internal ParamInfo(string name, MaterialParam type)
+			int count = ParamCount;
+			for (int i = 0; i < count; i++)
 			{
-				Name = name;
-				Type = type;
+				NativeAPI.material_get_param_info(_inst, i, out IntPtr name, out MaterialParam type);
+				yield return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
 			}
 		}
 
-		/// <summary>Gets all shader parameters Name and Type</summary>
-		public IEnumerable<ParamInfo> GetAllParamsInfo()
+		/// <summary>Gets available shader parameter information for the
+		/// parameter at the indicated index. Parameters are listed as
+		/// variables first, then textures.</summary>
+		/// <param name="index">Index of the shader parameter, bounded by
+		/// ParamCount.</param>
+		/// <returns>A structure that contains all the available information
+		/// about the parameter.</returns>
+		public MatParamInfo GetParamInfo(int index)
 		{
-			var count = NativeAPI.material_get_param_count(_inst);
-			for (int i = 0; i < count; i++)	
+			int count = ParamCount;
+			if ((count <= index) || index < 0)
 			{
-				NativeAPI.material_get_param_info(_inst, i, out string name, out MaterialParam type);
-				yield return new ParamInfo(name, type);
+				throw new IndexOutOfRangeException();
 			}
-		}
-
-		/// <summary>Gets shader parameter Name and Type</summary>
-		/// <param name="index">Index of the shader parameter.</param>
-		public ParamInfo GetParamInfo(int index)
-		{
-			var count = NativeAPI.material_get_param_count(_inst);
-			if((count <= index) || index < 0)
-			{
-				throw new IndexOutOfRangeException("Param not found");
-			}
-			NativeAPI.material_get_param_info(_inst, index, out string name, out MaterialParam type);
-			return new ParamInfo(name, type);
+			NativeAPI.material_get_param_info(_inst, index, out IntPtr name, out MaterialParam type);
+			return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
 		}
 
 		/// <summary>Creates a new Material asset with the same shader and
