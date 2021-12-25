@@ -76,19 +76,6 @@ namespace StereoKit
 		/// </summary>
 		public static readonly Vec3 UnitZ = new Vec3(0, 0, 1);
 
-		/// <summary>This extracts a Vec2 from the X and Y axes.</summary>
-		public Vec2 XY  { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
-		/// <summary>This extracts a Vec2 from the Y and Z axes.</summary>
-		public Vec2 YZ  { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
-		/// <summary>This extracts a Vec2 from the X and Z axes.</summary>
-		public Vec2 XZ  { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
-		/// <summary>This returns a Vec3 that has been flattened to 0 on the
-		/// Y axis. No other changes are made.</summary>
-		public Vec3 X0Z => new Vec3(x, 0, z);
-		/// <summary>This returns a Vec3 that has been flattened to 0 on the
-		/// Z axis. No other changes are made.</summary>
-		public Vec3 XY0 => new Vec3(x, y, 0);
-
 		/// <summary>Magnitude is the length of the vector! The distance from
 		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap 
 		/// or anything.</summary>
