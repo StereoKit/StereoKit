@@ -172,8 +172,35 @@ void anim_update_skin(model_t model) {
 
 ///////////////////////////////////////////
 
+void _anim_inst_check_ready(model_t model) {
+	anim_inst_t *inst = &model->anim_inst;
+	anim_data_t *data = &model->anim_data;
+
+	if (inst->node_transforms == nullptr) {
+		inst->node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
+		for (size_t i = 0; i < model->nodes.count; i++) {
+			matrix_decompose(model->nodes[i].transform_local,
+				inst->node_transforms[i].translation,
+				inst->node_transforms[i].scale,
+				inst->node_transforms[i].rotation);
+		}
+	}
+	if (inst->skinned_meshes == nullptr) {
+		inst->skinned_mesh_count = (int32_t)data->skeletons.count;
+		inst->skinned_meshes     = sk_malloc_t(anim_inst_subset_t, inst->skinned_mesh_count);
+		for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
+			inst->skinned_meshes[i].original_mesh   = model_node_get_mesh(model, data->skeletons[i].skin_node);
+			inst->skinned_meshes[i].modified_mesh   = mesh_copy(inst->skinned_meshes[i].original_mesh);
+			inst->skinned_meshes[i].bone_transforms = sk_malloc_t(matrix, data->skeletons[i].bone_count);
+			model_node_set_mesh(model, data->skeletons[i].skin_node, inst->skinned_meshes[i].modified_mesh);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
 void _anim_update_skin(model_t &model) {
-	if (model->anim_inst.anim_id < 0) return;
+	_anim_inst_check_ready(model);
 
 	for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
 		matrix root = matrix_invert(model_node_get_transform_model(model, model->anim_data.skeletons[i].skin_node));
@@ -194,29 +221,13 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 		log_err("Attempted to play an invalid animation id.");
 		return;
 	}
+	_anim_inst_check_ready(model);
+
 	if (model->anim_inst.curve_last_keyframe == nullptr) {
 		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[anim_id].curves.count);
 		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[anim_id].curves.count);
 	}
-	if (model->anim_inst.node_transforms == nullptr) {
-		model->anim_inst.node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
-		for (size_t i = 0; i < model->nodes.count; i++) {
-			matrix_decompose(model->nodes[i].transform_local,
-				model->anim_inst.node_transforms[i].translation,
-				model->anim_inst.node_transforms[i].scale,
-				model->anim_inst.node_transforms[i].rotation);
-		}
-	}
-	if (model->anim_inst.skinned_meshes == nullptr) {
-		model->anim_inst.skinned_mesh_count = (int32_t)model->anim_data.skeletons.count;
-		model->anim_inst.skinned_meshes     = sk_malloc_t(anim_inst_subset_t, model->anim_inst.skinned_mesh_count);
-		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
-			model->anim_inst.skinned_meshes[i].original_mesh   = model_node_get_mesh(model, model->anim_data.skeletons[i].skin_node);
-			model->anim_inst.skinned_meshes[i].modified_mesh   = mesh_copy(model->anim_inst.skinned_meshes[i].original_mesh);
-			model->anim_inst.skinned_meshes[i].bone_transforms = sk_malloc_t(matrix, model->anim_data.skeletons[i].bone_count);
-			model_node_set_mesh(model, model->anim_data.skeletons[i].skin_node, model->anim_inst.skinned_meshes[i].modified_mesh);
-		}
-	}
+
 	model->anim_inst.start_time  = time_getf();
 	model->anim_inst.last_update = -1;
 	model->anim_inst.anim_id     = anim_id;
