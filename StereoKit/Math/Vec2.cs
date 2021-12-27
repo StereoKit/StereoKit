@@ -53,7 +53,7 @@ namespace StereoKit
 		public static readonly Vec2 UnitY = new Vec2(0,1);
 
 		/// <summary>A transpose swizzle property, returns (y,x)</summary>
-		public Vec2 YX  => new Vec2(y, x);
+		public Vec2 YX => new Vec2(y, x);
 		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Z axis.
 		/// </summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
