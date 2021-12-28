@@ -698,9 +698,7 @@ namespace StereoKit
 		N5           = 0x35,
 		/// <summary>Keyboard top row 6, with shift is '^'.</summary>
 		N6           = 0x36,
-		/// <summary>Keyboard top row 7, with shift is '
-		/// &
-		/// '.</summary>
+		/// <summary>Keyboard top row 7, with shift is '&amp;'.</summary>
 		N7           = 0x37,
 		/// <summary>Keyboard top row 8, with shift is '*'.</summary>
 		N8           = 0x38,
@@ -802,11 +800,9 @@ namespace StereoKit
 		F11          = 0x7A,
 		/// <summary>Function key F12.</summary>
 		F12          = 0x7B,
-		/// <summary>,/
-		/// <</summary>
+		/// <summary>,/&lt;</summary>
 		Comma        = 0xBC,
-		/// <summary>./
-		/// ></summary>
+		/// <summary>./&gt;</summary>
 		Period       = 0xBE,
 		/// <summary>/</summary>
 		SlashFwd     = 0xBF,

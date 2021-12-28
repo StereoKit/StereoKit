@@ -84,7 +84,7 @@ namespace StereoKit
 	static bool IsCommand(CppComment cmd)
 	{
 		if (cmd.Kind == CppCommentKind.InlineCommand) return true;
-		if (cmd.Kind == CppCommentKind.Text) return ((CppCommentText)cmd).Text == "@";
+		if (cmd.Kind == CppCommentKind.Text) { string txt = ((CppCommentText)cmd).Text; return txt == "@" || txt == "&" || txt == "<" || txt == ">"; }
 		return false;
 	}
 
@@ -106,6 +106,9 @@ namespace StereoKit
 			if (!(nextCommand || isCommand) && i+1 < children.Count)
 				txt += "\r\n";
 		}
+		txt = txt.Replace("&", "&amp;");
+		txt = txt.Replace("<", "&lt;");
+		txt = txt.Replace(">", "&gt;");
 
 
 		string   prefix = new string('\t', indent) + "/// ";
