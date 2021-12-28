@@ -257,6 +257,96 @@ namespace StereoKit
 		private int _worldRaycastPresent;
 	}
 
+	/// <summary>Keyboard Key for Virtual Keyboard.</summary>
+	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+	public struct KeyboardLayoutKey
+	{
+		internal IntPtr _key;
+
+		/// <summary>
+		/// The Key of the Keyboard
+		/// </summary>
+		public string Key
+		{
+			set
+			{
+				if (_key != IntPtr.Zero) Marshal.FreeHGlobal(_key);
+
+				_key = string.IsNullOrEmpty(value)
+					? IntPtr.Zero
+					: Marshal.StringToHGlobalAnsi(value);
+			}
+			get => Marshal.PtrToStringAnsi(_key);
+		}
+
+		/// <summary>
+		/// The Width of the key as %
+		/// </summary>
+		public float Width;
+	}
+
+	/// <summary>Keyboard Layout Layer for Virtual Keyboard.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct KeyboardLayoutLayer
+	{
+		/// <summary>
+		/// Each Key on Keyboard [row][column]
+		/// </summary>
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 6 * 35)] 
+		public KeyboardLayoutKey[] Keys;
+
+		/// <summary>
+		/// Default
+		/// </summary>
+		public static KeyboardLayoutLayer Default
+		{
+			get
+			{
+				var e = new KeyboardLayoutLayer
+				{
+					Keys = new KeyboardLayoutKey[6 * 35]
+                };
+                return e;
+			} 
+		}
+	}
+
+	/// <summary>Keyboard Layout for Virtual Keyboard.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct KeyboardLayouts
+	{
+		/// <summary>
+		/// UnShifted layer of keyboard
+		/// </summary>
+		public KeyboardLayoutLayer NormalKeyboard;
+		/// <summary>
+		/// Shifted layer of keyboard
+		/// </summary>
+		public KeyboardLayoutLayer ShiftKeyboard;
+
+		/// <summary>
+		/// Default Blank Keyboard
+		/// </summary>
+		public static KeyboardLayouts Default
+		{
+			get
+			{
+                var e = new KeyboardLayouts
+                {
+                    NormalKeyboard = KeyboardLayoutLayer.Default,
+                    ShiftKeyboard = KeyboardLayoutLayer.Default
+                };
+                return e;
+			}
+		}
+
+		/// <summary>
+		/// Default US Keyboard
+		/// </summary>
+		public static KeyboardLayouts USKeyboardLayout
+			=> NativeAPI.virtualkeyboard_get_usKeyboard_Layout();
+	}
+
 	/// <summary>Visual properties and spacing of the UI system.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct UISettings

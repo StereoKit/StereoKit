@@ -510,5 +510,53 @@ namespace StereoKit
 			NativeAPI.input_fire_event(eventSource, eventTypes, arg);
 			Marshal.FreeCoTaskMem(arg);
 		}
+		/// <summary>Virtual Keyboard Options!</summary>
+		public static class VirtualKeyboard
+        {
+			/// <summary>
+			/// See if keyboard is open and also open or close keyboard
+			/// </summary>
+			public static bool Open
+			{
+				get
+				{
+					return NativeAPI.virtualkeyboard_getopen();
+				}
+				set 
+				{
+					NativeAPI.virtualkeyboard_setopen(value);
+				}
+			}
+
+			/// <summary>
+			/// KeyboardLayout defaults to US
+			/// </summary>
+			public static KeyboardLayouts KeyboardLayout
+			{
+				get
+				{
+					return NativeAPI.virtualkeyboard_getKeyboard_Layout();
+				}
+				set
+				{
+					NativeAPI.virtualkeyboard_setKeyboard_Layout(value);
+				}
+			}
+
+			/// <summary>
+			/// See if keyboard is activly shifting and also set keyboard to shift
+			/// </summary>
+			public static bool Shift
+			{
+				get
+				{
+					return NativeAPI.virtualkeyboard_getshift();
+				}
+				set
+				{
+					NativeAPI.virtualkeyboard_setshift(value);
+				}
+			}
+		}
 	}
 }

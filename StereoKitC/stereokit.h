@@ -143,6 +143,20 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
+typedef struct keyboard_layout_Key {
+	const char* key;
+	float width;
+} keyboard_layout_Key;
+
+typedef struct keyboard_layout_Layer_t {
+	keyboard_layout_Key key[6*35];
+} keyboard_layout_Layer_t;
+
+typedef struct keyboard_layout_t {
+	keyboard_layout_Layer_t normalLayer;
+	keyboard_layout_Layer_t shiftLayer;
+} keyboard_layout_t;
+
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
@@ -1086,6 +1100,19 @@ SK_API void                  input_hand_material  (handed_ hand, material_t mate
 SK_API void                  input_subscribe      (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void                  input_fire_event     (input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer);
+
+///////////////////////////////////////////
+
+SK_API keyboard_layout_t     virtualkeyboard_get_usKeyboard_Layout();
+SK_API keyboard_layout_t     virtualkeyboard_getKeyboard_Layout();
+
+SK_API void     virtualkeyboard_setKeyboard_Layout(keyboard_layout_t layout);
+
+SK_API bool     virtualkeyboard_getopen();
+SK_API void     virtualkeyboard_setopen(bool open);
+
+SK_API bool     virtualkeyboard_getshift();
+SK_API void     virtualkeyboard_setshift(bool shift);
 
 ///////////////////////////////////////////
 

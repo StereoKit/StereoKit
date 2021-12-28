@@ -59,6 +59,9 @@ SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, mat
 SK_API void     ui_push_text_style     (text_style_t  style);
 SK_API void     ui_pop_text_style      ();
 
+SK_API void     ui_push_no_keyboard_loss(bool disallowKeyboard);
+SK_API void     ui_pop_no_keyboard_loss();
+
 SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
 SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();

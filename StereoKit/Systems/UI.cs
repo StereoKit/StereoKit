@@ -645,6 +645,19 @@ namespace StereoKit
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
 
+		/// <summary>
+		/// This pushes if a element will not hide the keyboard
+		/// </summary>
+		/// <param name="stealFocus">If true the elements will still hide the keyboard if false will not hide the keyboard </param>
+		public static void PushKeyboardFocusSteal(bool stealFocus)
+			=> NativeAPI.ui_push_no_keyboard_loss(!stealFocus);
+
+		/// <summary>
+		/// This removes the last pushed case if a element will not hide the keyboard
+		/// </summary>
+		public static void PopKeyboardFocusSteal()
+			=> NativeAPI.ui_pop_no_keyboard_loss();
+
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
 		/// </summary>

@@ -405,6 +405,18 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardLayouts virtualkeyboard_get_usKeyboard_Layout();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardLayouts virtualkeyboard_getKeyboard_Layout();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setKeyboard_Layout(KeyboardLayouts keyboardLayout);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool virtualkeyboard_getopen();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setopen(bool open);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool virtualkeyboard_getshift();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setshift(bool shift);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      input_pointer_count(InputSource filter = InputSource.Any);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer  input_pointer      (int index, InputSource filter = InputSource.Any);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_hand         (Handed hand);
@@ -485,6 +497,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_element_visual  (UIVisual element_visual, IntPtr mesh, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_no_keyboard_loss(bool disallowKeyboard);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_no_keyboard_loss();
+
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_area     (Vec3 start, Vec2 dimensions);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_layout_remaining();

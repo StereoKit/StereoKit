@@ -72,6 +72,9 @@ array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
 array_t<text_style_t>skui_font_stack = {};
+array_t<bool>     nokeyboard_steal_stack = {};
+array_t<uint64_t>     nokeyboard_steal_stack_ids = {};
+
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
 mesh_t          skui_win_top      = nullptr;
 mesh_t          skui_win_bot      = nullptr;
@@ -519,6 +522,20 @@ void ui_pop_text_style() {
 
 ///////////////////////////////////////////
 
+void ui_push_no_keyboard_loss(bool disallowKeyboard){
+	nokeyboard_steal_stack.add(disallowKeyboard);
+}
+
+void ui_pop_no_keyboard_loss(){
+	if (nokeyboard_steal_stack.count <= 1) {
+		log_errf("ui_pop_no_keyboard_loss: tried to pop too many! Do you have a push/pop mismatch?");
+		return;
+	}
+	nokeyboard_steal_stack.pop();
+}
+
+///////////////////////////////////////////
+
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
@@ -550,6 +567,8 @@ bool ui_init() {
 	ui_set_element_visual(ui_vis_window_body, skui_win_bot, nullptr);
 
 	skui_id_stack.add({ HASH_FNV64_START });
+	
+	nokeyboard_steal_stack.add(false);
 	return true;
 }
 
@@ -627,11 +646,12 @@ void ui_update_late() {
 ///////////////////////////////////////////
 
 void ui_shutdown() {
-	skui_sl_windows.free();
-	skui_layers    .free();
-	skui_id_stack  .free();
-	skui_font_stack.free();
-
+	skui_sl_windows           .free();
+	skui_layers               .free();
+	skui_id_stack             .free();
+	skui_font_stack           .free();
+	nokeyboard_steal_stack    .free();
+	nokeyboard_steal_stack_ids.free();
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
 	sound_release(skui_snd_grab);
@@ -1311,6 +1331,9 @@ void ui_image(sprite_t image, vec2 size) {
 template<typename C>
 bool32_t ui_button_at_g(const C *text, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
+	if (nokeyboard_steal_stack.last()) {
+		nokeyboard_steal_stack_ids.add(id);
+	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -1363,6 +1386,9 @@ bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_
 template<typename C>
 bool32_t ui_toggle_at_g(const C *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
+	if (nokeyboard_steal_stack.last()) {
+		nokeyboard_steal_stack_ids.add(id);
+	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -1420,6 +1446,9 @@ bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { r
 template<typename C>
 bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
 	uint64_t      id = ui_stack_hash(text);
+	if (nokeyboard_steal_stack.last()) {
+		nokeyboard_steal_stack_ids.add(id);
+	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
@@ -1510,7 +1539,12 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
 
 	if (state & button_state_just_active) {
-		platform_keyboard_show(true);
+		if (platform_keyboard_available()) {
+			platform_keyboard_show(true);
+		}
+		else {
+			virtualkeyboard_setopen(true);
+		}
 		skui_input_target = id_hash;
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
@@ -1527,8 +1561,18 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	if (skui_input_target == id_hash) {
 		for (int32_t i = 0; i < handed_max; i++) {
 			if (ui_is_hand_preoccupied((handed_)i, id_hash, false)) {
-				skui_input_target = 0;
-				platform_keyboard_show(false);
+				const ui_hand_t& h = skui_hand[i];
+				if (h.focused) {
+					if ((nokeyboard_steal_stack_ids.index_of(h.focused) < 0)) {
+						skui_input_target = 0;
+						if (platform_keyboard_available()) {
+							platform_keyboard_show(false);
+						}
+						else {
+							virtualkeyboard_setopen(false);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1549,13 +1593,22 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
-				platform_keyboard_show(false);
-				result = true;
+				if (platform_keyboard_available()) {
+					platform_keyboard_show(false);
+				}
+				else {
+					virtualkeyboard_setopen(false);
+				}				result = true;
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
 				skui_input_target = 0;
-				platform_keyboard_show(false);
+				if (platform_keyboard_available()) {
+					platform_keyboard_show(false);
+				}
+				else {
+					virtualkeyboard_setopen(false);
+				}
 			} else {
 				add = curr;
 			}
@@ -1989,7 +2042,9 @@ void ui_handle_end() {
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
-
+	if (nokeyboard_steal_stack.last()) {
+		nokeyboard_steal_stack_ids.add(id);
+	}
 	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;
