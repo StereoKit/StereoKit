@@ -1501,7 +1501,7 @@ typedef enum key_ {
 	key_5 = 0x35,
 	/*Keyboard top row 6, with shift is '^'.*/
 	key_6 = 0x36,
-	/*Keyboard top row 7, with shift is '&amp;'.*/
+	/*Keyboard top row 7, with shift is '&'.*/
 	key_7 = 0x37,
 	/*Keyboard top row 8, with shift is '*'.*/
 	key_8 = 0x38,
