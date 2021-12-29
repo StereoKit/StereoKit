@@ -522,6 +522,18 @@ void render_check_screenshots() {
 		tex_set_colors(resolve_tex, w, h, nullptr);
 		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
 		tex_get_data(resolve_tex, buffer, size);
+#if defined(SKG_OPENGL)
+		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
+		void   *tmp       = sk_malloc(line_size);
+		for (int32_t y = 0; y < resolve_tex->tex.height/2; y++) {
+			void *top_line = ((uint8_t*)buffer) + line_size * y;
+			void *bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height-1) - y);
+			memcpy(tmp,      top_line, line_size);
+			memcpy(top_line, bot_line, line_size);
+			memcpy(bot_line, tmp,      line_size);
+		}
+		free(tmp);
+#endif
 		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
