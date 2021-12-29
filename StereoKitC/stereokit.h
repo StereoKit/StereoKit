@@ -1085,6 +1085,8 @@ typedef enum special_key {
 	special_key_fn,
 	special_key_close_keyboard,
 	//Used to put more space between keys
+	special_key_alt,
+	special_key_ctrl,
 	special_key_spacer,
 } special_key_;
 

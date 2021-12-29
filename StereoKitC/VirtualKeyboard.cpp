@@ -24,7 +24,7 @@ namespace sk {
 							{"","Shift",2.5,key_shift,special_key_shift},{"z","z",1,key_z},{"x","x",1,key_x},{"c","c",1,key_c},{"v","v",1,key_v},{"b","b",1,key_b},{"n","n",1,key_n},{"m","m",1,key_m},{",",",",1,key_comma},{".",".",1,key_period},{"/","/",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
 						},
 						{
-							{"","Ctrl",1.75,key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt},{"","Ctrl",1.75,key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+							{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt,special_key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt,special_key_alt},{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
 						}
 					}
 				},
@@ -44,7 +44,7 @@ namespace sk {
 							{"","Shift",2.5,key_shift,special_key_shift},{"Z","Z",1,key_z},{"X","X",1,key_x},{"C","C",1,key_c},{"V","V",1,key_v},{"B","B",1,key_b},{"N","N",1,key_n},{"M","M",1,key_m},{"<","<",1,key_comma},{">",">",1,key_period},{"?","?",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
 						},
 						{
-							{"","Ctrl",1.75,key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt},{"","Ctrl",1.75,key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+							{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt,special_key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt,special_key_alt},{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
 						}
 					}
 				},
@@ -205,10 +205,14 @@ namespace sk {
 			/////////////////////////////////////////////////////////////////////////////
 		};
 
-	bool keyboardFN = false;
-	bool keyboardAltgr = false;
-	bool keyboardShift = false;
-	bool keyboardOpen = false;
+	bool32_t keyboardFN = false;
+	bool32_t keyboardAltgr = false;
+	bool32_t keyboardShift = false;
+	bool32_t keyboardOpen = false;
+
+	bool32_t keyboardCtrl = false;
+	bool32_t keyboardAlt = false;
+
 	pose_t keyboardPose = { {-0.1f, 0.1f, -0.2f},quat_lookat({0,0,0},{1,1,1})};
 	array_t<key_> pressedKeys;
 	const keyboard_layout_t* CurrentKeyboardLayout;
@@ -331,7 +335,47 @@ namespace sk {
 						ui_push_idi((i * row) + 1000);
 						if (key.specialKey == special_key_spacer) {
 							ui_label_sz(" ", { buttonSize * key.width,buttonSize });
-						} else if (ui_button_sz(key.displayText, { buttonSize * key.width,buttonSize })) {
+						}
+						else if (key.specialKey == special_key_alt) {
+							if (ui_toggle_sz(key.displayText, keyboardAlt, { buttonSize * key.width,buttonSize })) {
+								if (keyboardAlt) {
+									input_keyboard_inject_press(key_alt);
+								} else {
+									input_keyboard_inject_release(key_alt);
+								}
+							}
+						}
+						else if (key.specialKey == special_key_ctrl) {
+							if (ui_toggle_sz(key.displayText, keyboardCtrl, { buttonSize * key.width,buttonSize })) {
+								if (keyboardCtrl) {
+									input_keyboard_inject_press(key_ctrl);
+								} else {
+									input_keyboard_inject_release(key_ctrl);
+								}
+							}
+						}
+						else if (key.specialKey == special_key_shift) {
+							if (ui_toggle_sz(key.displayText, keyboardShift, { buttonSize * key.width,buttonSize })) {
+								if (keyboardShift) {
+									input_keyboard_inject_press(key_shift);
+								} else {
+									input_keyboard_inject_release(key_shift);
+								}
+							}
+						}
+						else if (key.specialKey == special_key_fn) {
+							ui_toggle_sz(key.displayText, keyboardFN, { buttonSize * key.width,buttonSize });
+						} 
+						else if (key.specialKey == special_key_alt_gr) {
+							if (ui_toggle_sz(key.displayText, keyboardAltgr, { buttonSize * key.width,buttonSize })) {
+								if (keyboardAltgr) {
+									input_keyboard_inject_press(key_alt);
+								} else {
+									input_keyboard_inject_release(key_alt);
+								}
+							}
+						}
+						else if (ui_button_sz(key.displayText, { buttonSize * key.width,buttonSize })) {
 							virtualkeyboard_keypress(key);
 						}
 						ui_pop_id();
