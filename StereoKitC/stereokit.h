@@ -54,58 +54,156 @@ typedef int32_t bool32_t;
 
 ///////////////////////////////////////////
 
+/*Specifies a type of display mode StereoKit uses, like
+  Mixed Reality headset display vs. a PC display, or even just
+  rendering to an offscreen surface, or not rendering at all!*/
 typedef enum display_mode_ {
+	/*Creates an OpenXR instance, and drives display/input
+	  through that.*/
 	display_mode_mixedreality     = 0,
+	/*Creates a flat, Win32 window, and simulates some MR
+	  functionality. Great for debugging.*/
 	display_mode_flatscreen       = 1,
+	/*Not tested yet, but this is meant to run StereoKit
+	  without rendering to any display at all. This would allow for
+	  rendering to textures, running a server that can do MR related
+	  tasks, etc.*/
 	display_mode_none             = 2,
 } display_mode_;
 
+/*This is used to determine what kind of depth buffer
+  StereoKit uses!*/
 typedef enum depth_mode_ {
+	/*Default mode, uses 16 bit on mobile devices like
+	  HoloLens and Quest, and 32 bit on higher powered platforms like
+	  PC. If you need a far view distance even on mobile devices,
+	  prefer D32 or Stencil instead.*/
 	depth_mode_balanced           = 0,
+	/*16 bit depth buffer, this is fast and recommended for
+	  devices like the HoloLens. This is especially important for fast
+	  depth based reprojection. Far view distances will suffer here
+	  though, so keep your clipping far plane as close as possible.*/
 	depth_mode_d16,
+	/*32 bit depth buffer, should look great at any distance! 
+	  If you must have the best, then this is the best. If you're
+	  interested in this one, Stencil may also be plenty for you, as 24
+	  bit depth is also pretty peachy.*/
 	depth_mode_d32,
+	/*24 bit depth buffer with 8 bits of stencil data. 24 bits
+	  is generally plenty for a depth buffer, so using the rest for 
+	  stencil can open up some nice options! StereoKit has limited
+	  stencil support right now though (v0.3).*/
 	depth_mode_stencil,
 } depth_mode_;
 
 // TODO: remove this in v0.4
+/*This describes the type of display tech used on a Mixed
+  Reality device. This will be replaced by `DisplayBlend` in v0.4.*/
 typedef enum display_ {
+	/*Default value, when using this as a search type, it will
+	  fall back to default behavior which defers to platform
+	  preference.*/
 	display_none                  = 0,
+	/*This display is opaque, with no view into the real world!
+	  This is equivalent to a VR headset, or a PC screen.*/
 	display_opaque                = 1 << 0,
+	/*This display is transparent, and adds light on top of
+	  the real world. This is equivalent to a HoloLens type of device.*/
 	display_additive              = 1 << 1,
+	/*This is a physically opaque display, but with a camera
+	  passthrough displaying the world behind it anyhow. This would be
+	  like a Varjo XR-1, or phone-camera based AR.*/
 	display_blend                 = 1 << 2,
+	/*Use Display.Blend instead, to be removed in v0.4*/
 	display_passthrough           = 1 << 2,
+	/*This matches either transparent display type! Additive
+	  or Blend. For use when you just want to see the world behind your
+	  application.*/
 	display_any_transparent       = display_additive | display_blend,
 } display_;
 
+/*This describes the way the display's content blends with
+  whatever is behind it. VR headsets are normally Opaque, but some VR
+  headsets provide passthrough video, and can support Opaque as well as
+  Blend, like the Varjo. Transparent AR displays like the HoloLens
+  would be Additive.*/
 typedef enum display_blend_ {
+	/*Default value, when using this as a search type, it will
+	  fall back to default behavior which defers to platform
+	  preference.*/
 	display_blend_none            = 0,
+	/*This display is opaque, with no view into the real world!
+	  This is equivalent to a VR headset, or a PC screen.*/
 	display_blend_opaque          = 1 << 0,
+	/*This display is transparent, and adds light on top of
+	  the real world. This is equivalent to a HoloLens type of device.*/
 	display_blend_additive        = 1 << 1,
+	/*This is a physically opaque display, but with a camera
+	  passthrough displaying the world behind it anyhow. This would be
+	  like a Varjo XR-1, or phone-camera based AR.*/
 	display_blend_blend           = 1 << 2,
+	/*This matches either transparent display type! Additive
+	  or Blend. For use when you just want to see the world behind your
+	  application.*/
 	display_blend_any_transparent = display_blend_additive | display_blend_blend,
 } display_blend_;
 
+/*Severity of a log item.*/
 typedef enum log_ {
 	log_none                      = 0,
+	/*This is for diagnostic information, where you need to know
+	  details about what -exactly- is going on in the system. This
+	  info doesn't surface by default.*/
 	log_diagnostic,
+	/*This is non-critical information, just to let you know what's
+	  going on.*/
 	log_inform,
+	/*Something bad has happened, but it's still within the realm of
+	  what's expected.*/
 	log_warning,
+	/*Danger Will Robinson! Something really bad just happened and
+	  needs fixing!*/
 	log_error
 } log_;
 
+/*When rendering content, you can filter what you're rendering by the
+  RenderLayer that they're on. This allows you to draw items that are
+  visible in one render, but not another. For example, you may wish
+  to draw a player's avatar in a 'mirror' rendertarget, but not in
+  the primary display. See `Renderer.LayerFilter` for configuring what
+  the primary display renders.
+  
+  Render layers can also be mixed and matched like bit-flags!*/
 typedef enum render_layer_ {
+	/*The default render layer. All Draw use this layer unless
+	  otherwise specified.*/
 	render_layer_0                = 1 << 0,
+	/*Render layer 1.*/
 	render_layer_1                = 1 << 1,
+	/*Render layer 2.*/
 	render_layer_2                = 1 << 2,
+	/*Render layer 3.*/
 	render_layer_3                = 1 << 3,
+	/*Render layer 4.*/
 	render_layer_4                = 1 << 4,
+	/*Render layer 5.*/
 	render_layer_5                = 1 << 5,
+	/*Render layer 6.*/
 	render_layer_6                = 1 << 6,
+	/*Render layer 7.*/
 	render_layer_7                = 1 << 7,
+	/*Render layer 8.*/
 	render_layer_8                = 1 << 8,
+	/*Render layer 9.*/
 	render_layer_9                = 1 << 9,
+	/*The default VFX layer, StereoKit draws some non-standard
+	  mesh content using this flag, such as lines.*/
 	render_layer_vfx              = 1 << 10,
+	/*This is a flag that specifies all possible layers. If you
+	  want to render all layers, then this is the layer filter
+	  you would use. This is the default for render filtering.*/
 	render_layer_all              = 0xFFFF,
+	/*This is a combination of all layers that are not the VFX layer.*/
 	render_layer_all_regular      = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
 } render_layer_;
 SK_MakeFlag(render_layer_);
@@ -512,48 +610,134 @@ SK_API mesh_t   mesh_gen_cylinder    (float diameter,  float depth, vec3 directi
 
 ///////////////////////////////////////////
 
+/*Textures come in various types and flavors! These are bit-flags
+  that tell StereoKit what type of texture we want, and how the application
+  might use it!*/
 typedef enum tex_type_ {
+	/*A standard color image, without any generated mip-maps.*/
 	tex_type_image_nomips  = 1 << 0,
+	/*A size sided texture that's used for things like skyboxes,
+	  environment maps, and reflection probes. It behaves like a texture
+	  array with 6 textures.*/
 	tex_type_cubemap       = 1 << 1,
+	/*This texture can be rendered to! This is great for textures
+	  that might be passed in as a target to Renderer.Blit, or other
+	  such situations.*/
 	tex_type_rendertarget  = 1 << 2,
+	/*This texture contains depth data, not color data!*/
 	tex_type_depth         = 1 << 3,
+	/*This texture will generate mip-maps any time the contents
+	  change. Mip-maps are a list of textures that are each half the
+	  size of the one before them! This is used to prevent textures from
+	  'sparkling' or aliasing in the distance.*/
 	tex_type_mips          = 1 << 4,
+	/*This texture's data will be updated frequently from the
+	  CPU (not renders)! This ensures the graphics card stores it
+	  someplace where writes are easy to do quickly.*/
 	tex_type_dynamic       = 1 << 5,
+	/*A standard color image that also generates mip-maps
+	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
 } tex_type_;
 SK_MakeFlag(tex_type_);
 
+/*What type of color information will the texture contain? A
+  good default here is Rgba32.*/
 typedef enum tex_format_ {
+	/*A default zero value for TexFormat! Unitialized formats
+	  will get this value and **** **** up so you know to assign it
+	  properly :)*/
 	tex_format_none = 0,
+	/*Red/Green/Blue/Transparency data channels, at 8 bits
+	  per-channel in sRGB color space. This is what you'll want most of
+	  the time you're dealing with color images! Matches well with the
+	  Color32 struct! If you're storing normals, rough/metal, or
+	  anything else, use Rgba32Linear.*/
 	tex_format_rgba32,
+	/*Red/Green/Blue/Transparency data channels, at 8 bits
+	  per-channel in linear color space. This is what you'll want most
+	  of the time you're dealing with color data! Matches well with the
+	  Color32 struct.*/
 	tex_format_rgba32_linear,
 	tex_format_bgra32,
 	tex_format_bgra32_linear,
 	tex_format_rg11b10,
 	tex_format_rgb10a2,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images.*/
 	tex_format_rgba64, // TODO: remove during major version update
 	tex_format_rgba64s,
 	tex_format_rgba64f,
+	/*Red/Green/Blue/Transparency data channels at 32 bits
+	  per-channel! Basically 4 floats per color, which is bonkers
+	  expensive. Don't use this unless you know -exactly- what you're
+	  doing.*/
 	tex_format_rgba128,
+	/*A single channel of data, with 8 bits per-pixel! This
+	  can be great when you're only using one channel, and want to
+	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
 	tex_format_r8,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. Values in the shader are always 0.0-1.0.*/
 	tex_format_r16,
+	/*A single channel of data, with 32 bits per-pixel! This
+	  basically treats each pixel as a generic float, so you can do all
+	  sorts of strange and interesting things with this.*/
 	tex_format_r32,
+	/*A depth data format, 24 bits for depth data, and 8 bits
+	  to store stencil information! Stencil data can be used for things
+	  like clipping effects, deferred rendering, or shadow effects.*/
 	tex_format_depthstencil,
+	/*32 bits of data per depth value! This is pretty detailed,
+	  and is excellent for experiences that have a very far view
+	  distance.*/
 	tex_format_depth32,
+	/*16 bits of depth is not a lot, but it can be enough if
+	  your far clipping plane is pretty close. If you're seeing lots of
+	  flickering where two objects overlap, you either need to bring
+	  your far clip in, or switch to 32/24 bit depth.*/
 	tex_format_depth16,
 
 	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
 
+/*How does the shader grab pixels from the texture? Or more
+  specifically, how does the shader grab colors between the provided
+  pixels? If you'd like an in-depth explanation of these topics, check
+  out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+  by graphics wizard Ben Golus.*/
 typedef enum tex_sample_ {
+	/*Use a linear blend between adjacent pixels, this creates
+	  a smooth, blurry look when texture resolution is too low.*/
 	tex_sample_linear = 0,
+	/*Choose the nearest pixel's color! This makes your texture
+	  look like pixel art if you're too close.*/
 	tex_sample_point,
+	/*This helps reduce texture blurriness when a surface is
+	  viewed at an extreme angle!*/
 	tex_sample_anisotropic
 } tex_sample_;
 
+/*What happens when the shader asks for a texture coordinate
+  that's outside the texture?? Believe it or not, this happens plenty
+  often!*/
 typedef enum tex_address_ {
+	/*Wrap the UV coordinate around to the other side of the
+	  texture! This is basically like a looping texture, and is an
+	  excellent default. If you can see weird bits of color at the edges
+	  of your texture, this may be due to Wrap blending the color with
+	  the other side of the texture, Clamp may be better in such cases.*/
 	tex_address_wrap = 0,
+	/*Clamp the UV coordinates to the edge of the texture!
+	  This'll create color streaks that continue to forever. This is
+	  actually really great for non-looping textures that you know will
+	  always be accessed on the 0-1 range.*/
 	tex_address_clamp,
+	/*Like Wrap, but it reflects the image each time! Who needs
+	  this? I'm not sure!! But the graphics card can do it, so now you
+	  can too!*/
 	tex_address_mirror,
 } tex_address_;
 
@@ -610,35 +794,106 @@ SK_API void         shader_release          (shader_t shader);
 
 ///////////////////////////////////////////
 
+/*Also known as 'alpha' for those in the know. But there's
+  actually more than one type of transparency in rendering! The
+  horrors. We're keepin' it fairly simple for now, so you get three
+  options!*/
 typedef enum transparency_ {
+	/*Not actually transparent! This is opaque! Solid! It's
+	  the default option, and it's the fastest option! Opaque objects
+	  write to the z-buffer, the occlude pixels behind them, and they
+	  can be used as input to important Mixed Reality features like
+	  Late Stage Reprojection that'll make your view more stable!*/
 	transparency_none = 1,
+	/*This will blend with the pixels behind it. This is 
+	  transparent! You may not want to write to the z-buffer, and it's
+	  slower than opaque materials.*/
 	transparency_blend,
+	/*This will straight up add the pixel color to the color
+	  buffer! This usually looks -really- glowy, so it makes for good
+	  particles or lighting effects.*/
 	transparency_add,
 } transparency_;
 
+/*Culling is discarding an object from the render pipeline!
+  This enum describes how mesh faces get discarded on the graphics
+  card. With culling set to none, you can double the number of pixels
+  the GPU ends up drawing, which can have a big impact on performance.
+  None can be appropriate in cases where the mesh is designed to be
+  'double sided'. Front can also be helpful when you want to flip a
+  mesh 'inside-out'!*/
 typedef enum cull_ {
+	/*Discard if the back of the triangle face is pointing
+	  towards the camera. This is the default behavior.*/
 	cull_back = 0,
+	/*Discard if the front of the triangle face is pointing
+	  towards the camera. This is opposite the default behavior.*/
 	cull_front,
+	/*No culling at all! Draw the triangle regardless of which
+	  way it's pointing.*/
 	cull_none,
 } cull_;
 
+/*Depth test describes how this material looks at and responds
+  to depth information in the zbuffer! The default is Less, which means
+  if the material pixel's depth is Less than the existing depth data,
+  (basically, is this in front of some other object) it will draw that
+  pixel. Similarly, Greater would only draw the material if it's
+  'behind' the depth buffer. Always would just draw all the time, and
+  not read from the depth buffer at all.*/
 typedef enum depth_test_ {
+	/*Default behavior, pixels behind the depth buffer will be
+	  discarded, and pixels in front of it will be drawn.*/
 	depth_test_less = 0,
+	/*Pixels behind the depth buffer will be discarded, and
+	  pixels in front of, or at the depth buffer's value it will be
+	  drawn. This could be great for things that might be sitting
+	  exactly on a floor or wall.*/
 	depth_test_less_or_eq,
+	/*Pixels in front of the zbuffer will be discarded! This
+	  is opposite of how things normally work. Great for drawing
+	  indicators that something is occluded by a wall or other
+	  geometry.*/
 	depth_test_greater,
+	/*Pixels in front of (or exactly at) the zbuffer will be
+	  discarded! This is opposite of how things normally work. Great
+	  for drawing indicators that something is occluded by a wall or
+	  other geometry.*/
 	depth_test_greater_or_eq,
+	/*Only draw pixels if they're at exactly the same depth as
+	  the zbuffer!*/
 	depth_test_equal,
+	/*Draw any pixel that's not exactly at the value in the
+	  zbuffer.*/
 	depth_test_not_equal,
+	/*Don't look at the zbuffer at all, just draw everything,
+	  always, all the time! At this poit, the order at which the mesh
+	  gets drawn will be  super important, so don't forget about
+	  `Material.QueueOffset`!*/
 	depth_test_always,
+	/*Never draw a pixel, regardless of what's in the zbuffer.
+	  I can think of better ways to do this, but uhh, this is here for
+	  completeness! Maybe you can find a use for it.*/
 	depth_test_never,
 } depth_test_;
 
+// TODO: v0.4 This may need significant revision?
+/*What type of data does this material parameter need? This is
+  used to tell the shader how large the data is, and where to attach it
+  to on the shader.*/
 typedef enum material_param_ {
+	/*This data type is not currently recognized. Please
+	  report your case on Github Issues!*/
 	material_param_unknown = 0,
+	/*A single 32 bit float value.*/
 	material_param_float,
+	/*A color value described by 4 floating point values.*/
 	material_param_color128,
+	/*A 4 component vector composed of loating point values.*/
 	material_param_vector,
+	/*A 4x4 matrix of floats.*/
 	material_param_matrix,
+	/*Texture information!*/
 	material_param_texture,
 } material_param_;
 
@@ -686,29 +941,74 @@ SK_API void              material_buffer_release  (material_buffer_t buffer);
 
 ///////////////////////////////////////////
 
+/*This enum describes how text layout behaves within the space
+  it is given.*/
 typedef enum text_fit_ {
+	/*The text will wrap around to the next line down when it
+	  reaches the end of the space on the X axis.*/
 	text_fit_wrap           = 1 << 0,
+	/*When the text reaches the end, it is simply truncated
+	  and no longer visible.*/
 	text_fit_clip           = 1 << 1,
+	/*If the text is too large to fit in the space provided,
+	  it will be scaled down to fit inside. This will not scale up.*/
 	text_fit_squeeze        = 1 << 2,
+	/*If the text is larger, or smaller than the space 
+	  provided, it will scale down or up to fill the space.*/
 	text_fit_exact          = 1 << 3,
+	/*The text will ignore the containing space, and just keep
+	  on going.*/
 	text_fit_overflow       = 1 << 4
 } text_fit_;
 
+/*A bit-flag enum for describing alignment or positioning.
+  Items can be combined using the '|' operator, like so:
+  
+  `TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
+  
+  Avoid combining multiple items of the same axis. There are also a
+  complete list of valid bit flag combinations! These are the values
+  without an axis listed in their names, 'TopLeft', 'BottomCenter',
+  etc.*/
 typedef enum text_align_ {
+	/*On the x axis, this item should start on the left.*/
 	text_align_x_left       = 1 << 0,
+	/*On the y axis, this item should start at the top.*/
 	text_align_y_top        = 1 << 1,
+	/*On the x axis, the item should be centered.*/
 	text_align_x_center     = 1 << 2,
+	/*On the y axis, the item should be centered.*/
 	text_align_y_center     = 1 << 3,
+	/*On the x axis, this item should start on the right.*/
 	text_align_x_right      = 1 << 4,
+	/*On the y axis, this item should start on the bottom.*/
 	text_align_y_bottom     = 1 << 5,
+	/*Center on both X and Y axes. This is a combination of 
+	  XCenter and YCenter.*/
 	text_align_center       = text_align_x_center | text_align_y_center,
+	/*Start on the left of the X axis, center on the Y axis. 
+	  This is a combination of XLeft and YCenter.*/
 	text_align_center_left  = text_align_x_left   | text_align_y_center,
+	/*Start on the right of the X axis, center on the Y axis. 
+	  This is a combination of XRight and YCenter.*/
 	text_align_center_right = text_align_x_right  | text_align_y_center,
+	/*Center on the X axis, and top on the Y axis. This is a
+	  combination of XCenter and YTop.*/
 	text_align_top_center   = text_align_x_center | text_align_y_top,
+	/*Start on the left of the X axis, and top on the Y axis.
+	  This is a combination of XLeft and YTop.*/
 	text_align_top_left     = text_align_x_left   | text_align_y_top,
+	/*Start on the right of the X axis, and top on the Y axis.
+	  This is a combination of XRight and YTop.*/
 	text_align_top_right    = text_align_x_right  | text_align_y_top,
+	/*Center on the X axis, and bottom on the Y axis. This is
+	  a combination of XCenter and YBottom.*/
 	text_align_bottom_center= text_align_x_center | text_align_y_bottom,
+	/*Start on the left of the X axis, and bottom on the Y
+	  axis. This is a combination of XLeft and YBottom.*/
 	text_align_bottom_left  = text_align_x_left   | text_align_y_bottom,
+	/*Start on the right of the X axis, and bottom on the Y
+	  axis.This is a combination of XRight and YBottom.*/
 	text_align_bottom_right = text_align_x_right  | text_align_y_bottom,
 } text_align_;
 SK_MakeFlag(text_align_);
@@ -730,9 +1030,21 @@ SK_API float         text_style_get_char_height    (text_style_t style);
 
 ///////////////////////////////////////////
 
+/*This describes the behavior of a 'Solid' physics object! The
+  physics engine will apply forces differently based on this type.*/
 typedef enum solid_type_ {
+	/*This object behaves like a normal physical object, it'll
+	  fall, get pushed around, and generally be succeptible to physical
+	  forces! This is a 'Dynamic' body in physics simulation terms.*/
 	solid_type_normal = 0,
+	/*Immovable objects are always stationary! They have
+	  infinite mass, zero velocity, and can't collide with Immovable of
+	  Unaffected types.*/
 	solid_type_immovable,
+	/*Unaffected objects have infinite mass, but can have a
+	  velocity! They'll move under their own forces, but nothing in the
+	  simulation will affect them. They don't collide with Immovable or
+	  Unaffected types.*/
 	solid_type_unaffected,
 } solid_type_;
 
@@ -753,9 +1065,18 @@ SK_API void          solid_get_pose                (const solid_t solid, sk_ref(
 
 typedef int32_t model_node_id;
 
+/*Describes how an animation is played back, and what to do when
+  the animation hits the end.*/
 typedef enum anim_mode_ {
+	/*If the animation reaches the end, it will always loop
+	  back around to the start again.*/
 	anim_mode_loop,
+	/*When the animation reaches the end, it will freeze
+	  in-place.*/
 	anim_mode_once,
+	/*The animation will not progress on its own, and instead
+	  must be driven by providing information to the model's AnimTime
+	  or AnimCompletion properties.*/
 	anim_mode_manual,
 } anim_mode_;
 
@@ -830,8 +1151,22 @@ SK_API void          model_node_set_transform_local(model_t model, model_node_id
 
 ///////////////////////////////////////////
 
+/*The way the Sprite is stored on the backend! Does it get
+  batched and atlased for draw efficiency, or is it a single image?*/
 typedef enum sprite_type_ {
+	/*The sprite will be batched onto an atlas texture so all
+	  sprites can be drawn in a single pass. This is excellent for
+	  performance! The only thing to watch out for here, adding a sprite
+	  to an atlas will rebuild the atlas texture! This can be a bit
+	  expensive, so it's recommended to add all sprites to an atlas at
+	  start, rather than during runtime. Also, if an image is too large,
+	  it may take up too much space on the atlas, and may be better as a
+	  Single sprite type.*/
 	sprite_type_atlased = 0,
+	/*This sprite is on its own texture. This is best for large
+	  images, items that get loaded and unloaded during runtime, or for
+	  sprites that may have edge artifacts or severe 'bleed' from
+	  adjacent atlased images.*/
 	sprite_type_single
 } sprite_type_;
 
@@ -863,10 +1198,19 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
 
 ///////////////////////////////////////////
 
+/*When rendering to a rendertarget, this tells if and what of the
+  rendertarget gets cleared before rendering. For example, if you
+  are assembling a sheet of images, you may want to clear
+  everything on the first image draw, but not clear on subsequent
+  draws.*/
 typedef enum render_clear_ {
+	/*Don't clear anything, leave it as it is.*/
 	render_clear_none  = 0,
+	/*Clear the rendertarget's color data.*/
 	render_clear_color = 1 << 0,
+	/*Clear the rendertarget's depth data, if present.*/
 	render_clear_depth = 1 << 1,
+	/*Clear both color and depth data.*/
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
 
@@ -957,8 +1301,13 @@ typedef struct file_filter_t {
 	char ext[32];
 } file_filter_t;
 
+/*When opening the Platform.FilePicker, this enum describes
+  how the picker should look and behave.*/
 typedef enum picker_mode_ {
+	/*Allow opening a single file.*/
 	picker_mode_open,
+	/*Allow the user to enter or select the name of the
+	  destination file.*/
 	picker_mode_save,
 } picker_mode_;
 
@@ -970,37 +1319,76 @@ SK_API bool32_t platform_write_file         (const char *filename, void *data, s
 
 ///////////////////////////////////////////
 
+/*What type of device is the source of the pointer? This is a
+  bit-flag that can contain some input source family information.*/
 typedef enum input_source_ {
+	/*Matches with all input sources!*/
 	input_source_any           = 0x7FFFFFFF,
+	/*Matches with any hand input source.*/
 	input_source_hand          = 1 << 0,
+	/*Matches with left hand input sources.*/
 	input_source_hand_left     = 1 << 1,
+	/*Matches with right hand input sources.*/
 	input_source_hand_right    = 1 << 2,
+	/*Matches with Gaze category input sources.*/
 	input_source_gaze          = 1 << 4,
+	/*Matches with the head gaze input source.*/
 	input_source_gaze_head     = 1 << 5,
+	/*Matches with the eye gaze input source.*/
 	input_source_gaze_eyes     = 1 << 6,
+	/*Matches with mouse cursor simulated gaze as an input source.*/
 	input_source_gaze_cursor   = 1 << 7,
+	/*Matches with any input source that has an activation button!*/
 	input_source_can_press     = 1 << 8,
 } input_source_;
 SK_MakeFlag(input_source_);
 
+/*An enum for indicating which hand to use!*/
 typedef enum handed_ {
+	/*Left hand.*/
 	handed_left                = 0,
+	/*Right hand.*/
 	handed_right               = 1,
+	/*The number of hands one generally has, this is much nicer
+	  than doing a for loop with '2' as the condition! It's much clearer
+	  when you can loop Hand.Max times instead.*/
 	handed_max                 = 2,
 } handed_;
 
+/*A bit-flag for the current state of a button input.*/
 typedef enum button_state_ {
+	/*Is the button currently up, unpressed?*/
 	button_state_inactive      = 0,
+	/*Is the button currently down, pressed?*/
 	button_state_active        = 1 << 0,
+	/*Has the button just been released? Only true for a single frame.*/
 	button_state_just_inactive = 1 << 1,
+	/*Has the button just been pressed? Only true for a single frame.*/
 	button_state_just_active   = 1 << 2,
+	/*Has the button just changed state this frame?*/
 	button_state_changed       = button_state_just_inactive | button_state_just_active,
+	/*Matches with all states!*/
+	button_state_any           = 0x7FFFFFFF,
 } button_state_;
 SK_MakeFlag(button_state_);
 
+/*This is the tracking state of a sensory input in the world,
+  like a controller's position sensor, or a QR code identified by a
+  tracking system.*/
 typedef enum track_state_ {
+	/*The system has no current knowledge about the state of
+	  this input. It may be out of visibility, or possibly just
+	  disconnected.*/
 	track_state_lost           = 0,
+	/*The system doesn't know for sure where this is, but it
+	  has an educated guess that may be inferred from previous data at
+	  a lower quality. For example, a controller may still have
+	  accelerometer data after going out of view, which can still be
+	  accurate for a short time after losing optical tracking.*/
 	track_state_inferred       = 1,
+	/*The system actively knows where this input is. Within
+	  the constraints of the relevant hardware's capabilities, this is
+	  as accurate as it gets!*/
 	track_state_known          = 2,
 } track_state_;
 
@@ -1054,27 +1442,220 @@ typedef struct mouse_t {
 	float         scroll_change;
 } mouse_t;
 
-// Based on VK codes
+/*A collection of system key codes, representing keyboard
+  characters and mouse buttons. Based on VK codes.*/
 typedef enum key_ {
 	key_none      = 0x00,
-	key_mouse_left= 0x01, key_mouse_right = 0x02, key_mouse_center = 0x04, key_mouse_forward = 0x05, key_mouse_back = 0x06,
-	key_backspace = 0x08, key_tab       = 0x09,
-	key_return    = 0x0D, key_shift     = 0x10,
-	key_ctrl      = 0x11, key_alt       = 0x12,
+	/*Left mouse button.*/
+	key_mouse_left = 0x01,
+	/*Right mouse button.*/
+	key_mouse_right = 0x02,
+	/*Center mouse button.*/
+	key_mouse_center = 0x04,
+	/*Mouse forward button.*/
+	key_mouse_forward = 0x05,
+	/*Mouse back button.*/
+	key_mouse_back = 0x06,
+
+	/*Backspace*/
+	key_backspace = 0x08,
+	/*Tab*/
+	key_tab       = 0x09,
+	/*Return, or Enter.*/
+	key_return    = 0x0D,
+	/*Left or right Shift.*/
+	key_shift     = 0x10,
+	/*Left or right Control key.*/
+	key_ctrl      = 0x11,
+	/*Left or right Alt key.*/
+	key_alt       = 0x12,
+	/*This behaves a little differently! This tells the toggle
+	  state of caps lock, rather than the key state itself.*/
 	key_caps_lock = 0x14,
-	key_esc       = 0x1B, key_space     = 0x20,
-	key_end       = 0x23, key_home      = 0x24,
-	key_left      = 0x25, key_right     = 0x27,
-	key_up        = 0x26, key_down      = 0x28,
-	key_page_up   = 0x21, key_page_down = 0x22,
-	key_printscreen=0x2A, key_insert    = 0x2D, key_del = 0x2E,
-	key_0 = 0x30, key_1 = 0x31, key_2 = 0x32, key_3 = 0x33, key_4 = 0x34, key_5 = 0x35, key_6 = 0x36, key_7 = 0x37, key_8 = 0x38, key_9 = 0x39, 
-	key_a = 0x41, key_b = 0x42, key_c = 0x43, key_d = 0x44, key_e = 0x45, key_f = 0x46, key_g = 0x47, key_h = 0x48, key_i = 0x49, key_j = 0x4A, key_k = 0x4B, key_l = 0x4C, key_m = 0x4D, key_n = 0x4E, key_o = 0x4F, key_p = 0x50, key_q = 0x51, key_r = 0x52, key_s = 0x53, key_t = 0x54, key_u = 0x55, key_v = 0x56, key_w = 0x57, key_x = 0x58, key_y = 0x59, key_z = 0x5A,
-	key_comma = 0xBC, key_period = 0xBE, key_slash_fwd = 0xBF, key_slash_back = 0xDC, key_semicolon = 0xBA, key_apostrophe = 0xDE, key_bracket_open = 0xDB, key_bracket_close = 0xDD, key_minus = 0xBD, key_equals = 0xBB, key_backtick = 0xc0,
-	key_lcmd = 0x5B, key_rcmd = 0x5C,
-	key_num0 = 0x60, key_num1 = 0x61, key_num2 = 0x62, key_num3 = 0x63, key_num4 = 0x64, key_num5 = 0x65, key_num6 = 0x66, key_num7 = 0x67, key_num8 = 0x68, key_num9 = 0x69,
-	key_multiply = 0x6A, key_add = 0x6B, key_subtract = 0x6D, key_decimal = 0x6E, key_divide = 0x6F,
-	key_f1 = 0x70, key_f2 = 0x71, key_f3 = 0x72, key_f4 = 0x73, key_f5 = 0x74, key_f6 = 0x75, key_f7 = 0x76, key_f8 = 0x77, key_f9 = 0x78, key_f10 = 0x79, key_f11 = 0x7A, key_f12 = 0x7B,
+	/*Escape*/
+	key_esc       = 0x1B,
+	/*Space*/
+	key_space     = 0x20,
+	/*End*/
+	key_end       = 0x23,
+	/*Home*/
+	key_home      = 0x24,
+	/*Left arrow key.*/
+	key_left      = 0x25,
+	/*Right arrow key.*/
+	key_right     = 0x27,
+	/*Up arrow key.*/
+	key_up        = 0x26,
+	/*Down arrow key.*/
+	key_down      = 0x28,
+	/*Page up*/
+	key_page_up   = 0x21,
+	/*Page down*/
+	key_page_down = 0x22,
+	/*Printscreen*/
+	key_printscreen=0x2A,
+	/*Any Insert key.*/
+	key_insert    = 0x2D,
+	/*Any Delete key.*/
+	key_del       = 0x2E,
+
+	/*Keyboard top row 0, with shift is ')'.*/
+	key_0 = 0x30,
+	/*Keyboard top row 1, with shift is '!'.*/
+	key_1 = 0x31,
+	/*Keyboard top row 2, with shift is '@'.*/
+	key_2 = 0x32,
+	/*Keyboard top row 3, with shift is '#'.*/
+	key_3 = 0x33,
+	/*Keyboard top row 4, with shift is '$'.*/
+	key_4 = 0x34,
+	/*Keyboard top row 5, with shift is '%'.*/
+	key_5 = 0x35,
+	/*Keyboard top row 6, with shift is '^'.*/
+	key_6 = 0x36,
+	/*Keyboard top row 7, with shift is '&amp;'.*/
+	key_7 = 0x37,
+	/*Keyboard top row 8, with shift is '*'.*/
+	key_8 = 0x38,
+	/*Keyboard top row 9, with shift is '('.*/
+	key_9 = 0x39,
+
+	/*a/A*/
+	key_a = 0x41,
+	/*b/B*/
+	key_b = 0x42,
+	/*c/C*/
+	key_c = 0x43,
+	/*d/D*/
+	key_d = 0x44,
+	/*e/E*/
+	key_e = 0x45,
+	/*f/F*/
+	key_f = 0x46,
+	/*g/G*/
+	key_g = 0x47,
+	/*h/H*/
+	key_h = 0x48,
+	/*i/I*/
+	key_i = 0x49,
+	/*j/J*/
+	key_j = 0x4A,
+	/*k/K*/
+	key_k = 0x4B,
+	/*l/L*/
+	key_l = 0x4C,
+	/*m/M*/
+	key_m = 0x4D,
+	/*n/N*/
+	key_n = 0x4E,
+	/*o/O*/
+	key_o = 0x4F,
+	/*p/P*/
+	key_p = 0x50,
+	/*q/Q*/
+	key_q = 0x51,
+	/*r/R*/
+	key_r = 0x52,
+	/*s/S*/
+	key_s = 0x53,
+	/*t/T*/
+	key_t = 0x54,
+	/*u/U*/
+	key_u = 0x55,
+	/*v/V*/
+	key_v = 0x56,
+	/*w/W*/
+	key_w = 0x57,
+	/*x/X*/
+	key_x = 0x58,
+	/*y/Y*/
+	key_y = 0x59,
+	/*z/Z*/
+	key_z = 0x5A,
+
+	/*0 on the numpad, when numlock is on.*/
+	key_num0 = 0x60,
+	/*1 on the numpad, when numlock is on.*/
+	key_num1 = 0x61,
+	/*2 on the numpad, when numlock is on.*/
+	key_num2 = 0x62,
+	/*3 on the numpad, when numlock is on.*/
+	key_num3 = 0x63,
+	/*4 on the numpad, when numlock is on.*/
+	key_num4 = 0x64,
+	/*5 on the numpad, when numlock is on.*/
+	key_num5 = 0x65,
+	/*6 on the numpad, when numlock is on.*/
+	key_num6 = 0x66,
+	/*7 on the numpad, when numlock is on.*/
+	key_num7 = 0x67,
+	/*8 on the numpad, when numlock is on.*/
+	key_num8 = 0x68,
+	/*9 on the numpad, when numlock is on.*/
+	key_num9 = 0x69,
+
+	/*Function key F1.*/
+	key_f1  = 0x70,
+	/*Function key F2.*/
+	key_f2  = 0x71,
+	/*Function key F3.*/
+	key_f3  = 0x72,
+	/*Function key F4.*/
+	key_f4  = 0x73,
+	/*Function key F5.*/
+	key_f5  = 0x74,
+	/*Function key F6.*/
+	key_f6  = 0x75,
+	/*Function key F7.*/
+	key_f7  = 0x76,
+	/*Function key F8.*/
+	key_f8  = 0x77,
+	/*Function key F9.*/
+	key_f9  = 0x78,
+	/*Function key F10.*/
+	key_f10 = 0x79,
+	/*Function key F11.*/
+	key_f11 = 0x7A,
+	/*Function key F12.*/
+	key_f12 = 0x7B,
+
+	/*,/&lt;*/
+	key_comma = 0xBC,
+	/*./&gt;*/
+	key_period = 0xBE,
+	/*/*/
+	key_slash_fwd = 0xBF,
+	/*\*/
+	key_slash_back = 0xDC,
+	/*;/:*/
+	key_semicolon = 0xBA,
+	/*'/"*/
+	key_apostrophe = 0xDE,
+	/*[/{*/
+	key_bracket_open = 0xDB,
+	/*]/}*/
+	key_bracket_close = 0xDD,
+	/*-/_*/
+	key_minus = 0xBD,
+	/*=/+*/
+	key_equals = 0xBB,
+	/*`/~*/
+	key_backtick = 0xc0,
+	/*The Windows/Mac Command button on the left side of the keyboard.*/
+	key_lcmd = 0x5B,
+	/*The Windows/Mac Command button on the right side of the keyboard.*/
+	key_rcmd = 0x5C,
+	/*Numpad '*', NOT the same as number row '*'.*/
+	key_multiply = 0x6A,
+	/*Numpad '+', NOT the same as number row '+'.*/
+	key_add = 0x6B,
+	/*Numpad '-', NOT the same as number row '-'.*/
+	key_subtract = 0x6D,
+	/*Numpad '.', NOT the same as character '.'.*/
+	key_decimal = 0x6E,
+	/*Numpad '/', NOT the same as character '/'.*/
+	key_divide = 0x6F,
+	/*Maximum value for key codes.*/
 	key_MAX = 0xFF,
 } key_;
 
@@ -1137,8 +1718,18 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
+/*A settings flag that lets you describe the behavior of how
+  StereoKit will refresh data about the world mesh, if applicable. This
+  is used with `World.RefreshType`.*/
 typedef enum world_refresh_ {
+	/*Refreshing occurs when the user leaves the area that was
+	  most recently scanned. This area is a sphere that is 0.5 of the
+	  World.RefreshRadius.*/
 	world_refresh_area,
+	/*Refreshing happens at timer intervals. If an update
+	  doesn't happen in time, the next update will happen as soon as
+	  possible. The timer interval is configurable via
+	  `World.RefreshInterval`.*/
 	world_refresh_timer,
 } world_refresh_;
 
@@ -1165,10 +1756,22 @@ SK_API float          world_get_refresh_interval      ();
 
 ///////////////////////////////////////////
 
+/*This describes what technology is being used to power StereoKit's
+  XR backend.*/
 typedef enum backend_xr_type_ {
+	/*StereoKit is not using an XR backend of any sort. That means
+	  the application is flatscreen and has the simulator disabled.*/
 	backend_xr_type_none,
+	/*StereoKit is using the flatscreen XR simulator. Inputs are
+	  emulated, and some advanced XR functionality may not be
+	  available.*/
 	backend_xr_type_simulator,
+	/*StereoKit is currently powered by OpenXR! This means we're
+	  running on a real XR device. Not all OpenXR runtimes provide
+	  the same functionality, but we will have access to more fun
+	  stuff :)*/
 	backend_xr_type_openxr,
+	/*StereoKit is running in a browser, and is using WebXR!*/
 	backend_xr_type_webxr,
 } backend_xr_type_;
 
@@ -1185,8 +1788,14 @@ SK_API void             backend_openxr_ext_request (const char *extension_name);
 
 ///////////////////////////////////////////
 
+/*The log tool will write to the console with annotations for console
+  colors, which helps with readability, but isn't always supported.
+  These are the options available for configuring those colors.*/
 typedef enum log_colors_ {
+	/*Use console coloring annotations.*/
 	log_colors_ansi = 0,
+	/*Scrape out any color annotations, so logs are all completely
+	  plain text.*/
 	log_colors_none
 } log_colors_;
 

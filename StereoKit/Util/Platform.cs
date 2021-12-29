@@ -5,18 +5,6 @@ using System.Text;
 
 namespace StereoKit
 {
-
-	/// <summary>When opening the Platform.FilePicker, this enum describes
-	/// how the picker should look and behave.</summary>
-	public enum PickerMode
-	{
-		/// <summary>Allow opening a single file.</summary>
-		Open,
-		/// <summary>Allow the user to enter or select the name of the
-		/// destination file.</summary>
-		Save,
-	}
-
 	internal struct FileFilter
 	{
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string ext;
