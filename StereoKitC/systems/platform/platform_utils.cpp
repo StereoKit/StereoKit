@@ -12,6 +12,7 @@
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
 #include "../../asset_types/font.h"
+#include "../../VirtualKeyboard.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -351,11 +352,19 @@ bool platform_keyboard_available() {
 
 ///////////////////////////////////////////
 
-void platform_keyboard_show(bool visible) {
+void platform_keyboard_show(bool visible,bool useNativePlatformKeyboard, keyboard_input_type_ type) {
+	if (useNativePlatformKeyboard) {
 #if defined(SK_OS_WINDOWS_UWP)
-	uwp_show_keyboard(visible);
-#else
+		uwp_show_keyboard(visible);
 #endif
+		//Just in case the native keyboard can not load 
+		if (!platform_keyboard_available()) {
+			virtualkeyboard_open(visible,type);
+		}
+	}
+	else {
+		virtualkeyboard_open(visible,type);
+	}
 }
 
 ///////////////////////////////////////////

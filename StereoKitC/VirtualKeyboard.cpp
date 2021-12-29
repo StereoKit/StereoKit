@@ -1,59 +1,226 @@
-#include "VirtualKeyboard.h"
+﻿#include "VirtualKeyboard.h"
 #include "stereokit_ui.h"
 #include "systems/input_keyboard.h"
 #include "libraries/array.h"
 
 namespace sk {
+	const keyboard_layout_t virtualkeyboard_get_uskeyboard_layout =
+		{
+			////////////       text input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{ "`","`",1,key_backtick},{"1","1",1,key_1}, {"2","2",1,key_2}, {"3","3",1,key_3}, {"4","4",1,key_4}, {"5","5",1,key_5}, {"6","6",1,key_6}, {"7","7",1,key_7}, {"8","8",1,key_8}, {"9","9",1,key_9}, {"0","0",1,key_0}, {"-","-",1,key_minus}, {"=","=",1,key_equals},{"\b","<--",1.5f,key_backspace}
+						},
+						{
+							{"\t","Tab",1.5,key_tab},{"q","q",1,key_q},{"w","w",1,key_w},{"e","e",1,key_e},{"r","r",1,key_r},{"t","t",1,key_t},{"y","y",1,key_y},{"u","u",1,key_u},{"i","i",1,key_i},{"o","o",1,key_o},{"p","p",1,key_p},{"[","[",1,key_bracket_open},{"]","]",1,key_bracket_close},{"\\","\\",1,key_slash_back}
+						},
+						{
+							{"","CapsLk",1.9,key_caps_lock,special_key_shift},{"a","a",1,key_a},{"s","s",1,key_s},{"d","d",1,key_d},{"f","f",1,key_f},{"g","g",1,key_g},{"h","h",1,key_h},{"j","j",1,key_j},{"k","k",1,key_k},{"l","l",1,key_l},{";",";",1,key_semicolon},{"'","'",1,key_apostrophe},{"\r","Enter",1.9,key_return}
+						},
+						{
+							{"","Shift",2.5,key_shift,special_key_shift},{"z","z",1,key_z},{"x","x",1,key_x},{"c","c",1,key_c},{"v","v",1,key_v},{"b","b",1,key_b},{"n","n",1,key_n},{"m","m",1,key_m},{",",",",1,key_comma},{".",".",1,key_period},{"/","/",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
+						},
+						{
+							{"","Ctrl",1.75,key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt},{"","Ctrl",1.75,key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+						}
+					}
+				},
+				//shift
+				{
+					{
+						{
+							{ "~","~",1,key_backtick},{"!","!",1,key_1}, {"@","@",1,key_2}, {"#","#",1,key_3}, {"$","$",1,key_4}, {"%","%",1,key_5}, {"^","^",1,key_6}, {"&","&",1,key_7}, {"*","*",1,key_8}, {"(","(",1,key_9}, {")",")",1,key_0}, {"_","_",1,key_minus}, {"+","+",1,key_equals},{"\b","<--",1.5f,key_backspace}
+						},
+						{
+							{"\t","Tab",1.5,key_tab},{"Q","Q",1,key_q},{"W","W",1,key_w},{"E","E",1,key_e},{"R","R",1,key_r},{"T","T",1,key_t},{"Y","Y",1,key_y},{"U","U",1,key_u},{"I","I",1,key_i},{"O","O",1,key_o},{"P","P",1,key_p},{"{","{",1,key_bracket_open},{"}","}",1,key_bracket_close},{"|","|",1,key_slash_back}
+						},
+						{
+							{"","CapsLk",1.9,key_caps_lock,special_key_shift},{"A","A",1,key_a},{"S","S",1,key_s},{"D","D",1,key_d},{"F","F",1,key_f},{"G","G",1,key_g},{"H","H",1,key_h},{"J","J",1,key_j},{"K","K",1,key_k},{"L","L",1,key_l},{":",":",1,key_semicolon},{"\"","\"",1,key_apostrophe},{"\n","NewLine",1.9,key_return}
+						},
+						{
+							{"","Shift",2.5,key_shift,special_key_shift},{"Z","Z",1,key_z},{"X","X",1,key_x},{"C","C",1,key_c},{"V","V",1,key_v},{"B","B",1,key_b},{"N","N",1,key_n},{"M","M",1,key_m},{"<","<",1,key_comma},{">",">",1,key_period},{"?","?",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
+						},
+						{
+							{"","Ctrl",1.75,key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt},{"","Ctrl",1.75,key_ctrl},{"","",2,key_none,special_key_spacer},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+						}
+					}
+				},
+				{
+					// altgr
+				},
+				{
+					// altgr and shift
+				},
+				{
+					// fn
+				}
+			},
+			/////////////////////////////////////////////////////////////////////////////
+			////////////       number input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{"\r","Enter",1.6,key_return},{"\b","<--",1.6f,key_backspace}
+						},
+						{
+							{"7","7",1,key_7},{"8","8",1,key_8},{"9","9",1,key_9}
+						},
+						{
+							{"4","4",1,key_4},{"5","5",1,key_5},{"6","6",1,key_6}
+						},
+						{
+							{"1","1",1,key_1},{"2","2",1,key_2},{"3","3",1,key_3}
+						},
+						{
+							{"0","0",3.6,key_0}
+						}
+					}
+				},
+			{
+				//shift
+			},
+			{
+				// altgr
+			},
+			{
+				// altgr and shift
+			},
+			{
+				// fn
+			}
+		},
+		/////////////////////////////////////////////////////////////////////////////
+		////////////       decimal input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{"\r","Enter",1.6,key_return},{"\b","<--",1.6f,key_backspace}
+						},
+						{
+							{"7","7",1,key_7},{"8","8",1,key_8},{"9","9",1,key_9}
+						},
+						{
+							{"4","4",1,key_4},{"5","5",1,key_5},{"6","6",1,key_6}
+						},
+						{
+							{"1","1",1,key_1},{"2","2",1,key_2},{"3","3",1,key_3}
+						},
+						{
+							{"0","0",1.6,key_0},{".",".",1.6,key_period}
+						}
+					}
+				},
+			{
+				//shift
+			},
+			{
+				// altgr
+			},
+			{
+				// altgr and shift
+			},
+			{
+				// fn
+			}
+		},
+		/////////////////////////////////////////////////////////////////////////////
+		////////////       signed input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{"\r","Enter",1.6,key_return},{"\b","<--",1.6f,key_backspace}
+						},
+						{
+							{"7","7",1,key_7},{"8","8",1,key_8},{"9","9",1,key_9}
+						},
+						{
+							{"4","4",1,key_4},{"5","5",1,key_5},{"6","6",1,key_6}
+						},
+						{
+							{"1","1",1,key_1},{"2","2",1,key_2},{"3","3",1,key_3}
+						},
+						{
+							{"0","0",1.6,key_0},{"-","-",1.6,key_minus}
+						}
+					}
+				},
+			{
+				//shift
+			},
+			{
+				// altgr
+			},
+			{
+				// altgr and shift
+			},
+			{
+				// fn
+			}
+			},
+			/////////////////////////////////////////////////////////////////////////////
+			////////////       signed decimal input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{"\r","Enter",1.6,key_return},{"\b","<--",1.6f,key_backspace}
+						},
+						{
+							{"7","7",1,key_7},{"8","8",1,key_8},{"9","9",1,key_9}
+						},
+						{
+							{"4","4",1,key_4},{"5","5",1,key_5},{"6","6",1,key_6}
+						},
+						{
+							{"1","1",1,key_1},{"2","2",1,key_2},{"3","3",1,key_3}
+						},
+						{
+							{"0","0",1,key_0},{".",".",1,key_period},{"-","-",1,key_minus}
+						}
+					}
+				},
+			{
+				//shift
+			},
+			{
+				// altgr
+			},
+			{
+				// altgr and shift
+			},
+			{
+				// fn
+			}
+			},
+			/////////////////////////////////////////////////////////////////////////////
+		};
+
+	bool keyboardFN = false;
+	bool keyboardAltgr = false;
 	bool keyboardShift = false;
 	bool keyboardOpen = false;
 	pose_t keyboardPose = { {-0.1f, 0.1f, -0.2f},quat_lookat({0,0,0},{1,1,1})};
 	array_t<key_> pressedKeys;
-	const char* Spacer = "Spacer";
-
-	keyboard_layout_t CurrentKeyboardLayout;
-
-	keyboard_layout_t virtualkeyboard_get_usKeyboard_Layout()
+	const keyboard_layout_t* CurrentKeyboardLayout;
+	keyboard_input_type_ Inputtype;
+	const keyboard_layout_t* virtualkeyboard_get_system_keyboard_layout()
 	{
-		return
-		{
-			{
-				{
-					{"`",1},{"1",1}, {"2",1}, {"3",1}, {"4",1}, {"5",1}, {"6",1}, {"7",1}, {"8",1}, {"9",1}, {"0",1}, {"-",1}, {"=",1},{"<--",1.5f},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"Tab",1.5},{"q",1},{"w",1},{"e",1},{"r",1},{"t",1},{"y",1},{"u",1},{"i",1},{"o",1},{"p",1},{"[",1},{"]",1},{"\\",1},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"CapsLk",1.9},{"a",1},{"s",1},{"d",1},{"f",1},{"g",1},{"h",1},{"j",1},{"k",1},{"l",1},{";",1},{"'",1},{"Enter",1.9},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"LShift",2.5},{"z",1},{"x",1},{"c",1},{"v",1},{"b",1},{"n",1},{"m",1},{",",1},{".",1},{"/",1},{"RShift",2.5},{"Spacer",1},{"/\\",1},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"LCtrl",1.75},{"Sys",1},{"LAlt",1.75},{"     ",6.4},{"RAlt",1.75},{"RCtrl",1.75},{"Spacer",2},{"< ",1},{"\\/",1},{" >",1}
-				}
-			},
-			{
-				{
-					{"~",1},{"!",1}, {"@",1}, {"#",1}, {"$",1}, {"%",1}, {"^",1}, {"&",1}, {"*",1}, {"(",1}, {")",1}, {"_",1}, {"+",1},{"<--",1.5f},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"Tab",1.5},{"Q",1},{"W",1},{"E",1},{"R",1},{"T",1},{"Y",1},{"U",1},{"I",1},{"O",1},{"P",1},{"{",1},{"}",1},{"|",1},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"CapsLk",1.9},{"A",1},{"S",1},{"D",1},{"F",1},{"G",1},{"H",1},{"J",1},{"K",1},{"L",1},{":",1},{"\"",1},{"NewLine",1.9},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"LShift",2.5},{"Z",1},{"X",1},{"C",1},{"V",1},{"B",1},{"N",1},{"M",1},{"<",1},{">",1},{"?",1},{"RShift",2.5},{"Spacer",1},{"/\\",1},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},
-					{"LCtrl",1.75},{"Sys",1},{"LAlt",1.75},{"     ",6.4},{"RAlt",1.75},{"RCtrl",1.75},{"Spacer",2},{"< ",1},{"\\/",1},{" >",1}
-				}
-			}
-		};
+		return &virtualkeyboard_get_uskeyboard_layout;
 	}
 
-	keyboard_layout_t virtualkeyboard_getKeyboard_Layout()
+	void virtualkeyboard_open(bool open, keyboard_input_type_ type)
 	{
-		return CurrentKeyboardLayout;
-	}
-
-	void virtualkeyboard_setKeyboard_Layout(keyboard_layout_t layout)
-	{
-		CurrentKeyboardLayout = layout;
-	}
-
-	bool virtualkeyboard_getopen()
-	{
-		return keyboardOpen;
-	}
-
-	void virtualkeyboard_setopen(bool open)
-	{
+		Inputtype = type;
 		if (open != keyboardOpen) {
 			if (open) {
 				keyboardShift = false;
@@ -62,258 +229,22 @@ namespace sk {
 		}
 	}
 
-	bool virtualkeyboard_getshift()
-	{
-		return keyboardShift;
-	}
-
-	void virtualkeyboard_setshift(bool shift)
-	{
-		keyboardShift = shift;
-	}
-
 	void virtualkeyboard_initialize()
 	{
 		pressedKeys.free();
-		CurrentKeyboardLayout = virtualkeyboard_get_usKeyboard_Layout();
-	}
-	//Is a partial Match
-	bool CheckKey(const char* key, const char* check) {
-		int charindex = 0;
-		bool returnFalse = false;
-		bool returnTrue = false;
-		if (key[1] == '\0') {
-			return false;
-		}
-		while (!returnTrue && !returnFalse)
-		{
-			if (check[charindex] == '\0') {
-				if (check[charindex] == key[charindex])
-				{
-					returnTrue = true;
-				}
-				else {
-					returnFalse = true;
-				}
-			}
-			if (key[charindex] == '\0') {
-				if (key[charindex] == check[charindex])
-				{
-					returnTrue = true;
-				}
-				else {
-					returnFalse = true;
-				}
-			}
-			if (key[charindex] != check[charindex]) {
-				returnFalse = true;
-			}
-			charindex++;
-		}
-		return returnTrue;
+		CurrentKeyboardLayout = virtualkeyboard_get_system_keyboard_layout();
 	}
 
 	void SendKeyData(const char* charkey,key_ key) {
 		pressedKeys.add(key);
 		input_keyboard_inject_press(key);
 		if (charkey != nullptr) {
-			input_text_inject_char((char32_t)(*charkey));
-		}
-	}
-
-	key_ GetKeyFromString(const char* key) {
-		if (key == nullptr) {
-			return key_::key_none;
-		}
-		char firstChar = *key;
-		if (firstChar <= 'z' && firstChar > 'a') {
-			return (key_)((firstChar - 'a') + key_::key_a);
-		}
-		if (firstChar <= 'Z' && firstChar > 'A') {
-			return (key_)((firstChar - 'A') + key_::key_a);
-		}
-		if (firstChar <= '9' && firstChar > '0') {
-			return (key_)((firstChar - '0') + key_::key_0);
-		}
-		if (firstChar == '`') {
-			return key_::key_backtick;
-		}
-		if (firstChar == '!') {
-			//Could not find exclamation mark
-			return key_::key_none;
-		}
-		if (firstChar == '@') {
-			//Could not find at key
-			return key_::key_none;
-		}
-		if (firstChar == '#') {
-			//Could not find hashTag key
-			return key_::key_none;
-		}
-		if (firstChar == '$') {
-			//Could not find doller key
-			return key_::key_none;
-		}
-		if (firstChar == '%') {
-			//Could not find persent key
-			return key_::key_none;
-		}
-		if (firstChar == '^') {
-			//Could not find caret key
-			return key_::key_none;
-		}
-		if (firstChar == '&') {
-			//Could not find and key
-			return key_::key_none;
-		}
-		if (firstChar == '*') {
-			return key_::key_multiply;
-		}
-		if (firstChar == '(') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == ')') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '-') {
-			return key_::key_subtract;
-		}
-		if (firstChar == '=') {
-			return key_::key_equals;
-		}
-		if (firstChar == '_') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '+') {
-			return key_::key_add;
-		}
-		if (firstChar == '[') {
-			return key_::key_bracket_open;
-		}
-		if (firstChar == '{') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == ']') {
-			return key_::key_bracket_close;
-		}
-		if (firstChar == '}') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '\\') {
-			return key_::key_slash_back;
-		}
-		if (firstChar == '|') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == ';') {
-			return key_::key_semicolon;
-		}
-		if (firstChar == ':') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '"') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '\'') {
-			return key_::key_apostrophe;
-		}
-		if (firstChar == ',') {
-			return key_::key_comma;
-		}
-		if (firstChar == '<') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '>') {
-			//Could not find
-			return key_::key_none;
-		}
-		if (firstChar == '.') {
-			return key_::key_period;
-		}
-		if (firstChar == '/') {
-			return key_::key_slash_fwd;
-		}
-		if (firstChar == '?') {
-			//Could not find
-			return key_::key_none;
-		}
-		return key_::key_none;
-	}
-
-	void virtualkeyboard_keyPress(const char* key) {
-		//Check If BackSpace Key
-		if (CheckKey(key, "<--")) {
-			SendKeyData("\b", key_::key_backspace);
-		}
-		//Check If Tab Key
-		else if(CheckKey(key, "Tab")) {
-			SendKeyData("\t", key_::key_tab);
-		}
-		//Check If Caps Lock Key
-		else if (CheckKey(key, "CapsLk")) {
-			SendKeyData(NULL, key_::key_caps_lock);
-		}
-		//Check If Enter Key
-		else if (CheckKey(key, "Enter")) {
-			SendKeyData("\r", key_::key_return);
-		}
-		//Check If NewLine Key
-		else if (CheckKey(key, "NewLine")) {
-			SendKeyData("\n", key_::key_return);
-		}
-		//Check If Left Shift Key
-		else if (CheckKey(key, "LShift")) {
-			keyboardShift = !keyboardShift;
-			SendKeyData(NULL, key_::key_shift);
-		}
-		//Check If Right Shift Key
-		else if (CheckKey(key, "RShift")) {
-			keyboardShift = !keyboardShift;
-			SendKeyData(NULL, key_::key_shift);
-		}
-		//Check If Up Key
-		else if (CheckKey(key, "/\\")) {
-			SendKeyData(NULL, key_::key_up);
-		}
-		//Check If Left Key
-		else if (CheckKey(key, "< ")) {
-			SendKeyData(NULL, key_::key_left);
-		}
-		//Check If Right Key
-		else if (CheckKey(key, " >")) {
-			SendKeyData(NULL, key_::key_right);
-		}
-		//Check If Left Ctrl Key
-		else if (CheckKey(key, " LCtrl")) {
-			SendKeyData(NULL, key_::key_ctrl);
-		}
-		//Check If Right Ctrl Key
-		else if (CheckKey(key, " RCtrl")) {
-			SendKeyData(NULL, key_::key_ctrl);
-		}
-		//Check If Left Alt Key
-		else if (CheckKey(key, " LAlt")) {
-			SendKeyData(NULL, key_::key_alt);
-		}
-		//Check If Right Alt Key
-		else if (CheckKey(key, " RAlt")) {
-			SendKeyData(NULL, key_::key_alt);
-		}
-		//Check If Space Bar Key
-		else if (CheckKey(key, "     ")) {
-			SendKeyData(" ", key_::key_space);
-		}
-		else {
-			SendKeyData(key, GetKeyFromString(key));
+			int index = 0;
+			while (charkey[index] != '\0')
+			{
+				input_text_inject_char((char32_t)charkey[index]);
+				index++;
+			}
 		}
 	}
 
@@ -325,28 +256,85 @@ namespace sk {
 		}
 	}
 
+	void virtualkeyboard_keypress(keyboard_layout_Key_t key) {
+		SendKeyData(key.clickedText, key.keyEventType);
+		if (key.specialKey == special_key_shift) {
+			keyboardShift = !keyboardShift;
+		}
+		if (key.specialKey == special_key_alt_gr) {
+			keyboardAltgr = !keyboardAltgr;
+		}
+		if (key.specialKey == special_key_fn) {
+			keyboardFN = !keyboardFN;
+		}
+		if (key.specialKey == special_key_close_keyboard) {
+			keyboardOpen = false;
+		}
+	}
 
 	void virtualkeyboard_update()
 	{
 		if (keyboardOpen) {
+			if (CurrentKeyboardLayout == nullptr) {
+				return;
+			}
 			RemoveLastClickedKeys();
+			hierarchy_push(render_get_cam_root());
 			ui_window_begin("Keyboard", keyboardPose, {0,0},ui_win_body);
 			ui_push_no_keyboard_loss(true);
-			keyboard_layout_Layer_t layer = (keyboardShift) ? CurrentKeyboardLayout.shiftLayer : CurrentKeyboardLayout.normalLayer;
+			int typeIndex = 0;
+			if (keyboardShift) {
+				if (keyboardAltgr) {
+					typeIndex = 3;
+				}
+				else {
+					typeIndex = 1;
+				}
+			}
+			else {
+				if (keyboardAltgr) {
+					typeIndex = 2;
+				}
+			}
+			if (keyboardFN) {
+				typeIndex = 3;
+			}
+			const keyboard_layout_Layer_t* layer = &CurrentKeyboardLayout->text_layer[typeIndex];
+			switch (Inputtype)
+			{
+			case sk::number:
+				layer = &(CurrentKeyboardLayout->number_layer[typeIndex]);
+				break;
+			case sk::Decimal:
+				layer = &(CurrentKeyboardLayout->number_decimal_layer[typeIndex]);
+				break;
+			case sk::Signed:
+				layer = &CurrentKeyboardLayout->number_signed_layer[typeIndex];
+				break;
+			case sk::Number_Decimal:
+				layer = &CurrentKeyboardLayout->number_decimal_layer[typeIndex];
+				break;
+			case sk::Number_Signed:
+				layer = &CurrentKeyboardLayout->number_signed_layer[typeIndex];
+				break;
+			case sk::Number_Signed_Decimal:
+				layer = &CurrentKeyboardLayout->number_signed_decimal_layer[typeIndex];
+				break;
+			}
 			float buttonSize = 0.035f;
 			for (int row = 0; row < 6; row++)
 			{
 				for (int i = 0; i < 35; i++)
 				{
-					const char* character = layer.key[(row*35)+i].key;
-					float width = layer.key[(row * 35) + i].width;
-					if (width > 0) {
-						//Only care about the last 2 Characters and first
-						if ((character[0] == Spacer[0])&&(character[6] == Spacer[6]) && (character[5] == Spacer[5])) {
-							ui_label_sz(" ", { buttonSize * width,buttonSize });
-						} else if (ui_button_sz(character, { buttonSize * width,buttonSize })) {
-							virtualkeyboard_keyPress(character);
+					keyboard_layout_Key_t key = layer->normalKeys[row][i];
+					if (key.width > 0) {
+						ui_push_idi((i * row) + 1000);
+						if (key.specialKey == special_key_spacer) {
+							ui_label_sz(" ", { buttonSize * key.width,buttonSize });
+						} else if (ui_button_sz(key.displayText, { buttonSize * key.width,buttonSize })) {
+							virtualkeyboard_keypress(key);
 						}
+						ui_pop_id();
 					}
 					ui_sameline();
 				}
@@ -354,6 +342,7 @@ namespace sk {
 			}
 			ui_pop_no_keyboard_loss();
 			ui_window_end();
+			hierarchy_pop();
 		}
 	}
 }

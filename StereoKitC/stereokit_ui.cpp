@@ -631,6 +631,8 @@ void ui_update() {
 	skui_finger_radius /= handed_max;
 
 	ui_push_surface(pose_identity);
+	//Clear current keyboard ignore elements
+	nokeyboard_steal_stack_ids.clear();
 }
 
 ///////////////////////////////////////////
@@ -968,6 +970,10 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+
+	if (nokeyboard_steal_stack.last()) {
+		nokeyboard_steal_stack_ids.add(id);
+	}
 
 	for (int32_t i = 0; i < handed_max; i++) {
 		if (ui_is_hand_preoccupied((handed_)i, id, false))
@@ -1331,9 +1337,6 @@ void ui_image(sprite_t image, vec2 size) {
 template<typename C>
 bool32_t ui_button_at_g(const C *text, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
-	if (nokeyboard_steal_stack.last()) {
-		nokeyboard_steal_stack_ids.add(id);
-	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -1386,9 +1389,6 @@ bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_
 template<typename C>
 bool32_t ui_toggle_at_g(const C *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
 	uint64_t      id = ui_stack_hash(text);
-	if (nokeyboard_steal_stack.last()) {
-		nokeyboard_steal_stack_ids.add(id);
-	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -1446,9 +1446,6 @@ bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { r
 template<typename C>
 bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
 	uint64_t      id = ui_stack_hash(text);
-	if (nokeyboard_steal_stack.last()) {
-		nokeyboard_steal_stack_ids.add(id);
-	}
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
@@ -1523,7 +1520,7 @@ inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { r
 inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
-bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
+bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool useNativeKeyboard,keyboard_input_type_ type) {
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
@@ -1539,12 +1536,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
 
 	if (state & button_state_just_active) {
-		if (platform_keyboard_available()) {
-			platform_keyboard_show(true);
-		}
-		else {
-			virtualkeyboard_setopen(true);
-		}
+		platform_keyboard_show(true, useNativeKeyboard,type);
 		skui_input_target = id_hash;
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
@@ -1565,12 +1557,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 				if (h.focused) {
 					if ((nokeyboard_steal_stack_ids.index_of(h.focused) < 0)) {
 						skui_input_target = 0;
-						if (platform_keyboard_available()) {
-							platform_keyboard_show(false);
-						}
-						else {
-							virtualkeyboard_setopen(false);
-						}
+						platform_keyboard_show(false, useNativeKeyboard, type);
 					}
 				}
 			}
@@ -1593,22 +1580,13 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
-				if (platform_keyboard_available()) {
-					platform_keyboard_show(false);
-				}
-				else {
-					virtualkeyboard_setopen(false);
-				}				result = true;
+				platform_keyboard_show(false, useNativeKeyboard, type);
+				result = true;
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
 				skui_input_target = 0;
-				if (platform_keyboard_available()) {
-					platform_keyboard_show(false);
-				}
-				else {
-					virtualkeyboard_setopen(false);
-				}
+				platform_keyboard_show(false, useNativeKeyboard, type);
 			} else {
 				add = curr;
 			}
@@ -1636,11 +1614,11 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size) {
 	return result;
 }
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size) {
-	return ui_input_g<char, text_size>(id, buffer, buffer_size, size);
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, bool useNativeKeyboard, keyboard_input_type_ type) {
+	return ui_input_g<char, text_size>(id, buffer, buffer_size, size, useNativeKeyboard, type);
 }
-bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size) {
-	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size);
+bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, bool useNativeKeyboard, keyboard_input_type_ type) {
+	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size, useNativeKeyboard, type);
 }
 
 ///////////////////////////////////////////
@@ -2042,9 +2020,6 @@ void ui_handle_end() {
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
-	if (nokeyboard_steal_stack.last()) {
-		nokeyboard_steal_stack_ids.add(id);
-	}
 	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;

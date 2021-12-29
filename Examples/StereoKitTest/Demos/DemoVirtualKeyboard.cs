@@ -4,40 +4,33 @@ class DemoVirtualKeyboard : ITest
 {
 	Pose windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1, 0, 1));
 	string data = "Edit me";
-	KeyboardLayouts keyboardLayouta;
+	string number = "1";
+	string noneNative = "Force none native Edit me";
+
 	public void Initialize()
 	{
-		keyboardLayouta = KeyboardLayouts.Default;
-		keyboardLayouta.NormalKeyboard.Keys[0].Key = "a";
-		keyboardLayouta.ShiftKeyboard.Keys[0].Key = "A";
-		keyboardLayouta.NormalKeyboard.Keys[0].Width = 1;
-		keyboardLayouta.ShiftKeyboard.Keys[0].Width = 1;
 	}
 
 	public void Update()
     {
         UI.WindowBegin("Virtual Keyboard", ref windowPose);
-		if(UI.Button("Set Keyboard Layout to US"))
-        {
-			Input.VirtualKeyboard.KeyboardLayout = KeyboardLayouts.USKeyboardLayout;
-		}
-		UI.SameLine();
-		if (UI.Button("Set Keyboard Layout to A"))
-		{
-			Input.VirtualKeyboard.KeyboardLayout = keyboardLayouta;
-		}
 		UI.Button("this button will take the keyboard focus");
 		UI.PushKeyboardFocusSteal(false);
 		UI.Button("this button will not");
 		UI.PopKeyboardFocusSteal();
 		UI.Input("testText", ref data);
-		var open = Input.VirtualKeyboard.Open;
-		UI.Toggle("Open", ref open);
-		Input.VirtualKeyboard.Open = open;
+		UI.Label("number field Signed Decimal");
 		UI.SameLine();
-		var shift = Input.VirtualKeyboard.Shift;
-		UI.Toggle("Shift", ref shift);
-		Input.VirtualKeyboard.Shift = shift;
+		UI.Input("Test number Signed Decimal", ref number, default,true,KeyboardInputType.Number_Signed_Decimal);
+		UI.Label("number field Signed");
+		UI.SameLine();
+		UI.Input("Test number Signed", ref number, default, true, KeyboardInputType.Number_Signed);
+		UI.Label("number field");
+		UI.SameLine();
+		UI.Input("Test number", ref number, default, true, KeyboardInputType.Number);
+		UI.Label("Force Virtual Keyboard");
+		UI.SameLine();
+		UI.Input("Test force virtual", ref noneNative, default, false);
 		UI.WindowEnd();
 	}
 

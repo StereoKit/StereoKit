@@ -110,6 +110,17 @@ typedef enum render_layer_ {
 } render_layer_;
 SK_MakeFlag(render_layer_);
 
+typedef enum keyboard_input_type_ {
+	text = 1 << 0,
+	number = 1 << 1,
+	Decimal = 1 << 2,
+	Signed = 1 << 3,
+	Number_Decimal = number | Decimal,
+	Number_Signed = number | Signed,
+	Number_Signed_Decimal = number | Signed | Decimal,
+} keyboard_input_type_;
+SK_MakeFlag(keyboard_input_type_);
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -143,19 +154,6 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
-typedef struct keyboard_layout_Key {
-	const char* key;
-	float width;
-} keyboard_layout_Key;
-
-typedef struct keyboard_layout_Layer_t {
-	keyboard_layout_Key key[6*35];
-} keyboard_layout_Layer_t;
-
-typedef struct keyboard_layout_t {
-	keyboard_layout_Layer_t normalLayer;
-	keyboard_layout_Layer_t shiftLayer;
-} keyboard_layout_t;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
@@ -1080,6 +1078,42 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
+typedef enum special_key {
+	special_key_none,
+	special_key_shift,
+	special_key_alt_gr,
+	special_key_fn,
+	special_key_close_keyboard,
+	//Used to put more space between keys
+	special_key_spacer,
+} special_key_;
+
+typedef struct keyboard_layout_Key_t {
+	const char* clickedText;
+	const char* displayText;
+	float width;
+	key_ keyEventType;
+	special_key_ specialKey;
+} keyboard_layout_Key_t;
+
+typedef struct keyboard_layout_Layer_t {
+	keyboard_layout_Key_t normalKeys[8][35];
+} keyboard_layout_Layer_t;
+
+typedef struct keyboard_layout_t {
+	keyboard_layout_Layer_t text_layer[5];
+	keyboard_layout_Layer_t number_layer[5];
+	keyboard_layout_Layer_t number_decimal_layer[5];
+	keyboard_layout_Layer_t number_signed_layer[5];
+	keyboard_layout_Layer_t number_signed_decimal_layer[5];
+	// of all of these arrays
+	// first layer is normal key layout array index 0
+    // second layer is shift array index 1
+	// third layer is AltGr array index 2
+	// fourth layer is AltGr + Shift array index 3
+	// fifth layer in fnkey array index 4
+} keyboard_layout_t;
+
 SK_API int                   input_pointer_count  (input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t         *input_hand           (handed_ hand);
@@ -1100,19 +1134,6 @@ SK_API void                  input_hand_material  (handed_ hand, material_t mate
 SK_API void                  input_subscribe      (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
 SK_API void                  input_fire_event     (input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer);
-
-///////////////////////////////////////////
-
-SK_API keyboard_layout_t     virtualkeyboard_get_usKeyboard_Layout();
-SK_API keyboard_layout_t     virtualkeyboard_getKeyboard_Layout();
-
-SK_API void     virtualkeyboard_setKeyboard_Layout(keyboard_layout_t layout);
-
-SK_API bool     virtualkeyboard_getopen();
-SK_API void     virtualkeyboard_setopen(bool open);
-
-SK_API bool     virtualkeyboard_getshift();
-SK_API void     virtualkeyboard_setshift(bool shift);
 
 ///////////////////////////////////////////
 

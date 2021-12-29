@@ -20,6 +20,41 @@ namespace StereoKit
 		/// tasks, etc.</summary>
 		None = 2,
 	}
+	/// <summary>
+	/// Specifies what type of input it is number or text
+	/// </summary>
+	[Flags]
+	public enum KeyboardInputType
+	{
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard
+		/// </summary>
+		Text = 1 << 0,
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard to be number form of keyboard like a numpad
+		/// </summary>
+		Number = 1 << 1,
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key should use <seealso cref="Number_Decimal"/>
+		/// </summary>
+		Decimal = 1 << 2,
+		/// <summary>
+		/// Well tell the virtual keyboard or system keyboard that the number can be a Signed to show the - key should use <seealso cref="Number_Signed"/>
+		/// </summary>
+		Signed = 1 << 3,
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key
+		/// </summary>
+		Number_Decimal = Number | Decimal,
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard that the number can be a Signed to show the - key
+		/// </summary>
+		Number_Signed = Number | Signed,
+		/// <summary>
+		/// Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys
+		/// </summary>
+		Number_Signed_Decimal = Number | Signed | Decimal,
+	}
 
 	/// <summary>This is used to determine what kind of depth buffer 
 	/// StereoKit uses!</summary>
@@ -255,96 +290,6 @@ namespace StereoKit
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
 		private int _worldRaycastPresent;
-	}
-
-	/// <summary>Keyboard Key for Virtual Keyboard.</summary>
-	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-	public struct KeyboardLayoutKey
-	{
-		internal IntPtr _key;
-
-		/// <summary>
-		/// The Key of the Keyboard
-		/// </summary>
-		public string Key
-		{
-			set
-			{
-				if (_key != IntPtr.Zero) Marshal.FreeHGlobal(_key);
-
-				_key = string.IsNullOrEmpty(value)
-					? IntPtr.Zero
-					: Marshal.StringToHGlobalAnsi(value);
-			}
-			get => Marshal.PtrToStringAnsi(_key);
-		}
-
-		/// <summary>
-		/// The Width of the key as %
-		/// </summary>
-		public float Width;
-	}
-
-	/// <summary>Keyboard Layout Layer for Virtual Keyboard.</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public struct KeyboardLayoutLayer
-	{
-		/// <summary>
-		/// Each Key on Keyboard [row][column]
-		/// </summary>
-		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 6 * 35)] 
-		public KeyboardLayoutKey[] Keys;
-
-		/// <summary>
-		/// Default
-		/// </summary>
-		public static KeyboardLayoutLayer Default
-		{
-			get
-			{
-				var e = new KeyboardLayoutLayer
-				{
-					Keys = new KeyboardLayoutKey[6 * 35]
-                };
-                return e;
-			} 
-		}
-	}
-
-	/// <summary>Keyboard Layout for Virtual Keyboard.</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public struct KeyboardLayouts
-	{
-		/// <summary>
-		/// UnShifted layer of keyboard
-		/// </summary>
-		public KeyboardLayoutLayer NormalKeyboard;
-		/// <summary>
-		/// Shifted layer of keyboard
-		/// </summary>
-		public KeyboardLayoutLayer ShiftKeyboard;
-
-		/// <summary>
-		/// Default Blank Keyboard
-		/// </summary>
-		public static KeyboardLayouts Default
-		{
-			get
-			{
-                var e = new KeyboardLayouts
-                {
-                    NormalKeyboard = KeyboardLayoutLayer.Default,
-                    ShiftKeyboard = KeyboardLayoutLayer.Default
-                };
-                return e;
-			}
-		}
-
-		/// <summary>
-		/// Default US Keyboard
-		/// </summary>
-		public static KeyboardLayouts USKeyboardLayout
-			=> NativeAPI.virtualkeyboard_get_usKeyboard_Layout();
 	}
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>

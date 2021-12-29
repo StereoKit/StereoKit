@@ -403,17 +403,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out UIntPtr out_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, UIntPtr size);
 
-		///////////////////////////////////////////
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardLayouts virtualkeyboard_get_usKeyboard_Layout();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardLayouts virtualkeyboard_getKeyboard_Layout();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setKeyboard_Layout(KeyboardLayouts keyboardLayout);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool virtualkeyboard_getopen();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setopen(bool open);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool virtualkeyboard_getshift();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void virtualkeyboard_setshift(bool shift);
 
 		///////////////////////////////////////////
 
@@ -545,7 +534,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16      (string text, ref int pressed);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16   (string text, ref int pressed, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model          (IntPtr model, Vec2 ui_size, float model_scale);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size, bool useNativeKeyboard = true, KeyboardInputType type = KeyboardInputType.Text);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16     (string id,   ref float value, float min, float max, float step, float width, UIConfirm confirm_method);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_f64_16 (string id,   ref double value, double min, double max, double step, float width, UIConfirm confirm_method);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16(string text, ref Pose movement, Bounds handle, int draw, UIMove move_type);

@@ -425,14 +425,20 @@ namespace StereoKit
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
 		/// Zero axes will auto-size.</param>
+		/// <param name="useNativeKeyboard">
+		/// Open up system keyboard if one exists or if can use system keyboard, if false will use virtual keyboard.
+		/// </param>
+		/// <param name="type">
+		/// Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use
+		/// </param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size = new Vec2()) {
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), bool useNativeKeyboard = true, KeyboardInputType type = KeyboardInputType.Text) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 4) :
 				new StringBuilder(4);
 
-			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, useNativeKeyboard,type)) { 
 				value = builder.ToString();
 				return true;
 			}
