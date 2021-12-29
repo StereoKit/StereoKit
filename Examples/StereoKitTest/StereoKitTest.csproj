@@ -25,13 +25,13 @@
 	
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
 	<ItemGroup>
-		<ProjectReference Include="..\..\StereoKit\StereoKit.csproj" />
-		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
-		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.sym" Include="../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
+		<ProjectReference Include="$(ProjectDir)..\..\StereoKit\StereoKit.csproj" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
 	</ItemGroup>
-	<Import Project="..\..\StereoKit\SKShaders.targets" />
+	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 
 	<!-- Copy assets, and build the app's shaders into the final app folder -->
 	<ItemGroup>

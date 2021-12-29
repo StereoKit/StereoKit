@@ -10,12 +10,6 @@
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
-		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="'$(OS)' == 'Windows_NT'">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
 	</ItemGroup>
 
 	<!-- NuGet package -->

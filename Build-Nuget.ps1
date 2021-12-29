@@ -257,12 +257,19 @@ Write-Host @"
 Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
 & 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
+# Find the correct WSL folder
+$linux_folder = ''+$PSScriptRoot
+$linux_folder = $linux_folder.replace('\', '/')
+$linux_folder = $linux_folder.replace(':', '')
+$linux_folder = '/mnt/'+$linux_folder
+Write-Output $linux_folder
+
 # Linux, via WSL
 Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
 if ($fast -eq $false) {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
 } else {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a arm64 -m release -y ; xmake"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
@@ -273,9 +280,9 @@ Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
 
 Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
 if ($fast -eq $false) {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release -y ; xmake -r"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
 } else {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release -y ; xmake"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red

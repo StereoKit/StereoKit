@@ -1,6 +1,7 @@
 ﻿using StereoKit;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -20,6 +21,9 @@ public static class Tests
 	private static Type ActiveTest { set { nextScene = (ITest)Activator.CreateInstance(value); } }
 	public  static int  DemoCount => demoTests.Count;
 	public  static bool IsTesting { get; set; }
+
+	public static string ScreenshotRoot  { get; set; } = "../../../docs/img/screenshots";
+	public static bool   MakeScreenshots { get; set; } = true;
 
 	public static void FindTests()
 	{
@@ -134,10 +138,10 @@ public static class Tests
 		=> Screenshot(name, 0, width, height, 90, from, at);
 	public static void Screenshot(string name, int frame, int width, int height, float fov, Vec3 from, Vec3 at)
 	{
-		if (!IsTesting || frame != sceneFrame || screens.Contains(name))
+		if (!IsTesting || frame != sceneFrame || screens.Contains(name) || !MakeScreenshots)
 			return;
 		screens.Add(name);
-		Renderer.Screenshot($"../../../docs/img/screenshots/{name}", from, at, width, height, fov);
+		Renderer.Screenshot(Path.Combine(ScreenshotRoot,name), from, at, width, height, fov);
 	}
 	public static void Hand(in HandJoint[] joints)
 	{
