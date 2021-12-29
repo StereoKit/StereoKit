@@ -352,8 +352,18 @@ bool platform_keyboard_available() {
 
 ///////////////////////////////////////////
 
-void platform_keyboard_show(bool visible,bool useNativePlatformKeyboard, keyboard_input_type_ type) {
-	if (useNativePlatformKeyboard) {
+bool32_t  force_virtualkeyboard_keyboard = false;
+bool32_t platform_keyboard_get_force_virtualkeyboard_keyboard() {
+	return force_virtualkeyboard_keyboard;
+}
+void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value) {
+	force_virtualkeyboard_keyboard = value;
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show(bool32_t visible, input_text_context_type_ type) {
+	if (!force_virtualkeyboard_keyboard) {
 #if defined(SK_OS_WINDOWS_UWP)
 		uwp_show_keyboard(visible);
 #endif
@@ -369,8 +379,9 @@ void platform_keyboard_show(bool visible,bool useNativePlatformKeyboard, keyboar
 
 ///////////////////////////////////////////
 
-bool platform_keyboard_visible() {
-	return false;
+bool32_t platform_keyboard_visible() {
+	// todo: get udp visible
+	return virtualkeyboard_get_open();
 }
 
 ///////////////////////////////////////////

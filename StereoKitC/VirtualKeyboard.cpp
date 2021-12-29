@@ -59,6 +59,59 @@ namespace sk {
 				}
 			},
 			/////////////////////////////////////////////////////////////////////////////
+			////////////       uri text input        //////////////
+			{
+				//Normal
+				{
+					{
+						{
+							{ "`","`",1,key_backtick},{"1","1",1,key_1}, {"2","2",1,key_2}, {"3","3",1,key_3}, {"4","4",1,key_4}, {"5","5",1,key_5}, {"6","6",1,key_6}, {"7","7",1,key_7}, {"8","8",1,key_8}, {"9","9",1,key_9}, {"0","0",1,key_0}, {"-","-",1,key_minus}, {"=","=",1,key_equals},{"\b","<--",1.5f,key_backspace}
+						},
+						{
+							{"\t","Tab",1.5,key_tab},{"q","q",1,key_q},{"w","w",1,key_w},{"e","e",1,key_e},{"r","r",1,key_r},{"t","t",1,key_t},{"y","y",1,key_y},{"u","u",1,key_u},{"i","i",1,key_i},{"o","o",1,key_o},{"p","p",1,key_p},{"[","[",1,key_bracket_open},{"]","]",1,key_bracket_close},{"\\","\\",1,key_slash_back}
+						},
+						{
+							{"","CapsLk",1.9,key_caps_lock,special_key_shift},{"a","a",1,key_a},{"s","s",1,key_s},{"d","d",1,key_d},{"f","f",1,key_f},{"g","g",1,key_g},{"h","h",1,key_h},{"j","j",1,key_j},{"k","k",1,key_k},{"l","l",1,key_l},{";",";",1,key_semicolon},{"'","'",1,key_apostrophe},{"\r","Enter",1.9,key_return}
+						},
+						{
+							{"","Shift",2.5,key_shift,special_key_shift},{"z","z",1,key_z},{"x","x",1,key_x},{"c","c",1,key_c},{"v","v",1,key_v},{"b","b",1,key_b},{"n","n",1,key_n},{"m","m",1,key_m},{",",",",1,key_comma},{".",".",1,key_period},{"/","/",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
+						},
+						{
+							{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt,special_key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt,special_key_alt},{"","Ctrl",1,key_ctrl,special_key_ctrl},{".com",".com",1},{"https://","https://",1},{"://","://",1},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+						}
+					}
+				},
+				//shift
+				{
+					{
+						{
+							{ "~","~",1,key_backtick},{"!","!",1,key_1}, {"@","@",1,key_2}, {"#","#",1,key_3}, {"$","$",1,key_4}, {"%","%",1,key_5}, {"^","^",1,key_6}, {"&","&",1,key_7}, {"*","*",1,key_8}, {"(","(",1,key_9}, {")",")",1,key_0}, {"_","_",1,key_minus}, {"+","+",1,key_equals},{"\b","<--",1.5f,key_backspace}
+						},
+						{
+							{"\t","Tab",1.5,key_tab},{"Q","Q",1,key_q},{"W","W",1,key_w},{"E","E",1,key_e},{"R","R",1,key_r},{"T","T",1,key_t},{"Y","Y",1,key_y},{"U","U",1,key_u},{"I","I",1,key_i},{"O","O",1,key_o},{"P","P",1,key_p},{"{","{",1,key_bracket_open},{"}","}",1,key_bracket_close},{"|","|",1,key_slash_back}
+						},
+						{
+							{"","CapsLk",1.9,key_caps_lock,special_key_shift},{"A","A",1,key_a},{"S","S",1,key_s},{"D","D",1,key_d},{"F","F",1,key_f},{"G","G",1,key_g},{"H","H",1,key_h},{"J","J",1,key_j},{"K","K",1,key_k},{"L","L",1,key_l},{":",":",1,key_semicolon},{"\"","\"",1,key_apostrophe},{"\n","NewLine",1.9,key_return}
+						},
+						{
+							{"","Shift",2.5,key_shift,special_key_shift},{"Z","Z",1,key_z},{"X","X",1,key_x},{"C","C",1,key_c},{"V","V",1,key_v},{"B","B",1,key_b},{"N","N",1,key_n},{"M","M",1,key_m},{"<","<",1,key_comma},{">",">",1,key_period},{"?","?",1,key_slash_fwd},{"","Shift",2.5,key_shift,special_key_shift},{"","",1,key_none,special_key_spacer},{"","^",1,key_up}
+						},
+						{
+							{"","Ctrl",1.75,key_ctrl,special_key_ctrl},{"","Cmd",1,key_rcmd},{"","Alt",1.75,key_alt,special_key_alt},{" ","     ",6.4,key_space},{"","Alt",1.75,key_alt,special_key_alt},{"","Ctrl",1,key_ctrl,special_key_ctrl},{".com",".com",1},{"https://","https://",1},{"://","://",1},{"","<",1,key_left},{"","v",1,key_down},{""," >",1,key_right}
+						}
+					}
+				},
+				{
+					// altgr
+				},
+				{
+					// altgr and shift
+				},
+				{
+					// fn
+				}
+			},
+			/////////////////////////////////////////////////////////////////////////////
 			////////////       number input        //////////////
 			{
 				//Normal
@@ -205,42 +258,46 @@ namespace sk {
 			/////////////////////////////////////////////////////////////////////////////
 		};
 
-	bool32_t keyboardFN = false;
-	bool32_t keyboardAltgr = false;
-	bool32_t keyboardShift = false;
-	bool32_t keyboardOpen = false;
+	bool32_t keyboard_fn = false;
+	bool32_t keyboard_altgr = false;
+	bool32_t keyboard_shift = false;
+	bool32_t keyboard_open = false;
 
-	bool32_t keyboardCtrl = false;
-	bool32_t keyboardAlt = false;
+	bool32_t keyboard_ctrl = false;
+	bool32_t keyboard_alt = false;
 
-	pose_t keyboardPose = { {-0.1f, 0.1f, -0.2f},quat_lookat({0,0,0},{1,1,1})};
-	array_t<key_> pressedKeys;
-	const keyboard_layout_t* CurrentKeyboardLayout;
-	keyboard_input_type_ Inputtype;
+	pose_t keyboard_pose = { {-0.1f, 0.1f, -0.2f},quat_lookat({0,0,0},{1,1,1})};
+	array_t<key_> pressed_keys;
+	const keyboard_layout_t* current_keyboard_layout;
+	input_text_context_type_ input_type;
 	const keyboard_layout_t* virtualkeyboard_get_system_keyboard_layout()
 	{
 		return &virtualkeyboard_get_uskeyboard_layout;
 	}
 
-	void virtualkeyboard_open(bool open, keyboard_input_type_ type)
+	void virtualkeyboard_open(bool open, input_text_context_type_ type)
 	{
-		Inputtype = type;
-		if (open != keyboardOpen) {
+		input_type = type;
+		if (open != keyboard_open) {
 			if (open) {
-				keyboardShift = false;
+				keyboard_shift = false;
 			}
-			keyboardOpen = open;
+			keyboard_open = open;
 		}
+	}
+
+	bool virtualkeyboard_get_open() {
+		return keyboard_open;
 	}
 
 	void virtualkeyboard_initialize()
 	{
-		pressedKeys.free();
-		CurrentKeyboardLayout = virtualkeyboard_get_system_keyboard_layout();
+		pressed_keys.free();
+		current_keyboard_layout = virtualkeyboard_get_system_keyboard_layout();
 	}
 
-	void SendKeyData(const char* charkey,key_ key) {
-		pressedKeys.add(key);
+	void send_key_data(const char* charkey,key_ key) {
+		pressed_keys.add(key);
 		input_keyboard_inject_press(key);
 		if (charkey != nullptr) {
 			int index = 0;
@@ -252,43 +309,43 @@ namespace sk {
 		}
 	}
 
-	void RemoveLastClickedKeys() {
-		for (int i = 0; i < pressedKeys.count; i++)
+	void remove_last_clicked_keys() {
+		for (int i = 0; i < pressed_keys.count; i++)
 		{
-			input_keyboard_inject_release(pressedKeys[0]);
-			pressedKeys.remove(0);
+			input_keyboard_inject_release(pressed_keys[0]);
+			pressed_keys.remove(0);
 		}
 	}
 
 	void virtualkeyboard_keypress(keyboard_layout_Key_t key) {
-		SendKeyData(key.clickedText, key.keyEventType);
-		if (key.specialKey == special_key_shift) {
-			keyboardShift = !keyboardShift;
+		send_key_data(key.clicked_text, key.key_event_type);
+		if (key.special_key == special_key_shift) {
+			keyboard_shift = !keyboard_shift;
 		}
-		if (key.specialKey == special_key_alt_gr) {
-			keyboardAltgr = !keyboardAltgr;
+		if (key.special_key == special_key_alt_gr) {
+			keyboard_altgr = !keyboard_altgr;
 		}
-		if (key.specialKey == special_key_fn) {
-			keyboardFN = !keyboardFN;
+		if (key.special_key == special_key_fn) {
+			keyboard_fn = !keyboard_fn;
 		}
-		if (key.specialKey == special_key_close_keyboard) {
-			keyboardOpen = false;
+		if (key.special_key == special_key_close_keyboard) {
+			keyboard_open = false;
 		}
 	}
 
 	void virtualkeyboard_update()
 	{
-		if (keyboardOpen) {
-			if (CurrentKeyboardLayout == nullptr) {
+		if (keyboard_open) {
+			if (current_keyboard_layout == nullptr) {
 				return;
 			}
-			RemoveLastClickedKeys();
+			remove_last_clicked_keys();
 			hierarchy_push(render_get_cam_root());
-			ui_window_begin("Keyboard", keyboardPose, {0,0},ui_win_body);
+			ui_window_begin("Keyboard", keyboard_pose, {0,0},ui_win_body);
 			ui_push_no_keyboard_loss(true);
 			int typeIndex = 0;
-			if (keyboardShift) {
-				if (keyboardAltgr) {
+			if (keyboard_shift) {
+				if (keyboard_altgr) {
 					typeIndex = 3;
 				}
 				else {
@@ -296,33 +353,30 @@ namespace sk {
 				}
 			}
 			else {
-				if (keyboardAltgr) {
+				if (keyboard_altgr) {
 					typeIndex = 2;
 				}
 			}
-			if (keyboardFN) {
+			if (keyboard_fn) {
 				typeIndex = 3;
 			}
-			const keyboard_layout_Layer_t* layer = &CurrentKeyboardLayout->text_layer[typeIndex];
-			switch (Inputtype)
+			const keyboard_layout_Layer_t* layer = &current_keyboard_layout->text_layer[typeIndex];
+			switch (input_type)
 			{
-			case sk::number:
-				layer = &(CurrentKeyboardLayout->number_layer[typeIndex]);
+			case sk::input_text_context_type_number:
+				layer = &(current_keyboard_layout->number_layer[typeIndex]);
 				break;
-			case sk::Decimal:
-				layer = &(CurrentKeyboardLayout->number_decimal_layer[typeIndex]);
+			case sk::input_text_context_type_number_decimal:
+				layer = &current_keyboard_layout->number_decimal_layer[typeIndex];
 				break;
-			case sk::Signed:
-				layer = &CurrentKeyboardLayout->number_signed_layer[typeIndex];
+			case sk::input_text_context_type_number_signed:
+				layer = &current_keyboard_layout->number_signed_layer[typeIndex];
 				break;
-			case sk::Number_Decimal:
-				layer = &CurrentKeyboardLayout->number_decimal_layer[typeIndex];
+			case sk::input_text_context_type_number_signed_decimal:
+				layer = &current_keyboard_layout->number_signed_decimal_layer[typeIndex];
 				break;
-			case sk::Number_Signed:
-				layer = &CurrentKeyboardLayout->number_signed_layer[typeIndex];
-				break;
-			case sk::Number_Signed_Decimal:
-				layer = &CurrentKeyboardLayout->number_signed_decimal_layer[typeIndex];
+			case sk::input_text_context_type_text_uri:
+				layer = &current_keyboard_layout->text_uri_layer[typeIndex];
 				break;
 			}
 			float buttonSize = 0.035f;
@@ -330,52 +384,52 @@ namespace sk {
 			{
 				for (int i = 0; i < 35; i++)
 				{
-					keyboard_layout_Key_t key = layer->normalKeys[row][i];
+					keyboard_layout_Key_t key = layer->normal_keys[row][i];
 					if (key.width > 0) {
 						ui_push_idi((i * row) + 1000);
-						if (key.specialKey == special_key_spacer) {
+						if (key.special_key == special_key_spacer) {
 							ui_label_sz(" ", { buttonSize * key.width,buttonSize });
 						}
-						else if (key.specialKey == special_key_alt) {
-							if (ui_toggle_sz(key.displayText, keyboardAlt, { buttonSize * key.width,buttonSize })) {
-								if (keyboardAlt) {
+						else if (key.special_key == special_key_alt) {
+							if (ui_toggle_sz(key.display_text, keyboard_alt, { buttonSize * key.width,buttonSize })) {
+								if (keyboard_alt) {
 									input_keyboard_inject_press(key_alt);
 								} else {
 									input_keyboard_inject_release(key_alt);
 								}
 							}
 						}
-						else if (key.specialKey == special_key_ctrl) {
-							if (ui_toggle_sz(key.displayText, keyboardCtrl, { buttonSize * key.width,buttonSize })) {
-								if (keyboardCtrl) {
+						else if (key.special_key == special_key_ctrl) {
+							if (ui_toggle_sz(key.display_text, keyboard_ctrl, { buttonSize * key.width,buttonSize })) {
+								if (keyboard_ctrl) {
 									input_keyboard_inject_press(key_ctrl);
 								} else {
 									input_keyboard_inject_release(key_ctrl);
 								}
 							}
 						}
-						else if (key.specialKey == special_key_shift) {
-							if (ui_toggle_sz(key.displayText, keyboardShift, { buttonSize * key.width,buttonSize })) {
-								if (keyboardShift) {
+						else if (key.special_key == special_key_shift) {
+							if (ui_toggle_sz(key.display_text, keyboard_shift, { buttonSize * key.width,buttonSize })) {
+								if (keyboard_shift) {
 									input_keyboard_inject_press(key_shift);
 								} else {
 									input_keyboard_inject_release(key_shift);
 								}
 							}
 						}
-						else if (key.specialKey == special_key_fn) {
-							ui_toggle_sz(key.displayText, keyboardFN, { buttonSize * key.width,buttonSize });
+						else if (key.special_key == special_key_fn) {
+							ui_toggle_sz(key.display_text, keyboard_fn, { buttonSize * key.width,buttonSize });
 						} 
-						else if (key.specialKey == special_key_alt_gr) {
-							if (ui_toggle_sz(key.displayText, keyboardAltgr, { buttonSize * key.width,buttonSize })) {
-								if (keyboardAltgr) {
+						else if (key.special_key == special_key_alt_gr) {
+							if (ui_toggle_sz(key.display_text, keyboard_altgr, { buttonSize * key.width,buttonSize })) {
+								if (keyboard_altgr) {
 									input_keyboard_inject_press(key_alt);
 								} else {
 									input_keyboard_inject_release(key_alt);
 								}
 							}
 						}
-						else if (ui_button_sz(key.displayText, { buttonSize * key.width,buttonSize })) {
+						else if (ui_button_sz(key.display_text, { buttonSize * key.width,buttonSize })) {
 							virtualkeyboard_keypress(key);
 						}
 						ui_pop_id();

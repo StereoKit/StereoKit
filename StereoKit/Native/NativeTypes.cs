@@ -3,43 +3,6 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-
-	/// <summary>
-	/// Specifies what type of input it is number or text
-	/// </summary>
-	[Flags]
-	public enum KeyboardInputType
-	{
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard
-		/// </summary>
-		Text = 1 << 0,
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard to be number form of keyboard like a numpad
-		/// </summary>
-		Number = 1 << 1,
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key should use <seealso cref="Number_Decimal"/>
-		/// </summary>
-		Decimal = 1 << 2,
-		/// <summary>
-		/// Well tell the virtual keyboard or system keyboard that the number can be a Signed to show the - key should use <seealso cref="Number_Signed"/>
-		/// </summary>
-		Signed = 1 << 3,
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key
-		/// </summary>
-		Number_Decimal = Number | Decimal,
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard that the number can be a Signed to show the - key
-		/// </summary>
-		Number_Signed = Number | Signed,
-		/// <summary>
-		/// Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys
-		/// </summary>
-		Number_Signed_Decimal = Number | Signed | Decimal,
-	}
-  
 	/// <summary>StereoKit initialization settings! Setup SK.settings with 
 	/// your data before calling SK.Initialize.</summary>
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]

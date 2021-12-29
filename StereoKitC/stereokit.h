@@ -207,17 +207,27 @@ typedef enum render_layer_ {
 	render_layer_all_regular      = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
 } render_layer_;
 SK_MakeFlag(render_layer_);
+/*
+  Specifies what type of input it is number or text
+*/
+typedef enum input_text_context_type_ {
+	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
+	input_text_context_type_text = 1 << 1,
+	/* Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag*/
+	input_text_context_type_text_uri = 1 << 1 | 1 << 3,
+	/* Will tell the virtual keyboard or system keyboard to be a private form of input so user*/
+	input_text_context_type_text_password = 1 << 1 | 1 << 4,
+	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
+	input_text_context_type_number = 1 << 2,
+	/*Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag*/
+	input_text_context_type_number_decimal = 1 << 3 | 1 << 2,
+	/*Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key*/
+	input_text_context_type_number_signed = 1 << 4 | 1 << 2,
+	/*Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys*/
+	input_text_context_type_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
 
-typedef enum keyboard_input_type_ {
-	text = 1 << 0,
-	number = 1 << 1,
-	Decimal = 1 << 2,
-	Signed = 1 << 3,
-	Number_Decimal = number | Decimal,
-	Number_Signed = number | Signed,
-	Number_Signed_Decimal = number | Signed | Decimal,
-} keyboard_input_type_;
-SK_MakeFlag(keyboard_input_type_);
+} input_text_context_type_;
+SK_MakeFlag(input_text_context_type_);
 
 typedef struct sk_settings_t {
 	const char    *app_name;
@@ -1317,6 +1327,11 @@ SK_API bool32_t platform_file_picker_visible();
 SK_API bool32_t platform_read_file          (const char *filename, void **out_data, size_t *out_size);
 SK_API bool32_t platform_write_file         (const char *filename, void *data, size_t size);
 
+SK_API bool32_t platform_keyboard_get_force_virtualkeyboard_keyboard();
+SK_API void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value);
+SK_API void  platform_keyboard_show(bool32_t visible, input_text_context_type_ type);
+SK_API bool32_t  platform_keyboard_visible();
+
 ///////////////////////////////////////////
 
 /*What type of device is the source of the pointer? This is a
@@ -1658,44 +1673,6 @@ typedef enum key_ {
 	/*Maximum value for key codes.*/
 	key_MAX = 0xFF,
 } key_;
-
-typedef enum special_key {
-	special_key_none,
-	special_key_shift,
-	special_key_alt_gr,
-	special_key_fn,
-	special_key_close_keyboard,
-	//Used to put more space between keys
-	special_key_alt,
-	special_key_ctrl,
-	special_key_spacer,
-} special_key_;
-
-typedef struct keyboard_layout_Key_t {
-	const char* clickedText;
-	const char* displayText;
-	float width;
-	key_ keyEventType;
-	special_key_ specialKey;
-} keyboard_layout_Key_t;
-
-typedef struct keyboard_layout_Layer_t {
-	keyboard_layout_Key_t normalKeys[8][35];
-} keyboard_layout_Layer_t;
-
-typedef struct keyboard_layout_t {
-	keyboard_layout_Layer_t text_layer[5];
-	keyboard_layout_Layer_t number_layer[5];
-	keyboard_layout_Layer_t number_decimal_layer[5];
-	keyboard_layout_Layer_t number_signed_layer[5];
-	keyboard_layout_Layer_t number_signed_decimal_layer[5];
-	// of all of these arrays
-	// first layer is normal key layout array index 0
-    // second layer is shift array index 1
-	// third layer is AltGr array index 2
-	// fourth layer is AltGr + Shift array index 3
-	// fifth layer in fnkey array index 4
-} keyboard_layout_t;
 
 SK_API int                   input_pointer_count  (input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));

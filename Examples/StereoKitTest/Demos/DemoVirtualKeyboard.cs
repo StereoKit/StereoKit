@@ -19,18 +19,29 @@ class DemoVirtualKeyboard : ITest
 		UI.Button("this button will not");
 		UI.PopKeyboardFocusSteal();
 		UI.Input("testText", ref data);
+		UI.Label("uri field");
+		UI.SameLine();
+		UI.Input("testText", ref data);
 		UI.Label("number field Signed Decimal");
 		UI.SameLine();
-		UI.Input("Test number Signed Decimal", ref number, default,true,KeyboardInputType.Number_Signed_Decimal);
+		UI.Input("Test number Signed Decimal", ref number, default, InputTextContextType.NumberSignedDecimal);
 		UI.Label("number field Signed");
 		UI.SameLine();
-		UI.Input("Test number Signed", ref number, default, true, KeyboardInputType.Number_Signed);
+		UI.Input("Test number Signed", ref number, default, InputTextContextType.NumberSigned);
 		UI.Label("number field");
 		UI.SameLine();
-		UI.Input("Test number", ref number, default, true, KeyboardInputType.Number);
-		UI.Label("Force Virtual Keyboard");
+		UI.Input("Test number", ref number, default, InputTextContextType.Number);
+		var forceKeyboard = Platform.ForceVirtualKeyboard;
+		if(UI.Toggle("Force Virtual Keyboard",ref forceKeyboard))
+        {
+			Platform.ForceVirtualKeyboard = forceKeyboard;
+		}
 		UI.SameLine();
-		UI.Input("Test force virtual", ref noneNative, default, false);
+		var oepnKeyboard = Platform.KeyboardVisible;
+		if (UI.Toggle("Open Keyboard", ref oepnKeyboard))
+		{
+			Platform.KeyboardShow(oepnKeyboard,InputTextContextType.Text);
+		}
 		UI.WindowEnd();
 	}
 

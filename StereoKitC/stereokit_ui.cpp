@@ -1520,7 +1520,7 @@ inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { r
 inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }
 
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
-bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool useNativeKeyboard,keyboard_input_type_ type) {
+bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, input_text_context_type_ type) {
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
@@ -1536,7 +1536,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool 
 	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
 
 	if (state & button_state_just_active) {
-		platform_keyboard_show(true, useNativeKeyboard,type);
+		platform_keyboard_show(true,type);
 		skui_input_target = id_hash;
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
@@ -1557,7 +1557,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool 
 				if (h.focused) {
 					if ((nokeyboard_steal_stack_ids.index_of(h.focused) < 0)) {
 						skui_input_target = 0;
-						platform_keyboard_show(false, useNativeKeyboard, type);
+						platform_keyboard_show(false, type);
 					}
 				}
 			}
@@ -1580,13 +1580,13 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool 
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
-				platform_keyboard_show(false, useNativeKeyboard, type);
+				platform_keyboard_show(false, type);
 				result = true;
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
 				skui_input_target = 0;
-				platform_keyboard_show(false, useNativeKeyboard, type);
+				platform_keyboard_show(false, type);
 			} else {
 				add = curr;
 			}
@@ -1614,11 +1614,11 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size,bool 
 	return result;
 }
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, bool useNativeKeyboard, keyboard_input_type_ type) {
-	return ui_input_g<char, text_size>(id, buffer, buffer_size, size, useNativeKeyboard, type);
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, input_text_context_type_ type) {
+	return ui_input_g<char, text_size>(id, buffer, buffer_size, size, type);
 }
-bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, bool useNativeKeyboard, keyboard_input_type_ type) {
-	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size, useNativeKeyboard, type);
+bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, input_text_context_type_ type) {
+	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size, type);
 }
 
 ///////////////////////////////////////////

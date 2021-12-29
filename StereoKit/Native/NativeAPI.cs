@@ -46,7 +46,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   matrix_extract_scale   (in Matrix transform);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat   matrix_extract_rotation(in Matrix transform);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   matrix_extract_pose    (in Matrix transform);
-
+		
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool plane_ray_intersect    (Plane plane, Ray ray, out Vec3 out_pt);
@@ -403,6 +403,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          (string name, out IntPtr out_data, out UIntPtr out_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         (string name, [In] byte[] data, UIntPtr size);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_get_force_virtualkeyboard_keyboard();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_set_force_virtualkeyboard_keyboard(bool value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_visible();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show(bool show,InputTextContextType inputType);
 
 		///////////////////////////////////////////
 
@@ -534,7 +538,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16      (string text, ref int pressed);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16   (string text, ref int pressed, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model          (IntPtr model, Vec2 ui_size, float model_scale);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size, bool useNativeKeyboard = true, KeyboardInputType type = KeyboardInputType.Text);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size, InputTextContextType type = InputTextContextType.Text);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16     (string id,   ref float value, float min, float max, float step, float width, UIConfirm confirm_method);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_f64_16 (string id,   ref double value, double min, double max, double step, float width, UIConfirm confirm_method);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16(string text, ref Pose movement, Bounds handle, int draw, UIMove move_type);
