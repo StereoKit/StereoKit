@@ -146,7 +146,15 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	}
 #endif
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
+	FILE *fp = _wfopen(wfilename, L"rb");
+	free(wfilename);
+#else
 	FILE *fp = fopen(filename, "rb");
+#endif
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't find %s", filename);
 		return false;
@@ -179,7 +187,15 @@ bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 		return true;
 #endif
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
+	FILE *fp = _wfopen(wfilename, L"wb");
+	free(wfilename);
+#else
 	FILE *fp = fopen(filename, "wb");
+#endif
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't write %s", filename);
 		return false;
