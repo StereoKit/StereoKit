@@ -5,23 +5,6 @@ namespace StereoKit
 {
 	public enum SpatialNodeType { Static, Dynamic }
 
-	/// <summary>A settings flag that lets you describe the behavior of how
-	/// StereoKit will refresh data about the world mesh, if applicable. This
-	/// is used with `World.RefreshType`.</summary>
-	public enum WorldRefresh
-	{
-		/// <summary>Refreshing occurs when the user leaves the area that was
-		/// most recently scanned. This area is a sphere that is 0.5 of the
-		/// World.RefreshRadius.</summary>
-		Area,
-		/// <summary>Refreshing happens at timer intervals. If an update
-		/// doesn't happen in time, the next update will happen as soon as
-		/// possible. The timer interval is configurable via
-		/// `World.RefreshInterval`.
-		/// </summary>
-		Timer,
-	}
-
 	/// <summary>World contains information about the real world around the 
 	/// user. This includes things like play boundaries, scene understanding,
 	/// and other various things.</summary>
