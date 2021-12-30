@@ -113,11 +113,19 @@ namespace StereoKit
 
 		string   prefix = new string('\t', indent) + "/// ";
 		string[] lines  = txt.Split("\n");
-		lines[0] = "<summary>"+lines[0];
-		lines[lines.Length-1] = lines[lines.Length-1]+"</summary>";
+		bool     first  = true;
 
 		for (int i = 0; i < lines.Length; i++)
-			lines[i] = prefix + lines[i];
+		{
+			if (lines[i].StartsWith("obsolete:"))
+				lines[i] = $"{new string('\t', indent)}[Obsolete(\"{lines[i].Substring("obsolete:".Length).Trim()}\")]";
+			else { 
+				lines[i] = prefix + (first?"<summary>":"") + lines[i];
+				first = false;
+			}
+		}
+		
+		lines[lines.Length - 1] = lines[lines.Length - 1] + "</summary>";
 		return string.Join("\n", lines);
 	}
 

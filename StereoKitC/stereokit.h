@@ -875,16 +875,21 @@ typedef enum material_param_ {
 	material_param_unknown = 0,
 	/*A single 32 bit float value.*/
 	material_param_float = 1,
-	/*A color value described by 4 floating point values.*/
+	/*A color value described by 4 floating point values. Memory-wise this is
+	  the same as a Vector4, but in the shader this variable has a ':color'
+	  tag applied to it using StereoKits's shader info syntax, indicating it's
+	  a color value. Color values for shaders should be in linear space, not
+	  gamma.*/
 	material_param_color128 = 2,
-	/*A 2 component vector composed of loating point values.*/
-	material_param_vector_2 = 3,
-	/*A 3 component vector composed of loating point values.*/
-	material_param_vector_3 = 4,
-	/*A 4 component vector composed of loating point values.*/
-	material_param_vector_4 = 5,
-	/* obsolete: should use Vector_4 pram instead
-	TODO: remove in v0.4*/
+	/*A 2 component vector composed of floating point values.*/
+	material_param_vector2 = 3,
+	/*A 3 component vector composed of floating point values.*/
+	material_param_vector3 = 4,
+	/*A 4 component vector composed of floating point values.*/
+	material_param_vector4 = 5,
+	/*obsolete: Replaced by MaterialParam.Vector4
+	  A 4 component vector composed of floating point values.
+	  TODO: Remove in v0.4*/
 	material_param_vector = 5,
 	/*A 4x4 matrix of floats.*/
 	material_param_matrix = 6,

@@ -35,7 +35,9 @@ inline size_t material_param_size(material_param_ type) {
 	switch (type) {
 	case material_param_float:    return sizeof(float);
 	case material_param_color128: return sizeof(color128);
-	case material_param_vector_4:   return sizeof(vec4);
+	case material_param_vector4:  return sizeof(vec4);
+	case material_param_vector3:  return sizeof(vec3);
+	case material_param_vector2:  return sizeof(vec2);
 	case material_param_matrix:   return sizeof(matrix);
 	case material_param_texture:  return sizeof(tex_t);
 	default: log_err("Bad material param type"); return 0;
@@ -454,7 +456,7 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 					// float4 param with the name [texname]_i
 					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
 					vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
-					material_set_param_id(material, tex_info_hash, material_param_vector_4, &info);
+					material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
 				}
 			}
 			return true;
@@ -552,13 +554,13 @@ void material_get_param_info(material_t material, int32_t index, char **out_name
 			if (info->type == skg_shader_var_float) {
 				if      (info->type_count == 16) *out_type = material_param_matrix;
 				else if (info->type_count == 1 ) *out_type = material_param_float;
-				else if (info->type_count == 2) *out_type = material_param_vector_2;
-				else if (info->type_count == 3) *out_type = material_param_vector_3;
-				else if (info->type_count == 4) {
+				else if (info->type_count == 2 ) *out_type = material_param_vector2;
+				else if (info->type_count == 3 ) *out_type = material_param_vector3;
+				else if (info->type_count == 4 ) {
 					if (string_eq_nocase(info->extra, "color"))
 						*out_type = material_param_color128;
 					else
-						*out_type = material_param_vector_4;
+						*out_type = material_param_vector4;
 				}
 			}
 		}

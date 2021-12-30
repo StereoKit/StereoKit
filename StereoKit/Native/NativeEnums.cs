@@ -401,16 +401,21 @@ namespace StereoKit
 		Unknown      = 0,
 		/// <summary>A single 32 bit float value.</summary>
 		Float        = 1,
-		/// <summary>A color value described by 4 floating point values.</summary>
+		/// <summary>A color value described by 4 floating point values. Memory-wise this is
+		/// the same as a Vector4, but in the shader this variable has a ':color'
+		/// tag applied to it using StereoKits's shader info syntax, indicating it's
+		/// a color value. Color values for shaders should be in linear space, not
+		/// gamma.</summary>
 		Color128     = 2,
-		/// <summary>A 2 component vector composed of loating point values.</summary>
+		/// <summary>A 2 component vector composed of floating point values.</summary>
 		Vector2      = 3,
-		/// <summary>A 3 component vector composed of loating point values.</summary>
+		/// <summary>A 3 component vector composed of floating point values.</summary>
 		Vector3      = 4,
-		/// <summary>A 4 component vector composed of loating point values.</summary>
+		/// <summary>A 4 component vector composed of floating point values.</summary>
 		Vector4      = 5,
-		/// <summary>obsolete: should use Vector_4 pram instead
-		/// TODO: remove in v0.4</summary>
+		[Obsolete("Replaced by MaterialParam.Vector4")]
+		/// <summary>A 4 component vector composed of floating point values.
+		/// TODO: Remove in v0.4</summary>
 		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix       = 6,
