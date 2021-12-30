@@ -13,7 +13,7 @@ namespace sk {
 				{
 					{
 						{
-							{  u"`",  u"`",1,key_backtick},{u"1", u"1",1,key_1}, {u"2", u"2",1,key_2}, {u"3", u"3",1,key_3}, {u"4", u"4",1,key_4}, {u"5", u"5",1,key_5}, {u"6", u"6",1,key_6}, {u"7", u"7",1,key_7}, {u"8", u"8",1,key_8}, {u"9", u"9",1,key_9}, {u"0", u"0",1,key_0}, {u"-", u"-",1,key_minus}, {u"=", u"=",1,key_equals},{u"\b", u"<--",1.5f,key_backspace},{u"", u"",1.5f,key_none}
+							{  u"`",  u"`",1,key_backtick},{u"1", u"1",1,key_1}, {u"2", u"2",1,key_2}, {u"3", u"3",1,key_3}, {u"4", u"4",1,key_4}, {u"5", u"5",1,key_5}, {u"6", u"6",1,key_6}, {u"7", u"7",1,key_7}, {u"8", u"8",1,key_8}, {u"9", u"9",1,key_9}, {u"0", u"0",1,key_0}, {u"-", u"-",1,key_minus}, {u"=", u"=",1,key_equals},{u"\b", u"<--",1.5f,key_backspace}
 						},
 						{
 							{u"\t", u"Tab",1.5,key_tab},{u"q", u"q",1,key_q},{u"w", u"w",1,key_w},{u"e", u"e",1,key_e},{u"r", u"r",1,key_r},{u"t", u"t",1,key_t},{u"y", u"y",1,key_y},{u"u", u"u",1,key_u},{u"i", u"i",1,key_i},{u"o", u"o",1,key_o},{u"p", u"p",1,key_p},{u"[", u"[",1,key_bracket_open},{u"]", u"]",1,key_bracket_close},{u"\\", u"\\",1,key_slash_back}
@@ -281,7 +281,29 @@ namespace sk {
 		input_type = type;
 		if (open != keyboard_open) {
 			if (open) {
-				keyboard_shift = false;
+				if (keyboard_alt) {
+					input_keyboard_inject_release(key_alt);
+					keyboard_alt = false;
+				}
+				if (keyboard_altgr) {
+					input_keyboard_inject_release(key_alt);
+					keyboard_altgr = false;
+				}
+				if (keyboard_ctrl) {
+					input_keyboard_inject_release(key_ctrl);
+					keyboard_ctrl = false;
+				}
+				if (keyboard_fn) {
+					keyboard_fn = false;
+				}
+				if (keyboard_alt) {
+					input_keyboard_inject_release(key_alt);
+					keyboard_alt = false;
+				}
+				if (keyboard_shift) {
+					input_keyboard_inject_release(key_shift);
+					keyboard_shift = false;
+				}
 			}
 			keyboard_open = open;
 		}
@@ -300,13 +322,9 @@ namespace sk {
 	void send_key_data(const char16_t* charkey,key_ key) {
 		pressed_keys.add(key);
 		input_keyboard_inject_press(key);
-		if (charkey != nullptr) {
-			int index = 0;
-			while (charkey[index] != '\0')
-			{
-				input_text_inject_char(charkey[index]);
-				index++;
-			}
+		char32_t c = 0;
+		while (utf16_decode_fast_b(charkey, &charkey, &c)) {
+			input_text_inject_char(c);
 		}
 	}
 
@@ -320,15 +338,6 @@ namespace sk {
 
 	void virtualkeyboard_keypress(keyboard_layout_Key_t key) {
 		send_key_data(key.clicked_text, key.key_event_type);
-		if (key.special_key == special_key_shift) {
-			keyboard_shift = !keyboard_shift;
-		}
-		if (key.special_key == special_key_alt_gr) {
-			keyboard_altgr = !keyboard_altgr;
-		}
-		if (key.special_key == special_key_fn) {
-			keyboard_fn = !keyboard_fn;
-		}
 		if (key.special_key == special_key_close_keyboard) {
 			keyboard_open = false;
 		}
