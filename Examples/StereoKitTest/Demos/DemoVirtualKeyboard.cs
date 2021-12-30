@@ -20,16 +20,16 @@ class DemoVirtualKeyboard : ITest
 		UI.Input("testText", ref data);
 		UI.Label("uri field");
 		UI.SameLine();
-		UI.Input("test Text uri", ref data,default,InputTextContextType.TextUri);
+		UI.Input("test Text uri", ref data,default, TextContext.TextUri);
 		UI.Label("number field Signed Decimal");
 		UI.SameLine();
-		UI.Input("Test number Signed Decimal", ref number, default, InputTextContextType.NumberSignedDecimal);
+		UI.Input("Test number Signed Decimal", ref number, default, TextContext.NumberSignedDecimal);
 		UI.Label("number field Signed");
 		UI.SameLine();
-		UI.Input("Test number Signed", ref number, default, InputTextContextType.NumberSigned);
+		UI.Input("Test number Signed", ref number, default, TextContext.NumberSigned);
 		UI.Label("number field");
 		UI.SameLine();
-		UI.Input("Test number", ref number, default, InputTextContextType.Number);
+		UI.Input("Test number", ref number, default, TextContext.Number);
 		var forceKeyboard = Platform.ForceVirtualKeyboard;
 		if(UI.Toggle("Force Virtual Keyboard",ref forceKeyboard))
         {
@@ -39,7 +39,7 @@ class DemoVirtualKeyboard : ITest
 		var oepnKeyboard = Platform.KeyboardVisible;
 		if (UI.Toggle("Open Keyboard", ref oepnKeyboard))
 		{
-			Platform.KeyboardShow(oepnKeyboard,InputTextContextType.Text);
+			Platform.KeyboardShow(oepnKeyboard, TextContext.Text);
 		}
 		UI.WindowEnd();
 	}

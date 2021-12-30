@@ -362,7 +362,7 @@ void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value) {
 
 ///////////////////////////////////////////
 
-void platform_keyboard_show(bool32_t visible, input_text_context_type_ type) {
+void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	if (!force_virtualkeyboard_keyboard) {
 #if defined(SK_OS_WINDOWS_UWP)
 		uwp_show_keyboard(visible);

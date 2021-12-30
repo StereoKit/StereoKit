@@ -270,13 +270,13 @@ namespace sk {
 	pose_t keyboard_pose = { {-0.1f, 0.1f, -0.2f},quat_lookat({0,0,0},{1,1,1})};
 	array_t<key_> pressed_keys;
 	const keyboard_layout_t* current_keyboard_layout;
-	input_text_context_type_ input_type;
+	text_context_ input_type;
 	const keyboard_layout_t* virtualkeyboard_get_system_keyboard_layout()
 	{
 		return &virtualkeyboard_get_uskeyboard_layout;
 	}
 
-	void virtualkeyboard_open(bool open, input_text_context_type_ type)
+	void virtualkeyboard_open(bool open, text_context_ type)
 	{
 		input_type = type;
 		if (open != keyboard_open) {
@@ -373,19 +373,19 @@ namespace sk {
 			const keyboard_layout_Layer_t* layer = &current_keyboard_layout->text_layer[typeIndex];
 			switch (input_type)
 			{
-			case sk::input_text_context_type_number:
+			case sk::text_context_number:
 				layer = &(current_keyboard_layout->number_layer[typeIndex]);
 				break;
-			case sk::input_text_context_type_number_decimal:
+			case sk::text_context_number_decimal:
 				layer = &current_keyboard_layout->number_decimal_layer[typeIndex];
 				break;
-			case sk::input_text_context_type_number_signed:
+			case sk::text_context_number_signed:
 				layer = &current_keyboard_layout->number_signed_layer[typeIndex];
 				break;
-			case sk::input_text_context_type_number_signed_decimal:
+			case sk::text_context_number_signed_decimal:
 				layer = &current_keyboard_layout->number_signed_decimal_layer[typeIndex];
 				break;
-			case sk::input_text_context_type_text_uri:
+			case sk::text_context_text_uri:
 				layer = &current_keyboard_layout->text_uri_layer[typeIndex];
 				break;
 			}

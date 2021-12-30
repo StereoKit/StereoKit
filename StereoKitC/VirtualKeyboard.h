@@ -46,7 +46,7 @@ namespace sk {
 	void     virtualkeyboard_initialize();
 
 	void     virtualkeyboard_update();
-	void     virtualkeyboard_open(bool open, input_text_context_type_ type);
+	void     virtualkeyboard_open(bool open, text_context_ type);
 	bool     virtualkeyboard_get_open();
 
 #ifdef __cplusplus

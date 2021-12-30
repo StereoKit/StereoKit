@@ -210,24 +210,24 @@ SK_MakeFlag(render_layer_);
 /*
   Specifies what type of input it is number or text
 */
-typedef enum input_text_context_type_ {
+typedef enum text_context_ {
 	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
-	input_text_context_type_text = 1 << 1,
+	text_context_text = 1 << 1,
 	/* Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag*/
-	input_text_context_type_text_uri = 1 << 1 | 1 << 3,
+	text_context_text_uri = 1 << 1 | 1 << 3,
 	/* Will tell the virtual keyboard or system keyboard to be a private form of input so user*/
-	input_text_context_type_text_password = 1 << 1 | 1 << 4,
+	text_context_text_password = 1 << 1 | 1 << 4,
 	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
-	input_text_context_type_number = 1 << 2,
+	text_context_number = 1 << 2,
 	/*Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag*/
-	input_text_context_type_number_decimal = 1 << 3 | 1 << 2,
+	text_context_number_decimal = 1 << 3 | 1 << 2,
 	/*Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key*/
-	input_text_context_type_number_signed = 1 << 4 | 1 << 2,
+	text_context_number_signed = 1 << 4 | 1 << 2,
 	/*Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys*/
-	input_text_context_type_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
+	text_context_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
 
-} input_text_context_type_;
-SK_MakeFlag(input_text_context_type_);
+} text_context_;
+SK_MakeFlag(text_context_);
 
 typedef struct sk_settings_t {
 	const char    *app_name;
@@ -1329,7 +1329,7 @@ SK_API bool32_t platform_write_file         (const char *filename, void *data, s
 
 SK_API bool32_t platform_keyboard_get_force_virtualkeyboard_keyboard();
 SK_API void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value);
-SK_API void  platform_keyboard_show(bool32_t visible, input_text_context_type_ type);
+SK_API void  platform_keyboard_show(bool32_t visible, text_context_ type);
 SK_API bool32_t  platform_keyboard_visible();
 
 ///////////////////////////////////////////

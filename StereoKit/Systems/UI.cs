@@ -430,7 +430,7 @@ namespace StereoKit
 		/// </param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), InputTextContextType type = InputTextContextType.Text) {
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
 			StringBuilder builder = value != null ? 
 				new StringBuilder(value, value.Length + 16) :
 				new StringBuilder(16);

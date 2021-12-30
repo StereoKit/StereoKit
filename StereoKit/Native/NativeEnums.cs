@@ -162,7 +162,7 @@ namespace StereoKit
 
 	/// <summary>Specifies what type of input it is number or text</summary>
 	[Flags]
-	public enum InputTextContextType {
+	public enum TextContext {
 		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
 		Text         = 1 << 1,
 		/// <summary>Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag</summary>

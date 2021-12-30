@@ -51,7 +51,7 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="show">Tells whether or not to open or close the keyboard</param>
 		/// <param name="inputType">Defines what type of keyboard to be shown if it is a Numpad for a full keyboard.</param>
-		public static void KeyboardShow(bool show, InputTextContextType inputType)
+		public static void KeyboardShow(bool show, TextContext inputType)
         {
 			NativeAPI.platform_keyboard_show(show,inputType);
         }
