@@ -171,12 +171,6 @@ namespace StereoKit
 		TextPassword = 1 << 1 | 1 << 4,
 		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
 		Number       = 1 << 2,
-		/// <summary>Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag</summary>
-		NumberDecimal = 1 << 3 | 1 << 2,
-		/// <summary>Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key</summary>
-		NumberSigned = 1 << 4 | 1 << 2,
-		/// <summary>Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys</summary>
-		NumberSignedDecimal = 1 << 3 | 1 << 4 | 1 << 2,
 	}
 
 	/// <summary>Textures come in various types and flavors! These are bit-flags

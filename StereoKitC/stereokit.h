@@ -219,13 +219,13 @@ typedef enum text_context_ {
 	text_context_text_password = 1 << 1 | 1 << 4,
 	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
 	text_context_number = 1 << 2,
-	/*Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag*/
-	text_context_number_decimal = 1 << 3 | 1 << 2,
-	/*Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key*/
-	text_context_number_signed = 1 << 4 | 1 << 2,
-	/*Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys*/
-	text_context_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
-
+	// TODO: remove this if deside not to support
+	///*Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag*/
+	//text_context_number_decimal = 1 << 3 | 1 << 2,
+	///*Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key*/
+	//text_context_number_signed = 1 << 4 | 1 << 2,
+	///*Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys*/
+	//text_context_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
 } text_context_;
 SK_MakeFlag(text_context_);
 

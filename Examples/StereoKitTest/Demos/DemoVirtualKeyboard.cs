@@ -14,6 +14,7 @@ class DemoVirtualKeyboard : ITest
     {
         UI.WindowBegin("Virtual Keyboard", ref windowPose);
 		UI.Button("this button will take the keyboard focus");
+		UI.SameLine();
 		UI.PushKeyboardFocusSteal(false);
 		UI.Button("this button will not");
 		UI.PopKeyboardFocusSteal();
@@ -21,13 +22,7 @@ class DemoVirtualKeyboard : ITest
 		UI.Label("uri field");
 		UI.SameLine();
 		UI.Input("test Text uri", ref data,default, TextContext.TextUri);
-		UI.Label("number field Signed Decimal");
-		UI.SameLine();
-		UI.Input("Test number Signed Decimal", ref number, default, TextContext.NumberSignedDecimal);
-		UI.Label("number field Signed");
-		UI.SameLine();
-		UI.Input("Test number Signed", ref number, default, TextContext.NumberSigned);
-		UI.Label("number field");
+		UI.Label("number field does not lock what can be typed in");
 		UI.SameLine();
 		UI.Input("Test number", ref number, default, TextContext.Number);
 		var forceKeyboard = Platform.ForceVirtualKeyboard;

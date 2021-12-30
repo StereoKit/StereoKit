@@ -29,18 +29,19 @@ namespace sk {
 	} keyboard_layout_Layer_t;
 
 	typedef struct keyboard_layout_t {
-		keyboard_layout_Layer_t text_layer[5];
-		keyboard_layout_Layer_t text_uri_layer[5];
-		keyboard_layout_Layer_t number_layer[5];
-		keyboard_layout_Layer_t number_decimal_layer[5];
-		keyboard_layout_Layer_t number_signed_layer[5];
-		keyboard_layout_Layer_t number_signed_decimal_layer[5];
 		// of all of these arrays
 		// first layer is normal key layout array index 0
 		// second layer is shift array index 1
 		// third layer is AltGr array index 2
 		// fourth layer is AltGr + Shift array index 3
 		// fifth layer in fnkey array index 4
+		keyboard_layout_Layer_t text_layer[5];
+		keyboard_layout_Layer_t text_uri_layer[5];
+		keyboard_layout_Layer_t number_layer[5];
+		//  TODO: remove this if deside not to support
+		//keyboard_layout_Layer_t number_decimal_layer[5];
+		//keyboard_layout_Layer_t number_signed_layer[5];
+		//keyboard_layout_Layer_t number_signed_decimal_layer[5];
 	} keyboard_layout_t;
 
 	void     virtualkeyboard_initialize();

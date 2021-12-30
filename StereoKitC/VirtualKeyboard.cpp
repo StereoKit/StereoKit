@@ -131,116 +131,24 @@ namespace sk {
 							{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
 						},
 						{
-							{u"0", u"0",3.6,key_0}
-						}
-					}
-				},
-			{
-				//shift
-			},
-			{
-				// altgr
-			},
-			{
-				// altgr and shift
-			},
-			{
-				// fn
-			}
-		},
-		/////////////////////////////////////////////////////////////////////////////
-		////////////       decimal input        //////////////
-			{
-				//Normal
-				{
-					{
-						{
-							{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
-						},
-						{
-							{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
-						},
-						{
-							{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
-						},
-						{
-							{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
-						},
-						{
-							{u"0", u"0",1.6,key_0},{u".", u".",1.6,key_period}
-						}
-					}
-				},
-			{
-				//shift
-			},
-			{
-				// altgr
-			},
-			{
-				// altgr and shift
-			},
-			{
-				// fn
-			}
-		},
-		/////////////////////////////////////////////////////////////////////////////
-		////////////       signed input        //////////////
-			{
-				//Normal
-				{
-					{
-						{
-							{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
-						},
-						{
-							{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
-						},
-						{
-							{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
-						},
-						{
-							{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
-						},
-						{
-							{u"0", u"0",1.6,key_0},{u"-", u"-",1.6,key_minus}
-						}
-					}
-				},
-			{
-				//shift
-			},
-			{
-				// altgr
-			},
-			{
-				// altgr and shift
-			},
-			{
-				// fn
-			}
-			},
-			/////////////////////////////////////////////////////////////////////////////
-			////////////       signed decimal input        //////////////
-			{
-				//Normal
-				{
-					{
-						{
-							{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
-						},
-						{
-							{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
-						},
-						{
-							{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
-						},
-						{
-							{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
-						},
-						{
 							{u"0", u"0",1,key_0},{u".", u".",1,key_period},{u"-", u"-",1,key_minus}
 						}
+						/// TODO: remove this if deside not to support
+						////{
+						////	{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
+						////},
+						////{
+						////	{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
+						////},
+						////{
+						////	{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
+						////},
+						////{
+						////	{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
+						////},
+						////{
+						////	{u"0", u"0",3.6,key_0}
+						////}
 					}
 				},
 			{
@@ -255,8 +163,117 @@ namespace sk {
 			{
 				// fn
 			}
-			},
-			/////////////////////////////////////////////////////////////////////////////
+		},
+		/////////////////////////////////////////////////////////////////////////////
+		// 			// TODO: remove this if deside not to support
+		//////////////////       decimal input        ///////////////////////////////
+		//////	{
+		//////		//Normal
+		//////		{
+		//////			{
+		//////				{
+		//////					{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
+		//////				},
+		//////				{
+		//////					{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
+		//////				},
+		//////				{
+		//////					{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
+		//////				},
+		//////				{
+		//////					{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
+		//////				},
+		//////				{
+		//////					{u"0", u"0",1.6,key_0},{u".", u".",1.6,key_period}
+		//////				}
+		//////			}
+		//////		},
+		//////	{
+		//////		//shift
+		//////	},
+		//////	{
+		//////		// altgr
+		//////	},
+		//////	{
+		//////		// altgr and shift
+		//////	},
+		//////	{
+		//////		// fn
+		//////	}
+		//////},
+		///////////////////////////////////////////////////////////////////////////////////
+		//////////////////       signed input        //////////////
+		//////	{
+		//////		//Normal
+		//////		{
+		//////			{
+		//////				{
+		//////					{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
+		//////				},
+		//////				{
+		//////					{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
+		//////				},
+		//////				{
+		//////					{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
+		//////				},
+		//////				{
+		//////					{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
+		//////				},
+		//////				{
+		//////					{u"0", u"0",1.6,key_0},{u"-", u"-",1.6,key_minus}
+		//////				}
+		//////			}
+		//////		},
+		//////	{
+		//////		//shift
+		//////	},
+		//////	{
+		//////		// altgr
+		//////	},
+		//////	{
+		//////		// altgr and shift
+		//////	},
+		//////	{
+		//////		// fn
+		//////	}
+		//////	},
+		//////	/////////////////////////////////////////////////////////////////////////////
+		//////	////////////       signed decimal input        //////////////
+		//////	{
+		//////		//Normal
+		//////		{
+		//////			{
+		//////				{
+		//////					{u"\r", u"Enter",1.6,key_return},{u"\b", u"<--",1.6f,key_backspace}
+		//////				},
+		//////				{
+		//////					{u"7", u"7",1,key_7},{u"8", u"8",1,key_8},{u"9", u"9",1,key_9}
+		//////				},
+		//////				{
+		//////					{u"4", u"4",1,key_4},{u"5", u"5",1,key_5},{u"6", u"6",1,key_6}
+		//////				},
+		//////				{
+		//////					{u"1", u"1",1,key_1},{u"2", u"2",1,key_2},{u"3", u"3",1,key_3}
+		//////				},
+		//////				{
+		//////					{u"0", u"0",1,key_0},{u".", u".",1,key_period},{u"-", u"-",1,key_minus}
+		//////				}
+		//////			}
+		//////		},
+		//////	{
+		//////		//shift
+		//////	},
+		//////	{
+		//////		// altgr
+		//////	},
+		//////	{
+		//////		// altgr and shift
+		//////	},
+		//////	{
+		//////		// fn
+		//////	}
+		//////	},
+		//////	/////////////////////////////////////////////////////////////////////////////
 		};
 
 	bool32_t keyboard_fn = false;
@@ -376,15 +393,16 @@ namespace sk {
 			case sk::text_context_number:
 				layer = &(current_keyboard_layout->number_layer[typeIndex]);
 				break;
-			case sk::text_context_number_decimal:
-				layer = &current_keyboard_layout->number_decimal_layer[typeIndex];
-				break;
-			case sk::text_context_number_signed:
-				layer = &current_keyboard_layout->number_signed_layer[typeIndex];
-				break;
-			case sk::text_context_number_signed_decimal:
-				layer = &current_keyboard_layout->number_signed_decimal_layer[typeIndex];
-				break;
+			// TODO: remove this if deside not to support
+			//case sk::text_context_number_decimal:
+			//	layer = &current_keyboard_layout->number_decimal_layer[typeIndex];
+			//	break;
+			//case sk::text_context_number_signed:
+			//	layer = &current_keyboard_layout->number_signed_layer[typeIndex];
+			//	break;
+			//case sk::text_context_number_signed_decimal:
+			//	layer = &current_keyboard_layout->number_signed_decimal_layer[typeIndex];
+			//	break;
 			case sk::text_context_text_uri:
 				layer = &current_keyboard_layout->text_uri_layer[typeIndex];
 				break;
