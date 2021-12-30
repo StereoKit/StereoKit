@@ -403,8 +403,12 @@ namespace StereoKit
 		Float,
 		/// <summary>A color value described by 4 floating point values.</summary>
 		Color128,
+		/// <summary>A 2 component vector composed of loating point values.</summary>
+		Vector2,
+		/// <summary>A 3 component vector composed of loating point values.</summary>
+		Vector3,
 		/// <summary>A 4 component vector composed of loating point values.</summary>
-		Vector,
+		Vector4,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix,
 		/// <summary>Texture information!</summary>

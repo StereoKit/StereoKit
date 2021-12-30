@@ -877,8 +877,12 @@ typedef enum material_param_ {
 	material_param_float,
 	/*A color value described by 4 floating point values.*/
 	material_param_color128,
+	/*A 2 component vector composed of loating point values.*/
+	material_param_vector_2,
+	/*A 3 component vector composed of loating point values.*/
+	material_param_vector_3,
 	/*A 4 component vector composed of loating point values.*/
-	material_param_vector,
+	material_param_vector_4,
 	/*A 4x4 matrix of floats.*/
 	material_param_matrix,
 	/*Texture information!*/
