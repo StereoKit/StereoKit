@@ -5,7 +5,6 @@ class DemoVirtualKeyboard : ITest
 	Pose windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1, 0, 1));
 	string data = "Edit me";
 	string number = "1";
-	string noneNative = "Force none native Edit me";
 
 	public void Initialize()
 	{
@@ -21,7 +20,7 @@ class DemoVirtualKeyboard : ITest
 		UI.Input("testText", ref data);
 		UI.Label("uri field");
 		UI.SameLine();
-		UI.Input("testText", ref data);
+		UI.Input("test Text uri", ref data,default,InputTextContextType.TextUri);
 		UI.Label("number field Signed Decimal");
 		UI.SameLine();
 		UI.Input("Test number Signed Decimal", ref number, default, InputTextContextType.NumberSignedDecimal);
