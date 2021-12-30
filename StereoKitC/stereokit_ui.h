@@ -59,6 +59,9 @@ SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, mat
 SK_API void     ui_push_text_style     (text_style_t  style);
 SK_API void     ui_pop_text_style      ();
 
+SK_API void     ui_push_no_keyboard_loss(bool disallowKeyboard);
+SK_API void     ui_pop_no_keyboard_loss();
+
 SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
 SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();
@@ -119,8 +122,8 @@ SK_API bool32_t ui_toggle_sz      (const char     *text, sk_ref(bool32_t) presse
 SK_API bool32_t ui_toggle_sz_16   (const char16_t *text, sk_ref(bool32_t) pressed, vec2 size);
 //SK_API bool32_t ui_toggle_round(const char *text, bool32_t &pressed);
 SK_API void     ui_model          (model_t model, vec2 ui_size, float model_scale);
-SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero));
-SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero));
+SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
+SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API bool32_t ui_hslider        (const char     *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_16     (const char16_t *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_f64    (const char     *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));

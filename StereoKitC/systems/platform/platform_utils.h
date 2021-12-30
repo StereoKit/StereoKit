@@ -54,8 +54,6 @@ char *platform_push_path_new(const char *path, const char *directory);
 char *platform_pop_path_new (const char *path);
 
 bool  platform_keyboard_available();
-void  platform_keyboard_show     (bool visible);
-bool  platform_keyboard_visible  ();
 
 bool platform_utils_init();
 void platform_utils_update();

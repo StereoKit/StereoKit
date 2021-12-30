@@ -19,6 +19,44 @@ namespace StereoKit
 	/// methods do!</summary>
 	public static class Platform
 	{
+		#region Keyboard
+		/// <summary>
+		/// Force the use of StereoKit integrated keyboard instead of the system keyboard in case the system keyboard does not meet your needs.
+		/// </summary>
+		public static bool ForceVirtualKeyboard
+        {
+            get
+            {
+				return NativeAPI.platform_keyboard_get_force_virtualkeyboard_keyboard();
+            }
+            set
+            {
+				NativeAPI.platform_keyboard_set_force_virtualkeyboard_keyboard(value);
+            }
+        }
+
+		/// <summary>
+		/// Check if either the Stereo Kit integrated keyboard or the platform keyboard is open
+		/// </summary>
+		public static bool KeyboardVisible
+        {
+            get
+            {
+				return NativeAPI.platform_keyboard_visible();
+            }
+        }
+
+		/// <summary>
+		/// Opens system keyboard falling back to Stereo Kit integrated keyboard enless ForceVirtualKeyboard is set to true
+		/// </summary>
+		/// <param name="show">Tells whether or not to open or close the keyboard</param>
+		/// <param name="inputType">Defines what type of keyboard to be shown if it is a Numpad for a full keyboard.</param>
+		public static void KeyboardShow(bool show, TextContext inputType)
+        {
+			NativeAPI.platform_keyboard_show(show,inputType);
+        }
+		#endregion
+
 		#region File Picker
 		static Action<string>       _filePickerOnSelect;
 		static Action               _filePickerOnCancel;

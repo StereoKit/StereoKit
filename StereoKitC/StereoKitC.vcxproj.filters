@@ -184,6 +184,9 @@
     <ClCompile Include="libraries\qoi.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="VirtualKeyboard.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -424,6 +427,9 @@
     </ClInclude>
     <ClInclude Include="libraries\qoi.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualKeyboard.h">
+      <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

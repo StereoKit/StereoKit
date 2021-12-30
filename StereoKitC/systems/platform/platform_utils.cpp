@@ -12,6 +12,7 @@
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
 #include "../../asset_types/font.h"
+#include "../../VirtualKeyboard.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -367,17 +368,36 @@ bool platform_keyboard_available() {
 
 ///////////////////////////////////////////
 
-void platform_keyboard_show(bool visible) {
-#if defined(SK_OS_WINDOWS_UWP)
-	uwp_show_keyboard(visible);
-#else
-#endif
+bool32_t  force_virtualkeyboard_keyboard = false;
+bool32_t platform_keyboard_get_force_virtualkeyboard_keyboard() {
+	return force_virtualkeyboard_keyboard;
+}
+void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value) {
+	force_virtualkeyboard_keyboard = value;
 }
 
 ///////////////////////////////////////////
 
-bool platform_keyboard_visible() {
-	return false;
+void platform_keyboard_show(bool32_t visible, text_context_ type) {
+	if (!force_virtualkeyboard_keyboard) {
+#if defined(SK_OS_WINDOWS_UWP)
+		uwp_show_keyboard(visible);
+#endif
+		//Just in case the native keyboard can not load 
+		if (!platform_keyboard_available()) {
+			virtualkeyboard_open(visible,type);
+		}
+	}
+	else {
+		virtualkeyboard_open(visible,type);
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_keyboard_visible() {
+	// todo: get udp visible
+	return virtualkeyboard_get_open();
 }
 
 ///////////////////////////////////////////

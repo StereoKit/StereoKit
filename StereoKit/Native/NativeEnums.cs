@@ -160,6 +160,19 @@ namespace StereoKit
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 	}
 
+	/// <summary>Specifies what type of input it is number or text</summary>
+	[Flags]
+	public enum TextContext {
+		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
+		Text         = 1 << 1,
+		/// <summary>Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag</summary>
+		TextUri      = 1 << 1 | 1 << 3,
+		/// <summary>Will tell the virtual keyboard or system keyboard to be a private form of input so user</summary>
+		TextPassword = 1 << 1 | 1 << 4,
+		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
+		Number       = 1 << 2,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>

@@ -425,14 +425,17 @@ namespace StereoKit
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
 		/// Zero axes will auto-size.</param>
+		/// <param name="type">
+		/// Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use
+		/// </param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size = new Vec2()) {
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
 			StringBuilder builder = value != null ? 
-				new StringBuilder(value, value.Length + 4) :
-				new StringBuilder(4);
+				new StringBuilder(value, value.Length + 16) :
+				new StringBuilder(16);
 
-			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type)) { 
 				value = builder.ToString();
 				return true;
 			}
@@ -644,6 +647,19 @@ namespace StereoKit
 		/// the one before it!</summary>
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
+
+		/// <summary>
+		/// This pushes if a element will not hide the keyboard
+		/// </summary>
+		/// <param name="stealFocus">If true the elements will still hide the keyboard if false will not hide the keyboard </param>
+		public static void PushKeyboardFocusSteal(bool stealFocus)
+			=> NativeAPI.ui_push_no_keyboard_loss(!stealFocus);
+
+		/// <summary>
+		/// This removes the last pushed case if a element will not hide the keyboard
+		/// </summary>
+		public static void PopKeyboardFocusSteal()
+			=> NativeAPI.ui_pop_no_keyboard_loss();
 
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
