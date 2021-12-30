@@ -400,19 +400,22 @@ namespace StereoKit
 		/// report your case on Github Issues!</summary>
 		Unknown      = 0,
 		/// <summary>A single 32 bit float value.</summary>
-		Float,
+		Float        = 1,
 		/// <summary>A color value described by 4 floating point values.</summary>
-		Color128,
+		Color128     = 2,
 		/// <summary>A 2 component vector composed of loating point values.</summary>
-		Vector2,
+		Vector2      = 3,
 		/// <summary>A 3 component vector composed of loating point values.</summary>
-		Vector3,
+		Vector3      = 4,
 		/// <summary>A 4 component vector composed of loating point values.</summary>
-		Vector4,
+		Vector4      = 5,
+		/// <summary>obsolete: should use Vector_4 pram instead
+		/// TODO: remove in v0.4</summary>
+		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
-		Matrix,
+		Matrix       = 6,
 		/// <summary>Texture information!</summary>
-		Texture,
+		Texture      = 7,
 	}
 
 	/// <summary>This enum describes how text layout behaves within the space

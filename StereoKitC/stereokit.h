@@ -874,19 +874,22 @@ typedef enum material_param_ {
 	  report your case on Github Issues!*/
 	material_param_unknown = 0,
 	/*A single 32 bit float value.*/
-	material_param_float,
+	material_param_float = 1,
 	/*A color value described by 4 floating point values.*/
-	material_param_color128,
+	material_param_color128 = 2,
 	/*A 2 component vector composed of loating point values.*/
-	material_param_vector_2,
+	material_param_vector_2 = 3,
 	/*A 3 component vector composed of loating point values.*/
-	material_param_vector_3,
+	material_param_vector_3 = 4,
 	/*A 4 component vector composed of loating point values.*/
-	material_param_vector_4,
+	material_param_vector_4 = 5,
+	/* obsolete: should use Vector_4 pram instead
+	TODO: remove in v0.4*/
+	material_param_vector = 5,
 	/*A 4x4 matrix of floats.*/
-	material_param_matrix,
+	material_param_matrix = 6,
 	/*Texture information!*/
-	material_param_texture,
+	material_param_texture = 7,
 } material_param_;
 
 SK_API material_t        material_find            (const char *id);
