@@ -635,6 +635,25 @@ char *platform_pop_path_new(const char *path) {
 
 ///////////////////////////////////////////
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+wchar_t *platform_to_wchar(const char *utf8_string) {
+	int32_t  wsize  = MultiByteToWideChar(CP_UTF8, 0, utf8_string, -1, nullptr, 0);
+	wchar_t *result = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, utf8_string, -1, result, wsize);
+	return result;
+}
+
+char *platform_from_wchar(const wchar_t *string) {
+	int     len  = wcslen(string)+1;
+	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);
+	char *result = sk_malloc_t(char, size);
+	WideCharToMultiByte               (CP_UTF8, 0, string, len, result, size, nullptr, nullptr);
+	return result;
+}
+#endif
+
+///////////////////////////////////////////
+
 bool platform_utils_init() {
 	return true;
 }

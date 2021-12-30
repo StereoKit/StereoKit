@@ -24,14 +24,18 @@ namespace StereoKit
 		static Action               _filePickerOnCancel;
 		static Action<bool, string> _filePickerOnComplete;
 		static PickerCallback       _filePickerCallback;
-		private static void FilePickerCallback(IntPtr data, int confirmed, string file)
+		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
+			byte[] filenameUtf8 = new byte[fileLength];
+			Marshal.Copy(file, filenameUtf8, 0, fileLength);
+			string filename = Encoding.UTF8.GetString(filenameUtf8);
+
 			if (confirmed > 0) { 
-				_filePickerOnSelect?.Invoke(file);
+				_filePickerOnSelect?.Invoke(filename);
 			} else {
 				_filePickerOnCancel?.Invoke();
 			}
-			_filePickerOnComplete?.Invoke(confirmed>0, file);
+			_filePickerOnComplete?.Invoke(confirmed>0, filename);
 		}
 
 		/// <summary>Starts a file picker window! This will create a native
@@ -68,7 +72,7 @@ namespace StereoKit
 			_filePickerOnSelect   = onSelectFile;
 			_filePickerOnCancel   = onCancel;
 			_filePickerOnComplete = null;
-			NativeAPI.platform_file_picker(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>Starts a file picker window! This will create a native
 		/// file picker window if one is available in the current setup, and
@@ -105,7 +109,7 @@ namespace StereoKit
 			_filePickerOnSelect = null;
 			_filePickerOnCancel = null;
 			_filePickerOnComplete = onComplete;
-			NativeAPI.platform_file_picker(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>If the picker is visible, this will close it and 
 		/// immediately trigger a cancel event for the active picker.</summary>

@@ -364,7 +364,7 @@ namespace StereoKit
 	public delegate float AudioGenerator(float time);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, string filename);
+	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length);
 
 	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
 	public enum FingerId

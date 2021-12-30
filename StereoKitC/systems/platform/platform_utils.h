@@ -61,4 +61,9 @@ bool platform_utils_init();
 void platform_utils_update();
 void platform_utils_shutdown();
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+wchar_t *platform_to_wchar  (const char *utf8_string);
+char    *platform_from_wchar(const wchar_t *string);
+#endif
+
 }

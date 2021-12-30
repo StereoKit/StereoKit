@@ -1300,10 +1300,11 @@ typedef enum picker_mode_ {
 } picker_mode_;
 
 SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  ();
 SK_API bool32_t platform_file_picker_visible();
-SK_API bool32_t platform_read_file          (const char     *filename_utf8,  void **out_data, size_t *out_size);
-SK_API bool32_t platform_write_file         (const char     *filename_utf8,  void *data, size_t size);
+SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
+SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, size_t size);
 
 ///////////////////////////////////////////
 
