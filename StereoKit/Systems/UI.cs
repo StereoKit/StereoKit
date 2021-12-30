@@ -432,8 +432,8 @@ namespace StereoKit
 		/// </returns>
 		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), InputTextContextType type = InputTextContextType.Text) {
 			StringBuilder builder = value != null ? 
-				new StringBuilder(value, value.Length + 4) :
-				new StringBuilder(4);
+				new StringBuilder(value, value.Length + 16) :
+				new StringBuilder(16);
 
 			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type)) { 
 				value = builder.ToString();

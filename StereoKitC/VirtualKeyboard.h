@@ -17,8 +17,8 @@ namespace sk {
 	} special_key_;
 
 	typedef struct keyboard_layout_Key_t {
-		const char* clicked_text;
-		const char* display_text;
+		const char16_t* clicked_text;
+		const char16_t* display_text;
 		float width;
 		key_ key_event_type;
 		special_key_ special_key;
