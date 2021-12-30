@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -445,7 +446,7 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(file, final);
+			IntPtr inst = NativeAPI.model_create_file(Encoding.UTF8.GetBytes(file), final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -467,7 +468,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(Encoding.UTF8.GetBytes(filename), data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 

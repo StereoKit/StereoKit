@@ -119,10 +119,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, UIntPtr data_size, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color32      ([In] Color32[] data, int width, int height, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color128     ([In] Color[]   data, int width, int height, int srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file         (string file, int srgb_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file         ([In] byte[] file_utf8, int srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_file_arr     (string[] files, int file_count, int srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    int srgb_data, IntPtr lighting_info);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file (string equirectangular_file,    int srgb_data, out SphericalHarmonics lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file ([In] byte[] equirectangular_file_utf8,    int srgb_data, IntPtr lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_file ([In] byte[] equirectangular_file_utf8,    int srgb_data, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_cubemap_files(string[] cube_face_file_xxyyzz, int srgb_data, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_id              (IntPtr texture, string id);
@@ -152,7 +152,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_find        (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create      (string file);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create      ([In] byte[] file_utf8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_create_files(string[] file, int file_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   font_release     (IntPtr font);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr font_get_tex     (IntPtr font);
@@ -160,7 +160,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_find        (string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file (string filename);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_file ([In] byte[] filename_utf8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_create_mem  ([In] byte[] data, UIntPtr data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   shader_set_id      (IntPtr shader, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr shader_get_name    (IntPtr shader);
@@ -240,8 +240,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_copy              (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mesh       (IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        (string filename, [In] byte[] data, UIntPtr data_size, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file       (string filename, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_mem        ([In] byte[] filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create_file       ([In] byte[] filename_utf8, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_id            (IntPtr model, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_addref            (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release           (IntPtr model);
@@ -303,7 +303,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create     (IntPtr sprite,   SpriteType type = SpriteType.Atlased, string atlas_id = "default");
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create_file(string filename, SpriteType type = SpriteType.Atlased, string atlas_id = "default");
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create_file([In] byte[] filename_utf8, SpriteType type = SpriteType.Atlased, string atlas_id = "default");
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_set_id     (IntPtr sprite, string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_release    (IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  sprite_get_aspect (IntPtr sprite);
@@ -366,7 +366,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_find          (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      sound_set_id        (IntPtr sound, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create        (string filename);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create        ([In] byte[] filename_utf8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create_stream (float buffer_duration);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_create_samples([In] float[] samples_at_48000s, ulong sample_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    sound_generate      ([MarshalAs(UnmanagedType.FunctionPtr)] AudioGenerator function, float duration);
