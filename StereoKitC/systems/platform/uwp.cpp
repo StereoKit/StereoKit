@@ -21,6 +21,7 @@ skg_swapchain_t uwp_swapchain        = {};
 tex_t           uwp_target           = {};
 system_t       *uwp_render_sys       = nullptr;
 bool            uwp_keyboard_showing = false;
+bool            uwp_keyboard_show_evts = false;
 
 bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
@@ -128,7 +129,6 @@ public:
 		auto dispatcher                = CoreWindow::GetForCurrentThread().Dispatcher();
 		auto navigation                = SystemNavigationManager::GetForCurrentView();
 		auto currentDisplayInformation = DisplayInformation::GetForCurrentView();
-		auto inputPane                 = InputPane::GetForCurrentView();
 
 		window.SizeChanged({ this, &ViewProvider::OnWindowSizeChanged });
 
@@ -150,8 +150,7 @@ public:
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
 
-		inputPane.Showing([this](auto &&, auto &&) { uwp_keyboard_showing = true;  });
-		inputPane.Hiding ([this](auto &&, auto &&) { uwp_keyboard_showing = false; });
+
 		window   .Closed ([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
 
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
@@ -441,10 +440,20 @@ void uwp_show_keyboard(bool show) {
 	// For future improvements, see here:
 	// https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/CustomEditControl/cs/CustomEditControl.xaml.cs
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
+		auto inputPane = InputPane::GetForCurrentView();
+
+		// Registering these callbacks up in the class doesn't work, and I
+		// don't know why. Likely not worth the pain of figuring it out either.
+		if (!uwp_keyboard_show_evts) {
+			inputPane.Showing([](auto &&, auto &&) { uwp_keyboard_showing = true;  });
+			inputPane.Hiding ([](auto &&, auto &&) { uwp_keyboard_showing = false; });
+			uwp_keyboard_show_evts = true;
+		}
+
 		if (show) {
-			uwp_keyboard_showing = InputPane::GetForCurrentView().TryShow();
+			uwp_keyboard_showing = inputPane.TryShow();
 		} else {
-			if (InputPane::GetForCurrentView().TryHide()) {
+			if (inputPane.TryHide()) {
 				uwp_keyboard_showing = false;
 			}
 		}

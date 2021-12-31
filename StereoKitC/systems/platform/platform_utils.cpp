@@ -412,14 +412,11 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 ///////////////////////////////////////////
 
 bool32_t platform_keyboard_visible() {
-	if (force_fallback_keyboard) {
-		return virtualkeyboard_get_open();
-	}
 #if defined(SK_OS_WINDOWS_UWP)
-	return uwp_keyboard_visible();
-#else
-	return virtualkeyboard_get_open();
+	if (!force_fallback_keyboard)
+		return uwp_keyboard_visible();
 #endif
+	return virtualkeyboard_get_open();
 }
 
 ///////////////////////////////////////////
