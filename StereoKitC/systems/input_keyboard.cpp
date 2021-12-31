@@ -3,7 +3,7 @@
 #include "platform/platform_utils.h"
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
-#include "../VirtualKeyboard.h"
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -32,7 +32,6 @@ bool                      input_key_suspended   = false;
 
 void input_keyboard_initialize() {
 	mtx_init(&input_key_pending_mtx, mtx_plain);
-	virtualkeyboard_initialize();
 }
 
 ///////////////////////////////////////////
@@ -84,7 +83,6 @@ void input_keyboard_update() {
 			input_key_data.keys[evt.key] |=  button_state_just_inactive;
 		}
 	}
-	virtualkeyboard_update();
 }
 
 ///////////////////////////////////////////

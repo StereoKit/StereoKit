@@ -191,7 +191,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\text.cpp" />
     <ClCompile Include="systems\world.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
-    <ClCompile Include="VirtualKeyboard.cpp" />
+    <ClCompile Include="tools\virtual_keyboard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\animation.h" />
@@ -273,7 +273,8 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="systems\text.h" />
     <ClInclude Include="tools\file_picker.h" />
     <ClInclude Include="systems\world.h" />
-    <ClInclude Include="VirtualKeyboard.h" />
+    <ClInclude Include="tools\virtual_keyboard.h" />
+    <ClInclude Include="tools\virtual_keyboard_layouts.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>

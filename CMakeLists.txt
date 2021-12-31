@@ -285,6 +285,9 @@ set(SK_SRC_PLATFORM
   StereoKitC/systems/platform/win32.cpp )
 
 set(SK_SRC_TOOLS
+  StereoKitC/tools/virtual_keyboard_layouts.h
+  StereoKitC/tools/virtual_keyboard.h
+  StereoKitC/tools/virtual_keyboard.cpp
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 

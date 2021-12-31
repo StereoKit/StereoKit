@@ -403,10 +403,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_read_file          ([In] byte[] name_utf8, out IntPtr out_data, out UIntPtr out_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_write_file         ([In] byte[] name_utf8, [In] byte[] data, UIntPtr size);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_get_force_virtualkeyboard_keyboard();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_set_force_virtualkeyboard_keyboard(bool value);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_visible();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show(bool show,TextContext inputType);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int  platform_keyboard_get_force_fallback();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_set_force_fallback(int force_fallback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int  platform_keyboard_visible           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show              (int show, TextContext inputType);
 
 		///////////////////////////////////////////
 

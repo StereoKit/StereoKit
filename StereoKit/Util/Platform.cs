@@ -20,41 +20,35 @@ namespace StereoKit
 	public static class Platform
 	{
 		#region Keyboard
-		/// <summary>
-		/// Force the use of StereoKit integrated keyboard instead of the system keyboard in case the system keyboard does not meet your needs.
-		/// </summary>
-		public static bool ForceVirtualKeyboard
-        {
-            get
-            {
-				return NativeAPI.platform_keyboard_get_force_virtualkeyboard_keyboard();
-            }
-            set
-            {
-				NativeAPI.platform_keyboard_set_force_virtualkeyboard_keyboard(value);
-            }
-        }
+		/// <summary>Force the use of StereoKit's built-in fallback keyboard
+		/// instead of the system keyboard. This may be great for testing or
+		/// look and feel matching, but the system keyboard should generally be
+		/// preferred for accessibility reasons.</summary>
+		public static bool ForceFallbackKeyboard
+		{
+			get => NativeAPI.platform_keyboard_get_force_fallback() > 0;
+			set => NativeAPI.platform_keyboard_set_force_fallback(value?1:0);
+		}
 
-		/// <summary>
-		/// Check if either the Stereo Kit integrated keyboard or the platform keyboard is open
-		/// </summary>
+		/// <summary>Check if a soft keyboard is currently visible. This may be
+		/// an OS provided keyboard or StereoKit's fallback keyboard, but will
+		/// not indicate the presence of a physical keyboard.</summary>
 		public static bool KeyboardVisible
-        {
-            get
-            {
-				return NativeAPI.platform_keyboard_visible();
-            }
-        }
+			=> NativeAPI.platform_keyboard_visible() > 0;
 
-		/// <summary>
-		/// Opens system keyboard falling back to Stereo Kit integrated keyboard enless ForceVirtualKeyboard is set to true
-		/// </summary>
-		/// <param name="show">Tells whether or not to open or close the keyboard</param>
-		/// <param name="inputType">Defines what type of keyboard to be shown if it is a Numpad for a full keyboard.</param>
-		public static void KeyboardShow(bool show, TextContext inputType)
-        {
-			NativeAPI.platform_keyboard_show(show,inputType);
-        }
+		/// <summary>Request or hide a soft keyboard for the user to type on.
+		/// StereoKit will surface OS provided soft keyboards where available,
+		/// and use a fallback keyboard when not. On systems with physical
+		/// keyboards, soft keyboards may not be shown based on the user's
+		/// interaction with their physical keyboard.</summary>
+		/// <param name="show">Tells whether or not to open or close the soft
+		/// keyboard.</param>
+		/// <param name="inputType">Soft keyboards can change layout to
+		/// optimize for the type of text that's required. StereoKit will
+		/// request the soft keyboard layout that most closely represents the
+		/// TextContext provided.</param>
+		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
+			=> NativeAPI.platform_keyboard_show(show?1:0, inputType);
 		#endregion
 
 		#region File Picker

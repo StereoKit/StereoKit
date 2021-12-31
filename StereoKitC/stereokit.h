@@ -207,27 +207,6 @@ typedef enum render_layer_ {
 	render_layer_all_regular      = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
 } render_layer_;
 SK_MakeFlag(render_layer_);
-/*
-  Specifies what type of input it is number or text
-*/
-typedef enum text_context_ {
-	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
-	text_context_text = 1 << 1,
-	/* Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag*/
-	text_context_text_uri = 1 << 1 | 1 << 3,
-	/* Will tell the virtual keyboard or system keyboard to be a private form of input so user*/
-	text_context_text_password = 1 << 1 | 1 << 4,
-	/* Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.*/
-	text_context_number = 1 << 2,
-	// TODO: remove this if deside not to support
-	///*Will tell the virtual keyboard or system keyboard that the number can be a devimal to show the . key Flag*/
-	//text_context_number_decimal = 1 << 3 | 1 << 2,
-	///*Will tell the virtual keyboard or system keyboard that the number can be a signed to show the - key*/
-	//text_context_number_signed = 1 << 4 | 1 << 2,
-	///*Will tell the virtual keyboard or system keyboard that the number can be a Signed and be a Decimal to show the - and also . keys*/
-	//text_context_number_signed_decimal = 1 << 3 | 1 << 4 | 1 << 2,
-} text_context_;
-SK_MakeFlag(text_context_);
 
 typedef struct sk_settings_t {
 	const char    *app_name;
@@ -1333,6 +1312,23 @@ typedef enum picker_mode_ {
 	picker_mode_save,
 } picker_mode_;
 
+/*Soft keyboard layouts are often specific to the type of text that they're
+  editing! This enum is a collection of common text contexts that SK can pass
+  along to the OS's soft keyboard for a more optimal layout.*/
+typedef enum text_context_ {
+	/*General text editing, this is the most common type of text, and would
+	  result in a 'standard' keyboard layout.*/
+	text_context_text = 1,
+	/*Numbers and numerical values.*/
+	text_context_number = 2,
+	/*This text specifically represents some kind of URL/URI address.*/
+	text_context_uri = 10,
+	/*This is a password, and should not be visible when typed!*/
+	text_context_password = 18,
+
+} text_context_;
+SK_MakeFlag(text_context_);
+
 SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  ();
@@ -1340,10 +1336,10 @@ SK_API bool32_t platform_file_picker_visible();
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
 SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, size_t size);
 
-SK_API bool32_t platform_keyboard_get_force_virtualkeyboard_keyboard();
-SK_API void platform_keyboard_set_force_virtualkeyboard_keyboard(bool32_t value);
-SK_API void  platform_keyboard_show(bool32_t visible, text_context_ type);
-SK_API bool32_t  platform_keyboard_visible();
+SK_API bool32_t platform_keyboard_get_force_fallback();
+SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
+SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
+SK_API bool32_t platform_keyboard_visible           ();
 
 ///////////////////////////////////////////
 

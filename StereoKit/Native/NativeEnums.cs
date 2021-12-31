@@ -160,19 +160,6 @@ namespace StereoKit
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 	}
 
-	/// <summary>Specifies what type of input it is number or text</summary>
-	[Flags]
-	public enum TextContext {
-		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
-		Text         = 1 << 1,
-		/// <summary>Will tell the virtual keyboard or system keyboard to be a uri form of input good for emails Flag</summary>
-		TextUri      = 1 << 1 | 1 << 3,
-		/// <summary>Will tell the virtual keyboard or system keyboard to be a private form of input so user</summary>
-		TextPassword = 1 << 1 | 1 << 4,
-		/// <summary>Will tell the virtual keyboard or system keyboard to be text form of keyboard your standard keyboard.</summary>
-		Number       = 1 << 2,
-	}
-
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -579,6 +566,21 @@ namespace StereoKit
 		/// <summary>Allow the user to enter or select the name of the
 		/// destination file.</summary>
 		Save,
+	}
+
+	/// <summary>Soft keyboard layouts are often specific to the type of text that they're
+	/// editing! This enum is a collection of common text contexts that SK can pass
+	/// along to the OS's soft keyboard for a more optimal layout.</summary>
+	public enum TextContext {
+		/// <summary>General text editing, this is the most common type of text, and would
+		/// result in a 'standard' keyboard layout.</summary>
+		Text         = 1,
+		/// <summary>Numbers and numerical values.</summary>
+		Number       = 2,
+		/// <summary>This text specifically represents some kind of URL/URI address.</summary>
+		Uri          = 10,
+		/// <summary>This is a password, and should not be visible when typed!</summary>
+		Password     = 18,
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a

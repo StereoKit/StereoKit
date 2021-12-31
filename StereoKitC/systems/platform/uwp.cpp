@@ -16,10 +16,11 @@
 
 namespace sk {
 
-HWND            uwp_window     = nullptr;
-skg_swapchain_t uwp_swapchain  = {};
-tex_t           uwp_target     = {};
-system_t       *uwp_render_sys = nullptr;
+HWND            uwp_window           = nullptr;
+skg_swapchain_t uwp_swapchain        = {};
+tex_t           uwp_target           = {};
+system_t       *uwp_render_sys       = nullptr;
+bool            uwp_keyboard_showing = false;
 
 bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
@@ -127,6 +128,7 @@ public:
 		auto dispatcher                = CoreWindow::GetForCurrentThread().Dispatcher();
 		auto navigation                = SystemNavigationManager::GetForCurrentView();
 		auto currentDisplayInformation = DisplayInformation::GetForCurrentView();
+		auto inputPane                 = InputPane::GetForCurrentView();
 
 		window.SizeChanged({ this, &ViewProvider::OnWindowSizeChanged });
 
@@ -147,8 +149,10 @@ public:
 		dispatcher.AcceleratorKeyActivated            (uwp_on_corewindow_keypress);
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
-		
-		window.Closed([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
+
+		inputPane.Showing([this](auto &&, auto &&) { uwp_keyboard_showing = true;  });
+		inputPane.Hiding ([this](auto &&, auto &&) { uwp_keyboard_showing = false; });
+		window   .Closed ([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
 
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
 		// which can result in the app being suspended if unhandled
@@ -434,10 +438,23 @@ float uwp_get_scroll() {
 ///////////////////////////////////////////
 
 void uwp_show_keyboard(bool show) {
+	// For future improvements, see here:
+	// https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/CustomEditControl/cs/CustomEditControl.xaml.cs
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
-		if (show) InputPane::GetForCurrentView().TryShow();
-		else      InputPane::GetForCurrentView().TryHide();
+		if (show) {
+			uwp_keyboard_showing = InputPane::GetForCurrentView().TryShow();
+		} else {
+			if (InputPane::GetForCurrentView().TryHide()) {
+				uwp_keyboard_showing = false;
+			}
+		}
 	});
+}
+
+///////////////////////////////////////////
+
+bool uwp_keyboard_visible() {
+	return uwp_keyboard_showing;
 }
 
 ///////////////////////////////////////////

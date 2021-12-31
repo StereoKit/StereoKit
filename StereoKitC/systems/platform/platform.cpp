@@ -61,10 +61,12 @@ bool platform_init() {
 		if (!sk_no_flatscreen_fallback && sk_display_mode != display_mode_flatscreen) {
 			log_infof("MixedReality display mode failed, falling back to Flatscreen");
 			sk_display_mode = display_mode_flatscreen;
-			return platform_set_mode(sk_display_mode);
+			if (!platform_set_mode(sk_display_mode))
+				return false;
+		} else {
+			log_errf("Couldn't initialize StereoKit in %s mode!", sk_display_mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
+			return false;
 		}
-		log_errf("Couldn't initialize StereoKit in %s mode!", sk_display_mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
-		return false;
 	}
 	return platform_utils_init();
 }

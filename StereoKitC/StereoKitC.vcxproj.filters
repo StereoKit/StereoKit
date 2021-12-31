@@ -184,8 +184,8 @@
     <ClCompile Include="libraries\qoi.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
-    <ClCompile Include="VirtualKeyboard.cpp">
-      <Filter>systems</Filter>
+    <ClCompile Include="tools\virtual_keyboard.cpp">
+      <Filter>tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -428,8 +428,11 @@
     <ClInclude Include="libraries\qoi.h">
       <Filter>libraries</Filter>
     </ClInclude>
-    <ClInclude Include="VirtualKeyboard.h">
-      <Filter>systems</Filter>
+    <ClInclude Include="tools\virtual_keyboard.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\virtual_keyboard_layouts.h">
+      <Filter>tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
