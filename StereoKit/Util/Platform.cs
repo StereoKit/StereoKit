@@ -39,8 +39,8 @@ namespace StereoKit
 		/// <summary>Request or hide a soft keyboard for the user to type on.
 		/// StereoKit will surface OS provided soft keyboards where available,
 		/// and use a fallback keyboard when not. On systems with physical
-		/// keyboards, soft keyboards may not be shown based on the user's
-		/// interaction with their physical keyboard.</summary>
+		/// keyboards, soft keyboards generally will not be shown if the user
+		/// has interacted with their physical keyboard recently.</summary>
 		/// <param name="show">Tells whether or not to open or close the soft
 		/// keyboard.</param>
 		/// <param name="inputType">Soft keyboards can change layout to

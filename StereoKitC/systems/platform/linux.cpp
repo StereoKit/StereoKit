@@ -185,7 +185,13 @@ void linux_events() {
 					if (is_pressed) input_keyboard_inject_press  (key);
 					else            input_keyboard_inject_release(key);
 
-					// Some non-text characters get fed into the text system as well
+					// On desktop, we want to hide soft keyboards on physical
+					// presses
+					input_last_physical_keypress = time_getf();
+					platform_keyboard_show(false, text_context_text);
+
+					// Some non-text characters get fed into the text system as
+					// well
 					if (is_pressed) {
 						if (key == key_backspace || key == key_return || key == key_esc) {
 							input_text_inject_char((char32_t)key);

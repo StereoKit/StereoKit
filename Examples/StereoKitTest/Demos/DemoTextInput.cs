@@ -32,6 +32,8 @@ class DemoTextInput : ITest
 
 		UI.HSeparator();
 
+		UI.Text("Soft keyboards don't show up when a physical keyboard is known to be handy! Flatscreen apps and sessions where the user has pressed physical keys recently won't show any soft keyboards.");
+
 		bool forceKeyboard = Platform.ForceFallbackKeyboard;
 		if(UI.Toggle("Fallback Keyboard", ref forceKeyboard))
 			Platform.ForceFallbackKeyboard = forceKeyboard;

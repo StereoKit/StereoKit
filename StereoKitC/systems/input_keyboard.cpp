@@ -27,6 +27,7 @@ array_t<keyboard_event_t> input_key_pending     = {};
 array_t<char32_t>         input_chars_pending   = {};
 mtx_t                     input_key_pending_mtx = {};
 bool                      input_key_suspended   = false;
+float                     input_last_physical_keypress = -1000;
 
 ///////////////////////////////////////////
 

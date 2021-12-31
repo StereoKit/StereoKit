@@ -12,6 +12,7 @@
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
 #include "../../tools/virtual_keyboard.h"
+#include "../../systems/input_keyboard.h"
 #include "../../asset_types/font.h"
 
 #include <stdio.h>
@@ -382,14 +383,29 @@ void platform_keyboard_set_force_fallback(bool32_t force_fallback) {
 ///////////////////////////////////////////
 
 void platform_keyboard_show(bool32_t visible, text_context_ type) {
-	if (force_fallback_keyboard) {
-		virtualkeyboard_open(visible, type);
-	} else {
 #if defined(SK_OS_WINDOWS_UWP)
+	// UWP handles soft keyboards on its own quite nicely!
+	if (!force_fallback_keyboard) {
 		uwp_show_keyboard(visible);
-#else
-		virtualkeyboard_open(visible, type);
+		return;
+	}
 #endif
+
+	// Since we're now using the fallback keyboard, we need to balance soft
+	// keyboards with physical keyboard on our own.
+	// - It's always OK to set visible to false.
+	// - Flatscreen never needs a soft keyboard.
+	// - We'll assume someone in XR needs a soft keyboard up until they
+	//   touch a physical keyboard. If a physical keyboard has been
+	//   touched, then we'll avoid popping up a soft keyboard until a few
+	//   minutes have passed since that interaction. TODO: this behavior
+	//   may need some revision based on how people interact with it.
+	const float physical_interact_timeout = 60 * 5; // 5 minutes
+	if (visible == false) virtualkeyboard_open(false, type);
+	else if (sk_active_display_mode() != display_mode_flatscreen &&
+	         (input_last_physical_keypress < 0 || (time_getf()-input_last_physical_keypress) > physical_interact_timeout) ) {
+
+		virtualkeyboard_open(visible, type);
 	}
 }
 

@@ -52,6 +52,13 @@ void win32_resize(int width, int height) {
 	render_update_projection();
 }
 
+///////////////////////////////////////////
+
+void win32_physical_key_interact() {
+	// On desktop, we want to hide soft keyboards on physical presses
+	input_last_physical_keypress = time_getf();
+	platform_keyboard_show(false, text_context_text);
+}
 
 ///////////////////////////////////////////
 
@@ -65,10 +72,10 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_MBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     return true;
-	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     return true;
-	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam);     return true;
-	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam);     return true;
+	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
 	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
