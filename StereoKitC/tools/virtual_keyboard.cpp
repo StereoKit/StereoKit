@@ -8,7 +8,7 @@
 namespace sk {
 
 bool32_t           keyboard_open         = false;
-pose_t             keyboard_pose         = { {-0.1f, 0.1f, -0.2f}, quat_lookat({0,0,0},{1,1,1}) };
+pose_t             keyboard_pose         = pose_identity;
 array_t<key_>      keyboard_pressed_keys = {};
 const keylayout_t* keyboard_active_layout;
 text_context_      keyboard_text_context;
@@ -30,11 +30,15 @@ const keylayout_t* virtualkeyboard_get_system_keyboard_layout() {
 void virtualkeyboard_open(bool open, text_context_ type) {
 	keyboard_text_context = type;
 	if (open != keyboard_open) {
+		// Position the keyboard in front of the user
+		keyboard_pose = *input_head();
+		keyboard_pose.position   += keyboard_pose.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
+		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, input_head()->position);
+
 		if (open) {
 			if (keyboard_alt  ) { input_keyboard_inject_release(key_alt  ); keyboard_alt   = false; }
 			if (keyboard_altgr) { input_keyboard_inject_release(key_alt  ); keyboard_altgr = false; }
 			if (keyboard_ctrl ) { input_keyboard_inject_release(key_ctrl ); keyboard_ctrl  = false; }
-			if (keyboard_alt  ) { input_keyboard_inject_release(key_alt  ); keyboard_alt   = false; }
 			if (keyboard_shift) { input_keyboard_inject_release(key_shift); keyboard_shift = false; }
 			if (keyboard_fn   ) {                                           keyboard_fn    = false; }
 		}
@@ -114,11 +118,11 @@ void virtualkeyboard_update() {
 	}
 
 	// Draw the keyboard
-	float button_size = 0.035f;
+	float button_size = ui_line_height();
 	for (int row = 0; row < 6; row++) {
 		for (int i = 0; i < 35; i++) {
 			keylayout_key_t key  = layer->keys[row][i];
-			vec2            size = { button_size * key.width, button_size };
+			vec2            size = vec2{ button_size * key.width, button_size };
 			if (key.width == 0) continue;
 
 			ui_push_idi((i * row) + 1000);
