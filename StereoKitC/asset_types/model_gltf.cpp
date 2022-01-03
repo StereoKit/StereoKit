@@ -626,6 +626,8 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		material_set_transparency(result, transparency_blend);
 	if (material->alpha_mode == cgltf_alpha_mode_mask && material_has_param(result, "cutoff", material_param_float))
 		material_set_float(result, "cutoff", material->alpha_cutoff);
+	if (material_has_param  (result, "emission_factor", material_param_vector4))
+		material_set_vector4(result, "emission_factor", { material->emissive_factor[0], material->emissive_factor[1], material->emissive_factor[2], 0 });
 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {

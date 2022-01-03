@@ -50,6 +50,12 @@ namespace StereoKit
 		/// 
 		/// This represents the Color param 'color'.</summary>
 		ColorTint,
+		/// <summary>A multiplier for emission values sampled from the emission
+		/// texture. The default emission texture in SK shaders is white, and
+		/// the default value for this parameter is 0,0,0,0.
+		/// 
+		/// This represents the Color param 'emission_factor'.</summary>
+		EmissionFactor,
 		/// <summary>For physically based shader, this is a multiplier to
 		/// scale the metallic properties of the material.
 		/// 
@@ -221,6 +227,7 @@ namespace StereoKit
 			switch (parameter)
 			{
 				case MatParamName.ColorTint:       return "color";
+				case MatParamName.EmissionFactor:  return "emission_factor";
 				case MatParamName.DiffuseTex:      return "diffuse";
 				case MatParamName.EmissionTex:     return "emission";
 				case MatParamName.MetallicAmount:  return "metallic";
