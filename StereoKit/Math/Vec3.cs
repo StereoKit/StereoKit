@@ -210,6 +210,17 @@ namespace StereoKit
 		public static Vec3 AngleXY(float angleDeg, float z = 0)
 			=> new Vec3(SKMath.Cos(angleDeg * Units.deg2rad), SKMath.Sin(angleDeg * Units.deg2rad), z);
 
+		/// <summary>Calculates the angle between two vectors in degrees!
+		/// Vectors do not need to be normalized, and the result will always be
+		/// positive.</summary>
+		/// <param name="a">The first, initial vector, A. Does not need to be
+		/// normalized.</param>
+		/// <param name="b">The second vector, B, that we're finding the 
+		/// angle to. Does not need to be normalized.</param>
+		/// <returns>A positive angle between two vectors in degrees!</returns>
+		public static float AngleBetween(Vec3 a, Vec3 b)
+			=> (float)System.Math.Acos( Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq) ) * Units.rad2deg;
+
 		/// <summary>Exactly the same as Vec3.Cross, but has some naming
 		/// memnonics for getting the order right when trying to find a 
 		/// perpendicular vector using the cross product. This'll also make 

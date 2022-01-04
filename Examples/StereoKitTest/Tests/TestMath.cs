@@ -93,11 +93,45 @@ class TestMath : ITest
 		return true;
 	}
 
+	bool TestVector2Angles()
+	{
+		float angle43 = Vec2.AngleBetween(Vec2.FromAngle(0  ), Vec2.FromAngle(43));
+		float angle16 = Vec2.AngleBetween(Vec2.FromAngle(27 ), Vec2.FromAngle(43));
+		float angle74 = Vec2.AngleBetween(Vec2.FromAngle(117), Vec2.FromAngle(43));
+
+		Log.Info($"Vec2.AngleBetween(Vec2.FromAngle(0  ), Vec2.FromAngle(43)): {angle43} - expected 43");
+		Log.Info($"Vec2.AngleBetween(Vec2.FromAngle(27 ), Vec2.FromAngle(43)): {angle16} - expected 16");
+		Log.Info($"Vec2.AngleBetween(Vec2.FromAngle(117), Vec2.FromAngle(43)): {angle74} - expected -74");
+
+		if (MathF.Abs(angle43 - 43) > tolerance) return false;
+		if (MathF.Abs(angle16 - 16) > tolerance) return false;
+		if (MathF.Abs(angle74 + 74) > tolerance) return false;
+		return true;
+	}
+
+	bool TestVector3Angles()
+	{
+		float angle43 = Vec3.AngleBetween(Vec3.AngleXZ(0  ), Vec3.AngleXZ(43));
+		float angle16 = Vec3.AngleBetween(Vec3.AngleXZ(27 ), Vec3.AngleXZ(43));
+		float angle74 = Vec3.AngleBetween(Vec3.AngleXY(117), Vec3.AngleXY(43));
+
+		Log.Info($"Vec3.AngleBetween(Vec3.AngleXZ(0  ), Vec3.AngleXZ(43)): {angle43} - expected 43");
+		Log.Info($"Vec3.AngleBetween(Vec3.AngleXZ(27 ), Vec3.AngleXZ(43)): {angle16} - expected 16");
+		Log.Info($"Vec3.AngleBetween(Vec3.AngleXY(117), Vec3.AngleXY(43)): {angle74} - expected 74");
+
+		if (MathF.Abs(angle43 - 43) > tolerance) return false;
+		if (MathF.Abs(angle16 - 16) > tolerance) return false;
+		if (MathF.Abs(angle74 - 74) > tolerance) return false;
+		return true;
+	}
+
 	public void Initialize()
 	{
 		Tests.Test(TestMatrixDecompose);
 		Tests.Test(TestMatrixTransform);
 		Tests.Test(TestAngleDist);
+		Tests.Test(TestVector2Angles);
+		Tests.Test(TestVector3Angles);
 	}
 
 	public void Shutdown() { }
