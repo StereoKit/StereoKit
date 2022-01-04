@@ -27,23 +27,31 @@ const keylayout_t* virtualkeyboard_get_system_keyboard_layout() {
 
 ///////////////////////////////////////////
 
+void virtualkeyboard_reset_modifiers() {
+	if (keyboard_alt  ) { input_keyboard_inject_release(key_alt  ); keyboard_alt   = false; }
+	if (keyboard_altgr) { input_keyboard_inject_release(key_alt  ); keyboard_altgr = false; }
+	if (keyboard_ctrl ) { input_keyboard_inject_release(key_ctrl ); keyboard_ctrl  = false; }
+	if (keyboard_shift) { input_keyboard_inject_release(key_shift); keyboard_shift = false; }
+	if (keyboard_fn   ) {                                           keyboard_fn    = false; }
+}
+
+///////////////////////////////////////////
+
 void virtualkeyboard_open(bool open, text_context_ type) {
-	keyboard_text_context = type;
-	if (open != keyboard_open) {
-		// Position the keyboard in front of the user
+	if (open == keyboard_open && type == keyboard_text_context) return;
+
+	// Position the keyboard in front of the user if this just opened
+	if (open && !keyboard_open) {
 		keyboard_pose = *input_head();
 		keyboard_pose.position   += keyboard_pose.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
 		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, input_head()->position);
-
-		if (open) {
-			if (keyboard_alt  ) { input_keyboard_inject_release(key_alt  ); keyboard_alt   = false; }
-			if (keyboard_altgr) { input_keyboard_inject_release(key_alt  ); keyboard_altgr = false; }
-			if (keyboard_ctrl ) { input_keyboard_inject_release(key_ctrl ); keyboard_ctrl  = false; }
-			if (keyboard_shift) { input_keyboard_inject_release(key_shift); keyboard_shift = false; }
-			if (keyboard_fn   ) {                                           keyboard_fn    = false; }
-		}
-		keyboard_open = open;
 	}
+
+	// Reset the keyboard to its default state
+	virtualkeyboard_reset_modifiers();
+
+	keyboard_text_context = type;
+	keyboard_open         = open;
 }
 
 ///////////////////////////////////////////
@@ -85,6 +93,7 @@ void virtualkeyboard_keypress(keylayout_key_t key) {
 	if (key.special_key == special_key_close_keyboard) {
 		keyboard_open = false;
 	}
+	virtualkeyboard_reset_modifiers();
 }
 
 ///////////////////////////////////////////
