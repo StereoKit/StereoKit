@@ -141,7 +141,12 @@ public static class Tests
 		if (!IsTesting || frame != sceneFrame || screens.Contains(name) || !MakeScreenshots)
 			return;
 		screens.Add(name);
-		Renderer.Screenshot(Path.Combine(ScreenshotRoot,name), from, at, width, height, fov);
+
+		string file = Path.Combine(ScreenshotRoot, name);
+		string dir = Path.GetDirectoryName(file);
+		if (!Directory.Exists(dir))
+			Directory.CreateDirectory(dir);
+		Renderer.Screenshot(file, from, at, width, height, fov);
 	}
 	public static void Hand(in HandJoint[] joints)
 	{
