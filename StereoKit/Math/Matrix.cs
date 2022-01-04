@@ -16,7 +16,11 @@ namespace StereoKit
 	/// </summary>
 	public struct Matrix
 	{
-		internal Matrix4x4 m;
+		/// <summary>The internal, wrapped System.Numerics type. This can be
+		/// nice to have around so you can pass its fields as 'ref', which you
+		/// can't do with properties. You won't often need this, as implicit
+		/// conversions to System.Numerics types are also provided.</summary>
+		public Matrix4x4 m;
 
 		public Matrix(float m11, float m12, float m13, float m14, float m21, float m22, float m23, float m24, float m31, float m32, float m33, float m34, float m41, float m42, float m43, float m44)
 			=> m = new Matrix4x4(
