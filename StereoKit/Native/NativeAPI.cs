@@ -491,8 +491,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_no_keyboard_loss(bool disallowKeyboard);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_no_keyboard_loss();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_preserve_keyboard(int preserve_keyboard);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_preserve_keyboard();
 
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_area     (Vec3 start, Vec2 dimensions);

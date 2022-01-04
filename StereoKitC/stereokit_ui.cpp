@@ -72,8 +72,8 @@ array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
 array_t<text_style_t>skui_font_stack = {};
-array_t<bool>     nokeyboard_steal_stack = {};
-array_t<uint64_t>     nokeyboard_steal_stack_ids = {};
+array_t<bool>        skui_preserve_keyboard_stack = {};
+array_t<uint64_t>    skui_preserve_keyboard_ids   = {};
 
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
 mesh_t          skui_win_top      = nullptr;
@@ -522,16 +522,18 @@ void ui_pop_text_style() {
 
 ///////////////////////////////////////////
 
-void ui_push_no_keyboard_loss(bool disallowKeyboard){
-	nokeyboard_steal_stack.add(disallowKeyboard);
+void ui_push_preserve_keyboard(bool32_t preserve_keyboard){
+	skui_preserve_keyboard_stack.add(preserve_keyboard);
 }
 
-void ui_pop_no_keyboard_loss(){
-	if (nokeyboard_steal_stack.count <= 1) {
-		log_errf("ui_pop_no_keyboard_loss: tried to pop too many! Do you have a push/pop mismatch?");
+///////////////////////////////////////////
+
+void ui_pop_preserve_keyboard(){
+	if (skui_preserve_keyboard_stack.count <= 1) {
+		log_errf("ui_pop_preserve_keyboard: tried to pop too many! Do you have a push/pop mismatch?");
 		return;
 	}
-	nokeyboard_steal_stack.pop();
+	skui_preserve_keyboard_stack.pop();
 }
 
 ///////////////////////////////////////////
@@ -568,7 +570,7 @@ bool ui_init() {
 
 	skui_id_stack.add({ HASH_FNV64_START });
 	
-	nokeyboard_steal_stack.add(false);
+	skui_preserve_keyboard_stack.add(false);
 	return true;
 }
 
@@ -632,7 +634,7 @@ void ui_update() {
 
 	ui_push_surface(pose_identity);
 	//Clear current keyboard ignore elements
-	nokeyboard_steal_stack_ids.clear();
+	skui_preserve_keyboard_ids.clear();
 }
 
 ///////////////////////////////////////////
@@ -643,17 +645,19 @@ void ui_update_late() {
 		log_err("ui: Mismatching number of Begin/End calls!");
 	if (skui_id_stack.count > 1 || skui_id_stack.count == 0)
 		log_err("ui: Mismatching number of id push/pop calls!");
+	if (skui_preserve_keyboard_stack.count > 1 || skui_preserve_keyboard_stack.count == 0)
+		log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
 }
 
 ///////////////////////////////////////////
 
 void ui_shutdown() {
-	skui_sl_windows           .free();
-	skui_layers               .free();
-	skui_id_stack             .free();
-	skui_font_stack           .free();
-	nokeyboard_steal_stack    .free();
-	nokeyboard_steal_stack_ids.free();
+	skui_sl_windows        .free();
+	skui_layers            .free();
+	skui_id_stack          .free();
+	skui_font_stack        .free();
+	skui_preserve_keyboard_stack    .free();
+	skui_preserve_keyboard_ids.free();
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
 	sound_release(skui_snd_grab);
@@ -971,8 +975,8 @@ void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
 
-	if (nokeyboard_steal_stack.last()) {
-		nokeyboard_steal_stack_ids.add(id);
+	if (skui_preserve_keyboard_stack.last()) {
+		skui_preserve_keyboard_ids.add(id);
 	}
 
 	for (int32_t i = 0; i < handed_max; i++) {
@@ -1555,7 +1559,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			if (ui_is_hand_preoccupied((handed_)i, id_hash, false)) {
 				const ui_hand_t& h = skui_hand[i];
 				if (h.focused) {
-					if ((nokeyboard_steal_stack_ids.index_of(h.focused) < 0)) {
+					if ((skui_preserve_keyboard_ids.index_of(h.focused) < 0)) {
 						skui_input_target = 0;
 						platform_keyboard_show(false, type);
 					}

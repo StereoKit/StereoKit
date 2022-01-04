@@ -17,9 +17,9 @@ class DemoTextInput : ITest
 		UI.Text("You can specify whether or not a UI element will hide an active soft keyboard upon interaction.");
 		UI.Button("Hides active soft keyboard");
 		UI.SameLine();
-		UI.PushKeyboardFocusSteal(false);
+		UI.PushPreserveKeyboard(true);
 		UI.Button("Doesn't hide");
-		UI.PopKeyboardFocusSteal();
+		UI.PopPreserveKeyboard();
 
 		UI.HSeparator();
 

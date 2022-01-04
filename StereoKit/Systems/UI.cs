@@ -648,18 +648,21 @@ namespace StereoKit
 		public static void PopId() 
 			=> NativeAPI.ui_pop_id();
 
-		/// <summary>
-		/// This pushes if a element will not hide the keyboard
-		/// </summary>
-		/// <param name="stealFocus">If true the elements will still hide the keyboard if false will not hide the keyboard </param>
-		public static void PushKeyboardFocusSteal(bool stealFocus)
-			=> NativeAPI.ui_push_no_keyboard_loss(!stealFocus);
+		/// <summary>When a soft keyboard is visible, interacting with UI
+		/// elements will cause the keyboard to close. This function allows you
+		/// to change this behavior for certain UI elements, allowing the user
+		/// to interact and still preserve the keyboard's presence. Remember
+		/// to Pop when you're finished!</summary>
+		/// <param name="preserveKeyboard">If true, interacting with elements
+		/// will NOT hide the keyboard. If false, interaction will hide the
+		/// keyboard.</param>
+		public static void PushPreserveKeyboard(bool preserveKeyboard)
+			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard?1:0);
 
-		/// <summary>
-		/// This removes the last pushed case if a element will not hide the keyboard
-		/// </summary>
-		public static void PopKeyboardFocusSteal()
-			=> NativeAPI.ui_pop_no_keyboard_loss();
+		/// <summary>This pops the keyboard presentation state to what it was
+		/// previously.</summary>
+		public static void PopPreserveKeyboard()
+			=> NativeAPI.ui_pop_preserve_keyboard();
 
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
