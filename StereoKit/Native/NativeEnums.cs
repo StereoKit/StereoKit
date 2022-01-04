@@ -850,9 +850,9 @@ namespace StereoKit
 		/// <summary>`/~</summary>
 		Backtick     = 0xc0,
 		/// <summary>The Windows/Mac Command button on the left side of the keyboard.</summary>
-		Lcmd         = 0x5B,
+		LCmd         = 0x5B,
 		/// <summary>The Windows/Mac Command button on the right side of the keyboard.</summary>
-		Rcmd         = 0x5C,
+		RCmd         = 0x5C,
 		/// <summary>Numpad '*', NOT the same as number row '*'.</summary>
 		Multiply     = 0x6A,
 		/// <summary>Numpad '+', NOT the same as number row '+'.</summary>

@@ -10,6 +10,9 @@ key_7 N7
 key_8 N8
 key_9 N9
 
+key_lcmd LCmd
+key_rcmd RCmd
+
 # Same with render_layer_!
 render_layer_0 Layer0
 render_layer_1 Layer1
