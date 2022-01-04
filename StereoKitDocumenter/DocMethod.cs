@@ -13,7 +13,7 @@ namespace StereoKitDocumenter
 		public List<DocMethodOverload> overloads = new List<DocMethodOverload>();
 
 		public bool   IsStatic => overloads.Count > 0 ? overloads[0].IsStatic : throw new Exception("Calling this too early?");
-		public string ShowName => name == "#ctor" ? parent.Name : name;
+		public string ShowName => name == "#ctor" ? parent.Name : (name.Contains('`') ? name.Substring(0, name.IndexOf('`')) : name);
 		public string Name     => $"{parent.Name}.{ShowName}";
 		public string FileName => Path.Combine(Program.referenceOut, parent.Name + "/" + ShowName + ".md");
 		public string UrlName  => $"{{{{site.url}}}}/Pages/Reference/{parent.Name}/{ShowName}.html";
