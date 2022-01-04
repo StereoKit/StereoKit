@@ -383,6 +383,8 @@ namespace StereoKit
 		public static Material UI => StereoKit.Default.MaterialUI;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUIBox" />
 		public static Material UIBox => StereoKit.Default.MaterialUIBox;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUIQuadrant" />
+		public static Material UIQuadrant => StereoKit.Default.MaterialUIQuadrant;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUnlit" />
 		public static Material Unlit => StereoKit.Default.MaterialUnlit;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUnlitClip" />

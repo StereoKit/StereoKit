@@ -78,6 +78,8 @@
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
 
+		public static Material MaterialUIQuadrant { get; private set; }
+
 		/// <summary>Default 2x2 white opaque texture, this is the texture 
 		/// referred to as 'white' in the shader texture defaults.</summary>
 		public static Tex Tex      { get; private set; }
@@ -189,16 +191,17 @@
 
 		internal static void Initialize()
 		{
-			Material         = Material.Find(DefaultIds.material);
-			MaterialPBR      = Material.Find(DefaultIds.materialPBR);
-			MaterialPBRClip  = Material.Find(DefaultIds.materialPBRClip);
-			MaterialUnlit    = Material.Find(DefaultIds.materialUnlit);
-			MaterialUnlitClip= Material.Find(DefaultIds.materialUnlitClip);
-			MaterialEquirect = Material.Find(DefaultIds.materialEquirect);
-			MaterialFont     = Material.Find(DefaultIds.materialFont);
-			MaterialHand     = Material.Find(DefaultIds.materialHand);
-			MaterialUI       = Material.Find(DefaultIds.materialUI);
-			MaterialUIBox    = Material.Find(DefaultIds.materialUIBox);
+			Material           = Material.Find(DefaultIds.material);
+			MaterialPBR        = Material.Find(DefaultIds.materialPBR);
+			MaterialPBRClip    = Material.Find(DefaultIds.materialPBRClip);
+			MaterialUnlit      = Material.Find(DefaultIds.materialUnlit);
+			MaterialUnlitClip  = Material.Find(DefaultIds.materialUnlitClip);
+			MaterialEquirect   = Material.Find(DefaultIds.materialEquirect);
+			MaterialFont       = Material.Find(DefaultIds.materialFont);
+			MaterialHand       = Material.Find(DefaultIds.materialHand);
+			MaterialUI         = Material.Find(DefaultIds.materialUI);
+			MaterialUIBox      = Material.Find(DefaultIds.materialUIBox);
+			MaterialUIQuadrant = Material.Find(DefaultIds.materialUIQuadrant);
 
 			Tex      = Tex.Find(DefaultIds.tex);
 			TexBlack = Tex.Find(DefaultIds.texBlack);
@@ -230,16 +233,17 @@
 
 		internal static void Shutdown()
 		{
-			Material         = null;
-			MaterialPBR      = null;
-			MaterialPBRClip  = null;
-			MaterialUnlit    = null;
-			MaterialUnlitClip= null;
-			MaterialEquirect = null;
-			MaterialFont     = null;
-			MaterialHand     = null;
-			MaterialUI       = null;
-			MaterialUIBox    = null;
+			Material           = null;
+			MaterialPBR        = null;
+			MaterialPBRClip    = null;
+			MaterialUnlit      = null;
+			MaterialUnlitClip  = null;
+			MaterialEquirect   = null;
+			MaterialFont       = null;
+			MaterialHand       = null;
+			MaterialUI         = null;
+			MaterialUIBox      = null;
+			MaterialUIQuadrant = null;
 
 			Tex      = null;
 			TexBlack = null;
