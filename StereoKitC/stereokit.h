@@ -415,6 +415,7 @@ static inline vec3   operator* (matrix a, vec3 b) { return matrix_transform_pt(a
 static inline vec4   operator* (matrix a, vec4 b) { return matrix_transform_pt4(a, b); }
 #endif
 
+static inline float    vec4_magnitude   (vec4 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w); }
 static inline float    vec3_magnitude   (vec3 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); }
 static inline float    vec2_magnitude   (vec2 a) { return sqrtf(a.x*a.x + a.y*a.y); }
 static inline float    vec3_magnitude_sq(vec3 a) { return a.x*a.x + a.y*a.y + a.z*a.z; }
@@ -425,6 +426,8 @@ static inline float    vec3_distance_sq (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.
 static inline float    vec2_distance_sq (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude_sq(v); }
 static inline float    vec3_distance    (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.y-b.y, a.z-b.z}; return vec3_magnitude(v); }
 static inline float    vec2_distance    (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude(v); }
+static inline vec3     vec3_project     (vec3 a, vec3 onto_b) { return (vec3_dot(a,onto_b)/vec3_magnitude_sq(onto_b))*onto_b; }
+static inline vec4     vec4_normalize   (vec4 a) { float imag = 1.0f/vec4_magnitude(a); vec4 v = {a.x*imag, a.y*imag, a.z*imag, a.w*imag}; return v; }
 static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); vec3 v = {a.x*imag, a.y*imag, a.z*imag}; return v; }
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
 static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; return v; }

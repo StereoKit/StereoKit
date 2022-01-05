@@ -86,6 +86,41 @@ quat quat_inverse(const quat &a) {
 
 ///////////////////////////////////////////
 
+vec4 quat_to_axis_angle(quat a) {
+	float    angle;
+	XMVECTOR xaxis;
+	XMQuaternionToAxisAngle(&xaxis, &angle, math_quat_to_fast(a));
+
+	vec4 result = math_fast_to_vec4(xaxis);
+	result.w = angle * rad2deg;
+	return result;
+}
+
+///////////////////////////////////////////
+
+quat quat_axis_angle(vec3 axis, float angle_deg) {
+	return math_fast_to_quat(XMQuaternionRotationAxis(math_vec3_to_fast(axis), angle_deg*deg2rad));
+}
+
+///////////////////////////////////////////
+
+quat quat_normal_angle(vec3 normalized_axis, float angle_deg) {
+	return math_fast_to_quat(XMQuaternionRotationNormal(math_vec3_to_fast(normalized_axis), angle_deg*deg2rad));
+}
+
+///////////////////////////////////////////
+
+// See: https://stackoverflow.com/a/22401169/10813424
+// and its reference: http://www.euclideanspace.com/maths/geometry/rotations/for/decomposition/
+void quat_decompose_swing_twist(quat rotation, vec3 direction, quat *out_swing, quat *out_twist) {
+	vec3 axis  = { rotation.x, rotation.y, rotation.z }; // rotation axis
+	vec3 p     = vec3_project  ( axis, direction ); // return projection v1 on to v2  (parallel component)
+	*out_twist = quat_normalize( { p.x, p.y, p.z, rotation.w } );
+	*out_swing = rotation * quat{-out_twist->x, -out_twist->y, -out_twist->z, out_twist->w}; // twist.conjugated();
+}
+
+///////////////////////////////////////////
+
 void pose_matrix_out(const pose_t &pose, matrix &out_result, vec3 scale) {
 	matrix_trs_out(out_result, pose.position, pose.orientation, scale);
 }
