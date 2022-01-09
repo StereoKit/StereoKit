@@ -188,29 +188,36 @@ main img {
 
 /* Tree view styling*/
 .tree-view ul {
-    margin-left: 0; 
     padding-left: 0;
 }
+.tree-view>ul ul {
+    margin-left: 1em;
+}
 .tree-view li {
-    margin-left: 1em; 
     padding-left: 0;
     list-style: none;
 }
 .tree-view input {
-    opacity:0;
-    margin-left: -1em; 
+    /* Keep expanders keyboard accessible, but not affect the page layout. */
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.tree-view .expander-container {
+    display: inline-block;
+    width: 1em;
+}
+.tree-view .expander-container>label {
     cursor: pointer;
 }
-.tree-view input ~ span:before {
-    content:"\25BD";
-    left:-1em;
-    margin-right:-1em;
-    position: relative;
-    z-index: -2;
-    cursor: pointer;
+.tree-view .expander-container>label:before {
+    content: "\25BD";
 }
-.tree-view input:checked ~ span:before {
-    content:"\25B7";
+.tree-view input:checked ~ .expander-container>label:before {
+    content: "\25B7";
+}
+.tree-view input:focus ~ .expander-container>label:before {
+    color: #3794FF;
 }
 .tree-view input:checked ~ ul {
     display:none;
