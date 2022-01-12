@@ -676,6 +676,35 @@ namespace StereoKit
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
 
+		/// <summary>All UI between PushTint and its matching PopTint will be
+		/// tinted with this color. This is implemented by multiplying this
+		/// color with the current color of the UI element. The default is a
+		/// White (1,1,1,1) identity tint.</summary>
+		/// <param name="colorGamma">A normal (gamma corrected) color value.
+		/// This is internally converted to linear, so tint multiplication
+		/// happens on linear color values.</param>
+		public static void PushTint(Color colorGamma)
+			=> NativeAPI.ui_push_tint(colorGamma);
+
+		/// <summary>Removes a Tint from the stack, and whatever was below will
+		/// then be used as the primary tint.</summary>
+		public static void PopTint()
+			=> NativeAPI.ui_pop_tint();
+
+		/// <summary>All UI between PushEnabled and its matching PopEnabled
+		/// will set the UI to an enabled or disabled state, allowing or
+		/// preventing interaction with specific elements. The default state is
+		/// true.</summary>
+		/// <param name="enabled">Should the following elements be enabled and
+		/// interactible?</param>
+		public static void PushEnabled(bool enabled)
+			=> NativeAPI.ui_push_enabled(enabled?1:0);
+
+		/// <summary>Removes an 'enabled' state from the stack, and whatever
+		/// was below will then be used as the primary enabled state.</summary>
+		public static void PopEnabled()
+			=> NativeAPI.ui_pop_enabled();
+
 		/// <summary>Override the visual assets attached to a particular UI
 		/// element. 
 		/// 

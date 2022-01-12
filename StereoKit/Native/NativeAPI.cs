@@ -488,12 +488,21 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_settings            (UISettings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_color           (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_set_element_visual  (UIVisual element_visual, IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style     (TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style      ();
-
+		
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_tint             (Color tint_gamma);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_tint              ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          (int enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_enabled           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_preserve_keyboard(int preserve_keyboard);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_preserve_keyboard();
-
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_preserve_keyboard ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_surface          (Pose surface_pose, Vec3 layout_start, Vec2 layout_dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_surface           ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_push_id_16   (string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]            public static extern ulong ui_push_idi     (int id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]            public static extern void  ui_pop_id       ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_stack_hash_16(string str);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_area     (Vec3 start, Vec2 dimensions);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_layout_remaining();
@@ -501,17 +510,11 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0, float depth = 0);
 
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_push_surface  (Pose surface_pose, Vec3 layout_start, Vec2 layout_dimensions);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_surface   ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern Vec2  ui_area_remaining();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_nextline      ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_sameline      ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern float ui_line_height   ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_space         (float space);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_push_id_16    (string id);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern ulong ui_push_idi      (int id);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void  ui_pop_id        ();
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern ulong ui_stack_hash_16 (string str);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   ui_area_remaining();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_nextline      ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_sameline      ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  ui_line_height   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_space         (float space);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting (Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_button_behavior(Vec3 window_relative_pos, Vec2 size, ulong id, out float finger_offset, out BtnState button_state, out BtnState focus_state);

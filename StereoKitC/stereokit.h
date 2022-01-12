@@ -505,7 +505,8 @@ static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint
 static inline color128 color_hex      (uint32_t hex)  { return color32_to_128(color32_hex(hex)); };
 
 #ifdef __cplusplus
-static inline color128  operator*(const color128 &a, const float b) { return { a.r * b, a.g * b, a.b * b, a.a * b }; }
+static inline color128  operator*(color128 a, float    b) { return { a.r*b,   a.g*b,   a.b*b,   a.a*b   }; }
+static inline color128  operator*(color128 a, color128 b) { return { a.r*b.r, a.g*b.g, a.b*b.b, a.a*b.a }; }
 #endif
 
 ///////////////////////////////////////////
