@@ -3,6 +3,9 @@ using StereoKit;
 
 class Program 
 {
+	delegate uint XR_xrConvertTimeToWin32PerformanceCounterKHR(ulong instance, long time, out long performanceCounter);
+	static XR_xrConvertTimeToWin32PerformanceCounterKHR xrConvertTimeToWin32PerformanceCounterKHR;
+
 	static void Main(string[] args) 
 	{
 		// If the app has a constructor that takes a string array, then
@@ -18,6 +21,14 @@ class Program
 		// Initialize StereoKit, and the app
 		if (!SK.Initialize(app.Settings))
 			Environment.Exit(1);
+
+		if (Backend.XRType == BackendXRType.OpenXR)
+		{
+			xrConvertTimeToWin32PerformanceCounterKHR = Backend.OpenXR.GetFunction<XR_xrConvertTimeToWin32PerformanceCounterKHR>("xrConvertTimeToWin32PerformanceCounterKHR");
+			xrConvertTimeToWin32PerformanceCounterKHR(Backend.OpenXR.Instance, Backend.OpenXR.Time, out long counter);
+			Log.Info($"XrTime: {counter}");
+		}
+
 		app.Init();
 
 		// Now pass execution over to StereoKit
