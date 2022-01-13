@@ -26,7 +26,7 @@ namespace StereoKitTest
 		public void Initialize()
 		{
 			volumeMat = Default.MaterialUIBox.Copy();
-			volumeMat["border_size"] = 0;
+			volumeMat["border_size"] = 0.0f;
 			volumeMat["border_affect_radius"] = 0.3f;
 
 			jointMaterial = Material.Unlit.Copy();

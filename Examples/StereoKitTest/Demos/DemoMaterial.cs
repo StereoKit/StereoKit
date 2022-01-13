@@ -141,7 +141,7 @@ class DemoMaterial : ITest
 		matParameters = Material.Default.Copy();
 		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		matParameters[MatParamName.ColorTint ] = Color.HSV(0.6f, 0.7f, 1f);
-		matParameters[MatParamName.TexScale  ] = 2;
+		matParameters[MatParamName.TexScale  ] = 2.0f;
 	}
 
 	int showCount;
