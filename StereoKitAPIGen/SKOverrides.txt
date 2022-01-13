@@ -25,6 +25,11 @@ render_layer_7 Layer7
 render_layer_8 Layer8
 render_layer_9 Layer9
 
+material_param_uint UInt
+material_param_uint2 UInt2
+material_param_uint3 UInt3
+material_param_uint4 UInt4
+
 log_ LogLevel
 log_inform Info
 

@@ -330,47 +330,46 @@ int32_t material_get_queue_offset(material_t material) {
 
 ///////////////////////////////////////////
 
-void material_set_float(material_t material, const char *name, float value) {
+void *_material_get_ptr(material_t material, const char *name, uint32_t size) {
 	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-	
+	if (i == -1) return nullptr;
+
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(float)) {
-		log_errf("material_set_float: '%s' is not a float (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	if (size == 0 || info->size != size) {
+		log_errf("material_set_: '%s' mismatched type (for shader %s)",  info->name, material->shader->shader.meta->name);
+		return nullptr;
 	}
-	*(float *)((uint8_t*)material->args.buffer + info->offset) = value;
-	material->args.buffer_dirty = true;
+	return ((uint8_t*)material->args.buffer + info->offset);
+}
+
+///////////////////////////////////////////
+
+void material_set_float(material_t material, const char *name, float value) {
+	float *matparam = (float*)_material_get_ptr(material, name, sizeof(float));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
+	}
 }
 
 ///////////////////////////////////////////
 
 void material_set_color32(material_t material, const char *name, color32 value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(color128)) {
-		log_errf("material_set_color32: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	color128 *matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
+	if (matparam != nullptr) {
+		*matparam = color_to_linear(color32_to_128(value));
+		material->args.buffer_dirty = true;
 	}
-	*(color128 *)((uint8_t *)material->args.buffer + info->offset) = color_to_linear( { value.r / 255.f, value.g / 255.f, value.b / 255.f, value.a / 255.f } );
-	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
 
 void material_set_color(material_t material, const char *name, color128 value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(color128)) {
-		log_errf("material_set_color: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	color128 *matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
+	if (matparam != nullptr) {
+		*matparam = color_to_linear(value);
+		material->args.buffer_dirty = true;
 	}
-	*(color128 *)((uint8_t*)material->args.buffer + info->offset) = color_to_linear( value );
-	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -382,46 +381,133 @@ void material_set_vector(material_t material, const char *name, vec4 value) {
 ///////////////////////////////////////////
 
 void material_set_vector4(material_t material, const char *name, vec4 value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(vec4)) {
-		log_errf("material_set_vector4: '%s' is not a float4 (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	vec4 *matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
 	}
-	*(vec4 *)((uint8_t*)material->args.buffer + info->offset) = value;
-	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector3(material_t material, const char *name, vec3 value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(vec3)) {
-		log_errf("material_set_vector3: '%s' is not a float3 (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	vec3 *matparam = (vec3*)_material_get_ptr(material, name, sizeof(vec3));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
 	}
-	*(vec3 *)((uint8_t*)material->args.buffer + info->offset) = value;
-	material->args.buffer_dirty = true;
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector2(material_t material, const char *name, vec2 value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(vec2)) {
-		log_errf("material_set_vector2: '%s' is not a float2 (in shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
+	vec2 *matparam = (vec2*)_material_get_ptr(material, name, sizeof(vec2));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
 	}
-	*(vec2 *)((uint8_t*)material->args.buffer + info->offset) = value;
-	material->args.buffer_dirty = true;
+}
+
+///////////////////////////////////////////
+
+void material_set_int(material_t material, const char *name, int32_t value) {
+	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_int2(material_t material, const char *name, int32_t  value1, int32_t value2) {
+	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*2);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_int3(material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3) {
+	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*3);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		matparam[2] = value3;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_int4(material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3, int32_t value4) {
+	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*4);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		matparam[2] = value3;
+		matparam[3] = value4;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_bool(material_t material, const char *name, bool32_t value) {
+	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
+	if (matparam != nullptr) {
+		*matparam = value>0?1:0;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_uint(material_t material, const char *name, uint32_t value) {
+	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
+	if (matparam != nullptr) {
+		*matparam = value;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_uint2(material_t material, const char *name, uint32_t value1, uint32_t value2) {
+	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*2);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_uint3(material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3) {
+	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*3);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		matparam[2] = value3;
+		material->args.buffer_dirty = true;
+	}
+}
+
+///////////////////////////////////////////
+
+void material_set_uint4(material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3, uint32_t value4) {
+	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*4);
+	if (matparam != nullptr) {
+		matparam[0] = value1;
+		matparam[1] = value2;
+		matparam[2] = value3;
+		matparam[3] = value4;
+		material->args.buffer_dirty = true;
+	}
 }
 
 ///////////////////////////////////////////
@@ -432,7 +518,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
 	if (info->size != sizeof(matrix)) {
-		log_errf("material_set_matrix: '%s' is not a float4x4 (in shader %s)",  info->name, material->shader->shader.meta->name);
+		log_errf("material_set_: '%s' mismatched type (for shader %s)",  info->name, material->shader->shader.meta->name);
 		return;
 	}
 	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
@@ -562,6 +648,16 @@ void material_get_param_info(material_t material, int32_t index, char **out_name
 					else
 						*out_type = material_param_vector4;
 				}
+			} else if (info->type == skg_shader_var_int) {
+				if      (info->type_count == 1 ) *out_type = material_param_int;
+				else if (info->type_count == 2 ) *out_type = material_param_int2;
+				else if (info->type_count == 3 ) *out_type = material_param_int3;
+				else if (info->type_count == 4 ) *out_type = material_param_int4;
+			} else if (info->type == skg_shader_var_uint) {
+				if      (info->type_count == 1 ) *out_type = material_param_uint;
+				else if (info->type_count == 2 ) *out_type = material_param_uint2;
+				else if (info->type_count == 3 ) *out_type = material_param_uint3;
+				else if (info->type_count == 4 ) *out_type = material_param_uint4;
 			}
 		}
 		if (out_name != nullptr) *out_name = info->name;

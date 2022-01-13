@@ -68,7 +68,7 @@ class DemoTextures : ITest
 		/// representing shader parameter names, or use the MatParamName
 		/// enum for compile safety.
 		exampleMaterial[MatParamName.DiffuseTex] = gridTex;
-		exampleMaterial[MatParamName.TexScale  ] = 2;
+		exampleMaterial[MatParamName.TexScale  ] = 2.0f;
 		/// :End:
 	}
 

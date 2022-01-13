@@ -900,6 +900,23 @@ typedef enum material_param_ {
 	material_param_matrix = 6,
 	/*Texture information!*/
 	material_param_texture = 7,
+	/*A 1 component vector composed of signed integers.*/
+	material_param_int = 8,
+	/*A 2 component vector composed of signed integers.*/
+	material_param_int2 = 9,
+	/*A 3 component vector composed of signed integers.*/
+	material_param_int3 = 10,
+	/*A 4 component vector composed of signed integers.*/
+	material_param_int4 = 11,
+	/*A 1 component vector composed of unsigned integers. This may also be a
+	  boolean.*/
+	material_param_uint = 12,
+	/*A 2 component vector composed of unsigned integers.*/
+	material_param_uint2 = 13,
+	/*A 3 component vector composed of unsigned integers.*/
+	material_param_uint3 = 14,
+	/*A 4 component vector composed of unsigned integers.*/
+	material_param_uint4 = 15,
 } material_param_;
 
 SK_API material_t        material_find            (const char *id);
@@ -922,11 +939,20 @@ SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
+SK_API void              material_set_vector2     (material_t material, const char *name, vec2     value);
+SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);
 SK_API void              material_set_color       (material_t material, const char *name, color128 color_gamma);
 SK_API void              material_set_vector4     (material_t material, const char *name, vec4     value);
-SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);
-SK_API void              material_set_vector2     (material_t material, const char *name, vec2     value);
 SK_API void              material_set_vector      (material_t material, const char *name, vec4     value); // TODO: Remove in v0.4
+SK_API void              material_set_int         (material_t material, const char *name, int32_t  value);
+SK_API void              material_set_int2        (material_t material, const char *name, int32_t  value1, int32_t value2);
+SK_API void              material_set_int3        (material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3);
+SK_API void              material_set_int4        (material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3, int32_t value4);
+SK_API void              material_set_bool        (material_t material, const char *name, bool32_t value);
+SK_API void              material_set_uint        (material_t material, const char *name, uint32_t value);
+SK_API void              material_set_uint2       (material_t material, const char *name, uint32_t value1, uint32_t value2);
+SK_API void              material_set_uint3       (material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3);
+SK_API void              material_set_uint4       (material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3, uint32_t value4);
 SK_API void              material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t          material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t          material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);

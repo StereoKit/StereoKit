@@ -77,7 +77,10 @@
 		/// border_affect_radius - meters```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
-
+		/// <summary>The material used by the UI for Quadrant Sized UI
+		/// elements. See UI.QuadrantSizeMesh for additional details. By
+		/// default, it uses a shader that creates a 'finger shadow' that shows
+		/// how close the finger is to the UI.</summary>
 		public static Material MaterialUIQuadrant { get; private set; }
 
 		/// <summary>Default 2x2 white opaque texture, this is the texture 

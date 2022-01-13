@@ -694,7 +694,8 @@ namespace StereoKit
 		/// <summary>All UI between PushEnabled and its matching PopEnabled
 		/// will set the UI to an enabled or disabled state, allowing or
 		/// preventing interaction with specific elements. The default state is
-		/// true.</summary>
+		/// true. This currently doesn't have any visual effect, so you may
+		/// wish to pair it with a PushTint.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
 		/// interactible?</param>
 		public static void PushEnabled(bool enabled)

@@ -421,6 +421,23 @@ namespace StereoKit
 		Matrix       = 6,
 		/// <summary>Texture information!</summary>
 		Texture      = 7,
+		/// <summary>A 1 component vector composed of signed integers.</summary>
+		Int          = 8,
+		/// <summary>A 2 component vector composed of signed integers.</summary>
+		Int2         = 9,
+		/// <summary>A 3 component vector composed of signed integers.</summary>
+		Int3         = 10,
+		/// <summary>A 4 component vector composed of signed integers.</summary>
+		Int4         = 11,
+		/// <summary>A 1 component vector composed of unsigned integers. This may also be a
+		/// boolean.</summary>
+		UInt         = 12,
+		/// <summary>A 2 component vector composed of unsigned integers.</summary>
+		UInt2        = 13,
+		/// <summary>A 3 component vector composed of unsigned integers.</summary>
+		UInt3        = 14,
+		/// <summary>A 4 component vector composed of unsigned integers.</summary>
+		UInt4        = 15,
 	}
 
 	/// <summary>This enum describes how text layout behaves within the space

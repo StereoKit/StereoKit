@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class TestHatrixShaderParam : ITest
+class TestMatrixShaderParam : ITest
 {
 	Material _material;
 
