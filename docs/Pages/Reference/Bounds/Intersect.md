@@ -26,6 +26,8 @@ the start of the ray if an intersection is found!
 
 ## Examples
 
+### General Usage
+
 ```csharp
 // All these create bounds for a 1x1x1m cube around the origin!
 Bounds bounds = new Bounds(Vec3.One);

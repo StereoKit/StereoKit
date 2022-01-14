@@ -28,7 +28,9 @@ just copies in the data!
 ## Examples
 
 ### Procedurally generating a wavy grid
+
 ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
+
 Here, we'll generate a grid mesh using Mesh.SetVerts and Mesh.SetInds! This
 is a common example of creating a grid using code, we're using a sin wave
 to make it more visually interesting, but you could also substitute this for

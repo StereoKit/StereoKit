@@ -76,56 +76,72 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public Vec3 Rotate(Vec3 pt) => Vector3.Transform(pt, q);
 
-		/// <summary>Creates a rotation from a resting direction, to a
-		/// direction indicated by the direction of the two vectors provided
-		/// to the function! This is a great function for camera style
-		/// rotation, when you know where a camera is, and where you want to
-		/// look at. This prevents roll on the Z axis, Up is always (0,1,0)
-		/// </summary>
-		/// <param name="from">Where the object is.</param>
-		/// <param name="to">Where the object should be looking!</param>
-		/// <param name="up">Which direction is up from this perspective?
+		/// <summary>Creates a rotation that describes looking from a point,
+		/// to another point! This is a great function for camera style
+		/// rotation, or other facing behavior when you know where an object 
+		/// is, and where you want it to look at. This rotation works best
+		/// when applied to objects that face Vec3.Forward in their 
+		/// resting/model space pose.</summary>
+		/// <param name="lookFromPoint">Position of where the 'object' is.
 		/// </param>
-		/// <returns>A rotation from resting, to the look direction of the 
-		/// parameters.</returns>
+		/// <param name="lookAtPoint">Position of where the 'object' should
+		/// be looking towards!</param>
+		/// <param name="upDirection">Look From/At positions describe X and Y
+		/// axis rotation well, but leave Z Axiz/Roll undefined. Providing an
+		/// upDirection vector helps to indicate roll around the From/At
+		/// line. A common up direction would be (0,1,0), to prevent roll.
+		/// </param>
+		/// <returns>A rotation that describes looking from a point, towards
+		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookAt(Vec3 from, Vec3 to, Vec3 up) 
-			=> NativeAPI.quat_lookat_up(from, to, up);
+		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint, Vec3 upDirection) 
+			=> NativeAPI.quat_lookat_up(lookFromPoint, lookAtPoint, upDirection);
 
-		/// <summary>Creates a rotation from a resting direction, to a
-		/// direction indicated by the direction of the two vectors provided
-		/// to the function! This is a greatfunction for camera style
-		/// rotation, when you know where a camera is, and where you want to
-		/// look at. This prevents roll on the Z axis, Up is always (0,1,0).
+		/// <summary>Creates a rotation that describes looking from a point,
+		/// to another point! This is a great function for camera style
+		/// rotation, or other facing behavior when you know where an object 
+		/// is, and where you want it to look at. This rotation works best
+		/// when applied to objects that face Vec3.Forward in their 
+		/// resting/model space pose.
+		/// 
+		/// This overload automatically defines 'upDirection' as (0,1,0).
+		/// This indicates the rotation should contain no roll around the Z
+		/// axis, and is the most common way of using this type of rotation.
 		/// </summary>
-		/// <param name="from">Where the object is.</param>
-		/// <param name="to">Where the object should be looking!</param>
-		/// <returns>A rotation from resting, to the look direction of the
-		/// parameters.</returns>
+		/// <param name="lookFromPoint">Position of where the 'object' is.
+		/// </param>
+		/// <param name="lookAtPoint">Position of where the 'object' should
+		/// be looking towards!</param>
+		/// <returns>A rotation that describes looking from a point, towards
+		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookAt(Vec3 from, Vec3 to) 
-			=> NativeAPI.quat_lookat_up(from, to, Vec3.Up);
+		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint) 
+			=> NativeAPI.quat_lookat_up(lookFromPoint, lookAtPoint, Vec3.Up);
 
-		/// <summary>Creates a rotation from a resting direction, to the
-		/// given direction! This prevents roll on the Z axis, Up is always
-		/// (0,1,0)</summary>
+		/// <summary>Creates a rotation that describes looking towards a
+		/// direction. This is great for quickly describing facing behavior!
+		/// This rotation works best when applied to objects that face
+		/// Vec3.Forward in their resting/model space pose.</summary>
 		/// <param name="direction">Direction the rotation should be looking.
 		/// Doesn't need to be normalized.</param>
-		/// <returns>A rotation from resting, to the given direction.</returns>
+		/// <returns>A rotation that describes looking towards a direction.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookDir(Vec3 direction) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, direction);
 
-		/// <summary>Creates a rotation from a resting direction, to the
-		/// given direction! This prevents roll on the Z axis, Up is always
-		/// (0,1,0)</summary>
+		/// <summary>Creates a rotation that describes looking towards a
+		/// direction. This is great for quickly describing facing behavior!
+		/// This rotation works best when applied to objects that face
+		/// Vec3.Forward in their resting/model space pose.</summary>
 		/// <param name="x">X component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
 		/// <param name="y">Y component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
 		/// <param name="z">Z component of the direction the rotation should
 		/// be looking. Doesn't need to be normalized.</param>
-		/// <returns>A rotation from resting, to the given direction.</returns>
+		/// <returns>A rotation that describes looking towards a direction.
+		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat LookDir(float x, float y, float z) 
 			=> NativeAPI.quat_lookat(Vec3.Zero, new Vec3(x, y, z));

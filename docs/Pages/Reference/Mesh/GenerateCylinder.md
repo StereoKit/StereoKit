@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.GenerateCylinder
-description: Generates a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now. Additional development is needed for making better UVs for the edges.
+description: Generates a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now. Additional development is needed for making better UVs for the edges.  NOTE. This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCylinder
 
@@ -13,6 +13,9 @@ Generates a cylinder mesh, pre-sized to the given
 diameter and depth, UV coordinates are from a flattened top view
 right now. Additional development is needed for making better UVs
 for the edges.
+
+NOTE: This generates a completely new Mesh asset on the GPU, and
+is best done during 'initialization' of your app/scene.
 </div>
 
 |  |  |
@@ -29,10 +32,14 @@ for the edges.
 
 ## Examples
 
+### Generating a Mesh and Model
+
 ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
+// Do this in your initialization
 Mesh  cylinderMesh  = Mesh.GenerateCylinder(0.4f, 0.4f, Vec3.Up);
 Model cylinderModel = Model.FromMesh(cylinderMesh, Default.Material);
 ```
@@ -40,11 +47,13 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
+// Call this code every Step
+
 Matrix cylinderTransform = Matrix.T(-.5f, 1, 0);
-Renderer.Add(cylinderMesh, Default.Material, cylinderTransform);
+cylinderMesh.Draw(Default.Material, cylinderTransform);
 
 cylinderTransform = Matrix.T(.5f, 1, 0);
-Renderer.Add(cylinderModel, cylinderTransform);
+cylinderModel.Draw(cylinderTransform);
 ```
 ### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is

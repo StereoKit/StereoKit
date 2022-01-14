@@ -60,13 +60,9 @@ class Program
 ```
 ![Hello World](/Tools/img/StereoKitMin.gif)
 
-## Roadmap
+## Building or Contributing
 
-Where is StereoKit going next? That depends on you! What do you need? Is StereoKit missing something that it really should have? File an issue and let us know!
-
-In the short term, StereoKit will focus on the Core API, improving performance, and ensuring all basic features are present and work well! Some basic tooling, things like a visual shader editor might get built here. The Core of StereoKit is an Immediate Mode system that does not provide any framework or application state management.
-
-Long term, we'd love to add StereoKit Framework! Framework is a higher-level layer that manages application state, so more complicated functionality can be taken care of. Features such as automatic multi-user capabilities, component systems, WYSIWYG UI design tools, visual scene editors and code-free design environments will become possible.
+For those that wish to build the test project, or perhaps the whole library, there's a [guide to building StereoKit's repository](/BUILDING.md)! For those that wish to contribute features or fixes to StereoKit, awesome! There will soon be a contributor guide to help you navigate style and architecture requirements. In the meantime, check with the maintainer on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
 
 ## Dependencies
 

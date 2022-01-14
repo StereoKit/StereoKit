@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.GeneratePlane
-description: Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!
+description: Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!  NOTE. This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated Mesh.Quad asset if it already meets your needs.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GeneratePlane
 
@@ -13,6 +13,11 @@ Generates a plane on the XZ axis facing up that is
 optionally subdivided, pre-sized to the given dimensions. UV
 coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
 +X,+Z corner!
+
+NOTE: This generates a completely new Mesh asset on the GPU, and
+is best done during 'initialization' of your app/scene. You may
+also be interested in using the pre-generated `Mesh.Quad` asset
+if it already meets your needs.
 </div>
 
 |  |  |
@@ -29,6 +34,11 @@ Generates a plane with an arbitrary orientation that is
 optionally subdivided, pre-sized to the given dimensions. UV
 coordinates start at the top left indicated with
 'planeTopDirection'.
+
+NOTE: This generates a completely new Mesh asset on the GPU, and
+is best done during 'initialization' of your app/scene. You may
+also be interested in using the pre-generated `Mesh.Quad` asset
+if it already meets your needs.
 </div>
 
 |  |  |
@@ -45,10 +55,14 @@ coordinates start at the top left indicated with
 
 ## Examples
 
+### Generating a Mesh and Model
+
 ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
+// Do this in your initialization
 Mesh  planeMesh  = Mesh.GeneratePlane(Vec2.One*0.4f);
 Model planeModel = Model.FromMesh(planeMesh, Default.Material);
 ```
@@ -57,10 +71,10 @@ here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
 Matrix planeTransform = Matrix.T(-.5f, -1, 0);
-Renderer.Add(planeMesh, Default.Material, planeTransform);
+planeMesh.Draw(Default.Material, planeTransform);
 
 planeTransform = Matrix.T(.5f, -1, 0);
-Renderer.Add(planeModel, planeTransform);
+planeModel.Draw(planeTransform);
 ```
 ### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is

@@ -11,6 +11,7 @@ var documents =
 			{name : 'Using QR Codes'},
 			{name : 'Drawing'},
 			{name : 'Working with Materials'},
+			{name : 'Debugging your App'},
 		]
 		},
 		{name : 'Reference',

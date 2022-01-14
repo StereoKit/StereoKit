@@ -25,3 +25,29 @@ returns true.
 
 
 
+
+## Examples
+
+### Radio button group
+
+![A window with radio buttons]({{site.screen_url}}/UI/RadioWindow.jpg)
+
+Radio buttons are a variety of Toggle button that behaves in a manner
+more conducive to radio group style behavior. This is an example of
+how to implement a small radio button group.
+
+```csharp
+Pose windowPoseRadio = new Pose(1.5f, 0, 0, Quat.Identity);
+int  radioState      = 1;
+void ShowWindowRadio()
+{
+	UI.WindowBegin("Window Radio", ref windowPoseRadio);
+
+	if (UI.Radio("Option 1", radioState == 1)) radioState = 1;
+	if (UI.Radio("Option 2", radioState == 2)) radioState = 2;
+	if (UI.Radio("Option 3", radioState == 3)) radioState = 3;
+
+	UI.WindowEnd();
+}
+```
+

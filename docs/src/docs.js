@@ -67,20 +67,32 @@ function renderFolder(folder, parent, hierarchy) {
     folder.element = folderItem;
     parent.appendChild(folderItem);
 
+    var expanderContainer = document.createElement("span");
+    expanderContainer.className = "expander-container";
+    expanderContainer.setAttribute("aria-hidden", true);
+
     // If there are child pages, make it expandable
     if (hasChildren) {
-        // The expand tree arrow
-        var expander = document.createElement("input");
-        expander.className = "tree-branch-check";
-        expander.type      = "checkbox";
-        expander.setAttribute('aria-label', "Expand " + folder.name);
-        expander.onclick   = function() { treeDict.setItem(folder.name, !this.checked); };
-        folder.check = expander;
-        folderItem.appendChild(expander);
+        var expanderId = "expander-" + folder.name.replace(/ /g, '-');
 
-        // A span for some of the tree trickery
-        folderItem.appendChild(document.createElement("span"));
+        // Label which proxies clicks to the expander checkbox input
+        var expander = document.createElement("label");
+        expander.htmlFor = expanderId;
+        expanderContainer.appendChild(expander);
+
+        // The checkbox input used to store expand state. Also used in CSS to hide the child page lists and for keyboard focus.
+        var checkbox = document.createElement("input");
+        checkbox.id = expanderId;
+        checkbox.className = "tree-branch-check";
+        checkbox.type      = "checkbox";
+        checkbox.setAttribute('aria-label', "Expand " + folder.name);
+        checkbox.onclick   = function() { treeDict.setItem(folder.name, !this.checked); };
+        folder.check = checkbox;
+        folderItem.appendChild(checkbox);
     }
+
+    // Append the expander container after the checkbox input
+    folderItem.appendChild(expanderContainer);
 
     // Link to the actual document
     var link = document.createElement("a");

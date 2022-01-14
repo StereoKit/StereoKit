@@ -38,3 +38,30 @@ the Matrix provided here.
 
 
 
+
+## Examples
+
+### Generating a Mesh and Model
+
+![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
+Here's a quick example of generating a mesh! You can store it in just a
+Mesh, or you can attach it to a Model for easier rendering later on.
+```csharp
+// Do this in your initialization
+Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
+Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Default.Material);
+```
+Drawing both a Mesh and a Model generated this way is reasonably simple,
+here's a short example! For the Mesh, you'll need to create your own material,
+we just loaded up the default Material here.
+```csharp
+// Call this code every Step
+
+Matrix roundedCubeTransform = Matrix.T(-.5f, 0, 0);
+roundedCubeMesh.Draw(Default.Material, roundedCubeTransform);
+
+roundedCubeTransform = Matrix.T(.5f, 0, 0);
+roundedCubeModel.Draw(roundedCubeTransform);
+```
+

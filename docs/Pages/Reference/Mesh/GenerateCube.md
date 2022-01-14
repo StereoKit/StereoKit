@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.GenerateCube
-description: Generates a flat-shaded cube mesh, pre-sized to the given dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.
+description: Generates a flat-shaded cube mesh, pre-sized to the given dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.  NOTE. This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated Mesh.Cube asset if it already meets your needs.
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).GenerateCube
 
@@ -12,6 +12,11 @@ static Mesh GenerateCube(Vec3 dimensions, int subdivisions)
 Generates a flat-shaded cube mesh, pre-sized to the
 given dimensions. UV coordinates are projected flat on each face,
 0,0 -> 1,1.
+
+NOTE: This generates a completely new Mesh asset on the GPU, and
+is best done during 'initialization' of your app/scene. You may
+also be interested in using the pre-generated `Mesh.Cube` asset
+if it already meets your needs.
 </div>
 
 |  |  |
@@ -26,7 +31,10 @@ given dimensions. UV coordinates are projected flat on each face,
 
 ## Examples
 
+### Generating a Mesh and Model
+
 ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
 Here's a quick example of generating a mesh! You can store it in just a
 Mesh, or you can attach it to a Model for easier rendering later on.
 ```csharp
@@ -37,11 +45,13 @@ Drawing both a Mesh and a Model generated this way is reasonably simple,
 here's a short example! For the Mesh, you'll need to create your own material,
 we just loaded up the default Material here.
 ```csharp
+// Call this code every Step
+
 Matrix cubeTransform = Matrix.T(-.5f, -.5f, 0);
-Renderer.Add(cubeMesh, Default.Material, cubeTransform);
+cubeMesh.Draw(Default.Material, cubeTransform);
 
 cubeTransform = Matrix.T(.5f, -.5f, 0);
-Renderer.Add(cubeModel, cubeTransform);
+cubeModel.Draw(cubeTransform);
 ```
 ### UV and Face layout
 Here's a test image that illustrates how this mesh's geometry is

@@ -24,6 +24,8 @@ Create a bounding box between two corner points.
 
 ## Examples
 
+### General Usage
+
 ```csharp
 // All these create bounds for a 1x1x1m cube around the origin!
 Bounds bounds = new Bounds(Vec3.One);

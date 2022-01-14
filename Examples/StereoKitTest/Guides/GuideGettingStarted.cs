@@ -3,7 +3,7 @@
 /// 
 /// Here's a quick list of what you'll need to start developing with StereoKit:
 /// 
-/// - **[Visual Studio 2019](https://visualstudio.microsoft.com/vs/) - Use these workloads:**
+/// - **[Visual Studio 2019 or 2022](https://visualstudio.microsoft.com/vs/) - Use these workloads:**
 ///   - .NET Desktop development
 ///   - Universal Windows Platform development (for HoloLens)
 ///   - Mobile development with .Net (for Quest)
@@ -22,7 +22,7 @@
 /// For Mac developers: while StereoKit's _simulator_ does not run on Mac OS,
 /// you can still deploy to standalone Android headsets such as Quest!
 /// [See here](https://www.youtube.com/watch?v=UMwTLecVATU) for a quick video
-/// by community member Raphaël about how to do this with the experimental
+/// by community member Raphael about how to do this with the experimental
 /// cross platform template.
 /// 
 /// ## The Templates

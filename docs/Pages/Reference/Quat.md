@@ -48,7 +48,28 @@ about them!
 |--|--|
 |[Difference]({{site.url}}/Pages/Reference/Quat/Difference.html)|This gives a relative rotation between the first and second quaternion rotations. Remember that order is important here!|
 |[FromAngles]({{site.url}}/Pages/Reference/Quat/FromAngles.html)|Creates a Roll/Pitch/Yaw rotation (applied in that order) from the provided angles in degrees!|
-|[LookAt]({{site.url}}/Pages/Reference/Quat/LookAt.html)|Creates a rotation from a resting direction, to a direction indicated by the direction of the two vectors provided to the function! This is a great function for camera style rotation, when you know where a camera is, and where you want to look at. This prevents roll on the Z axis, Up is always (0,1,0)|
-|[LookDir]({{site.url}}/Pages/Reference/Quat/LookDir.html)|Creates a rotation from a resting direction, to the given direction! This prevents roll on the Z axis, Up is always (0,1,0)|
+|[LookAt]({{site.url}}/Pages/Reference/Quat/LookAt.html)|Creates a rotation that describes looking from a point, to another point! This is a great function for camera style rotation, or other facing behavior when you know where an object is, and where you want it to look at. This rotation works best when applied to objects that face Vec3.Forward in their resting/model space pose.|
+|[LookDir]({{site.url}}/Pages/Reference/Quat/LookDir.html)|Creates a rotation that describes looking towards a direction. This is great for quickly describing facing behavior! This rotation works best when applied to objects that face Vec3.Forward in their resting/model space pose.|
 |[Slerp]({{site.url}}/Pages/Reference/Quat/Slerp.html)|Spherical Linear intERPolation. Interpolates between two quaternions! Both Quats should be normalized/unit quaternions, or you may get unexpected results.|
+
+
+## Examples
+
+Quat.LookAt and LookDir are probably one of the easiest ways to
+work with quaternions in StereoKit! They're handy functions to
+have a good understanding of. Here's an example of how you might
+use them.
+```csharp
+// Draw a box that always rotates to face the user
+Vec3 boxPos = new Vec3(1,0,1);
+Quat boxRot = Quat.LookAt(boxPos, Input.Head.position);
+Mesh.Cube.Draw(Material.Default, Matrix.TR(boxPos, boxRot));
+
+// Make a Window that faces a user that enters the app looking
+// Forward.
+Pose winPose = new Pose(0,0,-0.5f, Quat.LookDir(0,0,1));
+UI.WindowBegin("Posed Window", ref winPose);
+UI.WindowEnd();
+
+```
 

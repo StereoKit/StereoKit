@@ -53,9 +53,37 @@ a fudgeton of verts! 4 billion or so :)
 |  |  |
 |--|--|
 |[Find]({{site.url}}/Pages/Reference/Mesh/Find.html)|Finds the Mesh with the matching id, and returns a reference to it. If no Mesh it found, it returns null.|
-|[GenerateCube]({{site.url}}/Pages/Reference/Mesh/GenerateCube.html)|Generates a flat-shaded cube mesh, pre-sized to the given dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.|
-|[GenerateCylinder]({{site.url}}/Pages/Reference/Mesh/GenerateCylinder.html)|Generates a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now. Additional development is needed for making better UVs for the edges.|
-|[GeneratePlane]({{site.url}}/Pages/Reference/Mesh/GeneratePlane.html)|Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!|
-|[GenerateRoundedCube]({{site.url}}/Pages/Reference/Mesh/GenerateRoundedCube.html)|Generates a cube mesh with rounded corners, pre-sized to the given dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded corners.|
-|[GenerateSphere]({{site.url}}/Pages/Reference/Mesh/GenerateSphere.html)|Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.|
+|[GenerateCube]({{site.url}}/Pages/Reference/Mesh/GenerateCube.html)|Generates a flat-shaded cube mesh, pre-sized to the given dimensions. UV coordinates are projected flat on each face, 0,0 -> 1,1.  NOTE: This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated `Mesh.Cube` asset if it already meets your needs.|
+|[GenerateCylinder]({{site.url}}/Pages/Reference/Mesh/GenerateCylinder.html)|Generates a cylinder mesh, pre-sized to the given diameter and depth, UV coordinates are from a flattened top view right now. Additional development is needed for making better UVs for the edges.  NOTE: This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene.|
+|[GeneratePlane]({{site.url}}/Pages/Reference/Mesh/GeneratePlane.html)|Generates a plane on the XZ axis facing up that is optionally subdivided, pre-sized to the given dimensions. UV coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the +X,+Z corner!  NOTE: This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated `Mesh.Quad` asset if it already meets your needs.|
+|[GenerateRoundedCube]({{site.url}}/Pages/Reference/Mesh/GenerateRoundedCube.html)|Generates a cube mesh with rounded corners, pre-sized to the given dimensions. UV coordinates are 0,0 -> 1,1 on each face, meeting at the middle of the rounded corners.  NOTE: This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene.|
+|[GenerateSphere]({{site.url}}/Pages/Reference/Mesh/GenerateSphere.html)|Generates a sphere mesh, pre-sized to the given diameter, created by sphereifying a subdivided cube! UV coordinates are taken from the initial unspherified cube.  NOTE: This generates a completely new Mesh asset on the GPU, and is best done during 'initialization' of your app/scene. You may also be interested in using the pre-generated `Mesh.Sphere` asset if it already meets your needs.|
+
+
+## Examples
+
+### Generating a Mesh and Model
+
+![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+
+Here's a quick example of generating a mesh! You can store it in just a
+Mesh, or you can attach it to a Model for easier rendering later on.
+```csharp
+// Do this in your initialization
+Mesh  roundedCubeMesh  = Mesh.GenerateRoundedCube(Vec3.One * 0.4f, 0.05f);
+Model roundedCubeModel = Model.FromMesh(roundedCubeMesh, Default.Material);
+```
+
+Drawing both a Mesh and a Model generated this way is reasonably simple,
+here's a short example! For the Mesh, you'll need to create your own material,
+we just loaded up the default Material here.
+```csharp
+// Call this code every Step
+
+Matrix roundedCubeTransform = Matrix.T(-.5f, 0, 0);
+roundedCubeMesh.Draw(Default.Material, roundedCubeTransform);
+
+roundedCubeTransform = Matrix.T(.5f, 0, 0);
+roundedCubeModel.Draw(roundedCubeTransform);
+```
 
