@@ -5,8 +5,7 @@
         android:versionCode="1"
         android:versionName="1.0">
 
-    <!-- This is the platform API where NativeActivity was introduced. -->
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="25"/>
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29"/>
 
     <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
     <uses-permission android:name="com.oculus.permission.HAND_TRACKING" />

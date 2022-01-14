@@ -10,12 +10,13 @@
 
 #pragma warning(push)
 #pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
-#define STB_IMAGE_IMPLEMENTATION
 #include "../libraries/stb_image.h"
 #pragma warning(pop)
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <string.h>
+#include <limits.h>
 
 namespace sk {
 

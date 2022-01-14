@@ -187,6 +187,9 @@
     <ClCompile Include="tools\virtual_keyboard.cpp">
       <Filter>tools</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\stb_image.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -197,9 +200,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\stb_image.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\stb_rect_pack.h">
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\stb_truetype.h">

@@ -212,8 +212,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/sokol_time.h
   StereoKitC/libraries/sokol_time.cpp
   StereoKitC/libraries/stb_image.h
+  StereoKitC/libraries/stb_image.cpp
   StereoKitC/libraries/stb_image_write.h
-  StereoKitC/libraries/stb_rect_pack.h
   StereoKitC/libraries/stb_truetype.h
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp

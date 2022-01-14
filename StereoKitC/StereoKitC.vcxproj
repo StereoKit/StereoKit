@@ -153,6 +153,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
+    <ClCompile Include="libraries\stb_image.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="log.cpp" />
@@ -217,7 +218,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="libraries\sokol_time.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />
-    <ClInclude Include="libraries\stb_rect_pack.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
     <ClInclude Include="libraries\tinycthread.h" />

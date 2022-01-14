@@ -137,7 +137,7 @@ void common_init() {
 	// Create a PBR floor material
 	tex_t tex_color = tex_create_file("test.png");
 	//tex_t tex_norm  = tex_create_file("test_normal.png");
-	floor_mat = material_copy_id("default/material");
+	floor_mat = material_copy_id(default_id_material);
 	material_set_texture(floor_mat, "diffuse",   tex_color);
 	//material_set_texture(floor_mat, "normal",    tex_norm);
 	material_set_float  (floor_mat, "tex_scale", 6);

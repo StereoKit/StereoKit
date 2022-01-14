@@ -10,6 +10,7 @@
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
 	#define SK_EXIMPORT
+    #define SK_CONST __attribute__((weak))
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
 	#if defined(_DLL) || defined(BUILDING_DLL)
@@ -17,6 +18,7 @@
 	#else
 		#define SK_EXIMPORT __declspec(dllimport)
 	#endif
+	#define SK_CONST extern const __declspec(selectany)
 #endif
 
 #ifdef __cplusplus
@@ -437,26 +439,26 @@ static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
 static inline bool32_t vec2_in_radius   (vec2 pt, vec2 center, float radius) { return vec2_distance_sq(center, pt) < radius*radius; }
 
-static const float  deg2rad         = 0.01745329252f;
-static const float  rad2deg         = 57.295779513f;
-static const float  cm2m            = 0.01f;
-static const float  mm2m            = 0.001f;
-static const float  m2cm            = 100.f;
-static const float  m2mm            = 1000.f;
+SK_CONST float  deg2rad         = 0.01745329252f;
+SK_CONST float  rad2deg         = 57.295779513f;
+SK_CONST float  cm2m            = 0.01f;
+SK_CONST float  mm2m            = 0.001f;
+SK_CONST float  m2cm            = 100.f;
+SK_CONST float  m2mm            = 1000.f;
 
-static const vec2   vec2_zero       = { 0,0 };
-static const vec2   vec2_one        = { 1,1 };
-static const vec3   vec3_one        = { 1,1, 1 };
-static const vec3   vec3_zero       = { 0,0, 0 };
-static const vec3   vec3_up         = { 0,1, 0 };
-static const vec3   vec3_forward    = { 0,0,-1 };
-static const vec3   vec3_right      = { 1,0, 0 };
-static const vec3   vec3_unit_x     = { 1,0, 0 };
-static const vec3   vec3_unit_y     = { 0,1, 0 };
-static const vec3   vec3_unit_z     = { 0,0, 1 };
-static const quat   quat_identity   = { 0,0, 0,1 };
-static const matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
-static const pose_t pose_identity   = { {0,0,0}, {0,0,0,1} };
+SK_CONST vec2   vec2_zero       = { 0,0 };
+SK_CONST vec2   vec2_one        = { 1,1 };
+SK_CONST vec3   vec3_one        = { 1,1, 1 };
+SK_CONST vec3   vec3_zero       = { 0,0, 0 };
+SK_CONST vec3   vec3_up         = { 0,1, 0 };
+SK_CONST vec3   vec3_forward    = { 0,0,-1 };
+SK_CONST vec3   vec3_right      = { 1,0, 0 };
+SK_CONST vec3   vec3_unit_x     = { 1,0, 0 };
+SK_CONST vec3   vec3_unit_y     = { 0,1, 0 };
+SK_CONST vec3   vec3_unit_z     = { 0,0, 1 };
+SK_CONST quat   quat_identity   = { 0,0, 0,1 };
+SK_CONST matrix matrix_identity = { { {1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1} } };
+SK_CONST pose_t pose_identity   = { {0,0,0}, {0,0,0,1} };
 
 #define unit_cm(cm) ((cm)*0.01f)
 #define unit_mm(mm) ((mm)*0.001f)
@@ -1838,47 +1840,47 @@ SK_API void assets_releaseref_threadsafe(void *asset);
 
 ///////////////////////////////////////////
 
-static const char *default_id_material             = "default/material";
-static const char *default_id_material_pbr         = "default/material_pbr";
-static const char *default_id_material_pbr_clip    = "default/material_pbr_clip";
-static const char *default_id_material_unlit       = "default/material_unlit";
-static const char *default_id_material_unlit_clip  = "default/material_unlit_clip";
-static const char *default_id_material_equirect    = "default/equirect_convert";
-static const char *default_id_material_font        = "default/material_font";
-static const char *default_id_material_hand        = "default/material_hand";
-static const char *default_id_material_ui          = "default/material_ui";
-static const char *default_id_material_ui_box      = "default/material_ui_box";
-static const char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
-static const char *default_id_tex                  = "default/tex";
-static const char *default_id_tex_black            = "default/tex_black";
-static const char *default_id_tex_gray             = "default/tex_gray";
-static const char *default_id_tex_flat             = "default/tex_flat";
-static const char *default_id_tex_rough            = "default/tex_rough";
-static const char *default_id_cubemap              = "default/cubemap";
-static const char *default_id_font                 = "default/font";
-static const char *default_id_mesh_quad            = "default/mesh_quad";
-static const char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";
-static const char *default_id_mesh_cube            = "default/mesh_cube";
-static const char *default_id_mesh_sphere          = "default/mesh_sphere";
-static const char *default_id_mesh_lefthand        = "default/mesh_lefthand";
-static const char *default_id_mesh_righthand       = "default/mesh_righthand";
-static const char *default_id_mesh_ui_button       = "default/mesh_ui_button";
-static const char *default_id_shader               = "default/shader";
-static const char *default_id_shader_pbr           = "default/shader_pbr";
-static const char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
-static const char *default_id_shader_unlit         = "default/shader_unlit";
-static const char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
-static const char *default_id_shader_font          = "default/shader_font";
-static const char *default_id_shader_equirect      = "default/shader_equirect";
-static const char *default_id_shader_ui            = "default/shader_ui";
-static const char *default_id_shader_ui_box        = "default/shader_ui_box";
-static const char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
-static const char *default_id_shader_sky           = "default/shader_sky";
-static const char *default_id_shader_lines         = "default/shader_lines";
-static const char *default_id_sound_click          = "default/sound_click";
-static const char *default_id_sound_unclick        = "default/sound_unclick";
-static const char *default_id_sound_grab           = "default/sound_grab";
-static const char *default_id_sound_ungrab         = "default/sound_ungrab";
+SK_CONST char *default_id_material             = "default/material";
+SK_CONST char *default_id_material_pbr         = "default/material_pbr";
+SK_CONST char *default_id_material_pbr_clip    = "default/material_pbr_clip";
+SK_CONST char *default_id_material_unlit       = "default/material_unlit";
+SK_CONST char *default_id_material_unlit_clip  = "default/material_unlit_clip";
+SK_CONST char *default_id_material_equirect    = "default/equirect_convert";
+SK_CONST char *default_id_material_font        = "default/material_font";
+SK_CONST char *default_id_material_hand        = "default/material_hand";
+SK_CONST char *default_id_material_ui          = "default/material_ui";
+SK_CONST char *default_id_material_ui_box      = "default/material_ui_box";
+SK_CONST char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+SK_CONST char *default_id_tex                  = "default/tex";
+SK_CONST char *default_id_tex_black            = "default/tex_black";
+SK_CONST char *default_id_tex_gray             = "default/tex_gray";
+SK_CONST char *default_id_tex_flat             = "default/tex_flat";
+SK_CONST char *default_id_tex_rough            = "default/tex_rough";
+SK_CONST char *default_id_cubemap              = "default/cubemap";
+SK_CONST char *default_id_font                 = "default/font";
+SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
+SK_CONST char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";
+SK_CONST char *default_id_mesh_cube            = "default/mesh_cube";
+SK_CONST char *default_id_mesh_sphere          = "default/mesh_sphere";
+SK_CONST char *default_id_mesh_lefthand        = "default/mesh_lefthand";
+SK_CONST char *default_id_mesh_righthand       = "default/mesh_righthand";
+SK_CONST char *default_id_mesh_ui_button       = "default/mesh_ui_button";
+SK_CONST char *default_id_shader               = "default/shader";
+SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
+SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
+SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
+SK_CONST char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char *default_id_shader_font          = "default/shader_font";
+SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
+SK_CONST char *default_id_shader_ui            = "default/shader_ui";
+SK_CONST char *default_id_shader_ui_box        = "default/shader_ui_box";
+SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+SK_CONST char *default_id_shader_sky           = "default/shader_sky";
+SK_CONST char *default_id_shader_lines         = "default/shader_lines";
+SK_CONST char *default_id_sound_click          = "default/sound_click";
+SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
+SK_CONST char *default_id_sound_grab           = "default/sound_grab";
+SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
 
 #ifdef __cplusplus
 } // namespace sk
