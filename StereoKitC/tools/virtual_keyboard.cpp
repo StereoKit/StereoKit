@@ -114,58 +114,67 @@ void virtualkeyboard_update() {
 	else if (keyboard_shift)                   layer_index = 1;
 	else if (keyboard_altgr)                   layer_index = 2;
 
+	// Until we have more, this is capped at 2
+	assert(layer_index < 2);
+
 	// Get the right layout for this text context
-	const keylayout_layer_t* layer = nullptr;
+	const keylayout_key_t* layer = nullptr;
 	switch (keyboard_text_context) {
-	case text_context_text:  layer = &keyboard_active_layout->text  [layer_index]; break;
-	case text_context_number:layer = &keyboard_active_layout->number[layer_index]; break;
-	case text_context_uri:   layer = &keyboard_active_layout->uri   [layer_index]; break;
-	default:                 layer = &keyboard_active_layout->text  [layer_index]; break;
+	case text_context_text:  layer = keyboard_active_layout->text  [layer_index]; break;
+	case text_context_number:layer = keyboard_active_layout->number[layer_index]; break;
+	case text_context_uri:   layer = keyboard_active_layout->uri   [layer_index]; break;
+	default:                 layer = keyboard_active_layout->text  [layer_index]; break;
 	//case text_context_number_decimal:        layer = &keyboard_active_layout->number_decimal_layer       [layer_index]; break;
 	//case text_context_number_signed:         layer = &keyboard_active_layout->number_signed_layer        [layer_index]; break;
 	//case text_context_number_signed_decimal: layer = &keyboard_active_layout->number_signed_decimal_layer[layer_index]; break;
 	}
 
 	// Draw the keyboard
-	float button_size = ui_line_height();
-	for (int row = 0; row < 6; row++) {
-		for (int i = 0; i < 35; i++) {
-			keylayout_key_t key  = layer->keys[row][i];
-			vec2            size = vec2{ button_size * key.width, button_size };
-			if (key.width == 0) continue;
+	float   button_size = ui_line_height();
+	int32_t i           = 0;
+	while (layer[i].special_key != special_key_end) {
+		const keylayout_key_t *curr = &layer[i];
+		i += 1;
+		vec2 size = vec2{ button_size * curr->width, button_size };
+		if (curr->special_key == special_key_nextline) ui_nextline();
+		if (curr->width == 0) continue;
 
-			ui_push_idi((i * row) + 1000);
-			if (key.special_key == special_key_spacer) {
-				ui_layout_reserve(size);
-			} else if (key.special_key == special_key_fn) {
-				ui_toggle_sz_16(key.display_text, keyboard_fn, size);
-			} else if (key.special_key == special_key_alt) {
-				if (ui_toggle_sz_16(key.display_text, keyboard_alt, size)) {
-					if (keyboard_alt) input_keyboard_inject_press  (key_alt);
-					else              input_keyboard_inject_release(key_alt);
-				}
-			} else if (key.special_key == special_key_ctrl) {
-				if (ui_toggle_sz_16(key.display_text, keyboard_ctrl, size)) {
-					if (keyboard_ctrl) input_keyboard_inject_press  (key_ctrl);
-					else               input_keyboard_inject_release(key_ctrl);
-				}
-			} else if (key.special_key == special_key_shift) {
-				if (ui_toggle_sz_16(key.display_text, keyboard_shift, size)) {
-					if (keyboard_shift) input_keyboard_inject_press  (key_shift);
-					else                input_keyboard_inject_release(key_shift);
-				}
-			} else if (key.special_key == special_key_alt_gr) {
-				if (ui_toggle_sz_16(key.display_text, keyboard_altgr, size)) {
-					if (keyboard_altgr) input_keyboard_inject_press  (key_alt);
-					else                input_keyboard_inject_release(key_alt);
-				}
-			} else if (ui_button_sz_16(key.display_text, size)) {
-				virtualkeyboard_keypress(key);
+		ui_push_idi(i + 1000);
+		switch(curr->special_key) {
+		case special_key_spacer:   ui_layout_reserve(size); break;
+		case special_key_nextline: break;
+		case special_key_fn:       ui_toggle_sz_16(curr->display_text, keyboard_fn, size); break;
+		case special_key_alt: {
+			if (ui_toggle_sz_16(curr->display_text, keyboard_alt, size)) {
+				if (keyboard_alt) input_keyboard_inject_press  (key_alt);
+				else              input_keyboard_inject_release(key_alt);
 			}
-			ui_pop_id();
-			ui_sameline();
+		} break;
+		case special_key_ctrl: {
+			if (ui_toggle_sz_16(curr->display_text, keyboard_ctrl, size)) {
+				if (keyboard_ctrl) input_keyboard_inject_press  (key_ctrl);
+				else               input_keyboard_inject_release(key_ctrl);
+			}
+		} break;
+		case special_key_shift: {
+			if (ui_toggle_sz_16(curr->display_text, keyboard_shift, size)) {
+				if (keyboard_shift) input_keyboard_inject_press  (key_shift);
+				else                input_keyboard_inject_release(key_shift);
+			}
+		} break;
+		case special_key_alt_gr: {
+			if (ui_toggle_sz_16(curr->display_text, keyboard_altgr, size)) {
+				if (keyboard_altgr) input_keyboard_inject_press  (key_alt);
+				else                input_keyboard_inject_release(key_alt);
+			}
+		} break;
+		default: {
+			if (ui_button_sz_16(curr->display_text, size))
+				virtualkeyboard_keypress(*curr);
+		} break;
 		}
-		ui_nextline();
+		ui_pop_id();
+		ui_sameline();
 	}
 	ui_pop_preserve_keyboard();
 	ui_window_end();
