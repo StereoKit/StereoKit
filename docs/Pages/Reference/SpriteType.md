@@ -5,8 +5,8 @@ description: The way the Sprite is stored on the backend! Does it get batched an
 ---
 # enum SpriteType
 
-The way the Sprite is stored on the backend! Does it get batched and atlased
-for draw efficiency, or is it a single image?
+The way the Sprite is stored on the backend! Does it get
+batched and atlased for draw efficiency, or is it a single image?
 
 
 

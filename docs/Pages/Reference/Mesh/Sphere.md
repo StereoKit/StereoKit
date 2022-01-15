@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.Sphere
-description: See Default.MeshSphere
+description: A sphere mesh with a diameter of 1. This is equivalent to Mesh.GenerateSphere(1,4).
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Sphere
 
@@ -10,5 +10,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Sphere{ get }
 </div>
 
 ## Description
-See `Default.MeshSphere`
+A sphere mesh with a diameter of 1. This is equivalent
+to Mesh.GenerateSphere(1,4).
 

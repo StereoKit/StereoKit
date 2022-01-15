@@ -37,7 +37,7 @@ StereoKit uses 48,000 samples per second of audio.
 
 |  |  |
 |--|--|
-|Single[]& samples|An array of audio samples, where each              sample is between -1 and +1.|
+|Single[]& samples|An array of audio samples, where each             sample is between -1 and +1.|
 |int sampleCount|You can use this to write only a subset             of the samples in the array, rather than the entire array!|
 
 

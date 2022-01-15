@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UI.Toggle
-description: A toggleable button! A button will expand to fit the text provided to it, vertically and horizontally. Text is re-used as the id. Will return true any time the toggle value changes!
+description: A toggleable button! A button will expand to fit the text provided to it, vertically and horizontally. Text is re-used as the id. Will return true any time the toggle value changes, NOT the toggle value itself!
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).Toggle
 
@@ -11,14 +11,32 @@ static bool Toggle(string text, Boolean& value)
 ```
 A toggleable button! A button will expand to fit the
 text provided to it, vertically and horizontally. Text is re-used
-as the id. Will return true any time the toggle value changes!
+as the id. Will return true any time the toggle value changes, NOT
+the toggle value itself!
 </div>
 
 |  |  |
 |--|--|
 |string text|Text to display on the Toggle and id for             tracking element state. MUST be unique within current hierarchy.|
 |Boolean& value|The current state of the toggle button! True              means it's toggled on, and false means it's toggled off.|
-|RETURNS: bool|Will return true any time the toggle value changes!|
+|RETURNS: bool|Will return true any time the toggle value changes, NOT the toggle value itself!|
+
+<div class='signature' markdown='1'>
+```csharp
+static bool Toggle(string text, Boolean& value, Vec2 size)
+```
+A toggleable button! A button will expand to fit the
+text provided to it, vertically and horizontally. Text is re-used
+as the id. Will return true any time the toggle value changes, NOT
+the toggle value itself!
+</div>
+
+|  |  |
+|--|--|
+|string text|Text to display on the Toggle and id for             tracking element state. MUST be unique within current hierarchy.|
+|Boolean& value|The current state of the toggle button! True              means it's toggled on, and false means it's toggled off.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|The layout size for this element in Hierarchy             space. If an axis is left as zero, it will be auto-calculated. For             X this is the remaining width of the current layout, and for Y this             is UI.LineHeight.|
+|RETURNS: bool|Will return true any time the toggle value changes, NOT the toggle value itself!|
 
 
 

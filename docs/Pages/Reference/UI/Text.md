@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UI.Text
-description: Displays a large chunk of text on the current layout. This can include new lines and spaces, and will properly wrap once it fills the entire layout!
+description: Displays a large chunk of text on the current layout. This can include new lines and spaces, and will properly wrap once it fills the entire layout! Text uses the UI's current font settings, which can be changed with UI.Push/PopTextStyle.
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).Text
 
@@ -11,7 +11,8 @@ static void Text(string text, TextAlign textAlign)
 ```
 Displays a large chunk of text on the current layout.
 This can include new lines and spaces, and will properly wrap
-once it fills the entire layout!
+once it fills the entire layout! Text uses the UI's current font
+settings, which can be changed with UI.Push/PopTextStyle.
 </div>
 
 |  |  |

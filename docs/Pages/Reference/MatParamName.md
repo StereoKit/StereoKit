@@ -20,6 +20,7 @@ this is checked and verified by the compiler!
 |ClipCutoff|In clip shaders, this is the cutoff value below which pixels are discarded. Typically, the diffuse/albedo's alpha component is sampled for comparison here.  This represents the float param 'cutoff'.|
 |ColorTint|A per-material color tint, behavior could vary from shader to shader, but often this is just multiplied against the diffuse texture right at the start.  This represents the Color param 'color'.|
 |DiffuseTex|The primary color texture for the shader! Diffuse, Albedo, 'The Texture', or whatever you want to call it, this is usually the base color that the shader works with.  This represents the texture param 'diffuse'.|
+|EmissionFactor|A multiplier for emission values sampled from the emission texture. The default emission texture in SK shaders is white, and the default value for this parameter is 0,0,0,0.  This represents the Color param 'emission_factor'.|
 |EmissionTex|This texture is unaffected by lighting, and is frequently just added in on top of the material's final color! Tends to look really glowy.  This represents the texture param 'emission'.|
 |MetallicAmount|For physically based shader, this is a multiplier to scale the metallic properties of the material.  This represents the float param 'metallic'.|
 |MetalTex|For physically based shaders, metal is a texture that encodes metallic and roughness data into the 'B' and 'G' channels, respectively.  This represents the texture param 'metal'.|
@@ -39,6 +40,6 @@ representing shader parameter names, or use the MatParamName
 enum for compile safety.
 ```csharp
 exampleMaterial[MatParamName.DiffuseTex] = gridTex;
-exampleMaterial[MatParamName.TexScale  ] = 2;
+exampleMaterial[MatParamName.TexScale  ] = 2.0f;
 ```
 

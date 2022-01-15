@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Shift
-description: Left or right Shift
+description: Left or right Shift.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Shift
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Shift
 </div>
 
 ## Description
-Left or right Shift
+Left or right Shift.
 

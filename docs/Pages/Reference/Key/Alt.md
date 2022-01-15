@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Alt
-description: Left or right Alt key
+description: Left or right Alt key.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Alt
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Alt
 </div>
 
 ## Description
-Left or right Alt key
+Left or right Alt key.
 

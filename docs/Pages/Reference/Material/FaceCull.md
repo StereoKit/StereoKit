@@ -20,7 +20,7 @@ default behavior. On a sphere, this is a little hard to see, but
 you might notice here that the lighting is for the back side of
 the sphere!
 ```csharp
-matCull = Default.Material.Copy();
+matCull = Material.Default.Copy();
 matCull.FaceCull = Cull.Front;
 ```
 ![FaceCull material example]({{site.screen_url}}/MaterialCull.jpg)

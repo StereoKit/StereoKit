@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Platform.WriteFile
-description: Writes a text file to the filesystem, taking advantage of any permissions that may have been granted by Platform.FilePicker.
+description: Writes a UTF-8 text file to the filesystem, taking advantage of any permissions that may have been granted by Platform.FilePicker.
 ---
 # [Platform]({{site.url}}/Pages/Reference/Platform.html).WriteFile
 
@@ -9,15 +9,15 @@ description: Writes a text file to the filesystem, taking advantage of any permi
 ```csharp
 static bool WriteFile(string filename, string data)
 ```
-Writes a text file to the filesystem, taking advantage
-of any permissions that may have been granted by
+Writes a UTF-8 text file to the filesystem, taking
+advantage of any permissions that may have been granted by
 Platform.FilePicker.
 </div>
 
 |  |  |
 |--|--|
 |string filename|Path to the new file. Not affected by             Assets folder path.|
-|string data|A UTF-8 string to write to the file.|
+|string data|A string to write to the file. This gets             converted to a UTF-8 encoding.|
 |RETURNS: bool|True on success, False on failure.|
 
 <div class='signature' markdown='1'>

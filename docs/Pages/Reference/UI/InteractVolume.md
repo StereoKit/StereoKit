@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UI.InteractVolume
-description: This watches a volume of space for pinch interaction events! If a hand is inside the space indicated by the bounds, this function will return that hand's pinch state, as well as indicate which hand did it through the out parameter.  Note that since this only provides the hand's pinch state, it won't give you JustActive and JustInactive notifications for when the hand enters or leaves the volume.
+description: This method will be removed in v0.4, use UI.VolumeAt.  This watches a volume of space for pinch interaction events! If a hand is inside the space indicated by the bounds, this function will return that hand's pinch state, as well as indicate which hand did it through the out parameter.  Note that since this only provides the hand's pinch state, it won't give you JustActive and JustInactive notifications for when the hand enters or leaves the volume.
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).InteractVolume
 
@@ -9,6 +9,8 @@ description: This watches a volume of space for pinch interaction events! If a h
 ```csharp
 static BtnState InteractVolume(Bounds bounds, Handed& hand)
 ```
+This method will be removed in v0.4, use UI.VolumeAt.
+
 This watches a volume of space for pinch interaction
 events! If a hand is inside the space indicated by the bounds,
 this function will return that hand's pinch state, as well as

@@ -6,7 +6,7 @@ description: This is a link to the currently active animation. If no animation i
 # [Model]({{site.url}}/Pages/Reference/Model.html).ActiveAnim
 
 <div class='signature' markdown='1'>
-Anim ActiveAnim{ get }
+[Anim]({{site.url}}/Pages/Reference/Anim.html) ActiveAnim{ get }
 </div>
 
 ## Description

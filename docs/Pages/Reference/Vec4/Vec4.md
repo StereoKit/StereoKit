@@ -21,9 +21,20 @@ A basic constructor, just copies the values in!
 
 <div class='signature' markdown='1'>
 ```csharp
+void Vec4(float xyzw)
+```
+A basic constructor, just copies the value in as x,y,z and,w component!
+</div>
+
+|  |  |
+|--|--|
+|float xyzw|X,Y,Z,and W component of the vector.|
+
+<div class='signature' markdown='1'>
+```csharp
 void Vec4(Vec3 xyz, float w)
 ```
-A basic constructor, just copies the values in!
+A short hand constructor, just copies the values in!
 </div>
 
 |  |  |

@@ -6,7 +6,7 @@ description: This is the current render layer mask for Mixed Reality Capture, or
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).CaptureFilter
 
 <div class='signature' markdown='1'>
-static RenderLayer CaptureFilter{ get }
+static [RenderLayer]({{site.url}}/Pages/Reference/RenderLayer.html) CaptureFilter{ get }
 </div>
 
 ## Description

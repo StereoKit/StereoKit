@@ -22,7 +22,7 @@ also adds some glow to the surface near the user's fingers. It
 works best on flat surfaces, and in StereoKit's design language,
 can be used to indicate that something is interactive.
 ```csharp
-matUI = Default.MaterialUI.Copy();
+matUI = Material.UI.Copy();
 ```
 And here's what it looks like:
 ![UI Material example]({{site.screen_url}}/MaterialUI.jpg)

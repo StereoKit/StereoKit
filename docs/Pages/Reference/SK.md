@@ -30,6 +30,7 @@ library!
 |[Initialize]({{site.url}}/Pages/Reference/SK/Initialize.html)|Initializes StereoKit window, default resources, systems, etc.|
 |[PreLoadLibrary]({{site.url}}/Pages/Reference/SK/PreLoadLibrary.html)|If you need to call StereoKit code before calling SK.Initialize, you may need to explicitly load the library first. This can be useful for setting up a few things, but should probably be a pretty rare case.|
 |[Quit]({{site.url}}/Pages/Reference/SK/Quit.html)|Lets StereoKit know it should quit! It'll finish the current frame, and after that Step will return that it wants to exit.|
+|[Run]({{site.url}}/Pages/Reference/SK/Run.html)|This passes application execution over to StereoKit. This continuously steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. Once execution completes, it properly calls the shutdown callback and shuts down StereoKit for you.  Using this method is important for compatability with WASM and is the preferred method of controlling the main loop, over `SK.Step`.|
 |[Shutdown]({{site.url}}/Pages/Reference/SK/Shutdown.html)|Shuts down all StereoKit initialized systems. Release your own StereoKit created assets before calling this.|
 |[Step]({{site.url}}/Pages/Reference/SK/Step.html)|Steps all StereoKit systems, and inserts user code via callback between the appropriate system updates.|
 

@@ -27,13 +27,13 @@ sometimes!
 
 |  |  |
 |--|--|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Default]({{site.url}}/Pages/Reference/Shader/Default.html)|See `Default.Shader`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBR]({{site.url}}/Pages/Reference/Shader/PBR.html)|See `Default.ShaderPbr`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBRClip]({{site.url}}/Pages/Reference/Shader/PBRClip.html)|See `Default.ShaderPbrClip`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UI]({{site.url}}/Pages/Reference/Shader/UI.html)|See `Default.ShaderUI`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UIBox]({{site.url}}/Pages/Reference/Shader/UIBox.html)|See `Default.ShaderUIBox`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Unlit]({{site.url}}/Pages/Reference/Shader/Unlit.html)|See `Default.ShaderUnlit`|
-|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UnlitClip]({{site.url}}/Pages/Reference/Shader/UnlitClip.html)|See `Default.ShaderUnlitClip`|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Default]({{site.url}}/Pages/Reference/Shader/Default.html)|This is a fast, general purpose shader. It uses a texture for 'diffuse', a 'color' property for tinting the material, and a 'tex_scale' for scaling the UV coordinates. For lighting, it just uses a lookup from the current cubemap.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBR]({{site.url}}/Pages/Reference/Shader/PBR.html)|A physically based shader.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [PBRClip]({{site.url}}/Pages/Reference/Shader/PBRClip.html)|Same as ShaderPBR, but with a discard clip for transparency.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UI]({{site.url}}/Pages/Reference/Shader/UI.html)|A shader for UI or interactable elements, this'll be the same as the Shader, but with an additional finger 'shadow' and distance circle effect that helps indicate finger distance from the surface of the object.|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UIBox]({{site.url}}/Pages/Reference/Shader/UIBox.html)|A shader for indicating interaction volumes! It renders a border around the edges of the UV coordinates that will 'grow' on proximity to the user's finger. It will discard pixels outside of that border, but will also show the finger shadow. This is meant to be an opaque shader, so it works well for depth LSR.  This shader works best on cube-like meshes where each face has UV coordinates from 0-1.  Shader Parameters: ```color                - color border_size          - meters border_size_grow     - meters border_affect_radius - meters```|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [Unlit]({{site.url}}/Pages/Reference/Shader/Unlit.html)|Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all!|
+|[Shader]({{site.url}}/Pages/Reference/Shader.html) [UnlitClip]({{site.url}}/Pages/Reference/Shader/UnlitClip.html)|Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all! This shader will also discard pixels with an alpha of zero.|
 
 
 ## Static Methods

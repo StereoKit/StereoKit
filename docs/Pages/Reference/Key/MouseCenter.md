@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.MouseCenter
-description: Center mouse button
+description: Center mouse button.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).MouseCenter
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) MouseCenter
 </div>
 
 ## Description
-Center mouse button
+Center mouse button.
 

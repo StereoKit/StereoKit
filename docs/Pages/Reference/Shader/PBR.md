@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Shader.PBR
-description: See Default.ShaderPbr
+description: A physically based shader.
 ---
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).PBR
 
@@ -10,5 +10,5 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) PBR{ get }
 </div>
 
 ## Description
-See `Default.ShaderPbr`
+A physically based shader.
 

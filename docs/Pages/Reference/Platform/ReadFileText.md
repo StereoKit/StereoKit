@@ -17,7 +17,7 @@ Platform.FilePicker. Returns null on failure.
 |  |  |
 |--|--|
 |string filename|Path to the file. Not affected by Assets             folder path.|
-|RETURNS: string|A UTF-8 encoded string if successful, null if not.|
+|RETURNS: string|A UTF-8 decoded string if successful, null if not.|
 
 
 

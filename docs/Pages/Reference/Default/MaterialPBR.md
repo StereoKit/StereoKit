@@ -28,7 +28,7 @@ Occlusion can be separated out into a different texture as per
 the GLTF spec, so you do need to assign it separately from the
 Metal texture.
 ```csharp
-matPBR = Default.MaterialPBR.Copy();
+matPBR = Material.PBR.Copy();
 matPBR[MatParamName.DiffuseTex  ] = Tex.FromFile("metal_plate_diff.jpg");
 matPBR[MatParamName.MetalTex    ] = Tex.FromFile("metal_plate_metal.jpg", false);
 matPBR[MatParamName.OcclusionTex] = Tex.FromFile("metal_plate_metal.jpg", false);

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Vec2.AngleBetween
-description: Calculates a signed angle between two vectors! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A. Vectors do not need to be normalized.
+description: Calculates a signed angle between two vectors in degrees! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A. Vectors do not need to be normalized. NOTE. Since this will return a positive or negative angle, order of parameters matters!
 ---
 # [Vec2]({{site.url}}/Pages/Reference/Vec2.html).AngleBetween
 
@@ -9,17 +9,19 @@ description: Calculates a signed angle between two vectors! Sign will be positiv
 ```csharp
 static float AngleBetween(Vec2 a, Vec2 b)
 ```
-Calculates a signed angle between two vectors! Sign will
-be positive if B is counter-clockwise (left) of A, and negative
-if B is clockwise (right) of A. Vectors do not need to be
+Calculates a signed angle between two vectors in degrees!
+Sign will be positive if B is counter-clockwise (left) of A, and
+negative if B is clockwise (right) of A. Vectors do not need to be
 normalized.
+NOTE: Since this will return a positive or negative angle, order of
+parameters matters!
 </div>
 
 |  |  |
 |--|--|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) a|The first, initial vector, A. Does not need to be             normalized.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) b|The second vector, B, that we're finding the              angle to. Does not need to be normalized.|
-|RETURNS: float|a signed angle between two vectors! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A.|
+|RETURNS: float|a signed angle between two vectors in degrees! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A.|
 
 
 

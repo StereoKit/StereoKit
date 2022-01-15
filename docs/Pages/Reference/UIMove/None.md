@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UIMove.None
-description: Do not allow user input to change the element's pose at all!
+description: Do not allow user input to change the element's pose at all! You may also be interested in UI.Push/PopSurface.
 ---
 # [UIMove]({{site.url}}/Pages/Reference/UIMove.html).None
 
@@ -11,5 +11,5 @@ static [UIMove]({{site.url}}/Pages/Reference/UIMove.html) None
 
 ## Description
 Do not allow user input to change the element's pose at
-all!
+all! You may also be interested in UI.Push/PopSurface.
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Material.PBRClip
-description: See Default.MaterialPBRClip
+description: Same as MaterialPBR, but it uses a discard clip for transparency.
 ---
 # [Material]({{site.url}}/Pages/Reference/Material.html).PBRClip
 
@@ -10,5 +10,6 @@ static [Material]({{site.url}}/Pages/Reference/Material.html) PBRClip{ get }
 </div>
 
 ## Description
-See `Default.MaterialPBRClip`
+Same as MaterialPBR, but it uses a discard clip for
+transparency.
 

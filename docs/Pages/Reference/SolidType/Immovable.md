@@ -10,6 +10,7 @@ static [SolidType]({{site.url}}/Pages/Reference/SolidType.html) Immovable
 </div>
 
 ## Description
-Immovable objects are always stationary! They have infinite mass,
-zero velocity, and can't collide with Immovable of Unaffected types.
+Immovable objects are always stationary! They have
+infinite mass, zero velocity, and can't collide with Immovable of
+Unaffected types.
 

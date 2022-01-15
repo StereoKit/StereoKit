@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Shader.PBRClip
-description: See Default.ShaderPbrClip
+description: Same as ShaderPBR, but with a discard clip for transparency.
 ---
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).PBRClip
 
@@ -10,5 +10,6 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) PBRClip{ get }
 </div>
 
 ## Description
-See `Default.ShaderPbrClip`
+Same as ShaderPBR, but with a discard clip for
+transparency.
 

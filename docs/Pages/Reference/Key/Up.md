@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Up
-description: Up arrow key
+description: Up arrow key.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Up
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Up
 </div>
 
 ## Description
-Up arrow key
+Up arrow key.
 

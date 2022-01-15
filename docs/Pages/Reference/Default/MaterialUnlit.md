@@ -21,7 +21,7 @@ StereoKit's default unlit behavior, here's where you do it!
 ## Examples
 
 ```csharp
-matUnlit = Default.MaterialUnlit.Copy();
+matUnlit = Material.Unlit.Copy();
 matUnlit[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 ```
 ![Unlit material example]({{site.screen_url}}/MaterialUnlit.jpg)

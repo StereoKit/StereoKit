@@ -57,6 +57,7 @@ right, +y is upwards, and -z is forward.
 
 |  |  |
 |--|--|
+|[AngleBetween]({{site.url}}/Pages/Reference/Vec3/AngleBetween.html)|Calculates the angle between two vectors in degrees! Vectors do not need to be normalized, and the result will always be positive.|
 |[AngleXY]({{site.url}}/Pages/Reference/Vec3/AngleXY.html)|Creates a vector that points out at the given 2D angle! This creates the vector on the XY plane, and allows you to specify a constant z value.|
 |[AngleXZ]({{site.url}}/Pages/Reference/Vec3/AngleXZ.html)|Creates a vector that points out at the given 2D angle! This creates the vector on the XZ plane, and allows you to specify a constant y value.|
 |[Cross]({{site.url}}/Pages/Reference/Vec3/Cross.html)|The cross product of two vectors!|

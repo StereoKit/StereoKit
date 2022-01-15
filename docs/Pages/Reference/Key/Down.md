@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Down
-description: Down arrow key
+description: Down arrow key.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Down
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Down
 </div>
 
 ## Description
-Down arrow key
+Down arrow key.
 
