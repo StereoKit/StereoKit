@@ -1,16 +1,17 @@
 ﻿namespace StereoKit {
 	internal static class DefaultIds
 	{
-		internal const string material         = "default/material";
-		internal const string materialPBR      = "default/material_pbr";
-		internal const string materialPBRClip  = "default/material_pbr_clip";
-		internal const string materialUnlit    = "default/material_unlit";
-		internal const string materialUnlitClip= "default/material_unlit_clip";
-		internal const string materialEquirect = "default/equirect_convert";
-		internal const string materialFont     = "default/material_font";
-		internal const string materialHand     = "default/material_hand";
-		internal const string materialUI       = "default/material_ui";
-		internal const string materialUIBox    = "default/material_ui_box";
+		internal const string material           = "default/material";
+		internal const string materialPBR        = "default/material_pbr";
+		internal const string materialPBRClip    = "default/material_pbr_clip";
+		internal const string materialUnlit      = "default/material_unlit";
+		internal const string materialUnlitClip  = "default/material_unlit_clip";
+		internal const string materialEquirect   = "default/equirect_convert";
+		internal const string materialFont       = "default/material_font";
+		internal const string materialHand       = "default/material_hand";
+		internal const string materialUI         = "default/material_ui";
+		internal const string materialUIBox      = "default/material_ui_box";
+		internal const string materialUIQuadrant = "default/material_ui_quadrant";
 
 		internal const string tex      = "default/tex";
 		internal const string texBlack = "default/tex_black";

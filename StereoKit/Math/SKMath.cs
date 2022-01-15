@@ -39,17 +39,15 @@ namespace StereoKit
 
 		/// <summary>Calculates the minimum angle 'distance' between two 
 		/// angles. This covers wraparound cases like: the minimum distance 
-		/// between 10 and 350 is 20. Only works on angles in the range of
-		/// 0-360.</summary>
+		/// between 10 and 350 is 20.</summary>
 		/// <param name="a">First angle, in degrees.</param>
 		/// <param name="b">Second angle, in degrees.</param>
 		/// <returns>Degrees 0-180, the minimum angle between a and b.
 		/// </returns>
 		public static float AngleDist(float a, float b)
 		{
-			float delta = b-a;
-			if (delta < 0) delta += 360;
-			return delta > 180 ? delta-180 : delta;
+			float delta = (b - a + 180) % 360 - 180;
+			return Math.Abs(delta < -180 ? delta + 360 : delta);
 		}
 
 		/// <summary>Modulus, works better than '%' for negative values.

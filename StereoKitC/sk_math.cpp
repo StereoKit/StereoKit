@@ -41,6 +41,9 @@ quat quat_difference(const quat &a, const quat &b) {
 ///////////////////////////////////////////
 
 quat quat_lookat(const vec3 &from, const vec3 &at) {
+	if (from.x == at.x && from.y == at.y && from.z == at.z)
+		return quat_identity;
+
 	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), XMVectorSet(0, 1, 0, 0));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
@@ -48,6 +51,9 @@ quat quat_lookat(const vec3 &from, const vec3 &at) {
 ///////////////////////////////////////////
 
 quat quat_lookat_up(const vec3 &from, const vec3 &at, const vec3 &up) {
+	if (from.x == at.x && from.y == at.y && from.z == at.z)
+		return quat_identity;
+
 	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), math_vec3_to_fast(up));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
@@ -76,6 +82,41 @@ quat quat_normalize(const quat &a) {
 
 quat quat_inverse(const quat &a) {
 	return math_fast_to_quat(XMQuaternionInverse(math_quat_to_fast(a)));
+}
+
+///////////////////////////////////////////
+
+vec4 quat_to_axis_angle(quat a) {
+	float    angle;
+	XMVECTOR xaxis;
+	XMQuaternionToAxisAngle(&xaxis, &angle, math_quat_to_fast(a));
+
+	vec4 result = math_fast_to_vec4(xaxis);
+	result.w = angle * rad2deg;
+	return result;
+}
+
+///////////////////////////////////////////
+
+quat quat_axis_angle(vec3 axis, float angle_deg) {
+	return math_fast_to_quat(XMQuaternionRotationAxis(math_vec3_to_fast(axis), angle_deg*deg2rad));
+}
+
+///////////////////////////////////////////
+
+quat quat_normal_angle(vec3 normalized_axis, float angle_deg) {
+	return math_fast_to_quat(XMQuaternionRotationNormal(math_vec3_to_fast(normalized_axis), angle_deg*deg2rad));
+}
+
+///////////////////////////////////////////
+
+// See: https://stackoverflow.com/a/22401169/10813424
+// and its reference: http://www.euclideanspace.com/maths/geometry/rotations/for/decomposition/
+void quat_decompose_swing_twist(quat rotation, vec3 direction, quat *out_swing, quat *out_twist) {
+	vec3 axis  = { rotation.x, rotation.y, rotation.z }; // rotation axis
+	vec3 p     = vec3_project  ( axis, direction ); // return projection v1 on to v2  (parallel component)
+	*out_twist = quat_normalize( { p.x, p.y, p.z, rotation.w } );
+	*out_swing = rotation * quat{-out_twist->x, -out_twist->y, -out_twist->z, out_twist->w}; // twist.conjugated();
 }
 
 ///////////////////////////////////////////
@@ -306,6 +347,45 @@ matrix matrix_trs(const vec3 &position, const quat &orientation, const vec3 &sca
 	matrix result;
 	math_fast_to_matrix(mat, &result);
 	return result;
+}
+
+///////////////////////////////////////////
+
+matrix matrix_t(vec3 position) {
+	return {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		position.x, position.y, position.z, 1 };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_r(quat orientation) {
+	XMMATRIX mat = XMMatrixRotationQuaternion(XMLoadFloat4((XMFLOAT4*)&orientation));
+	matrix result;
+	math_fast_to_matrix(mat, &result);
+	return result;
+}
+
+///////////////////////////////////////////
+
+matrix matrix_s(vec3 scale) {
+	return {
+		scale.x,0,0,0,
+		0,scale.y,0,0,
+		0,0,scale.z,0,
+		0,0,0,1 };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_ts(vec3 position, vec3 scale) {
+	return {
+		scale.x,0,0,0,
+		0,scale.y,0,0,
+		0,0,scale.z,0,
+		position.x, position.y, position.z, 1 };
 }
 
 ///////////////////////////////////////////

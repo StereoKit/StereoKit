@@ -30,6 +30,23 @@ class DemoPBR : ITest
 			pbrMaterials[i][MatParamName.MetallicAmount ] = x/(float)(materialGrid-1);
 			pbrMaterials[i][MatParamName.RoughnessAmount] = y/(float)(materialGrid-1);
 		} }
+
+		/// :CodeSample: Material.GetAllParamInfo Material.GetParamInfo Material.ParamCount MatParamInfo MatParamInfo.name MatParamInfo.type
+		/// ### Listing parameters in a Material
+
+		// Iterate using a foreach
+		Log.Info("Builtin PBR Materials contain these parameters:");
+		foreach (MatParamInfo info in Material.PBR.GetAllParamInfo())
+			Log.Info($"- {info.name} : {info.type}");
+
+		// Or with a normal for loop
+		Log.Info("Builtin Unlit Materials contain these parameters:");
+		for (int i=0; i<Material.Unlit.ParamCount; i+=1)
+		{
+			MatParamInfo info = Material.Unlit.GetParamInfo(i);
+			Log.Info($"- {info.name} : {info.type}");
+		}
+		/// :End:
 	}
 
 	public void Shutdown()

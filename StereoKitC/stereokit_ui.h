@@ -10,6 +10,7 @@ typedef enum ui_move_ {
 	ui_move_exact = 0,
 	ui_move_face_user,
 	ui_move_pos_only,
+	ui_move_none,
 } ui_move_;
 
 typedef enum ui_win_ {
@@ -55,8 +56,23 @@ SK_API bool32_t ui_far_interact_enabled();
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr));
-SK_API void     ui_push_text_style     (text_style_t  style);
-SK_API void     ui_pop_text_style      ();
+
+SK_API void     ui_push_text_style       (text_style_t  style);
+SK_API void     ui_pop_text_style        ();
+SK_API void     ui_push_tint             (color128 tint_gamma);
+SK_API void     ui_pop_tint              ();
+SK_API void     ui_push_enabled          (bool32_t enabled);
+SK_API void     ui_pop_enabled           ();
+SK_API void     ui_push_preserve_keyboard(bool32_t preserve_keyboard);
+SK_API void     ui_pop_preserve_keyboard ();
+SK_API void     ui_push_surface          (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
+SK_API void     ui_pop_surface           ();
+SK_API uint64_t ui_push_id               (const char     *id);
+SK_API uint64_t ui_push_id_16            (const char16_t *id);
+SK_API uint64_t ui_push_idi              (int32_t id);
+SK_API void     ui_pop_id                ();
+SK_API uint64_t ui_stack_hash            (const char     *string);
+SK_API uint64_t ui_stack_hash_16         (const char16_t *string);
 
 SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
 SK_API vec2     ui_layout_remaining();
@@ -64,19 +80,11 @@ SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
 
-SK_API void     ui_push_surface  (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
-SK_API void     ui_pop_surface   ();
 SK_API vec2     ui_area_remaining(); // TODO: remove in v0.4, prefer ui_layout_remaining
 SK_API void     ui_nextline      ();
 SK_API void     ui_sameline      ();
 SK_API float    ui_line_height   ();
 SK_API void     ui_space         (float space);
-SK_API uint64_t ui_push_id       (const char     *id);
-SK_API uint64_t ui_push_id_16    (const char16_t *id);
-SK_API uint64_t ui_push_idi      (int32_t id);
-SK_API void     ui_pop_id        ();
-SK_API uint64_t ui_stack_hash    (const char     *string);
-SK_API uint64_t ui_stack_hash_16 (const char16_t *string);
 
 SK_API bool32_t ui_is_interacting (handed_ hand);
 SK_API void     ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, sk_ref(float) finger_offset, sk_ref(button_state_) button_state, sk_ref(button_state_) focus_state);
@@ -118,8 +126,8 @@ SK_API bool32_t ui_toggle_sz      (const char     *text, sk_ref(bool32_t) presse
 SK_API bool32_t ui_toggle_sz_16   (const char16_t *text, sk_ref(bool32_t) pressed, vec2 size);
 //SK_API bool32_t ui_toggle_round(const char *text, bool32_t &pressed);
 SK_API void     ui_model          (model_t model, vec2 ui_size, float model_scale);
-SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero));
-SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero));
+SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
+SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API bool32_t ui_hslider        (const char     *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_16     (const char16_t *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_f64    (const char     *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));

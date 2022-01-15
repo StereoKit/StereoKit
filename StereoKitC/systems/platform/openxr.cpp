@@ -1,13 +1,20 @@
+
+#include "../../stereokit.h"
+#include "../../_stereokit.h"
+
+#include "platform_utils.h"
+
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
 #include "../../sk_memory.h"
 #include "../../log.h"
 #include "../../asset_types/texture.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/ferr_hash.h"
 #include "../render.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
@@ -15,7 +22,6 @@
 #include "linux.h"
 #include "uwp.h"
 #include "win32.h"
-#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
@@ -50,20 +56,22 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 
-bool   xr_check_bounds = false;
-bool   xr_has_bounds   = false;
-vec2   xr_bounds_size  = {};
-pose_t xr_bounds_pose  = { {}, quat_identity };
+array_t<const char*> xr_exts_user   = {};
+array_t<uint64_t>    xr_exts_loaded = {};
+
+bool   xr_has_bounds        = false;
+vec2   xr_bounds_size       = {};
+pose_t xr_bounds_pose       = pose_identity;
+pose_t xr_bounds_pose_local = pose_identity;
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-XrReferenceSpaceType openxr_preferred_space     ();
-bool                 openxr_preferred_extensions(uint32_t &out_extension_count, const char **out_extensions);
-void                 openxr_preferred_layers    (uint32_t &out_layer_count, const char **out_layers);
-XrTime               openxr_acquire_time        ();
+XrReferenceSpaceType openxr_preferred_space ();
+void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
+XrTime               openxr_acquire_time    ();
 
 ///////////////////////////////////////////
 
@@ -188,8 +196,11 @@ bool openxr_init() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions([](const char *ext) {log_diagf("available: %s", ext);});
-	extensions.each([](const char *&ext) { log_diagf("REQUESTED: <~grn>%s<~clr>", ext); });
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, [](const char *ext) {log_diagf("available: %s", ext);});
+	extensions.each([](const char *&ext) { 
+		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
+		xr_exts_loaded.add(hash_fnv64_string(ext));
+	});
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);
@@ -313,6 +324,10 @@ bool openxr_init() {
 	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+
+	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
+	else                                                                log_diagf("Platform does not support single-pass rendering");
+	
 
 	// Exception for the articulated WMR hand simulation, and the Vive Index
 	// controller equivalent. These simulations are insufficient to treat them
@@ -476,7 +491,9 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time = openxr_acquire_time();
+	xr_time        = openxr_acquire_time();
+	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
+	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
 	return true;
 }
@@ -589,13 +606,6 @@ void openxr_step_end() {
 		openxr_render_frame();
 
 	render_clear();
-
-	// Check if the bounds have changed. This needs a valid xr_time, which is
-	// why we have this on a flag delay. xr_time is set in openxr_render_frame
-	if (xr_check_bounds) {
-		xr_check_bounds = false;
-		xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, xr_time);
-	}
 }
 
 ///////////////////////////////////////////
@@ -629,12 +639,10 @@ void openxr_poll_events() {
 				xr_running = true;
 				log_diag("OpenXR session begin.");
 			} break;
-			case XR_SESSION_STATE_SYNCHRONIZED: {
-				xr_check_bounds = true;
-			} break;
+			case XR_SESSION_STATE_SYNCHRONIZED: break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_run = false;              break;
-			case XR_SESSION_STATE_LOSS_PENDING: sk_run = false;              break;
+			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
@@ -643,10 +651,11 @@ void openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_run = false; return;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
-			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose, pending->changeTime);
+			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 			break;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
@@ -658,11 +667,6 @@ void openxr_poll_events() {
 void openxr_poll_actions() {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
 		return;
-
-	// Track the head location
-	openxr_get_space(xr_head_space, &input_head_pose_local);
-	matrix root = render_get_cam_final();
-	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	oxri_update_frame();
 }
@@ -715,7 +719,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 #endif
 
 	pose_t result = {};
-	if (!openxr_get_space(space, &result)) {
+	if (!openxr_get_space(space, &result, time)) {
 		log_warn("world_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
 		return pose_identity;
 	}
@@ -846,4 +850,134 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 #endif
 }
 
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_instance() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_instance;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_session() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_session;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_space() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_app_space;
+}
+
+///////////////////////////////////////////
+
+int64_t backend_openxr_get_time() {
+	if (backend_xr_get_type() != backend_xr_type_openxr) 
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return xr_time;
+}
+
+///////////////////////////////////////////
+
+void *backend_openxr_get_function(const char *function_name) {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	if (xr_instance == XR_NULL_HANDLE)
+		log_err("backend_openxr_get_function must be called after StereoKit initialization!");
+
+	void   (*fn)()  = nullptr;
+	XrResult result = xrGetInstanceProcAddr(xr_instance, function_name, &fn);
+	if (XR_FAILED(result)) {
+		log_errf("Failed to find OpenXR function '%s' [%s]", function_name, openxr_string(result));
+		return nullptr;
+	}
+
+	return (void*)fn;
+}
+
+///////////////////////////////////////////
+
+bool32_t backend_openxr_ext_enabled(const char *extension_name) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return false;
+	}
+	uint64_t hash = hash_fnv64_string(extension_name);
+	return xr_exts_loaded.index_of(hash) >= 0;
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_ext_request(const char *extension_name) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+
+	xr_exts_user.add(string_copy(extension_name));
+}
+
 } // namespace sk
+
+#else
+
+namespace sk {
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_instance() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_session() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_space() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+int64_t backend_openxr_get_time() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
+void *backend_openxr_get_function(const char *function_name) {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
+bool32_t backend_openxr_ext_enabled(const char *extension_name) {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return false;
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_ext_request(const char *extension_name) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+}
+#endif

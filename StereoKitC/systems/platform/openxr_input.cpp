@@ -1,3 +1,6 @@
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "openxr_extensions.h"
 #include "openxr_input.h"
@@ -6,7 +9,6 @@
 #include "../render.h"
 #include "../hand/input_hand.h"
 
-#include "platform_utils.h"
 #include "../../libraries/array.h"
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
@@ -518,7 +520,12 @@ void oxri_shutdown() {
 
 ///////////////////////////////////////////
 
-void oxri_update_frame() {
+void oxri_update_poses() {
+	// We occasionally need to update poses multiple times per frame, to
+	// account for camera movement, or predicted time updates. This code is 
+	// called separate from button press and tracking events to prevent
+	// issues with hiding 'just_active/inactive' events.
+
 	// Update our action set with up-to-date input data!
 	XrActiveActionSet action_set = { };
 	action_set.actionSet     = xrc_action_set;
@@ -528,10 +535,14 @@ void oxri_update_frame() {
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
 
+	matrix root   = render_get_cam_final    ();
+	quat   root_q = matrix_extract_rotation(root);
+
+	// Track the head location
+	openxr_get_space(xr_head_space, &input_head_pose_local);
+	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
+
 	// Get input from whatever controllers may be present
-	bool   menu_button = false;
-	matrix root        = render_get_cam_final();
-	quat   root_q      = matrix_extract_rotation(root);
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
@@ -547,11 +558,15 @@ void oxri_update_frame() {
 		// rotation or position are tracked independently of eachother.
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		bool tracked_pos = false;
+		bool tracked_rot = false;
+		bool valid_pos   = false;
+		bool valid_rot   = false;
 		if (XR_UNQUALIFIED_SUCCESS(res)) {
-			bool tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT)    != 0;
-			bool tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
-			bool valid_pos   = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)      != 0;
-			bool valid_rot   = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)   != 0;
+			tracked_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT)    != 0;
+			tracked_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) != 0;
+			valid_pos   = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)      != 0;
+			valid_rot   = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)   != 0;
 			if (valid_pos) {
 				vec3 local_pos;
 				memcpy(&local_pos, &space_location.pose.position, sizeof(vec3));
@@ -565,7 +580,6 @@ void oxri_update_frame() {
 			input_controllers[hand].tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
 			input_controllers[hand].tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
 		}
-		input_controllers[hand].tracked = button_make_state(input_controllers[hand].tracked & button_state_active, state_grip.isActive);
 
 		// Controller aim pose
 		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };
@@ -574,6 +588,45 @@ void oxri_update_frame() {
 		pose_t local_aim;
 		openxr_get_space(xrc_space_aim[hand], &local_aim);
 		input_controllers[hand].aim = { root * local_aim.position, local_aim.orientation * root_q };
+	}
+
+	// eye input
+	if (sk_info.eye_tracking_present) {
+		pointer_t           *pointer     = input_get_pointer(xr_eyes_pointer);
+		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
+		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
+		action_info.action = xrc_action_eyes;
+		xrGetActionStatePose(xr_session, &action_info, &action_pose);
+
+		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose_local)) {
+			input_eyes_pose_world.position    = root   * input_eyes_pose_local.position;
+			input_eyes_pose_world.orientation = root_q * input_eyes_pose_local.orientation;
+
+			pointer->ray.pos     = input_eyes_pose_world.position;
+			pointer->ray.dir     = input_eyes_pose_world.orientation * vec3_forward;
+			pointer->orientation = input_eyes_pose_world.orientation;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void oxri_update_frame() {
+	// This function call already syncs OpenXR actions
+	oxri_update_poses();
+
+	// Get input from whatever controllers may be present
+	bool menu_button = false;
+	for (uint32_t hand = 0; hand < handed_max; hand++) {
+		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
+		get_info.subactionPath = xrc_hand_subaction_path[hand];
+
+		//// Pose actions
+
+		input_controllers[hand].tracked = button_make_state(
+			input_controllers[hand].tracked & button_state_active,
+			(input_controllers[hand].tracked_pos != track_state_lost ||
+			 input_controllers[hand].tracked_rot != track_state_lost));
 
 		//// Float actions
 
@@ -635,15 +688,6 @@ void oxri_update_frame() {
 
 		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, action_pose.isActive);
 		pointer->tracked = input_eyes_track_state;
-
-		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose_local)) {
-			input_eyes_pose_world.position    = root * input_eyes_pose_local.position;
-			input_eyes_pose_world.orientation = root_q * input_eyes_pose_local.orientation;
-
-			pointer->ray.pos     = input_eyes_pose_world.position;
-			pointer->ray.dir     = input_eyes_pose_world.orientation * vec3_forward;
-			pointer->orientation = input_eyes_pose_world.orientation;
-		}
 	}
 }
 
@@ -678,3 +722,4 @@ void oxri_update_interaction_profile() {
 }
 
 } // namespace sk
+#endif

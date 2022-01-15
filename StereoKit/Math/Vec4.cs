@@ -36,15 +36,16 @@ namespace StereoKit
 		public static readonly Vec4 UnitW = new Vec4(0, 0, 0, 1);
 
 		/// <summary>This extracts a Vec2 from the X and Y axes.</summary>
-		public Vec2 XY  { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
+		public Vec2 XY { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
 		/// <summary>This extracts a Vec2 from the Y and Z axes.</summary>
-		public Vec2 YZ  { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
+		public Vec2 YZ { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
 		/// <summary>This extracts a Vec2 from the Z and W axes.</summary>
-		public Vec2 ZW  { get => new Vec2(z, w); set { z = value.x; w = value.y; } }
+		public Vec2 ZW { get => new Vec2(z, w); set { z = value.x; w = value.y; } }
 		/// <summary>This extracts a Vec2 from the X and Z axes.</summary>
-		public Vec2 XZ  { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
+		public Vec2 XZ { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
 		/// <summary>This extracts a Vec3 from the X, Y, and Z axes.</summary>
 		public Vec3 XYZ { get => new Vec3(x, y, z); set { x = value.x; y = value.y; z = value.z; } }
+
 
 		/// <summary>A Vec4 and a Quat are only really different by name and
 		/// purpose. So, if you need to do Quat math with your Vec4, or visa
@@ -59,7 +60,13 @@ namespace StereoKit
 		public Vec4(float x, float y, float z, float w) 
 			=> v = new Vector4(x, y, z, w);
 
-		/// <summary>A basic constructor, just copies the values in!</summary>
+
+		/// <summary>A basic constructor, just copies the value in as x,y,z and,w component!</summary>
+		/// <param name="xyzw">X,Y,Z,and W component of the vector.</param>
+		public Vec4(float xyzw)
+			=> v = new Vector4(xyzw, xyzw, xyzw, xyzw);
+
+		/// <summary>A short hand constructor, just copies the values in!</summary>
 		/// <param name="xyz">X, Y and Z components of the vector.</param>
 		/// <param name="w">W component of the vector.</param>
 		public Vec4(Vec3 xyz, float w)

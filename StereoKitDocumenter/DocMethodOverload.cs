@@ -72,6 +72,8 @@ namespace StereoKitDocumenter
 			Type result = Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
 			if (result == null)
 				result = Type.GetType("StereoKit.Framework." + rootMethod.parent.name + ", StereoKit");
+			if (result == null)
+				result = Type.GetType("StereoKit.Backend+" + rootMethod.parent.name + ", StereoKit");
 			return result;
 		}
 		private static MethodBase GetMethodInfo(string signature, DocMethod rootMethod)
@@ -127,15 +129,20 @@ namespace StereoKitDocumenter
 				})
 				.ToArray();
 
+			// Scrape out generics tags, don't quite know how to use them yet.
+			string methodName = rootMethod.name;
+			if (methodName.Contains('`'))
+				methodName = methodName.Substring(0, methodName.IndexOf('`'));
+
 			Type       parent = GetParentType(rootMethod);
-			MethodBase result = rootMethod.name == "#ctor" ?
+			MethodBase result = methodName == "#ctor" ?
 				(MethodBase)parent.GetConstructor(paramTypes) :
-				(MethodBase)parent.GetMethod     (rootMethod.name, paramTypes);
+				(MethodBase)parent.GetMethod     (methodName, paramTypes);
 
 			// If it's generic, but there's no overloads, we can just return
 			// the only method present
-			if (result == null && rootMethod.name != "#ctor" && paramTypes.Contains(typeof(object)) && parent.GetMethods().Where(m=>m.Name==rootMethod.name).Count() == 1)
-				result = parent.GetMethod(rootMethod.name);
+			if (result == null && methodName != "#ctor" && paramTypes.Contains(typeof(object)) && parent.GetMethods().Where(m=>m.Name==methodName).Count() == 1)
+				result = parent.GetMethod(methodName);
 
 			if (result == null)
 				throw new Exception("Can't find info for method " + rootMethod.name);

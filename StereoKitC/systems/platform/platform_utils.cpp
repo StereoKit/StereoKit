@@ -11,6 +11,9 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/array.h"
 #include "../../tools/file_picker.h"
+#include "../../tools/virtual_keyboard.h"
+#include "../../systems/input_keyboard.h"
+#include "../../asset_types/font.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +54,13 @@
 #include <dirent.h> 
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
+#endif
+
+#ifdef SK_OS_WEB
+#include "web.h"
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <stdio.h>
 #endif
 
 namespace sk {
@@ -138,7 +148,15 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	}
 #endif
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
+	FILE *fp = _wfopen(wfilename, L"rb");
+	free(wfilename);
+#else
 	FILE *fp = fopen(filename, "rb");
+#endif
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't find %s", filename);
 		return false;
@@ -171,7 +189,15 @@ bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 		return true;
 #endif
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
+	FILE *fp = _wfopen(wfilename, L"wb");
+	free(wfilename);
+#else
 	FILE *fp = fopen(filename, "wb");
+#endif
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't write %s", filename);
 		return false;
@@ -197,6 +223,8 @@ bool platform_get_cursor(vec2 &out_pos) {
 	out_pos.y = (float)cursor_pos.y;
 #elif defined(SK_OS_LINUX)
 	result = linux_get_cursor(out_pos);
+#elif defined(SK_OS_WEB)
+	result = web_get_cursor(out_pos);
 #else
 #endif
 	return result;
@@ -213,6 +241,8 @@ void platform_set_cursor(vec2 window_pos) {
 	SetCursorPos  (pt.x, pt.y);
 #elif defined(SK_OS_LINUX)
 	linux_set_cursor(window_pos);
+#elif defined(SK_OS_WEB)
+	web_set_cursor(window_pos);
 #endif
 }
 
@@ -225,6 +255,8 @@ float platform_get_scroll() {
 	return win32_scroll;
 #elif defined(SK_OS_LINUX)
 	return linux_get_scroll();
+#elif defined(SK_OS_WEB)
+	return web_get_scroll();
 #else
 	return 0;
 #endif
@@ -243,6 +275,11 @@ void platform_debug_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
 	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
 	__android_log_write(priority, "StereoKit", text);
+#elif defined(SK_OS_WEB)
+	if      (level == log_diagnostic) emscripten_console_log(text);
+	else if (level == log_inform    ) emscripten_console_log(text);
+	else if (level == log_warning   ) emscripten_console_warn(text);
+	else if (level == log_error     ) emscripten_console_error(text);
 #else
 	(void)level;
 	(void)text;
@@ -313,6 +350,8 @@ void platform_sleep(int ms) {
 	Sleep(ms);
 #elif defined(SK_OS_LINUX)
     sleep(ms / 1000);
+#elif defined(SK_OS_WEB)
+	emscripten_sleep(ms);
 #else
 	usleep(ms * 1000);
 #endif
@@ -330,17 +369,54 @@ bool platform_keyboard_available() {
 
 ///////////////////////////////////////////
 
-void platform_keyboard_show(bool visible) {
-#if defined(SK_OS_WINDOWS_UWP)
-	uwp_show_keyboard(visible);
-#else
-#endif
+bool32_t force_fallback_keyboard = false;
+bool32_t platform_keyboard_get_force_fallback() {
+	return force_fallback_keyboard;
 }
 
 ///////////////////////////////////////////
 
-bool platform_keyboard_visible() {
-	return false;
+void platform_keyboard_set_force_fallback(bool32_t force_fallback) {
+	force_fallback_keyboard = force_fallback;
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show(bool32_t visible, text_context_ type) {
+#if defined(SK_OS_WINDOWS_UWP)
+	// UWP handles soft keyboards on its own quite nicely!
+	if (!force_fallback_keyboard) {
+		uwp_show_keyboard(visible);
+		return;
+	}
+#endif
+
+	// Since we're now using the fallback keyboard, we need to balance soft
+	// keyboards with physical keyboard on our own.
+	// - It's always OK to set visible to false.
+	// - Flatscreen never needs a soft keyboard.
+	// - We'll assume someone in XR needs a soft keyboard up until they
+	//   touch a physical keyboard. If a physical keyboard has been
+	//   touched, then we'll avoid popping up a soft keyboard until a few
+	//   minutes have passed since that interaction. TODO: this behavior
+	//   may need some revision based on how people interact with it.
+	const float physical_interact_timeout = 60 * 5; // 5 minutes
+	if (visible == false) virtualkeyboard_open(false, type);
+	else if (sk_active_display_mode() != display_mode_flatscreen &&
+	         (input_last_physical_keypress < 0 || (time_getf()-input_last_physical_keypress) > physical_interact_timeout) ) {
+
+		virtualkeyboard_open(visible, type);
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_keyboard_visible() {
+#if defined(SK_OS_WINDOWS_UWP)
+	if (!force_fallback_keyboard)
+		return uwp_keyboard_visible();
+#endif
+	return virtualkeyboard_get_open();
 }
 
 ///////////////////////////////////////////
@@ -414,6 +490,8 @@ font_t platform_default_font() {
 	fonts.each(free);
 	fonts.free();
 	return result;
+#elif defined(SK_OS_WEB)
+	return font_create_default();
 #else
 	array_t<const char *> fonts = array_t<const char *>::make(3);
 	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
@@ -440,6 +518,8 @@ char *platform_working_dir() {
 	int32_t len    = GetCurrentDirectoryA(0, nullptr);
 	char   *result = sk_malloc_t(char, len);
 	GetCurrentDirectoryA(len, result);
+#elif defined(SK_OS_WEB)
+	char *result = string_copy("/");
 #else
 	int32_t len    = 260;
 	char   *result = sk_malloc_t(char, len);
@@ -594,7 +674,27 @@ char *platform_pop_path_new(const char *path) {
 
 ///////////////////////////////////////////
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+wchar_t *platform_to_wchar(const char *utf8_string) {
+	int32_t  wsize  = MultiByteToWideChar(CP_UTF8, 0, utf8_string, -1, nullptr, 0);
+	wchar_t *result = sk_malloc_t(wchar_t, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, utf8_string, -1, result, wsize);
+	return result;
+}
+
+char *platform_from_wchar(const wchar_t *string) {
+	int     len  = wcslen(string)+1;
+	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);
+	char *result = sk_malloc_t(char, size);
+	WideCharToMultiByte               (CP_UTF8, 0, string, len, result, size, nullptr, nullptr);
+	return result;
+}
+#endif
+
+///////////////////////////////////////////
+
 bool platform_utils_init() {
+	virtualkeyboard_initialize();
 	return true;
 }
 
@@ -602,6 +702,7 @@ bool platform_utils_init() {
 
 void platform_utils_update() {
 	file_picker_update();
+	virtualkeyboard_update();
 }
 
 ///////////////////////////////////////////

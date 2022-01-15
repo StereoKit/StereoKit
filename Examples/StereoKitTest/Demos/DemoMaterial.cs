@@ -38,27 +38,27 @@ class DemoMaterial : ITest
 
 		meshSphere = Mesh.GenerateSphere(1,8);
 
-		/// :CodeSample: Default.Material
+		/// :CodeSample: Default.Material Material.Default
 		/// If you want to modify the default material, it's recommended to
 		/// copy it first!
-		matDefault = Default.Material.Copy();
+		matDefault = Material.Default.Copy();
 		/// And here's what it looks like:
 		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
 		/// :End:
 
-		/// :CodeSample: Default.MaterialUI
+		/// :CodeSample: Default.MaterialUI Material.UI
 		/// This Material is basically the same as Default.Material, except it
 		/// also adds some glow to the surface near the user's fingers. It
 		/// works best on flat surfaces, and in StereoKit's design language,
 		/// can be used to indicate that something is interactive.
-		matUI = Default.MaterialUI.Copy();
+		matUI = Material.UI.Copy();
 		/// And here's what it looks like:
 		/// ![UI Material example]({{site.screen_url}}/MaterialUI.jpg)
 		/// :End:
 
 		/// :CodeSample: Material.Wireframe
 		/// Here's creating a simple wireframe material!
-		matWireframe = Default.Material.Copy();
+		matWireframe = Material.Default.Copy();
 		matWireframe.Wireframe = true;
 		/// Which looks like this:
 		/// ![Wireframe material example]({{site.screen_url}}/MaterialWireframe.jpg)
@@ -69,7 +69,7 @@ class DemoMaterial : ITest
 		/// default behavior. On a sphere, this is a little hard to see, but
 		/// you might notice here that the lighting is for the back side of
 		/// the sphere!
-		matCull = Default.Material.Copy();
+		matCull = Material.Default.Copy();
 		matCull.FaceCull = Cull.Front;
 		/// ![FaceCull material example]({{site.screen_url}}/MaterialCull.jpg)
 		/// :End:
@@ -81,7 +81,7 @@ class DemoMaterial : ITest
 		/// but this may vary from case to case. Note that the material's 
 		/// alpha does not play any role in additive transparency! Instead, 
 		/// you could make the material's tint darker.
-		matAlphaAdd = Default.Material.Copy();
+		matAlphaAdd = Material.Default.Copy();
 		matAlphaAdd.Transparency = Transparency.Add;
 		matAlphaAdd.DepthWrite   = false;
 		/// ![Additive transparency example]({{site.screen_url}}/MaterialAlphaAdd.jpg)
@@ -95,53 +95,53 @@ class DemoMaterial : ITest
 		/// through the material's Tint value, but the diffuse texture's 
 		/// alpha and the instance render color's alpha may also play a part
 		/// in the final alpha value.
-		matAlphaBlend = Default.Material.Copy();
+		matAlphaBlend = Material.Default.Copy();
 		matAlphaBlend.Transparency = Transparency.Blend;
 		matAlphaBlend.DepthWrite   = false;
 		matAlphaBlend[MatParamName.ColorTint] = new Color(1, 1, 1, 0.75f);
 		/// ![Alpha blend example]({{site.screen_url}}/MaterialAlphaBlend.jpg)
 		/// :End:
 
-		matTextured = Default.Material.Copy();
+		matTextured = Material.Default.Copy();
 		matTextured[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 
-		/// :CodeSample: Default.MaterialUnlit
-		matUnlit = Default.MaterialUnlit.Copy();
+		/// :CodeSample: Default.MaterialUnlit Material.Unlit
+		matUnlit = Material.Unlit.Copy();
 		matUnlit[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		/// ![Unlit material example]({{site.screen_url}}/MaterialUnlit.jpg)
 		/// :End:
 
-		/// :CodeSample: Default.MaterialPBR
+		/// :CodeSample: Default.MaterialPBR Material.PBR
 		/// Occlusion (R), Roughness (G), and Metal (B) are stored
 		/// respectively in the R, G and B channels of their texture.
 		/// Occlusion can be separated out into a different texture as per
 		/// the GLTF spec, so you do need to assign it separately from the
 		/// Metal texture.
-		matPBR = Default.MaterialPBR.Copy();
+		matPBR = Material.PBR.Copy();
 		matPBR[MatParamName.DiffuseTex  ] = Tex.FromFile("metal_plate_diff.jpg");
 		matPBR[MatParamName.MetalTex    ] = Tex.FromFile("metal_plate_metal.jpg", false);
 		matPBR[MatParamName.OcclusionTex] = Tex.FromFile("metal_plate_metal.jpg", false);
 		/// ![PBR material example]({{site.screen_url}}/MaterialPBR.jpg)
 		/// :End:
 
-		/// :CodeSample: Default.MaterialUIBox
+		/// :CodeSample: Default.MaterialUIBox Material.UIBox
 		/// The UI Box material has 3 parameters to control how the box wires
 		/// are rendered. The initial size in meters is 'border_size', and 
 		/// can grow by 'border_size_grow' meters based on distance to the
 		/// user's hand. That distance can be configured via the
 		/// 'border_affect_radius' property of the shader, which is also in
 		/// meters.
-		matUIBox = Default.MaterialUIBox.Copy();
+		matUIBox = Material.UIBox.Copy();
 		matUIBox["border_size"]          = 0.005f;
 		matUIBox["border_size_grow"]     = 0.01f;
 		matUIBox["border_affect_radius"] = 0.2f;
 		/// ![UI box material example]({{site.screen_url}}/MaterialUIBox.jpg)
 		/// :End:
 
-		matParameters = Default.Material.Copy();
+		matParameters = Material.Default.Copy();
 		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		matParameters[MatParamName.ColorTint ] = Color.HSV(0.6f, 0.7f, 1f);
-		matParameters[MatParamName.TexScale  ] = 2;
+		matParameters[MatParamName.TexScale  ] = 2.0f;
 	}
 
 	int showCount;
@@ -172,8 +172,8 @@ class DemoMaterial : ITest
 		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");
-		ShowMaterial(Default.MeshCube, matUIBox,"MaterialUIBox.jpg", new Vec3( 0.07f, 0.07f, -0.08f));
-		ShowMaterial(Default.MeshCube, matUI,   "MaterialUI.jpg",    new Vec3(-0.07f, 0.07f, -0.08f));
+		ShowMaterial(Mesh.Cube,  matUIBox,      "MaterialUIBox.jpg", new Vec3( 0.07f, 0.07f, -0.08f));
+		ShowMaterial(Mesh.Cube,  matUI,         "MaterialUI.jpg",    new Vec3(-0.07f, 0.07f, -0.08f));
 	}
 
 	public void Shutdown()

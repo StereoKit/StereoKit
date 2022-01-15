@@ -19,13 +19,13 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 ![Screenshot](/Tools/img/FeatureImage.jpg)
 
 ## StereoKit Features:
-- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado Linux, and eventually everywhere OpenXR is!
+- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado (Linux), and eventually everywhere OpenXR is!
 - Flat screen MR simulator with input emulation for easy development
 - Builds your application to device in seconds, not minutes
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
 - Model formats: .gltf, .glb, .obj, .stl, ASCII .ply, procedural
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, equirectangular cubemap, procedural
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, equirectangular cubemap, procedural
 - Runtime asset loading
 - Physics
 - Performance-by-default instanced render pipeline
@@ -72,6 +72,7 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
 - [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
+- [QOI](https://github.com/phoboslab/qoi) - image format support
 - [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
 - [sokol_time](https://github.com/floooh/sokol) - cross platform high performance time
 - [TinyCThread](https://github.com/tinycthread/tinycthread) - for portable threading

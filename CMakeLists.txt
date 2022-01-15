@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.2" LANGUAGES CXX C)
+project(StereoKit VERSION "0.3.5" LANGUAGES CXX C)
 
 # Default build configuration to RelWithDebInfo 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
@@ -195,6 +195,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/texture.cpp )
 
 set(SK_SRC_LIBRARIES
+  StereoKitC/libraries/aileron_font_data.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/ferr_hash.h
@@ -204,13 +205,15 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
+  StereoKitC/libraries/qoi.h
+  StereoKitC/libraries/qoi.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sokol_time.h
   StereoKitC/libraries/sokol_time.cpp
   StereoKitC/libraries/stb_image.h
+  StereoKitC/libraries/stb_image.cpp
   StereoKitC/libraries/stb_image_write.h
-  StereoKitC/libraries/stb_rect_pack.h
   StereoKitC/libraries/stb_truetype.h
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
@@ -274,12 +277,17 @@ set(SK_SRC_PLATFORM
   StereoKitC/systems/platform/platform.cpp
   StereoKitC/systems/platform/platform_utils.h
   StereoKitC/systems/platform/platform_utils.cpp
+  StereoKitC/systems/platform/web.h
+  StereoKitC/systems/platform/web.cpp  
   StereoKitC/systems/platform/uwp.h
   StereoKitC/systems/platform/uwp.cpp  
   StereoKitC/systems/platform/win32.h
   StereoKitC/systems/platform/win32.cpp )
 
 set(SK_SRC_TOOLS
+  StereoKitC/tools/virtual_keyboard_layouts.h
+  StereoKitC/tools/virtual_keyboard.h
+  StereoKitC/tools/virtual_keyboard.cpp
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 
@@ -343,6 +351,8 @@ target_link_libraries( StereoKitC
 if (SK_BUILD_TESTS)
   add_executable( StereoKitCTest
     Examples/StereoKitCTest/main.cpp
+    Examples/StereoKitCTest/demo_draw.h
+    Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_picker.h

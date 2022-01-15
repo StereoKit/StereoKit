@@ -643,6 +643,7 @@ var documents =
 				{name : 'CreateStream'},
 				{name : 'Find'},
 				{name : 'FromFile'},
+				{name : 'FromSamples'},
 				{name : 'Generate'},
 				{name : 'Play'},
 				{name : 'ReadSamples'},

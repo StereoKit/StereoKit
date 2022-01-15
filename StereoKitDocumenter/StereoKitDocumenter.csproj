@@ -55,6 +55,8 @@
     <Compile Include="DocExampleFinder.cs" />
     <Compile Include="DocField.cs" />
     <Compile Include="DocIndexFolder.cs" />
+    <Compile Include="DocInheritField.cs" />
+    <Compile Include="DocInheritMethod.cs" />
     <Compile Include="DocMethod.cs" />
     <Compile Include="DocMethodOverload.cs" />
     <Compile Include="DocParam.cs" />

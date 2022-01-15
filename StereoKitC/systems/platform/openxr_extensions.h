@@ -1,5 +1,8 @@
 #pragma once
 
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "openxr.h"
 #include "platform_utils.h"
 #include "../../stereokit.h"
@@ -153,7 +156,7 @@ typedef struct XrExtInfo {
 extern XrExtInfo xr_ext_available;
 
 #define CHECK_EXT(name, available) else if (available && strcmp("XR_"#name, exts[i].extensionName) == 0) {xr_ext_available.name = true; result.add("XR_"#name);}
-inline array_t<const char *> openxr_list_extensions(void (*on_available)(const char *name)) {
+inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_exts, void (*on_available)(const char *name)) {
 	array_t<const char *> result = {};
 
 	// Enumerate the list of extensions available on the system
@@ -174,7 +177,17 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
 		FOR_EACH_EXT_LINUX  (CHECK_EXT)
 		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
-		else if (on_available != nullptr) { on_available(exts[i].extensionName); }
+		else {
+			bool found = false;
+			for (size_t e = 0; e < extra_exts.count; e++) {
+				if (strcmp(extra_exts[e], exts[i].extensionName) == 0) {
+					result.add(extra_exts[e]);
+					found = true;
+					break;
+				}
+			}
+			if (!found && on_available != nullptr) { on_available(exts[i].extensionName); }
+		}
 	}
 
 	free(exts);
@@ -194,3 +207,5 @@ inline array_t<const char *> openxr_list_extensions(void (*on_available)(const c
 
 #pragma warning( pop )
 }
+
+#endif

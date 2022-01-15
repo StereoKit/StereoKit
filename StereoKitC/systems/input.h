@@ -16,10 +16,10 @@ extern button_state_ input_controller_menubtn;
 int        input_add_pointer(input_source_ source);
 pointer_t *input_get_pointer(int32_t id);
 
-bool input_init            ();
-void input_shutdown        ();
-void input_update          ();
-void input_update_predicted();
+bool input_init        ();
+void input_shutdown    ();
+void input_update      ();
+void input_update_poses(bool update_visuals);
 
 inline button_state_ button_make_state(bool32_t was, bool32_t is) { 
 	button_state_ result = is ? button_state_active : button_state_inactive;

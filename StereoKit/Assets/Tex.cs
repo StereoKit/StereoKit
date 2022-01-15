@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -47,6 +48,12 @@ namespace StereoKit
 		public int Anisoptropy {
 			get => NativeAPI.tex_get_anisotropy(_inst);
 			set => NativeAPI.tex_set_anisotropy(_inst, value); }
+
+		/// <summary>ONLY valid for cubemap textures! This will calculate a
+		/// spherical harmonics representation of the cubemap for use with 
+		/// StereoKit's lighting. First call may take a frame or two of time,
+		/// but subsequent calls will pull from a cached value.</summary>
+		public SphericalHarmonics CubemapLighting => NativeAPI.tex_get_cubemap_lighting(_inst);
 
 		#endregion
 
@@ -257,7 +264,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData?1:0, IntPtr.Zero);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap), sRGBData?1:0, IntPtr.Zero);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -278,7 +285,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData?1:0, out lightingInfo);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap), sRGBData?1:0, out lightingInfo);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -296,7 +303,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData?1:0);
+			IntPtr inst = NativeAPI.tex_create_file(Encoding.UTF8.GetBytes(file), sRGBData?1:0);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -370,7 +377,7 @@ namespace StereoKit
 		/// `TexType.Image`, and a format of `TexFormat.Rgba32` or
 		/// `TexFormat.Rgba32Linear` depending on the value of the sRGBData
 		/// parameter.</summary>
-		/// <param name="colors">An array of 32 bit colors, should be a
+		/// <param name="colors">An array of 128 bit colors, should be a
 		/// length of `width*height`.</param>
 		/// <param name="width">Width in pixels of the texture. Powers of two
 		/// are generally best!</param>
@@ -432,6 +439,27 @@ namespace StereoKit
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
 			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, out lightingInfo);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
+		/// <summary>This generates a solid color texture of the given
+		/// dimensions. Can be quite nice for creating placeholder textures!
+		/// Make sure to match linear/gamma colors with the correct format.
+		/// </summary>
+		/// <param name="color">The color to use for the texture. This is
+		/// interpreted slightly differently based on what TexFormat gets used.
+		/// </param>
+		/// <param name="width">Width of the final texture, in pixels.</param>
+		/// <param name="height">Height of the final texture, in pixels.</param>
+		/// <param name="type">Not all types here are applicable, but
+		/// TexType.Image or TexType.ImageNomips are good options here.</param>
+		/// <param name="format">Not all formats are supported, but this does
+		/// support a decent range. The provided color is interpreted slightly
+		/// different depending on this format.</param>
+		/// <returns>A solid color image of width x height pixels.</returns>
+		public static Tex GenColor(Color color, int width, int height, TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32)
+		{
+			IntPtr tex = NativeAPI.tex_gen_color(color, width, height, type, format);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
 		/// <summary>Generates a cubemap texture from a gradient and a 

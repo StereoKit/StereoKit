@@ -1,3 +1,5 @@
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
 #include "openxr_input.h"
@@ -11,7 +13,6 @@
 #include "../../systems/input.h"
 #include "../../libraries/sokol_time.h"
 #include "../system.h"
-#include "platform_utils.h"
 
 #include <openxr/openxr.h>
 #include <stdio.h>
@@ -228,7 +229,8 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		out_view.view_depths[i] = { XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR };
 	}
 
-	if (!openxr_update_swapchains(out_view)) {
+	bool needs_swapchain_now = view_type != XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
+	if (needs_swapchain_now && !openxr_update_swapchains(out_view)) {
 		log_fail_reason(80, log_error, "Couldn't create OpenXR view swapchains!");
 		return false;
 	}
@@ -260,11 +262,9 @@ bool openxr_update_swapchains(device_display_t &display) {
 	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) {
 		display.swapchain_color.surface_layers = 1;
 		display.swapchain_depth.surface_layers = 1;
-		log_diagf("Platform supports single-pass rendering");
 	} else {
 		display.swapchain_color.surface_layers = display.view_cap;
 		display.swapchain_depth.surface_layers = display.view_cap;
-		log_diagf("Platform does not support single-pass rendering");
 	}
 
 	// Create texture objects if we don't have 'em
@@ -543,7 +543,7 @@ bool openxr_render_frame() {
 
 	// Execute any code that's dependant on the predicted time, such as updating the location of
 	// controller models.
-	input_update_predicted();
+	input_update_poses(true);
 
 	// Render all the views for the application, then clear out the render queue
 	// If the session is active, lets render our layer in the compositor!
@@ -553,33 +553,34 @@ bool openxr_render_frame() {
 	for (size_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
-		render_layer_ filter = render_get_filter();
-		if (xr_displays[i].type != xr_display_primary) {
-			XrSecondaryViewConfigurationLayerInfoMSFT layer = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
-			layer.viewConfigurationType = xr_displays[i].type;
-			layer.environmentBlendMode  = xr_displays[i].blend;
-			layer.layerCount            = 1;
-			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
-			xr_display_2nd_layers.add(layer);
-			filter = render_get_capture_filter();
-		}
+		render_layer_ filter = xr_displays[i].type == xr_display_primary
+			? render_get_filter()
+			: render_get_capture_filter();
 		openxr_render_layer(xr_time, xr_displays[i], filter);
+
+		if (xr_displays[i].type != xr_display_primary) {
+			XrSecondaryViewConfigurationLayerInfoMSFT layer2nd = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
+			layer2nd.viewConfigurationType = xr_displays[i].type;
+			layer2nd.environmentBlendMode  = xr_displays[i].blend;
+			layer2nd.layerCount            = 1;
+			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
+			xr_display_2nd_layers.add(layer2nd);
+		}
 	}
 
-	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
-	end_second.viewConfigurationCount = (uint32_t)xr_display_2nd_layers.count;
-	if (xr_display_2nd_layers.count > 0)
-		end_second.viewConfigurationLayersInfo = &xr_display_2nd_layers[0];
-
 	// We're finished with rendering our layer, so send it off for display!
-	XrCompositionLayerBaseHeader *layer    = (XrCompositionLayerBaseHeader*)&xr_displays[0].projection_data[0];
-	XrFrameEndInfo                end_info = { XR_TYPE_FRAME_END_INFO };
+	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime          = frame_state.predictedDisplayTime;
 	end_info.environmentBlendMode = xr_displays[0].blend;
 	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
-	end_info.layers               = &layer;
+	end_info.layers               = (XrCompositionLayerBaseHeader**)&xr_displays[0].projection_data;
+
+	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
+	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
+	end_second.viewConfigurationLayersInfo = xr_display_2nd_layers.data;
 	if (end_second.viewConfigurationCount > 0)
 		end_info.next = &end_second;
+
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
 	return true;
@@ -696,3 +697,4 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 }
 
 } // namespace sk
+#endif

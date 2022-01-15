@@ -32,7 +32,7 @@ bool win32_check_resize = true;
 UINT win32_resize_x     = 0;
 UINT win32_resize_y     = 0;
 
-#if defined(SKG_OPENGL);
+#if defined(SKG_OPENGL)
 const int32_t win32_multisample = 1;
 #else
 const int32_t win32_multisample = 8;
@@ -52,6 +52,13 @@ void win32_resize(int width, int height) {
 	render_update_projection();
 }
 
+///////////////////////////////////////////
+
+void win32_physical_key_interact() {
+	// On desktop, we want to hide soft keyboards on physical presses
+	input_last_physical_keypress = time_getf();
+	platform_keyboard_show(false, text_context_text);
+}
 
 ///////////////////////////////////////////
 
@@ -65,10 +72,10 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_MBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam);     return true;
-	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam);     return true;
-	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam);     return true;
-	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam);     return true;
+	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
 	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
@@ -150,7 +157,7 @@ bool win32_start_flat() {
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
-			case WM_CLOSE:      sk_run     = false; PostQuitMessage(0); break;
+			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
 			case WM_SETFOCUS:   sk_focused = true;  break;
 			case WM_KILLFOCUS:  sk_focused = false; break;
 			case WM_MOUSEWHEEL: if (sk_focused) win32_scroll += (short)HIWORD(wParam); break;
@@ -245,7 +252,7 @@ void win32_stop_flat() {
 
 void win32_step_begin_xr() {
 	MSG msg = {0};
-	if (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
+	while (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
@@ -253,7 +260,7 @@ void win32_step_begin_xr() {
 
 void win32_step_begin_flat() {
 	MSG msg = {0};
-	if (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
@@ -273,7 +280,7 @@ void win32_step_end_flat() {
 #endif
 	skg_target_clear(true, &col.r);
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();

@@ -8,27 +8,33 @@
 #include "../systems/platform/platform_utils.h"
 
 #if defined(SK_OS_WINDOWS)
-#include "../systems/platform/win32.h"
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <commdlg.h>
-#include <stdio.h>
+
+	#include "../systems/platform/win32.h"
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <commdlg.h>
+	#include <stdio.h>
+
 #elif defined(SK_OS_WINDOWS_UWP)
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.ApplicationModel.Core.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Storage.Pickers.h>
-#include <winrt/Windows.Storage.Streams.h>
-#include <vector>
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+	#include <winrt/Windows.UI.Core.h>
+	#include <winrt/Windows.ApplicationModel.Core.h>
+	#include <winrt/Windows.Foundation.Collections.h>
+	#include <winrt/Windows.Storage.Pickers.h>
+	#include <winrt/Windows.Storage.Streams.h>
 
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::ApplicationModel::Core;
-using namespace winrt::Windows::Storage;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Storage::Streams;
+	using namespace winrt::Windows::UI::Core;
+	using namespace winrt::Windows::ApplicationModel::Core;
+	using namespace winrt::Windows::Storage;
+	using namespace winrt::Windows::Foundation;
+	using namespace winrt::Windows::Storage::Streams;
+
+#elif defined(SK_OS_WEB)
+
+	#include <stdio.h>
+
 #endif
 
 namespace sk {
@@ -46,15 +52,16 @@ public:
 	uint64_t    name_hash;
 	StorageFile file = nullptr;
 };
-std::vector<fp_file_cache_t> fp_file_cache = {};
+std::vector<fp_file_cache_t> fp_file_cache;
 #endif
 
-char                         fp_filename[1024];
+char                         fp_filename [1024];
+wchar_t                      fp_wfilename[1024];
 char                         fp_buffer[1023];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
-void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
+void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
 
 bool                         fp_show          = false;
 picker_mode_                 fp_mode;
@@ -77,9 +84,31 @@ void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus st
 ///////////////////////////////////////////
 
 void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count) {
+	// This is basically a manual lambda capture for the wrapper callback
+	struct callback_t {
+		void *callback_data;
+		void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename);
+	};
+	callback_t *data = sk_malloc_t(callback_t, 1);
+	data->callback_data = callback_data;
+	data->on_confirm    = on_confirm;
+
+	// Call the file picker that does all the real work, and pass the callback
+	// along to _our_ callback.
+	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) {
+		callback_t *data = (callback_t *)callback_data;
+		if (data->on_confirm)
+			data->on_confirm(data->callback_data, confirmed, filename);
+		free(data);
+	}, filters, filter_count);
+}
+
+///////////////////////////////////////////
+
+void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
 	if (sk_active_display_mode() == display_mode_flatscreen) {
-		fp_filename[0] = '\0';
+		fp_wfilename[0] = '\0';
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
@@ -88,34 +117,40 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		size_t len = strlen(filter);
-		for (size_t i = 0; i < len; i++) if (filter[i] == '\1') filter[i] = '\0'; 
+		wchar_t *w_filter = platform_to_wchar(filter);
+		for (size_t i = 0; i < len; i++) if (w_filter[i] == '\1') w_filter[i] = '\0'; 
 
-		OPENFILENAMEA settings = {};
+		OPENFILENAMEW settings = {};
 		settings.lStructSize  = sizeof(settings);
 		settings.nMaxFile     = sizeof(fp_filename);
 		settings.hwndOwner    = (HWND)win32_hwnd();
-		settings.lpstrFile    = fp_filename;
-		settings.lpstrFilter  = filter;
+		settings.lpstrFile    = fp_wfilename;
+		settings.lpstrFilter  = w_filter;
 		settings.nFilterIndex = 1;
 
 		if (mode == picker_mode_open) {
-			settings.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-			settings.lpstrTitle = "Open";
-			if (GetOpenFileName(&settings) == TRUE) {
-				if (on_confirm) on_confirm(callback_data, true, fp_filename);
+			settings.Flags      = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+			settings.lpstrTitle = L"Open";
+			if (GetOpenFileNameW(&settings) == TRUE) {
+				char *filename = platform_from_wchar(fp_wfilename);
+				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				free(filename);
 			} else {
-				if (on_confirm) on_confirm(callback_data, false, nullptr);
+				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
 			}
 		} else if (mode == picker_mode_save) {
 			settings.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
-			settings.lpstrTitle = "Save As";
-			if (GetSaveFileNameA(&settings) == TRUE) {
-				if (on_confirm) on_confirm(callback_data, true, fp_filename);
+			settings.lpstrTitle = L"Save As";
+			if (GetSaveFileNameW(&settings) == TRUE) {
+				char *filename = platform_from_wchar(fp_wfilename);
+				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				free(filename);
 			} else {
-				if (on_confirm) on_confirm(callback_data, false, nullptr);
+				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
 			}
 		}
 
+		free(w_filter);
 		free(filter);
 		return;
 	}
@@ -224,8 +259,10 @@ void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus sta
 ///////////////////////////////////////////
 
 void file_picker_open_folder(const char *folder) {
+	char *dir_mem = nullptr;
 	if (folder == nullptr) {
-		folder = platform_working_dir();
+		dir_mem = platform_working_dir();
+		folder  = dir_mem;
 	}
 
 	fp_items.each([](fp_item_t &item) { free(item.name); });
@@ -253,6 +290,7 @@ void file_picker_open_folder(const char *folder) {
 
 	char *new_folder = string_copy(folder);
 	free(fp_folder);
+	free(dir_mem);
 	fp_folder = new_folder;
 	fp_active = nullptr;
 }
@@ -260,7 +298,7 @@ void file_picker_open_folder(const char *folder) {
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename);
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?strlen(fp_filename)+1:0);
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;
@@ -345,6 +383,10 @@ void file_picker_shutdown() {
 	free(fp_title ); fp_title  = nullptr;
 	free(fp_folder); fp_folder = nullptr;
 	fp_items.free();
+
+#if defined(SK_OS_WINDOWS_UWP)
+	//fp_file_cache.free();
+#endif
 }
 
 ///////////////////////////////////////////

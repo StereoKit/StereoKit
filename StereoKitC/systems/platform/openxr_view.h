@@ -1,5 +1,8 @@
 #pragma once
 
+#include "platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../../stereokit.h"
 #include "../../libraries/array.h"
 
@@ -15,3 +18,5 @@ void openxr_views_render (XrTime time);
 extern array_t<XrViewConfigurationType> xr_display_types;
 
 } // namespace sk
+
+#endif

@@ -1,3 +1,5 @@
+#include "platform/platform_utils.h"
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -9,13 +11,17 @@
 
 namespace sk {
 
+#if defined(SK_XR_OPENXR)
+
 ///////////////////////////////////////////
 
 struct scene_request_info_t {
-	bool32_t occlusion;
-	bool32_t raycast;
-	vec3     center;
-	float    radius;
+	bool32_t       occlusion;
+	bool32_t       raycast;
+	vec3           center;
+	float          radius;
+	world_refresh_ refresh_type;
+	float          refresh_interval;
 };
 
 struct scene_mesh_t {
@@ -33,32 +39,44 @@ struct su_mesh_inst_t {
 	matrix   inv_transform;
 };
 
-XrSceneObserverMSFT  xr_scene_observer    = {};
-bool                 xr_scene_updating    = false;
-bool                 xr_scene_update_requested = false;
-XrSceneMSFT          xr_scene;
-scene_request_info_t xr_scene_last_req    = {};
-scene_request_info_t xr_scene_next_req    = {};
+XrSceneObserverMSFT     xr_scene_observer         = {};
+bool                    xr_scene_updating         = false;
+bool                    xr_scene_update_requested = false;
+XrSceneMSFT             xr_scene;
+scene_request_info_t    xr_scene_last_req         = {};
+scene_request_info_t    xr_scene_next_req         = {};
+float                   xr_scene_last_refresh     = -1000;
 
-array_t<scene_mesh_t>   xr_meshes         = {};
-array_t<su_mesh_inst_t> xr_scene_colliders= {};
-array_t<su_mesh_inst_t> xr_scene_visuals  = {};
-material_t              xr_scene_material = {};
+array_t<scene_mesh_t>   xr_meshes                 = {};
+array_t<su_mesh_inst_t> xr_scene_colliders        = {};
+array_t<su_mesh_inst_t> xr_scene_visuals          = {};
+material_t              xr_scene_material         = {};
 
-array_t<vert_t>     world_verts_tmp   = {};
-array_t<XrVector3f> world_vbuffer_tmp = {};
-array_t<uint32_t>   world_ibuffer_tmp = {};
+array_t<vert_t>         world_verts_tmp           = {};
+array_t<XrVector3f>     world_vbuffer_tmp         = {};
+array_t<uint32_t>       world_ibuffer_tmp         = {};
 
 ///////////////////////////////////////////
 
-bool world_is_su_needed(scene_request_info_t info);
-void world_scene_shutdown();
-void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<scene_mesh_t> *mesh_list);
+bool world_is_su_needed      (scene_request_info_t info);
+bool world_check_needs_update(scene_request_info_t info);
+void world_scene_shutdown    ();
+void world_load_scene_meshes (XrSceneComponentTypeMSFT type, array_t<scene_mesh_t> *mesh_list);
 
 ///////////////////////////////////////////
 
 bool world_is_su_needed(scene_request_info_t info) {
 	return info.occlusion || info.raycast;
+}
+
+///////////////////////////////////////////
+
+bool world_check_needs_update(scene_request_info_t info) {
+	switch (info.refresh_type) {
+	case world_refresh_area:  return !vec3_in_radius(input_head()->position, info.center, info.radius * 0.5f);
+	case world_refresh_timer: return (time_getf() - xr_scene_last_refresh) >= info.refresh_interval;
+	default: return false;
+	}
 }
 
 ///////////////////////////////////////////
@@ -159,10 +177,67 @@ material_t world_get_occlusion_material() {
 
 ///////////////////////////////////////////
 
+void world_set_refresh_type(world_refresh_ refresh_type) {
+	xr_scene_next_req.refresh_type = refresh_type;
+	if (xr_scene_next_req.refresh_type != xr_scene_last_req.refresh_type) {
+		xr_scene_update_requested = true;
+	}
+}
+
+///////////////////////////////////////////
+
+world_refresh_ world_get_refresh_type() {
+	return xr_scene_next_req.refresh_type;
+}
+
+///////////////////////////////////////////
+
+void world_set_refresh_radius(float radius_meters) {
+	xr_scene_next_req.radius = radius_meters;
+	if (xr_scene_next_req.radius != xr_scene_last_req.radius) {
+		xr_scene_update_requested = true;
+	}
+}
+
+///////////////////////////////////////////
+
+float world_get_refresh_radius() {
+	return xr_scene_next_req.radius;
+}
+
+///////////////////////////////////////////
+
+void world_set_refresh_interval(float every_seconds) {
+	xr_scene_next_req.refresh_interval = every_seconds;
+	if (xr_scene_next_req.refresh_interval != xr_scene_last_req.refresh_interval) {
+		xr_scene_update_requested = true;
+	}
+}
+
+///////////////////////////////////////////
+
+float world_get_refresh_interval() {
+	return xr_scene_next_req.refresh_interval;
+}
+
+///////////////////////////////////////////
+
 void world_request_update(scene_request_info_t info) {
+	// SU EXT requires a new scene observer any time the occlusion optimized
+	// flag changes.
+	bool occlusion_only      = info             .occlusion && !info             .raycast;
+	bool occlusion_only_prev = xr_scene_last_req.occlusion && !xr_scene_last_req.raycast;
+	if (occlusion_only != occlusion_only_prev) {
+		if (xr_scene_observer != XR_NULL_HANDLE) xr_extensions.xrDestroySceneObserverMSFT(xr_scene_observer);
+		xr_scene_observer = XR_NULL_HANDLE;
+	}
+
 	xr_scene_last_req = info;
 	if (!world_is_su_needed(info))
 		return;
+
+	xr_scene_last_req.center = input_head()->position;
+	xr_scene_last_refresh    = time_getf();
 
 	if (xr_scene_observer == XR_NULL_HANDLE) {
 		XrSceneObserverCreateInfoMSFT create_info = { (XrStructureType)XR_TYPE_SCENE_OBSERVER_CREATE_INFO_MSFT };
@@ -172,16 +247,14 @@ void world_request_update(scene_request_info_t info) {
 		}
 	}
 	array_t<XrSceneComputeFeatureMSFT> features = {};
-	if (info.occlusion) {
-		features.add(XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT);
-	}
-	if (info.raycast) {
-		features.add(XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT);
-	}
+	if (info.occlusion) features.add(XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT); 
+	if (info.raycast  ) features.add(XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT); 
 
 	XrNewSceneComputeInfoMSFT compute_info = { XR_TYPE_NEW_SCENE_COMPUTE_INFO_MSFT };
 	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&input_head()->position, info.radius };
-	compute_info.consistency           = XR_SCENE_COMPUTE_CONSISTENCY_SNAPSHOT_COMPLETE_MSFT;
+	compute_info.consistency           = occlusion_only
+		? XR_SCENE_COMPUTE_CONSISTENCY_OCCLUSION_OPTIMIZED_MSFT
+		: XR_SCENE_COMPUTE_CONSISTENCY_SNAPSHOT_COMPLETE_MSFT;
 	compute_info.requestedFeatures     = features.data;
 	compute_info.requestedFeatureCount = (uint32_t)features.count;
 	compute_info.bounds.space       = xr_app_space;
@@ -248,6 +321,7 @@ void world_update_meshes(array_t<scene_mesh_t> *mesh_list) {
 			world_verts_tmp[v] = { *(vec3 *)&v_buffer.vertices[v], {0,1,0}, {}, {255,255,255,255} };
 		}
 		mesh_calculate_normals(world_verts_tmp.data, v_count, i_buffer.indices, i_count);
+		mesh_set_keep_data(mesh.mesh, xr_scene_last_req.raycast);
 		mesh_set_inds (mesh.mesh, i_buffer.indices,     i_count);
 		mesh_set_verts(mesh.mesh, world_verts_tmp.data, v_count);
 	}
@@ -321,7 +395,8 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 		inst.local_transform = pose_matrix(pose);
 		inst.transform       = inst.local_transform * render_get_cam_final();
 		inst.inv_transform   = matrix_invert(inst.transform);
-		if (xr_meshes[mesh_idx].buffer_updated != components.components[i].updateTime) {
+		if (xr_meshes[mesh_idx].buffer_updated != components.components[i].updateTime ||
+			(!mesh_get_keep_data(xr_meshes[mesh_idx].mesh) && xr_scene_last_req.raycast)) {
 			xr_meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;
 			xr_meshes[mesh_idx].buffer_dirty    = true;
 		}
@@ -340,8 +415,12 @@ bool world_init() {
 	material_set_id   (xr_scene_material, "default/world_mat");
 	material_set_color(xr_scene_material, "color", { 0,0,0,0 });
 
-	xr_scene_next_req.center = { 10000,10000,10000 };
-	xr_scene_next_req.radius = 4;
+	xr_scene_next_req.center        = { 10000,10000,10000 };
+	xr_scene_next_req.radius        = 4;
+	xr_scene_next_req.refresh_type  = world_refresh_area;
+	xr_scene_next_req.refresh_interval = 1.5f;
+
+	xr_scene_last_req = xr_scene_next_req;
 
 	return true;
 }
@@ -350,10 +429,9 @@ bool world_init() {
 
 void world_update() {
 	if (world_is_su_needed(xr_scene_next_req) || world_is_su_needed(xr_scene_last_req)) {
-		xr_scene_next_req.center = input_head()->position;
 
 		// Check if we've walked away from the current scene's center
-		if (!vec3_in_radius(xr_scene_next_req.center, xr_scene_last_req.center, xr_scene_next_req.radius * 0.5f))
+		if (world_check_needs_update(xr_scene_last_req))
 			xr_scene_update_requested = true;
 
 		// Check if we need to request a new scene
@@ -438,6 +516,89 @@ inline void world_update_inst(su_mesh_inst_t &inst) {
 void world_refresh_transforms() {
 	xr_scene_colliders.each(world_update_inst);
 	xr_scene_visuals  .each(world_update_inst);
+	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 }
+
+#else
+
+bool world_init() {
+	return true;
+}
+
+void world_update() {
+}
+
+void world_shutdown() {
+}
+
+void world_refresh_transforms() {
+}
+
+bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
+	return false;
+}
+
+void world_set_occlusion_enabled(bool32_t enabled) {
+}
+
+bool32_t world_get_occlusion_enabled() {
+	return false;
+}
+
+void world_set_raycast_enabled(bool32_t enabled) {
+}
+
+bool32_t world_get_raycast_enabled() {
+	return false;
+}
+
+void world_set_occlusion_material(material_t material) {
+}
+
+material_t world_get_occlusion_material() {
+	return nullptr;
+}
+
+void world_set_refresh_type(world_refresh_ refresh_type) {
+}
+
+world_refresh_ world_get_refresh_type() {
+	return world_refresh_area;
+}
+
+void world_set_refresh_radius(float radius_meters) {
+}
+
+float world_get_refresh_radius() {
+	return 0;
+}
+
+void world_set_refresh_interval(float every_seconds) {
+}
+
+float world_get_refresh_interval() {
+	return 0;
+}
+
+
+///////////////////////////////////////////
+
+bool32_t world_has_bounds() {
+	return false;
+}
+
+///////////////////////////////////////////
+
+vec2 world_get_bounds_size() {
+	return vec2_zero;
+}
+
+///////////////////////////////////////////
+
+pose_t world_get_bounds_pose() {
+	return pose_identity;
+}
+
+#endif
 
 } // namespace sk

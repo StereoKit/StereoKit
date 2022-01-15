@@ -56,7 +56,7 @@ key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
-bool  linux_mouse_avail = true;
+bool  linux_mouse_avail = false;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -185,7 +185,13 @@ void linux_events() {
 					if (is_pressed) input_keyboard_inject_press  (key);
 					else            input_keyboard_inject_release(key);
 
-					// Some non-text characters get fed into the text system as well
+					// On desktop, we want to hide soft keyboards on physical
+					// presses
+					input_last_physical_keypress = time_getf();
+					platform_keyboard_show(false, text_context_text);
+
+					// Some non-text characters get fed into the text system as
+					// well
 					if (is_pressed) {
 						if (key == key_backspace || key == key_return || key == key_esc) {
 							input_text_inject_char((char32_t)key);
@@ -315,7 +321,7 @@ bool setup_x_window() {
 
 	x_swa.colormap   = x_cmap;
 	x_swa.event_mask = ExposureMask | KeyPressMask;
-	x_win = XCreateWindow(x_dpy, x_root, 0, 0, 1280, 720, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
+	x_win = XCreateWindow(x_dpy, x_root, 0, 0, sk_settings.flatscreen_width, sk_settings.flatscreen_height, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
 
 	XSizeHints *hints = XAllocSizeHints();
 	if (hints == nullptr) {
@@ -495,7 +501,7 @@ void linux_step_end_flat() {
 
 	linux_render_sys->profile_frame_start = stm_now();
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();

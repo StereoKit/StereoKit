@@ -42,12 +42,13 @@ void hand_override_update_frame() {
 			inp_hand->wrist = pose_t{ override_joints[h][26].position, override_joints[h][26].orientation };
 		}
 	}
-	input_hand_update_meshes();
 }
 
 ///////////////////////////////////////////
 
-void hand_override_update_predicted() {
+void hand_override_update_poses(bool update_visuals) {
+	if (update_visuals)
+		input_hand_update_meshes();
 }
 
 ///////////////////////////////////////////

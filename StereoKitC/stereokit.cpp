@@ -19,6 +19,7 @@
 #include "systems/platform/win32.h"
 #include "systems/platform/uwp.h"
 #include "systems/platform/android.h"
+#include "systems/platform/web.h"
 #include "systems/platform/openxr.h"
 #include "systems/platform/platform.h"
 #include "systems/platform/platform_utils.h"
@@ -31,12 +32,11 @@ const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
 display_mode_ sk_display_mode           = display_mode_mixedreality;
 bool          sk_no_flatscreen_fallback = false;
-sk_settings_t sk_settings = {};
-system_info_t sk_info     = {};
-bool32_t      sk_focused  = true;
-bool32_t      sk_run      = true;
-
-bool sk_initialized = false;
+sk_settings_t sk_settings    = {};
+system_info_t sk_info        = {};
+bool32_t      sk_focused     = true;
+bool32_t      sk_running     = true;
+bool32_t      sk_initialized = false;
 
 double  sk_timev_scale       = 1;
 float   sk_timevf            = 0;
@@ -303,7 +303,7 @@ void sk_shutdown() {
 ///////////////////////////////////////////
 
 void sk_quit() {
-	sk_run = false;
+	sk_running = false;
 }
 
 ///////////////////////////////////////////
@@ -318,8 +318,49 @@ bool32_t sk_step(void (*app_update)(void)) {
 	systems_update();
 
 	if (!sk_focused)
-		platform_sleep(sk_focused ? 1 : 100);
-	return sk_run;
+		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
+	return sk_running;
+}
+
+///////////////////////////////////////////
+
+void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
+#if defined(SK_OS_WEB)
+	web_start_main_loop(app_update, app_shutdown);
+#else
+	while (sk_step(app_update));
+
+	if (app_shutdown != nullptr)
+		app_shutdown();
+	sk_shutdown();
+#endif
+}
+
+///////////////////////////////////////////
+
+void (*_sk_run_data_app_update)(void *);
+void  *_sk_run_data_update_data;
+void (*_sk_run_data_app_shutdown)(void *);
+void  *_sk_run_data_shutdown_data;
+void sk_run_data(void (*app_update)(void *update_data), void *update_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
+	_sk_run_data_app_update    = app_update;
+	_sk_run_data_update_data   = update_data;
+	_sk_run_data_app_shutdown  = app_shutdown;
+	_sk_run_data_shutdown_data = shutdown_data;
+
+#if defined(SK_OS_WEB)
+	web_start_main_loop(
+		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); },
+		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
+#else
+	while (sk_step(
+		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); }));
+
+	if (_sk_run_data_app_shutdown)
+		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);
+
+	sk_shutdown();
+#endif
 }
 
 ///////////////////////////////////////////

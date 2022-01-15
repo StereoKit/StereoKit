@@ -4,33 +4,15 @@ param(
     [string]$key = ''
 )
 
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
+$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[16.0,17.0)'
+if (!$vsExe) {
+    Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
+    exit 
+}
 $vsExe = [io.path]::ChangeExtension($vsExe, '.com')
 
 ###########################################
 ## Functions                             ##
-###########################################
-
-function Get-Version {
-    $fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
-
-    $fileData -match '#define SK_VERSION_MAJOR\s+(?<ver>\d+)' | Out-Null
-    $major = $Matches.ver
-    $fileData -match '#define SK_VERSION_MINOR\s+(?<ver>\d+)' | Out-Null
-    $minor = $Matches.ver
-    $fileData -match '#define SK_VERSION_PATCH\s+(?<ver>\d+)' | Out-Null
-    $patch = $Matches.ver
-    $fileData -match '#define SK_VERSION_PRERELEASE\s+(?<ver>\d+)' | Out-Null
-    $pre = $Matches.ver
-
-    $result = "$major.$minor.$patch"
-    if ($pre -ne 0) {
-        $result = "$result-preview.$pre"
-    }
-
-    return $result
-}
-
 ###########################################
 
 function Replace-In-File {
@@ -81,12 +63,13 @@ function Get-Key {
 ###########################################
 
 function Build-Sizes {
-    $size_x64       = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
-    $size_x64_linux = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
-    $size_x64_uwp   = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
-    $size_arm64     = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
-    $size_arm64_uwp = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
-    $size_arm_uwp   = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
+    $size_x64        = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
+    $size_x64_linux  = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
+    $size_x64_uwp    = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
+    $size_arm64      = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
+    $size_arm64_linux= (Get-Item "bin/distribute/bin/linux/arm64/release/libStereoKitC.so").length
+    $size_arm64_uwp  = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
+    $size_arm_uwp    = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
 
     $text = (@"
 ## Build Sizes:
@@ -94,17 +77,20 @@ function Build-Sizes {
 | Platform | Arch  | Size, kb | Size, bytes |
 | -------- | ----- | -------- | ----------- |
 | Win32    | x64   | {0,8:N0} | {1,11:N0} |
-| Linux    | x64   | {2,8:N0} | {3,11:N0} |
-| UWP      | x64   | {4,8:N0} | {5,11:N0} |
-| UWP      | ARM64 | {6,8:N0} | {7,11:N0} |
-| Android  | ARM64 | {8,8:N0} | {9,11:N0} |
-| UWP      | ARM   | {10,8:N0} | {11,11:N0} |
-"@ -f ([math]::Round($size_x64/1kb), $size_x64,
-       [math]::Round($size_x64_linux/1kb), $size_x64_linux,
-       [math]::Round($size_x64_uwp/1kb), $size_x64_uwp,
-       [math]::Round($size_arm64_uwp/1kb), $size_arm64_uwp,
-       [math]::Round($size_arm64/1kb), $size_arm64,
-       [math]::Round($size_arm_uwp/1kb), $size_arm_uwp))
+| UWP      | x64   | {2,8:N0} | {3,11:N0} |
+| UWP      | ARM64 | {4,8:N0} | {5,11:N0} |
+| UWP      | ARM   | {6,8:N0} | {7,11:N0} |
+| Linux    | x64   | {8,8:N0} | {9,11:N0} |
+| Linux    | ARM64 | {10,8:N0} | {11,11:N0} |
+| Android  | ARM64 | {12,8:N0} | {13,11:N0} |
+"@ -f ([math]::Round($size_x64        /1kb), $size_x64,
+       [math]::Round($size_x64_uwp    /1kb), $size_x64_uwp,
+       [math]::Round($size_arm64_uwp  /1kb), $size_arm64_uwp,
+       [math]::Round($size_arm_uwp    /1kb), $size_arm_uwp,
+       [math]::Round($size_x64_linux  /1kb), $size_x64_linux,
+       [math]::Round($size_arm64_linux/1kb), $size_arm64_linux,
+       [math]::Round($size_arm64      /1kb), $size_arm64
+       ))
 
     return $text
 }
@@ -131,7 +117,20 @@ if ($fast -eq $true) {
 #### Update Version #######################
 
 # Print version, so we know we're building the right version right away
-$version = Get-Version
+$fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
+$fileData -match '#define SK_VERSION_MAJOR\s+(?<ver>\d+)' | Out-Null
+$major = $Matches.ver
+$fileData -match '#define SK_VERSION_MINOR\s+(?<ver>\d+)' | Out-Null
+$minor = $Matches.ver
+$fileData -match '#define SK_VERSION_PATCH\s+(?<ver>\d+)' | Out-Null
+$patch = $Matches.ver
+$fileData -match '#define SK_VERSION_PRERELEASE\s+(?<ver>\d+)' | Out-Null
+$pre = $Matches.ver
+
+$version = "$major.$minor.$patch"
+if ($pre -ne 0) {
+    $version = "$version-preview.$pre"
+}
 
 # Notify of build, and output the version
 Write-Host @"
@@ -147,6 +146,7 @@ Write-Host "v$version`n" -ForegroundColor Cyan
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
+Replace-In-File -file 'CMakeLists.txt' -text 'StereoKit VERSION "(.*)"' -with "StereoKit VERSION `"$major.$minor.$patch`""
 
 #### Clean Project ########################
 
@@ -171,10 +171,14 @@ Write-Host @"
 
 __      ___         _               
 \ \    / (_)_ _  __| |_____ __ _____
- \ \/\/ /| | ' \/ _` / _ \ V  V (_-<
+ \ \/\/ /| | ' \/ _' / _ \ V  V (_-<
   \_/\_/ |_|_||_\__,_\___/\_/\_//__/
 
 "@ -ForegroundColor White
+
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 # Build Win32 first
 Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
@@ -240,12 +244,36 @@ Write-Host @"
                       
 "@ -ForegroundColor White
 
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+
+# Find the correct WSL folder
+$linux_folder = ''+$PSScriptRoot
+$linux_folder = $linux_folder.replace('\', '/')
+$linux_folder = $linux_folder.replace(':', '')
+$linux_folder = '/mnt/'+$linux_folder
+Write-Output $linux_folder
+
 # Linux, via WSL
+Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
+if ($fast -eq $false) {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
+} else {
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    exit
+}
+Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
+
+
 Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
 if ($fast -eq $false) {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake -r"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
 } else {
-    cmd /c "wsl cd /mnt/c/Data/Repositories/StereoKit ; xmake f -p linux -a x64 -m release ; xmake"
+    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
@@ -259,10 +287,14 @@ Write-Host @"
 
     _           _         _    _ 
    /_\  _ _  __| |_ _ ___(_)__| |
-  / _ \| ' \/ _` | '_/ _ \ / _` |
+  / _ \| ' \/ _' | '_/ _ \ / _' |
  /_/ \_\_||_\__,_|_| \___/_\__,_|
                       
 "@ -ForegroundColor White
+
+# Platform specific shader compile for shaders bundled in the platform binary!
+Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 # Do cross platform build code first
 Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
@@ -284,7 +316,7 @@ Write-Host @"
 
   _  _       ___     _   
  | \| |_  _ / __|___| |_ 
- | .` | || | (_ / -_)  _|
+ | .' | || | (_ / -_)  _|
  |_|\_|\_,_|\___\___|\__|
                       
 "@ -ForegroundColor White
@@ -321,5 +353,9 @@ if ($upload) {
         Write-Host 'No key, cancelling upload'
     }
 }
+
+# Put the shaders back to cross-platform to make dev a little nicer!
+Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundColor green
+& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green

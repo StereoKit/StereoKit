@@ -4,14 +4,20 @@
 
 #if   defined(__EMSCRIPTEN__)
 	#define SK_OS_WEB
+	#define SK_XR_WEBXR
+	#define WEB_EXPORT EMSCRIPTEN_KEEPALIVE extern "C"
 #elif defined(__ANDROID__)
 	#define SK_OS_ANDROID
+	#define SK_XR_OPENXR
 #elif defined(__linux__)
 	#define SK_OS_LINUX
+	#define SK_XR_OPENXR
 #elif defined(WINDOWS_UWP)
 	#define SK_OS_WINDOWS_UWP
+	#define SK_XR_OPENXR
 #elif defined(_WIN32)
 	#define SK_OS_WINDOWS
+	#define SK_XR_OPENXR
 #endif
 
 #if !defined(NDEBUG)
@@ -48,11 +54,14 @@ char *platform_push_path_new(const char *path, const char *directory);
 char *platform_pop_path_new (const char *path);
 
 bool  platform_keyboard_available();
-void  platform_keyboard_show     (bool visible);
-bool  platform_keyboard_visible  ();
 
 bool platform_utils_init();
 void platform_utils_update();
 void platform_utils_shutdown();
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+wchar_t *platform_to_wchar  (const char *utf8_string);
+char    *platform_from_wchar(const wchar_t *string);
+#endif
 
 }

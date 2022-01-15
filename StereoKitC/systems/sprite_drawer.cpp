@@ -18,6 +18,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 array_t<sprite_buffer_t> sprite_buffers = {};
+mesh_t                   sprite_quad_old;
 mesh_t                   sprite_quad;
 
 ///////////////////////////////////////////
@@ -65,7 +66,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
-		render_add_mesh(sprite_quad, sprite->material, at, {color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f });
+		render_add_mesh(sprite_quad_old, sprite->material, at, {color.r/255.f, color.g/255.f, color.b/255.f, color.a/255.f });
 		return;
 	}
 
@@ -93,12 +94,32 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	buffer.vert_count += 4;
 }
 
+
+///////////////////////////////////////////
+
+void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_position, color32 color) {
+	// Check if this one does get batched
+	if (sprite->buffer_index == -1) {
+		// Just plop a quad onto the render queue
+		vec3 offset = vec3_zero;
+		if      (anchor_position & text_align_x_left  ) offset.x =  sprite->aspect/2;
+		else if (anchor_position & text_align_x_right ) offset.x = -sprite->aspect/2;
+		if      (anchor_position & text_align_y_bottom) offset.y =  0.5f;
+		else if (anchor_position & text_align_y_top   ) offset.y = -0.5f;
+		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {sprite->aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+		return;
+	} else {
+		log_err("Not implemented");
+	}
+}
+
 ///////////////////////////////////////////
 
 bool sprite_drawer_init() {
+	sprite_quad = mesh_find(default_id_mesh_quad);
 
 	// Default rendering quad
-	sprite_quad = mesh_create();
+	sprite_quad_old = mesh_create();
 	vert_t verts[4] = {
 		{ vec3{0, 0,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} },
 		{ vec3{1, 0,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
@@ -106,10 +127,10 @@ bool sprite_drawer_init() {
 		{ vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_id       (sprite_quad, "render/sprite_quad");
-	mesh_set_keep_data(sprite_quad, false);
-	mesh_set_verts    (sprite_quad, verts, 4, false);
-	mesh_set_inds     (sprite_quad, inds,  6);
+	mesh_set_id       (sprite_quad_old, "render/sprite_quad");
+	mesh_set_keep_data(sprite_quad_old, false);
+	mesh_set_verts    (sprite_quad_old, verts, 4, false);
+	mesh_set_inds     (sprite_quad_old, inds,  6);
 
 	return true;
 }
@@ -134,6 +155,7 @@ void sprite_drawer_update() {
 
 void sprite_drawer_shutdown() {
 	mesh_release(sprite_quad);
+	mesh_release(sprite_quad_old);
 	for (size_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		mesh_release(buffer.mesh);

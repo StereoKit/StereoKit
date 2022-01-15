@@ -2,6 +2,8 @@ add_rules("mode.release", "mode.debug")
 
 --------------------------------------------------
 
+-- For defining packages like these, check out these docs:
+-- https://xmake.io/#/package/remote_package?id=package-description
 package("reactphysics3d")
     set_homepage("http://www.reactphysics3d.com/")
     set_description("Open source C++ physics engine library in 3D")
@@ -36,10 +38,12 @@ package_end()
 --------------------------------------------------
 
 -- On Android, we have a precompiled binary provided by Oculus
-if not is_plat("android") then
+if not is_plat("android") and not is_plat("wasm") then
     add_requires("openxr_loader 1.0.17", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
-add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
+if not is_plat("wasm") then
+    add_requires("reactphysics3d 0.8.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
+end
 
 option("uwp")
     set_default(false)
@@ -57,13 +61,13 @@ option("linux-graphics-backend")
 target("StereoKitC")
     add_options("uwp")
     add_options("linux-graphics-backend")
-    set_version("0.3.4")
+    set_version("0.3.5")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
         set_languages("cxx17")
         add_cxflags(is_mode("debug") and "/MDd" or "/MD")
-        add_links("windowsapp", "user32")
+        add_links("windowsapp", "user32", "comdlg32")
         if has_config("uwp") then
             add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
         end
@@ -91,7 +95,7 @@ target("StereoKitC")
     if is_plat("android") then
         add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
         add_links("openxr_loader")
-    else
+    elseif not is_plat("wasm") then
         add_packages("openxr_loader")
     end
 
@@ -110,7 +114,17 @@ target("StereoKitC")
 
     -- Emscripten stuff, this doesn't actually work yet
     if is_plat("wasm") then
-        add_cxflags("-msimd128", "-msse4", "-s", "SIMD=1")
+        add_ldflags(
+            "-s FULL_ES3=1",
+            "-s ASSERTIONS=1",
+            "-s ALLOW_MEMORY_GROWTH=1",
+            "-g",
+            "-gsource-map",
+            "--profiling",
+            "-s FORCE_FILESYSTEM=1",
+            --"-s -Oz",
+            "-s ENVIRONMENT=web")
+        add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
     end
 
     -- Copy finished files over to the bin directory
@@ -148,13 +162,38 @@ option("tests")
     set_description("Build native test project")
     set_values(true, false)
 
-if has_config("tests") and is_plat("linux", "windows") then
+if has_config("tests") and is_plat("linux", "windows", "wasm") then
     target("StereoKitCTest")
         add_options("uwp")
         set_kind("binary")
         add_files("Examples/StereoKitCTest/*.cpp")
         add_includedirs("StereoKitC/")
         add_deps("StereoKitC")
+
+        if is_plat("wasm") then
+            set_policy("check.auto_ignore_flags", false)
+            add_ldflags(
+                "-s FULL_ES3=1",
+                "-s ALLOW_MEMORY_GROWTH=1",
+                "-s FORCE_FILESYSTEM=1",
+                "--preload-file Examples/Assets",
+                "-s -Oz",
+                "-s ENVIRONMENT=web")
+
+            if is_mode("debug") then
+                add_ldflags(
+                    "-s ASSERTIONS=1",
+                    "--profiling",
+                    "-g",
+                    "-gsource-map",
+                    "--source-map-base http://127.0.0.1:8000/")
+            end
+            if is_mode("release") then
+                add_ldflags(
+                    "-s -Oz",
+                    "-fno-rtti")
+            end
+        end
 
         after_build(function (target)
             local assets_folder = path.join(target:targetdir(), "Assets")

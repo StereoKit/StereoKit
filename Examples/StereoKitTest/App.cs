@@ -1,5 +1,6 @@
 ﻿using StereoKit;
 using StereoKit.Framework;
+using System;
 using System.Collections.Generic;
 
 class App
@@ -24,11 +25,18 @@ class App
 
 	public App(string[] args)
 	{
-		Tests.IsTesting = args.Length > 0 && args[0].ToLower() == "-test";
-		if (!Tests.IsTesting && args.Length > 0)
-			startTest = args[0];
+		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
+		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
+		if (Array.IndexOf(args, "-screenfolder") != -1)
+			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
+		if (Array.IndexOf(args, "-start") != -1)
+			startTest = args[Array.IndexOf(args, "-start") + 1];
+
 		if (Tests.IsTesting)
-			settings.displayPreference = DisplayMode.Flatscreen;
+		{
+			settings.displayPreference     = DisplayMode.Flatscreen;
+			settings.disableUnfocusedSleep = true;
+		}
 
 		// Preload the StereoKit library for access to Time.Scale before
 		// initialization occurs.

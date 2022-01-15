@@ -5,18 +5,6 @@ using System.Text;
 
 namespace StereoKit
 {
-
-	/// <summary>When opening the Platform.FilePicker, this enum describes
-	/// how the picker should look and behave.</summary>
-	public enum PickerMode
-	{
-		/// <summary>Allow opening a single file.</summary>
-		Open,
-		/// <summary>Allow the user to enter or select the name of the
-		/// destination file.</summary>
-		Save,
-	}
-
 	internal struct FileFilter
 	{
 		[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string ext;
@@ -31,19 +19,55 @@ namespace StereoKit
 	/// methods do!</summary>
 	public static class Platform
 	{
+		#region Keyboard
+		/// <summary>Force the use of StereoKit's built-in fallback keyboard
+		/// instead of the system keyboard. This may be great for testing or
+		/// look and feel matching, but the system keyboard should generally be
+		/// preferred for accessibility reasons.</summary>
+		public static bool ForceFallbackKeyboard
+		{
+			get => NativeAPI.platform_keyboard_get_force_fallback() > 0;
+			set => NativeAPI.platform_keyboard_set_force_fallback(value?1:0);
+		}
+
+		/// <summary>Check if a soft keyboard is currently visible. This may be
+		/// an OS provided keyboard or StereoKit's fallback keyboard, but will
+		/// not indicate the presence of a physical keyboard.</summary>
+		public static bool KeyboardVisible
+			=> NativeAPI.platform_keyboard_visible() > 0;
+
+		/// <summary>Request or hide a soft keyboard for the user to type on.
+		/// StereoKit will surface OS provided soft keyboards where available,
+		/// and use a fallback keyboard when not. On systems with physical
+		/// keyboards, soft keyboards generally will not be shown if the user
+		/// has interacted with their physical keyboard recently.</summary>
+		/// <param name="show">Tells whether or not to open or close the soft
+		/// keyboard.</param>
+		/// <param name="inputType">Soft keyboards can change layout to
+		/// optimize for the type of text that's required. StereoKit will
+		/// request the soft keyboard layout that most closely represents the
+		/// TextContext provided.</param>
+		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
+			=> NativeAPI.platform_keyboard_show(show?1:0, inputType);
+		#endregion
+
 		#region File Picker
 		static Action<string>       _filePickerOnSelect;
 		static Action               _filePickerOnCancel;
 		static Action<bool, string> _filePickerOnComplete;
 		static PickerCallback       _filePickerCallback;
-		private static void FilePickerCallback(IntPtr data, int confirmed, string file)
+		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
+			byte[] filenameUtf8 = new byte[fileLength];
+			Marshal.Copy(file, filenameUtf8, 0, fileLength);
+			string filename = Encoding.UTF8.GetString(filenameUtf8);
+
 			if (confirmed > 0) { 
-				_filePickerOnSelect?.Invoke(file);
+				_filePickerOnSelect?.Invoke(filename);
 			} else {
 				_filePickerOnCancel?.Invoke();
 			}
-			_filePickerOnComplete?.Invoke(confirmed>0, file);
+			_filePickerOnComplete?.Invoke(confirmed>0, filename);
 		}
 
 		/// <summary>Starts a file picker window! This will create a native
@@ -80,7 +104,7 @@ namespace StereoKit
 			_filePickerOnSelect   = onSelectFile;
 			_filePickerOnCancel   = onCancel;
 			_filePickerOnComplete = null;
-			NativeAPI.platform_file_picker(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>Starts a file picker window! This will create a native
 		/// file picker window if one is available in the current setup, and
@@ -117,7 +141,7 @@ namespace StereoKit
 			_filePickerOnSelect = null;
 			_filePickerOnCancel = null;
 			_filePickerOnComplete = onComplete;
-			NativeAPI.platform_file_picker(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>If the picker is visible, this will close it and 
 		/// immediately trigger a cancel event for the active picker.</summary>
@@ -129,17 +153,18 @@ namespace StereoKit
 		#endregion
 
 		#region File Save & Load
-		/// <summary>Writes a text file to the filesystem, taking advantage
-		/// of any permissions that may have been granted by
+		/// <summary>Writes a UTF-8 text file to the filesystem, taking
+		/// advantage of any permissions that may have been granted by
 		/// Platform.FilePicker.</summary>
 		/// <param name="filename">Path to the new file. Not affected by
 		/// Assets folder path.</param>
-		/// <param name="data">A UTF-8 string to write to the file.</param>
+		/// <param name="data">A string to write to the file. This gets
+		/// converted to a UTF-8 encoding.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, string data)
 		{ 
 			byte[] bytes = Encoding.UTF8.GetBytes(data); 
-			return NativeAPI.platform_write_file(filename, bytes, (UIntPtr)bytes.Length);
+			return NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename), bytes, (UIntPtr)bytes.Length);
 		}
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
@@ -150,19 +175,19 @@ namespace StereoKit
 		/// <param name="data">An array of bytes to write to the file.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, byte[] data)
-			=> NativeAPI.platform_write_file(filename, data, (UIntPtr)data.Length);
+			=> NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename), data, (UIntPtr)data.Length);
 
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by
 		/// Platform.FilePicker.</summary>
 		/// <param name="filename">Path to the file. Not affected by Assets
 		/// folder path.</param>
-		/// <param name="data">A UTF-8 encoded string representing the
+		/// <param name="data">A UTF-8 decoded string representing the
 		/// contents of the file. Will be null on failure.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out string data) {
 			data = null;
-			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename), out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			byte[] bytes = new byte[(uint)length];
@@ -177,7 +202,7 @@ namespace StereoKit
 		/// Platform.FilePicker. Returns null on failure.</summary>
 		/// <param name="filename">Path to the file. Not affected by Assets
 		/// folder path.</param>
-		/// <returns>A UTF-8 encoded string if successful, null if not.</returns>
+		/// <returns>A UTF-8 decoded string if successful, null if not.</returns>
 		public static string ReadFileText(string filename)
 		{
 			ReadFile(filename, out string data);
@@ -189,13 +214,13 @@ namespace StereoKit
 		/// Platform.FilePicker.</summary>
 		/// <param name="filename">Path to the file. Not affected by Assets
 		/// folder path.</param>
-		/// <param name="data">A UTF-8 encoded string representing the
-		/// contents of the file. Will be null on failure.</param>
+		/// <param name="data">A raw byte array representing the contents of
+		/// the file. Will be null on failure.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out byte[] data)
 		{
 			data = null;
-			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename), out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			data = new byte[(uint)length];
@@ -208,7 +233,7 @@ namespace StereoKit
 		/// Platform.FilePicker. Returns null on failure.</summary>
 		/// <param name="filename">Path to the file. Not affected by Assets
 		/// folder path.</param>
-		/// <returns>A byte array if successful, null if not.</returns>
+		/// <returns>A raw byte array if successful, null if not.</returns>
 		public static byte[] ReadFileBytes(string filename)
 		{
 			ReadFile(filename, out byte[] data);

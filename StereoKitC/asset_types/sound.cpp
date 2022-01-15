@@ -71,6 +71,20 @@ sound_t sound_create_stream(float buffer_duration) {
 
 ///////////////////////////////////////////
 
+sound_t sound_create_samples(const float *samples_at_48000s, uint64_t sample_count) {
+	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
+
+	result->type = sound_type_buffer;
+	result->buffer.capacity = sample_count;
+	result->buffer.count    = sample_count;
+	result->buffer.data     = sk_malloc_t(float, sample_count);
+	memcpy(result->buffer.data, samples_at_48000s, sample_count * sizeof(float));
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 sound_t sound_generate(float (*function)(float sample_time), float duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
@@ -82,12 +96,6 @@ sound_t sound_generate(float (*function)(float sample_time), float duration) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}
 
-	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
-	if (ma_decoder_init_memory_raw(result->buffer.data, sizeof(float) * result->buffer.capacity, &config, &config, &result->decoder) != MA_SUCCESS) {
-		log_err("Failed to generate sound!");
-		free(result->buffer.data);
-		return nullptr;
-	}
 	return result;
 }
 
@@ -160,7 +168,14 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 
 uint64_t sound_total_samples(sound_t sound) {
 	switch (sound->type) {
-	case sound_type_decode: return ma_decoder_get_length_in_pcm_frames(&sound->decoder);
+	case sound_type_decode: {
+		ma_uint64 sample_count = 0;
+		if (ma_decoder_get_length_in_pcm_frames(&sound->decoder, &sample_count) != MA_SUCCESS) {
+			log_err("Failed to get sample count of a decode sound!");
+			return 0;
+		}
+		return sample_count;
+	}
 	case sound_type_buffer:
 	case sound_type_stream: return sound->buffer.count;
 	default: return 0;
@@ -179,7 +194,14 @@ uint64_t sound_cursor_samples(sound_t sound) {
 
 float sound_duration(sound_t sound) {
 	switch (sound->type) {
-	case sound_type_decode: return (float)ma_decoder_get_length_in_pcm_frames(&sound->decoder) / (float)sound->decoder.outputSampleRate;
+	case sound_type_decode: {
+		ma_uint64 sample_count = 0;
+		if (ma_decoder_get_length_in_pcm_frames(&sound->decoder, &sample_count) != MA_SUCCESS) {
+			log_err("Failed to get sample duration of a decode sound!");
+			return 0;
+		}
+		return (float)sample_count / (float)sound->decoder.outputSampleRate;
+	}
 	case sound_type_buffer:
 	case sound_type_stream: return (float)sound->buffer.count / (float)AU_SAMPLE_RATE;
 	default: return 0;

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../platform/platform_utils.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../../stereokit.h"
 #include "../../libraries/sk_gpu.h"
-#include "../platform/platform_utils.h"
 
 #if defined(SK_OS_ANDROID)
 	#include <android/native_activity.h>
@@ -140,6 +142,7 @@ const char* openxr_string   (XrResult result);
 
 extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;
+extern XrSpace    xr_head_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
@@ -150,8 +153,9 @@ extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
 extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
-extern XrSpace    xrc_space_grip[2];
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
+extern pose_t     xr_bounds_pose_local;
 
 } // namespace sk
+#endif

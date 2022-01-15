@@ -178,6 +178,18 @@
     <ClCompile Include="asset_types\animation.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="systems\platform\web.cpp">
+      <Filter>systems\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\qoi.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\virtual_keyboard.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\stb_image.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -188,9 +200,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\stb_image.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\stb_rect_pack.h">
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\stb_truetype.h">
@@ -410,6 +419,21 @@
     <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h">
       <Filter>shaders_builtin</Filter>
     </ClInclude>
+    <ClInclude Include="systems\platform\web.h">
+      <Filter>systems\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\aileron_font_data.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\qoi.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\virtual_keyboard.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\virtual_keyboard_layouts.h">
+      <Filter>tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -478,5 +502,6 @@
     <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -29,6 +29,12 @@ namespace StereoKit
 		/// <param name="z">The z axis.</param>
 		public Vec3(float x, float y, float z) => v = new Vector3(x, y, z);
 
+		/// <summary>Creates a vector with all values the same! StereoKit uses
+		/// a right-handed metric coordinate system, where +x is to the 
+		/// right, +y is upwards, and -z is forward.</summary>
+		/// <param name="xyz">The x,y,and z axis.</param>
+		public Vec3(float xyz) => v = new Vector3(xyz, xyz, xyz);
+
 		public static implicit operator Vec3(Vector3 v) => new Vec3(v.X, v.Y, v.Z);
 		public static implicit operator Vector3(Vec3 v) => v.v;
 
@@ -71,11 +77,11 @@ namespace StereoKit
 		public static readonly Vec3 UnitZ = new Vec3(0, 0, 1);
 
 		/// <summary>This extracts a Vec2 from the X and Y axes.</summary>
-		public Vec2 XY  { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
+		public Vec2 XY { get => new Vec2(x, y); set { x = value.x; y = value.y; } }
 		/// <summary>This extracts a Vec2 from the Y and Z axes.</summary>
-		public Vec2 YZ  { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
+		public Vec2 YZ { get => new Vec2(y, z); set { y = value.x; z = value.y; } }
 		/// <summary>This extracts a Vec2 from the X and Z axes.</summary>
-		public Vec2 XZ  { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
+		public Vec2 XZ { get => new Vec2(x, z); set { x = value.x; z = value.y; } }
 		/// <summary>This returns a Vec3 that has been flattened to 0 on the
 		/// Y axis. No other changes are made.</summary>
 		public Vec3 X0Z => new Vec3(x, 0, z);
@@ -203,6 +209,17 @@ namespace StereoKit
 		/// will be a normalized vector (vector with a length of 1).</returns>
 		public static Vec3 AngleXY(float angleDeg, float z = 0)
 			=> new Vec3(SKMath.Cos(angleDeg * Units.deg2rad), SKMath.Sin(angleDeg * Units.deg2rad), z);
+
+		/// <summary>Calculates the angle between two vectors in degrees!
+		/// Vectors do not need to be normalized, and the result will always be
+		/// positive.</summary>
+		/// <param name="a">The first, initial vector, A. Does not need to be
+		/// normalized.</param>
+		/// <param name="b">The second vector, B, that we're finding the 
+		/// angle to. Does not need to be normalized.</param>
+		/// <returns>A positive angle between two vectors in degrees!</returns>
+		public static float AngleBetween(Vec3 a, Vec3 b)
+			=> (float)System.Math.Acos( Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq) ) * Units.rad2deg;
 
 		/// <summary>Exactly the same as Vec3.Cross, but has some naming
 		/// memnonics for getting the order right when trying to find a 

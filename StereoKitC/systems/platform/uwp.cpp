@@ -16,9 +16,12 @@
 
 namespace sk {
 
-HWND            uwp_window     = nullptr;
-skg_swapchain_t uwp_swapchain  = {};
-system_t       *uwp_render_sys = nullptr;
+HWND            uwp_window           = nullptr;
+skg_swapchain_t uwp_swapchain        = {};
+tex_t           uwp_target           = {};
+system_t       *uwp_render_sys       = nullptr;
+bool            uwp_keyboard_showing = false;
+bool            uwp_keyboard_show_evts = false;
 
 bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
@@ -146,8 +149,9 @@ public:
 		dispatcher.AcceleratorKeyActivated            (uwp_on_corewindow_keypress);
 		currentDisplayInformation.DpiChanged          ({ this, &ViewProvider::OnDpiChanged         });
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
-		
-		window.Closed([this](auto &&, auto &&) { m_exit = true; sk_run = false; log_info("OnClosed!"); });
+
+
+		window   .Closed ([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
 
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
 		// which can result in the app being suspended if unhandled
@@ -164,7 +168,9 @@ public:
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			std::swap(sk_info.display_width, sk_info.display_height);
+			int32_t swap_tmp = sk_info.display_width;
+			sk_info.display_width  = sk_info.display_height;
+			sk_info.display_height = swap_tmp;
 		}
 
 		// Get the HWND of the UWP window
@@ -200,12 +206,12 @@ public:
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 
 				vec2 new_point = uwp_mouse_set_delta + vec2{ 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 
 				CoreWindow::GetForCurrentThread().PointerPosition(Point(
-					pixels_to_dips(new_point.x, ViewProvider::inst->m_DPI) + win.X,
-					pixels_to_dips(new_point.y, ViewProvider::inst->m_DPI) + win.Y));
+					pixels_to_dips(new_point.x, m_DPI) + win.X,
+					pixels_to_dips(new_point.y, m_DPI) + win.Y));
 
 				ViewProvider::inst->mouse_point = new_point;
 				uwp_mouse_set = false;
@@ -213,8 +219,8 @@ public:
 				Point pos = CoreWindow::GetForCurrentThread().PointerPosition();
 				Rect  win = CoreWindow::GetForCurrentThread().Bounds();
 				mouse_point = { 
-					dips_to_pixels(pos.X, m_DPI) - win.X,
-					dips_to_pixels(pos.Y, m_DPI) - win.Y};
+					dips_to_pixels(pos.X, m_DPI) - dips_to_pixels(win.X, m_DPI),
+					dips_to_pixels(pos.Y, m_DPI) - dips_to_pixels(win.Y, m_DPI)};
 			}
 
 			Sleep(1);
@@ -376,8 +382,11 @@ private:
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 
-		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270)
-			std::swap(outputWidth, outputHeight);
+		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
+			int swap_tmp = outputWidth;
+			outputWidth  = outputHeight;
+			outputHeight = swap_tmp;
+		}
 
 		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
 			return;
@@ -428,10 +437,33 @@ float uwp_get_scroll() {
 ///////////////////////////////////////////
 
 void uwp_show_keyboard(bool show) {
+	// For future improvements, see here:
+	// https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/CustomEditControl/cs/CustomEditControl.xaml.cs
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
-		if (show) InputPane::GetForCurrentView().TryShow();
-		else      InputPane::GetForCurrentView().TryHide();
+		auto inputPane = InputPane::GetForCurrentView();
+
+		// Registering these callbacks up in the class doesn't work, and I
+		// don't know why. Likely not worth the pain of figuring it out either.
+		if (!uwp_keyboard_show_evts) {
+			inputPane.Showing([](auto &&, auto &&) { uwp_keyboard_showing = true;  });
+			inputPane.Hiding ([](auto &&, auto &&) { uwp_keyboard_showing = false; });
+			uwp_keyboard_show_evts = true;
+		}
+
+		if (show) {
+			uwp_keyboard_showing = inputPane.TryShow();
+		} else {
+			if (inputPane.TryHide()) {
+				uwp_keyboard_showing = false;
+			}
+		}
 	});
+}
+
+///////////////////////////////////////////
+
+bool uwp_keyboard_visible() {
+	return uwp_keyboard_showing;
 }
 
 ///////////////////////////////////////////
@@ -485,6 +517,10 @@ bool uwp_start_flat() {
 	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
+	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
@@ -510,16 +546,20 @@ void uwp_step_end_flat() {
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	color128 color = render_get_clear_color();
-	skg_swapchain_bind(&uwp_swapchain);
+	skg_tex_target_bind(&uwp_target->tex);
 	skg_target_clear(true, &color.r);
 
-	input_update_predicted();
+	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
+
+	// This copies the color data over to the swapchain, and resolves any
+	// multisampling on the primary target texture.
+	skg_tex_copy_to_swapchain(&uwp_target->tex, &uwp_swapchain);
 
 	uwp_render_sys->profile_frame_duration = stm_since(uwp_render_sys->profile_frame_start);
 	skg_swapchain_present(&uwp_swapchain);
@@ -531,6 +571,7 @@ void uwp_stop_flat() {
 	flatscreen_input_shutdown();
 
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
+	tex_release          (uwp_target);
 	skg_swapchain_destroy(&uwp_swapchain);
 }
 

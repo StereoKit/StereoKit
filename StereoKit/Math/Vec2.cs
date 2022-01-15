@@ -23,6 +23,10 @@ namespace StereoKit
 		/// <param name="y">Y component of the vector.</param>
 		public Vec2(float x, float y) => v = new Vector2(x, y);
 
+		/// <summary>A short hand constructor, just sets all values as the same!</summary>
+		/// <param name="xy">X and Y component of the vector.</param>
+		public Vec2(float xy) => v = new Vector2(xy, xy);
+
 		public static implicit operator Vec2(Vector2 v) => new Vec2(v.X, v.Y);
 		public static implicit operator Vector2(Vec2 v) => v.v;
 
@@ -49,7 +53,7 @@ namespace StereoKit
 		public static readonly Vec2 UnitY = new Vec2(0,1);
 
 		/// <summary>A transpose swizzle property, returns (y,x)</summary>
-		public Vec2 YX  => new Vec2(y, x);
+		public Vec2 YX => new Vec2(y, x);
 		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Z axis.
 		/// </summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
@@ -96,6 +100,19 @@ namespace StereoKit
 		public static float Dot(Vec2 a, Vec2 b)
 			=> Vector2.Dot(a.v, b.v);
 
+		/// <summary>Creates a vector pointing in the direction of the angle,
+		/// with a length of 1. Angles are counter-clockwise, and start from
+		/// (1,0), so an angle of 90 will be (0,1).</summary>
+		/// <param name="degrees">Counter-clockwise angle from (1,0), in
+		/// degrees.</param>
+		/// <returns>A unit vector (length of 1), pointing towards degrees.
+		/// </returns>
+		public static Vec2 FromAngle(float degrees)
+		{
+			float ang = degrees * Units.deg2rad;
+			return new Vec2(SKMath.Cos(ang), SKMath.Sin(ang));
+		}
+
 		/// <summary>Returns the counter-clockwise degrees from [1,0]. 
 		/// Resulting value is between 0 and 360. Vector does not need to be
 		/// normalized.</summary>
@@ -125,17 +142,19 @@ namespace StereoKit
 		public bool InRadius(Vec2 pt, float radius)
 			=> (v - pt.v).LengthSquared() < radius * radius;
 
-		/// <summary>Calculates a signed angle between two vectors! Sign will
-		/// be positive if B is counter-clockwise (left) of A, and negative 
-		/// if B is clockwise (right) of A. Vectors do not need to be 
-		/// normalized.</summary>
+		/// <summary>Calculates a signed angle between two vectors in degrees!
+		/// Sign will be positive if B is counter-clockwise (left) of A, and
+		/// negative if B is clockwise (right) of A. Vectors do not need to be 
+		/// normalized.
+		/// NOTE: Since this will return a positive or negative angle, order of
+		/// parameters matters!</summary>
 		/// <param name="a">The first, initial vector, A. Does not need to be
 		/// normalized.</param>
 		/// <param name="b">The second vector, B, that we're finding the 
 		/// angle to. Does not need to be normalized.</param>
-		/// <returns>a signed angle between two vectors! Sign will be 
-		/// positive if B is counter-clockwise (left) of A, and negative if B
-		/// is clockwise (right) of A.</returns>
+		/// <returns>a signed angle between two vectors in degrees! Sign will
+		/// be positive if B is counter-clockwise (left) of A, and negative if
+		/// B is clockwise (right) of A.</returns>
 		public static float AngleBetween(Vec2 a, Vec2 b)
 			=> (float)Math.Atan2(a.v.X*b.v.Y - a.v.Y*b.v.X, Vector2.Dot(a.v, b.v)) * Units.rad2deg;
 

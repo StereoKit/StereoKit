@@ -554,6 +554,8 @@ SKG_API void                skg_tex_settings             (      skg_tex_t *tex, 
 SKG_API void                skg_tex_set_contents         (      skg_tex_t *tex, const void *data, int32_t width, int32_t height);
 SKG_API void                skg_tex_set_contents_arr     (      skg_tex_t *tex, const void **data_frames, int32_t data_frame_count, int32_t width, int32_t height, int32_t multisample);
 SKG_API bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
+SKG_API bool                skg_tex_get_mip_contents     (      skg_tex_t *tex, int32_t mip_level, void *ref_data, size_t data_size);
+SKG_API bool                skg_tex_get_mip_contents_arr (      skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size);
 SKG_API void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
 SKG_API void                skg_tex_clear                (skg_bind_t bind);
 SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target);
@@ -595,6 +597,7 @@ SKG_API void                    skg_log                        (skg_log_ level, 
 SKG_API bool                    skg_read_file                  (const char *filename, void **out_data, size_t *out_size);
 SKG_API uint64_t                skg_hash                       (const char *string);
 SKG_API uint32_t                skg_mip_count                  (int32_t width, int32_t height);
+SKG_API void                    skg_mip_dimensions             (int32_t width, int32_t height, int32_t mip_level, int32_t *out_width, int32_t *out_height);
 
 SKG_API skg_color32_t           skg_col_hsv32                  (float hue, float saturation, float value, float alpha);
 SKG_API skg_color128_t          skg_col_hsv128                 (float hue, float saturation, float value, float alpha);
@@ -677,7 +680,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	UINT creation_flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #if defined(_DEBUG)
 	creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
-	skg_log(skg_log_info, "Requesting debug Direct3D context");
+	skg_log(skg_log_info, "Requesting debug Direct3D context.");
 #endif
 
 	// Find the right adapter to use:
@@ -736,7 +739,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 			NULL,
 			hr,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(char *)&error_text, 0,
+			(char*)&error_text, 0,
 			NULL);
 		skg_log(skg_log_critical, error_text);
 		LocalFree(error_text);
@@ -1965,22 +1968,57 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 ///////////////////////////////////////////
 
 bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
+	return skg_tex_get_mip_contents_arr(tex, 0, 0, ref_data, data_size);
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_mip_contents(skg_tex_t *tex, int32_t mip_level, void *ref_data, size_t data_size) {
+	return skg_tex_get_mip_contents_arr(tex, mip_level, 0, ref_data, data_size);
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size) {
+	// Double check on mips first
+	uint32_t mip_levels = tex->mips == skg_mip_generate ? skg_mip_count(tex->width, tex->height) : 1;
+	if (mip_level != 0) {
+		if (tex->mips != skg_mip_generate) {
+			skg_log(skg_log_critical, "Can't get mip data from a texture with no mips!");
+			return false;
+		}
+		if (mip_level >= mip_levels) {
+			skg_log(skg_log_critical, "This texture doesn't have quite as many mip levels as you think.");
+			return false;
+		}
+	}
+
 	// Make sure we've been provided enough memory to hold this texture
-	size_t format_size = skg_tex_fmt_size(tex->format);
-	if (data_size != (size_t)tex->width * (size_t)tex->height * format_size) {
-		skg_log(skg_log_critical, "Insufficient buffer size for skg_tex_get_contents");
+	int32_t width       = 0;
+	int32_t height      = 0;
+	size_t  format_size = skg_tex_fmt_size(tex->format);
+	skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+
+	if (data_size != (size_t)width * (size_t)height * format_size) {
+		skg_log(skg_log_critical, "Insufficient buffer size for skg_tex_get_mip_contents_arr");
 		return false;
 	}
 
 	D3D11_TEXTURE2D_DESC desc             = {};
 	ID3D11Texture2D     *copy_tex         = nullptr;
 	bool                 copy_tex_release = true;
+	UINT                 subresource      = mip_level + (arr_index * mip_levels);
 	tex->_texture->GetDesc(&desc);
+	desc.Width     = width;
+	desc.Height    = height;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.MiscFlags = 0;
 
 	// Make sure copy_tex is a texture that we can read from!
 	if (desc.SampleDesc.Count > 1) {
 		// Not gonna bother with MSAA stuff
-		skg_log(skg_log_warning, "skg_tex_get_contents MSAA surfaces not implemented");
+		skg_log(skg_log_warning, "skg_tex_get_mip_contents_arr MSAA surfaces not implemented");
 		return false;
 	} else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ)) {
 		// Handle case where the source is already a staging texture we can use directly
@@ -1996,12 +2034,18 @@ bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
 			skg_log(skg_log_critical, "CreateTexture2D failed!");
 			return false;
 		}
-		d3d_context->CopyResource(copy_tex, tex->_texture);
+
+		D3D11_BOX box = {};
+		box.right  = width;
+		box.bottom = height;
+		box.back   = 1;
+		d3d_context->CopySubresourceRegion(copy_tex, 0, 0, 0, 0, tex->_texture, subresource, &box);
+		subresource = 0;
 	}
 
 	// Load the data into CPU RAM
 	D3D11_MAPPED_SUBRESOURCE data;
-	if (FAILED(d3d_context->Map(copy_tex, 0, D3D11_MAP_READ, 0, &data))) {
+	if (FAILED(d3d_context->Map(copy_tex, subresource, D3D11_MAP_READ, 0, &data))) {
 		skg_log(skg_log_critical, "Texture Map failed!");
 		return false;
 	}
@@ -2009,7 +2053,7 @@ bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
 	// Copy it into our waiting buffer
 	uint8_t *srcPtr  = (uint8_t*)data.pData;
 	uint8_t *destPtr = (uint8_t*)ref_data;
-	size_t   msize   = tex->width*format_size;
+	size_t   msize   = width*format_size;
 	for (size_t h = 0; h < desc.Height; ++h) {
 		memcpy(destPtr, srcPtr, msize);
 		srcPtr  += data.RowPitch;
@@ -3331,30 +3375,28 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 #ifdef _SKG_GL_WEB
 		for (size_t i = 0; i < meta->buffer_count; i++) {
 			char t_name[64];
-			snprintf(t_name, 64, "type_%s", meta->buffers[i].name);
+			snprintf(t_name, 64, "%s", meta->buffers[i].name);
 			// $Global is a near universal buffer name, we need to scrape the
 			// '$' character out.
-			char *pr = t_name, *pw = t_name;
+			char *pr = t_name;
 			while (*pr) {
-				*pw = *pr++;
-				pw += (*pw != '$');
+				if (*pr == '$')
+					*pr = '_';
+				pr++;
 			}
-			*pw = '\0';
 
 			uint32_t slot = glGetUniformBlockIndex(result._program, t_name);
-			glUniformBlockBinding(result._program, slot, slot);
+			glUniformBlockBinding(result._program, slot, meta->buffers[i].bind.slot);
 
 			if (slot == GL_INVALID_INDEX) {
-				skg_log(skg_log_warning, "Couldn't find uinform block index for:");
+				skg_log(skg_log_warning, "Couldn't find uniform block index for:");
 				skg_log(skg_log_warning, meta->buffers[i].name);
-			} else {
-				meta->buffers[i].bind.slot = (uint16_t)slot;
 			}
 		}
 		glUseProgram(result._program);
-		for (size_t i = 0; i < meta->texture_count; i++) {
-			uint32_t loc = glGetUniformLocation(result._program, meta->textures[i].name);
-			glUniform1i(loc , meta->textures[i].bind.slot);
+		for (size_t i = 0; i < meta->resource_count; i++) {
+			uint32_t loc = glGetUniformLocation(result._program, meta->resources[i].name);
+			glUniform1i(loc , meta->resources[i].bind.slot);
 		}
 #endif
 	}
@@ -3634,21 +3676,21 @@ void main() {
 
 	skg_shader_meta_t *meta = (skg_shader_meta_t *)malloc(sizeof(skg_shader_meta_t));
 	*meta = {};
-	meta->texture_count = 1;
-	meta->textures = (skg_shader_texture_t*)malloc(sizeof(skg_shader_texture_t));
-	meta->textures[0].bind = { 0, skg_stage_pixel };
-	strcpy(meta->textures[0].name, "tex");
-	meta->textures[0].name_hash = skg_hash(meta->textures[0].name);
+	meta->resource_count = 1;
+	meta->resources = (skg_shader_resource_t*)malloc(sizeof(skg_shader_resource_t));
+	meta->resources[0].bind = { 0, skg_stage_pixel };
+	strcpy(meta->resources[0].name, "tex");
+	meta->resources[0].name_hash = skg_hash(meta->resources[0].name);
 
 	skg_shader_stage_t v_stage = skg_shader_stage_create(vs, strlen(vs), skg_stage_vertex);
 	skg_shader_stage_t p_stage = skg_shader_stage_create(ps, strlen(ps), skg_stage_pixel);
 	result._convert_shader = skg_shader_create_manual(meta, v_stage, p_stage, {});
 	result._convert_pipe   = skg_pipeline_create(&result._convert_shader);
 
-	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, skg_tex_fmt_rgba32, skg_mip_none);
+	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, skg_tex_fmt_rgba32_linear, skg_mip_none);
 	skg_tex_set_contents(&result._surface, nullptr, result.width, result.height);
 
-	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_format, skg_mip_none);
+	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
 	skg_tex_set_contents(&result._surface_depth, nullptr, result.width, result.height);
 	skg_tex_attach_depth(&result._surface, &result._surface_depth);
 
@@ -3681,10 +3723,10 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 	skg_tex_destroy(&swapchain->_surface);
 	skg_tex_destroy(&swapchain->_surface_depth);
 
-	swapchain->_surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_dynamic, color_fmt, skg_mip_none);
+	swapchain->_surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, color_fmt, skg_mip_none);
 	skg_tex_set_contents(&swapchain->_surface, nullptr, swapchain->width, swapchain->height);
 
-	swapchain->_surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_dynamic, depth_fmt, skg_mip_none);
+	swapchain->_surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_fmt, skg_mip_none);
 	skg_tex_set_contents(&swapchain->_surface_depth, nullptr, swapchain->width, swapchain->height);
 	skg_tex_attach_depth(&swapchain->_surface, &swapchain->_surface_depth);
 #endif
@@ -3853,7 +3895,8 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 		skg_tex_set_contents_arr(destination, nullptr, tex->array_count, tex->width, tex->height, tex->multisample);
 	}
 
-	glBindTexture      (tex->_target, destination->_texture);
+	glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
+	glBindTexture      (destination->_target, destination->_texture);
 	glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
 }
 
@@ -3980,7 +4023,43 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 ///////////////////////////////////////////
 
 bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
-	int64_t format = skg_tex_fmt_to_gl_layout(tex->format);
+	return skg_tex_get_mip_contents_arr(tex, 0, 0, ref_data, data_size);
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_mip_contents(skg_tex_t *tex, int32_t mip_level, void *ref_data, size_t data_size) {
+	return skg_tex_get_mip_contents_arr(tex, mip_level, 0, ref_data, data_size);
+}
+
+///////////////////////////////////////////
+
+bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size) {
+	// Double check on mips first
+	uint32_t mip_levels = tex->mips == skg_mip_generate ? skg_mip_count(tex->width, tex->height) : 1;
+	if (mip_level != 0) {
+		if (tex->mips != skg_mip_generate) {
+			skg_log(skg_log_critical, "Can't get mip data from a texture with no mips!");
+			return false;
+		}
+		if (mip_level >= mip_levels) {
+			skg_log(skg_log_critical, "This texture doesn't have quite as many mip levels as you think.");
+			return false;
+		}
+	}
+
+	// Make sure we've been provided enough memory to hold this texture
+	int32_t width       = 0;
+	int32_t height      = 0;
+	size_t  format_size = skg_tex_fmt_size(tex->format);
+	skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+
+	if (data_size != (size_t)width * (size_t)height * format_size) {
+		skg_log(skg_log_critical, "Insufficient buffer size for skg_tex_get_mip_contents_arr");
+		return false;
+	}
+
+	int64_t layout = skg_tex_fmt_to_gl_layout(tex->format);
 	glBindTexture (tex->_target, tex->_texture);
 
 #if defined(_SKG_GL_WEB) || defined(_SKG_GL_ES)
@@ -3989,47 +4068,43 @@ bool skg_tex_get_contents(skg_tex_t *tex, void *ref_data, size_t data_size) {
 	uint32_t fbo = 0;
 	glGenFramebuffers     (1, &fbo); 
 	glBindFramebuffer     (GL_FRAMEBUFFER, fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, 0);
+	if (tex->_target == GL_TEXTURE_CUBE_MAP) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+arr_index, tex->_texture, mip_level);
+	} else {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, mip_level);
+	}
 
-	glReadPixels(0, 0, tex->width, tex->height, format, skg_tex_fmt_to_gl_type(tex->format), ref_data);
+	glReadPixels(0, 0, width, height, layout, skg_tex_fmt_to_gl_type(tex->format), ref_data);
 
 	glBindFramebuffer   (GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, &fbo);
 #else
 	glBindTexture(tex->_target, tex->_texture);
-	glGetTexImage(tex->_target, 0, (uint32_t)format, skg_tex_fmt_to_gl_type(tex->format), ref_data);
+
+	if (tex->_target == GL_TEXTURE_CUBE_MAP) {
+		glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X+arr_index, mip_level, (uint32_t)layout, skg_tex_fmt_to_gl_type(tex->format), ref_data);
+	} else {
+		glGetTexImage(tex->_target, mip_level, (uint32_t)layout, skg_tex_fmt_to_gl_type(tex->format), ref_data);
+	}
 #endif
 
-	bool result = glGetError() == 0;
-
-	// This is OpenGL, and textures are upside-down
-	if (result) {
-		int32_t line_size = skg_tex_fmt_size(tex->format) * tex->width;
-		void   *tmp       = malloc(line_size);
-		for (int32_t y = 0; y < tex->height/2; y++) {
-			void *top_line = ((uint8_t*)ref_data) + line_size * y;
-			void *bot_line = ((uint8_t*)ref_data) + line_size * ((tex->height-1) - y);
-			memcpy(tmp,      top_line, line_size);
-			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp,      line_size);
-		}
-		free(tmp);
+	uint32_t result = glGetError();
+	if (result != 0) {
+		char text[128];
+		snprintf(text, 128, "skg_tex_get_mip_contents_arr error: %d", result);
+		skg_log(skg_log_critical, text);
 	}
 
-	return result;
+	return result == 0;
 }
 
 ///////////////////////////////////////////
 
 void skg_tex_bind(const skg_tex_t *texture, skg_bind_t bind) {
-	// Added this in to fix textures initially? Removed it after I switched to
-	// explicit binding locations in GLSL. This may need further attention? I
-	// have no idea what's happening here!
-	//if (texture)
-	//	glUniform1i(bind.slot, bind.slot);
-	
 	if (bind.stage_bits & skg_stage_compute) {
+#if !defined(_SKG_GL_WEB)
 		glBindImageTexture(bind.slot, texture->_texture, 0, false, 0, texture->_access, skg_tex_fmt_to_native( texture->format ));
+#endif
 	} else {
 		glActiveTexture(GL_TEXTURE0 + bind.slot);
 		glBindTexture(texture->_target, texture->_texture);
@@ -4232,6 +4307,13 @@ uint64_t skg_hash(const char *string) {
 
 uint32_t skg_mip_count(int32_t width, int32_t height) {
 	return (uint32_t)log2f(fminf((float)width, (float)height)) + 1;
+}
+
+///////////////////////////////////////////
+
+void skg_mip_dimensions(int32_t width, int32_t height, int32_t mip_level, int32_t *out_width, int32_t *out_height) {
+	*out_width  = width  >> mip_level;
+	*out_height = height >> mip_level;
 }
 
 ///////////////////////////////////////////

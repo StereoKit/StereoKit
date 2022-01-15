@@ -53,7 +53,9 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 		ma_uint64 frames_read = 0;
 		switch (inst.sound->type) {
 		case sound_type_decode: {
-			frames_read = ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
+			if (ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read, &frames_read) != MA_SUCCESS) {
+				log_err("Failed to read PCM frames for mixing!");
+			}
 		} break;
 		case sound_type_stream: {
 			mtx_lock(&inst.sound->data_lock);
@@ -153,7 +155,9 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 		ma_uint64 frames_read = 0;
 		switch (inst.sound->type) {
 		case sound_type_decode: {
-			frames_read = ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read);
+			if (ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read, &frames_read) != MA_SUCCESS) {
+				log_err("Failed to read PCM frames for ISAC!");
+			}
 		} break;
 		case sound_type_stream: {
 			mtx_lock(&inst.sound->data_lock);

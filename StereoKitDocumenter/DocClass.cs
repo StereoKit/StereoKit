@@ -20,7 +20,7 @@ namespace StereoKitDocumenter
 					: name; } }
 		public string FileName  => Path.Combine( Program.referenceOut, Name+".md");
 		public string UrlName   => $"{{{{site.url}}}}/Pages/Reference/{Name}.html";
-		public Type   ClassType => Type.GetType("StereoKit." + name + ", StereoKit") ?? Type.GetType("StereoKit.Framework." + name + ", StereoKit");
+		public Type   ClassType => Type.GetType("StereoKit." + name + ", StereoKit") ?? Type.GetType("StereoKit.Framework." + name + ", StereoKit") ?? Type.GetType("StereoKit.Backend+" + name + ", StereoKit");
 		public bool   IsEnum    => ClassType.IsEnum;
 
 		public void AddExample(DocExample aExample) => examples.Add(aExample);

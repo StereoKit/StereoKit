@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -48,6 +50,12 @@ namespace StereoKit
 		/// 
 		/// This represents the Color param 'color'.</summary>
 		ColorTint,
+		/// <summary>A multiplier for emission values sampled from the emission
+		/// texture. The default emission texture in SK shaders is white, and
+		/// the default value for this parameter is 0,0,0,0.
+		/// 
+		/// This represents the Color param 'emission_factor'.</summary>
+		EmissionFactor,
 		/// <summary>For physically based shader, this is a multiplier to
 		/// scale the metallic properties of the material.
 		/// 
@@ -70,6 +78,34 @@ namespace StereoKit
 		/// 
 		/// This represents the float param 'cutoff'.</summary>
 		ClipCutoff
+	}
+
+	/// <summary>Information and details about the shader parameters
+	/// available on a Material. Currently only the text name and data type
+	/// of the parameter are surfaced here. This contains textures as well as
+	/// global constant buffer variables.</summary>
+	public struct MatParamInfo
+	{
+		/// <summary>The name of the shader parameter, as provided inside of
+		/// the shader file itself. These are the 'global' variables defined
+		/// in the shader, as well as textures. The shader compiler will
+		/// output a list of parameter names when compiling, so check the
+		/// output window after building if you're uncertain what you'll
+		/// find.
+		/// 
+		/// See `MatParamName` for a list of "standardized" parameter names.
+		/// </summary>
+		public string name;
+
+		/// <summary>This is the data type that StereoKit recognizes the
+		/// parameter to be.</summary>
+		public MaterialParam type;
+
+		internal MatParamInfo(string name, MaterialParam type)
+		{
+			this.name = name;
+			this.type = type;
+		}
 	}
 
 	/// <summary>A Material describes the surface of anything drawn on the 
@@ -133,7 +169,8 @@ namespace StereoKit
 			get => NativeAPI.material_get_queue_offset(_inst);
 			set => NativeAPI.material_set_queue_offset(_inst, value); }
 		/// <summary>The number of shader parameters available to this 
-		/// material.</summary>
+		/// material, includes global shader variables as well as textures.
+		/// </summary>
 		public int ParamCount => NativeAPI.material_get_param_count(_inst);
 		/// <summary>Gets a link to the Shader that the Material is currently 
 		/// using, or overrides the Shader this material uses.</summary>
@@ -173,12 +210,13 @@ namespace StereoKit
 			switch(value)
 			{
 				case float   f:    SetFloat  (parameterName, f); break;
-				case int     i:    SetFloat  (parameterName, i); break;
+				case int     f:    SetFloat  (parameterName, f); Log.Warn($"Material param '{parameterName}' was provided as int and is being converted to float. Please use SetInt to actually set an integer value, or use the .0f postfix to indicate a float."); break;
 				case Color32 c32:  SetColor  (parameterName, c32); break;
 				case Color   c128: SetColor  (parameterName, c128); break;
 				case Vec4    v:    SetVector (parameterName, v); break;
 				case Vec3    v:    SetVector (parameterName, v); break;
 				case Vec2    v:    SetVector (parameterName, v); break;
+				case bool    v:    SetBool   (parameterName, v); break;
 				case Matrix  m:    SetMatrix (parameterName, m); break;
 				case Tex     t:    SetTexture(parameterName, t); break;
 				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
@@ -190,6 +228,7 @@ namespace StereoKit
 			switch (parameter)
 			{
 				case MatParamName.ColorTint:       return "color";
+				case MatParamName.EmissionFactor:  return "emission_factor";
 				case MatParamName.DiffuseTex:      return "diffuse";
 				case MatParamName.EmissionTex:     return "emission";
 				case MatParamName.MetallicAmount:  return "metallic";
@@ -201,6 +240,37 @@ namespace StereoKit
 				case MatParamName.ClipCutoff:      return "cutoff";
 				default: Log.Err("Unimplemented Material Parameter Name! " + parameter); return "";
 			}
+		}
+
+		/// <summary>Gets an enumerable list of all parameter information on
+		/// the Material. This includes all global shader variables and
+		/// textures.</summary>
+		/// <returns>A pretty standard IEnumarable of MatParamInfo that can
+		/// be used with foreach.</returns>
+		public IEnumerable<MatParamInfo> GetAllParamInfo()
+		{
+			int count = ParamCount;
+			for (int i = 0; i < count; i++)
+			{
+				NativeAPI.material_get_param_info(_inst, i, out IntPtr name, out MaterialParam type);
+				yield return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
+			}
+		}
+
+		/// <summary>Gets available shader parameter information for the
+		/// parameter at the indicated index. Parameters are listed as
+		/// variables first, then textures.</summary>
+		/// <param name="index">Index of the shader parameter, bounded by
+		/// ParamCount.</param>
+		/// <returns>A structure that contains all the available information
+		/// about the parameter.</returns>
+		public MatParamInfo GetParamInfo(int index)
+		{
+			if (index < 0 || index >= ParamCount)
+				throw new IndexOutOfRangeException();
+
+			NativeAPI.material_get_param_info(_inst, index, out IntPtr name, out MaterialParam type);
+			return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
 		}
 
 		/// <summary>Creates a new Material asset with the same shader and
@@ -266,6 +336,90 @@ namespace StereoKit
 		/// the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
+		public void SetInt(string name, int value)
+			=> NativeAPI.material_set_int(_inst, name, value);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		public void SetInt(string name, int value1, int value2)
+			=> NativeAPI.material_set_int2(_inst, name, value1, value2);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		/// <param name="value3">New value for the parameter.</param>
+		public void SetInt(string name, int value1, int value2, int value3)
+			=> NativeAPI.material_set_int3(_inst, name, value1, value2, value3);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		/// <param name="value3">New value for the parameter.</param>
+		/// <param name="value4">New value for the parameter.</param>
+		public void SetInt(string name, int value1, int value2, int value3, int value4)
+			=> NativeAPI.material_set_int4(_inst, name, value1, value2, value3, value4);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
+		public void SetUInt(string name, uint value)
+			=> NativeAPI.material_set_uint(_inst, name, value);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		public void SetUInt(string name, uint value1, uint value2)
+			=> NativeAPI.material_set_uint2(_inst, name, value1, value2);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		/// <param name="value3">New value for the parameter.</param>
+		public void SetUInt(string name, uint value1, uint value2, uint value3)
+			=> NativeAPI.material_set_uint3(_inst, name, value1, value2, value3);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value1">New value for the parameter.</param>
+		/// <param name="value2">New value for the parameter.</param>
+		/// <param name="value3">New value for the parameter.</param>
+		/// <param name="value4">New value for the parameter.</param>
+		public void SetUInt(string name, uint value1, uint value2, uint value3, uint value4)
+			=> NativeAPI.material_set_uint4(_inst, name, value1, value2, value3, value4);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
+		public void SetBool(string name, bool value)
+			=> NativeAPI.material_set_bool(_inst, name, value?1:0);
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
 		public void SetMatrix(string name, Matrix value)
 			=> NativeAPI.material_set_matrix(_inst, name, value);
 
@@ -276,6 +430,29 @@ namespace StereoKit
 		/// <param name="value">New value for the parameter.</param>
 		public void SetTexture(string name, Tex value)
 			=> NativeAPI.material_set_texture(_inst, name, value._inst);
+
+		/// <summary>This allows you to set more complex shader data types such
+		/// as structs. Note the SK doesn't guard against setting data of the
+		/// wrong size here, so pay extra attention to the size of your data
+		/// here, and ensure it matched up with the shader!</summary>
+		/// <typeparam name="T">a struct that uses the 
+		/// `[StructLayout(LayoutKind.Sequential)]` attribute for proper
+		/// copying.</typeparam>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="serializableData">New value for the parameter.</param>
+		public void SetData<T>(string name, in T serializableData) where T : struct
+		{
+			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
+				throw new NotSupportedException("Material.SetData's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
+
+			int    size   = Marshal.SizeOf(typeof(T));
+			IntPtr memory = Marshal.AllocHGlobal(size);
+			Marshal.StructureToPtr(serializableData, memory, false);
+
+			NativeAPI.material_set_param(_inst, name, MaterialParam.Unknown, memory);
+
+			Marshal.FreeHGlobal(memory);
+		}
 
 		/// <summary>Looks for a Material asset that's already loaded,
 		/// matching the given id!</summary>
@@ -312,6 +489,8 @@ namespace StereoKit
 		public static Material UI => StereoKit.Default.MaterialUI;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUIBox" />
 		public static Material UIBox => StereoKit.Default.MaterialUIBox;
+		/// <inheritdoc cref="StereoKit.Default.MaterialUIQuadrant" />
+		public static Material UIQuadrant => StereoKit.Default.MaterialUIQuadrant;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUnlit" />
 		public static Material Unlit => StereoKit.Default.MaterialUnlit;
 		/// <inheritdoc cref="StereoKit.Default.MaterialUnlitClip" />

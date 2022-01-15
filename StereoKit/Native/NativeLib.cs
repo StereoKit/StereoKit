@@ -14,6 +14,9 @@ namespace StereoKit
 			// Mono uses a different strategy for linking the DLL
 			if (RuntimeInformation.FrameworkDescription.StartsWith("Mono "))
 				return true;
+			// Browsers should also have their own strategy for linking
+			if (RuntimeInformation.OSDescription == "Browser")
+				return true;
 
 			string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64
 				? "arm64"
@@ -39,9 +42,9 @@ namespace StereoKit
 		static bool LoadUnix(string arch)
 		{
 			const int RTLD_NOW = 2;
-			if (dlopen("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			return false;
 		}
 	}

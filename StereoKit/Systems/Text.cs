@@ -2,30 +2,32 @@
 
 namespace StereoKit
 {
-	/// <summary>A text style is a font plus size/color/material parameters, and are 
-	/// used to keep text looking more consistent through the application by encouraging 
-	/// devs to re-use styles throughout the project. See Text.MakeStyle for making a 
-	/// TextStyle object.</summary>
+	/// <summary>A text style is a font plus size/color/material parameters,
+	/// and are used to keep text looking more consistent through the
+	/// application by encouraging devs to re-use styles throughout the
+	/// project. See Text.MakeStyle for making a TextStyle object.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct TextStyle
 	{
-		internal uint id;
+		internal uint _id;
 
 		/// <summary>This provides a reference to the Material used by this
 		/// style, so you can override certain features! Note that if you're
 		/// creating TextStyles with manually provided Materials, this 
 		/// Material may not be unique to this style.</summary>
-		public Material Material  => new Material(NativeAPI.text_style_get_material(this));
+		public Material Material => new Material(NativeAPI.text_style_get_material(this));
 
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
 		public float CharHeight => NativeAPI.text_style_get_char_height(this);
 
-
-		public static TextStyle Default { get => new TextStyle { id = 0 }; }
+		/// <summary>This is the default text style used by StereoKit.</summary>
+		public static TextStyle Default { get => new TextStyle { _id = 0 }; }
 	}
 
-	/// <summary>A collection of functions for rendering and working with text.</summary>
+	/// <summary>A collection of functions for rendering and working with text.
+	/// These are a lower level access to text rendering than the UI text
+	/// functions, and are completely unaware of the UI code.</summary>
 	public static class Text
 	{
 		/// <summary>Create a text style for use with other text functions! A
@@ -96,45 +98,97 @@ namespace StereoKit
 		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Material material, Color colorGamma)
 			=> NativeAPI.text_make_style_mat(font._fontInst, characterHeightMeters, material._inst, colorGamma);
 
-		/// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
+		/// <summary>Renders text at the given location! Must be called every
+		/// frame you want this text to be visible.</summary>
 		/// <param name="text">What text should be drawn?</param>
-		/// <param name="transform">A Matrix representing the transform of the text mesh! Try Matrix.TRS.</param>
-		/// <param name="style">Style information for rendering, see Text.MakeStyle or the TextStyle object.</param>
-		/// <param name="position">How should the text's bounding rectangle be positioned relative to the transform?</param>
-		/// <param name="align">How should the text be aligned within the text's bounding rectangle?</param>
+		/// <param name="transform">A Matrix representing the transform of the
+		/// text mesh! Try Matrix.TRS.</param>
+		/// <param name="style">Style information for rendering, see
+		/// Text.MakeStyle or the TextStyle object.</param>
+		/// <param name="position">How should the text's bounding rectangle be
+		/// positioned relative to the transform?</param>
+		/// <param name="align">How should the text be aligned within the
+		/// text's bounding rectangle?</param>
 		/// <param name="offX">An additional offset on the X axis.</param>
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX=0, float offY=0, float offZ=0) 
-			=> NativeAPI.text_add_at_16(text, transform, style.id, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_at_16(text, transform, style._id, position, align, offX, offY, offZ);
 
-		/// <summary>Renders text at the given location! Must be called every frame you want this text to be visible.</summary>
+		/// <summary>Renders text at the given location! Must be called every
+		/// frame you want this text to be visible.</summary>
 		/// <param name="text">What text should be drawn?</param>
-		/// <param name="transform">A Matrix representing the transform of the text mesh! Try Matrix.TRS.</param>
-		/// <param name="position">How should the text's bounding rectangle be positioned relative to the transform?</param>
-		/// <param name="align">How should the text be aligned within the text's bounding rectangle?</param>
+		/// <param name="transform">A Matrix representing the transform of the
+		/// text mesh! Try Matrix.TRS.</param>
+		/// <param name="position">How should the text's bounding rectangle be
+		/// positioned relative to the transform?</param>
+		/// <param name="align">How should the text be aligned within the
+		/// text's bounding rectangle?</param>
 		/// <param name="offX">An additional offset on the X axis.</param>
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at_16(text, transform, 0, position, align, offX, offY, offZ);
 
+		/// <summary>Renders text at the given location! Must be called every
+		/// frame you want this text to be visible.</summary>
+		/// <param name="text">What text should be drawn?</param>
+		/// <param name="transform">A Matrix representing the transform of the
+		/// text mesh! Try Matrix.TRS.</param>
+		/// <param name="size">This is the Hierarchy space rectangle that the
+		/// text should try to fit inside of. This allows for text wrapping or
+		/// scaling based on the value provided to the 'fit' parameter.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// </param>
+		/// <param name="style">Style information for rendering, see
+		/// Text.MakeStyle or the TextStyle object.</param>
+		/// <param name="position">How should the text's bounding rectangle be
+		/// positioned relative to the transform?</param>
+		/// <param name="align">How should the text be aligned within the
+		/// text's bounding rectangle?</param>
+		/// <param name="offX">An additional offset on the X axis.</param>
+		/// <param name="offY">An additional offset on the Y axis.</param>
+		/// <param name="offZ">An additional offset on the Z axis.</param>
+		/// <returns>Returns the vertical space used by this text.</returns>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, style.id, position, align, offX, offY, offZ);
+			=> NativeAPI.text_add_in_16(text, transform, size, fit, style._id, position, align, offX, offY, offZ);
 
+		/// <summary>Renders text at the given location! Must be called every
+		/// frame you want this text to be visible.</summary>
+		/// <param name="text">What text should be drawn?</param>
+		/// <param name="transform">A Matrix representing the transform of the
+		/// text mesh! Try Matrix.TRS.</param>
+		/// <param name="size">This is the Hierarchy space rectangle that the
+		/// text should try to fit inside of. This allows for text wrapping or
+		/// scaling based on the value provided to the 'fit' parameter.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// </param>
+		/// <param name="position">How should the text's bounding rectangle be
+		/// positioned relative to the transform?</param>
+		/// <param name="align">How should the text be aligned within the
+		/// text's bounding rectangle?</param>
+		/// <param name="offX">An additional offset on the X axis.</param>
+		/// <param name="offY">An additional offset on the Y axis.</param>
+		/// <param name="offZ">An additional offset on the Z axis.</param>
+		/// <returns>Returns the vertical space used by this text.</returns>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, 0, position, align, offX, offY, offZ);
 
-		/// <summary>Sometimes you just need to know how much room some text takes up! This finds
-		/// the size of the text in meters, when using the indicated style!</summary>
+		/// <summary>Sometimes you just need to know how much room some text
+		/// takes up! This finds the size of the text in meters when using the
+		/// indicated style!</summary>
 		/// <param name="text">Text you want to find the size of.</param>
-		/// <param name="style">The visual style of the text, see Text.MakeStyle or the TextStyle object for more details.</param>
+		/// <param name="style">The visual style of the text, see
+		/// Text.MakeStyle or the TextStyle object for more details.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text, TextStyle style)
-			=> NativeAPI.text_size_16(text, style.id);
+			=> NativeAPI.text_size_16(text, style._id);
 
-		/// <summary>Sometimes you just need to know how much room some text takes up! This finds
-		/// the size of the text in meters, when using the indicated style!</summary>
+		/// <summary>Sometimes you just need to know how much room some text
+		/// takes up! This finds the size of the text in meters when using the
+		/// default style!</summary>
 		/// <param name="text">Text you want to find the size of.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text)

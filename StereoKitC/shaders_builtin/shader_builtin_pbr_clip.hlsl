@@ -1,19 +1,21 @@
 #include "stereokit.hlsli"
 
 //--name = sk/default_pbr_clip
-//--color:color = 1,1,1,1
-//--metallic    = 0
-//--roughness   = 1
-//--tex_scale   = 1
-//--cutoff      = 0.5
+//--color:color           = 1,1,1,1
+//--emission_factor:color = 0,0,0,0
+//--metallic              = 0
+//--roughness             = 1
+//--tex_scale             = 1
+//--cutoff                = 0.5
 float4 color;
+float4 emission_factor;
 float  metallic;
 float  roughness;
 float  tex_scale;
 float  cutoff;
 
 //--diffuse   = white
-//--emission  = black
+//--emission  = white
 //--metal     = white
 //--normal    = flat
 //--occlusion = white
@@ -87,7 +89,7 @@ float4 ps(psIn input) : SV_TARGET {
 	if (albedo.a < cutoff) discard;
 	albedo = albedo*input.color;
 
-	float3 emissive    = emission .Sample(emission_s, input.uv).rgb;
+	float3 emissive    = emission .Sample(emission_s, input.uv).rgb * emission_factor.rgb;
 	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // b is metallic, rough is g
 	float  ao          = occlusion.Sample(occlusion_s,input.uv).r;  // occlusion is sometimes part of the metal tex, uses r channel
 

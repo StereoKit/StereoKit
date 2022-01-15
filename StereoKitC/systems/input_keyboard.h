@@ -19,4 +19,6 @@ void          input_keyboard_inject_release(key_ key);
 button_state_ input_keyboard_get           (key_ key);
 void          input_text_inject_char       (char32_t character);
 
+extern float input_last_physical_keypress;
+
 } // namespace sk

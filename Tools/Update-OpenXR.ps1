@@ -17,7 +17,11 @@ if ($openxrCurrent -ne $openxrDesired) {
 }
 
 # Get the Visual Studio executable for building
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property productPath
+$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[16.0,17.0)'
+if (!$vsExe) {
+    Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
+    exit 
+}
 
 # This tell VS to build with a partcular 'Release|x64' style mode
 function Build {
@@ -127,4 +131,4 @@ Pop-Location
 # more builds of react physics than strictly necessary, but we do
 # tap into the OXR build-if-necessary logic.
 Write-Host 'Building ReactPhysics3D too!'
-C:update_physics_win.bat
+& .\update_physics_win.bat

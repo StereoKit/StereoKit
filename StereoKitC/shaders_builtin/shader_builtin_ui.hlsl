@@ -39,7 +39,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 float4 ps(psIn input) : SV_TARGET {
 	float  glow = FingerGlow(input.world.xyz, input.normal);
-	float4 col  = float4(lerp(input.color.rgb, float3(1,1,1), glow), input.color.a);
+	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow), input.color.a);
 
 	return diffuse.Sample(diffuse_s, input.uv) * col;
 }

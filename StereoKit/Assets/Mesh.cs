@@ -144,12 +144,7 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Adds a mesh to the render queue for this frame! If the 
-		/// Hierarchy has a transform on it, that transform is combined with
-		/// the Matrix provided here.</summary>
-		/// <param name="material">A Material to apply to the Mesh.</param>
-		/// <param name="transform">A Matrix that will transform the mesh 
-		/// from Model Space into the current Hierarchy Space.</param>
+		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
 		/// to pass into the shader! Normally this gets used like a material
 		/// tint. If you're  adventurous and don't need per-instance colors,
