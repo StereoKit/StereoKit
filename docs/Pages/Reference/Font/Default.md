@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Font.Default
-description: See Default.Font
+description: The default font used by StereoKit's text. This varies from platform to platform, but is typically a sans-serif general purpose font, such as Segoe UI.
 ---
 # [Font]({{site.url}}/Pages/Reference/Font.html).Default
 
@@ -10,5 +10,7 @@ static [Font]({{site.url}}/Pages/Reference/Font.html) Default{ get }
 </div>
 
 ## Description
-See `Default.Font`
+The default font used by StereoKit's text. This varies
+from platform to platform, but is typically a sans-serif general
+purpose font, such as Segoe UI.
 

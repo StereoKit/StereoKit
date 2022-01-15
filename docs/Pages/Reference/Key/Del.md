@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Del
-description: Any Delete key
+description: Any Delete key.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Del
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Del
 </div>
 
 ## Description
-Any Delete key
+Any Delete key.
 

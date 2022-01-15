@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mesh.Cube
-description: See Default.MeshCube
+description: A cube with dimensions of (1,1,1), this is equivalent to Mesh.GenerateCube(Vec3.One).
 ---
 # [Mesh]({{site.url}}/Pages/Reference/Mesh.html).Cube
 
@@ -10,5 +10,6 @@ static [Mesh]({{site.url}}/Pages/Reference/Mesh.html) Cube{ get }
 </div>
 
 ## Description
-See `Default.MeshCube`
+A cube with dimensions of (1,1,1), this is equivalent to
+Mesh.GenerateCube(Vec3.One).
 

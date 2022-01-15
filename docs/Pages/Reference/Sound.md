@@ -43,8 +43,8 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 
 |  |  |
 |--|--|
-|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Click]({{site.url}}/Pages/Reference/Sound/Click.html)|See `Default.SoundClick`|
-|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Unclick]({{site.url}}/Pages/Reference/Sound/Unclick.html)|See `Default.SoundUnclick`|
+|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Click]({{site.url}}/Pages/Reference/Sound/Click.html)|A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse press, with extra low frequencies in it.|
+|[Sound]({{site.url}}/Pages/Reference/Sound.html) [Unclick]({{site.url}}/Pages/Reference/Sound/Unclick.html)|A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse release, with extra low frequencies in it.|
 
 
 ## Static Methods

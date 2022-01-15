@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Multiply
-description: Numpad '*', NOT the same as number row '*'
+description: Numpad '*', NOT the same as number row '*'.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Multiply
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Multiply
 </div>
 
 ## Description
-Numpad '*', NOT the same as number row '*'
+Numpad '*', NOT the same as number row '*'.
 

@@ -1,12 +1,13 @@
-# StereoKit v0.3.4 Build Information
+# StereoKit v0.3.5 Build Information
 
 ## Build Sizes:
 
 | Platform | Arch  | Size, kb | Size, bytes |
 | -------- | ----- | -------- | ----------- |
-| Win32    | x64   |    1,777 |   1,819,648 |
-| Linux    | x64   |    3,812 |   3,903,096 |
-| UWP      | x64   |    1,803 |   1,846,272 |
-| UWP      | ARM64 |    1,750 |   1,792,000 |
-| Android  | ARM64 |    2,715 |   2,780,320 |
-| UWP      | ARM   |    1,362 |   1,395,200 |
+| Win32    | x64   |    1,784 |   1,826,304 |
+| UWP      | x64   |    1,830 |   1,873,408 |
+| UWP      | ARM64 |    1,761 |   1,803,264 |
+| UWP      | ARM   |    1,364 |   1,396,736 |
+| Linux    | x64   |    4,076 |   4,174,128 |
+| Linux    | ARM64 |    4,076 |   4,174,128 |
+| Android  | ARM64 |    2,913 |   2,982,616 |

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UIWin.Empty
-description: No body, no head, none of the window will be grabbable. Not really a flag, just set to this value.
+description: No body, no head. Not really a flag, just set to this value. The Window will still be grab/moveable. To prevent it from being grabbable, combine with the UIMove.None option, or switch to UI.Push/PopSurface.
 ---
 # [UIWin]({{site.url}}/Pages/Reference/UIWin.html).Empty
 
@@ -10,6 +10,8 @@ static [UIWin]({{site.url}}/Pages/Reference/UIWin.html) Empty
 </div>
 
 ## Description
-No body, no head, none of the window will be grabbable.
-Not really a flag, just set to this value.
+No body, no head. Not really a flag, just set to this
+value. The Window will still be grab/moveable. To prevent it from
+being grabbable, combine with the UIMove.None option, or switch
+to UI.Push/PopSurface.
 

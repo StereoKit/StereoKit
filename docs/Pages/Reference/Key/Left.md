@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Left
-description: Left arrow key
+description: Left arrow key.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Left
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Left
 </div>
 
 ## Description
-Left arrow key
+Left arrow key.
 

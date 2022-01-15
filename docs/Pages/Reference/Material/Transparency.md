@@ -24,7 +24,7 @@ but this may vary from case to case. Note that the material's
 alpha does not play any role in additive transparency! Instead,
 you could make the material's tint darker.
 ```csharp
-matAlphaAdd = Default.Material.Copy();
+matAlphaAdd = Material.Default.Copy();
 matAlphaAdd.Transparency = Transparency.Add;
 matAlphaAdd.DepthWrite   = false;
 ```
@@ -37,7 +37,7 @@ through the material's Tint value, but the diffuse texture's
 alpha and the instance render color's alpha may also play a part
 in the final alpha value.
 ```csharp
-matAlphaBlend = Default.Material.Copy();
+matAlphaBlend = Material.Default.Copy();
 matAlphaBlend.Transparency = Transparency.Blend;
 matAlphaBlend.DepthWrite   = false;
 matAlphaBlend[MatParamName.ColorTint] = new Color(1, 1, 1, 0.75f);

@@ -6,7 +6,7 @@ description: By default, StereoKit renders all layers. This is a bit flag that a
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).LayerFilter
 
 <div class='signature' markdown='1'>
-static RenderLayer LayerFilter{ get set }
+static [RenderLayer]({{site.url}}/Pages/Reference/RenderLayer.html) LayerFilter{ get set }
 </div>
 
 ## Description

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Tex.Rough
-description: See Default.TexRough
+description: Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Rough
 
@@ -10,5 +10,6 @@ static [Tex]({{site.url}}/Pages/Reference/Tex.html) Rough{ get }
 </div>
 
 ## Description
-See `Default.TexRough`
+Default 2x2 roughness color (0,0,1) texture, this is the
+texture referred to as 'rough' in the shader texture defaults.
 

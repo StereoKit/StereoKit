@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.MouseRight
-description: Right mouse button
+description: Right mouse button.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).MouseRight
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) MouseRight
 </div>
 
 ## Description
-Right mouse button
+Right mouse button.
 

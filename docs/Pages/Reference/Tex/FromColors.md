@@ -39,7 +39,7 @@ parameter.
 
 |  |  |
 |--|--|
-|Color[]& colors|An array of 32 bit colors, should be a             length of `width*height`.|
+|Color[]& colors|An array of 128 bit colors, should be a             length of `width*height`.|
 |int width|Width in pixels of the texture. Powers of two             are generally best!|
 |int height|Height in pixels of the texture. Powers of             two are generally best!|
 |bool sRGBData|Is this image color data in sRGB format,             or is it normal/metal/rough/data that's not for direct display?             sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|

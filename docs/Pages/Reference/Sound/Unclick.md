@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Sound.Unclick
-description: See Default.SoundUnclick
+description: A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse release, with extra low frequencies in it.
 ---
 # [Sound]({{site.url}}/Pages/Reference/Sound.html).Unclick
 
@@ -10,5 +10,7 @@ static [Sound]({{site.url}}/Pages/Reference/Sound.html) Unclick{ get }
 </div>
 
 ## Description
-See `Default.SoundUnclick`
+A default click sound that lasts for 300ms. It's a
+procedurally generated sound based on a mouse release, with extra
+low frequencies in it.
 

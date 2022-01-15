@@ -23,7 +23,7 @@ StereoKit's default material, here's where you do it!
 If you want to modify the default material, it's recommended to
 copy it first!
 ```csharp
-matDefault = Default.Material.Copy();
+matDefault = Material.Default.Copy();
 ```
 And here's what it looks like:
 ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)

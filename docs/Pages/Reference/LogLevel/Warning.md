@@ -10,5 +10,6 @@ static [LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) Warning
 </div>
 
 ## Description
-Something bad has happened, but it's still within the realm of what's expected.
+Something bad has happened, but it's still within the realm of
+what's expected.
 

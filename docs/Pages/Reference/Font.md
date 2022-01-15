@@ -18,7 +18,7 @@ This asset is used anywhere that text shows up, like in the UI or Text classes!
 
 |  |  |
 |--|--|
-|[Font]({{site.url}}/Pages/Reference/Font.html) [Default]({{site.url}}/Pages/Reference/Font/Default.html)|See `Default.Font`|
+|[Font]({{site.url}}/Pages/Reference/Font.html) [Default]({{site.url}}/Pages/Reference/Font/Default.html)|The default font used by StereoKit's text. This varies from platform to platform, but is typically a sans-serif general purpose font, such as Segoe UI.|
 
 
 ## Static Methods

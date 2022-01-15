@@ -16,7 +16,7 @@ the given name.
 |  |  |
 |--|--|
 |string name|Case sensitive name of the animation.|
-|RETURNS: Anim|A link to the animation, or null if none is found.|
+|RETURNS: [Anim]({{site.url}}/Pages/Reference/Anim.html)|A link to the animation, or null if none is found.|
 
 
 

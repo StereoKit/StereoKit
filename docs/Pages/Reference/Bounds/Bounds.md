@@ -15,7 +15,7 @@ Creates a bounding box object!
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) center|The exact center of the box.|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) totalDimensions|The total size of the box, from one end to the              other. This is the width, height, and depth of the Bounds.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) totalDimensions|The total size of the box, from one             end to the other. This is the width, height, and depth of the             Bounds.|
 
 <div class='signature' markdown='1'>
 ```csharp
@@ -26,7 +26,7 @@ Creates a bounding box object centered around zero!
 
 |  |  |
 |--|--|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) totalDimensions|The total size of the box, from one end to the              other. This is the width, height, and depth of the Bounds.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) totalDimensions|The total size of the box, from one             end to the other. This is the width, height, and depth of the             Bounds.|
 
 
 

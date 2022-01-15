@@ -1,7 +1,7 @@
 ---
 layout: default
 title: SKMath.AngleDist
-description: Calculates the minimum angle 'distance' between two angles. This covers wraparound cases like. the minimum distance between 10 and 350 is 20. Only works on angles in the range of 0-360.
+description: Calculates the minimum angle 'distance' between two angles. This covers wraparound cases like. the minimum distance between 10 and 350 is 20.
 ---
 # [SKMath]({{site.url}}/Pages/Reference/SKMath.html).AngleDist
 
@@ -11,8 +11,7 @@ static float AngleDist(float a, float b)
 ```
 Calculates the minimum angle 'distance' between two
 angles. This covers wraparound cases like: the minimum distance
-between 10 and 350 is 20. Only works on angles in the range of
-0-360.
+between 10 and 350 is 20.
 </div>
 
 |  |  |

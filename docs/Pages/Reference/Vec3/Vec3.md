@@ -20,6 +20,19 @@ right, +y is upwards, and -z is forward.
 |float y|The y axis.|
 |float z|The z axis.|
 
+<div class='signature' markdown='1'>
+```csharp
+void Vec3(float xyz)
+```
+Creates a vector with all values the same! StereoKit uses
+a right-handed metric coordinate system, where +x is to the
+right, +y is upwards, and -z is forward.
+</div>
+
+|  |  |
+|--|--|
+|float xyz|The x,y,and z axis.|
+
 
 
 

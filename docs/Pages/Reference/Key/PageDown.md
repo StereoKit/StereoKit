@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.PageDown
-description: Page Down key
+description: Page down
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).PageDown
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) PageDown
 </div>
 
 ## Description
-Page Down key
+Page down
 

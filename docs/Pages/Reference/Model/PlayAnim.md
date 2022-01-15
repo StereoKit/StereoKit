@@ -29,7 +29,7 @@ playing it with the animation mode.
 
 |  |  |
 |--|--|
-|Anim animation|The new active animation.|
+|[Anim]({{site.url}}/Pages/Reference/Anim.html) animation|The new active animation.|
 |[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) mode|The mode with which to play the animation.|
 
 

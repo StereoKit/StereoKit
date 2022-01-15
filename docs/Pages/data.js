@@ -16,7 +16,19 @@ var documents =
 		},
 		{name : 'Reference',
 		 pages: [
+			{name : 'Anim',
+			 pages: [
+				{name : 'Duration'},
+				{name : 'Name'},
+			]
+			},
 			{name : 'AnimMode'},
+			{name : 'Backend',
+			 pages: [
+				{name : 'XRType'},
+			]
+			},
+			{name : 'BackendXRType'},
 			{name : 'Bounds',
 			 pages: [
 				{name : 'center'},
@@ -106,6 +118,7 @@ var documents =
 				{name : 'MaterialPBRClip'},
 				{name : 'MaterialUI'},
 				{name : 'MaterialUIBox'},
+				{name : 'MaterialUIQuadrant'},
 				{name : 'MaterialUnlit'},
 				{name : 'MaterialUnlitClip'},
 				{name : 'MeshCube'},
@@ -287,6 +300,7 @@ var documents =
 				{name : 'Write'},
 			]
 			},
+			{name : 'LogColors'},
 			{name : 'LogLevel'},
 			{name : 'Material',
 			 pages: [
@@ -302,16 +316,23 @@ var documents =
 				{name : 'Transparency'},
 				{name : 'UI'},
 				{name : 'UIBox'},
+				{name : 'UIQuadrant'},
 				{name : 'Unlit'},
 				{name : 'UnlitClip'},
 				{name : 'Wireframe'},
 				{name : 'Material'},
 				{name : 'Copy'},
 				{name : 'Find'},
+				{name : 'GetAllParamInfo'},
+				{name : 'GetParamInfo'},
+				{name : 'SetBool'},
 				{name : 'SetColor'},
+				{name : 'SetData'},
 				{name : 'SetFloat'},
+				{name : 'SetInt'},
 				{name : 'SetMatrix'},
 				{name : 'SetTexture'},
+				{name : 'SetUInt'},
 				{name : 'SetVector'},
 			]
 			},
@@ -322,11 +343,18 @@ var documents =
 			]
 			},
 			{name : 'MaterialParam'},
+			{name : 'MatParamInfo',
+			 pages: [
+				{name : 'name'},
+				{name : 'type'},
+			]
+			},
 			{name : 'MatParamName'},
 			{name : 'Matrix',
 			 pages: [
 				{name : 'Identity'},
 				{name : 'Inverse'},
+				{name : 'm'},
 				{name : 'Pose'},
 				{name : 'Rotation'},
 				{name : 'Scale'},
@@ -453,6 +481,18 @@ var documents =
 				{name : 'scrollChange'},
 			]
 			},
+			{name : 'OpenXR',
+			 pages: [
+				{name : 'Instance'},
+				{name : 'Session'},
+				{name : 'Space'},
+				{name : 'Time'},
+				{name : 'ExtEnabled'},
+				{name : 'GetFunction'},
+				{name : 'GetFunctionPtr'},
+				{name : 'RequestExt'},
+			]
+			},
 			{name : 'PickerMode'},
 			{name : 'Plane',
 			 pages: [
@@ -469,8 +509,11 @@ var documents =
 			{name : 'Platform',
 			 pages: [
 				{name : 'FilePickerVisible'},
+				{name : 'ForceFallbackKeyboard'},
+				{name : 'KeyboardVisible'},
 				{name : 'FilePicker'},
 				{name : 'FilePickerClose'},
+				{name : 'KeyboardShow'},
 				{name : 'ReadFile'},
 				{name : 'ReadFileBytes'},
 				{name : 'ReadFileText'},
@@ -529,6 +572,7 @@ var documents =
 				{name : 'Intersect'},
 			]
 			},
+			{name : 'RenderClear'},
 			{name : 'Renderer',
 			 pages: [
 				{name : 'CameraRoot'},
@@ -548,6 +592,7 @@ var documents =
 				{name : 'SetFOV'},
 			]
 			},
+			{name : 'RenderLayer'},
 			{name : 'Shader',
 			 pages: [
 				{name : 'Default'},
@@ -580,6 +625,7 @@ var documents =
 				{name : 'Initialize'},
 				{name : 'PreLoadLibrary'},
 				{name : 'Quit'},
+				{name : 'Run'},
 				{name : 'Shutdown'},
 				{name : 'Step'},
 			]
@@ -604,6 +650,7 @@ var documents =
 				{name : 'blendPreference'},
 				{name : 'depthMode'},
 				{name : 'disableFlatscreenMRSim'},
+				{name : 'disableUnfocusedSleep'},
 				{name : 'displayPreference'},
 				{name : 'flatscreenHeight'},
 				{name : 'flatscreenPosX'},
@@ -709,6 +756,7 @@ var documents =
 				{name : 'AddressMode'},
 				{name : 'Anisoptropy'},
 				{name : 'Black'},
+				{name : 'CubemapLighting'},
 				{name : 'Flat'},
 				{name : 'Format'},
 				{name : 'Gray'},
@@ -727,6 +775,7 @@ var documents =
 				{name : 'FromFile'},
 				{name : 'FromFiles'},
 				{name : 'FromMemory'},
+				{name : 'GenColor'},
 				{name : 'GenCubemap'},
 				{name : 'SetColors'},
 				{name : 'SetSize'},
@@ -743,10 +792,12 @@ var documents =
 			]
 			},
 			{name : 'TextAlign'},
+			{name : 'TextContext'},
 			{name : 'TextFit'},
 			{name : 'TextStyle',
 			 pages: [
 				{name : 'CharHeight'},
+				{name : 'Default'},
 				{name : 'Material'},
 			]
 			},
@@ -787,12 +838,15 @@ var documents =
 				{name : 'Settings'},
 				{name : 'ShowVolumes'},
 				{name : 'Button'},
+				{name : 'ButtonAt'},
 				{name : 'ButtonRound'},
+				{name : 'ButtonRoundAt'},
 				{name : 'Handle'},
 				{name : 'HandleBegin'},
 				{name : 'HandleEnd'},
 				{name : 'HSeparator'},
 				{name : 'HSlider'},
+				{name : 'HSliderAt'},
 				{name : 'Image'},
 				{name : 'Input'},
 				{name : 'InteractVolume'},
@@ -801,12 +855,18 @@ var documents =
 				{name : 'LayoutArea'},
 				{name : 'LayoutReserve'},
 				{name : 'NextLine'},
+				{name : 'PopEnabled'},
 				{name : 'PopId'},
+				{name : 'PopPreserveKeyboard'},
 				{name : 'PopSurface'},
 				{name : 'PopTextStyle'},
+				{name : 'PopTint'},
+				{name : 'PushEnabled'},
 				{name : 'PushId'},
+				{name : 'PushPreserveKeyboard'},
 				{name : 'PushSurface'},
 				{name : 'PushTextStyle'},
+				{name : 'PushTint'},
 				{name : 'QuadrantSizeMesh'},
 				{name : 'QuadrantSizeVerts'},
 				{name : 'Radio'},
@@ -816,6 +876,7 @@ var documents =
 				{name : 'Space'},
 				{name : 'Text'},
 				{name : 'Toggle'},
+				{name : 'ToggleAt'},
 				{name : 'VolumeAt'},
 				{name : 'WindowBegin'},
 				{name : 'WindowEnd'},
@@ -877,6 +938,7 @@ var documents =
 				{name : 'Distance'},
 				{name : 'DistanceSq'},
 				{name : 'Dot'},
+				{name : 'FromAngle'},
 				{name : 'InRadius'},
 				{name : 'Lerp'},
 				{name : 'Max'},
@@ -906,6 +968,7 @@ var documents =
 				{name : 'YZ'},
 				{name : 'Zero'},
 				{name : 'Vec3'},
+				{name : 'AngleBetween'},
 				{name : 'AngleXY'},
 				{name : 'AngleXZ'},
 				{name : 'Cross'},
@@ -957,11 +1020,15 @@ var documents =
 				{name : 'OcclusionEnabled'},
 				{name : 'OcclusionMaterial'},
 				{name : 'RaycastEnabled'},
+				{name : 'RefreshInterval'},
+				{name : 'RefreshRadius'},
+				{name : 'RefreshType'},
 				{name : 'FromPerceptionAnchor'},
 				{name : 'FromSpatialNode'},
 				{name : 'Raycast'},
 			]
 			},
+			{name : 'WorldRefresh'},
 		]
 		},
 	]

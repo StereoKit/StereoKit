@@ -22,6 +22,24 @@ returns true.
 |bool active|Does this button look like it's pressed?|
 |RETURNS: bool|Will return true only on the first frame it is pressed!|
 
+<div class='signature' markdown='1'>
+```csharp
+static bool Radio(string text, bool active, Vec2 size)
+```
+A Radio is similar to a button, except you can specify if
+it looks pressed or not regardless of interaction. This can be
+useful for radio-like behavior! Check an enum for a value, and use
+that as the 'active' state, Then switch to that enum value if Radio
+returns true.
+</div>
+
+|  |  |
+|--|--|
+|string text|Text to display on the Radio and id for             tracking element state. MUST be unique within current hierarchy.|
+|bool active|Does this button look like it's pressed?|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|The layout size for this element in Hierarchy             space. If an axis is left as zero, it will be auto-calculated. For             X this is the remaining width of the current layout, and for Y this             is UI.LineHeight.|
+|RETURNS: bool|Will return true only on the first frame it is pressed!|
+
 
 
 

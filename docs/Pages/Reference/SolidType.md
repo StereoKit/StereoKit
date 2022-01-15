@@ -1,12 +1,12 @@
 ---
 layout: default
 title: SolidType
-description: This describes the behavior of a 'Solid' physics object! the physics engine will apply forces differently
+description: This describes the behavior of a 'Solid' physics object! The physics engine will apply forces differently based on this type.
 ---
 # enum SolidType
 
-This describes the behavior of a 'Solid' physics object! the physics
-engine will apply forces differently
+This describes the behavior of a 'Solid' physics object! The
+physics engine will apply forces differently based on this type.
 
 
 

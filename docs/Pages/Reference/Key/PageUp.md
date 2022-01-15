@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.PageUp
-description: Page Up key
+description: Page up
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).PageUp
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) PageUp
 </div>
 
 ## Description
-Page Up key
+Page up
 

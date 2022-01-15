@@ -27,7 +27,7 @@ faster to render a Mesh instead of a Model!
 
 |  |  |
 |--|--|
-|Anim [ActiveAnim]({{site.url}}/Pages/Reference/Model/ActiveAnim.html)|This is a link to the currently active animation. If no animation is active, this value will be null. To set the active animation, use `PlayAnim`.|
+|[Anim]({{site.url}}/Pages/Reference/Anim.html) [ActiveAnim]({{site.url}}/Pages/Reference/Model/ActiveAnim.html)|This is a link to the currently active animation. If no animation is active, this value will be null. To set the active animation, use `PlayAnim`.|
 |float [AnimCompletion]({{site.url}}/Pages/Reference/Model/AnimCompletion.html)|This is the percentage of completion of the active animation. This will always be a value between 0-1. If no animation is active, this will be zero.|
 |[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) [AnimMode]({{site.url}}/Pages/Reference/Model/AnimMode.html)|The playback mode of the active animation.|
 |[ModelAnimCollection]({{site.url}}/Pages/Reference/ModelAnimCollection.html) [Anims]({{site.url}}/Pages/Reference/Model/Anims.html)|An enumerable collection of animations attached to this Model. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|

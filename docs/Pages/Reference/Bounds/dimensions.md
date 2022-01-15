@@ -10,6 +10,6 @@ description: The total size of the box, from one end to the other. This is the w
 </div>
 
 ## Description
-The total size of the box, from one end to the other. This is the
-width, height, and depth of the Bounds.
+The total size of the box, from one end to the other. This
+is the width, height, and depth of the Bounds.
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Shader.Unlit
-description: See Default.ShaderUnlit
+description: Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all!
 ---
 # [Shader]({{site.url}}/Pages/Reference/Shader.html).Unlit
 
@@ -10,5 +10,8 @@ static [Shader]({{site.url}}/Pages/Reference/Shader.html) Unlit{ get }
 </div>
 
 ## Description
-See `Default.ShaderUnlit`
+Sometimes lighting just gets in the way! This is an
+extremely simple and fast shader that uses a 'diffuse' texture
+and a 'color' tint property to draw a model without any lighting
+at all!
 

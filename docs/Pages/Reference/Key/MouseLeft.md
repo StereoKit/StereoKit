@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.MouseLeft
-description: Left mouse button
+description: Left mouse button.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).MouseLeft
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) MouseLeft
 </div>
 
 ## Description
-Left mouse button
+Left mouse button.
 

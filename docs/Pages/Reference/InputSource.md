@@ -5,8 +5,8 @@ description: What type of device is the source of the pointer? This is a bit-fla
 ---
 # enum InputSource
 
-What type of device is the source of the pointer? This is a bit-flag that can
-contain some input source family information.
+What type of device is the source of the pointer? This is a
+bit-flag that can contain some input source family information.
 
 
 

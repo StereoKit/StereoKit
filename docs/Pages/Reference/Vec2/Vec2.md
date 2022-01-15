@@ -17,6 +17,17 @@ A basic constructor, just copies the values in!
 |float x|X component of the vector.|
 |float y|Y component of the vector.|
 
+<div class='signature' markdown='1'>
+```csharp
+void Vec2(float xy)
+```
+A short hand constructor, just sets all values as the same!
+</div>
+
+|  |  |
+|--|--|
+|float xy|X and Y component of the vector.|
+
 
 
 

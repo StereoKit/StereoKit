@@ -20,7 +20,7 @@ OpenGL systems like Quest.
 
 Here's creating a simple wireframe material!
 ```csharp
-matWireframe = Default.Material.Copy();
+matWireframe = Material.Default.Copy();
 matWireframe.Wireframe = true;
 ```
 Which looks like this:

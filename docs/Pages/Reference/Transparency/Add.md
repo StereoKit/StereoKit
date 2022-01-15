@@ -24,7 +24,7 @@ but this may vary from case to case. Note that the material's
 alpha does not play any role in additive transparency! Instead,
 you could make the material's tint darker.
 ```csharp
-matAlphaAdd = Default.Material.Copy();
+matAlphaAdd = Material.Default.Copy();
 matAlphaAdd.Transparency = Transparency.Add;
 matAlphaAdd.DepthWrite   = false;
 ```

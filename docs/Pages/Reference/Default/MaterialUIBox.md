@@ -36,7 +36,7 @@ user's hand. That distance can be configured via the
 'border_affect_radius' property of the shader, which is also in
 meters.
 ```csharp
-matUIBox = Default.MaterialUIBox.Copy();
+matUIBox = Material.UIBox.Copy();
 matUIBox["border_size"]          = 0.005f;
 matUIBox["border_size_grow"]     = 0.01f;
 matUIBox["border_affect_radius"] = 0.2f;

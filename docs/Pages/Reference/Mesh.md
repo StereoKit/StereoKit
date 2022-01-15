@@ -43,9 +43,9 @@ a fudgeton of verts! 4 billion or so :)
 
 |  |  |
 |--|--|
-|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Cube]({{site.url}}/Pages/Reference/Mesh/Cube.html)|See `Default.MeshCube`|
-|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Quad]({{site.url}}/Pages/Reference/Mesh/Quad.html)|See `Default.MeshQuad`|
-|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Sphere]({{site.url}}/Pages/Reference/Mesh/Sphere.html)|See `Default.MeshSphere`|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Cube]({{site.url}}/Pages/Reference/Mesh/Cube.html)|A cube with dimensions of (1,1,1), this is equivalent to Mesh.GenerateCube(Vec3.One).|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Quad]({{site.url}}/Pages/Reference/Mesh/Quad.html)|A default quad mesh, 2 triangles, 4 verts, from (-0.5,-0.5,0) to (0.5,0.5,0) and facing forward on the Z axis (0,0,-1). White vertex colors, and UVs from (1,1) at vertex (-0.5,-0.5,0) to (0,0) at vertex (0.5,0.5,0).|
+|[Mesh]({{site.url}}/Pages/Reference/Mesh.html) [Sphere]({{site.url}}/Pages/Reference/Mesh/Sphere.html)|A sphere mesh with a diameter of 1. This is equivalent to Mesh.GenerateSphere(1,4).|
 
 
 ## Static Methods

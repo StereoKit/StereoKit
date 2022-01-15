@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Key.Num1
-description: 1 on the numpad, when numlock is on
+description: 1 on the numpad, when numlock is on.
 ---
 # [Key]({{site.url}}/Pages/Reference/Key.html).Num1
 
@@ -10,5 +10,5 @@ static [Key]({{site.url}}/Pages/Reference/Key.html) Num1
 </div>
 
 ## Description
-1 on the numpad, when numlock is on
+1 on the numpad, when numlock is on.
 

@@ -7,7 +7,7 @@ description: This is an input field where users can input text to the app! Selec
 
 <div class='signature' markdown='1'>
 ```csharp
-static bool Input(string id, String& value, Vec2 size)
+static bool Input(string id, String& value, Vec2 size, TextContext type)
 ```
 This is an input field where users can input text to the
 app! Selecting it will spawn a virtual keyboard, or act as the
@@ -20,6 +20,7 @@ element will remove focus from this Input.
 |string id|An id for tracking element state. MUST be unique             within current hierarchy.|
 |String& value|The string that will store the Input's              content in.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|Size of the Input in Hierarchy local meters.             Zero axes will auto-size.|
+|[TextContext]({{site.url}}/Pages/Reference/TextContext.html) type|Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use|
 |RETURNS: bool|Returns true every time the contents of 'value' change.|
 
 

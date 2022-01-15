@@ -19,5 +19,5 @@ manipulation.
 |  |  |
 |--|--|
 |[Add]({{site.url}}/Pages/Reference/Lines/Add.html)|Adds a line to the environment for the current frame.|
-|[AddAxis]({{site.url}}/Pages/Reference/Lines/AddAxis.html)|Displays an RGB/XYZ axis widget at the pose! Note that this draws lines along 'Right/Up/Forward' vectors, rather than 'UnitX/UnitY/UnitZ'. Notably, Forward is (0,0,-1), and UnitZ is (0,0,1)|
+|[AddAxis]({{site.url}}/Pages/Reference/Lines/AddAxis.html)|Displays an RGB/XYZ axis widget at the pose! Each line is extended along the positive direction of each axis, so the red line is +X, green is +Y, and blue is +Z. A white line is drawn along -Z to indicate the Forward vector of the pose (-Z is forward in StereoKit).|
 

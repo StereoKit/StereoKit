@@ -19,7 +19,7 @@ the Matrix provided here.
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|A Material to apply to the Mesh.|
 |[Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform|A Matrix that will transform the mesh              from Model Space into the current Hierarchy Space.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorLinear|A per-instance linear space color value             to pass into the shader! Normally this gets used like a material             tint. If you're  adventurous and don't need per-instance colors,             this is a great spot to pack in extra per-instance data for the             shader!|
-|RenderLayer layer|All visuals are rendered using a layer              bit-flag. By default, all layers are rendered, but this can be              useful for filtering out objects for different rendering              purposes! For example: rendering a mesh over the user's head from             a 3rd person perspective, but filtering it out from the 1st             person perspective.|
+|[RenderLayer]({{site.url}}/Pages/Reference/RenderLayer.html) layer|All visuals are rendered using a layer              bit-flag. By default, all layers are rendered, but this can be              useful for filtering out objects for different rendering              purposes! For example: rendering a mesh over the user's head from             a 3rd person perspective, but filtering it out from the 1st             person perspective.|
 
 <div class='signature' markdown='1'>
 ```csharp

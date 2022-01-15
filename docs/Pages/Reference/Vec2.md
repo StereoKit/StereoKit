@@ -49,10 +49,11 @@ with 2 dimensions to it!
 
 |  |  |
 |--|--|
-|[AngleBetween]({{site.url}}/Pages/Reference/Vec2/AngleBetween.html)|Calculates a signed angle between two vectors! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A. Vectors do not need to be normalized.|
+|[AngleBetween]({{site.url}}/Pages/Reference/Vec2/AngleBetween.html)|Calculates a signed angle between two vectors in degrees! Sign will be positive if B is counter-clockwise (left) of A, and negative if B is clockwise (right) of A. Vectors do not need to be normalized. NOTE: Since this will return a positive or negative angle, order of parameters matters!|
 |[Distance]({{site.url}}/Pages/Reference/Vec2/Distance.html)|Calculates the distance between two points in space! Make sure they're in the same coordinate space! Uses a Sqrt, so it's not blazing fast, prefer DistanceSq when possible.|
 |[DistanceSq]({{site.url}}/Pages/Reference/Vec2/DistanceSq.html)|Calculates the distance between two points in space, but leaves them squared! Make sure they're in the same coordinate space! This is a fast function :)|
 |[Dot]({{site.url}}/Pages/Reference/Vec2/Dot.html)|The dot product is an extremely useful operation! One major use is to determine how similar two vectors are. If the vectors are Unit vectors (magnitude/length of 1), then the result will be 1 if the vectors are the same, -1 if they're opposite, and a gradient in-between with 0 being perpendicular. See [Freya Holmer's excellent visualization](https://twitter.com/FreyaHolmer/status/1200807790580768768) of this concept|
+|[FromAngle]({{site.url}}/Pages/Reference/Vec2/FromAngle.html)|Creates a vector pointing in the direction of the angle, with a length of 1. Angles are counter-clockwise, and start from (1,0), so an angle of 90 will be (0,1).|
 |[Lerp]({{site.url}}/Pages/Reference/Vec2/Lerp.html)|Blends (Linear Interpolation) between two vectors, based on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp percent for you.|
 |[Max]({{site.url}}/Pages/Reference/Vec2/Max.html)|Returns a vector where each elements is the maximum value for each corresponding pair.|
 |[Min]({{site.url}}/Pages/Reference/Vec2/Min.html)|Returns a vector where each elements is the minimum value for each corresponding pair.|
