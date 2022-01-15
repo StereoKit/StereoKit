@@ -15,28 +15,6 @@ $vsExe = [io.path]::ChangeExtension($vsExe, '.com')
 ## Functions                             ##
 ###########################################
 
-function Get-Version {
-    $fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
-
-    $fileData -match '#define SK_VERSION_MAJOR\s+(?<ver>\d+)' | Out-Null
-    $major = $Matches.ver
-    $fileData -match '#define SK_VERSION_MINOR\s+(?<ver>\d+)' | Out-Null
-    $minor = $Matches.ver
-    $fileData -match '#define SK_VERSION_PATCH\s+(?<ver>\d+)' | Out-Null
-    $patch = $Matches.ver
-    $fileData -match '#define SK_VERSION_PRERELEASE\s+(?<ver>\d+)' | Out-Null
-    $pre = $Matches.ver
-
-    $result = "$major.$minor.$patch"
-    if ($pre -ne 0) {
-        $result = "$result-preview.$pre"
-    }
-
-    return $result
-}
-
-###########################################
-
 function Replace-In-File {
     param($file, $text, $with)
 
@@ -139,7 +117,20 @@ if ($fast -eq $true) {
 #### Update Version #######################
 
 # Print version, so we know we're building the right version right away
-$version = Get-Version
+$fileData = Get-Content -path 'StereoKitC\stereokit.h' -Raw;
+$fileData -match '#define SK_VERSION_MAJOR\s+(?<ver>\d+)' | Out-Null
+$major = $Matches.ver
+$fileData -match '#define SK_VERSION_MINOR\s+(?<ver>\d+)' | Out-Null
+$minor = $Matches.ver
+$fileData -match '#define SK_VERSION_PATCH\s+(?<ver>\d+)' | Out-Null
+$patch = $Matches.ver
+$fileData -match '#define SK_VERSION_PRERELEASE\s+(?<ver>\d+)' | Out-Null
+$pre = $Matches.ver
+
+$version = "$major.$minor.$patch"
+if ($pre -ne 0) {
+    $version = "$version-preview.$pre"
+}
 
 # Notify of build, and output the version
 Write-Host @"
@@ -155,7 +146,7 @@ Write-Host "v$version`n" -ForegroundColor Cyan
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
 Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
-Replace-In-File -file 'CMakeLists.txt' -text 'StereoKit VERSION "(.*)"' -with "StereoKit VERSION `"$version`""
+Replace-In-File -file 'CMakeLists.txt' -text 'StereoKit VERSION "(.*)"' -with "StereoKit VERSION `"$major.$minor.$patch`""
 
 #### Clean Project ########################
 

@@ -15,7 +15,7 @@
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.5-preview.6</Version>
+		<Version>0.3.5</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
