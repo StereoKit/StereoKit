@@ -1987,7 +1987,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 			skg_log(skg_log_critical, "Can't get mip data from a texture with no mips!");
 			return false;
 		}
-		if (mip_level >= mip_levels) {
+		if (mip_level >= (int32_t)mip_levels) {
 			skg_log(skg_log_critical, "This texture doesn't have quite as many mip levels as you think.");
 			return false;
 		}
@@ -2725,8 +2725,6 @@ int32_t gl_init_wgl() {
 		WGL_COLOR_BITS_ARB,     32,
 		WGL_DEPTH_BITS_ARB,     24,
 		WGL_STENCIL_BITS_ARB,   8,
-		WGL_SAMPLE_BUFFERS_ARB, 1,
-		WGL_SAMPLES_ARB,        4,
 		0 };
 
 	pixel_format = 0;
@@ -3608,8 +3606,6 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		WGL_COLOR_BITS_ARB,     32,
 		WGL_DEPTH_BITS_ARB,     24,
 		WGL_STENCIL_BITS_ARB,   8,
-		WGL_SAMPLE_BUFFERS_ARB, 1,
-		WGL_SAMPLES_ARB,        4,
 		0 };
 
 	int  pixel_format = 0;
@@ -4079,8 +4075,6 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	glBindFramebuffer   (GL_FRAMEBUFFER, 0);
 	glDeleteFramebuffers(1, &fbo);
 #else
-	glBindTexture(tex->_target, tex->_texture);
-
 	if (tex->_target == GL_TEXTURE_CUBE_MAP) {
 		glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X+arr_index, mip_level, (uint32_t)layout, skg_tex_fmt_to_gl_type(tex->format), ref_data);
 	} else {

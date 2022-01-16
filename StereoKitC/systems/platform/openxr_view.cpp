@@ -567,6 +567,10 @@ bool openxr_render_frame() {
 			xr_display_2nd_layers.add(layer2nd);
 		}
 	}
+	// Make sure everything has been completely rendered, there may be
+	// screenshots not taken care of in openxr_render_layer
+	render_all();
+	render_clear();
 
 	// We're finished with rendering our layer, so send it off for display!
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
@@ -665,10 +669,10 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		openxr_projection(view.fov, clip_planes.x, clip_planes.y, xr_projection);
 		memcpy(&layer.view_projections[i], xr_projection, sizeof(float) * 16);
 		matrix view_tr = matrix_trs((vec3 &)view.pose.position, (quat &)view.pose.orientation, vec3_one);
-		view_tr = view_tr * render_get_cam_final();
-		matrix_inverse(view_tr, layer.view_transforms[i]);
+		layer.view_transforms[i] = view_tr * render_get_cam_final();
 	}
 
+	render_list_t list = render_get_primary_list();
 	for (uint32_t s_layer = 0; s_layer < layer.swapchain_color.surface_layers; s_layer++) {
 		int32_t index = s_layer*layer.swapchain_color.surface_count + color_id;
 
@@ -677,11 +681,20 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		color128 col    = sk_info.display_type == display_opaque
 			? render_get_clear_color()
 			: color128{ 0,0,0,0 };
-		skg_tex_target_bind(&target->tex);
-		skg_target_clear(true, &col.r);
 
-		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers, render_filter);
+		
+		render_pass_settings_t settings = {};
+		settings.layer_filter       = render_filter;
+		settings.clear_color_linear = sk_info.display_type == display_opaque
+			? render_get_clear_color()
+			: color128{ 0,0,0,0 };
+
+		render_list_draw_to(list, target, &layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers, settings);
 	}
+	render_list_release(list);
+
+	// Tell our viewpoints to render now
+	render_viewpoints();
 
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };

@@ -140,6 +140,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="asset_types\model_obj.cpp" />
     <ClCompile Include="asset_types\model_ply.cpp" />
     <ClCompile Include="asset_types\model_stl.cpp" />
+    <ClCompile Include="asset_types\render_list.cpp" />
     <ClCompile Include="asset_types\shader.cpp" />
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
@@ -201,6 +202,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="asset_types\material.h" />
     <ClInclude Include="asset_types\mesh.h" />
     <ClInclude Include="asset_types\model.h" />
+    <ClInclude Include="asset_types\render_list.h" />
     <ClInclude Include="asset_types\shader.h" />
     <ClInclude Include="asset_types\sound.h" />
     <ClInclude Include="asset_types\sprite.h" />
@@ -224,6 +226,8 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="rect_atlas.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_blit_linear.hlsl.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_fxaa.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
@@ -292,16 +296,10 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
-      <FileType>Document</FileType>
-    </None>
+    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_blit_linear.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_fxaa.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

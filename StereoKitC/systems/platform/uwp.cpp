@@ -8,6 +8,7 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../../libraries/sokol_time.h"
+#include "../defaults.h"
 #include "../system.h"
 #include "../render.h"
 #include "../input.h"
@@ -20,6 +21,7 @@ HWND            uwp_window           = nullptr;
 skg_swapchain_t uwp_swapchain        = {};
 tex_t           uwp_target           = {};
 system_t       *uwp_render_sys       = nullptr;
+const int32_t   uwp_supersample      = 2;
 bool            uwp_keyboard_showing = false;
 bool            uwp_keyboard_show_evts = false;
 
@@ -394,7 +396,8 @@ private:
 		sk_info.display_height = outputHeight;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
-		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
+		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width,                 sk_info.display_height);
+		tex_set_color_arr   (uwp_target,     sk_info.display_width*uwp_supersample, sk_info.display_height*uwp_supersample, nullptr, 1, nullptr, 1);
 		render_update_projection();
 	}
 };
@@ -518,7 +521,7 @@ bool uwp_start_flat() {
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_set_color_arr(uwp_target, sk_info.display_width*uwp_supersample, sk_info.display_height*uwp_supersample, nullptr, 1, nullptr, 1);
 	tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
@@ -541,25 +544,36 @@ void uwp_step_begin_flat() {
 
 ///////////////////////////////////////////
 
-void uwp_step_end_flat() { 
-	skg_draw_begin();
-
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	color128 color = render_get_clear_color();
-	skg_tex_target_bind(&uwp_target->tex);
-	skg_target_clear(true, &color.r);
-
+void uwp_step_end_flat() {
 	input_update_poses(true);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
+	// Set up our primary render list for drawing
+	render_list_t          list     = render_get_primary_list();
+	matrix                 view     = render_get_cam_final ();
+	matrix                 proj     = render_get_projection();
+	render_pass_settings_t settings = {};
+	settings.clear_color_linear = render_get_clear_color();
+	settings.layer_filter       = render_get_filter();
+	render_list_draw_to(list, uwp_target, &view, &proj, 1, settings);
 
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_tex_copy_to_swapchain(&uwp_target->tex, &uwp_swapchain);
+	// Draw all outstanding items
+	skg_draw_begin();
+	render_all();
+
+	render_list_clear  (list);
+	render_list_release(list);
+
+	// Downsample the supersampled surface
+	skg_swapchain_bind(&uwp_swapchain);
+	material_set_texture(sk_default_material_blit_linear, "source", uwp_target);
+	render_blit_to_bound(sk_default_material_blit_linear); 
+
+	// swapchain needs removed before presentation
+	skg_tex_target_bind(nullptr);
+	// target needs cleared from the list of bound textures 
+	for (uint16_t i = 0; i < 16; i++) {
+		skg_tex_clear({ i, skg_stage_pixel | skg_stage_vertex, skg_register_resource });
+	}
 
 	uwp_render_sys->profile_frame_duration = stm_since(uwp_render_sys->profile_frame_start);
 	skg_swapchain_present(&uwp_swapchain);

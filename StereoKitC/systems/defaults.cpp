@@ -32,6 +32,7 @@ shader_t     sk_default_shader_ui_box;
 shader_t     sk_default_shader_ui_quadrant;
 shader_t     sk_default_shader_sky;
 shader_t     sk_default_shader_lines;
+shader_t     sk_default_shader_blit_linear;
 material_t   sk_default_material;
 material_t   sk_default_material_pbr;
 material_t   sk_default_material_pbr_clip;
@@ -42,6 +43,7 @@ material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
 material_t   sk_default_material_ui_box;
 material_t   sk_default_material_ui_quadrant;
+material_t   sk_default_material_blit_linear;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
 sound_t      sk_default_click;
@@ -136,6 +138,7 @@ bool defaults_init() {
 	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
 	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
 	sk_default_shader_pbr_clip    = shader_create_mem((void*)sks_shader_builtin_pbr_clip_hlsl,    sizeof(sks_shader_builtin_pbr_clip_hlsl));
+	sk_default_shader_blit_linear = shader_create_mem((void*)sks_shader_builtin_blit_linear_hlsl, sizeof(sks_shader_builtin_blit_linear_hlsl));
 
 	// Android seems to give us a hard time about this one, so let's fall
 	// back at least somewhat gently.
@@ -154,6 +157,7 @@ bool defaults_init() {
 		sk_default_shader_ui          == nullptr ||
 		sk_default_shader_ui_box      == nullptr ||
 		sk_default_shader_ui_quadrant == nullptr ||
+		sk_default_shader_blit_linear == nullptr ||
 		sk_default_shader_sky         == nullptr ||
 		sk_default_shader_lines       == nullptr)
 		return false;
@@ -170,6 +174,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
+	shader_set_id(sk_default_shader_blit_linear, default_id_shader_blit_linear);
 
 	// Materials
 	sk_default_material             = material_create(sk_default_shader);
@@ -182,32 +187,38 @@ bool defaults_init() {
 	sk_default_material_ui          = material_create(sk_default_shader_ui);
 	sk_default_material_ui_box      = material_create(sk_default_shader_ui_box);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
+	sk_default_material_blit_linear = material_create(sk_default_shader_blit_linear);
 
-	if (sk_default_material          == nullptr ||
-		sk_default_material_pbr      == nullptr ||
-		sk_default_material_pbr_clip == nullptr ||
-		sk_default_material_unlit    == nullptr ||
-		sk_default_material_unlit_clip == nullptr ||
-		sk_default_material_equirect == nullptr ||
-		sk_default_material_font     == nullptr ||
-		sk_default_material_ui       == nullptr ||
-		sk_default_material_ui_box   == nullptr ||
+	if (sk_default_material             == nullptr ||
+		sk_default_material_pbr         == nullptr ||
+		sk_default_material_pbr_clip    == nullptr ||
+		sk_default_material_unlit       == nullptr ||
+		sk_default_material_unlit_clip  == nullptr ||
+		sk_default_material_equirect    == nullptr ||
+		sk_default_material_font        == nullptr ||
+		sk_default_material_ui          == nullptr ||
+		sk_default_material_ui_box      == nullptr ||
+		sk_default_material_blit_linear == nullptr ||
 		sk_default_material_ui_quadrant == nullptr)
 		return false;
 
-	material_set_id(sk_default_material,          default_id_material);
-	material_set_id(sk_default_material_pbr,      default_id_material_pbr);
-	material_set_id(sk_default_material_pbr_clip, default_id_material_pbr_clip);
-	material_set_id(sk_default_material_unlit,    default_id_material_unlit);
-	material_set_id(sk_default_material_unlit_clip, default_id_material_unlit_clip);
-	material_set_id(sk_default_material_equirect, default_id_material_equirect);
-	material_set_id(sk_default_material_font,     default_id_material_font);
-	material_set_id(sk_default_material_ui,       default_id_material_ui);
-	material_set_id(sk_default_material_ui_box,   default_id_material_ui_box);
+	material_set_id(sk_default_material,             default_id_material);
+	material_set_id(sk_default_material_pbr,         default_id_material_pbr);
+	material_set_id(sk_default_material_pbr_clip,    default_id_material_pbr_clip);
+	material_set_id(sk_default_material_unlit,       default_id_material_unlit);
+	material_set_id(sk_default_material_unlit_clip,  default_id_material_unlit_clip);
+	material_set_id(sk_default_material_equirect,    default_id_material_equirect);
+	material_set_id(sk_default_material_font,        default_id_material_font);
+	material_set_id(sk_default_material_ui,          default_id_material_ui);
+	material_set_id(sk_default_material_ui_box,      default_id_material_ui_box);
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
+	material_set_id(sk_default_material_blit_linear, default_id_material_blit_linear);
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 	material_set_cull(sk_default_material_ui_box, cull_none);
+
+	material_set_depth_test (sk_default_material_blit_linear, depth_test_always);
+	material_set_depth_write(sk_default_material_blit_linear, false);
 
 	// These can be paired with changes in the shader for antialiased edges.
 	// material_set_transparency(sk_default_material_ui_box, transparency_blend);
@@ -284,6 +295,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
+	material_release(sk_default_material_blit_linear);
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_unlit_clip);
@@ -292,6 +304,7 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_box);
 	shader_release  (sk_default_shader_ui_quadrant);
+	shader_release  (sk_default_shader_blit_linear);
 	shader_release  (sk_default_shader_sky);
 	shader_release  (sk_default_shader_lines);
 	shader_release  (sk_default_shader_pbr);

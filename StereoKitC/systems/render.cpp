@@ -1,6 +1,6 @@
 #include "render.h"
-#include "render_sort.h"
 #include "world.h"
+#include "defaults.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
@@ -15,6 +15,7 @@
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
+#include "../asset_types/render_list.h"
 #include "../systems/input.h"
 #include "../systems/platform/flatscreen_input.h"
 #include "../systems/platform/platform_utils.h"
@@ -69,15 +70,16 @@ struct render_screenshot_t {
 	int32_t width;
 	int32_t height;
 	float   fov_degrees;
+	tex_t   surface;
+	tex_t   copy_surface;
 };
 struct render_viewpoint_t {
-	tex_t         rendertarget;
-	matrix        camera;
-	matrix        projection;
-	rect_t        viewport;
-	material_t    override_material;
-	render_layer_ layer_filter;
-	render_clear_ clear;
+	tex_t                  rendertarget;
+	render_list_t          render_list;
+	render_pass_settings_t settings;
+	matrix                *viewpoints;
+	matrix                *viewpoint_projections;
+	int32_t                viewpoint_count;
 };
 
 ///////////////////////////////////////////
@@ -92,21 +94,22 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
-vec2                    render_clip_planes     = {0.02f, 50};
-float                   render_fov             = 90;
+vec2                    render_clip_planes           = {0.02f, 50};
+float                   render_fov                   = 90;
 render_global_buffer_t  render_global_buffer;
 mesh_t                  render_blit_quad;
-vec4                    render_lighting[9]     = {};
-spherical_harmonics_t   render_lighting_src    = {};
-color128                render_clear_col       = {0,0,0,1};
-render_list_t           render_list_primary    = -1;
-render_layer_           render_primary_filter  = render_layer_all;
-render_layer_           render_capture_filter  = render_layer_all;
-bool                    render_use_capture_filter = false;
-tex_t                   render_global_textures[16] = {};
+vec4                    render_lighting[9]           = {};
+spherical_harmonics_t   render_lighting_src          = {};
+color128                render_clear_col             = {0,0,0,1};
+render_layer_           render_primary_filter        = render_layer_all;
+render_layer_           render_capture_filter        = render_layer_all;
+bool                    render_use_capture_filter    = false;
+tex_t                   render_global_textures[16]   = {};
+render_list_t           render_list_primary          = nullptr;
 
-array_t<render_screenshot_t>  render_screenshot_list = {};
-array_t<render_viewpoint_t>   render_viewpoint_list  = {};
+array_t<render_screenshot_t>  render_screenshot_list        = {};
+array_t<render_viewpoint_t>   render_viewpoint_list         = {};
+array_t<matrix>               render_viewpoint_matrix_cache = {};
 
 const int32_t           render_skytex_register = 11;
 mesh_t                  render_sky_mesh    = nullptr;
@@ -118,25 +121,19 @@ material_t              render_last_material;
 shader_t                render_last_shader;
 mesh_t                  render_last_mesh;
 
-array_t< render_list_t> render_list_stack       = {};
-array_t<_render_list_t> render_lists            = {};
-render_list_t           render_list_active      = -1;
-skg_bind_t              render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-skg_bind_t              render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_bind_globals   = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_bind_instances = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+skg_bind_t              render_bind_blit      = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 
 ///////////////////////////////////////////
 
-void          render_set_material     (material_t material);
-skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
-void          render_check_screenshots();
-void          render_check_viewpoints ();
-
-///////////////////////////////////////////
-
-inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
-	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
-}
+void          render_set_material           (material_t material);
+skg_buffer_t *render_fill_inst_buffer       (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+void          render_check_screenshots      ();
+void          render_viewpoints             ();
+void          render_draw_viewpoint         (render_viewpoint_t *view);
+void          render_instanced_list         (const array_t<render_item_t> items, render_layer_ filter, uint32_t view_count, render_stats_t *stats);
+void          render_instanced_list_material(const array_t<render_item_t> items, render_layer_ filter, uint32_t view_count, material_t override_material, render_stats_t *stats);
 
 ///////////////////////////////////////////
 
@@ -295,6 +292,25 @@ spherical_harmonics_t render_get_skylight() {
 
 ///////////////////////////////////////////
 
+void render_set_primary_list(render_list_t render_list) {
+	if (render_list == nullptr) {
+		log_err("render_set_primary_list: must be a valid list!");
+		return;
+	}
+	assets_safeswap_ref(
+		(asset_header_t**)&render_list_primary,
+		(asset_header_t* ) render_list);
+}
+
+///////////////////////////////////////////
+
+render_list_t render_get_primary_list() {
+	render_list_addref(render_list_primary);
+	return render_list_primary;
+}
+
+///////////////////////////////////////////
+
 render_layer_ render_get_filter() {
 	return render_primary_filter;
 }
@@ -348,13 +364,12 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 
 	if (render_global_textures[register_slot] == texture) return;
 
+	if (texture != nullptr)
+		tex_addref(texture);
 	if (render_global_textures[register_slot] != nullptr)
 		tex_release(render_global_textures[register_slot]);
 
 	render_global_textures[register_slot] = texture;
-
-	if (render_global_textures[register_slot] != nullptr)
-		tex_addref(render_global_textures[register_slot]);
 }
 
 ///////////////////////////////////////////
@@ -372,58 +387,107 @@ color128 render_get_clear_color() {
 ///////////////////////////////////////////
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
-	render_item_t item;
-	item.mesh     = &mesh->gpu_mesh;
-	item.mesh_inds= mesh->ind_draw;
-	item.material = material;
-	item.color    = color;
-	item.sort_id  = render_queue_id(material, mesh);
-	item.layer    = (uint16_t)layer;
-	if (hierarchy_enabled) {
-		matrix_mul(transform, hierarchy_stack.last().transform, item.transform);
-	} else {
-		math_matrix_to_fast(transform, &item.transform);
-	}
-	render_list_add(&item);
+	render_list_add_mesh(render_list_primary, mesh, material, transform, color, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, const matrix &transform, color128 color, render_layer_ layer) {
-	XMMATRIX root;
-	if (hierarchy_enabled) {
-		matrix_mul(transform, hierarchy_stack.last().transform, root);
-	} else {
-		math_matrix_to_fast(transform, &root);
-	}
-
-	anim_update_model(model);
-	for (size_t i = 0; i < model->visuals.count; i++) {
-		render_item_t item;
-		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
-		item.mesh_inds= model->visuals[i].mesh->ind_count;
-		item.material = model->visuals[i].material;
-		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, model->visuals[i].mesh);
-		item.layer    = (uint16_t)layer;
-		matrix_mul(model->visuals[i].transform_model, root, item.transform);
-		render_list_add(&item);
-	}
-
-	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
-		model->transforms_changed = false;
-		anim_update_skin(model);
-	}
+	render_list_add_model(render_list_primary, model, transform, color, layer);
 }
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, render_layer_ filter, int32_t view_count) {
+void render_all() {
+	render_check_screenshots();
+	render_viewpoints();
+}
+
+///////////////////////////////////////////
+
+void render_viewpoints() {
+	if (render_viewpoint_list.count == 0) return;
+
+	skg_tex_t *old_target = skg_tex_target_get();
+	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
+
+		skg_tex_target_bind  (&render_viewpoint_list[i].rendertarget->tex);
+		render_draw_viewpoint(&render_viewpoint_list[i]);
+		//skg_tex_target_bind(nullptr);
+
+		// Release the references we added, the user should have their own
+		// references
+		tex_release        (render_viewpoint_list[i].rendertarget);
+		render_list_release(render_viewpoint_list[i].render_list);
+	}
+	render_viewpoint_list        .clear();
+	render_viewpoint_matrix_cache.clear();
+	skg_tex_target_bind(old_target);
+}
+
+///////////////////////////////////////////
+
+void render_list_draw_to(render_list_t list, tex_t to_rendertarget, const matrix *viewpoints, const matrix *viewpoint_projections, uint32_t viewpoint_count, render_pass_settings_t pass_settings) {
+	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
+		log_err("render_to texture must be a render target texture type!");
+		return;
+	}
+
+	tex_addref        (to_rendertarget);
+	render_list_addref(list);
+
+	int32_t viewpoint_start = render_viewpoint_matrix_cache.count;
+	for (int32_t i = 0; i < viewpoint_count; i++)
+		render_viewpoint_matrix_cache.add(matrix_invert(viewpoints[i]));
+	int32_t projection_start = render_viewpoint_matrix_cache.count;
+	for (int32_t i = 0; i < viewpoint_count; i++)
+		render_viewpoint_matrix_cache.add(viewpoint_projections[i]);
+
+	render_viewpoint_t viewpoint = {};
+	viewpoint.render_list           = list;
+	viewpoint.rendertarget          = to_rendertarget;
+	viewpoint.settings              = pass_settings;
+	viewpoint.viewpoint_count       = viewpoint_count;
+	viewpoint.viewpoints            = &render_viewpoint_matrix_cache[viewpoint_start];
+	viewpoint.viewpoint_projections = &render_viewpoint_matrix_cache[projection_start];
+	render_viewpoint_list.add(viewpoint);
+}
+
+///////////////////////////////////////////
+
+void render_draw_viewpoint(render_viewpoint_t *view) {
+	// Clear the viewport
+	render_clear_ clear = view->settings.surface_clear == render_clear_default
+		? render_clear_all
+		: view->settings.surface_clear;
+	if (clear != render_clear_none) {
+		float *color = (clear & render_clear_color)
+			? &view->settings.clear_color_linear.r
+			: (float *)nullptr;
+		skg_target_clear(clear & render_clear_depth, color);
+	}
+
+	// Set up the viewport if we've got one!
+	if (view->settings.viewport.w != 0) {
+		skg_tex_t *target = skg_tex_target_get();
+		int32_t    w = 0, h = 0;
+		if (target) {
+			w = target->width;
+			h = target->height;
+		}
+		int32_t viewport[4] = {
+			(int32_t)(view->settings.viewport.x * w),
+			(int32_t)(view->settings.viewport.y * h),
+			(int32_t)(view->settings.viewport.w * w),
+			(int32_t)(view->settings.viewport.h * h) };
+		skg_viewport(viewport);
+	}
+
 	// Copy camera information into the global buffer
-	for (int32_t i = 0; i < view_count; i++) {
+	for (int32_t i = 0; i < view->viewpoint_count; i++) {
 		XMMATRIX view_f, projection_f;
-		math_matrix_to_fast(views      [i], &view_f      );
-		math_matrix_to_fast(projections[i], &projection_f);
+		math_matrix_to_fast(view->viewpoints           [i], &view_f      );
+		math_matrix_to_fast(view->viewpoint_projections[i], &projection_f);
 
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
@@ -442,7 +506,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	// Copy in the other global shader variables
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
 	render_global_buffer.time       = time_getf();
-	render_global_buffer.view_count = view_count;
+	render_global_buffer.view_count = view->viewpoint_count;
 	vec3 tip = input_hand(handed_right)->tracked_state & button_state_active ? input_hand(handed_right)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
@@ -464,15 +528,12 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 			skg_tex_bind(&render_global_textures[i]->tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource});
 	}
 
-	render_list_execute(render_list_primary, filter, view_count);
-}
-
-///////////////////////////////////////////
-
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
-	render_check_viewpoints();
-	render_draw_queue(views, projections, render_filter, count);
-	render_check_screenshots();
+	// Draw the list!
+	render_list_sort(view->render_list);
+	if (view->settings.override_material == nullptr)
+		render_instanced_list         (view->render_list->queue, view->settings.layer_filter, view->viewpoint_count, &view->render_list->stats);
+	else
+		render_instanced_list_material(view->render_list->queue, view->settings.layer_filter, view->viewpoint_count, view->settings.override_material, &view->render_list->stats);
 }
 
 ///////////////////////////////////////////
@@ -480,118 +541,87 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
 
-	skg_tex_t *old_target = skg_tex_target_get();
+	// Each screenshot works in 3 passes:
+	// - Frame 1: Render the screenshot to a rendertarget
+	// - Frame 2: Copy the rendertarget to a texture we can read from
+	// - Frame 3: Read from final texture, and write to file
+
 	for (size_t i = 0; i < render_screenshot_list.count; i++) {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
 
-		matrix view = matrix_trs(
-			render_screenshot_list[i].from,
-			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
-		matrix_inverse(view, view);
+		if (render_screenshot_list[i].copy_surface != nullptr) {
 
-		matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w/h, render_clip_planes.x, render_clip_planes.y);
+			// Frame 3: Save the screenshot to file, and remove this from our
+			// list of screenshots.
+			size_t   size   = sizeof(color32) * w * h;
+			color32 *buffer = (color32*)sk_malloc(size);
+			tex_get_data  (render_screenshot_list[i].copy_surface, buffer, size);
+			stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
 
-		// Create the screenshot surface
-		
-		size_t   size   = sizeof(color32) * w * h;
-		color32 *buffer = (color32*)sk_malloc(size);
-		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
-		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_add_zbuffer  (render_capture_surface);
+			tex_release (render_screenshot_list[i].copy_surface);
+			free(buffer);
+			free(render_screenshot_list[i].filename);
 
-		// Setup to render the screenshot
-		skg_tex_target_bind(&render_capture_surface->tex);
+			render_screenshot_list.remove(i);
+			i--;
 
-		int32_t viewport[4] = { 0,0,w,h };
-		skg_viewport(viewport);
+		} else if (render_screenshot_list[i].surface != nullptr) {
 
-		float color[4] = {
-			render_clear_col.r / 255.f,
-			render_clear_col.g / 255.f,
-			render_clear_col.b / 255.f,
-			render_clear_col.a / 255.f };
-		skg_target_clear(true, color);
-		
-		// Render!
-		render_draw_queue(&view, &proj, render_primary_filter, 1);
-		skg_tex_target_bind(nullptr);
-		
-		// And save the screenshot to file
-		tex_t resolve_tex = tex_create(tex_type_image_nomips);
-		tex_set_colors(resolve_tex, w, h, nullptr);
-		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
-		tex_get_data(resolve_tex, buffer, size);
-#if defined(SKG_OPENGL)
-		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
-		void   *tmp       = sk_malloc(line_size);
-		for (int32_t y = 0; y < resolve_tex->tex.height/2; y++) {
-			void *top_line = ((uint8_t*)buffer) + line_size * y;
-			void *bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height-1) - y);
-			memcpy(tmp,      top_line, line_size);
-			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp,      line_size);
+			// Frame 2: Set up a copy to get data from the rendertarget a
+			// readable surface.
+			/*tex_t downsampled = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+			tex_set_colors(downsampled, w*2, h*2, nullptr);
+			material_set_texture(sk_default_material_blit_linear, "source", render_screenshot_list[i].surface);
+			render_blit(downsampled, sk_default_material_blit_linear); */
+
+			tex_t downsampled2 = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+			tex_set_colors ( downsampled2, w, h, nullptr);
+			material_set_texture(sk_default_material_blit_linear, "source", render_screenshot_list[i].surface);//downsampled);
+			render_blit(downsampled2, sk_default_material_blit_linear); 
+
+			render_screenshot_list[i].copy_surface = tex_create(tex_type_image_nomips);
+			tex_set_colors ( render_screenshot_list[i].copy_surface, w, h, nullptr);
+			skg_tex_copy_to(&downsampled2->tex, &render_screenshot_list[i].copy_surface->tex);
+
+			tex_release    (render_screenshot_list[i].surface);
+			//tex_release    ( downsampled);
+			tex_release    (downsampled2);
+
+		} else {
+			// Frame 1: Prepare to render the screenshot so we can save it to
+			// file on later frames
+
+			// Create the screenshot surface
+			render_screenshot_list[i].surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+			tex_set_color_arr(render_screenshot_list[i].surface, w*2, h*2, nullptr, 1, nullptr, 1);
+			tex_add_zbuffer  (render_screenshot_list[i].surface);
+
+			// Set up the render
+			matrix view = matrix_trs(
+				render_screenshot_list[i].from,
+				quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
+			matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w / h, render_clip_planes.x, render_clip_planes.y);
+			render_pass_settings_t settings = {};
+			settings.layer_filter       = render_get_filter();
+			settings.clear_color_linear = render_get_clear_color();
+			render_list_draw_to(render_list_primary, render_screenshot_list[i].surface, &view, &proj, 1, settings);
 		}
-		free(tmp);
-#endif
-		tex_release(render_capture_surface);
-		tex_release(resolve_tex);
-		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
-		free(buffer);
-		free(render_screenshot_list[i].filename);
 	}
-	render_screenshot_list.clear();
-	skg_tex_target_bind(old_target);
 }
 
 ///////////////////////////////////////////
 
-void render_check_viewpoints() {
-	if (render_viewpoint_list.count == 0) return;
-
-	skg_tex_t *old_target = skg_tex_target_get();
-	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
-		// Setup to render the screenshot
-		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex);
-
-		// Clear the viewport
-		if (render_viewpoint_list[i].clear != render_clear_none) {
-			float color[4] = {
-				render_clear_col.r / 255.f,
-				render_clear_col.g / 255.f,
-				render_clear_col.b / 255.f,
-				render_clear_col.a / 255.f };
-			skg_target_clear(
-				(render_viewpoint_list[i].clear & render_clear_depth),
-				(render_viewpoint_list[i].clear & render_clear_color) ? &color[0] : (float *)nullptr);
-		}
-
-		// Set up the viewport if we've got one!
-		if (render_viewpoint_list[i].viewport.w != 0) {
-			int32_t viewport[4] = {
-				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height),
-				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height) };
-			skg_viewport(viewport);
-		}
-
-		// Render!
-		render_draw_queue(&render_viewpoint_list[i].camera, &render_viewpoint_list[i].projection, render_viewpoint_list[i].layer_filter, 1);
-		skg_tex_target_bind(nullptr);
-
-		// Release the reference we added, the user should have their own ref
-		tex_release(render_viewpoint_list[i].rendertarget);
-	}
-	render_viewpoint_list.clear();
-	skg_tex_target_bind(old_target);
+void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+	char *file_copy = string_copy(file);
+	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
 }
 
 ///////////////////////////////////////////
 
 void render_clear() {
 	//log_infof("draws: %d, instances: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.draw_instances, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
-	render_list_clear(render_list_active);
+	render_list_clear(render_list_primary);
 
 	render_last_material = nullptr;
 	render_last_shader   = nullptr;
@@ -633,7 +663,7 @@ bool render_init() {
 	material_set_queue_offset(render_sky_mat, 100);
 	
 	render_list_primary = render_list_create();
-	render_list_push(render_list_primary);
+	render_list_set_id(render_list_primary, "render/list");
 
 	return true;
 }
@@ -652,14 +682,15 @@ void render_update() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (size_t i = 0; i < render_lists.count; i++) {
-		render_list_release(i);
-	}
-	render_lists          .free();
-	render_list_stack     .free();
-	render_screenshot_list.free();
-	render_viewpoint_list .free();
-	render_instance_list  .free();
+	// There may be remaining copy and file write frames remaining here, this
+	// should total no more than 2 steps at most.
+	while (render_screenshot_list.count > 0)
+		render_check_screenshots();
+
+	render_screenshot_list       .free();
+	render_viewpoint_list        .free();
+	render_viewpoint_matrix_cache.free();
+	render_instance_list         .free();
 
 	for (size_t i = 0; i < _countof(render_global_textures); i++) {
 		tex_release(render_global_textures[i]);
@@ -668,32 +699,40 @@ void render_shutdown() {
 	mesh_release           (render_sky_mesh);
 	mesh_release           (render_blit_quad);
 	material_buffer_release(render_shader_globals);
+	render_list_release    (render_list_primary);
 
 	skg_buffer_destroy(&render_instance_buffer);
 	skg_buffer_destroy(&render_shader_blit);
 
-	radix_sort_clean();
+	//radix_sort_clean();
 }
 
 ///////////////////////////////////////////
 
 void render_blit_to_bound(material_t material) {
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
+	// Wipe our swapchain color and depth target clean, and then set them
+	// up for rendering!
 	float color[4] = { 0,0,0,0 };
 	skg_target_clear(true, color);
 
 	skg_tex_t *target = skg_tex_target_get();
+	float w = sk_info.display_width;
+	float h = sk_info.display_height;
+	if (target != nullptr) {
+		w = target->width;
+		h = target->height;
+	}
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
-	data.width  = (float)target->width;
-	data.height = (float)target->height;
-	data.pixel_width  = 1.0f / target->width;
-	data.pixel_height = 1.0f / target->height;
+	data.width  = w;
+	data.height = h;
+	data.pixel_width  = 1.0f / w;
+	data.pixel_height = 1.0f / h;
 
 	// Setup render states for blitting
 	skg_buffer_set_contents(&render_shader_blit, &data, sizeof(render_blit_data_t));
-	skg_buffer_bind        (&render_shader_blit, render_list_blit_bind, 0);
+	skg_buffer_bind        (&render_shader_blit, render_bind_blit, 0);
 	render_set_material(material);
 	skg_mesh_bind(&render_blit_quad->gpu_mesh);
 	
@@ -708,18 +747,15 @@ void render_blit_to_bound(material_t material) {
 ///////////////////////////////////////////
 
 void render_blit(tex_t to, material_t material) {
+	if (!(to->type & tex_type_rendertarget)) {
+		log_err("render_blit: target must be a rendertexture!");
+		return;
+	}
 	skg_tex_t *old_target = skg_tex_target_get();
 
 	skg_tex_target_bind (&to->tex  );
 	render_blit_to_bound(material  );
 	skg_tex_target_bind (old_target);
-}
-
-///////////////////////////////////////////
-
-void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
-	char *file_copy = string_copy(file);
-	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
 }
 
 ///////////////////////////////////////////
@@ -731,23 +767,18 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 ///////////////////////////////////////////
 
 void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+	render_pass_settings_t settings = {};
+	settings.layer_filter      = layer_filter;
+	settings.override_material = override_material;
+	settings.surface_clear     = clear;
+	settings.viewport          = viewport;
+	settings.clear_color_linear= render_get_clear_color();
+
+	render_list_draw_to(render_list_primary, to_rendertarget, &camera, &projection, 1, settings);
 	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
-	tex_addref(to_rendertarget);
-
-	matrix inv_cam;
-	matrix_inverse(camera, inv_cam);
-	render_viewpoint_t viewpoint = {};
-	viewpoint.rendertarget      = to_rendertarget;
-	viewpoint.camera            = inv_cam;
-	viewpoint.projection        = projection;
-	viewpoint.layer_filter      = layer_filter;
-	viewpoint.viewport          = viewport;
-	viewpoint.clear             = clear;
-	viewpoint.override_material = override_material;
-	render_viewpoint_list.add(viewpoint);
 }
 
 ///////////////////////////////////////////
@@ -756,7 +787,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_lists[render_list_active].stats.swaps_material++;
+	render_list_primary->stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -836,89 +867,31 @@ void render_get_device(void **device, void **context) {
 }
 
 ///////////////////////////////////////////
-// Render List                           //
-///////////////////////////////////////////
 
-render_list_t render_list_create() {
-	int64_t id = render_lists.index_where(&_render_list_t::state, render_list_state_destroyed);
-	if (id == -1)
-		id = render_lists.add({});
-	return id;
-}
-
-///////////////////////////////////////////
-
-void render_list_release(render_list_t list) {
-	render_lists[list].queue.free();
-	render_lists[list] = {};
-	render_lists[list].state = render_list_state_destroyed;
-}
-
-///////////////////////////////////////////
-
-void render_list_push(render_list_t list) {
-	render_list_active = render_list_stack.add(list);
-	render_lists[list].state = render_list_state_used;
-}
-
-///////////////////////////////////////////
-
-void render_list_pop() {
-	render_list_stack.pop();
-	render_list_active = render_list_stack.count - 1;
-}
-
-///////////////////////////////////////////
-
-void render_list_add(const render_item_t *item) {
-	render_lists[render_list_active].queue.add(*item);
-}
-
-///////////////////////////////////////////
-
-void render_list_add_to(render_list_t list, const render_item_t *item) {
-	render_lists[list].queue.add(*item);
-}
-
-///////////////////////////////////////////
-
-inline void render_list_execute_run(_render_list_t *list, material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t view_count) {
+inline void _render_instanced_list_run(material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t view_count, render_stats_t *stats) {
 	render_set_material(material);
 	skg_mesh_bind      (mesh);
-	list->stats.swaps_mesh++;
+	stats->swaps_mesh++;
 
 	// Collect and draw instances
 	int32_t offsets = 0, inst_count = 0;
 	do {
 		skg_buffer_t *instances = render_fill_inst_buffer(render_instance_list, offsets, inst_count);
-		skg_buffer_bind(instances, render_list_inst_bind, 0);
+		skg_buffer_bind(instances, render_bind_instances, 0);
 
 		skg_draw(0, 0, mesh_inds, inst_count * view_count);
-		list->stats.draw_calls     += 1;
-		list->stats.draw_instances += inst_count;
+		stats->draw_calls     += 1;
+		stats->draw_instances += inst_count;
 
 	} while (offsets != 0);
 }
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
-	_render_list_t *list = &render_lists[list_id];
-	list->state = render_list_state_rendering;
-
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
-		list->state = render_list_state_rendered;
-		return;
-	}
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
-
+void render_instanced_list(const array_t<render_item_t> items, render_layer_ filter, uint32_t view_count, render_stats_t *stats) {
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
-		render_item_t *item = &list->queue[i];
+	for (size_t i = 0; i < items.count; i++) {
+		render_item_t *item = &items[i];
 		
 		// Skip this item if it's filtered out
 		if ((item->layer & filter) == 0) continue;
@@ -930,7 +903,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 		// If the material/mesh changed
 		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+			_render_instanced_list_run(run_start->material, run_start->mesh, run_start->mesh_inds, view_count, stats);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -943,34 +916,17 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+		_render_instanced_list_run(run_start->material, run_start->mesh, run_start->mesh_inds, view_count, stats);
 		render_instance_list.clear();
 	}
-
-	list->state = render_list_state_rendered;
 }
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
-	_render_list_t *list = &render_lists[list_id];
-	list->state = render_list_state_rendering;
-
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
-		list->state = render_list_state_rendered;
-		return;
-	}
-	// TODO: this isn't entirely optimal here, this would be best if sorted
-	// solely by the mesh id since we only have one single material.
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
-
+void render_instanced_list_material(const array_t<render_item_t> items, render_layer_ filter, uint32_t view_count, material_t override_material, render_stats_t *stats) {
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
-		render_item_t *item = &list->queue[i];
+	for (size_t i = 0; i < items.count; i++) {
+		render_item_t *item = &items[i];
 
 		// Skip this item if it's filtered out
 		if ((item->layer & filter) == 0) continue;
@@ -982,7 +938,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 		// If the mesh changed
 		else if (run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+			_render_instanced_list_run(override_material, run_start->mesh, run_start->mesh_inds, view_count, stats);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -995,20 +951,9 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+		_render_instanced_list_run(override_material, run_start->mesh, run_start->mesh_inds, view_count, stats);
 		render_instance_list.clear();
 	}
-
-	list->state = render_list_state_rendered;
-}
-
-///////////////////////////////////////////
-
-void render_list_clear(render_list_t list) {
-	render_lists[list].queue.clear();
-	render_lists[list].stats  = {};
-	render_lists[list].sorted = false;
-	render_lists[list].state  = render_list_state_empty;
 }
 
 } // namespace sk

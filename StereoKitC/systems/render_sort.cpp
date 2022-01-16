@@ -60,6 +60,8 @@ static bool is_trivial(size_t freqs[RADIX_SIZE], size_t count) {
 }
 
 void radix_sort7(render_item_t *a, size_t count) {
+	if (count == 0) return;
+
 	// Resize up if needed
 	if (radix_queue_size < count) {
 		free(radix_queue_area);

@@ -9,6 +9,7 @@
 #include "../../_stereokit.h"
 #include "../../asset_types/texture.h"
 #include "../../libraries/sokol_time.h"
+#include "../defaults.h"
 #include "../system.h"
 #include "../render.h"
 #include "../input.h"
@@ -37,6 +38,7 @@ const int32_t win32_multisample = 1;
 #else
 const int32_t win32_multisample = 8;
 #endif
+const int32_t win32_supersample = 2;
 
 ///////////////////////////////////////////
 
@@ -47,8 +49,8 @@ void win32_resize(int width, int height) {
 	sk_info.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
-	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
+	skg_swapchain_resize(&win32_swapchain, sk_info.display_width,                   sk_info.display_height);
+	tex_set_color_arr   (win32_target,     sk_info.display_width*win32_supersample, sk_info.display_height*win32_supersample, nullptr, 1, nullptr, 1);
 	render_update_projection();
 }
 
@@ -230,12 +232,80 @@ bool win32_start_flat() {
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
+	tex_set_color_arr(win32_target, sk_info.display_width*win32_supersample, sk_info.display_height*win32_supersample, nullptr, 1, nullptr, 1);
 	tex_add_zbuffer  (win32_target, (tex_format_)depth_fmt);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
 	flatscreen_input_init();
+
+	//////////////////
+
+	/*render_res_create_swapchain("Render", &win32_swapchain);
+
+	rendergraph_add_module("Shadow", [](render_module_t *self) {
+		render_res_create    ("Shadow", render_resolution_absolute, nullptr, 512, 512, tex_format_r32);
+		rendermodule_uses_res(self, "Shadow", render_rw_write);
+
+		render_module_t *mod = rendermodule_get("Render");
+		rendermodule_dependency(mod, "Shadow");
+	},
+	[](render_module_t *self, render_list_t render_list) {
+		render_global_texture(12, nullptr);
+		render_res_t *target = render_res_get_write("Shadow");
+		render_res_bind(target);
+
+		static material_t shadow_material = nullptr;
+		if (shadow_material == nullptr) {
+			shadow_material = material_copy_id(default_id_material);
+		}
+
+		vec3   center = input_head()->position;
+		vec3   from   = center + vec3{ 50, 50, 0 };
+		matrix view   = matrix_invert(matrix_trs(from, quat_lookat(from, center)));
+		matrix proj   = matrix_orthographic(20, 20, 0.01, 100);
+		render_list_draw_material(render_list, &view, &proj, 1, render_get_filter(), shadow_material);
+
+		render_res_bind(nullptr);
+		render_global_texture(12, render_res_get_read("Shadow"));
+	});
+
+	//////////////////
+
+	rendergraph_add_module("Render",
+	[](render_module_t *self) {
+		rendermodule_uses_res(self, "Render", render_rw_write);
+	},
+	[](render_module_t *self, render_list_t render_list) {
+		render_res_t *target = render_res_get_write("Render");
+		render_res_bind(target);
+
+		matrix view = matrix_invert(render_get_cam_final());
+		matrix proj = render_get_projection();
+		render_list_draw(render_list, &view, &proj, 1, render_get_filter());
+	});
+
+	//////////////////
+
+	rendergraph_add_module("Downsample", [](render_module_t *self) {
+		rendermodule_uses_res  (self, "Render", render_rw_read_write);
+		rendermodule_dependency(self, "Render");
+	},
+	[](render_module_t *self) {
+		render_res_t *target = render_res_get_write("Render");
+		render_res_bind(target);
+
+		static material_t downsample = nullptr;
+		if (downsample == nullptr) {
+			downsample = material_create(shader_create_mem((void*)sks_shader_builtin_fxaa_hlsl, sizeof(sks_shader_builtin_fxaa_hlsl)));
+		}
+		
+		tex_t source = render_res_get_read("Render");
+		material_set_texture(downsample, "source", source);
+		render_blit_to_bound(downsample);
+	});*/
+	
+	//////////////////
 
 	return true;
 }
@@ -270,29 +340,35 @@ void win32_step_begin_flat() {
 ///////////////////////////////////////////
 
 void win32_step_end_flat() {
-	skg_draw_begin();
-
-	color128 col = render_get_clear_color();
-#if defined(SKG_OPENGL)
-	skg_swapchain_bind(&win32_swapchain);
-#else
-	skg_tex_target_bind(&win32_target->tex);
-#endif
-	skg_target_clear(true, &col.r);
-
 	input_update_poses(true);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
+	// Set up our primary render list for drawing
+	render_list_t          list     = render_get_primary_list();
+	matrix                 view     = render_get_cam_final ();
+	matrix                 proj     = render_get_projection();
+	render_pass_settings_t settings = {};
+	settings.clear_color_linear = render_get_clear_color();
+	settings.layer_filter       = render_get_filter();
+	render_list_draw_to(list, win32_target, &view, &proj, 1, settings);
+	
+	// Draw all outstanding items
+	skg_draw_begin();
+	render_all();
 
-#if !defined(SKG_OPENGL)
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_tex_copy_to_swapchain(&win32_target->tex, &win32_swapchain);
-#endif
+	render_list_clear  (list);
+	render_list_release(list);
+
+	// Downsample the supersampled surface
+	skg_swapchain_bind(&win32_swapchain);
+	material_set_texture(sk_default_material_blit_linear, "source", win32_target);
+	render_blit_to_bound(sk_default_material_blit_linear); 
+
+	// win32_swapchain needs removed before presentation
+	skg_tex_target_bind(nullptr);
+	// win32_target needs cleared from the list of bound textures
+	for (uint16_t i = 0; i < 16; i++) {
+		skg_tex_clear({ i, skg_stage_pixel | skg_stage_vertex, skg_register_resource });
+	}
 
 	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
 	skg_swapchain_present(&win32_swapchain);

@@ -10,6 +10,7 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
+#include "render_list.h"
 #include "../systems/physics.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -26,6 +27,100 @@ namespace sk {
 array_t<asset_header_t *> assets = {};
 array_t<asset_header_t *> assets_multithread_destroy = {};
 mtx_t                     assets_multithread_destroy_lock;
+
+///////////////////////////////////////////
+
+void *assets_allocate(asset_type_ type) {
+	size_t size = sizeof(asset_header_t);
+	switch(type) {
+	case asset_type_mesh:        size = sizeof(_mesh_t );       break;
+	case asset_type_texture:     size = sizeof(_tex_t);         break;
+	case asset_type_shader:      size = sizeof(_shader_t);      break;
+	case asset_type_material:    size = sizeof(_material_t);    break;
+	case asset_type_model:       size = sizeof(_model_t);       break;
+	case asset_type_font:        size = sizeof(_font_t);        break;
+	case asset_type_sprite:      size = sizeof(_sprite_t);      break;
+	case asset_type_sound:       size = sizeof(_sound_t);       break;
+	case asset_type_solid:       size = sizeof(_solid_t);       break;
+	case asset_type_render_list: size = sizeof(_render_list_t); break;
+	default: log_err("Unimplemented asset type!"); abort();
+	}
+
+	char name[64];
+	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
+
+	asset_header_t *header = (asset_header_t *)sk_malloc(size);
+	memset(header, 0, size);
+	header->type  = type;
+	header->refs += 1;
+	header->id    = hash_fnv64_string(name);
+	header->index = assets.count;
+	assets.add(header);
+	return header;
+}
+
+///////////////////////////////////////////
+
+void assets_destroy(asset_header_t &asset) {
+	if (asset.refs != 0) {
+		log_err("Destroying an asset that still has references!");
+		return;
+	}
+
+	// Call asset specific destroy function
+	switch(asset.type) {
+	case asset_type_mesh:        mesh_destroy       ((mesh_t       )&asset); break;
+	case asset_type_texture:     tex_destroy        ((tex_t        )&asset); break;
+	case asset_type_shader:      shader_destroy     ((shader_t     )&asset); break;
+	case asset_type_material:    material_destroy   ((material_t   )&asset); break;
+	case asset_type_model:       model_destroy      ((model_t      )&asset); break;
+	case asset_type_font:        font_destroy       ((font_t       )&asset); break;
+	case asset_type_sprite:      sprite_destroy     ((sprite_t     )&asset); break;
+	case asset_type_sound:       sound_destroy      ((sound_t      )&asset); break;
+	case asset_type_solid:       solid_destroy      ((solid_t      )&asset); break;
+	case asset_type_render_list: render_list_destroy((render_list_t)&asset); break;
+	default: log_err("Unimplemented asset type!"); abort();
+	}
+
+	// Remove it from our list of assets
+	for (size_t i = 0; i < assets.count; i++) {
+		if (assets[i] == &asset) {
+			assets.remove(i);
+			break;
+		}
+	}
+
+	// And at last, free the memory we allocated for it!
+#if defined(SK_DEBUG)
+	free(asset.id_text);
+#endif
+	free(&asset);
+}
+
+///////////////////////////////////////////
+
+void  assets_shutdown_check() {
+	if (assets.count > 0) {
+		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
+#if defined(SK_DEBUG)
+		for (size_t i = 0; i < assets.count; i++) {
+			const char *type_name = "[unimplemented type name]";
+			switch(assets[i]->type) {
+			case asset_type_mesh:        type_name = "mesh_t";        break;
+			case asset_type_texture:     type_name = "tex_t";         break;
+			case asset_type_shader:      type_name = "shader_t";      break;
+			case asset_type_material:    type_name = "material_t";    break;
+			case asset_type_model:       type_name = "model_t";       break;
+			case asset_type_font:        type_name = "font_t";        break;
+			case asset_type_sprite:      type_name = "sprite_t";      break;
+			case asset_type_sound:       type_name = "sound_t";       break;
+			case asset_type_render_list: type_name = "render_list_t"; break;
+			}
+			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
+		}
+#endif
+	}
+}
 
 ///////////////////////////////////////////
 
@@ -55,36 +150,6 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 		id = hash_fnv64_string(dest);
 		count += 1;
 	}
-}
-
-///////////////////////////////////////////
-
-void *assets_allocate(asset_type_ type) {
-	size_t size = sizeof(asset_header_t);
-	switch(type) {
-	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
-	case asset_type_texture:  size = sizeof(_tex_t);      break;
-	case asset_type_shader:   size = sizeof(_shader_t);   break;
-	case asset_type_material: size = sizeof(_material_t); break;
-	case asset_type_model:    size = sizeof(_model_t);    break;
-	case asset_type_font:     size = sizeof(_font_t);     break;
-	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
-	case asset_type_sound:    size = sizeof(_sound_t);    break;
-	case asset_type_solid:    size = sizeof(_solid_t);    break;
-	default: log_err("Unimplemented asset type!"); abort();
-	}
-
-	char name[64];
-	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
-
-	asset_header_t *header = (asset_header_t *)sk_malloc(size);
-	memset(header, 0, size);
-	header->type  = type;
-	header->refs += 1;
-	header->id    = hash_fnv64_string(name);
-	header->index = assets.count;
-	assets.add(header);
-	return header;
 }
 
 ///////////////////////////////////////////
@@ -133,43 +198,6 @@ void assets_releaseref_threadsafe(void *asset) {
 
 ///////////////////////////////////////////
 
-void assets_destroy(asset_header_t &asset) {
-	if (asset.refs != 0) {
-		log_err("Destroying an asset that still has references!");
-		return;
-	}
-
-	// Call asset specific destroy function
-	switch(asset.type) {
-	case asset_type_mesh:     mesh_destroy    ((mesh_t    )&asset); break;
-	case asset_type_texture:  tex_destroy     ((tex_t     )&asset); break;
-	case asset_type_shader:   shader_destroy  ((shader_t  )&asset); break;
-	case asset_type_material: material_destroy((material_t)&asset); break;
-	case asset_type_model:    model_destroy   ((model_t   )&asset); break;
-	case asset_type_font:     font_destroy    ((font_t    )&asset); break;
-	case asset_type_sprite:   sprite_destroy  ((sprite_t  )&asset); break;
-	case asset_type_sound:    sound_destroy   ((sound_t   )&asset); break;
-	case asset_type_solid:    solid_destroy   ((solid_t   )&asset); break;
-	default: log_err("Unimplemented asset type!"); abort();
-	}
-
-	// Remove it from our list of assets
-	for (size_t i = 0; i < assets.count; i++) {
-		if (assets[i] == &asset) {
-			assets.remove(i);
-			break;
-		}
-	}
-
-	// And at last, free the memory we allocated for it!
-#if defined(SK_DEBUG)
-	free(asset.id_text);
-#endif
-	free(&asset);
-}
-
-///////////////////////////////////////////
-
 void assets_releaseref(asset_header_t &asset) {
 	// Manage the reference count
 	asset.refs -= 1;
@@ -191,30 +219,6 @@ void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
 	assets_addref    (* asset);
 	assets_releaseref(**asset_link);
 	*asset_link = asset;
-}
-
-///////////////////////////////////////////
-
-void  assets_shutdown_check() {
-	if (assets.count > 0) {
-		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
-#if defined(SK_DEBUG)
-		for (size_t i = 0; i < assets.count; i++) {
-			const char *type_name = "[unimplemented type name]";
-			switch(assets[i]->type) {
-			case asset_type_mesh:     type_name = "mesh_t";     break;
-			case asset_type_texture:  type_name = "tex_t";      break;
-			case asset_type_shader:   type_name = "shader_t";   break;
-			case asset_type_material: type_name = "material_t"; break;
-			case asset_type_model:    type_name = "model_t";    break;
-			case asset_type_font:     type_name = "font_t";     break;
-			case asset_type_sprite:   type_name = "sprite_t";   break;
-			case asset_type_sound:    type_name = "sound_t";    break;
-			}
-			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
-		}
-#endif
-	}
 }
 
 ///////////////////////////////////////////

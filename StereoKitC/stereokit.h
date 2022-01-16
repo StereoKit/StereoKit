@@ -524,6 +524,7 @@ SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
+SK_DeclarePrivateType(render_list_t);
 
 ///////////////////////////////////////////
 
@@ -1237,15 +1238,25 @@ SK_API void line_add_listv(const line_point_t *points, int32_t count);
   everything on the first image draw, but not clear on subsequent
   draws.*/
 typedef enum render_clear_ {
-	/*Don't clear anything, leave it as it is.*/
-	render_clear_none  = 0,
+	/*Default value, don't clear.*/
+	render_clear_default = 0,
 	/*Clear the rendertarget's color data.*/
-	render_clear_color = 1 << 0,
+	render_clear_color   = 1 << 0,
 	/*Clear the rendertarget's depth data, if present.*/
-	render_clear_depth = 1 << 1,
+	render_clear_depth   = 1 << 1,
+	/*Don't clear anything, leave it as it is.*/
+	render_clear_none    = 1 << 2,
 	/*Clear both color and depth data.*/
-	render_clear_all   = render_clear_color | render_clear_depth,
+	render_clear_all     = render_clear_color | render_clear_depth,
 } render_clear_;
+
+typedef struct render_pass_settings_t {
+	render_layer_ layer_filter;
+	render_clear_ surface_clear;
+	color128      clear_color_linear;
+	rect_t        viewport;
+	material_t    override_material;
+} render_pass_settings_t;
 
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
@@ -1255,6 +1266,8 @@ SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     ();
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   ();
+SK_API void                  render_set_primary_list(render_list_t render_list);
+SK_API render_list_t         render_get_primary_list();
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     ();
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
@@ -1265,12 +1278,26 @@ SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
 SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model,                    const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int width, int height, float field_of_view_degrees);
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
+
+///////////////////////////////////////////
+
+SK_API render_list_t render_list_create   ();
+SK_API render_list_t render_list_find     (const char *id);
+SK_API void          render_list_set_id   (render_list_t list, const char *id);
+SK_API void          render_list_addref   (render_list_t list);
+SK_API void          render_list_release  (render_list_t list);
+SK_API void          render_list_clear    (render_list_t list);
+SK_API void          render_list_add_mesh (render_list_t list, mesh_t  mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void          render_list_add_model(render_list_t list, model_t model,                     const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void          render_list_draw_to    (render_list_t list, tex_t to_rendertarget, const matrix *viewpoints, const matrix *viewpoint_projections, uint32_t viewpoint_count, render_pass_settings_t pass_settings);
+SK_API void          render_list_draw_to_idx(render_list_t list, tex_t to_rendertarget, int32_t array_index, matrix viewpoint, matrix viewpoint_projection, render_pass_settings_t pass_settings);
+SK_API void          render_list_draw_to_mip(render_list_t list, tex_t to_rendertarget, int32_t array_index, int32_t mip, matrix viewpoint, matrix viewpoint_projection, render_pass_settings_t pass_settings);
 
 ///////////////////////////////////////////
 
@@ -1851,6 +1878,7 @@ SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
 SK_CONST char *default_id_material_ui_box      = "default/material_ui_box";
 SK_CONST char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+SK_CONST char *default_id_material_blit_linear = "default/material_blit_linear";
 SK_CONST char *default_id_tex                  = "default/tex";
 SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
@@ -1875,6 +1903,7 @@ SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";
 SK_CONST char *default_id_shader_ui_box        = "default/shader_ui_box";
 SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+SK_CONST char *default_id_shader_blit_linear   = "default/shader_blit_linear";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
