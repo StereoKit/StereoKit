@@ -48,6 +48,7 @@ namespace sk {
 	_(EXT_hand_tracking,                 true) \
 	_(EXT_eye_gaze_interaction,          true) \
 	_(FB_color_space,                    true) \
+	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_interaction,             true) \
 	_(MSFT_hand_tracking_mesh,           true) \
@@ -109,7 +110,9 @@ namespace sk {
 #define FOR_EACH_PLATFORM_FUNCTION(_)                \
 	_(xrConvertWin32PerformanceCounterToTimeKHR)     \
 	_(xrConvertTimeToWin32PerformanceCounterKHR)     \
-	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT)
+	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
+	_(xrGetAudioOutputDeviceGuidOculus)              \
+	_(xrGetAudioInputDeviceGuidOculus)
 #else
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
 	_(xrConvertTimespecTimeToTimeKHR ) \

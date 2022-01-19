@@ -18,6 +18,11 @@ bool audio_init     ();
 void audio_update   ();
 void audio_shutdown ();
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+void audio_set_default_device_in (const wchar_t *id);
+void audio_set_default_device_out(const wchar_t *id);
+#endif
+
 extern _sound_inst_t au_active_sounds[8];
 
 } // namespace sk

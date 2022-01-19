@@ -16,6 +16,7 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/ferr_hash.h"
 #include "../render.h"
+#include "../audio.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
 #include "android.h"
@@ -494,6 +495,18 @@ bool openxr_init() {
 	xr_time        = openxr_acquire_time();
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (xr_ext_available.OCULUS_audio_device_guid) {
+		wchar_t device_guid[128];
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_out(device_guid);
+		}
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioInputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_in(device_guid);
+		}
+	}
+#endif
 
 	return true;
 }

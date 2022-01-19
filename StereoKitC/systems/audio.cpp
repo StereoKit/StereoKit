@@ -29,6 +29,20 @@ bool              au_recording      = false;
 IsacAdapter*      isac_adapter      = nullptr;
 #endif
 
+
+///////////////////////////////////////////
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+ma_device_id au_default_device_out_id = {};
+ma_device_id au_default_device_in_id  = {};
+void audio_set_default_device_out(const wchar_t *device_id) {
+	wcscpy_s(au_default_device_out_id.wasapi, device_id);
+}
+void audio_set_default_device_in(const wchar_t *device_id) {
+	wcscpy_s(au_default_device_in_id.wasapi, device_id);
+}
+#endif
+
 ///////////////////////////////////////////
 
 ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
@@ -267,6 +281,11 @@ bool32_t mic_start(const char *device_name) {
 		}
 	}
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (id == nullptr && au_default_device_in_id.wasapi[0] != '\0')
+		id = &au_default_device_in_id;
+#endif
+
 	// Start up the mic
 	ma_device_config config   = ma_device_config_init(ma_device_type_capture);
 	config.capture.pDeviceID  = id;
@@ -323,25 +342,26 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
-
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {
 		return false;
 	}
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	isac_adapter = new IsacAdapter(_countof(au_active_sounds));
-	HRESULT hr = isac_adapter->Activate(isac_data_callback);
+	if (au_default_device_out_id.wasapi[0] == '\0') {
+		isac_adapter = new IsacAdapter(_countof(au_active_sounds));
+		HRESULT hr = isac_adapter->Activate(isac_data_callback);
 
-	if (SUCCEEDED(hr)) {
-		log_info("Using audio backend: ISAC");
-		return true;
-	} else if (hr == E_NOT_VALID_STATE){
-		log_diag("ISAC audio backend not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
-	} else {
-		log_warnf("ISAC audio backend failed 0x%X, falling back to miniaudio!", hr);
+		if (SUCCEEDED(hr)) {
+			log_info("Using audio backend: ISAC");
+			return true;
+		} else if (hr == E_NOT_VALID_STATE) {
+			log_diag("ISAC audio backend not available, falling back to miniaudio! It's likely the device doesn't have Windows Sonic enabled, which can be found under Settings->Sound->Device Properties->Spatial Sound.");
+		} else {
+			log_warnf("ISAC audio backend failed 0x%X, falling back to miniaudio!", hr);
+		}
+		delete isac_adapter;
+		isac_adapter = nullptr;
 	}
-	delete isac_adapter;
-	isac_adapter = nullptr;
 #endif
 
 	au_config = ma_device_config_init(ma_device_type_playback);
@@ -350,6 +370,14 @@ bool audio_init() {
 	au_config.sampleRate        = AU_SAMPLE_RATE;
 	au_config.dataCallback      = data_callback;
 	au_config.pUserData         = nullptr;
+
+	// If we've requested a specific output device, like Oculus requires,
+	// we set that up here.
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (au_default_device_out_id.wasapi[0] != '\0') {
+		au_config.playback.pDeviceID = &au_default_device_out_id;
+	}
+#endif
 
 	ma_result result = ma_device_init(&au_context, &au_config, &au_device);
 	if (result != MA_SUCCESS) {
