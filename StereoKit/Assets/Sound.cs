@@ -117,7 +117,7 @@ namespace StereoKit
 		/// <returns>A sound object, or null if something went wrong.</returns>
 		public static Sound FromFile(string filename)
 		{
-			IntPtr inst = NativeAPI.sound_create(Encoding.UTF8.GetBytes(filename));
+			IntPtr inst = NativeAPI.sound_create(Encoding.UTF8.GetBytes(filename+'\0'));
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
 

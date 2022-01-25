@@ -163,8 +163,8 @@ namespace StereoKit
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, string data)
 		{ 
-			byte[] bytes = Encoding.UTF8.GetBytes(data); 
-			return NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename), bytes, (UIntPtr)bytes.Length);
+			byte[] bytes = Encoding.UTF8.GetBytes(data+'\0'); 
+			return NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename+'\0'), bytes, (UIntPtr)bytes.Length);
 		}
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
@@ -175,7 +175,7 @@ namespace StereoKit
 		/// <param name="data">An array of bytes to write to the file.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, byte[] data)
-			=> NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename), data, (UIntPtr)data.Length);
+			=> NativeAPI.platform_write_file(Encoding.UTF8.GetBytes(filename+'\0'), data, (UIntPtr)data.Length);
 
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by
@@ -187,7 +187,7 @@ namespace StereoKit
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out string data) {
 			data = null;
-			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename), out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename+'\0'), out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			byte[] bytes = new byte[(uint)length];
@@ -220,7 +220,7 @@ namespace StereoKit
 		public static bool ReadFile (string filename, out byte[] data)
 		{
 			data = null;
-			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename), out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(Encoding.UTF8.GetBytes(filename+'\0'), out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			data = new byte[(uint)length];
