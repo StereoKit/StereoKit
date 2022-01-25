@@ -79,6 +79,8 @@ class App
 
 	public void Step()
 	{
+		CheckFocus();
+
 		Tests.Update();
 
 		if (Input.Key(Key.Esc).IsJustActive())
@@ -186,6 +188,19 @@ class App
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
 		UI.Text(logText);
 		UI.WindowEnd();
+	}
+	/// :End:
+
+	/// :CodeSample: AppFocus SK.AppFocus
+	/// ### Checking for changes in application focus
+	AppFocus lastFocus = AppFocus.Hidden;
+	void CheckFocus()
+	{
+		if (lastFocus != SK.AppFocus)
+		{
+			lastFocus = SK.AppFocus;
+			Log.Info($"App focus changed to: {lastFocus}");
+		}
 	}
 	/// :End:
 }

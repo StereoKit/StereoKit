@@ -210,6 +210,23 @@ typedef enum render_layer_ {
 } render_layer_;
 SK_MakeFlag(render_layer_);
 
+/*This tells about the app's current focus state, whether it's active and
+  receiving input, or if it's backgrounded or hidden. This can be
+  important since apps may still run and render when unfocused, as the app
+  may still be visible behind the app that _does_ have focus.*/
+typedef enum app_focus_ {
+	/*This StereoKit app is active, focused, and receiving input from the
+	  user. Application should behave as normal.*/
+	app_focus_active,
+	/*This StereoKit app has been unfocused, something may be compositing
+	  on top of the app such as an OS dashboard. The app is still visible,
+	  but some other thing has focus and is receiving input. You may wish
+	  to pause, disable input tracking, or other such things.*/
+	app_focus_background,
+	/*This app is not rendering currently.*/
+	app_focus_hidden,
+} app_focus_;
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -243,7 +260,6 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
-
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
@@ -257,6 +273,7 @@ SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
 SK_API const char   *sk_version_name       ();
 SK_API uint64_t      sk_version_id         ();
+SK_API app_focus_    sk_app_focus          ();
 
 ///////////////////////////////////////////
 

@@ -160,6 +160,24 @@ namespace StereoKit
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 	}
 
+	/// <summary>This tells about the app's current focus state, whether it's active and
+	/// receiving input, or if it's backgrounded or hidden. This can be
+	/// important since apps may still run and render when unfocused, as the app
+	/// may still be visible behind the app that _does_ have focus.</summary>
+	public enum AppFocus
+	{
+		/// <summary>This StereoKit app is active, focused, and receiving input from the
+		/// user. Application should behave as normal.</summary>
+		Active,
+		/// <summary>This StereoKit app has been unfocused, something may be compositing
+		/// on top of the app such as an OS dashboard. The app is still visible,
+		/// but some other thing has focus and is receiving input. You may wish
+		/// to pause, disable input tracking, or other such things.</summary>
+		Background,
+		/// <summary>This app is not rendering currently.</summary>
+		Hidden,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>

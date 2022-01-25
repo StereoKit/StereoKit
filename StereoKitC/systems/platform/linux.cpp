@@ -200,7 +200,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonPress: {
-				if (sk_focused) {
+				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_keyboard_inject_press(key_mouse_left);    break;
 					case (2): input_keyboard_inject_press(key_mouse_center);  break;
@@ -213,7 +213,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonRelease: {
-				if (sk_focused) {
+				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_keyboard_inject_release(key_mouse_left);    break;
 					case (2): input_keyboard_inject_release(key_mouse_center);  break;

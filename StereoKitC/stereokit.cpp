@@ -34,7 +34,7 @@ display_mode_ sk_display_mode           = display_mode_mixedreality;
 bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
-bool32_t      sk_focused     = true;
+app_focus_    sk_focus       = app_focus_active;
 bool32_t      sk_running     = true;
 bool32_t      sk_initialized = false;
 
@@ -75,6 +75,12 @@ const char *sk_version_name() {
 
 uint64_t sk_version_id() {
 	return SK_VERSION_ID;
+}
+
+///////////////////////////////////////////
+
+app_focus_ sk_app_focus() {
+	return sk_focus;
 }
 
 ///////////////////////////////////////////
@@ -317,7 +323,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (!sk_focused)
+	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active)
 		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
 	return sk_running;
 }

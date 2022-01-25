@@ -631,7 +631,10 @@ void openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
 			xr_session_state = changed->state;
-			sk_focused       = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
+
+			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_focus = app_focus_active;
+			else if (xr_session_state == XR_SESSION_STATE_VISIBLE) sk_focus = app_focus_background;
+			else                                                   sk_focus = app_focus_hidden;
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {

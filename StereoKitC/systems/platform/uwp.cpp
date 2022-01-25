@@ -280,7 +280,7 @@ protected:
 	}
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (!sk_focused) return;
+		if (sk_focus != app_focus_active) return;
 		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
 		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
 		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
@@ -288,7 +288,7 @@ protected:
 		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (!sk_focused) return;
+		if (sk_focus != app_focus_active) return;
 		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
 		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
 		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
@@ -297,16 +297,18 @@ protected:
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (sk_focused) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
+		if (sk_focus == app_focus_active) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
 
 	void OnVisibilityChanged(CoreWindow const & /*sender*/, VisibilityChangedEventArgs const & args) {
 		m_visible = args.Visible();
-		sk_focused = m_visible;
+		sk_focus = m_visible? app_focus_active : app_focus_background;
 	}
 
 	void OnActivation(CoreWindow const & /*sender*/, WindowActivatedEventArgs const & args) {
-		sk_focused = args.WindowActivationState() != CoreWindowActivationState::Deactivated;
+		sk_focus = args.WindowActivationState() != CoreWindowActivationState::Deactivated 
+			? app_focus_active
+			: app_focus_background;
 	}
 
 	void OnAcceleratorKeyActivated(CoreDispatcher const &, AcceleratorKeyEventArgs const & args)

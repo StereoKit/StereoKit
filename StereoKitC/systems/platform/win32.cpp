@@ -64,12 +64,12 @@ void win32_physical_key_interact() {
 
 bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
-	case WM_LBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_center); return true;
+	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
@@ -77,7 +77,7 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
-	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
+	case WM_MOUSEWHEEL:  if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
 	}
 }
@@ -158,9 +158,9 @@ bool win32_start_flat() {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
 			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
-			case WM_SETFOCUS:   sk_focused = true;  break;
-			case WM_KILLFOCUS:  sk_focused = false; break;
-			case WM_MOUSEWHEEL: if (sk_focused) win32_scroll += (short)HIWORD(wParam); break;
+			case WM_SETFOCUS:   sk_focus   = app_focus_active;          break;
+			case WM_KILLFOCUS:  sk_focus   = app_focus_background;      break;
+			case WM_MOUSEWHEEL: if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); break;
 			case WM_SYSCOMMAND: {
 				// Has the user pressed the restore/'un-maximize' button?
 				// WM_SIZE happens -after- this event, and contains the new size.

@@ -41,6 +41,13 @@ namespace StereoKit
 		/// Major.mInor.Patch.pre-Release</summary>
 		public static ulong VersionId => NativeAPI.sk_version_id();
 
+		/// <summary> This tells about the app's current focus state,
+		/// whether it's active and receiving input, or if it's
+		/// backgrounded or hidden. This can be important since apps may
+		/// still run and render when unfocused, as the app may still be
+		/// visible behind the app that _does_ have focus. </summary>
+		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
+
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
 		/// <param name="settings">The configuration settings for StereoKit.
