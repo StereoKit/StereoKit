@@ -58,11 +58,14 @@ namespace StereoKit
 		static PickerCallback       _filePickerCallback;
 		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
-			byte[] filenameUtf8 = new byte[fileLength];
-			Marshal.Copy(file, filenameUtf8, 0, fileLength);
-			string filename = Encoding.UTF8.GetString(filenameUtf8);
+			string filename = "";
+			if (file != IntPtr.Zero) {
+				byte[] filenameUtf8 = new byte[fileLength];
+				Marshal.Copy(file, filenameUtf8, 0, fileLength);
+				filename = Encoding.UTF8.GetString(filenameUtf8);
+			}
 
-			if (confirmed > 0) { 
+			if (confirmed > 0) {
 				_filePickerOnSelect?.Invoke(filename);
 			} else {
 				_filePickerOnCancel?.Invoke();
