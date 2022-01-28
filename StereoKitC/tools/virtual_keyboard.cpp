@@ -37,7 +37,7 @@ void virtualkeyboard_reset_modifiers() {
 
 ///////////////////////////////////////////
 
-void virtualkeyboard_open(bool open, text_context_ type) {
+void virtualkeyboard_open(bool32_t open, text_context_ type) {
 	if (open == keyboard_open && type == keyboard_text_context) return;
 
 	// Position the keyboard in front of the user if this just opened
@@ -80,7 +80,7 @@ void send_key_data(const char16_t* charkey,key_ key) {
 ///////////////////////////////////////////
 
 void remove_last_clicked_keys() {
-	for (int i = 0; i < keyboard_pressed_keys.count; i++) {
+	for (size_t i = 0; i < keyboard_pressed_keys.count; i++) {
 		input_keyboard_inject_release(keyboard_pressed_keys[0]);
 		keyboard_pressed_keys.remove(0);
 	}

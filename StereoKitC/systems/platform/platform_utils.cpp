@@ -683,7 +683,7 @@ wchar_t *platform_to_wchar(const char *utf8_string) {
 }
 
 char *platform_from_wchar(const wchar_t *string) {
-	int     len  = wcslen(string)+1;
+	int32_t len  = (int)(wcslen(string)+1);
 	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);
 	char *result = sk_malloc_t(char, size);
 	WideCharToMultiByte               (CP_UTF8, 0, string, len, result, size, nullptr, nullptr);

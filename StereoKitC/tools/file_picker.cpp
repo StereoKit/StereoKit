@@ -95,7 +95,7 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 
 	// Call the file picker that does all the real work, and pass the callback
 	// along to _our_ callback.
-	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) {
+	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
 		callback_t *data = (callback_t *)callback_data;
 		if (data->on_confirm)
 			data->on_confirm(data->callback_data, confirmed, filename);
@@ -133,7 +133,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Open";
 			if (GetOpenFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -143,7 +143,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Save As";
 			if (GetSaveFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -298,7 +298,7 @@ void file_picker_open_folder(const char *folder) {
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?strlen(fp_filename)+1:0);
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?(int32_t)(strlen(fp_filename)+1):0);
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;

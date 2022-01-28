@@ -153,8 +153,8 @@ void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) 
 ///////////////////////////////////////////
 
 void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count) {
-	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
-	for (size_t i = 0; i < ind_count; i+=3) {
+	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
+	for (int32_t i = 0; i < ind_count; i+=3) {
 		vert_t *v1 = &verts[inds[i  ]];
 		vert_t *v2 = &verts[inds[i+1]];
 		vert_t *v3 = &verts[inds[i+2]];
@@ -166,7 +166,7 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 		v2->norm += normal;
 		v3->norm += normal;
 	}
-	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
 }
 
 ///////////////////////////////////////////

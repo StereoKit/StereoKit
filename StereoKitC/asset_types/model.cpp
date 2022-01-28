@@ -169,14 +169,14 @@ void model_recalculate_bounds(model_t model) {
 ///////////////////////////////////////////
 
 const char *model_get_name(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	return model_node_get_name(model, model->visuals[subset].node);
 }
 
 ///////////////////////////////////////////
 
 material_t model_get_material(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	material_addref(model->visuals[subset].material);
 	return model->visuals[subset].material;
 }
@@ -184,7 +184,7 @@ material_t model_get_material(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 mesh_t model_get_mesh(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	mesh_addref(model->visuals[subset].mesh);
 	return model->visuals[subset].mesh;
 }
@@ -192,14 +192,14 @@ mesh_t model_get_mesh(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 matrix model_get_transform(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	return model->visuals[subset].transform_model;
 }
 
 ///////////////////////////////////////////
 
 void model_set_material(model_t model, int32_t subset, material_t material) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	assert(material != nullptr);
 
 	assets_safeswap_ref(
@@ -210,7 +210,7 @@ void model_set_material(model_t model, int32_t subset, material_t material) {
 ///////////////////////////////////////////
 
 void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	assert(mesh != nullptr);
 
 	assets_safeswap_ref(
@@ -223,7 +223,7 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 ///////////////////////////////////////////
 
 void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 	model_node_set_transform_model(model, model->visuals[subset].node, transform);
 }
 
@@ -254,7 +254,7 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 ///////////////////////////////////////////
 
 void model_remove_subset(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
+	assert(subset < (int32_t)model->visuals.count);
 
 	model->nodes[model->visuals[subset].node].visual = -1;
 	mesh_release    (model->visuals[subset].mesh);
@@ -736,14 +736,14 @@ float model_anim_active_completion(model_t model) {
 ///////////////////////////////////////////
 
 const char *model_anim_get_name(model_t model, int32_t index) {
-	assert(index < model->anim_data.anims.count);
+	assert(index < (int32_t)model->anim_data.anims.count);
 	return model->anim_data.anims[index].name;
 }
 
 ///////////////////////////////////////////
 
 float model_anim_get_duration(model_t model, int32_t index) {
-	assert(index < model->anim_data.anims.count);
+	assert(index < (int32_t)model->anim_data.anims.count);
 	return model->anim_data.anims[index].duration;
 }
 

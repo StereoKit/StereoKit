@@ -187,7 +187,7 @@ tex_t tex_create_color32(color32 *data, int32_t width, int32_t height, bool32_t 
 tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_t srgb_data) {
 	tex_t    result = tex_create(tex_type_image, srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear);
 	color32 *color  = sk_malloc_t(color32, width * height);
-	for (size_t i = 0; i < width*height; i++)
+	for (int32_t i = 0; i < width*height; i++)
 		color[i] = color_to_32(data[i]);
 	tex_set_colors(result, width, height, color);
 	free(color);
@@ -231,7 +231,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
-	for (size_t i = 0; i < file_count; i++) {
+	for (int32_t i = 0; i < file_count; i++) {
 		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
@@ -251,7 +251,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	int  final_height = 0;
 	tex_format_ final_format = tex_format_none;
 	bool loaded       = true;
-	for (size_t i = 0; i < file_count; i++) {
+	for (int32_t i = 0; i < file_count; i++) {
 		int width    = 0;
 		int height   = 0;
 		tex_format_ format = tex_format_none;
@@ -282,7 +282,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 
 	// free memory if we failed
 	if (!loaded) {
-		for (size_t i = 0; i < file_count; i++) {
+		for (int32_t i = 0; i < file_count; i++) {
 			free(data[i]);
 		}
 		free(data);
@@ -297,7 +297,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	if (out_sh_lighting_info != nullptr)
 		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 
-	for (size_t i = 0; i < file_count; i++) {
+	for (int32_t i = 0; i < file_count; i++) {
 		free(data[i]);
 	}
 	free(data);
@@ -630,7 +630,7 @@ tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ typ
 	// Create an array of color values the size of our texture
 	uint8_t *color_data = (uint8_t *)sk_malloc(data_step * width * height);
 	uint8_t *color_curr = color_data;
-	for (size_t i = 0; i < width*height; i++) {
+	for (int32_t i = 0; i < width*height; i++) {
 		memcpy(color_curr, data, data_step);
 		color_curr += data_step;
 	}

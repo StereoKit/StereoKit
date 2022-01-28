@@ -283,7 +283,7 @@ void input_hand_update() {
 		input_hand_state_update((handed_)i);
 	}
 
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
 			hand_sources[i].update_inactive();
 	}

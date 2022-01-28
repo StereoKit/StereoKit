@@ -28,7 +28,7 @@ vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vin
 		result = (vind_t)verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
 		indmap->add_or_set(pt, result);
 	} else {
-		result = indmap->items[id];
+		result = indmap->items[(size_t)id];
 	}
 	verts->get(result).norm += normal;
 	return result;

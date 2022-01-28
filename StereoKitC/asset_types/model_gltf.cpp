@@ -265,7 +265,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		if (vert_count < (int32_t)attr->data->count) {
 			vert_count = (int32_t)attr->data->count;
 			verts      = sk_realloc_t(vert_t, verts, vert_count);
-			for (size_t i = 0; i < vert_count; i++) {
+			for (int32_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
 			}
 		}
@@ -698,18 +698,18 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 			switch (curve.applies_to) {
 			case anim_element_translation: {
 				vec3 *tr = (vec3*)curve.keyframe_values + offset;
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					tr[k*skip] = matrix_transform_pt(gltf_orientation_correction, tr[k*skip]);
 			} break;
 			case anim_element_scale: {
 				vec3 *sc = (vec3*)curve.keyframe_values + offset;
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					sc[k*skip] = matrix_transform_dir(gltf_orientation_correction, sc[k*skip]);
 			} break;
 			case anim_element_rotation: {
 				quat *rot = (quat*)curve.keyframe_values + offset;
 				quat r = matrix_extract_rotation(gltf_orientation_correction);
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					rot[k*skip] = r * rot[k*skip];
 			} break;
 			}
@@ -760,8 +760,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	if (parent == -1)
 		transform = transform * gltf_orientation_correction;
 
-	for (int32_t p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
-		mesh_t mesh = gltf_parsemesh(node->mesh, index, p, filename, warnings);
+	for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+		mesh_t mesh = gltf_parsemesh(node->mesh, index, (int)p, filename, warnings);
 		if (mesh == nullptr) continue;
 
 		// If we're splitting this node into multiple meshes, then add the
@@ -830,14 +830,14 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	// Load each root node
 	hashmap_t<cgltf_node*, model_node_id> node_map = {};
-	for (int32_t i = 0; i < data->nodes_count; i++) {
+	for (cgltf_size i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
 		if (n->parent == nullptr)
 			gltf_add_node(model, shader, -1, filename, data, n, &node_map, &warnings);
 	}
 
 	// Load each animation
-	for (int32_t i = 0; i < data->animations_count; i++) {
+	for (cgltf_size i = 0; i < data->animations_count; i++) {
 		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], &node_map) );
 	}
 
@@ -850,7 +850,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		skel.bone_count       = (int32_t)skin->joints_count;
 		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
 		skel.skin_node        = *node_map.get(&data->nodes[i]);
-		for (size_t b = 0; b < skel.bone_count; b++) {
+		for (int32_t b = 0; b < skel.bone_count; b++) {
 			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
 		}
 		model->anim_data.skeletons.add(skel);
