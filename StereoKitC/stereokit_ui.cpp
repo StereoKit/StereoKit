@@ -472,6 +472,12 @@ void ui_set_color(color128 color) {
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material) {
 	ui_el_visual_t visual = {};
+
+	if (mesh                                  != nullptr) mesh_addref(mesh);
+	if (skui_visuals[element_visual].mesh     != nullptr) mesh_release(skui_visuals[element_visual].mesh);
+	if (material                              != nullptr) material_addref(material);
+	if (skui_visuals[element_visual].material != nullptr) material_release(skui_visuals[element_visual].material);
+
 	visual.mesh     = mesh;
 	visual.material = material;
 	skui_visuals[element_visual] = visual;
@@ -696,6 +702,12 @@ void ui_update_late() {
 ///////////////////////////////////////////
 
 void ui_shutdown() {
+	for (int32_t i = 0; i < ui_vis_max; i++) {
+		mesh_release    (skui_visuals[i].mesh);
+		material_release(skui_visuals[i].material);
+		skui_visuals[i] = {};
+	}
+
 	skui_sl_windows             .free();
 	skui_layers                 .free();
 	skui_id_stack               .free();
