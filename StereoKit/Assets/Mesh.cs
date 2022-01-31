@@ -37,13 +37,13 @@ namespace StereoKit
 		/// </summary>
 		public bool HasSkin => NativeAPI.mesh_has_skin(_inst);
 
-        /// <summary>Should StereoKit keep the mesh data on the CPU for later
-        /// access, or collision detection? Defaults to true. If you set this 
-        /// to false before setting data, the data won't be stored. If you 
-        /// call this after setting data, that stored data will be freed! If 
-        /// you set this to true again later on, it will not contain data 
-        /// until it's set again.</summary>
-        public bool KeepData {
+		/// <summary>Should StereoKit keep the mesh data on the CPU for later
+		/// access, or collision detection? Defaults to true. If you set this 
+		/// to false before setting data, the data won't be stored. If you 
+		/// call this after setting data, that stored data will be freed! If 
+		/// you set this to true again later on, it will not contain data 
+		/// until it's set again.</summary>
+		public bool KeepData {
 			get => NativeAPI.mesh_get_keep_data(_inst);
 			set => NativeAPI.mesh_set_keep_data(_inst, value);
 		}
@@ -75,22 +75,22 @@ namespace StereoKit
 		/// <param name="bone_weights">the weights that will be applied</param>
 		/// <param name="starting_pos">The starting/resting Positions for the bones</param>
 		public void SetSkin(ushort[] bone_ids,Vec4[] bone_weights,Matrix[] starting_pos)
-        {
+		{
 			if(bone_weights.Length != bone_ids.Length / 4)
-            {
+			{
 				throw new ArgumentException($"mesh_set_skin: bone_ids should be 4 times more then bone_weights has {bone_ids.Length} amount of boneids should have {bone_weights.Length * 4}");
-            }
+			}
 			NativeAPI.mesh_set_skin(_inst, bone_ids, bone_ids.Length/4, bone_weights, bone_weights.Length, starting_pos, starting_pos.Length);
-        }
+		}
 
 		/// <summary>
 		/// Updates all bone positions does not need to happen every frame
 		/// </summary>
 		/// <param name="bone_positions">The Matrix position of each bone for this update</param>
 		public void UpdateSkin(Matrix[] bone_positions)
-        {
+		{
 			NativeAPI.mesh_update_skin(_inst,bone_positions,bone_positions.Length);
-        }
+		}
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card right away. If you're
