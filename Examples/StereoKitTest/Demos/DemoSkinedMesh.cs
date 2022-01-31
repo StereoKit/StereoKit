@@ -19,9 +19,9 @@ class DemoSkinedMesh : ITest
 			mesh = new Mesh();
 			Vertex[] verts = new Vertex[]
 			{
-			new Vertex(Vec3.Zero,Vec3.Up),
-			new Vertex(Vec3.Zero,Vec3.Up),
-			new Vertex(Vec3.Zero,Vec3.Up),
+				new Vertex(Vec3.Zero,Vec3.Up),
+				new Vertex(Vec3.Zero,Vec3.Up),
+				new Vertex(Vec3.Zero,Vec3.Up),
 			};
 			mesh.SetVerts(verts);
 			uint[] ints = new uint[]
@@ -31,17 +31,19 @@ class DemoSkinedMesh : ITest
 			mesh.SetInds(ints);
 			ushort[] testids = new ushort[]
 			{
-			0 ,0, 0, 0,1 ,0, 0, 0,2 ,0, 0, 0
+				0 ,0, 0, 0,
+				1 ,0, 0, 0,
+				2 ,0, 0, 0
 			};
 			Vec4[] wegts = new Vec4[]
 			{
-			new Vec4(1,0,0,0),new Vec4(1,0,0,0),new Vec4(1,0,0,0),
+				new Vec4(1,0,0,0),new Vec4(1,0,0,0),new Vec4(1,0,0,0),
 			};
 			Matrix[] stating_poses = new Matrix[]
 			{
-			poseone.ToMatrix(),
-			posetwo.ToMatrix(),
-			posethree.ToMatrix(),
+				poseone.ToMatrix(),
+				posetwo.ToMatrix(),
+				posethree.ToMatrix(),
 			};
 			mesh.SetSkin(testids, wegts, stating_poses);
 			poseone = new Pose(new Vec3(-1, 1, 1), Quat.Identity);
