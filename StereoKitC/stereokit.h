@@ -1264,8 +1264,17 @@ typedef enum render_clear_ {
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
 
+typedef enum projection_ {
+	projection_perspective = 0,
+	projection_ortho = 1
+} projection_;
+
+//TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
+SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
+SK_API void                  render_set_ortho_size (float viewport_height_meters);
+SK_API void                  render_set_projection (projection_ proj);
 SK_API matrix                render_get_cam_root   ();
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);

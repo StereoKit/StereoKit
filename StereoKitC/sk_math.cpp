@@ -146,16 +146,40 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 ///////////////////////////////////////////
 
 bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
-	if (screen_pixel_pos.x <= sk_system_info().display_width  && 
-		screen_pixel_pos.y <= sk_system_info().display_height && 
-		screen_pixel_pos.x >= 0 && 
-		screen_pixel_pos.y >= 0) {
 
-		out_ray.pos = input_head()->position;
-		out_ray.dir = vec3{ screen_pixel_pos.x, screen_pixel_pos.y, 1.0f };
-		out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
-		out_ray.dir = vec3_normalize(out_ray.dir);
-		return true;
+	if (screen_pixel_pos.x <= sk_system_info().display_width &&
+	    screen_pixel_pos.y <= sk_system_info().display_height &&
+		screen_pixel_pos.x >= 0 &&
+	    screen_pixel_pos.y >= 0) {
+		if (render_get_projection_type() == projection_perspective) {
+			out_ray.pos = input_head()->position;
+			out_ray.dir = vec3{screen_pixel_pos.x, screen_pixel_pos.y, 1.0f};
+			out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
+			out_ray.dir = vec3_normalize(out_ray.dir);
+			return true;
+
+		} else {
+			//TODO: Might be at most one pixel off. I (Moses) don't really care but feel free to do this math yourself
+			// First of all, get origin position as if camera has identity pose
+			system_info_t info = sk_system_info();
+			float viewport_height_meters = render_get_ortho_view_height();
+			out_ray.pos.x =
+			    ((screen_pixel_pos.x - ((float)info.display_width / 2)) / (float)info.display_width) *
+			    ((float)info.display_width / (float)info.display_height) * viewport_height_meters;
+			out_ray.pos.y =
+			    -((screen_pixel_pos.y - ((float)info.display_height / 2)) / (float)info.display_height) *
+			    viewport_height_meters;
+			out_ray.pos.z = 0.0f;
+
+			// Rotate origin offset by head rotation
+			out_ray.pos = quat_mul_vec(input_head()->orientation, out_ray.pos);
+
+			// Move origin to head position
+			out_ray.pos += input_head()->position;
+			out_ray.dir = {0.0, 0.0, -1.0f};
+			out_ray.dir = quat_mul_vec(input_head()->orientation, out_ray.dir);
+			return true;
+		}
 	}
 
 	return false;
