@@ -51,6 +51,8 @@ struct _render_list_t {
 typedef int64_t render_list_t;
 
 matrix        render_get_projection       ();
+projection_   render_get_projection_type  ();
+float         render_get_ortho_view_height();
 matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
 color128      render_get_clear_color      ();

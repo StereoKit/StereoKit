@@ -28,7 +28,13 @@
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
-#include <DirectXMath.h> // Matrix math functions and objects
+// Matrix math functions and objects
+#if defined(SK_OS_LINUX)
+// Different include path on Linux to hint clangd where the file actually is
+#include "../lib/include_no_win/DirectXMath.h" 
+#else
+#include <DirectXMath.h>
+#endif
 using namespace DirectX;
 
 namespace sk {
@@ -92,8 +98,16 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
+
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
+
+float                   render_ortho_near_clip = 0.0f;
+float                   render_ortho_far_clip  = 50.0f;
+float                   render_ortho_viewport_height = 1.0f;
+
+projection_             render_projection_type = projection_perspective;
+
 render_global_buffer_t  render_global_buffer;
 mesh_t                  render_blit_quad;
 vec4                    render_lighting[9]     = {};
@@ -158,12 +172,57 @@ void render_set_fov(float field_of_view_degrees) {
 
 ///////////////////////////////////////////
 
+void render_set_ortho_size(float viewport_height_meters) {
+	render_ortho_viewport_height = viewport_height_meters;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void render_set_ortho_clip(float near_plane, float far_plane) {
+	render_ortho_near_clip = near_plane;
+	render_ortho_far_clip = far_plane;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void render_set_projection(projection_ proj) {
+	render_projection_type = proj;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+projection_ render_get_projection_type() {
+	return render_projection_type;
+}
+
+///////////////////////////////////////////
+
+float render_get_ortho_view_height() {
+	return render_ortho_viewport_height;
+}
+
+///////////////////////////////////////////
+
 void render_update_projection() {
-	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
-		render_fov * deg2rad, 
-		(float)sk_system_info().display_width/sk_system_info().display_height, 
-		render_clip_planes.x, 
-		render_clip_planes.y), &render_default_camera_proj);
+	if (render_projection_type == projection_perspective) {
+		math_fast_to_matrix(
+		    XMMatrixPerspectiveFovRH(render_fov * deg2rad,
+		                             (float)sk_system_info().display_width / sk_system_info().display_height,
+		                             render_clip_planes.x,
+		                             render_clip_planes.y),
+		    &render_default_camera_proj);
+	} else {
+		math_fast_to_matrix(
+		    XMMatrixOrthographicRH(
+		        ((float)sk_system_info().display_width / (float)sk_system_info().display_height)*render_ortho_viewport_height, 
+				render_ortho_viewport_height, 
+				render_ortho_near_clip, 
+				render_ortho_far_clip),
+		    &render_default_camera_proj);
+	}
 }
 
 ///////////////////////////////////////////
