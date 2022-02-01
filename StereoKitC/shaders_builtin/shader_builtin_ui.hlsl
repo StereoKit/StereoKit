@@ -33,8 +33,9 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
 	o.uv         = input.uv;
-	o.color      = color * input.col * sk_inst[id].color;
+	o.color      = color * input.col * sk_inst[id].color * sk_inst[id].color.a;
 	o.color.rgb *= Lighting(o.normal);
+
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET {

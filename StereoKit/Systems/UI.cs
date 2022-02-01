@@ -92,6 +92,9 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
+		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
+		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
+
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
 		/// layout surface for UI content to be placed on and interacted with.
@@ -151,7 +154,7 @@ namespace StereoKit
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
 
-		/// /// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
+		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>

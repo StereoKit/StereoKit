@@ -37,8 +37,21 @@ typedef enum ui_vis_ {
 	ui_vis_window_body_only,
 	ui_vis_window_head,
 	ui_vis_window_head_only,
+	ui_vis_separator,
+	ui_vis_slider_line,
+	ui_vis_slider_push,
+	ui_vis_slider_pinch,
 	ui_vis_max,
 } ui_vis_;
+
+typedef enum ui_color_ {
+	ui_color_primary = 0,
+	ui_color_background,
+	ui_color_common,
+	ui_color_complement,
+	ui_color_text,
+	ui_color_max,
+} ui_color_;
 
 typedef struct ui_settings_t {
 	float padding;
@@ -55,6 +68,8 @@ SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API void     ui_set_color           (color128      color);
+SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
+SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr));
 
 SK_API void     ui_push_text_style       (text_style_t  style);

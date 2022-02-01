@@ -465,7 +465,7 @@ namespace StereoKit
 	public enum UIVisual
 	{
 		/// <summary>Default state, no UI element at all.</summary>
-		None,
+		None = 0,
 		/// <summary>A default root UI element. Not a particular element, but
 		/// other elements may refer to this if there is nothing more specific
 		/// present.</summary>
@@ -492,5 +492,27 @@ namespace StereoKit
 		/// is used when a Window only has the head panel, without a body.
 		/// </summary>
 		WindowHeadOnly,
+		/// <summary>Refers to UI.HSeparator element.</summary>
+		Separator,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element.</summary>
+		SliderLine,
+		/// <summary>Refers to the push button component of the UI.HSlider
+		/// element when using UIConfirm.Push.</summary>
+		SliderPush,
+		/// <summary>Refers to the pinch button component of the UI.HSlider
+		/// element when using UIConfirm.Pinch.</summary>
+		SliderPinch,
+		Max,
+	}
+
+	public enum UIColor
+	{
+		Primary = 0,
+		Background,
+		Common,
+		Complement,
+		Text,
+		Max,
 	}
 }
