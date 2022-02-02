@@ -612,7 +612,7 @@ SK_API bounds_t mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t mesh_has_skin        (mesh_t mesh);
 SK_API void     mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
 SK_API void     mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
-SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t *out_pt);
+SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t *out_pt,vec2 *out_uv_pos);
 
 SK_API mesh_t   mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
 SK_API mesh_t   mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));

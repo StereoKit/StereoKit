@@ -317,7 +317,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at)) {
+		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at,nullptr)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;

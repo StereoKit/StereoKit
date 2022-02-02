@@ -387,7 +387,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, vec2* out_uv_pos) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -427,6 +427,21 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
 			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
 			if (dist < nearest_dist) {
 				nearest_dist = dist;
+				if (out_uv_pos != nullptr) {
+					log_info("UV loaded");
+					//Return uv pos
+					vert_t vert_one = mesh->verts[mesh->inds[i]];
+					vert_t vert_two = mesh->verts[mesh->inds[i + 1]];
+					vert_t vert_three = mesh->verts[mesh->inds[i + 2]];
+					vec3 f1 = vert_one.pos - pt;
+					vec3 f2 = vert_two.pos - pt;
+					vec3 f3 = vert_three.pos - pt;
+					float a = vec3_magnitude(vec3_cross(vert_one.pos - vert_two.pos, vert_one.pos - vert_three.pos));
+					float a1 = vec3_magnitude(vec3_cross(f2, f3)) / a;
+					float a2 = vec3_magnitude(vec3_cross(f3, f1)) / a;
+					float a3 = vec3_magnitude(vec3_cross(f1, f2)) / a;
+					*out_uv_pos = (vert_one.uv * a1) + (vert_two.uv * a2) + (vert_three.uv * a3);
+				}
 				*out_pt = {pt, data->planes[i / 3].normal};
 			}
 		}
