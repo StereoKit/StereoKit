@@ -35,8 +35,8 @@ class DemoRayMesh : ITest
 		if (ray.Intersect(boxMesh, out Ray at,out Vec2 uv_pos))
 		{
 			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
-			Vec3 texttransform = transform.Transform(at.position * 1.5f) + new Vec3(0,0.05f,0f);
-			Text.Add($"uv-Pos:{uv_pos}",Matrix.TR(texttransform, Quat.LookAt(texttransform,Input.Head.position)),style);
+			Vec3 textTransform = transform.Transform(at.position * 1.5f) + new Vec3(0,0.05f,0f);
+			Text.Add($"uv-Pos:{uv_pos}",Matrix.TR(textTransform, Quat.LookAt(textTransform, Input.Head.position)),style);
 		}
 	}
 	/// :End:

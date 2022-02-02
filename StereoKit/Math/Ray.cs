@@ -99,11 +99,11 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
-		/// <param name="uv_pos">The intersection point on the uv plane</param>
+		/// <param name="uvPos">The intersection point on the uv plane</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out Vec2 uv_pos)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out uv_pos) > 0;
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out Vec2 uvPos)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out uvPos) > 0;
 
 
 		// TODO: Remove in v0.4
