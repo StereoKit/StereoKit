@@ -160,7 +160,7 @@ bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 
 		} else {
 			//TODO: Might be at most one pixel off. I (Moses) don't really care but feel free to do this math yourself
-			// First of all, get origin position as if camera has identity pose
+			// First of all, create ray as if camera has identity pose
 			system_info_t info = sk_system_info();
 			float viewport_height_meters = render_get_ortho_view_height();
 			out_ray.pos.x =
@@ -171,13 +171,11 @@ bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 			    viewport_height_meters;
 			out_ray.pos.z = 0.0f;
 
-			// Rotate origin offset by head rotation
-			out_ray.pos = quat_mul_vec(input_head()->orientation, out_ray.pos);
-
-			// Move origin to head position
-			out_ray.pos += input_head()->position;
 			out_ray.dir = {0.0, 0.0, -1.0f};
-			out_ray.dir = quat_mul_vec(input_head()->orientation, out_ray.dir);
+
+			// Transform to wherever the camera is!
+			out_ray.pos = matrix_transform_pt(render_get_cam_root(), out_ray.pos);
+			out_ray.dir = matrix_transform_dir(render_get_cam_root(), out_ray.dir);
 			return true;
 		}
 	}
