@@ -227,10 +227,10 @@ void linux_events() {
 				linux_mouse_x = event.xmotion.x;
 				linux_mouse_y = event.xmotion.y;
 			} break;
-			case EnterNotify: {
+			case FocusIn: {
 				linux_mouse_avail = true;
 			} break;
-			case LeaveNotify: {
+			case FocusOut: {
 				linux_mouse_avail = false;
 			} break;
 			case ConfigureNotify: {
@@ -357,7 +357,7 @@ bool setup_x_window() {
 	XSetICFocus(x_linux_input_context);
 
 	// Setup for window events
-	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask );
+	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | FocusChangeMask);
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
