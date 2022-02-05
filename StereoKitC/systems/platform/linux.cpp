@@ -56,7 +56,8 @@ key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
-bool  linux_mouse_avail = false;
+bool  linux_mouse_in_window = false;
+bool  linux_window_focused = false;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -227,11 +228,17 @@ void linux_events() {
 				linux_mouse_x = event.xmotion.x;
 				linux_mouse_y = event.xmotion.y;
 			} break;
+			case EnterNotify: {
+				linux_mouse_in_window = true;
+			} break;
+			case LeaveNotify: {
+				linux_mouse_in_window = false;
+			} break;
 			case FocusIn: {
-				linux_mouse_avail = true;
+				linux_window_focused = true;
 			} break;
 			case FocusOut: {
-				linux_mouse_avail = false;
+				linux_window_focused = false;
 			} break;
 			case ConfigureNotify: {
 				//Todo: only call this when the user is done resizing
@@ -357,7 +364,7 @@ bool setup_x_window() {
 	XSetICFocus(x_linux_input_context);
 
 	// Setup for window events
-	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | FocusChangeMask);
+	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask);
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
@@ -448,7 +455,7 @@ void linux_resize(int width, int height) {
 bool linux_get_cursor(vec2 &out_pos) {
 	out_pos.x = (float)linux_mouse_x;
 	out_pos.y = (float)linux_mouse_y;
-	return linux_mouse_avail;
+	return linux_window_focused || linux_mouse_in_window;
 }
 
 ///////////////////////////////////////////
