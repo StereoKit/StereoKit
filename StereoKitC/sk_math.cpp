@@ -170,7 +170,6 @@ bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 			out_ray.pos = matrix_transform_pt(render_get_cam_root(), out_ray.pos);
 			out_ray.dir = matrix_transform_dir(render_get_cam_root(), out_ray.dir);
 		}
-	}
 	return true;
 }
 
