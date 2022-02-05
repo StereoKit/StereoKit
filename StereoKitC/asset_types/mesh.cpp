@@ -429,7 +429,6 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, v
 				nearest_dist = dist;
 				if (out_uv_pos != nullptr) {
 					//Return uv pos
-					//Todo: oprtimize with somthing like barycentric coordinates
 					vert_t vert_one = mesh->verts[mesh->inds[i]];
 					vert_t vert_two = mesh->verts[mesh->inds[i + 1]];
 					vert_t vert_three = mesh->verts[mesh->inds[i + 2]];
