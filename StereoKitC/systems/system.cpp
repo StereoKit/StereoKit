@@ -131,6 +131,8 @@ bool systems_initialize() {
 	for (size_t i = 0; i < systems.count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
+			log_diagf("Initializing %s", systems[index].name);
+
 			// start timing
 			uint64_t start = stm_now();
 
@@ -141,7 +143,6 @@ bool systems_initialize() {
 
 			// end timing
 			systems[index].profile_start_duration = stm_since(start);
-			log_diagf("Initialized %s", systems[index].name);
 		}
 	}
 	systems_initialized = true;
