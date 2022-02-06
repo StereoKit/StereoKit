@@ -547,7 +547,7 @@ void uwp_step_end_flat() {
 	skg_draw_begin();
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	color128 color = render_get_clear_color();
+	color128 color = render_get_clear_color_ln();
 	skg_tex_target_bind(&uwp_target->tex);
 	skg_target_clear(true, &color.r);
 

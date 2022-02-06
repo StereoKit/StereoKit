@@ -21,16 +21,21 @@ namespace StereoKit.Framework
 		}
 		public T Add<T>(T stepper) where T:IStepper 
 		{
-			// TODO: if T is a new Type, SK should identify a sort order,
-			// and insert this stepper based on that sort value.
-
 			// Add the stepper to the list
 			_steppers.Add(stepper);
 
 			// And initialize the stepper!
-			stepper.Initialize();
+			if (SK.IsInitialized)
+				stepper.Initialize();
 
 			return stepper;
+		}
+		public void InitializeSteppers()
+		{
+			// This should only be called for steppers that were added before
+			// initialization!
+			System.Diagnostics.Debug.Assert(!SK.IsInitialized);
+			_steppers.ForEach(s => s.Initialize());
 		}
 
 		public void Remove<T>() where T:IStepper

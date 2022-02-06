@@ -10,7 +10,7 @@ namespace StereoKit
 	public static class SK
 	{
 		private static SystemInfo   _system;
-		private static Steppers     _steppers;
+		private static Steppers     _steppers         = new Steppers();
 		private static List<Action> _mainThreadInvoke = new List<Action>();
 
 		/// <summary>This is a copy of the settings that StereoKit was
@@ -95,7 +95,7 @@ namespace StereoKit
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
 
-				_steppers = new Steppers();
+				_steppers.InitializeSteppers();
 			}
 
 			return result;

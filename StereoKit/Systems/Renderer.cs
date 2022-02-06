@@ -59,6 +59,7 @@ namespace StereoKit
 		/// on displays with transparent screens</summary>
 		public static Color ClearColor
 		{
+			get => NativeAPI.render_get_clear_color();
 			set => NativeAPI.render_set_clear_color(value);
 		}
 

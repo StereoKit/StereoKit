@@ -618,6 +618,7 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
+	xr_compositor_layers_clear();
 	render_clear();
 }
 
@@ -993,6 +994,12 @@ void backend_openxr_ext_request(const char *extension_name) {
 		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
 		return;
 	}
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 }
 
 }

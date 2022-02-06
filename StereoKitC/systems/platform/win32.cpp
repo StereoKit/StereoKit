@@ -272,7 +272,7 @@ void win32_step_begin_flat() {
 void win32_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 #if defined(SKG_OPENGL)
 	skg_swapchain_bind(&win32_swapchain);
 #else

@@ -2901,6 +2901,8 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback([](uint32_t source, uint32_t type, uint32_t id, uint32_t severity, int32_t length, const char *message, const void *userParam) {
+		if (id == 0x7fffffff) return;
+
 		const char *src = "OTHER";
 		switch (source) {
 		case 0x8246: src = "API"; break;

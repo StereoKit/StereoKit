@@ -14,6 +14,7 @@ class App
 		logFilter         = LogLevel.Diagnostic};
 
 	public SKSettings Settings => settings;
+	public static PassthroughFBExt passthrough;
 
 	Model  floorMesh;
 	Matrix floorTr;
@@ -48,6 +49,8 @@ class App
 		/// your initialization code!
 		Log.Subscribe(OnLog);
 		/// :End:
+		
+		passthrough = SK.AddStepper<PassthroughFBExt>();
 	}
 
 	//////////////////////

@@ -1287,6 +1287,7 @@ SK_API void                  render_override_capture_filter(bool32_t use_overrid
 SK_API render_layer_         render_get_capture_filter     ();
 SK_API bool32_t              render_has_capture_filter     ();
 SK_API void                  render_set_clear_color(color128 color_gamma);
+SK_API color128              render_get_clear_color();
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
@@ -1831,6 +1832,7 @@ SK_API int64_t          backend_openxr_get_time    ();
 SK_API void            *backend_openxr_get_function(const char *function_name);
 SK_API bool32_t         backend_openxr_ext_enabled (const char *extension_name);
 SK_API void             backend_openxr_ext_request (const char *extension_name);
+SK_API void             backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
 
 ///////////////////////////////////////////
 

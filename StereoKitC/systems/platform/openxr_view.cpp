@@ -76,6 +76,50 @@ void device_display_delete(device_display_t &display) {
 
 ///////////////////////////////////////////
 
+array_t<uint8_t> xr_compositor_bytes      = {};
+array_t<size_t>  xr_compositor_layers     = {};
+array_t<int32_t> xr_compositor_layer_sort = {};
+
+void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
+	size_t start = xr_compositor_bytes.count;
+	xr_compositor_bytes.add_range((uint8_t*)XrCompositionLayerBaseHeader, layer_size);
+
+	int64_t id = xr_compositor_layer_sort.binary_search(sort_order);
+	if (id < 0) id = ~id;
+	xr_compositor_layer_sort.insert(id, sort_order);
+	xr_compositor_layers    .insert(id, start);
+}
+
+///////////////////////////////////////////
+
+array_t<XrCompositionLayerBaseHeader*> xr_compositor_layer_ptrs = {};
+const array_t<XrCompositionLayerBaseHeader *> *compositor_layers_get() {
+	xr_compositor_layer_ptrs.clear();
+	for (size_t i = 0; i < xr_compositor_layers.count; i++) {
+		xr_compositor_layer_ptrs.add((XrCompositionLayerBaseHeader *)(xr_compositor_bytes.data + xr_compositor_layers[i]));
+	}
+	return &xr_compositor_layer_ptrs;
+}
+
+///////////////////////////////////////////
+
+void xr_compositor_layers_clear() {
+	xr_compositor_bytes     .clear();
+	xr_compositor_layers    .clear();
+	xr_compositor_layer_sort.clear();
+}
+
+///////////////////////////////////////////
+
+void compositor_layers_free() {
+	xr_compositor_bytes     .free();
+	xr_compositor_layers    .free();
+	xr_compositor_layer_sort.free();
+	xr_compositor_layer_ptrs.free();
+}
+
+///////////////////////////////////////////
+
 XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
 	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
@@ -166,6 +210,7 @@ void openxr_views_destroy() {
 	xr_display_types     .free();
 	xr_display_2nd_states.free();
 	xr_display_2nd_layers.free();
+	compositor_layers_free();
 }
 
 ///////////////////////////////////////////
@@ -565,15 +610,18 @@ bool openxr_render_frame() {
 			layer2nd.layerCount            = 1;
 			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
 			xr_display_2nd_layers.add(layer2nd);
+		} else {
+			backend_openxr_composition_layer(xr_displays[i].projection_data, sizeof(XrCompositionLayerProjection), 0);
 		}
 	}
 
 	// We're finished with rendering our layer, so send it off for display!
+	const array_t<XrCompositionLayerBaseHeader*> *comp_layers = compositor_layers_get();
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime          = frame_state.predictedDisplayTime;
 	end_info.environmentBlendMode = xr_displays[0].blend;
-	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
-	end_info.layers               = (XrCompositionLayerBaseHeader**)&xr_displays[0].projection_data;
+	end_info.layerCount           = comp_layers->count;
+	end_info.layers               = comp_layers->data;
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
@@ -583,6 +631,7 @@ bool openxr_render_frame() {
 
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
+
 	return true;
 }
 
@@ -675,7 +724,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		// Call the rendering callback with our view and swapchain info
 		tex_t    target = layer.swapchain_color.textures[index];
 		color128 col    = sk_info.display_type == display_opaque
-			? render_get_clear_color()
+			? render_get_clear_color_ln()
 			: color128{ 0,0,0,0 };
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);

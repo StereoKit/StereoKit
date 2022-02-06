@@ -221,7 +221,7 @@ void android_step_end_flat() {
 		return;
 
 	skg_draw_begin();
-	color128 color = render_get_clear_color();
+	color128 color = render_get_clear_color_ln();
 	skg_swapchain_bind(&android_swapchain);
 	skg_target_clear(true, &color.r);
 

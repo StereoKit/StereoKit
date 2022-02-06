@@ -502,7 +502,7 @@ void linux_step_begin_flat() {
 void linux_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 	skg_swapchain_bind(&linux_swapchain);
 	skg_target_clear(true, &col.r);
 

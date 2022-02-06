@@ -55,7 +55,7 @@ projection_   render_get_projection_type  ();
 float         render_get_ortho_view_height();
 matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
-color128      render_get_clear_color      ();
+color128      render_get_clear_color_ln   ();
 vec2          render_get_clip             ();
 void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count, render_layer_ render_filter);
 void          render_clear                ();

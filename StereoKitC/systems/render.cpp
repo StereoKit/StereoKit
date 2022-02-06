@@ -425,6 +425,12 @@ void render_set_clear_color(color128 color) {
 //////////////////////////////////////////
 
 color128 render_get_clear_color() {
+	return color_to_gamma(render_clear_col);
+}
+
+//////////////////////////////////////////
+
+color128 render_get_clear_color_ln() {
 	return render_clear_col;
 }
 
