@@ -152,7 +152,7 @@
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>cd $(SolutionDir)
-xmake f -p android -a arm64-v8a -y -m $(ConfigurationName)
+xmake f -p android -a arm64-v8a -y -m $(ConfigurationName) --oculus-openxr=y
 xmake</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
