@@ -1822,7 +1822,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		ui_color_primary, color_blend);
 	ui_draw_el(ui_vis_slider_line,
 		vec3{ x - slide_x_rel - button_size.x/2, line_y, window_relative_pos.z },
-		vec3{ size.x-slide_x_rel , rule_size, rule_size * skui_settings.backplate_depth - mm2m },
+		vec3{ size.x-(slide_x_rel+button_size.x/2), rule_size, rule_size * skui_settings.backplate_depth - mm2m },
 		ui_color_common, color_blend);
 
 	if (confirm_method == ui_confirm_push) {
