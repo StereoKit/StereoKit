@@ -603,9 +603,9 @@ bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
 	skui_box_min = { skui_settings.padding*0.75f, skui_settings.padding*0.75f, 0 };
-	ui_quadrant_mesh     (&skui_box,     skui_settings.padding*0.75f, 3);
-	ui_quadrant_mesh_half(&skui_win_top, skui_settings.padding, 3, 0);
-	ui_quadrant_mesh_half(&skui_win_bot, skui_settings.padding, 3, 180 * deg2rad);
+	ui_quadrant_mesh     (&skui_box,     skui_settings.padding*0.75f, 5);
+	ui_quadrant_mesh_half(&skui_win_top, skui_settings.padding, 5, 0);
+	ui_quadrant_mesh_half(&skui_win_bot, skui_settings.padding, 5, 180 * deg2rad);
 	mesh_set_id(skui_box,     "sk/ui/box_mesh");
 	mesh_set_id(skui_win_top, "sk/ui/box_mesh_top");
 	mesh_set_id(skui_win_bot, "sk/ui/box_mesh_bot");
