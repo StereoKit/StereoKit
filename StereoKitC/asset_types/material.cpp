@@ -4,6 +4,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../sk_memory.h"
+#include "../systems/defaults.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -528,22 +529,36 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 ///////////////////////////////////////////
 
 bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
+
 	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-		if (material->shader->shader.meta->resources[i].name_hash == id) {
+		const skg_shader_resource_t *resource = &material->shader->shader.meta->resources[i];
+		if (resource->name_hash == id) {
+
+			// Assigning a null texture will crash the renderer, so we want to
+			// instead find the default texture for the material parameter.
+			if (value == nullptr) {
+				if      (string_eq(resource->extra, "white")) value = sk_default_tex;
+				else if (string_eq(resource->extra, "black")) value = sk_default_tex_black;
+				else if (string_eq(resource->extra, "gray" )) value = sk_default_tex_gray;
+				else if (string_eq(resource->extra, "flat" )) value = sk_default_tex_flat;
+				else if (string_eq(resource->extra, "rough")) value = sk_default_tex_rough;
+				else                                          value = sk_default_tex;
+			}
+
 			if (material->args.textures[i] != value) {
+				// No need for safe swap, since we know these textures aren't
+				// the same texture.
 				if (material->args.textures[i] != nullptr)
 					tex_release(material->args.textures[i]);
 				material->args.textures[i] = value;
-				if (value != nullptr) {
-					tex_addref(value);
-
-					// Tell the shader about the texture dimensions, if it has
-					// a parameter for it. Texture info will get put into any
-					// float4 param with the name [texname]_i
-					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
-					vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
-					material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
-				}
+				tex_addref(value);
+				
+				// Tell the shader about the texture dimensions, if it has
+				// a parameter for it. Texture info will get put into any
+				// float4 param with the name [texname]_i
+				uint64_t tex_info_hash = hash_fnv64_string("_i", id);
+				vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
+				material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
 			}
 			return true;
 		}
