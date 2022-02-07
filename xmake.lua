@@ -92,6 +92,7 @@ target("StereoKitC")
     add_files("StereoKitC/systems/hand/*.cpp") 
     add_files("StereoKitC/systems/platform/*.cpp") 
     add_files("StereoKitC/asset_types/*.cpp")
+    add_files("StereoKitC/ui/*.cpp")
     add_includedirs("StereoKitC/lib/include")
     add_includedirs("StereoKitC/lib/include_no_win")
 

@@ -147,7 +147,6 @@ endif()
 
 set(SK_SRC_CODE
   StereoKitC/stereokit.h
-  StereoKitC/stereokit_ui.h
 
   StereoKitC/_stereokit.h
   StereoKitC/_stereokit_ui.h
@@ -165,8 +164,7 @@ set(SK_SRC_CODE
   StereoKitC/sk_memory.cpp
   StereoKitC/spherical_harmonics.h
   StereoKitC/spherical_harmonics.cpp
-  StereoKitC/stereokit.cpp
-  StereoKitC/stereokit_ui.cpp )
+  StereoKitC/stereokit.cpp )
 
 set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/assets.h
@@ -291,6 +289,10 @@ set(SK_SRC_TOOLS
   StereoKitC/tools/file_picker.h
   StereoKitC/tools/file_picker.cpp )
 
+set(SK_SRC_UI
+  StereoKitC/stereokit_ui.h
+  StereoKitC/ui/stereokit_ui.cpp )
+
 # Switch between a static or shared library based on
 # the cmake options provided.
 if (SK_BUILD_SHARED_LIBS)
@@ -307,6 +309,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORM}
   ${SK_SRC_TOOLS}
+  ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
 # Set up Visual Studio folders/filters for a more organized
@@ -318,6 +321,7 @@ source_group("systems"     FILES ${SK_SRC_SYSTEMS})
 source_group("hands"       FILES ${SK_SRC_HANDS})
 source_group("platform"    FILES ${SK_SRC_PLATFORM})
 source_group("tools"       FILES ${SK_SRC_TOOLS})
+source_group("ui"          FILES ${SK_SRC_UI})
 
 if (UNIX)
   # DirectXMath on Linux needs a few extra files

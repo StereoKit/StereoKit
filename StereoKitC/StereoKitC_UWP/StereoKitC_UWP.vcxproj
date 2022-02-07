@@ -235,6 +235,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="..\systems\platform\*.cpp" />
     <ClCompile Include="..\systems\hand\*.cpp" />
     <ClCompile Include="..\shaders_builtin\*.cpp" />
+    <ClCompile Include="..\ui\*.cpp" />
     <ClInclude Include="..\*.h" />
     <ClInclude Include="..\libraries\*.h" />
     <ClInclude Include="..\tools\*.h" />
@@ -243,6 +244,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="..\systems\platform\*.h" />
     <ClInclude Include="..\systems\hand\*.h" />
     <ClInclude Include="..\shaders_builtin\*.h" />
+    <ClInclude Include="..\ui\*.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

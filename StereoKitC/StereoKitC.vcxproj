@@ -162,7 +162,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="sk_memory.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
-    <ClCompile Include="stereokit_ui.cpp" />
     <ClCompile Include="systems\audio.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
@@ -193,6 +192,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\world.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
+    <ClCompile Include="ui\stereokit_ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\animation.h" />
