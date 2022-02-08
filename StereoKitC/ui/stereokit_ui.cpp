@@ -880,6 +880,9 @@ void ui_layout_area(vec3 start, vec2 dimensions) {
 	layer.size           = dimensions;
 	layer.max_x          = 0;
 	layer.line_height    = 0;
+
+	skui_prev_offset      = layer.offset;
+	skui_prev_line_height = layer.line_height;
 }
 
 ///////////////////////////////////////////
