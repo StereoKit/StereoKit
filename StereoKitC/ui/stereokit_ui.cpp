@@ -2182,7 +2182,7 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 void ui_window_end() {
 	layer_t &layer = skui_layers.last();
 	vec3 start = layer.offset_initial + vec3{0,0,skui_settings.depth};
-	vec3 end   = { layer.max_x, layer.offset.y - layer.line_height,  layer.offset_initial.z};
+	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.gutter),  layer.offset_initial.z};
 	vec3 size  = start - end;
 	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
 	layer.window->size.x = size.x;
