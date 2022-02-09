@@ -337,9 +337,10 @@ ASALocalRun/
 !StereoKitC/lib/bin/**
 !**/Assets/**
 
-# Ignore OpenXR related stuff
+# Ignore dependency build related stuff
 Tools/oxr_current.txt
 StereoKitC/lib/bin/**/openxr_loader.lib
+StereoKitC/lib/bin/**/*reactphysics3d.*
 
 # Ignore cached shader blobs
 */Assets/cache
