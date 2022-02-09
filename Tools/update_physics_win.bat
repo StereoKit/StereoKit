@@ -12,14 +12,14 @@ xcopy "include/reactphysics3d" "../../StereoKitC/lib/include/reactphysics3d" /E
 mkdir Release_x64
 cd Release_x64
 cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release ../
-cmake --build . --config Release -j24
+cmake --build . --config Release
 xcopy /Y /F "Release/reactphysics3d.lib" "../../../StereoKitC/lib/bin/x64/Release/*"
 cd ..
 
 mkdir Debug_x64
 cd Debug_x64
 cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Debug ../
-cmake --build . -j24
+cmake --build .
 xcopy /Y /F "Debug/reactphysics3d.lib" "../../../StereoKitC/lib/bin/x64/Debug/*"
 xcopy /Y /F "Debug/reactphysics3d.pdb" "../../../StereoKitC/lib/bin/x64/Debug/*"
 cd ..
@@ -27,14 +27,14 @@ cd ..
 mkdir Release_ARM64
 cd Release_ARM64
 cmake -G "Visual Studio 16 2019" -A ARM64 -DCMAKE_BUILD_TYPE=Release ../
-cmake --build . --config Release -j24
+cmake --build . --config Release
 xcopy /Y /F "Release/reactphysics3d.lib" "../../../StereoKitC/lib/bin/ARM64/Release/*"
 cd ..
 
 mkdir Debug_ARM64
 cd Debug_ARM64
 cmake -G "Visual Studio 16 2019" -A ARM64 -DCMAKE_BUILD_TYPE=Debug ../
-cmake --build . -j24
+cmake --build .
 xcopy /Y /F "Debug/reactphysics3d.lib" "../../../StereoKitC/lib/bin/ARM64/Debug/*"
 xcopy /Y /F "Debug/reactphysics3d.pdb" "../../../StereoKitC/lib/bin/ARM64/Debug/*"
 cd ..
@@ -42,14 +42,14 @@ cd ..
 mkdir Release_ARM
 cd Release_ARM
 cmake -G "Visual Studio 16 2019" -A ARM -DCMAKE_BUILD_TYPE=Release ../
-cmake --build . --config Release -j24
+cmake --build . --config Release
 xcopy /Y /F "Release/reactphysics3d.lib" "../../../StereoKitC/lib/bin/ARM/Release/*"
 cd ..
 
 mkdir Debug_ARM
 cd Debug_ARM
 cmake -G "Visual Studio 16 2019" -A ARM -DCMAKE_BUILD_TYPE=Debug ../
-cmake --build . -j24
+cmake --build .
 xcopy /Y /F "Debug/reactphysics3d.lib" "../../../StereoKitC/lib/bin/ARM/Debug/*"
 xcopy /Y /F "Debug/reactphysics3d.pdb" "../../../StereoKitC/lib/bin/ARM/Debug/*"
 cd ..
@@ -68,7 +68,7 @@ cd Release_arm64-v8a
  -DCMAKE_BUILD_TYPE=Release^
  -DANDROID_STL=c++_static^
  ../
- "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build . --config Release -j24
+ "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build . --config Release
  xcopy /Y /F libreactphysics3d.a "../../../StereoKitC/lib/bin/arm64-v8a/Release/*"
 cd ..
 
@@ -84,7 +84,7 @@ cd Debug_arm64-v8a
  -DCMAKE_BUILD_TYPE=Debug^
  -DANDROID_STL=c++_static^
  ../
- "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build . -j24
+ "C:/Users/progr/AppData/Local/Android/Sdk/cmake/3.10.2.4988404/bin/cmake.exe" --build .
  xcopy /Y /F libreactphysics3d.a "../../../StereoKitC/lib/bin/arm64-v8a/Debug/*"
 cd ..
 
