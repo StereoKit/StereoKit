@@ -116,8 +116,8 @@ namespace StereoKit.Framework
 			Success = 0,
 		}
 
-		struct XrPassthroughFB      { UInt64 handle; }
-		struct XrPassthroughLayerFB { UInt64 handle; }
+		struct XrPassthroughFB      { ulong handle; }
+		struct XrPassthroughLayerFB { ulong handle; }
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB
 		{
@@ -171,7 +171,7 @@ namespace StereoKit.Framework
 			public XrStructureType             type;
 			public IntPtr                      next;
 			public XrCompositionLayerFlags     flags;
-			public UInt64                      space;
+			public ulong                       space;
 			public XrPassthroughLayerFB        layerHandle;
 			public XrCompositionLayerPassthroughFB(XrCompositionLayerFlags flags, XrPassthroughLayerFB layerHandle)
 			{
@@ -183,15 +183,15 @@ namespace StereoKit.Framework
 			}
 		}
 
-		delegate XrResult del_xrCreatePassthroughFB       (UInt64 session, in XrPassthroughCreateInfoFB createInfo, out XrPassthroughFB outPassthrough);
+		delegate XrResult del_xrCreatePassthroughFB       (ulong session, [In] XrPassthroughCreateInfoFB createInfo, out XrPassthroughFB outPassthrough);
 		delegate XrResult del_xrDestroyPassthroughFB      (XrPassthroughFB passthrough);
 		delegate XrResult del_xrPassthroughStartFB        (XrPassthroughFB passthrough);
 		delegate XrResult del_xrPassthroughPauseFB        (XrPassthroughFB passthrough);
-		delegate XrResult del_xrCreatePassthroughLayerFB  (UInt64 session, in XrPassthroughLayerCreateInfoFB createInfo, out XrPassthroughLayerFB outLayer);
+		delegate XrResult del_xrCreatePassthroughLayerFB  (ulong session, [In] XrPassthroughLayerCreateInfoFB createInfo, out XrPassthroughLayerFB outLayer);
 		delegate XrResult del_xrDestroyPassthroughLayerFB (XrPassthroughLayerFB layer);
 		delegate XrResult del_xrPassthroughLayerPauseFB   (XrPassthroughLayerFB layer);
 		delegate XrResult del_xrPassthroughLayerResumeFB  (XrPassthroughLayerFB layer);
-		delegate XrResult del_xrPassthroughLayerSetStyleFB(XrPassthroughLayerFB layer, in XrPassthroughStyleFB style);
+		delegate XrResult del_xrPassthroughLayerSetStyleFB(XrPassthroughLayerFB layer, [In] XrPassthroughStyleFB style);
 
 		del_xrCreatePassthroughFB        xrCreatePassthroughFB;
 		del_xrDestroyPassthroughFB       xrDestroyPassthroughFB;
