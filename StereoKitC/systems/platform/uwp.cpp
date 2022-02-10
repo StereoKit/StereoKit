@@ -27,6 +27,10 @@ bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
 vec2 uwp_mouse_frame_get;
 
+bool    uwp_resize_pending = false;
+int32_t uwp_resize_width   = 0;
+int32_t uwp_resize_height  = 0;
+
 }
 
 // The WinRT/UWP mess comes from:
@@ -392,12 +396,10 @@ private:
 
 		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
 			return;
-		sk_info.display_width  = outputWidth;
-		sk_info.display_height = outputHeight;
-		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
-		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
-		render_update_projection();
+		uwp_resize_pending = true;
+		uwp_resize_width   = outputWidth;
+		uwp_resize_height  = outputHeight;
 	}
 };
 ViewProvider *ViewProvider::inst = nullptr;
@@ -516,7 +518,7 @@ bool uwp_start_flat() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
-	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
+	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
@@ -537,6 +539,18 @@ void uwp_step_begin_xr() {
 ///////////////////////////////////////////
 
 void uwp_step_begin_flat() {
+	if (uwp_resize_pending) {
+		uwp_resize_pending = false;
+
+		sk_info.display_width  = uwp_resize_width;
+		sk_info.display_height = uwp_resize_height;
+		log_infof("Resized to: %d<~BLK>x<~clr>%d", uwp_resize_width, uwp_resize_height);
+
+		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
+		tex_set_color_arr   (uwp_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+		render_update_projection();
+	}
+
 	uwp_mouse_frame_get = ViewProvider::inst->mouse_point;
 	flatscreen_input_update();
 }
