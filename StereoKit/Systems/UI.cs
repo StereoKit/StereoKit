@@ -709,6 +709,26 @@ namespace StereoKit
 		public static void PopEnabled()
 			=> NativeAPI.ui_pop_enabled();
 
+		/// <summary>If you wish to manually draw a Panel, this function will
+		/// let you draw one wherever you want!</summary>
+		/// <param name="start">The top left corner of the Panel element.</param>
+		/// <param name="size">The size of the Panel element, in hierarchy
+		/// local meters.</param>
+		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// UIPad.Inside will behave the same as UIPad.None.</param>
+		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
+
+		/// <summary>This will begin a Panel element that will encompass all 
+		/// elements drawn between PanelBegin and PanelEnd. This is an entirely
+		/// visual element, and is great for visually grouping elements
+		/// together. Every Begin must have a matching End.</summary>
+		/// <param name="padding">Describes how padding is applied to the
+		/// visual element of the Panel.</param>
+		public static void PanelBegin(UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_begin(padding);
+		
+		/// <summary>This will finalize and draw a Panel element.</summary>
+		public static void PanelEnd() => NativeAPI.ui_panel_end();
+
 		/// <summary>Override the visual assets attached to a particular UI
 		/// element. 
 		/// 

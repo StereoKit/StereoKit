@@ -13,6 +13,7 @@
     <ClCompile Include="skt_lighting.cpp" />
     <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_draw.cpp" />
+    <ClCompile Include="demo_ui_layout.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -32,6 +33,7 @@
       <Filter>Shaders</Filter>
     </ClInclude>
     <ClInclude Include="demo_draw.h" />
+    <ClInclude Include="demo_ui_layout.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

@@ -562,5 +562,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end     ();
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16(string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_window_end     ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_at       (Vec3 start, Vec2 size, UIPad padding);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_begin    (UIPad padding);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_end      ();
 	}
 }

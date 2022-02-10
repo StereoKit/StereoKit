@@ -464,7 +464,7 @@ void ui_set_color(color128 color) {
 	skui_palette[0] = color_to_linear( color );                                                                     // Primary color: Headers, separators, etc.
 	skui_palette[1] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
 	skui_palette[2] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	skui_palette[3] = color_to_linear( color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Complement color: unused so far?
+	skui_palette[3] = color_to_linear( color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.2f,   hsv.z * 0.55f, color.a) ); // Complement color: unused so far?
 	skui_palette[4] = color128{1, 1, 1, 1};                                                                         // Text color
 }
 
@@ -2181,8 +2181,13 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 
 void ui_window_end() {
 	layer_t &layer = skui_layers.last();
+
+	// Move to next line if we're still on a previous line
+	if (layer.offset.x != layer.offset_initial.x - skui_settings.padding)
+		ui_nextline();
+	
 	vec3 start = layer.offset_initial + vec3{0,0,skui_settings.depth};
-	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.gutter),  layer.offset_initial.z};
+	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.padding),  layer.offset_initial.z};
 	vec3 size  = start - end;
 	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
 	layer.window->size.x = size.x;
@@ -2200,6 +2205,73 @@ void ui_window_end() {
 	}
 	ui_handle_end();
 	ui_pop_id();
+}
+
+///////////////////////////////////////////
+
+void ui_panel_at(vec3 start, vec2 size, ui_pad_ padding) {
+	vec3 start_offset = vec3_zero;
+	vec3 size_offset  = vec3_zero;
+	if (padding == ui_pad_outside) {
+		float gutter  = skui_settings.gutter / 2;
+		float gutter2 = skui_settings.gutter;
+		start_offset = { gutter,  gutter,  0 };
+		size_offset  = { gutter2, gutter2, 0 };
+	}
+	ui_draw_el(ui_vis_button, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, ui_color_complement, 1);
+}
+
+///////////////////////////////////////////
+
+struct panel_stack_data_t {
+	vec3    at;
+	float   max_x;
+	ui_pad_ padding;
+};
+array_t<panel_stack_data_t> skui_panel_stack = {};
+void ui_panel_begin(ui_pad_ padding) {
+	layer_t           &layer = skui_layers.last();
+	panel_stack_data_t data;
+	data.at      = layer.offset;
+	data.max_x   = layer.max_x;
+	data.padding = padding;
+
+	skui_panel_stack.add( data );
+	layer.max_x = layer.offset_initial.x;
+
+	if (padding == ui_pad_inside) {
+		float gutter = skui_settings.gutter / 2;
+		layer.offset_initial.x -= gutter;
+		layer.offset_initial.y -= gutter;
+		layer.offset.x -= gutter;
+		layer.offset.y -= gutter;
+	}
+}
+
+///////////////////////////////////////////
+
+void ui_panel_end() {
+	ui_sameline();
+
+	float              gutter = skui_settings.gutter / 2;
+	layer_t           &layer  = skui_layers.last();
+	panel_stack_data_t start  = skui_panel_stack.last();
+	if (start.padding == ui_pad_inside) layer.max_x -= gutter;
+
+	vec3 curr = vec3{layer.max_x, layer.offset.y - (layer.line_height + (start.padding == ui_pad_inside?gutter:0)), layer.offset.z};
+
+	ui_panel_at(start.at, {fabsf(curr.x-start.at.x), start.at.y-curr.y}, start.padding);
+
+	layer.max_x = fminf(layer.max_x, start.max_x);
+	if (start.padding == ui_pad_inside) {
+		layer.offset_initial.x += gutter;
+		layer.offset_initial.y += gutter;
+		layer.line_height += gutter * 2;
+		layer.offset.y += gutter;
+		layer.offset.x -= gutter;
+	}
+	skui_panel_stack.pop();
+	ui_nextline();
 }
 
 } // namespace sk

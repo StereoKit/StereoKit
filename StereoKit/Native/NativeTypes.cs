@@ -515,4 +515,21 @@ namespace StereoKit
 		Text,
 		Max,
 	}
+
+	/// <summary>This specifies a particular padding mode for certain UI
+	/// elements, such as the UI.Panel! This describes where padding is applied
+	/// and how it affects the layout of elements.</summary>
+	public enum UIPad
+	{
+		/// <summary>No padding, this matches the element's layout bounds
+		/// exactly!</summary>
+		None,
+		/// <summary>This applies padding inside the element's layout bounds,
+		/// and will inflate the layout bounds to fit the extra padding.</summary>
+		Inside,
+		/// <summary>This will apply the padding outside of the layout bounds!
+		/// This will maintain the size and position of the layout volume, but
+		/// the visual padding will go outside of the volume.</summary>
+		Outside
+	}
 }

@@ -96,6 +96,7 @@
     <ClCompile Include="demo_picker.cpp" />
     <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="demo_sprites.cpp" />
+    <ClCompile Include="demo_ui_layout.cpp" />
     <ClCompile Include="demo_world.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_basics.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_ui.h" />
     <ClInclude Include="demo_sprites.h" />
+    <ClInclude Include="demo_ui_layout.h" />
     <ClInclude Include="demo_world.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="demo_basics.h" />

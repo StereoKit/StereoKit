@@ -53,6 +53,12 @@ typedef enum ui_color_ {
 	ui_color_max,
 } ui_color_;
 
+typedef enum ui_pad_ {
+	ui_pad_none,
+	ui_pad_inside,
+	ui_pad_outside,
+} ui_pad_;
+
 typedef struct ui_settings_t {
 	float padding;
 	float gutter;
@@ -153,6 +159,10 @@ SK_API void     ui_handle_end     ();
 SK_API void     ui_window_begin   (const char     *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_begin_16(const char16_t *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_end     ();
+
+SK_API void     ui_panel_at       (vec3 start, vec2 size, ui_pad_ padding sk_default(ui_pad_outside));
+SK_API void     ui_panel_begin    (ui_pad_ padding sk_default(ui_pad_outside));
+SK_API void     ui_panel_end      ();
 
 #ifdef __cplusplus
 } // namespace sk
