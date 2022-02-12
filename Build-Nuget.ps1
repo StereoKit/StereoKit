@@ -298,7 +298,7 @@ Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
 
 # Do cross platform build code first
 Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
-xmake f -p android -a arm64-v8a -m release --oculus-openxr=y
+xmake f -p android -a arm64-v8a -m release -y --oculus-openxr=y
 if ($fast -eq $false) {
     xmake -r
 } else {

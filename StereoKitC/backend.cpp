@@ -105,10 +105,10 @@ backend_platform_ backend_platform_get() {
 
 ///////////////////////////////////////////
 
-#if defined(SK_OS_ANDROID)
-void *backend_android_get_java_vm () { log_err("backend_ platform functions only work on the correct platform!"); }
-void *backend_android_get_activity() { log_err("backend_ platform functions only work on the correct platform!"); }
-void *backend_android_get_jni_env () { log_err("backend_ platform functions only work on the correct platform!"); }
+#if !defined(SK_OS_ANDROID)
+void *backend_android_get_java_vm () { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
+void *backend_android_get_activity() { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
+void *backend_android_get_jni_env () { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
 #endif
 
 }
