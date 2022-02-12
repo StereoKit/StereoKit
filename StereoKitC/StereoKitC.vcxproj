@@ -144,6 +144,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
+    <ClCompile Include="backend.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />

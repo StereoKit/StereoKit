@@ -190,6 +190,9 @@
     <ClCompile Include="ui\stereokit_ui.cpp">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="backend.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

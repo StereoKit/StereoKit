@@ -1822,17 +1822,35 @@ typedef enum backend_xr_type_ {
 	backend_xr_type_webxr,
 } backend_xr_type_;
 
+/*This describes the platform that StereoKit is running on.*/
+typedef enum backend_platform_ {
+	/*This is running as a Windows app using the Win32 APIs.*/
+	backend_platform_win32,
+	/*This is running as a Windows app using the UWP APIs.*/
+	backend_platform_uwp,
+	/*This is running as a Linux app.*/
+	backend_platform_linux,
+	/*This is running as an Android app.*/
+	backend_platform_android,
+	/*This is running in a browser.*/
+	backend_platform_web,
+} backend_platform_;
+
 typedef uint64_t openxr_handle_t;
 
-SK_API backend_xr_type_ backend_xr_get_type        ();
-SK_API openxr_handle_t  backend_openxr_get_instance();
-SK_API openxr_handle_t  backend_openxr_get_session ();
-SK_API openxr_handle_t  backend_openxr_get_space   ();
-SK_API int64_t          backend_openxr_get_time    ();
-SK_API void            *backend_openxr_get_function(const char *function_name);
-SK_API bool32_t         backend_openxr_ext_enabled (const char *extension_name);
-SK_API void             backend_openxr_ext_request (const char *extension_name);
-SK_API void             backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
+SK_API backend_xr_type_  backend_xr_get_type        ();
+SK_API openxr_handle_t   backend_openxr_get_instance();
+SK_API openxr_handle_t   backend_openxr_get_session ();
+SK_API openxr_handle_t   backend_openxr_get_space   ();
+SK_API int64_t           backend_openxr_get_time    ();
+SK_API void             *backend_openxr_get_function(const char *function_name);
+SK_API bool32_t          backend_openxr_ext_enabled (const char *extension_name);
+SK_API void              backend_openxr_ext_request (const char *extension_name);
+SK_API void              backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
+SK_API backend_platform_ backend_platform_get        ();
+SK_API void             *backend_android_get_java_vm ();
+SK_API void             *backend_android_get_activity();
+SK_API void             *backend_android_get_jni_env ();
 
 ///////////////////////////////////////////
 

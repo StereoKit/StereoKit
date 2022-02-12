@@ -235,6 +235,12 @@ void android_step_end_flat() {
 	skg_swapchain_present(&android_swapchain);
 }
 
+///////////////////////////////////////////
+
+void *backend_android_get_java_vm () { return android_vm; }
+void *backend_android_get_activity() { return android_activity; }
+void *backend_android_get_jni_env () { return android_env; }
+
 } // namespace sk
 
 #endif

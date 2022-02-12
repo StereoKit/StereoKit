@@ -15,6 +15,11 @@ namespace StereoKit
 		/// WebXR, then this will reflect that.</summary>
 		public static BackendXRType XRType => NativeAPI.backend_xr_get_type();
 
+		/// <summary>What kind of plaform is StereoKit running on? This can be
+		/// important to tell you what APIs or functionality is available to
+		/// the app.</summary>
+		public static BackendPlatform Platform => NativeAPI.backend_platform_get();
+
 		/// <summary>This class is NOT of general interest, unless you are
 		/// trying to add support for some unusual OpenXR extension! StereoKit
 		/// should do all the OpenXR work that most people will need. If you
@@ -111,6 +116,25 @@ namespace StereoKit
 				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
 				Marshal.FreeHGlobal(ptr);
 			}
+		}
+
+		/// <summary>This class contains variables that may be useful for
+		/// interop with the Android operating system, or other Android
+		/// libraries.</summary>
+		public static class Android
+		{
+			/// <summary>This is the `JavaVM*` object that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr JavaVM => NativeAPI.backend_android_get_java_vm();
+			/// <summary>This is the `jobject` activity that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr Activity => NativeAPI.backend_android_get_activity();
+			/// <summary>This is the `JNIEnv*` object that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
 		}
 	}
 }

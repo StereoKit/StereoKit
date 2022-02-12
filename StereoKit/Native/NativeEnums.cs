@@ -164,8 +164,7 @@ namespace StereoKit
 	/// receiving input, or if it's backgrounded or hidden. This can be
 	/// important since apps may still run and render when unfocused, as the app
 	/// may still be visible behind the app that _does_ have focus.</summary>
-	public enum AppFocus
-	{
+	public enum AppFocus {
 		/// <summary>This StereoKit app is active, focused, and receiving input from the
 		/// user. Application should behave as normal.</summary>
 		Active,
@@ -934,6 +933,20 @@ namespace StereoKit
 		OpenXR,
 		/// <summary>StereoKit is running in a browser, and is using WebXR!</summary>
 		WebXR,
+	}
+
+	/// <summary>This describes the platform that StereoKit is running on.</summary>
+	public enum BackendPlatform {
+		/// <summary>This is running as a Windows app using the Win32 APIs.</summary>
+		Win32,
+		/// <summary>This is running as a Windows app using the UWP APIs.</summary>
+		Uwp,
+		/// <summary>This is running as a Linux app.</summary>
+		Linux,
+		/// <summary>This is running as an Android app.</summary>
+		Android,
+		/// <summary>This is running in a browser.</summary>
+		Web,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console
