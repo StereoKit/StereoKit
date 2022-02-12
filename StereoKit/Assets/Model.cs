@@ -562,7 +562,7 @@ namespace StereoKit
 		/// also be re-used elsewhere.</summary>
 		public Mesh Mesh
 		{
-			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_model._inst, _nodeId); return new Mesh(ptr); }
+			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_model._inst, _nodeId); return ptr == IntPtr.Zero ? null : new Mesh(ptr); }
 			set => NativeAPI.model_node_set_mesh(_model._inst, _nodeId, value._inst);
 		}
 		/// <summary>The Model associated with this node. May be null, or may
