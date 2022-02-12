@@ -936,8 +936,8 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 
 	// If this is not the first element, and it goes outside the active window,
 	// then we'll want to start this element on the next line down
-	if (final_pos.x  != -skui_settings.padding &&
-		layer.size.x != 0                      &&
+	if (final_pos.x  != layer.offset_initial.x-skui_settings.padding &&
+		layer.size.x != 0                                            &&
 		final_pos.x - final_size.x < layer.offset_initial.x - layer.size.x + skui_settings.padding)
 	{
 		ui_nextline();
