@@ -89,6 +89,19 @@ class App
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
 
+		/// :CodeSample: Projection Renderer.Projection
+		/// ### Toggling the projection mode
+		/// Only in flatscreen apps, there is the option to change the main
+		/// camera's projection mode between perspective and orthographic.
+		if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
+			Input.Key(Key.P).IsJustActive())
+		{
+			Renderer.Projection = Renderer.Projection == Projection.Perspective
+				? Projection.Ortho
+				: Projection.Perspective;
+		}
+		/// :End:
+
 		// If we can't see the world, we'll draw a floor!
 		if (SK.System.displayType == Display.Opaque)
 			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);

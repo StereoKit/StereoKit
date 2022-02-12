@@ -146,30 +146,15 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 ///////////////////////////////////////////
 
 bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
-		if (render_get_projection_type() == projection_perspective) {
-			out_ray.pos = input_head()->position;
-			out_ray.dir = vec3{screen_pixel_pos.x, screen_pixel_pos.y, 1.0f};
-			out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
-			out_ray.dir = vec3_normalize(out_ray.dir);
-		} else {
-			//TODO: Might be at most one pixel off. I (Moses) don't really care but feel free to do this math yourself
-			// First of all, create ray as if camera has identity pose
-			system_info_t info = sk_system_info();
-			float viewport_height_meters = render_get_ortho_view_height();
-			out_ray.pos.x =
-			    ((screen_pixel_pos.x - ((float)info.display_width / 2)) / (float)info.display_width) *
-			    ((float)info.display_width / (float)info.display_height) * viewport_height_meters;
-			out_ray.pos.y =
-			    -((screen_pixel_pos.y - ((float)info.display_height / 2)) / (float)info.display_height) *
-			    viewport_height_meters;
-			out_ray.pos.z = 0.0f;
-
-			out_ray.dir = {0.0, 0.0, -1.0f};
-
-			// Transform to wherever the camera is!
-			out_ray.pos = matrix_transform_pt(render_get_cam_root(), out_ray.pos);
-			out_ray.dir = matrix_transform_dir(render_get_cam_root(), out_ray.dir);
-		}
+	if (render_get_projection() == projection_perspective) {
+		out_ray.pos = input_head()->position;
+		out_ray.dir = vec3{screen_pixel_pos.x, screen_pixel_pos.y, 1.0f};
+		out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
+		out_ray.dir = vec3_normalize(out_ray.dir);
+	} else {
+		out_ray.pos = render_unproject_pt(vec3{screen_pixel_pos.x, screen_pixel_pos.y, 0});
+		out_ray.dir = input_head()->orientation * vec3_forward;
+	}
 	return true;
 }
 

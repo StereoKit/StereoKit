@@ -1264,8 +1264,18 @@ typedef enum render_clear_ {
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
 
+/*The projection mode used by StereoKit for the main camera! You
+  can use this with Renderer.Projection. These options are only
+  available in flatscreen mode, as MR headsets provide very
+  specific projection matrices.*/
 typedef enum projection_ {
+	/*This is the default projection mode, and the one you're most likely
+	  to be familiar with! This is where parallel lines will converge as
+	  they go into the distance.*/
 	projection_perspective = 0,
+	/*Orthographic projection mode is often used for tools, 2D rendering,
+	  thumbnails of 3D objects, or other similar cases. In this mode,
+	  parallel lines remain parallel regardless of how far they travel.*/
 	projection_ortho = 1
 } projection_;
 
@@ -1275,6 +1285,7 @@ SK_API void                  render_set_fov        (float field_of_view_degrees 
 SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
 SK_API void                  render_set_ortho_size (float viewport_height_meters);
 SK_API void                  render_set_projection (projection_ proj);
+SK_API projection_           render_get_projection ();
 SK_API matrix                render_get_cam_root   ();
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);

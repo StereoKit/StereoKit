@@ -592,6 +592,21 @@ namespace StereoKit
 		All          = Color | Depth,
 	}
 
+	/// <summary>The projection mode used by StereoKit for the main camera! You
+	/// can use this with Renderer.Projection. These options are only
+	/// available in flatscreen mode, as MR headsets provide very
+	/// specific projection matrices.</summary>
+	public enum Projection {
+		/// <summary>This is the default projection mode, and the one you're most likely
+		/// to be familiar with! This is where parallel lines will converge as
+		/// they go into the distance.</summary>
+		Perspective  = 0,
+		/// <summary>Orthographic projection mode is often used for tools, 2D rendering,
+		/// thumbnails of 3D objects, or other similar cases. In this mode,
+		/// parallel lines remain parallel regardless of how far they travel.</summary>
+		Ortho        = 1,
+	}
+
 	/// <summary>When opening the Platform.FilePicker, this enum describes
 	/// how the picker should look and behave.</summary>
 	public enum PickerMode {

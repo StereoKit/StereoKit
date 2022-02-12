@@ -194,7 +194,7 @@ void render_set_projection(projection_ proj) {
 
 ///////////////////////////////////////////
 
-projection_ render_get_projection_type() {
+projection_ render_get_projection() {
 	return render_projection_type;
 }
 
@@ -271,7 +271,7 @@ skg_tex_fmt_ render_preferred_depth_fmt() {
 
 ///////////////////////////////////////////
 
-matrix render_get_projection() {
+matrix render_get_projection_matrix() {
 	return render_default_camera_proj;
 }
 
@@ -868,7 +868,7 @@ skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, 
 
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	XMMATRIX fast_proj, fast_view;
-	math_matrix_to_fast(render_get_projection(), &fast_proj);
+	math_matrix_to_fast(render_get_projection_matrix(), &fast_proj);
 	math_matrix_to_fast(render_camera_root_final_inv,  &fast_view);
 	XMVECTOR result = XMVector3Unproject(math_vec3_to_fast(normalized_screen_pt),
 		0, 0, (float)sk_system_info().display_width, (float)sk_system_info().display_height,
