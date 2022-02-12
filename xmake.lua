@@ -66,7 +66,7 @@ target("StereoKitC")
     add_options("uwp")
     add_options("linux-graphics-backend")
     add_options("oculus-openxr")
-    set_version("0.3.6-preview.2")
+    set_version("0.3.6-preview.3")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
