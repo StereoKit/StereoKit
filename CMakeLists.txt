@@ -370,6 +370,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/scene.cpp
     Examples/StereoKitCTest/demo_ui.h
     Examples/StereoKitCTest/demo_ui.cpp
+    Examples/StereoKitCTest/demo_ui_layout.h
+    Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
     Examples/StereoKitCTest/demo_lines.h
