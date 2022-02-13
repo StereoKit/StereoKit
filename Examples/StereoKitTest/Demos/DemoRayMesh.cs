@@ -32,11 +32,16 @@ class DemoRayMesh : ITest
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Ray at,out Vec2 uvPos))
+		if (ray.Intersect(boxMesh, out Ray at, out int index))
 		{
 			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
-			Vec3 textTransform = transform.Transform(at.position * 1.5f) + new Vec3(0,0.05f,0f);
-			Text.Add($"uv-Pos:{uvPos}",Matrix.TR(textTransform, Quat.LookAt(textTransform, Input.Head.position)),style);
+			Vec3 textTransform = transform.Transform(at.position * 1.5f) + new Vec3(0, 0.05f, 0f);
+			var Inds = boxMesh.GetInds();
+			var verts = boxMesh.GetVerts();
+			var vert0 = verts[Inds[index]];
+			var vert1 = verts[Inds[index + 1]];
+			var vert2 = verts[Inds[index + 2]];
+			Text.Add($"Vert0-Pos:{vert0.pos}\nVert1-Pos:{vert1.pos}\nVert2-Pos:{vert2.pos}",Matrix.TR(textTransform, Quat.LookAt(textTransform, Input.Head.position)),style);
 		}
 	}
 	/// :End:

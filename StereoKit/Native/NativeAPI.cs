@@ -106,7 +106,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_bounds   (IntPtr mesh, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds mesh_get_bounds   (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Ray out_pt,IntPtr out_uv_pos);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Ray out_pt, out Vec2 out_uv_pos);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, out Ray out_pt, out int out_start_inds);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_plane       (Vec2 dimensions, Vec3 plane_normal, Vec3 plane_top_direction, int subdivisions = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_gen_cube        (Vec3 dimensions, int subdivisions = 0);
