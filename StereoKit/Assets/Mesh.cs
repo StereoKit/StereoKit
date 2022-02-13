@@ -58,7 +58,7 @@ namespace StereoKit
 		}
 		~Mesh()
 		{
-			if (_inst == IntPtr.Zero)
+			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
