@@ -387,7 +387,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, int32_t* out_start_inds) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -436,6 +436,18 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, i
 	}
 
 	return nearest_dist != FLT_MAX;
+}
+///////////////////////////////////////////
+
+bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
+	if (mesh->ind_count > triangle_index) {
+		*a = mesh->verts[mesh->inds[triangle_index]];
+		*b = mesh->verts[mesh->inds[triangle_index + 1]];
+		*c = mesh->verts[mesh->inds[triangle_index + 2]];
+		return true;
+	}else {
+		return false;
+	}
 }
 
 ///////////////////////////////////////////

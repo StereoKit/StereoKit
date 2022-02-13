@@ -102,7 +102,7 @@ namespace StereoKit
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out int outStartInds)
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds) > 0;
 
 

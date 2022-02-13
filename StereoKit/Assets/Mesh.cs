@@ -154,10 +154,20 @@ namespace StereoKit
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out int outStartInds)
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
- 
 
+		/// <summary>
+		/// Finds a triangle with specified index and returns vertexs out the triangle
+		/// used with <see cref="Mesh.Intersect(Ray,out Ray,out uint)"/> to get info of the triangle hit
+		/// </summary>
+		/// <param name="triangleIndex">Starting inds index of the triangle</param>
+		/// <param name="a">The first vertex of the found triangle</param>
+		/// <param name="b">The seccond vertex of the found triangle</param>
+		/// <param name="c">The third vertex of the found triangle</param>
+		/// <returns>Returns true if triangle Index was valid</returns>
+		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
+			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c);
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
