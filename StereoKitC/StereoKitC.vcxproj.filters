@@ -512,4 +512,7 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debugger_vis.natvis" />
+  </ItemGroup>
 </Project>

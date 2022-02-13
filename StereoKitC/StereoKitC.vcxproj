@@ -304,6 +304,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debugger_vis.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
