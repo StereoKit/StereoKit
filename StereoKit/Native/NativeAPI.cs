@@ -98,6 +98,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_release      (IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_keep_data(IntPtr mesh, bool keep_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_get_keep_data(IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr mesh_copy         (IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_has_skin     (IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_skin     (IntPtr mesh,[In] ushort[] bone_ids_4,int bone_id_4_count, [In] Vec4[] bone_weights, int bone_weight_count,[In] Matrix[] bone_resting_transforms,int bone_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_update_skin  (IntPtr mesh, [In] Matrix[] bone_transforms, int bone_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_verts    (IntPtr mesh, [In] Vertex[] vertices, int vertex_count, bool calculate_bounds = true);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_get_verts    (IntPtr mesh, out IntPtr out_vertices, out int out_vertex_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_inds     (IntPtr mesh, [In] uint[] indices, int index_count);
