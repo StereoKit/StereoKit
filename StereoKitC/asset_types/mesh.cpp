@@ -440,6 +440,10 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 ///////////////////////////////////////////
 
 bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
+	if (mesh->discard_data) {
+		log_err("mesh_get_triangle: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
+		return false;
+	}
 	if (mesh->ind_count > triangle_index) {
 		*a = mesh->verts[mesh->inds[triangle_index]];
 		*b = mesh->verts[mesh->inds[triangle_index + 1]];

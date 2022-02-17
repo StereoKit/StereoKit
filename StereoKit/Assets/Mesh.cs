@@ -167,7 +167,7 @@ namespace StereoKit
 		/// <param name="c">The third vertex of the found triangle</param>
 		/// <returns>Returns true if triangle Index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
-			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c);
+			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
