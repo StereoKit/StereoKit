@@ -14,7 +14,7 @@ class DemoRayMesh : ITest
 	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
 	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
 	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
-
+	TextStyle style;
 	public void Update()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
@@ -32,15 +32,21 @@ class DemoRayMesh : ITest
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Ray at))
+		if (ray.Intersect(boxMesh, out Ray at, out uint index))
 		{
 			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
+			Vec3 textTransform = transform.Transform(at.position * 1.5f) + new Vec3(0, 0.05f, 0f);
+			if (boxMesh.GetTriangle(index,out Vertex a, out Vertex b, out Vertex c))
+			{
+				Text.Add($"a-Pos:{a.pos}\nb-Pos:{b.pos}\nc-Pos:{c.pos}", Matrix.TR(textTransform, Quat.LookAt(textTransform, Input.Head.position)), style);
+			}
 		}
 	}
 	/// :End:
 
 	public void Initialize() {
 		Tests.Screenshot("RayMeshIntersect.jpg", 600, 600, 90, new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
+		style = Text.MakeStyle(Font.Default, 0.01f, new Color(1,0.4f,0.4f));
 	}
 
 	public void Shutdown  () { }
