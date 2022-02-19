@@ -129,8 +129,7 @@ bool sprite_drawer_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id       (sprite_quad_old, "render/sprite_quad");
 	mesh_set_keep_data(sprite_quad_old, false);
-	mesh_set_verts    (sprite_quad_old, verts, 4, false);
-	mesh_set_inds     (sprite_quad_old, inds,  6);
+	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, false);
 
 	return true;
 }

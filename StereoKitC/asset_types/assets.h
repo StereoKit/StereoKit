@@ -42,4 +42,8 @@ bool        assets_init          ();
 void        assets_update        ();
 void        assets_shutdown      ();
 
+// This function will block execution until `asset_job` is finished, but will
+// ensure it is run on the GPU thread.
+bool32_t    assets_execute_gpu   (bool32_t (*asset_job)(void *data), void *data);
+
 } // namespace sk

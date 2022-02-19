@@ -65,9 +65,8 @@ bool modelfmt_ply(model_t model, const char *filename, void *file_data, size_t f
 
 		// Make a mesh out of it all
 		mesh = mesh_create();
-		mesh_set_id   (mesh, id);
-		mesh_set_verts(mesh, verts, vert_count);
-		mesh_set_inds (mesh, inds,  ind_count);
+		mesh_set_id  (mesh, id);
+		mesh_set_data(mesh, verts, vert_count, inds, ind_count);
 
 		model_add_subset(model, mesh, material, matrix_identity);
 

@@ -412,7 +412,7 @@ void tex_destroy(tex_t tex) {
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->tex.width != width || texture->tex.height != height || texture->tex.array_count != data_count;
 	if (!different_size && (data == nullptr || *data == nullptr))
@@ -446,6 +446,27 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 
 	if (sh_lighting_info != nullptr)
 		*sh_lighting_info = tex_get_cubemap_lighting(texture);
+}
+
+///////////////////////////////////////////
+
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data, int32_t data_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+	struct tex_upload_job_t {
+		tex_t                  texture;
+		int32_t                width;
+		int32_t                height;
+		void                 **data;
+		int32_t                data_count;
+		spherical_harmonics_t *sh_lighting_info;
+		int32_t                multisample;
+	};
+	tex_upload_job_t job_data = {texture, width, height, data, data_count, sh_lighting_info, multisample};
+
+	assets_execute_gpu([](void *data) {
+		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
+		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->data, job_data->data_count, job_data->sh_lighting_info, job_data->multisample);
+		return (bool32_t)true; 
+	}, &job_data);
 }
 
 ///////////////////////////////////////////

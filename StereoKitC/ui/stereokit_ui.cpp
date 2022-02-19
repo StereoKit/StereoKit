@@ -271,8 +271,7 @@ void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
 	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
 	ui_quadrant_size_verts(verts, vert_count, 0);
 
-	mesh_set_verts(*mesh, verts, vert_count);
-	mesh_set_inds (*mesh, inds,  ind_count);
+	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -383,8 +382,7 @@ void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices,
 	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
 	ui_quadrant_size_verts(verts, vert_count, 0);
 
-	mesh_set_verts(*mesh, verts, vert_count);
-	mesh_set_inds (*mesh, inds,  ind_count);
+	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);

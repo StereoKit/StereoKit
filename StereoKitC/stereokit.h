@@ -602,6 +602,7 @@ SK_API void     mesh_release         (mesh_t mesh);
 SK_API void     mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void     mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data   (mesh_t mesh);
+SK_API void     mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
 SK_API void     mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
 SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count);
 SK_API void     mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);

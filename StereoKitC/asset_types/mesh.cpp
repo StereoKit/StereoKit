@@ -90,7 +90,20 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, 
 ///////////////////////////////////////////
 
 void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
-	_mesh_set_verts(mesh, vertices, vertex_count, calculate_bounds, true);
+	struct vert_upload_job_t {
+		mesh_t        mesh;
+		const vert_t *vertices;
+		int32_t       vertex_count;
+		bool32_t      calculate_bounds;
+	};
+	vert_upload_job_t job_data = {mesh, vertices, vertex_count, calculate_bounds};
+
+	assets_execute_gpu([](void *data) {
+		vert_upload_job_t *job_data = (vert_upload_job_t *)data;
+		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
+		
+		return (bool32_t)true;
+	}, &job_data);
 }
 
 ///////////////////////////////////////////
@@ -102,7 +115,7 @@ void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_coun
 
 ///////////////////////////////////////////
 
-void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
+void _mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
@@ -141,6 +154,46 @@ void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 
 	mesh->ind_count = index_count;
 	mesh->ind_draw  = index_count;
+}
+
+///////////////////////////////////////////
+
+void mesh_set_inds(mesh_t mesh, const vind_t *indices,  int32_t index_count) {
+	struct ind_upload_job_t {
+		mesh_t        mesh;
+		const vind_t *indices;
+		int32_t       index_count;
+	};
+	ind_upload_job_t job_data = {mesh, indices, index_count};
+
+	assets_execute_gpu([](void *data) {
+		ind_upload_job_t *job_data = (ind_upload_job_t *)data;
+		_mesh_set_inds(job_data->mesh, job_data->indices, job_data->index_count);
+		
+		return (bool32_t)true;
+	}, &job_data);
+}
+
+///////////////////////////////////////////
+
+void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds) {
+	struct mesh_upload_job_t {
+		mesh_t        mesh;
+		const vert_t *vertices;
+		int32_t       vertex_count;
+		const vind_t *indices;
+		int32_t       index_count;
+		bool32_t      calculate_bounds;
+	};
+	mesh_upload_job_t job_data = {mesh, vertices, vertex_count, indices, index_count, calculate_bounds};
+
+	assets_execute_gpu([](void *data) {
+		mesh_upload_job_t *job_data = (mesh_upload_job_t *)data;
+		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
+		_mesh_set_inds (job_data->mesh, job_data->indices,  job_data->index_count);
+		
+		return (bool32_t)true;
+	}, &job_data);
 }
 
 ///////////////////////////////////////////
@@ -514,8 +567,7 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] =  x    +  y    * subd;
 	} }
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -585,8 +637,7 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -655,8 +706,7 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -725,8 +775,7 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
 	verts[(subdivisions+1)*4+1] = { -z_off, -dir, {0.5f,0.99f}, {255,255,255,255} };
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -816,8 +865,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);

@@ -686,9 +686,8 @@ bool render_init() {
 		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
-	mesh_set_inds (render_sky_mesh, inds,  _countof(inds));
-	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
-	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
+	mesh_set_data(render_sky_mesh, verts, _countof(verts), inds, _countof(inds));
+	mesh_set_id  (render_sky_mesh, "render/skybox_mesh");
 
 	shader_t shader_sky = shader_find(default_id_shader_sky);
 	render_sky_mat = material_create(shader_sky);

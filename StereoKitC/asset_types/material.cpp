@@ -59,11 +59,21 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		material->args.buffer_size  = buff_size;
 		material->args.buffer_bind  = buff_info->bind;
 		material->args.buffer_dirty = true;
-		material->args.buffer_gpu   = skg_buffer_create(nullptr, 1, buff_size, skg_buffer_type_constant, skg_use_dynamic);
-		if (buff_info->defaults != nullptr)
-			memcpy(material->args.buffer, buff_info->defaults, buff_size);
-		else
-			memset(material->args.buffer, 0, buff_size);
+		if (buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
+		else                                memset(material->args.buffer, 0, buff_size);
+
+		// Construct a material parameters buffer on the GPU, and do it
+		// threadsafe
+		struct material_job_t {
+			material_t material;
+			uint32_t   buff_size;
+		};
+		material_job_t job_data = {material, buff_size};
+		assets_execute_gpu([](void *data) {
+			material_job_t *job_data = (material_job_t *)data;
+			job_data->material->args.buffer_gpu = skg_buffer_create(nullptr, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			return (bool32_t)true;
+		}, &job_data);
 	}
 	if (meta->resource_count > 0) {
 		material->args.texture_count = meta->resource_count;

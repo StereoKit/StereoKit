@@ -321,8 +321,10 @@ int cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *ts);
 /* Thread */
 #if defined(_TTHREAD_WIN32_)
 typedef HANDLE thrd_t;
+typedef DWORD  thrd_id_t;
 #else
 typedef pthread_t thrd_t;
+typedef pthread_t thrd_id_t;
 #endif
 
 /** Thread start function.
@@ -354,6 +356,8 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg);
 */
 thrd_t thrd_current(void);
 
+thrd_id_t thrd_id_current(void);
+
 /** Dispose of any resources allocated to the thread when that thread exits.
  * @return thrd_success, or thrd_error on error
 */
@@ -365,6 +369,8 @@ int thrd_detach(thrd_t thr);
 * Otherwise a nonzero value is returned.
 */
 int thrd_equal(thrd_t thr0, thrd_t thr1);
+
+int thrd_id_equal(thrd_id_t thr0, thrd_id_t thr1);
 
 /** Terminate execution of the calling thread.
 * @param res Result code of the calling thread.

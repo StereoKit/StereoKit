@@ -424,9 +424,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	result = mesh_create();
-	mesh_set_id   (result, id);
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  (int32_t)ind_count);
+	mesh_set_id  (result, id);
+	mesh_set_data(result, verts, vert_count, inds, (int32_t)ind_count);
 	free(verts);
 	free(inds );
 

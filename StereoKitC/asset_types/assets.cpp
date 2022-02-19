@@ -26,6 +26,9 @@ namespace sk {
 array_t<asset_header_t *> assets = {};
 array_t<asset_header_t *> assets_multithread_destroy = {};
 mtx_t                     assets_multithread_destroy_lock;
+thrd_id_t                 assets_gpu_thread = {};
+mtx_t                     assets_job_lock;
+array_t<asset_job_t *>    assets_gpu_jobs = {};
 
 ///////////////////////////////////////////
 
@@ -246,26 +249,66 @@ const char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
+	assets_gpu_thread = thrd_id_current();
 	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
+	mtx_init(&assets_job_lock,                 mtx_plain);
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void assets_update() {
+	// destroy objects where the request came from another thread
 	mtx_lock(&assets_multithread_destroy_lock);
 	for (size_t i = 0; i < assets_multithread_destroy.count; i++) {
 		assets_destroy(*assets_multithread_destroy[i]);
 	}
-	assets_multithread_destroy.free();
+	assets_multithread_destroy.clear();
 	mtx_unlock(&assets_multithread_destroy_lock);
+
+	// Do any jobs the assets need on the main thread, like GPU buffer uploads
+	mtx_lock(&assets_job_lock);
+	for (size_t i = 0; i < assets_gpu_jobs.count; i++) {
+		assets_gpu_jobs[i]->success  = assets_gpu_jobs[i]->asset_job(assets_gpu_jobs[i]->data);
+		assets_gpu_jobs[i]->finished = true;
+	}
+	assets_gpu_jobs.clear();
+	mtx_unlock(&assets_job_lock);
 }
 
 ///////////////////////////////////////////
 
 void assets_shutdown() {
 	assets_multithread_destroy.free();
+	assets_gpu_jobs           .free();
 	mtx_destroy(&assets_multithread_destroy_lock);
+	mtx_destroy(&assets_job_lock);
+}
+
+///////////////////////////////////////////
+
+bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
+	if (thrd_id_equal(thrd_id_current(), assets_gpu_thread)) {
+		return asset_job(data);
+	} else {
+		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
+		*job = {};
+		job->asset_job = asset_job;
+		job->data      = data;
+
+		mtx_lock(&assets_job_lock);
+		assets_gpu_jobs.add(job);
+		mtx_unlock(&assets_job_lock);
+
+		// Block until the GPU thread has had a chance to take care of the job.
+		while (job->finished == false) {
+			platform_sleep(1);
+		}
+
+		bool32_t result = job->success;
+		free(job);
+		return result;
+	}
 }
 
 } // namespace sk

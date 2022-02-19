@@ -101,8 +101,7 @@ bool defaults_init() {
 		{ vec3{ 0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
 		{ vec3{-0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} }, };
 	vind_t inds[6] = { 2,1,0, 3,2,0 };
-	mesh_set_verts(sk_default_quad, verts, 4);
-	mesh_set_inds (sk_default_quad, inds,  6);
+	mesh_set_data(sk_default_quad, verts, 4, inds, 6);
 	
 	// Default rendering quad
 	sk_default_screen_quad = mesh_create();
@@ -112,8 +111,7 @@ bool defaults_init() {
 		{ vec3{ 1, 1,0}, vec3{0,0,1}, vec2{1,0}, color32{255,255,255,255} },
 		{ vec3{-1, 1,0}, vec3{0,0,1}, vec2{0,0}, color32{255,255,255,255} }, };
 	vind_t sq_inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_verts(sk_default_screen_quad, sq_verts, 4);
-	mesh_set_inds (sk_default_screen_quad, sq_inds,  6);
+	mesh_set_data(sk_default_screen_quad, sq_verts, 4, sq_inds, 6);
 	
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
