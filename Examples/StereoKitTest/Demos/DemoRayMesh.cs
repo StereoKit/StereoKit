@@ -14,7 +14,7 @@ class DemoRayMesh : ITest
 	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
 	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
 	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
-	TextStyle style;
+
 	public void Update()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
@@ -22,7 +22,7 @@ class DemoRayMesh : ITest
 		UI.Handle("Cast", ref castPose, sphereMesh.Bounds*0.03f);
 		boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix());
 		sphereMesh.Draw(Default.MaterialUI, castPose.ToMatrix(0.03f));
-		Lines.Add(castPose.position, boxPose.position, Color.White, 0.01f);
+		Lines.Add(castPose.position, boxPose.position, Color.White, 0.005f);
 
 		// Create a ray that's in the Mesh's model space
 		Matrix transform = boxPose.ToMatrix();
@@ -34,11 +34,15 @@ class DemoRayMesh : ITest
 		// with the mesh.
 		if (ray.Intersect(boxMesh, out Ray at, out uint index))
 		{
-			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
-			Vec3 textTransform = transform.Transform(at.position * 1.5f) + new Vec3(0, 0.05f, 0f);
-			if (boxMesh.GetTriangle(index,out Vertex a, out Vertex b, out Vertex c))
+			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.01f));
+			if (boxMesh.GetTriangle(index, out Vertex a, out Vertex b, out Vertex c))
 			{
-				Text.Add($"a-Pos:{a.pos}\nb-Pos:{b.pos}\nc-Pos:{c.pos}", Matrix.TR(textTransform, Quat.LookAt(textTransform, Input.Head.position)), style);
+				Vec3 aPt = transform.Transform(a.pos);
+				Vec3 bPt = transform.Transform(b.pos);
+				Vec3 cPt = transform.Transform(c.pos);
+				Lines.Add(aPt, bPt, new Color32(0,255,0,255), 0.005f);
+				Lines.Add(bPt, cPt, new Color32(0,255,0,255), 0.005f);
+				Lines.Add(cPt, aPt, new Color32(0,255,0,255), 0.005f);
 			}
 		}
 	}
@@ -46,7 +50,6 @@ class DemoRayMesh : ITest
 
 	public void Initialize() {
 		Tests.Screenshot("RayMeshIntersect.jpg", 600, 600, 90, new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
-		style = Text.MakeStyle(Font.Default, 0.01f, new Color(1,0.4f,0.4f));
 	}
 
 	public void Shutdown  () { }
