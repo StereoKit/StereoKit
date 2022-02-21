@@ -142,7 +142,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// Linux thinks folders are files, but then fails in a bad way when
 	// treating them like files.
 	struct stat buffer;
-	if (stat(filename, &buffer) != 0 || (S_ISDIR(buffer.st_mode))) {
+	if (stat(filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
 		log_diagf("platform_read_file can't read folders: %s", filename);
 		return false;
 	}
