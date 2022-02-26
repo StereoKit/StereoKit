@@ -728,6 +728,15 @@ void material_buffer_set_data(material_buffer_t buffer, const void *data) {
 
 ///////////////////////////////////////////
 
+void material_check_dirty(material_t material) {
+	if (material->args.buffer_dirty == false || material->args.buffer == nullptr) return;
+
+	skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
+	material->args.buffer_dirty = false;
+}
+
+///////////////////////////////////////////
+
 void material_buffer_release(material_buffer_t buffer) {
 	skg_buffer_destroy(&buffer->buffer);
 	*buffer = {};

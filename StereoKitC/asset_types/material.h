@@ -35,8 +35,9 @@ struct _material_buffer_t {
 	skg_buffer_t buffer;
 };
 
-void   material_destroy   (material_t material);
-size_t material_param_size(material_param_ type);
+void   material_destroy    (material_t material);
+void   material_check_dirty(material_t material);
+size_t material_param_size (material_param_ type);
 
 extern _material_buffer_t material_buffers[14];
 

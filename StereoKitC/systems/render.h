@@ -45,7 +45,7 @@ struct _render_list_t {
 	array_t<render_item_t> queue;
 	render_stats_t         stats;
 	render_list_state_     state;
-	bool                   sorted;
+	bool                   prepped;
 };
 
 typedef int64_t render_list_t;

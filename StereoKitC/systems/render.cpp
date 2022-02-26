@@ -146,6 +146,8 @@ skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list,
 void          render_check_screenshots();
 void          render_check_viewpoints ();
 
+void          render_list_prep        (render_list_t list);
+
 ///////////////////////////////////////////
 
 inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
@@ -742,6 +744,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_blit_to_bound(material_t material) {
+	material_check_dirty(material);
+
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	float color[4] = { 0,0,0,0 };
 	skg_target_clear(true, color);
@@ -970,18 +974,14 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
+	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
+	render_list_prep(list_id);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
+	for (size_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
@@ -1020,20 +1020,17 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
+	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
 	// TODO: this isn't entirely optimal here, this would be best if sorted
 	// solely by the mesh id since we only have one single material.
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
+	render_list_prep(list_id);
+	material_check_dirty(override_material);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
+	for (size_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
@@ -1068,11 +1065,31 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 
 ///////////////////////////////////////////
 
+void render_list_prep(render_list_t list_id) {
+	_render_list_t *list = &render_lists[list_id];
+	if (list->prepped) return;
+
+	// Sort the render queue
+	radix_sort7(&list->queue[0], list->queue.count);
+
+	// Make sure the material buffers are all up-to-date
+	material_t curr = nullptr;
+	for (size_t i = 0; i < list->queue.count; i++) {
+		if (curr == list->queue[i].material) continue;
+		curr = list->queue[i].material;
+		material_check_dirty(curr);
+	}
+
+	list->prepped = true;
+}
+
+///////////////////////////////////////////
+
 void render_list_clear(render_list_t list) {
 	render_lists[list].queue.clear();
-	render_lists[list].stats  = {};
-	render_lists[list].sorted = false;
-	render_lists[list].state  = render_list_state_empty;
+	render_lists[list].stats   = {};
+	render_lists[list].prepped = false;
+	render_lists[list].state   = render_list_state_empty;
 }
 
 } // namespace sk
