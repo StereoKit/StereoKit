@@ -65,7 +65,7 @@ bool defaults_init() {
 	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,1}         );
 	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {0.5f,0.5f,0.5f,1});
 	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {0.5f,0.5f,1,1}   ); // Default for normal maps
-	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,0,1,1}         ); // Default for metal/roughness maps
+	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {1,0,1,1}         ); // Default for metal/roughness maps
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||
