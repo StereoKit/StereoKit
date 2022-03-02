@@ -18,13 +18,47 @@ enum asset_type_ {
 };
 
 struct asset_header_t {
-	asset_type_ type;
-	uint64_t    id;
-	int32_t     refs;
-	uint64_t    index;
+	asset_type_  type;
+	asset_state_ state;
+	uint64_t     id;
+	uint64_t     index;
+	int32_t      refs;
 #if defined(SK_DEBUG)
-	char       *id_text;
+	char        *id_text;
 #endif
+};
+
+struct asset_job_t {
+	bool32_t  finished;
+	bool32_t  success;
+	void     *data;
+	bool32_t(*asset_job)(void *data);
+};
+
+typedef enum asset_thread_ {
+	asset_thread_asset,
+	asset_thread_gpu,
+} asset_thread_;
+
+struct asset_task_t;
+
+struct asset_load_action_t {
+	bool32_t    (*action)(asset_task_t *task, asset_header_t *asset, void *data);
+	asset_thread_ thread_affinity;
+};
+
+struct asset_task_t {
+	asset_header_t      *asset;
+	void                *load_data;
+	void               (*free_data )(asset_header_t *asset, void *data);
+	void               (*on_failure)(asset_header_t *asset, void *data);
+	asset_load_action_t *actions;
+	int32_t              action_count;
+	int32_t              action_curr;
+	int32_t              priority;
+	float                complexity;
+	asset_job_t          gpu_job;
+	bool32_t             gpu_started;
 };
 
 void       *assets_find          (const char *id, asset_type_ type);
@@ -44,6 +78,9 @@ void        assets_shutdown      ();
 
 // This function will block execution until `asset_job` is finished, but will
 // ensure it is run on the GPU thread.
-bool32_t    assets_execute_gpu   (bool32_t (*asset_job)(void *data), void *data);
+bool32_t    assets_execute_gpu      (bool32_t (*asset_job)(void *data), void *data);
+void        assets_add_task         (asset_task_t task);
+void        assets_task_set_priority(asset_task_t *task, int32_t priority, float complexity);
+void        assets_block_until      (asset_header_t *asset, asset_state_ state);
 
 } // namespace sk

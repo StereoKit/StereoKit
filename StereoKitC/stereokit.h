@@ -227,6 +227,16 @@ typedef enum app_focus_ {
 	app_focus_hidden,
 } app_focus_;
 
+typedef enum asset_state_ {
+	asset_state_error_unsupported = -3,
+	asset_state_error_not_found   = -2,
+	asset_state_error             = -1,
+	asset_state_none              =  0,
+	asset_state_loading,
+	asset_state_loaded_meta,
+	asset_state_loaded,
+} asset_state_;
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -768,6 +778,7 @@ SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
+SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));

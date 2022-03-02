@@ -177,6 +177,15 @@ namespace StereoKit
 		Hidden,
 	}
 
+	public enum AssetState {
+		ErrorUnsupported = -3,
+		ErrorNotFound = -2,
+		Error        = -1,
+		None         = 0,
+		Loading,
+		LoadedMeta,
+		Loaded,
+	}
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>

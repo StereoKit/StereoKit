@@ -123,10 +123,9 @@ array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
 
 const int32_t           render_skytex_register = 11;
-mesh_t                  render_sky_mesh    = nullptr;
-material_t              render_sky_mat     = nullptr;
-bool32_t                render_sky_show    = false;
-vec4                    render_sky_dims    = {};
+mesh_t                  render_sky_mesh        = nullptr;
+material_t              render_sky_mat         = nullptr;
+bool32_t                render_sky_show        = false;
 
 material_t              render_last_material;
 shader_t                render_last_shader;
@@ -328,9 +327,6 @@ void render_set_skytex(tex_t sky_texture) {
 	}
 
 	render_global_texture(render_skytex_register, sky_texture);
-	render_sky_dims = sky_texture != nullptr 
-		? vec4{ (float)sky_texture->tex.width, (float)sky_texture->tex.height, floorf(log2f((float)sky_texture->tex.width)), 0 }
-		: vec4{};
 }
 
 ///////////////////////////////////////////
@@ -514,7 +510,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
-	render_global_buffer.cubemap_i    = render_sky_dims;
+
+	// TODO: This is a little odd now that textures like this go through the
+	// render_global_textures system.
+	tex_t sky_tex = render_global_textures[render_skytex_register];
+	render_global_buffer.cubemap_i = sky_tex != nullptr
+		? vec4{ (float)sky_tex->width, (float)sky_tex->height, floorf(log2f((float)sky_tex->width)), 0 }
+		: vec4{};
 
 	// Upload shader globals and set them active!
 	material_buffer_set_data(render_shader_globals, &render_global_buffer);
@@ -636,10 +638,10 @@ void render_check_viewpoints() {
 		// Set up the viewport if we've got one!
 		if (render_viewpoint_list[i].viewport.w != 0) {
 			int32_t viewport[4] = {
-				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height),
-				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height) };
+				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->width ),
+				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->height),
+				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->width ),
+				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->height) };
 			skg_viewport(viewport);
 		}
 
@@ -837,8 +839,12 @@ void render_set_material(material_t material) {
 
 	// Bind the material textures
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (render_global_textures[material->args.texture_binds[i].slot] == nullptr)
-			skg_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
+		if (render_global_textures[material->args.texture_binds[i].slot] == nullptr) {
+			tex_t tex = material->args.textures[i];
+			if (tex->fallback != nullptr)
+				tex = tex->fallback;
+			skg_tex_bind(&tex->tex, material->args.texture_binds[i]);
+		}
 	}
 
 	// And bind the pipeline
