@@ -665,7 +665,7 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 ///////////////////////////////////////////
 
 void tex_set_fallback(tex_t texture, tex_t fallback) {
-	if (texture->header.state >= asset_state_loaded && texture != nullptr) return;
+	if (texture->header.state >= asset_state_loaded && fallback != nullptr) return;
 
 	if (fallback          != nullptr) tex_addref (fallback);
 	if (texture->fallback != nullptr) tex_release(texture->fallback);

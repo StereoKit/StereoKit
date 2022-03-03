@@ -326,6 +326,9 @@ void render_set_skytex(tex_t sky_texture) {
 		return;
 	}
 
+	if (sky_texture != nullptr && render_global_textures[render_skytex_register] != nullptr) {
+		tex_set_fallback(sky_texture, render_global_textures[render_skytex_register]);
+	}
 	render_global_texture(render_skytex_register, sky_texture);
 }
 
@@ -529,8 +532,12 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 	// Activate any global textures we have
 	for (size_t i = 0; i < _countof(render_global_textures); i++) {
-		if (render_global_textures[i] != nullptr)
-			skg_tex_bind(&render_global_textures[i]->tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource});
+		if (render_global_textures[i] != nullptr) {
+			skg_tex_t *tex = render_global_textures[i]->fallback == nullptr
+				? &render_global_textures[i]->tex
+				: &render_global_textures[i]->fallback->tex;
+			skg_tex_bind(tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource });
+		}
 	}
 
 	render_list_execute(render_list_primary, filter, view_count);
