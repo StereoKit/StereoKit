@@ -76,6 +76,9 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 	data->file_sizes = sk_malloc_zero_t(size_t, data->file_count);
 
 	// Load all files
+	int32_t     width  = 0;
+	int32_t     height = 0;
+	tex_format_ format = tex_format_none;
 	for (int32_t i = 0; i < data->file_count; i++) {
 		// Read from file
 		if (!platform_read_file(assets_file(data->file_names[i]), &data->file_data[i], &data->file_sizes[i])) {
@@ -85,28 +88,28 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 		}
 
 		// Grab the image metadata
-		tex_format_ format = tex_format_none;
-		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &data->color_width, &data->color_height, &format)) {
+		tex_format_ color_format = tex_format_none;
+		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &data->color_width, &data->color_height, &color_format)) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
 		}
 
 		// Check if there were issues, or one of the images is the wrong size!
-		if ((tex->width  != 0               && tex->width  != data->color_width ) ||
-			(tex->height != 0               && tex->height != data->color_height) ||
-			(tex->format != tex_format_none && tex->format != format)) {
+		if ((width  != 0               && width  != data->color_width ) ||
+			(height != 0               && height != data->color_height) ||
+			(format != tex_format_none && format != color_format)) {
 			log_warnf(tex_msg_mismatched_images, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
 		}
-		tex->width  = data->color_width;
-		tex->height = data->color_height;
-		tex->format = format;
+		width  = data->color_width;
+		height = data->color_height;
+		format = color_format;
 	}
 
-	assets_task_set_priority(task, task->priority, tex->width * tex->height * data->file_count);
-	tex->header.state = asset_state_loaded_meta;
+	tex_set_meta(tex, width, height, format);
+	assets_task_set_complexity(task, width * height * data->file_count);
 	return true;
 }
 
@@ -164,16 +167,16 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 		return false;
 	}
 
-	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &data->color_width, &data->color_height, &tex->format)) {
+	tex_format_ format;
+	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &data->color_width, &data->color_height, &format)) {
 		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
 		tex->header.state = asset_state_error_unsupported;
 		return false;
 	}
-	tex->width  = data->color_height / 2;
-	tex->height = tex->width;
 
-	assets_task_set_priority(task, task->priority, tex->width * tex->height * 6);
-	tex->header.state = asset_state_loaded_meta;
+	int32_t tex_size = data->color_height / 2;
+	tex_set_meta(tex, tex_size, tex_size, format);
+	assets_task_set_complexity(task, tex_size * 6);
 	return true;
 }
 
@@ -360,7 +363,7 @@ void tex_add_loading_task(tex_t texture, void *load_data, const asset_load_actio
 	task.load_data    = load_data;
 	task.actions      = (asset_load_action_t *)actions;
 	task.action_count = action_count;
-	task.complexity   = complexity;
+	task.sort         = asset_sort(10, complexity);
 
 	assets_add_task(task);
 }
@@ -407,7 +410,6 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data) {
 
 tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data) {
 	tex_t result = tex_create(type);
-	result->header.state = asset_state_loaded_meta;
 
 	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
@@ -422,11 +424,15 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 
 	// Grab the file meta right away since we already have the file data, no
 	// point in delaying that until the task.
-	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &result->width, &result->height, &result->format)) {
+	int32_t     width  = 0;
+	int32_t     height = 0;
+	tex_format_ format = tex_format_none;
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &width, &height, &format)) {
 		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
 		result->header.state = asset_state_error_unsupported;
 		return result;
 	}
+	tex_set_meta(result, width, height, format);
 
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
@@ -436,7 +442,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), result->width * result->height);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), width * height);
 
 	return result;
 }
@@ -670,7 +676,10 @@ void tex_set_fallback(tex_t texture, tex_t fallback) {
 	if (fallback          != nullptr) tex_addref (fallback);
 	if (texture->fallback != nullptr) tex_release(texture->fallback);
 
-	texture->fallback = fallback;
+	texture->fallback  = fallback;
+	texture->meta_hash = fallback == nullptr
+		? tex_meta_hash(texture )
+		: tex_meta_hash(fallback);
 }
 
 ///////////////////////////////////////////
@@ -740,15 +749,14 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
 		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
-		texture->tex    = skg_tex_create(type, use, format, use_mips);
-		texture->width  = width;
-		texture->height = height;
+		texture->tex = skg_tex_create(type, use, format, use_mips);
+		tex_set_meta   (texture, width, height, texture->format);
 		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 		if (texture->depth_buffer != nullptr) {
 			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
-			tex_set_zbuffer(texture, texture->depth_buffer);
+			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
 		
 	} else if (dynamic) {
@@ -868,18 +876,21 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 ///////////////////////////////////////////
 
 tex_format_ tex_get_format(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded_meta);
 	return texture->format;
 }
 
 ///////////////////////////////////////////
 
 int32_t tex_get_width(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded_meta);
 	return texture->width;
 }
 
 ///////////////////////////////////////////
 
 int32_t tex_get_height(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded_meta);
 	return texture->height;
 }
 
@@ -940,6 +951,7 @@ size_t tex_format_size(tex_format_ format) {
 	}
 }
 
+
 ///////////////////////////////////////////
 
 tex_format_ tex_get_tex_format(int64_t native_fmt) {
@@ -952,7 +964,35 @@ tex_format_ tex_get_tex_format(int64_t native_fmt) {
 
 ///////////////////////////////////////////
 
+uint64_t tex_meta_hash(tex_t texture) {
+	uint64_t result = hash_fnv64_data(&texture->width,  sizeof(texture->width));
+	result          = hash_fnv64_data(&texture->height, sizeof(texture->height), result);
+	// May want to consider texture format or some other items as well, but
+	// this is plenty for now.
+	return result;
+}
+
+///////////////////////////////////////////
+
+void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ format) {
+	texture->width  = width;
+	texture->height = height;
+	texture->format = format;
+
+	if (texture->fallback == nullptr) {
+		texture->meta_hash = tex_meta_hash(texture);
+	}
+
+	// Make sure the asset knows it now has meta values, but don't overwrite
+	// errors or more advanced progress.
+	if (texture->header.state >= 0 && texture->header.state < asset_state_loaded_meta)
+		texture->header.state = asset_state_loaded_meta;
+}
+
+///////////////////////////////////////////
+
 void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
+	assets_block_until(&texture->header, asset_state_loaded);
 	memset(out_data, 0, out_data_size);
 	if (!skg_tex_get_contents(&texture->tex, out_data, out_data_size))
 		log_warn("Couldn't get texture contents!");

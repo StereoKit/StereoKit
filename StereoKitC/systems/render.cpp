@@ -837,20 +837,16 @@ void render_set_material(material_t material) {
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
-		if (material->args.buffer_dirty) {
-			skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
-			material->args.buffer_dirty = false;
-		}
 		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0);
 	}
 
 	// Bind the material textures
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (render_global_textures[material->args.texture_binds[i].slot] == nullptr) {
-			tex_t tex = material->args.textures[i];
+		if (render_global_textures[material->args.textures[i].bind.slot] == nullptr) {
+			tex_t tex = material->args.textures[i].tex;
 			if (tex->fallback != nullptr)
 				tex = tex->fallback;
-			skg_tex_bind(&tex->tex, material->args.texture_binds[i]);
+			skg_tex_bind(&tex->tex, material->args.textures[i].bind);
 		}
 	}
 

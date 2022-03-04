@@ -227,13 +227,39 @@ typedef enum app_focus_ {
 	app_focus_hidden,
 } app_focus_;
 
+/*StereoKit uses an asyncronous loading system to prevent assets from
+  blocking execution! This means that asset loading systems will return
+  an asset to you right away, even though it is still being processed
+  in the background.
+  
+  This enum will tell you about what state the asset is currently in,
+  so you know what sort of behavior to expect from it.*/
 typedef enum asset_state_ {
+	/*This asset encountered an issue when parsing the source data. Either
+	  the format is unrecognized by StereoKit, or the data may be corrupt.
+	  Check the logs for additional details.*/
 	asset_state_error_unsupported = -3,
+	/*The asset data was not found! This is most likely an issue with a
+	  bad file path, or file permissions. Check the logs for additional
+	  details.*/
 	asset_state_error_not_found   = -2,
+	/*An unknown error occurred when trying to load the asset! Check the
+	  logs for additional details.*/
 	asset_state_error             = -1,
+	/*This asset is in its default state. It has not been told to load
+	  anything, nor does it have any data!*/
 	asset_state_none              =  0,
+	/*This asset is currently queued for loading, but hasn't received any
+	  data yet. Attempting to access metadata or asset data will result in
+	  blocking the app's execution until that data is loaded!*/
 	asset_state_loading,
+	/*This asset is still loading, but some of the higher level data is
+	  already available for inspection without blocking the app.
+	  Attempting to access the core asset data will result in blocking the
+	  app's execution until that data is loaded!*/
 	asset_state_loaded_meta,
+	/*This asset is completely loaded without issues, and is ready for
+	  use!*/
 	asset_state_loaded,
 } asset_state_;
 

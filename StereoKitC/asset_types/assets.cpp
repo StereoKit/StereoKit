@@ -335,13 +335,15 @@ void assets_add_task(asset_task_t src_task) {
 	assets_addref(*task->asset);
 
 	mtx_lock(&asset_thread_task_mtx);
-	asset_thread_tasks.add(task);
+	int64_t idx = asset_thread_tasks.binary_search(&asset_task_t::sort, task->sort);
+	if (idx < 0) idx = ~idx;
+	asset_thread_tasks.insert(idx, task);
 	mtx_unlock(&asset_thread_task_mtx);
 }
 
 ///////////////////////////////////////////
 
-void assets_task_set_priority(asset_task_t *task, int32_t priority, float complexity) {
+void assets_task_set_complexity(asset_task_t *task, int32_t complexity) {
 }
 
 ///////////////////////////////////////////
@@ -417,14 +419,13 @@ int32_t asset_thread(void *) {
 	}
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
-	log_info("Asset thread finished.");
 	return 0;
 }
 
 ///////////////////////////////////////////
 
 void assets_block_until(asset_header_t *asset, asset_state_ state) {
-	if (asset->state >= state || asset->state == asset_state_error)
+	if (asset->state >= state || asset->state < 0)
 		return;
 
 	if (thrd_id_equal(thrd_id_current(), asset_thread_id)) {
@@ -432,7 +433,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		return;
 	}
 
-	while (asset->state < state && asset->state != asset_state_error) {
+	while (asset->state < state && asset->state >= 0) {
 		assets_update();
 		thrd_yield();
 	}

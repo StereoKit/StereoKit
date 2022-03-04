@@ -55,8 +55,7 @@ struct asset_task_t {
 	asset_load_action_t *actions;
 	int32_t              action_count;
 	int32_t              action_curr;
-	int32_t              priority;
-	float                complexity;
+	int64_t              sort;
 	asset_job_t          gpu_job;
 	bool32_t             gpu_started;
 };
@@ -78,9 +77,11 @@ void        assets_shutdown      ();
 
 // This function will block execution until `asset_job` is finished, but will
 // ensure it is run on the GPU thread.
-bool32_t    assets_execute_gpu      (bool32_t (*asset_job)(void *data), void *data);
-void        assets_add_task         (asset_task_t task);
-void        assets_task_set_priority(asset_task_t *task, int32_t priority, float complexity);
-void        assets_block_until      (asset_header_t *asset, asset_state_ state);
+bool32_t    assets_execute_gpu        (bool32_t (*asset_job)(void *data), void *data);
+void        assets_add_task           (asset_task_t task);
+void        assets_task_set_complexity(asset_task_t *task, int32_t priority);
+void        assets_block_until        (asset_header_t *asset, asset_state_ state);
+
+inline int64_t asset_sort(int32_t priority, int32_t complexity) { return ((int64_t)priority << 32) & ((int64_t)complexity); }
 
 } // namespace sk
