@@ -37,7 +37,7 @@ namespace StereoKit
 		}
 
 
-		[DllImport("libdl", CharSet = CharSet.Ansi)]
+		[DllImport("dl", CharSet = CharSet.Ansi)]
 		static extern IntPtr dlopen(string fileName, int flags);
 		static bool LoadUnix(string arch)
 		{
