@@ -381,6 +381,7 @@ int32_t asset_thread(void *) {
 					// On success, move to the next action in the task!
 					task->action_curr += 1;
 				}
+				break;
 			} else if (action->thread_affinity == asset_thread_gpu) {
 				if (task->gpu_started == false) {
 					task->gpu_started = true;
@@ -412,6 +413,7 @@ int32_t asset_thread(void *) {
 					}
 					task->gpu_job     = {};
 					task->gpu_started = false;
+					break;
 				}
 			}
 		}
