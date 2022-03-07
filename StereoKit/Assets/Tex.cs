@@ -27,6 +27,8 @@ namespace StereoKit
 		/// </summary>
 		public TexFormat Format => NativeAPI.tex_get_format(_inst);
 
+		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
+
 		/// <summary>When looking at a UV texture coordinate on this texture,
 		/// how do we handle values larger than 1, or less than zero? Do we 
 		/// Wrap to the other side? Clamp it between 0-1, or just keep
