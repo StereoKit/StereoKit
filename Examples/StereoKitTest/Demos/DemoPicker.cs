@@ -106,13 +106,10 @@ namespace StereoKitTest
 		/// size.
 		private void OnLoadModel(string filename)
 		{
-			Task.Run(() =>
-			{
-				model      = Model.FromFile(filename);
-				modelScale = 1 / model.Bounds.dimensions.Magnitude;
-				if (model.Anims.Count > 0)
-					model.PlayAnim(model.Anims[0], AnimMode.Loop);
-			});
+			model      = Model.FromFile(filename);
+			modelScale = 1 / model.Bounds.dimensions.Magnitude;
+			if (model.Anims.Count > 0)
+				model.PlayAnim(model.Anims[0], AnimMode.Loop);
 		}
 		/// :End:
 
