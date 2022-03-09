@@ -278,7 +278,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (cgltf_size v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].pos = *pos;
 				}
 			} else {
@@ -304,7 +304,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].norm = *norm;
 				}
 			} else {
@@ -329,7 +329,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
 				// Ideal case is vec2 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
+					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].uv = *uv;
 				}
 			} else {
@@ -354,13 +354,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
+					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].col = *col;
 				}
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
 				// vec4 float colors are also pretty straightforward
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
+					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].col = color_to_32(*col);
 				}
 			} else {
@@ -395,21 +395,21 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * v) + offset);
+			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 			inds[v] = *ind;
 		}
 	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + offset);
+			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 			inds[v] = *ind;
 		}
 	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint32_t) * v) + offset);
+			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 #ifdef SK_32BIT_INDICES
 			inds[v] = *ind;
 #else
