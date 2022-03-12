@@ -462,6 +462,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->address_mode = tex_address_wrap;
 	result->sample_mode  = tex_sample_linear;
 	result->anisotropy   = 4;
+	result->header.state = asset_state_loaded_meta;
 
 	tex_t fallback = tex_find(default_id_tex);
 	tex_set_fallback(result, fallback);
@@ -1085,7 +1086,6 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	}
 
 	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
-	result->header.state = asset_state_loaded;
 
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
@@ -1167,7 +1167,6 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 	}
 
 	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
-	result->header.state = asset_state_loaded;
 
 	for (int32_t i = 0; i < 6; i++) {
 		free(data[i]);
