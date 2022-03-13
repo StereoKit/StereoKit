@@ -329,20 +329,20 @@ void text_step_position(char32_t ch, const font_char_t *char_info, const C *next
 
 ///
 
-void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
 	float x_min = x - char_info->x0 * style_data.char_height;
 	float x_max = x - char_info->x1 * style_data.char_height;
 	float y_min = y + char_info->y0 * style_data.char_height;
 	float y_max = y + char_info->y1 * style_data.char_height;
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info->u0, char_info->v0 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info->u1, char_info->v0 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info->u1, char_info->v1 }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ char_info->u0, char_info->v1 }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info->u0, char_info->v0 }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info->u1, char_info->v0 }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info->u1, char_info->v1 }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ char_info->u0, char_info->v1 }, color };
 }
 
 ///
 
-void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data,  text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
 	float x_max = x - char_info->x0 * style_data.char_height;
 	float x_min = x - char_info->x1 * style_data.char_height;
 	float y_max = y + char_info->y0 * style_data.char_height;
@@ -378,28 +378,28 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 		y_max = bounds_max.y;
 	}
 
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ u_max, v_max }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ u_min, v_max }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ u_min, v_min }, style_data.color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ u_max, v_min }, style_data.color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ u_max, v_max }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ u_min, v_max }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ u_min, v_min }, color };
+	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ u_max, v_min }, color };
 }
 
 ///////////////////////////////////////////
 
-void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	text_add_in(text, transform, text_size(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z);
+void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+	text_add_in(text, transform, text_size(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
 
-void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	text_add_in_16(text, transform, text_size_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z);
+void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+	text_add_in_16(text, transform, text_size_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
+float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	if (text == nullptr) return 0;
 
 	XMMATRIX tr;
@@ -468,6 +468,9 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	text_buffer_t &buffer = text_buffers[step.style->buffer_index];
 	text_buffer_ensure_capacity(buffer, text_length);
 
+	// Get the final color
+	color32 color = color_to_32( color32_to_128(step.style->color) * vertex_tint_linear );
+
 	// Core loop for drawing the text
 	vec2     bounds_min = step.start - step.bounds;
 	bool     clip       = fit & text_fit_clip;
@@ -476,8 +479,8 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	while(char_decode_b_T(text, &text, &c)) {
 		const font_char_t *char_info = font_get_glyph(step.style->font, c);
 		if (!text_is_space(c)) {
-			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, buffer, tr, normal);
-			else      text_add_quad        (step.pos.x, step.pos.y, off_z, char_info, *step.style, buffer, tr, normal);
+			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
+			else      text_add_quad        (step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
 		}
 		text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 	}
@@ -485,11 +488,11 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 }
 
 
-float text_add_in(const char *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	return text_add_in_g<char, utf8_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z);
+float text_add_in(const char *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+	return text_add_in_g<char, utf8_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
-float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z) {
-	return text_add_in_g<char16_t, utf16_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z);
+float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+	return text_add_in_g<char16_t, utf16_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////

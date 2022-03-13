@@ -520,6 +520,7 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, 
 	matrix mx  = matrix_trs(pos, quat_identity, size);
 
 	color128 final_color = skui_palette[color] * skui_tint;
+	if (!skui_enabled_stack.last()) final_color = final_color * color128{.5f, .5f, .5f, 1};
 	final_color.a = focus;
 
 	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
@@ -1346,9 +1347,9 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 
 ///////////////////////////////////////////
 
-template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
+template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear)>
 inline void ui_text_in_g(vec3 start, vec2 size, const C *text, text_align_ position, text_align_ align) {
-	text_add_in_t(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z);
+	text_add_in_t(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{1, 1, 1, 1} : color128{.5f, .5f, .5f, 1});
 }
 void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align) { ui_text_in_g<char,     text_add_in >(start, size, text, position, align); }
 void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align) { ui_text_in_g<char16_t, text_add_in_16>(start, size, text, position, align); }
@@ -1395,13 +1396,13 @@ void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16
 
 ///////////////////////////////////////////
 
-template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z)>
+template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear)>
 void ui_text_g(const C *text, text_align_ text_align) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_layout_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
-	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align, at.x, at.y, at.z);
+	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align, at.x, at.y, at.z, {1,1,1,1});
 
 	ui_layout_reserve(size);
 }
