@@ -35,7 +35,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 ## Getting started
 
-Follow [this guide](https://stereokit.net/Pages/Guides/Getting-Started.html) for a detailed introduction! This repository is the raw source for those who wish to build StereoKit themselves, the Visul Studio templates and the NuGet packages referenced in the guide are how most people should build their applications! 
+Follow [this guide](https://stereokit.net/Pages/Guides/Getting-Started.html) for a detailed introduction! This repository is the raw source for those who wish to build StereoKit themselves, the Visual Studio templates and the NuGet packages referenced in the guide are how most people should build their applications!
 
 StereoKit focuses on getting you productive with the least amount of code possible. You can actually do most tasks with a single line of code, including UI! Here's hello world with StereoKit, this is all you need to get up and running!
 
