@@ -355,7 +355,7 @@ void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_
 // Texture creation functions            //
 ///////////////////////////////////////////
 
-void tex_add_loading_task(tex_t texture, void *load_data, const asset_load_action_t *actions, int32_t action_count, float complexity) {
+void tex_add_loading_task(tex_t texture, void *load_data, const asset_load_action_t *actions, int32_t action_count, int32_t priority, float complexity) {
 	asset_task_t task = {};
 	task.asset        = (asset_header_t*)texture;
 	task.free_data    = tex_load_free;
@@ -363,14 +363,14 @@ void tex_add_loading_task(tex_t texture, void *load_data, const asset_load_actio
 	task.load_data    = load_data;
 	task.actions      = (asset_load_action_t *)actions;
 	task.action_count = action_count;
-	task.sort         = asset_sort(10, complexity);
+	task.sort         = asset_sort(priority, complexity);
 
 	assets_add_task(task);
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data) {
+tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data, int32_t priority) {
 	tex_t result = tex_find(file);
 	if (result != nullptr)
 		return result;
@@ -395,20 +395,20 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data)
 		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), 0);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, 0);
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file(const char *file, bool32_t srgb_data) {
-	return tex_create_file_type(file, tex_type_image, srgb_data);
+tex_t tex_create_file(const char *file, bool32_t srgb_data, int32_t priority) {
+	return tex_create_file_type(file, tex_type_image, srgb_data, priority);
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data) {
+tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
 	tex_t result = tex_create(type);
 
 	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
@@ -442,15 +442,15 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), width * height);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, width * height);
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data) {
-	return tex_create_mem_type(tex_type_image, data, data_size, srgb_data);
+tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
+	return tex_create_mem_type(tex_type_image, data, data_size, srgb_data, priority);
 }
 
 ///////////////////////////////////////////
@@ -495,7 +495,7 @@ tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_
 
 ///////////////////////////////////////////
 
-tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
+tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
 	for (int32_t i = 0; i < file_count; i++) {
@@ -533,7 +533,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), 0);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, 0);
 
 	// NOTE: this will block execution if it occurs, as it requires the cubemap
 	// to be loaded!
@@ -545,13 +545,13 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 
 ///////////////////////////////////////////
 
-tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_data) {
-	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, nullptr);
+tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_data, int32_t priority) {
+	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, nullptr, priority);
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
+tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
 	char equirect_id[64];
 	snprintf(equirect_id, sizeof(equirect_id), "sk_equi::%" PRIu64, hash_fnv64_string(equirectangular_file));
 
@@ -581,7 +581,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 		asset_load_action_t {tex_load_equirect_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), 0);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, 0);
 
 	// NOTE: this will block execution if it occurs, as it requires the cubemap
 	// to be loaded!
@@ -593,8 +593,8 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info) {
-	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, out_sh_lighting_info);
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
+	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, out_sh_lighting_info, priority);
 }
 
 ///////////////////////////////////////////

@@ -35,6 +35,7 @@ array_t<asset_job_t *>    assets_gpu_jobs = {};
 thrd_id_t              asset_thread_id       = {};
 array_t<asset_task_t*> asset_thread_tasks    = {};
 mtx_t                  asset_thread_task_mtx = {};
+int32_t                asset_tasks_finished  = 0;
 
 int32_t asset_thread(void *);
 
@@ -326,6 +327,31 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 }
 
 ///////////////////////////////////////////
+
+int32_t assets_current_task() {
+	return asset_tasks_finished;
+}
+
+///////////////////////////////////////////
+
+int32_t assets_total_tasks() {
+	return asset_thread_tasks.count + asset_tasks_finished;
+}
+
+///////////////////////////////////////////
+
+int32_t assets_current_task_priority() {
+	if (asset_thread_tasks.count > 0)
+		return asset_thread_tasks[0]->sort;
+	return INT_MAX;
+}
+
+///////////////////////////////////////////
+
+void assets_notify_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
+}
+
+///////////////////////////////////////////
 // Asset thread                          //
 ///////////////////////////////////////////
 
@@ -357,6 +383,7 @@ int32_t asset_thread(void *) {
 			// Remove the task if it has completed all its actions.
 			if (task->action_curr >= task->action_count) {
 				mtx_lock(&asset_thread_task_mtx);
+				asset_tasks_finished += 1;
 				asset_thread_tasks.remove(i);
 				mtx_unlock(&asset_thread_task_mtx);
 				i--;
@@ -431,13 +458,34 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		return;
 
 	if (thrd_id_equal(thrd_id_current(), asset_thread_id)) {
-		log_err("assets_block_until should not be called on the assets thread!");
+		log_err("assets_block_ should not be called on the assets thread!");
 		return;
 	}
 
 	while (asset->state < state && asset->state >= 0) {
+		// Spin the GPU thread so the asset thread doesn't freeze up while
+		// we're waiting on it.
 		assets_update();
 		thrd_yield();
+	}
+}
+
+///////////////////////////////////////////
+
+void assets_block_for_priority(int32_t priority) {
+	if (thrd_id_equal(thrd_id_current(), asset_thread_id)) {
+		log_err("assets_block_ should not be called on the assets thread!");
+		return;
+	}
+
+	// This handles if the user passes in INT_MAX
+	int32_t curr_priority = assets_current_task_priority();
+	while (curr_priority <= priority && curr_priority != INT_MAX) {
+		// Spin the GPU thread so the asset thread doesn't freeze up while
+		// we're waiting on it.
+		assets_update();
+		thrd_yield();
+		curr_priority = assets_current_task_priority();
 	}
 }
 

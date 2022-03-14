@@ -60,6 +60,8 @@ public static class Tests
 			}
 
 			nextScene.Initialize();
+			if (IsTesting)
+				Assets.BlockForPriority(int.MaxValue);
 			sceneTime   = Time.Totalf;
 			activeScene = nextScene;
 			nextScene   = null;
