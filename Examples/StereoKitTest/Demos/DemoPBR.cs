@@ -6,7 +6,6 @@ class DemoPBR : ITest
 	Material[] pbrMaterials;
 	Model      pbrModel;
 	Mesh       sphereMesh;
-	bool       lightingLoaded = false;
 
 	Tex oldSkyTex;
 	SphericalHarmonics oldSkyLight;
@@ -17,8 +16,9 @@ class DemoPBR : ITest
 	{
 		oldSkyTex   = Renderer.SkyTex;
 		oldSkyLight = Renderer.SkyLight;
-		sphereMesh  = Mesh.GenerateSphere(1, 5);
-		Renderer.SkyTex   = Tex.FromCubemapEquirectangular(@"C:\Data\Skyboxes\pink_sunrise_4k.hdr");
+		sphereMesh  = Mesh.GenerateSphere(1, 7);
+		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"C:\Data\Skyboxes\pink_sunrise_4k.hdr");
+		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
 
 		pbrModel = Model.FromFile("DamagedHelmet.gltf");
 		pbrMaterials = new Material[materialGrid*materialGrid];
@@ -57,12 +57,6 @@ class DemoPBR : ITest
 
 	public void Update()
 	{
-		if (lightingLoaded == false && Renderer.SkyTex.AssetState == AssetState.Loaded)
-		{
-			lightingLoaded = true;
-			Renderer.SkyLight = Renderer.SkyTex.CubemapLighting;
-		}
-
 		Tests.Screenshot("PBRBalls.jpg", 1024, 1024, new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
 
 		Hierarchy.Push(Matrix.T(0,0,-1));

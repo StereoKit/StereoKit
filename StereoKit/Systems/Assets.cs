@@ -7,7 +7,7 @@ namespace StereoKit
 	/// you!</summary>
 	public static class Assets
 	{
-		internal static List<object> OnLoadCallbackDelegates = new List<object>();
+		internal static Dictionary<object, AssetOnLoadCallback> OnLoadCallbackDelegates = new Dictionary<object, AssetOnLoadCallback>();
 
 		/// <summary>This is the index of the current asset loading task. Note
 		/// that to load one asset, multiple tasks are generated.</summary>

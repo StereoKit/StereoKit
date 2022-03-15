@@ -717,6 +717,8 @@ void tex_release(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_destroy(tex_t tex) {
+	assets_on_load_remove(&tex->header, nullptr);
+
 	free(tex->light_info);
 	skg_tex_destroy(&tex->tex);
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
@@ -728,6 +730,18 @@ void tex_destroy(tex_t tex) {
 
 asset_state_ tex_asset_state(const tex_t texture) {
 	return texture->header.state;
+}
+
+///////////////////////////////////////////
+
+void tex_on_load(tex_t texture, void (*on_load)(tex_t texture, void *context), void *context) {
+	assets_on_load(&texture->header, (void(*)(asset_header_t*,void*))on_load, context);
+}
+
+///////////////////////////////////////////
+
+void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *context)) {
+	assets_on_load_remove(&texture->header, (void(*)(asset_header_t*,void*))on_load);
 }
 
 ///////////////////////////////////////////

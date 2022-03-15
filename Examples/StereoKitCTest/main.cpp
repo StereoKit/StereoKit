@@ -14,6 +14,7 @@ using namespace sk;
 #include "demo_world.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
+#include "demo_envmap.h"
 
 #include <stdio.h>
 
@@ -76,6 +77,11 @@ scene_t demos[] = {
 		demo_draw_init,
 		demo_draw_update,
 		demo_draw_shutdown,
+	}, {
+		"Environment Map",
+		demo_envmap_init,
+		demo_envmap_update,
+		demo_envmap_shutdown,
 	}
 };
 

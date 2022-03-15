@@ -361,6 +361,9 @@ namespace StereoKit
 	public delegate void LogCallback(LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]

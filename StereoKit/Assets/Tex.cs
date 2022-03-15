@@ -29,6 +29,18 @@ namespace StereoKit
 
 		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
 
+		public event Action<Tex> OnLoaded {
+			add {
+				AssetOnLoadCallback callback = (a, _) => { NativeAPI.tex_addref(a); value(new Tex(a)); };
+				Assets.OnLoadCallbackDelegates.Add(value, callback);
+				NativeAPI.tex_on_load(_inst, callback, IntPtr.Zero);
+			}
+			remove {
+				NativeAPI.tex_on_load_remove(_inst, Assets.OnLoadCallbackDelegates[value]);
+				Assets.OnLoadCallbackDelegates.Remove(value);
+			}
+		}
+
 		/// <summary>When looking at a UV texture coordinate on this texture,
 		/// how do we handle values larger than 1, or less than zero? Do we
 		/// Wrap to the other side? Clamp it between 0-1, or just keep

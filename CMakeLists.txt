@@ -356,6 +356,8 @@ target_link_libraries( StereoKitC
 if (SK_BUILD_TESTS)
   add_executable( StereoKitCTest
     Examples/StereoKitCTest/main.cpp
+    Examples/StereoKitCTest/demo_envmap.h
+    Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h

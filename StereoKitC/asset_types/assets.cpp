@@ -23,12 +23,23 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-array_t<asset_header_t *> assets = {};
-array_t<asset_header_t *> assets_multithread_destroy = {};
-mtx_t                     assets_multithread_destroy_lock;
-thrd_id_t                 assets_gpu_thread = {};
-mtx_t                     assets_job_lock;
-array_t<asset_job_t *>    assets_gpu_jobs = {};
+struct asset_load_callback_t {
+	asset_header_t *asset;
+	void (*on_load)(asset_header_t *asset, void *context);
+	void *context;
+};
+
+///////////////////////////////////////////
+
+array_t<asset_header_t *>      assets = {};
+array_t<asset_header_t *>      assets_multithread_destroy = {};
+mtx_t                          assets_multithread_destroy_lock;
+thrd_id_t                      assets_gpu_thread = {};
+mtx_t                          assets_job_lock;
+array_t<asset_job_t *>         assets_gpu_jobs = {};
+mtx_t                          assets_load_event_lock;
+array_t<asset_load_callback_t> assets_load_callbacks = {};
+array_t<asset_header_t *>      assets_load_events = {};
 
 ///////////////////////////////////////////
 
@@ -208,6 +219,35 @@ void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
 
 ///////////////////////////////////////////
 
+void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
+	assets_load_callbacks.add({
+		asset,
+		on_load,
+		context
+	});
+
+	// If it was loaded previously, we want to call this right away
+	if (asset->state >= asset_state_loaded) {
+		// If it's already in the event queue, we don't want to call this twice
+		if (assets_load_events.index_of(asset) == -1)
+			on_load(asset, context);
+	}
+}
+
+///////////////////////////////////////////
+
+void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context)) {
+	for (size_t i = 0; i < assets_load_callbacks.count; i++) {
+		if ( assets_load_callbacks[i].asset   == asset &&
+			(assets_load_callbacks[i].on_load == on_load || on_load == nullptr)) {
+			assets_load_callbacks.remove(i);
+			return;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
 void  assets_shutdown_check() {
 	if (assets.count > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
@@ -263,6 +303,7 @@ bool assets_init() {
 	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
 	mtx_init(&assets_job_lock,                 mtx_plain);
 	mtx_init(&asset_thread_task_mtx,           mtx_plain);
+	mtx_init(&assets_load_event_lock,          mtx_plain);
 
 	thrd_t thread = {};
 	thrd_create(&thread, asset_thread, nullptr);
@@ -272,6 +313,7 @@ bool assets_init() {
 
 ///////////////////////////////////////////
 
+array_t<asset_load_callback_t> assets_load_call_list = {};
 void assets_update() {
 	// destroy objects where the request came from another thread
 	mtx_lock(&assets_multithread_destroy_lock);
@@ -289,6 +331,24 @@ void assets_update() {
 	}
 	assets_gpu_jobs.clear();
 	mtx_unlock(&assets_job_lock);
+
+	// Update any on_load event callbacks
+	mtx_lock(&assets_load_event_lock);
+	for (size_t i = 0; i < assets_load_events.count; i++) {
+		for (size_t c = 0; c < assets_load_callbacks.count; c++) {
+			asset_load_callback_t *callback = &assets_load_callbacks[c];
+			if (assets_load_events[i] == callback->asset) {
+				// If the callback removes itself when it's called, this loop
+				// becomes problematic. So we're storing the items we need to
+				// call, and calling them outside this loop.
+				assets_load_call_list.add(*callback);
+			}
+		}
+	}
+	assets_load_events.clear();
+	mtx_unlock(&assets_load_event_lock);
+	assets_load_call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
+	assets_load_call_list.clear();
 }
 
 ///////////////////////////////////////////
@@ -298,6 +358,11 @@ void assets_shutdown() {
 	assets_gpu_jobs           .free();
 	mtx_destroy(&assets_multithread_destroy_lock);
 	mtx_destroy(&assets_job_lock);
+	mtx_destroy(&assets_load_event_lock);
+
+	assets_load_call_list.free();
+	assets_load_callbacks.free();
+	assets_load_events   .free();
 }
 
 ///////////////////////////////////////////
@@ -347,11 +412,6 @@ int32_t assets_current_task_priority() {
 }
 
 ///////////////////////////////////////////
-
-void assets_notify_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
-}
-
-///////////////////////////////////////////
 // Asset thread                          //
 ///////////////////////////////////////////
 
@@ -382,10 +442,21 @@ int32_t asset_thread(void *) {
 			asset_task_t *task = asset_thread_tasks[i];
 			// Remove the task if it has completed all its actions.
 			if (task->action_curr >= task->action_count) {
+
+				// If it was successfully loaded, we'll want to notify on_load,
+				// but we do want to skip this if it was removed because of an
+				// issue during load.
+				if (task->asset->state >= asset_state_loaded) {
+					mtx_lock(&assets_load_event_lock);
+					assets_load_events.add(task->asset);
+					mtx_unlock(&assets_load_event_lock);
+				}
+
 				mtx_lock(&asset_thread_task_mtx);
 				asset_tasks_finished += 1;
 				asset_thread_tasks.remove(i);
 				mtx_unlock(&asset_thread_task_mtx);
+
 				i--;
 
 				if (task->free_data != nullptr) task->free_data (task->asset, task->load_data);
