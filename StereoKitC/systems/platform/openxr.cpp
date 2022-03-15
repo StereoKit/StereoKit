@@ -100,7 +100,8 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 	if (!xr_stage_space) return false;
 
 	XrExtent2Df bounds;
-	if (XR_FAILED(xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds)))
+	XrResult res = xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+	if (XR_FAILED(res) || res == XR_SPACE_BOUNDS_UNAVAILABLE)
 		return false;
 	if (!openxr_get_space(xr_stage_space, out_pose, time))
 		return false;
