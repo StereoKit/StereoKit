@@ -140,7 +140,9 @@ void assets_addref(asset_header_t &asset) {
 
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
-
+	if (asset_header->id_text != nullptr && strcmp(asset_header->id_text, "DamagedHelmet.gltf") == 0) {
+		log_infof("Refcount %d -> %d", asset_header->refs, asset_header->refs-1);
+	}
 	// Manage the reference count
 	asset_header->refs -= 1;
 	if (asset_header->refs < 0) {
