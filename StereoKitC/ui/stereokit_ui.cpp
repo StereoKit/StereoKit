@@ -1726,10 +1726,8 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Find sizes of slider elements
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size   = fmaxf(skui_settings.padding, size.y / 6.f);
-	vec3  box_start   = window_relative_pos + vec3{ 0, 0, button_depth };
-	vec3  box_size    = vec3{ size.x, size.y, button_depth*2 };
-	vec2  button_size = confirm_method == ui_confirm_push
+	float rule_size    = fmaxf(skui_settings.padding, size.y / 6.f);
+	vec2  button_size  = confirm_method == ui_confirm_push
 		? vec2{ size.y / 2, size.y / 2 }
 		: vec2{ size.y / 4, size.y };
 
@@ -1765,12 +1763,13 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		if (hand != -1)
 			finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		activation_size.x *= 2;
-		sustain_size  = vec3{ activation_size.x,  activation_size.y, activation_plane };
-		sustain_start = vec3{ activation_start.x, activation_start.y, 0 };
+		activation_size.x = button_size.x * 3;
+		activation_size.z = button_depth * 2;
+		activation_start.z = button_depth;
+		activation_start.x += button_size.x;
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
-			sustain_start,    sustain_size,
+			activation_start, activation_size,
 			&focus_state, &hand);
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
