@@ -144,7 +144,7 @@ namespace StereoKitTest.Demos
 						Model model = Model.FromFile(file);
 						cloud      = new PointCloud(pointSize, model);
 						cloudScale = 0.5f / model.Bounds.dimensions.Length;
-					}, null, "*.gltf", "*.glb");
+					}, null, ".gltf", ".glb");
 				}
 				UI.HSlider("Cloud Scale", ref cloudScale, 0.001f, 2, 0);
 
