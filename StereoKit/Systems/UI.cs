@@ -4,7 +4,7 @@ using System.Text;
 namespace StereoKit
 {
 	/// <summary>This class is a collection of user interface and interaction
-	/// methods! StereoKit uses an Immediate Mode gui system, which can be very
+	/// methods! StereoKit uses an Immediate Mode GUI system, which can be very
 	/// easy to work with and modify during runtime.
 	/// 
 	/// You must call the UI method every frame you wish it to be available,
@@ -245,7 +245,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most english text is
+		/// within its bounds? TextAlign.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
@@ -429,7 +429,7 @@ namespace StereoKit
 		/// <param name="size">Size of the Input in Hierarchy local meters.
 		/// Zero axes will auto-size.</param>
 		/// <param name="type">
-		/// Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use
+		/// Specify what type of text field this is if string or number field. This does not limit what can be typed it is just so it knows what keyboard to use
 		/// </param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
@@ -700,7 +700,7 @@ namespace StereoKit
 		/// true. This currently doesn't have any visual effect, so you may
 		/// wish to pair it with a PushTint.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
-		/// interactible?</param>
+		/// interactable?</param>
 		public static void PushEnabled(bool enabled)
 			=> NativeAPI.ui_push_enabled(enabled?1:0);
 

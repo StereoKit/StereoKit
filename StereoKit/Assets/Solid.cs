@@ -58,7 +58,7 @@ namespace StereoKit
 		/// size, in meters!</param>
 		/// <param name="kilograms">How many kilograms does this shape weigh?
 		/// </param>
-		/// <param name="offset">Offset ot this shape from the center of the
+		/// <param name="offset">Offset to this shape from the center of the
 		/// solid.</param>
 		public void AddSphere(float diameter, float kilograms = 1, Vec3 ?offset = null)
 			=> NativeAPI.solid_add_sphere(_inst, diameter, kilograms, offset ?? Vec3.Zero);
@@ -105,7 +105,7 @@ namespace StereoKit
 
 		/// <summary>This moves the Solid from its current location through 
 		/// space to the new location provided, colliding with things along
-		/// the way. This is acheived by applying the velocity and angular 
+		/// the way. This is achieved by applying the velocity and angular 
 		/// velocity necessary to get to the destination in a single frame
 		/// during the next physics step, then restoring the previous 
 		/// velocity info afterwards! See also Teleport for movement without
@@ -136,7 +136,7 @@ namespace StereoKit
 		public void SetAngularVelocity(Vec3 radiansPerSecond)
 			=> NativeAPI.solid_set_velocity_ang(_inst, radiansPerSecond);
 
-		/// <summary>Retreives the current pose of the Solid from the physics
+		/// <summary>Retrieves the current pose of the Solid from the physics
 		/// simulation.</summary>
 		/// <returns>The Solid's current pose.</returns>
 		public Pose GetPose()
@@ -145,7 +145,7 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Retreives the current pose of the Solid from the physics
+		/// <summary>Retrieves the current pose of the Solid from the physics
 		/// simulation.</summary>
 		/// <param name="pose">Out param for the Solid's current pose.</param>
 		public void GetPose(out Pose pose)

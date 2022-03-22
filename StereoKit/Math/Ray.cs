@@ -34,7 +34,7 @@ namespace StereoKit
 		/// <param name="plane">Any plane you want to intersect with.</param>
 		/// <param name="at">An out parameter that will hold the intersection 
 		/// point. If there's no intersection, this will be (0,0,0).</param>
-		/// <returns>True if there's an intersetion, false if not. Refer to
+		/// <returns>True if there's an intersection, false if not. Refer to
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Plane plane, out Vec3 at)

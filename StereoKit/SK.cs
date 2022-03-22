@@ -28,7 +28,7 @@ namespace StereoKit
 		/// </summary>
 		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
 		/// <summary>This structure contains information about the current 
-		/// system and its capabilites. There's a lot of different MR devices,
+		/// system and its capabilities. There's a lot of different MR devices,
 		/// so it's nice to have code for systems with particular 
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
@@ -155,7 +155,7 @@ namespace StereoKit
 		/// execution completes, it properly calls the shutdown callback and
 		/// shuts down StereoKit for you.
 		/// 
-		/// Using this method is important for compatability with WASM and is
+		/// Using this method is important for compatibility with WASM and is
 		/// the preferred method of controlling the main loop, over 
 		/// `SK.Step`.</summary>
 		/// <param name="onStep">A callback where you put your application 

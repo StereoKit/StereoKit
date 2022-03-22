@@ -5,7 +5,7 @@ namespace StereoKit
 {
 	/// <summary>Quaternions are efficient and robust mathematical objects 
 	/// for representing rotations! Understanding the details of how a 
-	/// quaterion works is not generally necessary for using them 
+	/// quaternion works is not generally necessary for using them 
 	/// effectively, so don't worry too much if they seem weird to you.
 	/// They're weird to me too.
 	/// 
@@ -87,7 +87,7 @@ namespace StereoKit
 		/// <param name="lookAtPoint">Position of where the 'object' should
 		/// be looking towards!</param>
 		/// <param name="upDirection">Look From/At positions describe X and Y
-		/// axis rotation well, but leave Z Axiz/Roll undefined. Providing an
+		/// axis rotation well, but leave Z Axis/Roll undefined. Providing an
 		/// upDirection vector helps to indicate roll around the From/At
 		/// line. A common up direction would be (0,1,0), to prevent roll.
 		/// </param>
@@ -166,7 +166,7 @@ namespace StereoKit
 		/// <param name="rollZDeg">Roll is rotation around the z axis, 
 		/// measured in degrees.</param>
 		/// <returns>A quaternion representing the given Roll/Pitch/Yaw 
-		/// roatation!</returns>
+		/// rotation!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat FromAngles(float pitchXDeg, float yawYDeg, float rollZDeg) 
 			=> Quaternion.CreateFromYawPitchRoll(yawYDeg * Units.deg2rad, pitchXDeg * Units.deg2rad, rollZDeg * Units.deg2rad);
@@ -175,7 +175,7 @@ namespace StereoKit
 		/// <param name="pitchYawRollDeg">Pitch, yaw, and roll stored as
 		/// X, Y, and Z in this Vector. Angle values are in degrees.</param>
 		/// <returns>A quaternion representing the given Roll/Pitch/Yaw 
-		/// roatation!</returns>
+		/// rotation!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat FromAngles(Vec3 pitchYawRollDeg) 
 			=> Quaternion.CreateFromYawPitchRoll(pitchYawRollDeg.y * Units.deg2rad, pitchYawRollDeg.x * Units.deg2rad, pitchYawRollDeg.z * Units.deg2rad);

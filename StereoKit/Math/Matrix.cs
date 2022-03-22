@@ -352,7 +352,7 @@ namespace StereoKit
 		/// meters) will be discarded. For low resolution depth buffers, this
 		/// should not be too far away, or you'll see bad z-fighting 
 		/// artifacts.</param>
-		/// <returns>The final orhtographic matrix.</returns>
+		/// <returns>The final orthographic matrix.</returns>
 		public static Matrix Orthographic(float width, float height, float nearClip, float farClip)
 			=> Matrix4x4.CreateOrthographic(width, height, nearClip, farClip);
 	}

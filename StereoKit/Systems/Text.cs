@@ -39,7 +39,7 @@ namespace StereoKit
 		/// on Default.ShaderFont.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// <param name="characterHeightMeters">Height of a text glyph in
 		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="colorGamma">The gamma space color of the text
 		/// style. This will be embedded in the vertex color of the text
@@ -58,7 +58,7 @@ namespace StereoKit
 		/// on the provided Shader.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// <param name="characterHeightMeters">Height of a text glyph in
 		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="shader">This style will create and use a unique
 		/// Material based on the Shader that you provide here.</param>
@@ -82,7 +82,7 @@ namespace StereoKit
 		/// Shader, or takes neither a Shader nor a Material!</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glpyh in
+		/// <param name="characterHeightMeters">Height of a text glyph in
 		/// meters. StereoKit currently bases this on the letter 'T'.</param>
 		/// <param name="material">Which material should be used to render
 		/// the text with? Note that this does NOT duplicate the material, so

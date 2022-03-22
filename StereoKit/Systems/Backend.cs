@@ -15,7 +15,7 @@ namespace StereoKit
 		/// WebXR, then this will reflect that.</summary>
 		public static BackendXRType XRType => NativeAPI.backend_xr_get_type();
 
-		/// <summary>What kind of plaform is StereoKit running on? This can be
+		/// <summary>What kind of platform is StereoKit running on? This can be
 		/// important to tell you what APIs or functionality is available to
 		/// the app.</summary>
 		public static BackendPlatform Platform => NativeAPI.backend_platform_get();
@@ -24,7 +24,7 @@ namespace StereoKit
 		/// trying to add support for some unusual OpenXR extension! StereoKit
 		/// should do all the OpenXR work that most people will need. If you
 		/// find yourself here anyhow for something you feel StereoKit should
-		/// support already, please add a feature request on Github!
+		/// support already, please add a feature request on GitHub!
 		/// 
 		/// This class contains handles and methods for working directly with
 		/// OpenXR. This may allow you to activate or work with OpenXR

@@ -53,7 +53,7 @@ namespace StereoKit
 		/// <param name="ray">Ray we're checking with.</param>
 		/// <param name="at">An out parameter that will hold the intersection
 		/// point. If there's no intersection, this will be (0,0,0).</param>
-		/// <returns>True if there's an intersetion, false if not. Refer to
+		/// <returns>True if there's an intersection, false if not. Refer to
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Ray ray, out Vec3 at)
@@ -65,7 +65,7 @@ namespace StereoKit
 		/// <param name="lineEnd">End of the line.</param>
 		/// <param name="at">An out parameter that will hold the intersection
 		/// point. If there's no intersection, this will be (0,0,0).</param>
-		/// <returns>True if there's an intersetion, false if not. Refer to
+		/// <returns>True if there's an intersection, false if not. Refer to
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Vec3 lineStart, Vec3 lineEnd, out Vec3 at)

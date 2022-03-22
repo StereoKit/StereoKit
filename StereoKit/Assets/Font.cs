@@ -43,7 +43,7 @@ namespace StereoKit {
 		/// example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,
 		/// StereoKit will look in the next font file in the list.</param>
 		/// <returns>A font from the given files, or null if all of the files
-		/// failed to load properly! If any of the given files sucessfully 
+		/// failed to load properly! If any of the given files successfully 
 		/// loads, then this font will be a valid asset.</returns>
 		public static Font FromFile(params string[] fontFiles)
 		{

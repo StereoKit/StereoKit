@@ -137,7 +137,7 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 		/// <summary>Set the texture's pixels using a color array! This
-		/// function sould only be called on textures with a format of Rgba128.
+		/// function should only be called on textures with a format of Rgba128.
 		/// You can call this as many times as you'd like, even with different
 		/// widths and heights. Calling this multiple times will mark it as
 		/// dynamic on the graphics card. Calling this function can also
@@ -159,7 +159,7 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This
-		/// function sould only be called on textures with a format of R8.
+		/// function should only be called on textures with a format of R8.
 		/// You can call this as many times as you'd like, even with different
 		/// widths and heights. Calling this multiple times will mark it as
 		/// dynamic on the graphics card. Calling this function can also
@@ -176,7 +176,7 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This
-		/// function sould only be called on textures with a format of R16.
+		/// function should only be called on textures with a format of R16.
 		/// You can call this as many times as you'd like, even with different
 		/// widths and heights. Calling this multiple times will mark it as
 		/// dynamic on the graphics card. Calling this function can also
@@ -199,7 +199,7 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This
-		/// function sould only be called on textures with a format of R32.
+		/// function should only be called on textures with a format of R32.
 		/// You can call this as many times as you'd like, even with different
 		/// widths and heights. Calling this multiple times will mark it as
 		/// dynamic on the graphics card. Calling this function can also
@@ -267,7 +267,7 @@ namespace StereoKit
 
 		/// <summary>Creates a cubemap texture from a single equirectangular 
 		/// image! You know, the ones that look like an unwrapped globe with
-		/// the poles all streetched out. It uses some fancy shaders and
+		/// the poles all stretched out. It uses some fancy shaders and
 		/// texture blitting to create 6 faces from the equirectangular 
 		/// image.</summary>
 		/// <param name="equirectangularCubemap">Filename of the
@@ -289,7 +289,7 @@ namespace StereoKit
 
 		/// <summary>Creates a cubemap texture from a single equirectangular
 		/// image! You know, the ones that look like an unwrapped globe with
-		/// the poles all streetched out. It uses some fancy shaders and
+		/// the poles all stretched out. It uses some fancy shaders and
 		/// texture blitting to create 6 faces from the equirectangular image.
 		/// </summary>
 		/// <param name="equirectangularCubemap">Filename of the
@@ -555,7 +555,7 @@ namespace StereoKit
 		/// SphericalHarmonics typically contain pretty low frequency
 		/// information.</param>
 		/// <param name="lightSpotSizePct">The size of the glowing spot added
-		/// in the primary light direction. You can kinda thinl of the unit
+		/// in the primary light direction. You can kinda think of the unit
 		/// as a percentage of the cubemap face's size, but it's technically
 		/// a Chebyshev distance from the light's point on a 2m cube.</param>
 		/// <param name="lightSpotIntensity">The glowing spot's color is the

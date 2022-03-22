@@ -50,8 +50,8 @@ namespace StereoKit
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
-		/// directly linked to Renderer.LayerFilter, but this behaviour can be
-		/// overriden via `Renderer.OverrideCaptureFilter`.</summary>
+		/// directly linked to Renderer.LayerFilter, but this behavior can be
+		/// overridden via `Renderer.OverrideCaptureFilter`.</summary>
 		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
 
 		/// <summary>This is the gamma space color the renderer will clear
