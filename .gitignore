@@ -356,3 +356,6 @@ build_*/
 
 # Xmake cache files
 .xmake/
+
+# Clangd cache
+.clangd/
