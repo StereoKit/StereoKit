@@ -59,12 +59,10 @@ class Program
 		if (!SK.Initialize(new SKSettings{ appName = "Project" }))
 			Environment.Exit(1);
 
-		while (SK.Step(() =>
+		SK.Run(() =>
 		{
 			Mesh.Cube.Draw(Material.Default, Matrix.S(0.1f));
-		}));
-
-		SK.Shutdown();
+		});
 	}
 }
 /// 
@@ -78,7 +76,7 @@ class Program
 /// 
 /// For additional learning resources, you can check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
 /// page for a couple of repositories and links that may help you out. In
-/// particular, the Github repository does contain a [number of small demo scenes](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+/// particular, the GitHub repository does contain a [number of small demo scenes](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
 /// that are excellent reference for a number of different StereoKit features!
 /// 
 /// And don't forget to peek in the docs here! Most pages contain sample code
