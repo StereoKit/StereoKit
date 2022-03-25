@@ -76,7 +76,7 @@ SK_API void     ui_settings            (ui_settings_t settings);
 SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);
-SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr));
+SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();
@@ -122,6 +122,7 @@ SK_API bool32_t      ui_button_round_at   (const char     *text, sprite_t image,
 SK_API bool32_t      ui_button_round_at_16(const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_toggle_at_16      (const char16_t *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
+SK_API void          ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_hslider_at        (const char     *id,   sk_ref(float) value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t      ui_hslider_at_16     (const char16_t *id,   sk_ref(float) value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t      ui_hslider_at_f64    (const char     *id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
@@ -149,6 +150,7 @@ SK_API bool32_t ui_toggle_sz_16   (const char16_t *text, sk_ref(bool32_t) presse
 SK_API void     ui_model          (model_t model, vec2 ui_size, float model_scale);
 SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
+SK_API void     ui_progress_bar   (float percent, float width sk_default(0));
 SK_API bool32_t ui_hslider        (const char     *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_16     (const char16_t *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
 SK_API bool32_t ui_hslider_f64    (const char     *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));

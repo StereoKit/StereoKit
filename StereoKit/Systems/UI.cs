@@ -445,6 +445,30 @@ namespace StereoKit
 			return false;
 		}
 
+		/// <summary>This is a simple horizontal progress indicator bar. This
+		/// is used by the HSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		public static void ProgressBar(float percent, float width = 0)
+			=> NativeAPI.ui_progress_bar(percent, width);
+
+		/// <summary>This is a simple horizontal progress indicator bar. This
+		/// is used by the HSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size);
+
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
@@ -457,8 +481,8 @@ namespace StereoKit
 		/// side of the slider.</param>
 		/// <param name="step">Locks the value to intervals of step. Starts 
 		/// at min, and increments by step.</param>
-		/// <param name="width">Physical width of the slider on the window.
-		/// </param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -478,8 +502,8 @@ namespace StereoKit
 		/// side of the slider.</param>
 		/// <param name="step">Locks the value to intervals of step. Starts 
 		/// at min, and increments by step.</param>
-		/// <param name="width">Physical width of the slider on the window.
-		/// </param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -746,8 +770,12 @@ namespace StereoKit
 		/// <param name="material">The Material to use when rendering the UI
 		/// element. The default Material is specifically designed to work
 		/// with quadrant sizing formatted meshes.</param>
-		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null)
-			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero);
+		/// <param name="minSize">For some meshes, such as quadrant sized
+		/// meshes, there's a minimum size where the mesh turns inside out.
+		/// This lets UI elements to accommodate for this minimum size, and
+		/// behave somewhat more appropriately.</param>
+		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
+			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, Vec2.Zero);
 
 		/// <summary>This will reposition the vertices to work well with
 		/// quadrant resizing shaders. The mesh should generally be centered
