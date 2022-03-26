@@ -69,6 +69,21 @@ namespace StereoKit
 			return IsInitialized;
 		}
 
+		/// <summary>This is a _very_ rudimentary way to initialize StereoKit,
+		/// it doesn't take much, but a robust application will prefer to use
+		/// an overload that takes SKSettings. This uses all the default
+		/// settings, which are primarily configured for development.</summary>
+		/// <param name="projectName">Name of the application, this shows up an
+		/// the top of the Win32 window, and is submitted to OpenXR. OpenXR
+		/// caps this at 128 characters.</param>
+		/// <param name="assetsFolder">Where to look for assets when loading
+		/// files! Final path will look like '[assetsFolder]/[file]', so a
+		/// trailing '/' is unnecessary.</param>
+		/// <returns>Returns true if all systems are successfully 
+		/// initialized!</returns>
+		public static bool Initialize(string projectName = "StereoKit App", string assetsFolder = "")
+			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
+
 		/// <summary>If you need to call StereoKit code before calling
 		/// SK.Initialize, you may need to explicitly load the library first.
 		/// This can be useful for setting up a few things, but should
