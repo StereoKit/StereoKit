@@ -14,7 +14,7 @@ namespace StereoKit
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
 		public DisplayMode  displayPreference;
-		/// <summary>What type of backgroud blend mode do we prefer for this
+		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
 		/// will show up behind your content, if that's an option? Note that
@@ -61,7 +61,7 @@ namespace StereoKit
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headeset. If
+		/// so developers can test MR spaces without being in a headset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
@@ -317,7 +317,7 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Pointer
 	{
-		/// <summary>What input soure did this pointer come from? This is
+		/// <summary>What input source did this pointer come from? This is
 		/// a bit-flag that contains input family and capability
 		/// information.</summary>
 		public InputSource source;
@@ -432,7 +432,7 @@ namespace StereoKit
 		/// grabbed.</summary>
 		Normal = Head | Body,
 		/// <summary>No body, no head. Not really a flag, just set to this
-		/// value. The Window will still be grab/moveable. To prevent it from
+		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
 		Empty = 0,

@@ -24,7 +24,7 @@ namespace StereoKit
 
 		/// <summary>This is a bounding box that encapsulates the Mesh! It's
 		/// used for collision, visibility testing, UI layout, and probably 
-		/// other things. While it's normally cacluated from the mesh vertices, 
+		/// other things. While it's normally calculated from the mesh vertices,
 		/// you can also override this to suit your needs.</summary>
 		public Bounds Bounds { 
 			get => NativeAPI.mesh_get_bounds(_inst);
@@ -157,15 +157,14 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
 
-		/// <summary>
-		/// Finds a triangle with specified index and returns vertexs out the triangle
-		/// used with <see cref="Mesh.Intersect(Ray,out Ray,out uint)"/> to get info of the triangle hit
-		/// </summary>
-		/// <param name="triangleIndex">Starting inds index of the triangle</param>
+		/// <summary>Retrieves the vertices associated with a particular
+		/// triangle on the Mesh.</summary>
+		/// <param name="triangleIndex">Starting index of the triangle, should
+		/// be a multiple of 3.</param>
 		/// <param name="a">The first vertex of the found triangle</param>
-		/// <param name="b">The seccond vertex of the found triangle</param>
+		/// <param name="b">The second vertex of the found triangle</param>
 		/// <param name="c">The third vertex of the found triangle</param>
-		/// <returns>Returns true if triangle Index was valid</returns>
+		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
 			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
 

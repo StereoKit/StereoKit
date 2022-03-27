@@ -220,7 +220,7 @@ namespace StereoKit
 	/// <summary>What type of color information will the texture contain? A
 	/// good default here is Rgba32.</summary>
 	public enum TexFormat {
-		/// <summary>A default zero value for TexFormat! Unitialized formats
+		/// <summary>A default zero value for TexFormat! Uninitialized formats
 		/// will get this value and **** **** up so you know to assign it
 		/// properly :)</summary>
 		None         = 0,
@@ -407,7 +407,7 @@ namespace StereoKit
 		/// zbuffer.</summary>
 		NotEqual,
 		/// <summary>Don't look at the zbuffer at all, just draw everything,
-		/// always, all the time! At this poit, the order at which the mesh
+		/// always, all the time! At this point, the order at which the mesh
 		/// gets drawn will be  super important, so don't forget about
 		/// `Material.QueueOffset`!</summary>
 		Always,
@@ -423,7 +423,7 @@ namespace StereoKit
 	/// to on the shader.</summary>
 	public enum MaterialParam {
 		/// <summary>This data type is not currently recognized. Please
-		/// report your case on Github Issues!</summary>
+		/// report your case on GitHub Issues!</summary>
 		Unknown      = 0,
 		/// <summary>A single 32 bit float value.</summary>
 		Float        = 1,
@@ -536,7 +536,7 @@ namespace StereoKit
 	/// physics engine will apply forces differently based on this type.</summary>
 	public enum SolidType {
 		/// <summary>This object behaves like a normal physical object, it'll
-		/// fall, get pushed around, and generally be succeptible to physical
+		/// fall, get pushed around, and generally be susceptible to physical
 		/// forces! This is a 'Dynamic' body in physics simulation terms.</summary>
 		Normal       = 0,
 		/// <summary>Immovable objects are always stationary! They have

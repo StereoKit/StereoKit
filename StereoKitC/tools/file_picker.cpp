@@ -105,16 +105,27 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 
 ///////////////////////////////////////////
 
+char *platform_append_filter(char *to, const file_filter_t *filter, bool search_pattern, const char *postfix) {
+	const char *curr = filter->ext;
+	while (*curr == '.' || *curr == '*') curr++;
+
+	return search_pattern
+		? string_append(to, 3, "*.", curr, postfix)
+		: string_append(to, 2, curr, postfix);
+}
+
+///////////////////////////////////////////
+
 void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count) {
-#if defined(SK_OS_WINDOWS)
+#if false && defined(SK_OS_WINDOWS)
 	if (sk_active_display_mode() == display_mode_flatscreen) {
 		fp_wfilename[0] = '\0';
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?1:2, filters[e].ext, ", ");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], true, e == filter_count - 1 ? "" : ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		size_t len = strlen(filter);
 		wchar_t *w_filter = platform_to_wchar(filter);
@@ -163,8 +174,19 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
+			const char *ext = filters[i].ext;
+			while (*ext == '*') ext++;
+
+			char *ext_mem = nullptr;
+			if (*ext != '.') {
+				ext_mem = string_append(nullptr, 2, ".", ext);
+				ext = ext_mem;
+			}
+
+			MultiByteToWideChar(CP_UTF8, 0, ext, (int)strlen(ext)+1, wext, 32);
 			picker.FileTypeFilter().Append(wext);
+
+			free(ext_mem);
 		}
 		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
@@ -197,7 +219,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	case picker_mode_open: {
 		fp_title = string_append(fp_title, 1, "Open (");
 		for (int32_t e = 0; e < filter_count; e++)
-			fp_title = string_append(fp_title, e==filter_count-1?1:2, filters[e].ext, ", ");
+			fp_title = platform_append_filter(fp_title, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		fp_title = string_append(fp_title, 1, ")");
 	} break;
 	}

@@ -66,6 +66,7 @@ struct ui_id_t {
 struct ui_el_visual_t {
 	mesh_t     mesh;
 	material_t material;
+	vec2       min_size;
 };
 
 array_t<ui_window_t> skui_sl_windows = {};
@@ -480,7 +481,7 @@ color128 ui_get_theme_color(ui_color_ color_type) {
 
 ///////////////////////////////////////////
 
-void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material) {
+void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
 	ui_el_visual_t visual = {};
 
 	if (mesh                                  != nullptr) mesh_addref     (mesh);
@@ -490,6 +491,7 @@ void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t mater
 
 	visual.mesh     = mesh;
 	visual.material = material;
+	visual.min_size = min_size;
 	skui_visuals[element_visual] = visual;
 }
 
@@ -499,6 +501,14 @@ mesh_t ui_get_mesh(ui_vis_ element_visual) {
 	return skui_visuals[element_visual].mesh
 		? skui_visuals[element_visual].mesh
 		: skui_visuals[ui_vis_default].mesh;
+}
+
+///////////////////////////////////////////
+
+vec2 ui_get_mesh_minsize(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].mesh
+		? skui_visuals[element_visual].min_size
+		: skui_visuals[ui_vis_default].min_size;
 }
 
 ///////////////////////////////////////////
@@ -627,7 +637,7 @@ bool ui_init() {
 
 	skui_mat      = material_find(default_id_material_ui);
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
-	ui_set_element_visual(ui_vis_default,     skui_box,     skui_mat_quad);
+	ui_set_element_visual(ui_vis_default,     skui_box,     skui_mat_quad, { skui_settings.padding * 0.75f, skui_settings.padding * 0.75f });
 	ui_set_element_visual(ui_vis_window_head, skui_win_top, nullptr);
 	ui_set_element_visual(ui_vis_window_body, skui_win_bot, nullptr);
 	ui_set_element_visual(ui_vis_separator,   skui_box_dbg, skui_mat);
@@ -1716,6 +1726,59 @@ bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, 
 
 ///////////////////////////////////////////
 
+void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus) {
+	// Find sizes of bar elements
+	float bar_height = fmaxf(skui_settings.padding, size.y / 6.f);
+	float bar_depth  = bar_height * skui_settings.backplate_depth - mm2m;
+	float bar_y      = start_pos.y - size.y / 2.f + bar_height / 2.f;
+
+	// If the left or right side of the bar is too small, then we'll just draw
+	// a single solid bar.
+	float bar_length = math_saturate(percent) * size.x;
+	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line);
+	if (bar_length <= min_size.x) {
+		ui_draw_el(ui_vis_slider_line,
+			vec3{ start_pos.x, bar_y,      start_pos.z },
+			vec3{ size.x,      bar_height, bar_depth },
+			ui_color_common, focus);
+		return;
+	} else if (bar_length >= size.x-min_size.x) {
+		ui_draw_el(ui_vis_slider_line,
+			vec3{ start_pos.x, bar_y,      start_pos.z },
+			vec3{ size.x,      bar_height, bar_depth },
+			ui_color_primary, focus);
+		return;
+	}
+
+	// Slide line
+	ui_draw_el(ui_vis_slider_line,
+		vec3{ start_pos.x, bar_y,      start_pos.z },
+		vec3{ bar_length,  bar_height, bar_depth },
+		ui_color_primary, focus);
+	ui_draw_el(ui_vis_slider_line,
+		vec3{ start_pos.x - bar_length, bar_y,      start_pos.z },
+		vec3{ size.x      - bar_length, bar_height, bar_depth },
+		ui_color_common, focus);
+}
+
+///////////////////////////////////////////
+
+void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
+	ui_progress_bar_at_ex(percent, start_pos, size, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_progress_bar(float percent, float width) {
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz({ width, 0 }, false, &final_pos, &final_size);
+
+	return ui_progress_bar_at(percent, final_pos, final_size);
+}
+
+///////////////////////////////////////////
+
 template<typename C, typename N>
 bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method) {
 	uint64_t id     = ui_stack_hash(id_text);
@@ -1726,10 +1789,8 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Find sizes of slider elements
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size   = fmaxf(skui_settings.padding, size.y / 6.f);
-	vec3  box_start   = window_relative_pos + vec3{ 0, 0, button_depth };
-	vec3  box_size    = vec3{ size.x, size.y, button_depth*2 };
-	vec2  button_size = confirm_method == ui_confirm_push
+	float rule_size    = fmaxf(skui_settings.padding, size.y / 6.f);
+	vec2  button_size  = confirm_method == ui_confirm_push
 		? vec2{ size.y / 2, size.y / 2 }
 		: vec2{ size.y / 4, size.y };
 
@@ -1765,12 +1826,13 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		if (hand != -1)
 			finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		activation_size.x *= 2;
-		sustain_size  = vec3{ activation_size.x,  activation_size.y, activation_plane };
-		sustain_start = vec3{ activation_start.x, activation_start.y, 0 };
+		activation_size.x = button_size.x * 3;
+		activation_size.z = button_depth * 2;
+		activation_start.z = button_depth;
+		activation_start.x += button_size.x;
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
-			sustain_start,    sustain_size,
+			activation_start, activation_size,
 			&focus_state, &hand);
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
@@ -1811,21 +1873,14 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	}
 
 	// Draw the UI
+	float percent     = (float)((value - min) / (max - min));
 	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
 	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
-	float slide_x_rel = (float)(((value-min) / (max-min)) * (size.x-button_size.x));
+	float slide_x_rel = (float)(percent * (size.x-button_size.x));
 	float slide_y     = window_relative_pos.y - (size.y-button_size.y)/2;
 
-	// Slide line
-	ui_draw_el(ui_vis_slider_line,
-		vec3{ x, line_y, window_relative_pos.z },
-		vec3{ slide_x_rel+button_size.x/2, rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-		ui_color_primary, color_blend);
-	ui_draw_el(ui_vis_slider_line,
-		vec3{ x - slide_x_rel - button_size.x/2, line_y, window_relative_pos.z },
-		vec3{ size.x-(slide_x_rel+button_size.x/2), rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-		ui_color_common, color_blend);
+	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend);
 
 	if (confirm_method == ui_confirm_push) {
 		ui_draw_el(ui_vis_slider_push,

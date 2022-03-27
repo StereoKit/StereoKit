@@ -148,7 +148,7 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="pt">The point to check against.</param>
 		/// <param name="radius">The distance to check against.</param>
-		/// <returns>True if the points are within radius of eachother, false 
+		/// <returns>True if the points are within radius of each other, false 
 		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool InRadius(Vec3 pt, float radius)
@@ -175,13 +175,13 @@ namespace StereoKit
 			=> (a.v-b.v).LengthSquared();
 
 		/// <summary>Checks if two points are within a certain radius of
-		/// eachother. This is an easily readable shorthand of the squared
+		/// each other. This is an easily readable shorthand of the squared
 		/// distance check. </summary>
 		/// <param name="a">The first point.</param>
 		/// <param name="b">And the second point!</param>
 		/// <param name="radius">The distance to check against.</param>
-		/// <returns>True if a and b are within radius of eachother, false not.
-		/// </returns>
+		/// <returns>True if a and b are within radius of each other, false if
+		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool InRadius(Vec3 a, Vec3 b, float radius)
 			=> (a.v-b.v).LengthSquared() < radius * radius;
@@ -222,7 +222,7 @@ namespace StereoKit
 			=> (float)System.Math.Acos( Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq) ) * Units.rad2deg;
 
 		/// <summary>Exactly the same as Vec3.Cross, but has some naming
-		/// memnonics for getting the order right when trying to find a 
+		/// mnemonics for getting the order right when trying to find a 
 		/// perpendicular vector using the cross product. This'll also make 
 		/// it more obvious to read if that's what you're actually going for
 		/// when crossing vectors!

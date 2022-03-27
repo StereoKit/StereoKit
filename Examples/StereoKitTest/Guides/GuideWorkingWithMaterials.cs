@@ -4,7 +4,7 @@ using System;
 /// :CodeDoc: Guides 7 Working with Materials
 /// # Working with Materials
 /// 
-/// Materials describe the visual appearance of everything onscreen, so having
+/// Materials describe the visual appearance of everything on-screen, so having
 /// a solid understanding of how they work is important to making a good
 /// looking application! Fortunately, StereoKit comes with some great tools
 /// built-in, and Materials can be a _lot_ of fun to work with!

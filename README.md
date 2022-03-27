@@ -11,6 +11,7 @@ StereoKit is an easy-to-use open source mixed reality library for building HoloL
 The getting started guide [can be found here](https://stereokit.net/Pages/Guides/Getting-Started.html)!
 
 Interested in news and updates about StereoKit? Maybe just looking for some extra help?
+
 - Submit bugs on the [Issues tab](https://github.com/maluoi/StereoKit/issues), and ask questions in the [Discussions tab](https://github.com/maluoi/StereoKit/discussions)!
 - Follow [koujaku](https://twitter.com/koujaku/) on Twitter for development news.
 - Drop into the [Discord channel](https://discord.gg/jtZpfS7nyK) for discussion, help and updates.
@@ -19,6 +20,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 ![Screenshot](/Tools/img/FeatureImage.jpg)
 
 ## StereoKit Features:
+
 - Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado (Linux), and eventually everywhere OpenXR is!
 - Flat screen MR simulator with input emulation for easy development
 - Builds your application to device in seconds, not minutes
@@ -44,20 +46,19 @@ using StereoKit;
 
 class Program
 {
-	static void Main(string[] args)
-	{
-		SK.Initialize(new SKSettings{ appName = "Project" });
+    static void Main(string[] args)
+    {
+        SK.Initialize(new SKSettings{ appName = "Project" });
 
-		Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
+        Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
 
-		while (SK.Step(() => {
-			helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
-		}));
-
-		SK.Shutdown();
-	}
+        SK.Run(() => {
+            helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+        });
+    }
 }
 ```
+
 ![Hello World](/Tools/img/StereoKitMin.gif)
 
 ## Building or Contributing

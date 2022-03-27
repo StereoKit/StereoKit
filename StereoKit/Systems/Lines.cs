@@ -1,7 +1,7 @@
 ﻿namespace StereoKit
 {
 	/// <summary>A line drawing class! This is an easy way to visualize lines
-	/// or relationships between objects. The current implementatation uses a
+	/// or relationships between objects. The current implementation uses a
 	/// quad strip that always faces the user, via vertex shader
 	/// manipulation.</summary>
 	public static class Lines

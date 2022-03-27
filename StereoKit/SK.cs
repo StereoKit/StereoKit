@@ -28,7 +28,7 @@ namespace StereoKit
 		/// </summary>
 		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
 		/// <summary>This structure contains information about the current 
-		/// system and its capabilites. There's a lot of different MR devices,
+		/// system and its capabilities. There's a lot of different MR devices,
 		/// so it's nice to have code for systems with particular 
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
@@ -68,6 +68,21 @@ namespace StereoKit
 			IsInitialized = InitializeCall(settings);
 			return IsInitialized;
 		}
+
+		/// <summary>This is a _very_ rudimentary way to initialize StereoKit,
+		/// it doesn't take much, but a robust application will prefer to use
+		/// an overload that takes SKSettings. This uses all the default
+		/// settings, which are primarily configured for development.</summary>
+		/// <param name="projectName">Name of the application, this shows up an
+		/// the top of the Win32 window, and is submitted to OpenXR. OpenXR
+		/// caps this at 128 characters.</param>
+		/// <param name="assetsFolder">Where to look for assets when loading
+		/// files! Final path will look like '[assetsFolder]/[file]', so a
+		/// trailing '/' is unnecessary.</param>
+		/// <returns>Returns true if all systems are successfully 
+		/// initialized!</returns>
+		public static bool Initialize(string projectName = "StereoKit App", string assetsFolder = "")
+			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
 
 		/// <summary>If you need to call StereoKit code before calling
 		/// SK.Initialize, you may need to explicitly load the library first.
@@ -155,7 +170,7 @@ namespace StereoKit
 		/// execution completes, it properly calls the shutdown callback and
 		/// shuts down StereoKit for you.
 		/// 
-		/// Using this method is important for compatability with WASM and is
+		/// Using this method is important for compatibility with WASM and is
 		/// the preferred method of controlling the main loop, over 
 		/// `SK.Step`.</summary>
 		/// <param name="onStep">A callback where you put your application 

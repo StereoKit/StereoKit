@@ -6,7 +6,7 @@
 	/// stack, render child objects relative to that parent transform and 
 	/// then pop it off the stack.
 	/// 
-	/// Performance note: if any matrices are on the heirarchy stack, any 
+	/// Performance note: if any matrices are on the hierarchy stack, any 
 	/// render will cause a matrix multiplication to occur! So if you have a
 	/// collection of objects with their transforms baked and cached into 
 	/// matrices for performance reasons, you'll want to ensure there are no 
