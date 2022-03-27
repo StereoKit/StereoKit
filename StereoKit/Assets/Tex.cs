@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -13,7 +14,8 @@ namespace StereoKit
 	{
 		#region Fields and Properties
 
-		internal IntPtr _inst;
+		internal IntPtr                    _inst;
+		private  List<Assets.CallbackData> _callbacks;
 
 		/// <summary>Allows you to set the Id of the texture to a specific
 		/// Id.</summary>
@@ -29,15 +31,24 @@ namespace StereoKit
 
 		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
 
-		public event Action<Tex> OnLoaded {
+		/// <summary>This event gets called</summary>
+		public event Action<Tex> OnLoaded { 
 			add {
+				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
+
 				AssetOnLoadCallback callback = (a, _) => { NativeAPI.tex_addref(a); value(new Tex(a)); };
-				Assets.OnLoadCallbackDelegates.Add(value, callback);
+				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
+
 				NativeAPI.tex_on_load(_inst, callback, IntPtr.Zero);
 			}
 			remove {
-				NativeAPI.tex_on_load_remove(_inst, Assets.OnLoadCallbackDelegates[value]);
-				Assets.OnLoadCallbackDelegates.Remove(value);
+				if (_callbacks == null) throw new NullReferenceException();
+
+				int i = _callbacks.FindIndex(d => (Action<Tex>)d.action == value);
+				if (i<0) throw new KeyNotFoundException();
+
+				NativeAPI.tex_on_load_remove(_inst, _callbacks[i].callback);
+				_callbacks.RemoveAt(i);
 			}
 		}
 
@@ -92,7 +103,17 @@ namespace StereoKit
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
+			{
+				if (_callbacks != null)
+				{
+					foreach (var c in _callbacks)
+					{
+						NativeAPI.tex_on_load_remove(_inst, c.callback);
+					}
+					_callbacks = null;
+				}
 				NativeAPI.assets_releaseref_threadsafe(_inst);
+			}
 		}
 
 		#endregion

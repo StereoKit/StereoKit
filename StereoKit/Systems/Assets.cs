@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace StereoKit
+﻿namespace StereoKit
 {
 	/// <summary>If you want to manage loading assets, this is the class for
 	/// you!</summary>
 	public static class Assets
 	{
-		internal static Dictionary<object, AssetOnLoadCallback> OnLoadCallbackDelegates = new Dictionary<object, AssetOnLoadCallback>();
+		internal struct CallbackData
+		{
+			public object              action;
+			public AssetOnLoadCallback callback;
+		}
 
 		/// <summary>This is the index of the current asset loading task. Note
 		/// that to load one asset, multiple tasks are generated.</summary>

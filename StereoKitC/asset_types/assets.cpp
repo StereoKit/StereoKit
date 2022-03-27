@@ -62,7 +62,7 @@ void *assets_find(const char *id, asset_type_ type) {
 void *assets_find(uint64_t id, asset_type_ type) {
 	size_t count = assets.count;
 	for (size_t i = 0; i < count; i++) {
-		if (assets[i]->id == id && assets[i]->type == type)
+		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0)
 			return assets[i];
 	}
 	return nullptr;
@@ -104,10 +104,10 @@ void *assets_allocate(asset_type_ type) {
 	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
 	header->type  = type;
-	header->refs += 1;
 	header->id    = hash_fnv64_string(name);
 	header->index = assets.count;
 	header->state = asset_state_none;
+	assets_addref(*header);
 	assets.add(header);
 	return header;
 }
@@ -139,6 +139,21 @@ void assets_addref(asset_header_t &asset) {
 
 ///////////////////////////////////////////
 
+void assets_releaseref(asset_header_t &asset) {
+	// Manage the reference count
+	asset.refs -= 1;
+	if (asset.refs < 0) {
+		log_err("Released too many references to asset!");
+		abort();
+	}
+	if (asset.refs != 0)
+		return;
+
+	assets_destroy(asset);
+}
+
+///////////////////////////////////////////
+
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
@@ -160,7 +175,11 @@ void assets_releaseref_threadsafe(void *asset) {
 
 void assets_destroy(asset_header_t &asset) {
 	if (asset.refs != 0) {
+#if defined(SK_DEBUG)
+		log_errf("Destroying asset '%s' that still has references!", asset.id_text);
+#else
 		log_err("Destroying an asset that still has references!");
+#endif
 		return;
 	}
 
@@ -191,21 +210,6 @@ void assets_destroy(asset_header_t &asset) {
 	free(asset.id_text);
 #endif
 	free(&asset);
-}
-
-///////////////////////////////////////////
-
-void assets_releaseref(asset_header_t &asset) {
-	// Manage the reference count
-	asset.refs -= 1;
-	if (asset.refs < 0) {
-		log_err("Released too many references to asset!");
-		abort();
-	}
-	if (asset.refs != 0)
-		return;
-
-	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
