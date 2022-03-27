@@ -63,6 +63,7 @@ struct asset_task_t {
 void       *assets_find          (const char *id, asset_type_ type);
 void       *assets_find          (uint64_t    id, asset_type_ type);
 void       *assets_allocate      (asset_type_ type);
+void        assets_destroy       (asset_header_t &asset);
 void        assets_set_id        (asset_header_t &header, const char *id);
 void        assets_set_id        (asset_header_t &header, uint64_t    id);
 void        assets_unique_name   (asset_type_ type, const char *root_name, char *dest, int dest_size);
