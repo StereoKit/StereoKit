@@ -1788,6 +1788,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	const float snap_dist  = 7*cm2m;
 
 	// Find sizes of slider elements
+	float percent      = (float)((value - min) / (max - min));
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
 	float rule_size    = fmaxf(skui_settings.padding, size.y / 6.f);
 	vec2  button_size  = confirm_method == ui_confirm_push
@@ -1796,10 +1797,6 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Activation bounds sizing
 	float activation_plane = button_depth + skui_finger_radius;
-	vec3  activation_start = window_relative_pos + vec3{ (float)(((value-min) / (max-min)) * -(size.x-button_size.x)), -(size.y/2 - button_size.y/2), -activation_plane };
-	vec3  activation_size  = vec3{ button_size.x, button_size.y, 0.0001f };
-	vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-	vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
 
 	// Set up for getting the state of the sliders.
 	button_state_ focus_state   = button_state_inactive;
@@ -1808,6 +1805,11 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	float         finger_x      = 0;
 	int32_t       hand          = -1;
 	if (confirm_method == ui_confirm_push) {
+		vec3  activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
+		vec3  activation_size  = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
+		vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
+		vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+
 		ui_box_interaction_1h_poke(id,
 			activation_start, activation_size,
 			sustain_start,    sustain_size,
@@ -1826,10 +1828,9 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		if (hand != -1)
 			finger_x = skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		activation_size.x = button_size.x * 3;
-		activation_size.z = button_depth * 2;
-		activation_start.z = button_depth;
-		activation_start.x += button_size.x;
+		vec3 activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x, -(size.y/2 - button_size.y/2), button_depth };
+		vec3 activation_size  = vec3{ button_size.x*3, button_size.y, button_depth*2 };
+
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
 			activation_start, activation_size,
@@ -1862,6 +1863,7 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		}
 		result = value != new_val;
 		value = new_val;
+		percent = (float)((value - min) / (max - min));
 	}
 
 	if (button_state & button_state_just_active)
@@ -1873,7 +1875,6 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	}
 
 	// Draw the UI
-	float percent     = (float)((value - min) / (max - min));
 	float x           = window_relative_pos.x;
 	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
 	float slide_x_rel = (float)(percent * (size.x-button_size.x));
