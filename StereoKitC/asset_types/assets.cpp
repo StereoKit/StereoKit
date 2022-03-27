@@ -405,14 +405,14 @@ int32_t assets_current_task() {
 ///////////////////////////////////////////
 
 int32_t assets_total_tasks() {
-	return asset_thread_tasks.count + asset_tasks_finished;
+	return (int32_t)asset_thread_tasks.count + asset_tasks_finished;
 }
 
 ///////////////////////////////////////////
 
 int32_t assets_current_task_priority() {
 	if (asset_thread_tasks.count > 0)
-		return asset_thread_tasks[0]->sort;
+		return (int32_t)asset_thread_tasks[0]->sort;
 	return INT_MAX;
 }
 

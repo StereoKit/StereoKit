@@ -17,7 +17,7 @@ class DemoPBR : ITest
 		oldSkyTex   = Renderer.SkyTex;
 		oldSkyLight = Renderer.SkyLight;
 		sphereMesh  = Mesh.GenerateSphere(1, 7);
-		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"C:\Data\Skyboxes\pink_sunrise_4k.hdr");
+		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
 
 		pbrModel = Model.FromFile("DamagedHelmet.gltf");

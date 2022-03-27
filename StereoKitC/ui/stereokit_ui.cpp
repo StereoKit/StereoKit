@@ -1874,7 +1874,6 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Draw the UI
 	float percent     = (float)((value - min) / (max - min));
-	float back_size   = skui_settings.backplate_border;
 	float x           = window_relative_pos.x;
 	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
 	float slide_x_rel = (float)(percent * (size.x-button_size.x));

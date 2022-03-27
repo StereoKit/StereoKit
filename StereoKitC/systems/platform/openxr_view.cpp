@@ -620,7 +620,7 @@ bool openxr_render_frame() {
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime          = frame_state.predictedDisplayTime;
 	end_info.environmentBlendMode = xr_displays[0].blend;
-	end_info.layerCount           = comp_layers->count;
+	end_info.layerCount           = (uint32_t)comp_layers->count;
 	end_info.layers               = comp_layers->data;
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };

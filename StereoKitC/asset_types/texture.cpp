@@ -50,7 +50,7 @@ struct tex_load_t {
 
 ///////////////////////////////////////////
 
-void tex_load_free(asset_header_t *asset, void *job_data) {
+void tex_load_free(asset_header_t *, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 
 	for (size_t i = 0; i < data->file_count; i++) {
@@ -115,7 +115,7 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_parse(asset_task_t *task, asset_header_t *asset, void *job_data) {
+bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -182,7 +182,7 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_equirect_parse(asset_task_t *task, asset_header_t *asset, void *job_data) {
+bool32_t tex_load_equirect_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -206,7 +206,7 @@ bool32_t tex_load_equirect_parse(asset_task_t *task, asset_header_t *asset, void
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_equirect_upload(asset_task_t *task, asset_header_t *asset, void *job_data) {
+bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -239,13 +239,13 @@ bool32_t tex_load_equirect_upload(asset_task_t *task, asset_header_t *asset, voi
 			void      *face_data;
 			size_t     size;
 		};
-		blit_t job_data = { face, convert_material, face_data[i], size };
+		blit_t blit_data = { face, convert_material, face_data[i], size };
 		assets_execute_gpu([](void *data) {
-			blit_t *job_data = (blit_t *)data;
-			render_blit (job_data->face, job_data->material);
-			tex_get_data(job_data->face, job_data->face_data, job_data->size);
+			blit_t *blit_data = (blit_t *)data;
+			render_blit (blit_data->face, blit_data->material);
+			tex_get_data(blit_data->face, blit_data->face_data, blit_data->size);
 			return (bool32_t)true;
-		}, &job_data);
+		}, &blit_data);
 		
 		
 #if defined(SKG_OPENGL)
@@ -277,7 +277,7 @@ bool32_t tex_load_equirect_upload(asset_task_t *task, asset_header_t *asset, voi
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_upload(asset_task_t *task, asset_header_t *asset, void *job_data) {
+bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -289,8 +289,9 @@ bool32_t tex_load_arr_upload(asset_task_t *task, asset_header_t *asset, void *jo
 
 ///////////////////////////////////////////
 
-void tex_load_on_failure(asset_header_t *asset, void *job_data) {
-	tex_load_t *data = (tex_load_t *)job_data;
+void tex_load_on_failure(asset_header_t *, void *job_data) {
+	//tex_load_t *data = (tex_load_t *)job_data;
+	//TODO: error texture
 }
 
 ///////////////////////////////////////////
@@ -298,7 +299,7 @@ void tex_load_on_failure(asset_header_t *asset, void *job_data) {
 bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format) {
 	// Check STB image formats
 	int32_t comp;
-	bool success = stbi_info_from_memory((const stbi_uc*)data, data_size, out_width, out_height, &comp) == 1;
+	bool success = stbi_info_from_memory((const stbi_uc*)data, (int)data_size, out_width, out_height, &comp) == 1;
 	if (success) {
 		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rgba128;
 		else                                                          *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
@@ -307,7 +308,7 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32
 
 	// Check QOI
 	qoi_desc qoi = {};
-	success = qoi_info(data, data_size, &qoi);
+	success = qoi_info(data, (int)data_size, &qoi);
 	if (success) {
 		*out_width  = qoi.width;
 		*out_height = qoi.height;
