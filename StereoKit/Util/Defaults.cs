@@ -98,7 +98,7 @@
 		/// This is the texture referred to as 'flat' in the shader texture 
 		/// defaults.</summary>
 		public static Tex TexFlat  { get; private set; }
-		/// <summary>Default 2x2 roughness color (0,0,1) texture, this is the
+		/// <summary>Default 2x2 roughness color (1,0,1,1) texture, this is the
 		/// texture referred to as 'rough' in the shader texture defaults.
 		/// </summary>
 		public static Tex TexRough { get; private set; }
