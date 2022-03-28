@@ -115,6 +115,12 @@ void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_coun
 
 ///////////////////////////////////////////
 
+int32_t mesh_get_vert_count(mesh_t mesh) {
+	return mesh->vert_count;
+}
+
+///////////////////////////////////////////
+
 void _mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
@@ -201,6 +207,12 @@ void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, co
 void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
 	out_indices     = mesh->inds;
 	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
+}
+
+///////////////////////////////////////////
+
+int32_t mesh_get_ind_count(mesh_t mesh) {
+	return mesh->ind_count;
 }
 
 ///////////////////////////////////////////

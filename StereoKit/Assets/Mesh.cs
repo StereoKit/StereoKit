@@ -42,6 +42,16 @@ namespace StereoKit
 			set => NativeAPI.mesh_set_keep_data(_inst, value);
 		}
 
+		/// <summary>The number of vertices stored in this Mesh! This is
+		/// available to you regardless of whether or not KeepData is set.
+		/// </summary>
+		public int VertCount => NativeAPI.mesh_get_vert_count(_inst);
+
+		/// <summary>The number of indices stored in this Mesh! This is
+		/// available to you regardless of whether or not KeepData is set.
+		/// </summary>
+		public int IndCount => NativeAPI.mesh_get_ind_count(_inst);
+
 		/// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to
 		/// add data to it!</summary>
 		public Mesh()
