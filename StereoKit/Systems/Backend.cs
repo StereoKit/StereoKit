@@ -81,7 +81,7 @@ namespace StereoKit
 			/// <returns>A delegate, or null on failure.</returns>
 			public static TDelegate GetFunction<TDelegate>(string functionName) {
 				IntPtr fn = NativeAPI.backend_openxr_get_function(functionName);
-				if (fn == null) return default;
+				if (fn == IntPtr.Zero) return default;
 				return Marshal.GetDelegateForFunctionPointer<TDelegate>(fn);
 			}
 
