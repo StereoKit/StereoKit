@@ -99,19 +99,19 @@ const char *openxr_string(XrResult result) {
 bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 	if (!xr_stage_space) return false;
 
-	XrExtent2Df bounds;
-	XrResult res = xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
-	if (XR_FAILED(res) || res == XR_SPACE_BOUNDS_UNAVAILABLE)
-		return false;
 	if (!openxr_get_space(xr_stage_space, out_pose, time))
 		return false;
 
-	out_size->x = bounds.width;
-	out_size->y = bounds.height;
+	XrExtent2Df bounds;
+	XrResult    res = xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+	if (XR_SUCCEEDED(res) && res != XR_SPACE_BOUNDS_UNAVAILABLE) {
+		out_size->x = bounds.width;
+		out_size->y = bounds.height;
+	}
 
 	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)",
 		out_size->x, out_size->y,
-		out_pose->position.x, out_pose->position.y, out_pose->position.z,
+		out_pose->position   .x, out_pose->position   .y, out_pose->position   .z,
 		out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
 	return true;
 }
