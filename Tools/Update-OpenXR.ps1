@@ -17,11 +17,18 @@ if ($openxrCurrent -ne $openxrDesired) {
 }
 
 # Get the Visual Studio executable for building
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[16.0,17.0)'
+$vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+$vsVersionRange = '[16.0,18.0)'
+$vsExe          = & $vsWhere -latest -property productPath -version $vsVersionRange
 if (!$vsExe) {
-    Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
+    Write-Host 'Valid Visual Studio version not found!' -ForegroundColor red
     exit 
 }
+$vsYear          = & $vsWhere -latest -property catalog_productLineVersion -version $vsVersionRange
+$vsVersion       = & $vsWhere -latest -property catalog_buildVersion -version $vsVersionRange
+$vsVersion       = $vsVersion.Split(".")[0]
+$vsGeneratorName = "Visual Studio $vsVersion $vsYear"
+Write-Host "Using $vsGeneratorName"
 
 # This tell VS to build with a partcular 'Release|x64' style mode
 function Build {
@@ -76,31 +83,31 @@ New-Item -Path . -Name "ARM_UWP" -ItemType "directory" | Out-Null
 # cmake each project configuration
 Push-Location -Path "x64"
 Write-Host 'Making x64' -ForegroundColor green
-& cmake -G "Visual Studio 16 2019" -A x64 ../..
+& cmake -G $vsGeneratorName -A x64 ../..
 Write-Host 'Made x64' -ForegroundColor green
 Pop-Location
 
 Push-Location -Path "x64_UWP"
 Write-Host 'Making x64_UWP' -ForegroundColor green
-& cmake -G "Visual Studio 16 2019" -A x64 "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
+& cmake -G $vsGeneratorName -A x64 "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
 Write-Host 'Made x64_UWP' -ForegroundColor green
 Pop-Location
 
 Push-Location -Path "ARM64"
 Write-Host 'Making ARM64' -ForegroundColor green
-& cmake -G "Visual Studio 16 2019" -A ARM64 ../..
+& cmake -G $vsGeneratorName -A ARM64 ../..
 Write-Host 'Made ARM64' -ForegroundColor green
 Pop-Location
 
 Push-Location -Path "ARM64_UWP"
 Write-Host 'Making ARM64_UWP' -ForegroundColor green
-& cmake -G "Visual Studio 16 2019" -A ARM64 "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
+& cmake -G $vsGeneratorName -A ARM64 "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
 Write-Host 'Made ARM64_UWP' -ForegroundColor green
 Pop-Location
 
 Push-Location -Path "ARM_UWP"
 Write-Host 'Making ARM_UWP' -ForegroundColor green
-& cmake -G "Visual Studio 16 2019" -A ARM "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
+& cmake -G $vsGeneratorName -A ARM "-DCMAKE_SYSTEM_NAME=WindowsStore" "-DCMAKE_SYSTEM_VERSION=10.0" "-DDYNAMIC_LOADER=OFF" ../..
 Write-Host 'Made ARM_UWP' -ForegroundColor green
 Pop-Location
 
@@ -131,4 +138,63 @@ Pop-Location
 # more builds of react physics than strictly necessary, but we do
 # tap into the OXR build-if-necessary logic.
 Write-Host 'Building ReactPhysics3D too!'
-& .\update_physics_win.bat
+
+# Clone the repository
+& git clone https://github.com/DanielChappuis/reactphysics3d.git
+Push-Location -Path 'reactphysics3d'
+& git checkout 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9
+
+# Replace the include files
+Remove-Item -Path '../../StereoKitC/lib/include/reactphysics3d' -Recurse -Force -Confirm:$false
+New-Item -Path . -Name '../../StereoKitC/lib/include/reactphysics3d' -ItemType 'directory' | Out-Null
+Copy-Item -Path "include\reactphysics3d\*" -Destination "../../StereoKitC/lib/include/reactphysics3d" -Recurse -Force -Confirm:$false
+
+# Build x64 Release/Debug, ARM64 Release/Debug and ARM Release/Debug with Visual Studio
+New-Item -Path . -Name 'Release_x64' -ItemType 'directory' -Force | Out-Null
+Push-Location -Path 'Release_x64'
+& cmake -G "$vsGeneratorName" -A x64 -DCMAKE_BUILD_TYPE=Release ../ -Wno-dev
+& cmake --build . --config Release
+Copy-Item -Path "Release/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/x64/Release/" -Force -Confirm:$false
+Pop-Location
+
+New-Item -Path . -Name 'Debug_x64' -ItemType 'directory' | Out-Null
+Push-Location -Path 'Debug_x64'
+& cmake -G $vsGeneratorName -A x64 -DCMAKE_BUILD_TYPE=Debug ../ -Wno-dev
+& cmake --build .
+Copy-Item -Path "Debug/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/x64/Debug/" -Force -Confirm:$false
+Copy-Item -Path "Debug/reactphysics3d.pdb" -Destination "../../../StereoKitC/lib/bin/x64/Debug/" -Force -Confirm:$false
+Pop-Location
+
+New-Item -Path . -Name 'Release_ARM64' -ItemType 'directory' | Out-Null
+Push-Location -Path 'Release_ARM64'
+& cmake -G $vsGeneratorName -A ARM64 -DCMAKE_BUILD_TYPE=Release ../ -Wno-dev
+& cmake --build . --config Release 
+Copy-Item -Path "Release/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM64/Release/" -Force -Confirm:$false
+Pop-Location
+
+New-Item -Path . -Name 'Debug_ARM64' -ItemType 'directory' | Out-Null
+Push-Location -Path 'Debug_ARM64'
+& cmake -G $vsGeneratorName -A ARM64 -DCMAKE_BUILD_TYPE=Debug ../ -Wno-dev
+& cmake --build .
+Copy-Item -Path "Debug/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM64/Debug/" -Force -Confirm:$false
+Copy-Item -Path "Debug/reactphysics3d.pdb" -Destination "../../../StereoKitC/lib/bin/ARM64/Debug/" -Force -Confirm:$false
+Pop-Location
+
+New-Item -Path . -Name 'Release_ARM' -ItemType 'directory' | Out-Null
+Push-Location -Path 'Release_ARM'
+& cmake -G $vsGeneratorName -A ARM -DCMAKE_BUILD_TYPE=Release ../ -Wno-dev
+& cmake --build . --config Release 
+Copy-Item -Path "Release/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM/Release/" -Force -Confirm:$false
+Pop-Location
+
+New-Item -Path . -Name 'Debug_ARM' -ItemType 'directory' | Out-Null
+Push-Location -Path 'Debug_ARM'
+& cmake -G $vsGeneratorName -A ARM -DCMAKE_BUILD_TYPE=Debug ../ -Wno-dev
+& cmake --build .
+Copy-Item -Path "Debug/reactphysics3d.lib" -Destination "../../../StereoKitC/lib/bin/ARM/Debug/" -Force -Confirm:$false
+Copy-Item -Path "Debug/reactphysics3d.pdb" -Destination "../../../StereoKitC/lib/bin/ARM/Debug/" -Force -Confirm:$false
+Pop-Location
+
+Pop-Location
+
+Remove-Item -Path "reactphysics3d" -Recurse -Force -Confirm:$false
