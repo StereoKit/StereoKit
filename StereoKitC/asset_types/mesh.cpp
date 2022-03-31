@@ -37,7 +37,7 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
+void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data && update_original) {
 		if (mesh->vert_capacity < vertex_count)
@@ -75,7 +75,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, 
 	if (calculate_bounds && vertex_count > 0) {
 		vec3 min = vertices[0].pos;
 		vec3 max = vertices[0].pos;
-		for (int32_t i = 1; i < vertex_count; i++) {
+		for (uint32_t i = 1; i < vertex_count; i++) {
 			min.x = fminf(vertices[i].pos.x, min.x);
 			min.y = fminf(vertices[i].pos.y, min.y);
 			min.z = fminf(vertices[i].pos.z, min.z);
@@ -121,7 +121,7 @@ int32_t mesh_get_vert_count(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void _mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
+void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
@@ -206,13 +206,13 @@ void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, co
 
 void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
 	out_indices     = mesh->inds;
-	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
+	out_index_count = mesh->inds == nullptr ? 0 : (int32_t)mesh->ind_count;
 }
 
 ///////////////////////////////////////////
 
 int32_t mesh_get_ind_count(mesh_t mesh) {
-	return mesh->ind_count;
+	return (int32_t)mesh->ind_count;
 }
 
 ///////////////////////////////////////////
@@ -237,11 +237,12 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 ///////////////////////////////////////////
 
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
-	if (index_count > mesh->ind_count) {
-		index_count = mesh->ind_count;
+	uint32_t u_count = index_count;
+	if (u_count > mesh->ind_count) {
+		u_count = mesh->ind_count;
 		log_warn("mesh_set_draw_inds: Can't render more indices than the mesh has! Capping...");
 	}
-	mesh->ind_draw  = index_count;
+	mesh->ind_draw = u_count;
 }
 
 ///////////////////////////////////////////
@@ -262,7 +263,7 @@ bool32_t mesh_has_skin(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, int32_t bone_count) {
+bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_count, const vec4 *bone_weights, uint32_t bone_weight_count, int32_t bone_count) {
 	if (mesh->discard_data) {
 		log_err("mesh_set_skin: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
 		return false;
@@ -314,7 +315,7 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
 	}
 
-	for (int32_t i = 0; i < mesh->vert_count; i++) {
+	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
 
@@ -409,9 +410,9 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 	coll.pts    = sk_malloc_t(vec3   , mesh->ind_count);
 	coll.planes = sk_malloc_t(plane_t, mesh->ind_count/3);
 
-	for (int32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
+	for (uint32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
 
-	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
+	for (uint32_t i = 0; i < mesh->ind_count; i += 3) {
 		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
 		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
 		vec3    normal = vec3_normalize( vec3_cross(dir2, dir1) );
@@ -463,7 +464,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
-	for (int32_t i = 0; i < mesh->ind_count; i+=3) {
+	for (uint32_t i = 0; i < mesh->ind_count; i+=3) {
 		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
 			continue;
 
