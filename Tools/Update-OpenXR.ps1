@@ -3,28 +3,7 @@ Push-Location -Path $PSScriptRoot
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
 function Get-ScriptName { return $MyInvocation.ScriptName }
 
-# Check for cmake 3.21
-if (!(Get-Command 'cmake' -errorAction SilentlyContinue))
-{
-    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build OpenXR, please install or add to Path!" -ForegroundColor red
-    exit
-}
-$Matches = {}
-$cmakeVersion = & cmake --version
-$cmakeVersion = [string]$cmakeVersion
-$cmakeVersion -match '(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)' | Out-Null
-$cmvMajor = $Matches.Major
-$cmvMinor = $Matches.Minor
-$cmvPatch = $Matches.Patch
-if ( $cmvMajor -lt 3 -or
-    ($cmvMajor -eq 3 -and $cmvMinor -lt 21)) {
-    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake version must be greater than 3.21! Found $cmvMajor.$cmvMinor.$cmvPatch. Please update and try again!" -ForegroundColor red
-    exit
-} else {
-    Write-Host "Found cmake version: $cmvMajor.$cmvMinor.$cmvPatch" -ForegroundColor green
-}
-
-# Check the version installed
+# Check the OpenXR version installed
 $openxrDesired = Select-String -Path "..\xmake.lua" -Pattern 'add_requires\("openxr_loader (.*?)"' | %{$_.Matches.Groups[1].Value}
 if (Test-Path -Path oxr_current.txt -PathType Leaf) {
     $openxrCurrent = Get-Content -Path "oxr_current.txt"
@@ -52,7 +31,28 @@ $vsYear          = & $vsWhere -latest -property catalog_productLineVersion -vers
 $vsVersion       = & $vsWhere -latest -property catalog_buildVersion -version $vsVersionRange
 $vsVersion       = $vsVersion.Split(".")[0]
 $vsGeneratorName = "Visual Studio $vsVersion $vsYear"
-Write-Host "Using $vsGeneratorName"
+Write-Host "Using $vsGeneratorName" -ForegroundColor green
+
+# Check for cmake 3.21
+if (!(Get-Command 'cmake' -errorAction SilentlyContinue))
+{
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build OpenXR, please install or add to Path!" -ForegroundColor red
+    exit
+}
+$Matches = {}
+$cmakeVersion = & cmake --version
+$cmakeVersion = [string]$cmakeVersion
+$cmakeVersion -match '(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)' | Out-Null
+$cmvMajor = $Matches.Major
+$cmvMinor = $Matches.Minor
+$cmvPatch = $Matches.Patch
+if ( $cmvMajor -lt 3 -or
+    ($cmvMajor -eq 3 -and $cmvMinor -lt 21)) {
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake version must be greater than 3.21! Found $cmvMajor.$cmvMinor.$cmvPatch. Please update and try again!" -ForegroundColor red
+    exit
+} else {
+    Write-Host "Using cmake version: $cmvMajor.$cmvMinor.$cmvPatch" -ForegroundColor green
+}
 
 # This tell VS to build with a partcular 'Release|x64' style mode
 function Build {
