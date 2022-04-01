@@ -1,5 +1,29 @@
 Push-Location -Path $PSScriptRoot
 
+function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
+function Get-ScriptName { return $MyInvocation.ScriptName }
+
+# Check for cmake 3.21
+if (!(Get-Command 'cmake' -errorAction SilentlyContinue))
+{
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build OpenXR, please install or add to Path!" -ForegroundColor red
+    exit
+}
+$Matches = {}
+$cmakeVersion = & cmake --version
+$cmakeVersion = [string]$cmakeVersion
+$cmakeVersion -match '(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)' | Out-Null
+$cmvMajor = $Matches.Major
+$cmvMinor = $Matches.Minor
+$cmvPatch = $Matches.Patch
+if ( $cmvMajor -lt 3 -or
+    ($cmvMajor -eq 3 -and $cmvMinor -lt 21)) {
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake version must be greater than 3.21! Found $cmvMajor.$cmvMinor.$cmvPatch. Please update and try again!" -ForegroundColor red
+    exit
+} else {
+    Write-Host "Found cmake version: $cmvMajor.$cmvMinor.$cmvPatch" -ForegroundColor green
+}
+
 # Check the version installed
 $openxrDesired = Select-String -Path "..\xmake.lua" -Pattern 'add_requires\("openxr_loader (.*?)"' | %{$_.Matches.Groups[1].Value}
 if (Test-Path -Path oxr_current.txt -PathType Leaf) {
@@ -12,7 +36,7 @@ if ($openxrCurrent -ne $openxrDesired) {
     Write-Host "Updating to the correct OpenXR loader version!"
     Write-Host "$openxrCurrent -> $openxrDesired"
 } else {
-    Write-Host "OpenXR is up-to-date"
+    Write-Host "OpenXR is up-to-date" -ForegroundColor green
     exit
 }
 
@@ -21,7 +45,7 @@ $vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswh
 $vsVersionRange = '[16.0,18.0)'
 $vsExe          = & $vsWhere -latest -property productPath -version $vsVersionRange
 if (!$vsExe) {
-    Write-Host 'Valid Visual Studio version not found!' -ForegroundColor red
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Valid Visual Studio version not found!" -ForegroundColor red
     exit 
 }
 $vsYear          = & $vsWhere -latest -property catalog_productLineVersion -version $vsVersionRange
@@ -47,12 +71,12 @@ function Build-Config {
     # Build release and debug mode for this configuration
     $result = Build -mode "Release|$target"
     if ($result -ne 0) {
-        Write-Host "--- $config build failed! Stopping build! ---" -ForegroundColor red
+        Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $config build failed! Stopping build! ---" -ForegroundColor red
         exit
     }
     $result = Build -mode "Debug|$target"
     if ($result -ne 0) {
-        Write-Host "--- $config debug build failed! Stopping build! ---" -ForegroundColor red
+        Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $config debug build failed! Stopping build! ---" -ForegroundColor red
         exit
     }
     Write-Host "Built $config complete!" -ForegroundColor green
