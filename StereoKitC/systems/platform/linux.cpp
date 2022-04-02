@@ -342,7 +342,9 @@ bool setup_x_window() {
 	}
 
 	XMapWindow(x_dpy, x_win);
-	XStoreName(x_dpy, x_win, sk_app_name);
+	XChangeProperty(x_dpy, x_win, XInternAtom(x_dpy, "_NET_WM_NAME", False),
+								XInternAtom(x_dpy, "UTF8_STRING", False), 8, PropModeReplace,
+								(unsigned char *)sk_app_name, strlen(sk_app_name));
 
 	// loads the XMODIFIERS environment variable to see what input method to use
 	XSetLocaleModifiers("");
