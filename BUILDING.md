@@ -17,7 +17,7 @@ StereoKit is a cross-platform library, but many features are not platform specif
     - VS Workload: Universal Windows Platform
     - VS Workload: Desktop development with C++
     - VS Workload: Game development with C++
--  [CMake](https://cmake.org) (To build OpenXR & dependencies)
+- [CMake](https://cmake.org) (To build OpenXR & dependencies)
 
 Open StereoKit.sln and _unload_ these projects
 - StereoKitTest_Android
