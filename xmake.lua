@@ -97,13 +97,16 @@ target("StereoKitC")
     add_includedirs("StereoKitC/lib/include_no_win")
 
     add_packages("reactphysics3d")
-    -- On Android, we have a precompiled binary provided by Oculus
-    if has_config("oculus-openxr") then
-        add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
-        add_links("openxr_loader")
-    elseif not is_plat("wasm") then
-        add_packages("openxr_loader")
+    if not is_plat("wasm") then
+        -- On Android, we have a precompiled binary provided by Oculus
+        if has_config("oculus-openxr") then
+            add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
+            add_links("openxr_loader")
+        else
+            add_packages("openxr_loader")
+        end
     end
+
 
     -- Pick our flavor of OpenGL
     if is_plat("linux") then
