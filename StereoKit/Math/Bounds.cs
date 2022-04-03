@@ -101,7 +101,7 @@ namespace StereoKit
 		public bool Contains(Vec3 linePt1, Vec3 linePt2, float radius)
 			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius);
 
-		/// <summary>Scale this bounds position and extents by the given scale.
+		/// <summary>Scale this bounds. It will scale the center as well as	the dimensions!
 		///  Modifies this bounds object.</summary>
 		/// <remarks>See <seealso cref="Scaled(float)"/> or <seealso cref="Scaled(Vec3)"/>
 		/// for a non-mutating alternative</remarks>
@@ -119,7 +119,8 @@ namespace StereoKit
 			dimensions *= scale;
 		}
 
-		/// <summary>Scale the bounds position and extents by the given scale.
+		/// <summary>Scale the bounds.  
+		/// It will scale the center as well as	the dimensions!
 		/// Returns a new Bounds.</summary>
 		/// <remarks>This is equivalent to using the * operator: bounds * scale</remarks>
 		/// <param name="scale">Scale</param>
