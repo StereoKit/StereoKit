@@ -18,7 +18,8 @@ namespace StereoKit
     /// Matrix M = Matrix.S(...) * Matrix.R(...) * Matrix.T(...);
     /// This order is related to the fact that StereoKit uses row-major order
     /// to store matrices. In other 3D frameworks and certain 3D math references
-    /// you may find column-major matrices, so be sure to keep this in mind.
+    /// you may find column-major matrices, which would need the reverse order,
+    /// i.e. T*R*S. 
     ///
 	/// Matrices are prominently used within shaders for mesh transforms!
 	/// </summary>
