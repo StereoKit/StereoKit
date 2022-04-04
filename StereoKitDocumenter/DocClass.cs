@@ -30,8 +30,9 @@ namespace StereoKitDocumenter
 			Type t = ClassType;
 			methods.Sort((a,b)=>a.name.CompareTo(b.name));
 			fields .Sort((a,b)=>a.name.CompareTo(b.name));
-			List<DocMethod> methodsStatic   = methods.FindAll(a =>  a.IsStatic);
-			List<DocMethod> methodsInstance = methods.FindAll(a => !a.IsStatic);
+			List<DocMethod> methodsStatic   = methods.FindAll(a =>  a.IsStatic && !a.isOp);
+			List<DocMethod> methodsInstance = methods.FindAll(a => !a.IsStatic && !a.isOp);
+			List<DocMethod> methodsOperator = methods.FindAll(a =>  a.isOp);
 			List<DocField>  fieldsStatic    = fields.FindAll(a =>  a.GetStatic(t));
 			List<DocField>  fieldsInstance  = fields.FindAll(a => !a.GetStatic(t));
 
@@ -60,6 +61,11 @@ namespace StereoKitDocumenter
 			memberTextStatic += string.Join("\n", methodsStatic
 				.Select(methodToString));
 
+			string memberTextOps = methodsOperator.Count == 0 ?
+				"" : "\n\n## Operators\n\n|  |  |\n|--|--|\n";
+			memberTextOps += string.Join("\n", methodsOperator
+				.Select(methodToString));
+
 			string fieldTextStatic;
 			if (t.IsEnum) {
 				fieldTextStatic = fieldsStatic.Count == 0 ?
@@ -84,12 +90,7 @@ description: {StringHelper.CleanForDescription(summary)}
 ---
 # {classDescription} {Name}
 
-{summary}
-{fieldText}
-{memberText}
-{fieldTextStatic}
-{memberTextStatic}
-{exampleText}
+{summary}{fieldText}{memberText}{fieldTextStatic}{memberTextStatic}{memberTextOps}{exampleText}
 ";
 
 		}

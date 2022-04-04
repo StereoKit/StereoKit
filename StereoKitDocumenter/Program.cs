@@ -169,7 +169,11 @@ namespace StereoKitDocumenter
 			string paramSignature = segs.Length>1?segs[1] :"";
 			segs = nameSignature.Split('.');
 			if (paramSignature.Length > 0)
-				paramSignature = paramSignature.Substring(0, paramSignature.Length-1);
+			{
+				int end = paramSignature.IndexOf(')');
+				if (end == -1) end = paramSignature.Length - 1;
+				paramSignature = paramSignature.Substring(0, end);
+			}
 
 			DocMethod method = methods.Find(a => a.name == segs[segs.Length-1] && a.parent.name == segs[segs.Length-2]);
 			if (method == null)

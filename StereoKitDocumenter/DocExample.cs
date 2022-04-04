@@ -20,13 +20,13 @@ namespace StereoKitDocumenter
 		bool comments;
 
 		bool skipBlanks = true;
-		int  skipIndent = -1;
-		int  sortIndex  = 0;
+		int skipIndent = -1;
+		int sortIndex = 0;
 
-		public string Name      => info;
-		public string FileName  => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category+"/") + info.Replace(' ', '-') + ".md");
-		public string UrlName   => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
-		public int    SortIndex => sortIndex;
+		public string Name => info;
+		public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category + "/") + info.Replace(' ', '-') + ".md");
+		public string UrlName => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
+		public int SortIndex => sortIndex;
 
 		public DocExample(ExampleType aType, string aInfo)
 		{
@@ -46,9 +46,9 @@ namespace StereoKitDocumenter
 				}
 			} else if (type == ExampleType.Document) {
 				string[] words = info.Split(' ');
-				category  = words[0];
+				category = words[0];
 				sortIndex = int.Parse(words[1]);
-				info      = String.Join(" ", words, 2, words.Length - 2);
+				info = String.Join(" ", words, 2, words.Length - 2);
 				Program.items.Add(this);
 			}
 		}
@@ -58,7 +58,7 @@ namespace StereoKitDocumenter
 			if (text.Trim().StartsWith("///"))
 			{
 				// If we were in some code, finish the section off
-				if (!comments) { 
+				if (!comments) {
 					data += "```\n";
 					skipBlanks = true;
 					skipIndent = -1;
@@ -76,11 +76,11 @@ namespace StereoKitDocumenter
 					data += "```csharp\n";
 				comments = false;
 
-				if (!skipBlanks || text.Trim() != "") { 
+				if (!skipBlanks || text.Trim() != "") {
 					skipBlanks = false;
 					if (skipIndent == -1)
 						skipIndent = text.Length - text.TrimStart(' ', '\t').Length;
-					data += (skipIndent < text.Length ? text.Substring(skipIndent) : text) + "\n" ;
+					data += (skipIndent < text.Length ? text.Substring(skipIndent) : text) + "\n";
 				}
 			}
 		}
@@ -97,15 +97,37 @@ namespace StereoKitDocumenter
 
 		public override string ToString()
 		{
-
 			return $@"---
 layout: default
-title: {(category.ToLower()=="root"?"":category)} {info}
-description: {info}
+title: {info}
+description: {GetSummary(data)}
 ---
 
 {data}
 ";
+		}
+
+		private string GetSummary(string text)
+		{
+			int newline = 0;
+			int i = 0;
+			int start = 0;
+			text = text.Trim();
+			if (text.StartsWith("#"))
+			{
+				while(text[start] != '\n' && start < text.Length) start++;
+			}
+			while (char.IsWhiteSpace(text[start]) && start < text.Length) start++;
+
+			for (i=start; i < text.Length && i-start < 140; i++)
+			{
+				if      (text[i] == '\n') newline++;
+				else if (text[i] == '\r') { }
+				else if (text[i] == '#' ) break;
+				else                      newline = 0;
+			}
+			return StringHelper.CleanForDescription(text.Substring(start, i))
+				+ (start + 140 < text.Length ? "...":"");
 		}
 
 		public void AddExample(DocExample aExample)
