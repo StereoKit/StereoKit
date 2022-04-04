@@ -11,6 +11,12 @@ namespace StereoKit
 	/// together all sorts of transforms into a single Matrix! A Matrix
 	/// transform really shines when applied to many positions, as the more
 	/// expensive operations get cached within the matrix values.
+	///
+	/// Multiple matrix transforms can be combined by multiplying them, but note
+	/// that the order is different from the usual math order (and some other 3D 
+	/// frameworks). For example, in StereoKit, to create a matrix that first scales 
+	/// an object, followed by rotating it, and finally translating it you would use 
+	/// this order: Matrix.S(...) * Matrix.R(...) * Matrix.T(...).
 	/// 
 	/// Matrices are prominently used within shaders for mesh transforms!
 	/// </summary>
