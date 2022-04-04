@@ -104,9 +104,9 @@ void virtualkeyboard_update() {
 	if (keyboard_active_layout == nullptr) return;
 
 	remove_last_clicked_keys();
+	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
 	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body);
-	ui_push_preserve_keyboard(true);
 
 	// Check layer keys for switching between keyboard layout layers
 	int layer_index = 0;
@@ -177,9 +177,9 @@ void virtualkeyboard_update() {
 		ui_pop_id();
 		ui_sameline();
 	}
-	ui_pop_preserve_keyboard();
 	ui_window_end();
 	hierarchy_pop();
+	ui_pop_preserve_keyboard();
 }
 
 }

@@ -76,7 +76,9 @@ array_t<text_style_t>skui_font_stack = {};
 array_t<color128>    skui_tint_stack = {};
 array_t<bool32_t>    skui_enabled_stack = {};
 array_t<bool>        skui_preserve_keyboard_stack = {};
-array_t<uint64_t>    skui_preserve_keyboard_ids   = {};
+array_t<uint64_t>    skui_preserve_keyboard_ids[2] = {};
+array_t<uint64_t>   *skui_preserve_keyboard_ids_read;
+array_t<uint64_t>   *skui_preserve_keyboard_ids_write;
 
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
 mesh_t          skui_win_top      = nullptr;
@@ -642,6 +644,9 @@ bool ui_init() {
 	ui_set_element_visual(ui_vis_window_body, skui_win_bot, nullptr);
 	ui_set_element_visual(ui_vis_separator,   skui_box_dbg, skui_mat);
 
+	skui_preserve_keyboard_ids_read  = &skui_preserve_keyboard_ids[0];
+	skui_preserve_keyboard_ids_write = &skui_preserve_keyboard_ids[1];
+
 	skui_id_stack.add({ HASH_FNV64_START });
 
 	ui_push_tint             ({ 1,1,1,1 });
@@ -709,8 +714,12 @@ void ui_update() {
 	skui_finger_radius /= handed_max;
 
 	ui_push_surface(pose_identity);
-	//Clear current keyboard ignore elements
-	skui_preserve_keyboard_ids.clear();
+
+	// Clear current keyboard ignore elements
+	skui_preserve_keyboard_ids_read->clear();
+	array_t<uint64_t> *tmp = skui_preserve_keyboard_ids_read;
+	skui_preserve_keyboard_ids_read  = skui_preserve_keyboard_ids_write;
+	skui_preserve_keyboard_ids_write = tmp;
 }
 
 ///////////////////////////////////////////
@@ -740,7 +749,8 @@ void ui_shutdown() {
 	skui_tint_stack             .free();
 	skui_enabled_stack          .free();
 	skui_preserve_keyboard_stack.free();
-	skui_preserve_keyboard_ids  .free();
+	skui_preserve_keyboard_ids[0].free();
+	skui_preserve_keyboard_ids[1].free();
 	sound_release(skui_snd_interact);
 	sound_release(skui_snd_uninteract);
 	sound_release(skui_snd_grab);
@@ -1039,7 +1049,7 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 	}
 
 	if (skui_preserve_keyboard_stack.last()) {
-		skui_preserve_keyboard_ids.add(id);
+		skui_preserve_keyboard_ids_write->add(id);
 	}
 
 	for (int32_t i = 0; i < handed_max; i++) {
@@ -1078,7 +1088,7 @@ void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_
 	}
 
 	if (skui_preserve_keyboard_stack.last()) {
-		skui_preserve_keyboard_ids.add(id);
+		skui_preserve_keyboard_ids_write->add(id);
 	}
 
 	for (int32_t i = 0; i < handed_max; i++) {
@@ -1659,7 +1669,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		for (int32_t i = 0; i < handed_max; i++) {
 			if (ui_is_hand_preoccupied((handed_)i, id_hash, false)) {
 				const ui_hand_t& h = skui_hand[i];
-				if (h.focused && skui_preserve_keyboard_ids.index_of(h.focused) < 0) { 
+				if (h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) { 
 					skui_input_target = 0;
 					platform_keyboard_show(false, type);
 				}
@@ -1969,6 +1979,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	// If the handle is scale of zero, we don't actually want to draw or interact with it
 	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
 		return false;
+
+	if (skui_preserve_keyboard_stack.last()) {
+		skui_preserve_keyboard_ids_write->add(id);
+	}
 
 	vec3     box_start = handle.center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
 	vec3     box_size  = handle.dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
