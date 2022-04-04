@@ -42,9 +42,10 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		keyboard_pose = *input_head();
-		keyboard_pose.position   += keyboard_pose.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, input_head()->position);
+		matrix to_local   = matrix_invert(render_get_cam_root());
+		pose_t local_head = matrix_transform_pose(to_local, *input_head());
+		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
+		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
 	}
 
 	// Reset the keyboard to its default state
