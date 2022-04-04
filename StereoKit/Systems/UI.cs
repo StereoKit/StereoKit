@@ -563,12 +563,16 @@ namespace StereoKit
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
-		/// You can draw the handle, but it will have no text on it. Returns 
-		/// true for every frame the user is grabbing the handle.</summary>
+		/// You can draw the handle, but it will have no text on it.
+		/// The pose value is always relative to the current hierarchy stack.
+		/// This call will also push the pose transform onto the hierarchy stack, so
+		/// any objects drawn up to the corresponding UI.HandleEnd() will get transformed 
+		/// by the handle pose. Returns true for every frame the user is grabbing the handle.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around.</param>
+		/// be able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
 		/// the pose.</param>
 		/// <param name="drawHandle">Should this function draw the handle 
@@ -581,7 +585,8 @@ namespace StereoKit
 			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
-		/// and all elements have been drawn.</summary>
+		/// and all elements have been drawn. Pops the pose transform pushed
+		/// by UI.HandleBegin() from the hierarchy stack.</summary>
 		public static void HandleEnd   ()
 			=> NativeAPI.ui_handle_end();
 
@@ -593,7 +598,8 @@ namespace StereoKit
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around.</param>
+		/// be able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
 		/// the pose.</param>
 		/// <param name="drawHandle">Should this function draw the handle for 
