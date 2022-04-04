@@ -49,15 +49,13 @@
 /// "Hello Cube" down to something far simpler if we want to! This is the
 /// simplest possible StereoKit application:
 /// 
-using System;
 using StereoKit;
 
 class Program
 {
 	static void Main(string[] args)
 	{
-		if (!SK.Initialize(new SKSettings{ appName = "Project" }))
-			Environment.Exit(1);
+		SK.Initialize(new SKSettings{ appName = "Project" });
 
 		SK.Run(() =>
 		{
