@@ -17,12 +17,15 @@ namespace StereoKit
 		/// implicit conversions to System.Numerics types are also
 		/// provided.</summary>
 		public Vector3 v;
+		/// <summary>X component.</summary>
 		public float x { get => v.X; set => v.X=value; }
+		/// <summary>Y component.</summary>
 		public float y { get => v.Y; set => v.Y=value; }
+		/// <summary>Z component.</summary>
 		public float z { get => v.Z; set => v.Z=value; }
 
 		/// <summary>Creates a vector from x, y, and z values! StereoKit uses
-		/// a right-handed metric coordinate system, where +x is to the 
+		/// a right-handed metric coordinate system, where +x is to the
 		/// right, +y is upwards, and -z is forward.</summary>
 		/// <param name="x">The x axis.</param>
 		/// <param name="y">The y axis.</param>
@@ -30,21 +33,64 @@ namespace StereoKit
 		public Vec3(float x, float y, float z) => v = new Vector3(x, y, z);
 
 		/// <summary>Creates a vector with all values the same! StereoKit uses
-		/// a right-handed metric coordinate system, where +x is to the 
+		/// a right-handed metric coordinate system, where +x is to the
 		/// right, +y is upwards, and -z is forward.</summary>
 		/// <param name="xyz">The x,y,and z axis.</param>
 		public Vec3(float xyz) => v = new Vector3(xyz, xyz, xyz);
 
+		/// <summary>Allows implicit conversion from System.Numerics.Vector3
+		/// to StereoKit.Vec3.</summary>
+		/// <param name="v">Any System.Numerics Vector3.</param>
+		/// <returns>A StereoKit compatible vector.</returns>
 		public static implicit operator Vec3(Vector3 v) => new Vec3(v.X, v.Y, v.Z);
+		/// <summary>Allows implicit conversion from StereoKit.Vec3 to
+		/// System.Numerics.Vector3</summary>
+		/// <param name="v">Any StereoKit.Vec3.</param>
+		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector3(Vec3 v) => v.v;
 
+		/// <summary>Adds matching components together. Commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the added components.</returns>
 		public static Vec3 operator +(Vec3 a, Vec3 b) => a.v + b.v;
+		/// <summary>Subtracts matching components from eachother. Not
+		/// commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the subtracted components.</returns>
 		public static Vec3 operator -(Vec3 a, Vec3 b) => a.v - b.v;
+		/// <summary>A component-wise vector multiplication, same thing as
+		/// a non-uniform scale. NOT a dot or cross product! Commutative.
+		/// </summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec3 operator *(Vec3 b, Vec3 a) => a.v * b.v;
+		/// <summary>A component-wise vector division. Not commutative</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec3 operator /(Vec3 b, Vec3 a) => a.v / b.v;
+		/// <summary>Vector negation, returns a vector where each component has
+		/// been negated.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <returns>A vector where each component has been negated.</returns>
 		public static Vec3 operator -(Vec3 a) => -a.v;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec3 operator *(Vec3 a, float b) => a.v * b;
+		/// <summary>A scalar vector division.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec3 operator /(Vec3 a, float b) => a.v / b;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec3 operator *(float b, Vec3 a) => a.v * b;
 
 		/// <summary>Shorthand for a vector where all values are 0! Same as
@@ -61,7 +107,7 @@ namespace StereoKit
 		/// same as `new Vec3(0,0,-1)`. This is NOT the same as UnitZ!
 		/// </summary>
 		public static readonly Vec3 Forward = new Vec3(0, 0, -1);
-		/// <summary>When looking forward, this is the direction to the 
+		/// <summary>When looking forward, this is the direction to the
 		/// right! In StereoKit, this is the same as `new Vec3(1,0,0)`
 		/// </summary>
 		public static readonly Vec3 Right = new Vec3(1, 0, 0);
@@ -90,20 +136,20 @@ namespace StereoKit
 		public Vec3 XY0 => new Vec3(x, y, 0);
 
 		/// <summary>Magnitude is the length of the vector! The distance from
-		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap 
+		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap
 		/// or anything.</summary>
 		public float Magnitude => v.Length();
-		/// <summary>This is the length, or magnitude of the vector! The 
-		/// distance from the origin to this point. Uses Math.Sqrt, so it's 
+		/// <summary>This is the length, or magnitude of the vector! The
+		/// distance from the origin to this point. Uses Math.Sqrt, so it's
 		/// not dirt cheap or anything.</summary>
 		public float Length => v.Length();
 
-		/// <summary>This is the squared magnitude of the vector! It skips 
+		/// <summary>This is the squared magnitude of the vector! It skips
 		/// the Sqrt call, and just gives you the squared version for speedy
 		/// calculations that can work with it squared.</summary>
 		public float MagnitudeSq => v.LengthSquared();
-		/// <summary>This is the squared length of the vector! It skips the 
-		/// Sqrt call, and just gives you the squared version for speedy 
+		/// <summary>This is the squared length of the vector! It skips the
+		/// Sqrt call, and just gives you the squared version for speedy
 		/// calculations that can work with it squared.</summary>
 		public float LengthSq => v.LengthSquared();
 
@@ -113,11 +159,11 @@ namespace StereoKit
 		/// <returns>The normalized (length of 1) vector!</returns>
 		public Vec3 Normalized => v / v.Length();
 
-		/// <summary>The dot product is an extremely useful operation! One 
+		/// <summary>The dot product is an extremely useful operation! One
 		/// major use is to determine how similar two vectors are. If the
 		/// vectors are Unit vectors (magnitude/length of 1), then the result
 		/// will be 1 if the vectors are the same, -1 if they're opposite,
-		/// and a gradient in-between with 0 being perpendicular. See 
+		/// and a gradient in-between with 0 being perpendicular. See
 		/// [Freya Holmer's excellent visualization](https://twitter.com/FreyaHolmer/status/1200807790580768768)
 		/// of this concept</summary>
 		/// <param name="a">First vector.</param>
@@ -148,14 +194,14 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="pt">The point to check against.</param>
 		/// <param name="radius">The distance to check against.</param>
-		/// <returns>True if the points are within radius of each other, false 
+		/// <returns>True if the points are within radius of each other, false
 		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool InRadius(Vec3 pt, float radius)
 			=> (v - pt.v).LengthSquared() < radius * radius;
 
-		/// <summary>Calculates the distance between two points in space! 
-		/// Make sure they're in the same coordinate space! Uses a Sqrt, so 
+		/// <summary>Calculates the distance between two points in space!
+		/// Make sure they're in the same coordinate space! Uses a Sqrt, so
 		/// it's not blazing fast, prefer DistanceSq when possible.</summary>
 		/// <param name="a">The first point.</param>
 		/// <param name="b">And the second point!</param>
@@ -186,7 +232,7 @@ namespace StereoKit
 		public static bool InRadius(Vec3 a, Vec3 b, float radius)
 			=> (a.v-b.v).LengthSquared() < radius * radius;
 
-		/// <summary>Creates a vector that points out at the given 2D angle! 
+		/// <summary>Creates a vector that points out at the given 2D angle!
 		/// This creates the vector on the XZ plane, and allows you to
 		/// specify a constant y value.</summary>
 		/// <param name="angleDeg">Angle in degrees, starting from (1,0) at
@@ -215,15 +261,15 @@ namespace StereoKit
 		/// positive.</summary>
 		/// <param name="a">The first, initial vector, A. Does not need to be
 		/// normalized.</param>
-		/// <param name="b">The second vector, B, that we're finding the 
+		/// <param name="b">The second vector, B, that we're finding the
 		/// angle to. Does not need to be normalized.</param>
 		/// <returns>A positive angle between two vectors in degrees!</returns>
 		public static float AngleBetween(Vec3 a, Vec3 b)
 			=> (float)System.Math.Acos( Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq) ) * Units.rad2deg;
 
 		/// <summary>Exactly the same as Vec3.Cross, but has some naming
-		/// mnemonics for getting the order right when trying to find a 
-		/// perpendicular vector using the cross product. This'll also make 
+		/// mnemonics for getting the order right when trying to find a
+		/// perpendicular vector using the cross product. This'll also make
 		/// it more obvious to read if that's what you're actually going for
 		/// when crossing vectors!
 		/// 
@@ -240,7 +286,7 @@ namespace StereoKit
 			=> Vector3.Cross(forward.v, up.v);
 
 		/// <summary>Blends (Linear Interpolation) between two vectors, based
-		/// on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp 
+		/// on a 'blend' value, where 0 is a, and 1 is b. Doesn't clamp
 		/// percent for you.</summary>
 		/// <param name="a">First item in the blend, or '0.0' blend.</param>
 		/// <param name="b">Second item in the blend, or '1.0' blend.</param>
@@ -252,7 +298,7 @@ namespace StereoKit
 		public static Vec3 Lerp(Vec3 a, Vec3 b, float blend)
 			=> Vector3.Lerp(a.v, b.v, blend);
 
-		/// <summary>Returns a vector where each elements is the maximum 
+		/// <summary>Returns a vector where each elements is the maximum
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
@@ -262,7 +308,7 @@ namespace StereoKit
 		public static Vec3 Max(Vec3 a, Vec3 b)
 			=> Vector3.Max(a.v, b.v);
 
-		/// <summary>Returns a vector where each elements is the minimum 
+		/// <summary>Returns a vector where each elements is the minimum
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
@@ -272,6 +318,9 @@ namespace StereoKit
 		public static Vec3 Min(Vec3 a, Vec3 b)
 			=> Vector3.Min(a.v, b.v);
 
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the vector in debug mode. Looks like "[x, y, z]"</summary>
+		/// <returns>A string that looks like "[x, y, z]"</returns>
 		public override string ToString()
 			=> string.Format("[{0:0.00}, {1:0.00}, {2:0.00}]", x, y, z);
 	}

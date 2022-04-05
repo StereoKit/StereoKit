@@ -162,6 +162,11 @@ namespace StereoKit
 		/// <returns>The point at position + direction*percent.</returns>
 		public Vec3 At(float percent) => position + direction*percent;
 
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the Ray in debug mode. Looks like "[position], [direction]"
+		/// </summary>
+		/// <returns>A string that looks like "[position], [direction]"
+		/// </returns>
 		public override string ToString()
 			=> string.Format("{0}, {1}", position, direction);
 	}

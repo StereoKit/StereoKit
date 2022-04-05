@@ -2,25 +2,28 @@
 
 namespace StereoKit
 {
-	/// <summary>A Matrix in StereoKit is a 4x4 grid of numbers that is used 
-	/// to represent a transformation for any sort of position or vector! 
+	/// <summary>A Matrix in StereoKit is a 4x4 grid of numbers that is used
+	/// to represent a transformation for any sort of position or vector!
 	/// This is an oversimplification of what a matrix actually is, but it's
 	/// accurate in this case.
 	/// 
-	/// Matrices are really useful for transforms because you can chain 
+	/// Matrices are really useful for transforms because you can chain
 	/// together all sorts of transforms into a single Matrix! A Matrix
 	/// transform really shines when applied to many positions, as the more
 	/// expensive operations get cached within the matrix values.
 	///
-	/// Multiple matrix transforms can be combined by multiplying them. In StereoKit, 
-    /// to create a matrix that first scales an object, followed by rotating it, and 
-    /// finally translating it you would use this order: 
-    /// Matrix M = Matrix.S(...) * Matrix.R(...) * Matrix.T(...);
-    /// This order is related to the fact that StereoKit uses row-major order
-    /// to store matrices. Note that in other 3D frameworks and certain 3D math 
-    /// references you may find column-major matrices, which would need the reverse 
-    /// order (i.e. T*R*S), so please keep this in mind when creating transformations.
-    ///
+	/// Multiple matrix transforms can be combined by multiplying them. In
+	/// StereoKit, to create a matrix that first scales an object, followed by
+	/// rotating it, and finally translating it you would use this order:
+	/// 
+	/// `Matrix M = Matrix.S(...) * Matrix.R(...) * Matrix.T(...);`
+	/// 
+	/// This order is related to the fact that StereoKit uses row-major order
+	/// to store matrices. Note that in other 3D frameworks and certain 3D math
+	/// references you may find column-major matrices, which would need the
+	/// reverse order (i.e. T*R*S), so please keep this in mind when creating
+	/// transformations.
+	///
 	/// Matrices are prominently used within shaders for mesh transforms!
 	/// </summary>
 	public struct Matrix
@@ -33,20 +36,56 @@ namespace StereoKit
 
 		public Matrix(float m11, float m12, float m13, float m14, float m21, float m22, float m23, float m24, float m31, float m32, float m33, float m34, float m41, float m42, float m43, float m44)
 			=> m = new Matrix4x4(
-				m11, m12, m13, m14, 
-				m21, m22, m23, m24, 
-				m31, m32, m33, m34, 
+				m11, m12, m13, m14,
+				m21, m22, m23, m24,
+				m31, m32, m33, m34,
 				m41, m42, m43, m44);
 		public Matrix(Matrix4x4 matrix)
 			=> m = matrix;
 
+		/// <summary>Allows implicit conversion from System.Numerics.Matrix4x4
+		/// to StereoKit.Matrix.</summary>
+		/// <param name="m">Any System.Numerics Matrix4x4.</param>
+		/// <returns>A StereoKit compatible matrix.</returns>
 		public static implicit operator Matrix(Matrix4x4 m) => new Matrix(m);
+		/// <summary>Allows implicit conversion from StereoKit.Matrix to
+		/// System.Numerics.Matrix4x4</summary>
+		/// <param name="m">Any StereoKit.Matrix.</param>
+		/// <returns>A System.Numerics compatible matrix.</returns>
 		public static implicit operator Matrix4x4(Matrix m) => m.m;
 
+		/// <summary>Multiplies two matrices together! This is a great way to
+		/// combine transform operations. Note that StereoKit's matrices are
+		/// row-major, and multiplication order is important! To translate,
+		/// then scale, multiple in order of 'translate * scale'.</summary>
+		/// <param name="a">First Matrix.</param>
+		/// <param name="b">Second Matrix.</param>
+		/// <returns>Result of matrix multiplication.</returns>
 		public static Matrix operator *(Matrix a, Matrix b) => a.m*b.m;
-		public static Vec3   operator *(Matrix a, Vec3   b) => Vector3.Transform(b.v, a.m);
-		public static Ray    operator *(Matrix a, Ray    b) => a.Transform(b);
-		public static Pose   operator *(Matrix a, Pose   b) => a.Transform(b);
+		/// <summary>Multiplies the vector by the Matrix! Since only a 1x4
+		/// vector can be multiplied against a 4x4 matrix, this uses '1' for
+		/// the 4th element, so the result will also include translation! To
+		/// exclude translation, use `Matrix.TransformNormal`.
+		/// </summary>
+		/// <param name="a">A transform matrix.</param>
+		/// <param name="b">Any Vector.</param>
+		/// <returns>The Vec3 transformed by the matrix, including translation.
+		/// </returns>
+		public static Vec3 operator *(Matrix a, Vec3 b) => Vector3.Transform(b.v, a.m);
+		/// <summary>Transforms a Ray by the Matrix! The position and direction
+		/// are both multiplied by the matrix, accounting properly for which
+		/// should include translation, and which should not.</summary>
+		/// <param name="a">A transform matrix.</param>
+		/// <param name="b">A Ray to be transformed.</param>
+		/// <returns>A Ray transformed by the Matrix.</returns>
+		public static Ray operator *(Matrix a, Ray b) => a.Transform(b);
+		/// <summary>Transforms a Pose by the Matrix! The position and
+		/// orientation are both transformed by the matrix, accounting properly
+		/// for the Pose's quaternion.</summary>
+		/// <param name="a">A transform matrix.</param>
+		/// <param name="b">A Pose to be transformed.</param>
+		/// <returns>A Ray transformed by the Matrix.</returns>
+		public static Pose operator *(Matrix a, Pose   b) => a.Transform(b);
 
 		/// <summary>An identity Matrix is the matrix equivalent of '1'! 
 		/// Transforming anything by this will leave it at the exact same

@@ -3,11 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace StereoKit
 {
-	/// <summary>Quaternions are efficient and robust mathematical objects 
-	/// for representing rotations! Understanding the details of how a 
-	/// quaternion works is not generally necessary for using them 
-	/// effectively, so don't worry too much if they seem weird to you.
-	/// They're weird to me too.
+	/// <summary>Quaternions are efficient and robust mathematical objects for
+	/// representing rotations! Understanding the details of how a quaternion
+	/// works is not generally necessary for using them effectively, so don't
+	/// worry too much if they seem weird to you. They're weird to me too.
 	/// 
 	/// If you're interested in learning the details though, 3Blue1Brown and
 	/// Ben Eater have an [excellent interactive lesson](https://eater.net/quaternions)
@@ -15,14 +14,17 @@ namespace StereoKit
 	public struct Quat
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
-		/// nice to have around so you can pass its fields as 'ref', which
-		/// you can't do with properties. You won't often need this, as
-		/// implicit conversions to System.Numerics types are also
-		/// provided.</summary>
+		/// nice to have around so you can pass its fields as 'ref', which you
+		/// can't do with properties. You won't often need this, as implicit
+		/// conversions to System.Numerics types are also provided.</summary>
 		public Quaternion q;
+		/// <summary>X component. Sometimes known as I.</summary>
 		public float x { get => q.X; set => q.X = value; }
+		/// <summary>Y component. Sometimes known as J.</summary>
 		public float y { get => q.Y; set => q.Y = value; }
+		/// <summary>Z component. Sometimes known as K.</summary>
 		public float z { get => q.Z; set => q.Z = value; }
+		/// <summary>W component.</summary>
 		public float w { get => q.W; set => q.W = value; }
 
 		/// <summary>Sometimes you want to do weird stuff with your
@@ -40,7 +42,15 @@ namespace StereoKit
 		public Quat(float x, float y, float z, float w) 
 			=> q = new Quaternion(x,y,z,w);
 
+		/// <summary>Allows implicit conversion from System.Numerics.Quaternion
+		/// to StereoKit.Quat.</summary>
+		/// <param name="q">Any System.Numerics Quaternion.</param>
+		/// <returns>A StereoKit compatible quaternion.</returns>
 		public static implicit operator Quat(Quaternion q) => new Quat(q.X, q.Y, q.Z, q.W);
+		/// <summary>Allows implicit conversion from StereoKit.Quat to
+		/// System.Numerics.Quaternion</summary>
+		/// <param name="q">Any StereoKit.Quat.</param>
+		/// <returns>A System.Numerics compatible quaternion.</returns>
 		public static implicit operator Quaternion(Quat q) => q.q;
 
 		public static Quat operator -(Quat a,  Quat b ) => NativeAPI.quat_difference(a, b);
@@ -198,6 +208,10 @@ namespace StereoKit
 		public static Quat Slerp(Quat a, Quat b, float slerp)
 			=> Quaternion.Slerp(a,b, slerp);
 
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the quaternion in debug mode. Looks like "[x, y, z, w]"
+		/// </summary>
+		/// <returns>A string that looks like "[x, y, z, w]"</returns>
 		public override string ToString()
 			=> string.Format("[{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}]", x, y, z, w);
 	}
