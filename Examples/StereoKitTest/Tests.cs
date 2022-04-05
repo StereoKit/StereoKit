@@ -57,6 +57,8 @@ public static class Tests
 			{
 				Time.SetTime(0);
 				Input.HandVisible(Handed.Max, false);
+				Input.HandClearOverride(Handed.Left);
+				Input.HandClearOverride(Handed.Right);
 			}
 
 			nextScene.Initialize();
@@ -150,11 +152,13 @@ public static class Tests
 			Directory.CreateDirectory(dir);
 		Renderer.Screenshot(file, from, at, width, height, fov);
 	}
-	public static void Hand(in HandJoint[] joints)
+
+	public static void Hand(in HandJoint[] joints) => Hand(Handed.Right, joints);
+	public static void Hand(Handed hand, in HandJoint[] joints)
 	{
 		if (!IsTesting)
 			return;
-		Input.HandVisible (Handed.Right, true);
-		Input.HandOverride(Handed.Right, joints);
+		Input.HandVisible (hand, true);
+		Input.HandOverride(hand, joints);
 	}
 }
