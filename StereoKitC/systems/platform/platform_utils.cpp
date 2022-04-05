@@ -103,7 +103,11 @@ void platform_msgbox_err(const char *text, const char *header) {
 		platform_sleep(100);
 	}
 #elif defined(SK_OS_WINDOWS)
-	MessageBox(nullptr, text, header, MB_OK | MB_ICONERROR);
+	wchar_t *text_w   = platform_to_wchar(text);
+	wchar_t *header_w = platform_to_wchar(header);
+	MessageBoxW(nullptr, text_w, header_w, MB_OK | MB_ICONERROR);
+	free(text_w);
+	free(header_w);
 #else
 	log_err("No messagebox capability for this platform!");
 #endif

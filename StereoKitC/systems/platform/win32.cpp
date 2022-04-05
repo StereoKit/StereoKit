@@ -100,8 +100,7 @@ bool win32_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool win32_start_post_xr() {
-	wchar_t app_name_w[256];
-	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
 	// Create a window just to grab input
 	WNDCLASSW wc = {0}; 
@@ -117,14 +116,15 @@ bool win32_start_post_xr() {
 	if( !RegisterClassW(&wc) ) return false;
 
 	win32_window = CreateWindowW(
-		app_name_w, 
-		app_name_w, 
+		app_name_w,
+		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		0, 0, 0, 0,
 		0, 0, 
-		wc.hInstance, 
+		wc.hInstance,
 		nullptr);
 
+	free(app_name_w);
 	if (!win32_window) {
 		return false;
 	}
@@ -150,10 +150,9 @@ bool win32_start_flat() {
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 
-	wchar_t app_name_w[256];
-	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
-	WNDCLASSW wc = {0}; 
+	WNDCLASSW wc = {0};
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
@@ -195,7 +194,7 @@ bool win32_start_flat() {
 	wc.hInstance     = GetModuleHandleW(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
-	if( !RegisterClassW(&wc) ) return false;
+	if (!RegisterClassW(&wc)) { free(app_name_w); return false; }
 
 	RECT r;
 	r.left   = sk_settings.flatscreen_pos_x;
@@ -204,16 +203,19 @@ bool win32_start_flat() {
 	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
 	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindowW(
-		app_name_w, 
-		app_name_w, 
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
-		max(0,r.left), 
-		max(0,r.top), 
-		r.right  - r.left, 
-		r.bottom - r.top, 
+		app_name_w,
+		app_name_w,
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		max(0,r.left),
+		max(0,r.top),
+		r.right  - r.left,
+		r.bottom - r.top,
 		0, 0, 
-		wc.hInstance, 
+		wc.hInstance,
 		nullptr);
+
+	free(app_name_w);
+
 	if( !win32_window ) return false;
 
 	RECT bounds;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -28,17 +29,17 @@ namespace StereoKit
 		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
 		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
-		/// one, a detailed one, one that uses stencils? By default, 
+		/// one, a detailed one, one that uses stencils? By default,
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
 		/// speed but opening up when there's headroom.</summary>
 		public DepthMode    depthMode;
 		/// <summary> The default log filtering level. This can be changed at
-		/// runtime, but this allows you to set the log filter before 
+		/// runtime, but this allows you to set the log filter before
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
 		public LogLevel     logFilter;
 		/// <summary>If the runtime supports it, should this application run
-		/// as an overlay above existing applications? Check 
+		/// as an overlay above existing applications? Check
 		/// SK.System.overlayApp after initialization to see if the runtime
 		/// could comply with this flag. This will always force StereoKit to
 		/// work in a blend compositing mode.</summary>
@@ -65,7 +66,7 @@ namespace StereoKit
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
-		/// <summary>By default, StereoKit will slow down when the 
+		/// <summary>By default, StereoKit will slow down when the
 		/// application is out of focus. This is useful for saving processing
 		/// power while the app is out-of-focus, but may not always be
 		/// desired. In particular, running multiple copies of a SK app for
@@ -83,23 +84,35 @@ namespace StereoKit
 			set {
 				if (_appName != IntPtr.Zero) Marshal.FreeHGlobal(_appName);
 
-				_appName = string.IsNullOrEmpty(value)
-					? IntPtr.Zero
-					: Marshal.StringToHGlobalAnsi(value);
+				if (string.IsNullOrEmpty(value))
+				{
+					_appName = IntPtr.Zero;
+					return;
+				}
+
+				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				_appName = Marshal.AllocHGlobal(str.Length);
+				Marshal.Copy(str, 0, _appName, str.Length);
 			}
 			get => Marshal.PtrToStringAnsi(_appName);
 		}
-		/// <summary>Where to look for assets when loading files! Final path 
-		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+		/// <summary>Where to look for assets when loading files! Final path
+		/// will look like '[assetsFolder]/[file]', so a trailing '/' is
 		/// unnecessary.</summary>
-		public string assetsFolder { 
-			set { 
-				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder); 
+		public string assetsFolder {
+			set {
+				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder);
 
-				_assetsFolder = string.IsNullOrEmpty(value)
-					? IntPtr.Zero
-					: Marshal.StringToHGlobalAnsi(value);
-			} 
+				if (string.IsNullOrEmpty(value))
+				{
+					_assetsFolder = IntPtr.Zero;
+					return;
+				}
+
+				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				_assetsFolder = Marshal.AllocHGlobal(str.Length);
+				Marshal.Copy(str, 0, _assetsFolder, str.Length);
+			}
 			get => Marshal.PtrToStringAnsi(_assetsFolder);
 		}
 	}
@@ -132,8 +145,8 @@ namespace StereoKit
 		private int _perceptionBridgePresent;
 
 		/// <summary>Does the device we're on have eye tracking support
-		/// present? This is _not_ an indicator that the user has given the 
-		/// application permission to access this information. See 
+		/// present? This is _not_ an indicator that the user has given the
+		/// application permission to access this information. See
 		/// `Input.Gaze` for how to use this data.</summary>
 		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
 		private int _eyeTrackingPresent;
@@ -144,13 +157,13 @@ namespace StereoKit
 		public bool overlayApp { get => _overlayApp > 0; }
 		private int _overlayApp;
 
-		/// <summary>Does this device support world occlusion of digital 
+		/// <summary>Does this device support world occlusion of digital
 		/// objects? If this is true, then World.OcclusionEnabled can be set
 		/// to true, and World.OcclusionMaterial can be modified. </summary>
 		public bool worldOcclusionPresent { get => _worldOcclusionPresent > 0; }
 		private int _worldOcclusionPresent;
 
-		/// <summary>Can this device get ray intersections from the 
+		/// <summary>Can this device get ray intersections from the
 		/// environment? If this is true, then World.RaycastEnabled can be
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
@@ -187,12 +200,12 @@ namespace StereoKit
 	{
 		/// <summary>Position of the vertex, in model space coordinates.</summary>
 		public Vec3 pos;
-		/// <summary>The normal of this vertex, or the direction the vertex is 
+		/// <summary>The normal of this vertex, or the direction the vertex is
 		/// facing. Preferably normalized.</summary>
 		public Vec3 norm;
 		/// <summary>The texture coordinates at this vertex.</summary>
 		public Vec2 uv;
-		/// <summary>The color of the vertex. If you aren't using it, set it to 
+		/// <summary>The color of the vertex. If you aren't using it, set it to
 		/// white.</summary>
 		public Color32 col;
 
