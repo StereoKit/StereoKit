@@ -15,9 +15,11 @@ class Program
 		// This application needs parameters to work!
 		if (args.Length == 0)
 		{
-			Console.WriteLine("ERROR: No parameters provided.");
-			DisplayHelp();
-			return;
+			//-f "$(SolutionDir)\StereoKitC\stereokit.h" -o SKOverrides.txt -d "$(SolutionDir)\StereoKit\Native"
+			args = new string[] { 
+				"-f", "../../../../StereoKitC/stereokit.h",
+				"-o", "SKOverrides.txt",
+				"-d", "../../../../StereoKit/Native"};
 		}
 
 		// Parse the parameters into stuff we can work with
