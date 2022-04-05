@@ -227,7 +227,7 @@ typedef enum app_focus_ {
 	app_focus_hidden,
 } app_focus_;
 
-/*StereoKit uses an asyncronous loading system to prevent assets from
+/*StereoKit uses an asynchronous loading system to prevent assets from
   blocking execution! This means that asset loading systems will return
   an asset to you right away, even though it is still being processed
   in the background.
@@ -696,7 +696,7 @@ SK_MakeFlag(tex_type_);
 /*What type of color information will the texture contain? A
   good default here is Rgba32.*/
 typedef enum tex_format_ {
-	/*A default zero value for TexFormat! Unitialized formats
+	/*A default zero value for TexFormat! Uninitialized formats
 	  will get this value and **** **** up so you know to assign it
 	  properly :)*/
 	tex_format_none = 0,
@@ -922,7 +922,7 @@ typedef enum depth_test_ {
 	  zbuffer.*/
 	depth_test_not_equal,
 	/*Don't look at the zbuffer at all, just draw everything,
-	  always, all the time! At this poit, the order at which the mesh
+	  always, all the time! At this point, the order at which the mesh
 	  gets drawn will be  super important, so don't forget about
 	  `Material.QueueOffset`!*/
 	depth_test_always,
@@ -938,7 +938,7 @@ typedef enum depth_test_ {
   to on the shader.*/
 typedef enum material_param_ {
 	/*This data type is not currently recognized. Please
-	  report your case on Github Issues!*/
+	  report your case on GitHub Issues!*/
 	material_param_unknown = 0,
 	/*A single 32 bit float value.*/
 	material_param_float = 1,
@@ -1127,7 +1127,7 @@ SK_API float         text_style_get_char_height    (text_style_t style);
   physics engine will apply forces differently based on this type.*/
 typedef enum solid_type_ {
 	/*This object behaves like a normal physical object, it'll
-	  fall, get pushed around, and generally be succeptible to physical
+	  fall, get pushed around, and generally be susceptible to physical
 	  forces! This is a 'Dynamic' body in physics simulation terms.*/
 	solid_type_normal = 0,
 	/*Immovable objects are always stationary! They have
