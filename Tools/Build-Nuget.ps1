@@ -4,9 +4,15 @@ param(
     [string]$key = ''
 )
 
-$vsExe = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath -version '[16.0,17.0)'
+function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
+function Get-ScriptName { return $MyInvocation.ScriptName }
+
+# Get the Visual Studio executable for building
+$vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+$vsVersionRange = '[16.0,18.0)'
+$vsExe          = & $vsWhere -latest -property productPath -version $vsVersionRange
 if (!$vsExe) {
-    Write-Host "Visual Studio 2019 not found! VS 2022 may work, but official builds are done on 2019 currently. Swap out the version number to [16.0,18.0) to include VS 2022." -ForegroundColor red
+    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Valid Visual Studio version not found!" -ForegroundColor red
     exit 
 }
 $vsExe = [io.path]::ChangeExtension($vsExe, '.com')
@@ -114,6 +120,10 @@ if ($fast -eq $true) {
     Write-Host 'Making a "fast" build, incremental build issues may be present.'
 }
 
+# Switch to the right folder
+
+Push-Location -Path "$PSScriptRoot\.."
+
 #### Update Version #######################
 
 # Print version, so we know we're building the right version right away
@@ -185,6 +195,7 @@ Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
 $result = Build -mode "Release|X64" -project "StereoKitC"
 if ($result -ne 0) {
     Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
@@ -201,6 +212,7 @@ Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
 $result = Build -mode "Release|X64" -project "StereoKitC_UWP"
 if ($result -ne 0) {
     Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
@@ -208,6 +220,7 @@ Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
 $result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
 if ($result -ne 0) {
     Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
@@ -215,6 +228,7 @@ Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
 $result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
 if ($result -ne 0) {
     Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
@@ -226,6 +240,7 @@ if ($fast -eq $false) {
     Write-Host "`nRunning Windows Tests!"
     if ( Test -ne 0 ) {
         Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
         exit
     }
     Write-Host 'Tests passed!' -ForegroundColor green
@@ -264,6 +279,7 @@ if ($fast -eq $false) {
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
@@ -277,6 +293,7 @@ if ($fast -eq $false) {
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
@@ -306,6 +323,7 @@ if ($fast -eq $false) {
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
@@ -330,6 +348,7 @@ $result = Build -mode "Release|Any CPU" -project "StereoKit"
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packageOff
 if ($result -ne 0) {
     Write-Host '--- NuGet build failed! Stopping build! ---' -ForegroundColor red
+    Pop-Location
     exit
 }
 Write-Host "--- Finished building: NuGet package ---"-ForegroundColor green
@@ -359,3 +378,5 @@ Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundCol
 & 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green
+
+Pop-Location
