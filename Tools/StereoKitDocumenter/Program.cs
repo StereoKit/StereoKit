@@ -7,9 +7,9 @@ namespace StereoKitDocumenter
 {
 	class Program
 	{
-		public const string xmlDocs      = "../../../bin/StereoKit.xml";
-		public const string pagesOut     = "../../../docs/Pages/";
-		public const string samplesProj  = "../../../Examples/StereoKitTest/";
+		public const string xmlDocs      = "../../../../bin/StereoKit.xml";
+		public const string pagesOut     = "../../../../docs/Pages/";
+		public const string samplesProj  = "../../../../Examples/StereoKitTest/";
 		public const string referenceOut = pagesOut+"Reference/";
 
 		public static List<DocClass>  classes = new List<DocClass>();
@@ -99,9 +99,9 @@ namespace StereoKitDocumenter
 			testInfo.Arguments        = "/C StereoKitTest.exe -test";
 			testInfo.UseShellExecute  = false;
 			#if DEBUG
-			testInfo.WorkingDirectory = "../../../bin/x64_Debug/StereoKitTest/";
+			testInfo.WorkingDirectory = "../../../../bin/x64_Debug/StereoKitTest/";
 			#else
-			testInfo.WorkingDirectory = "../../../bin/x64_Release/StereoKitTest/";
+			testInfo.WorkingDirectory = "../../../../bin/x64_Release/StereoKitTest/";
 			#endif
 			var process = System.Diagnostics.Process.Start(testInfo);
 			process.WaitForExit();
