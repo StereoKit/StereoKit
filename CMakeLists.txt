@@ -430,18 +430,15 @@ endif()
 install(
   TARGETS StereoKitC 
   EXPORT  StereoKitC-targets
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 
 install(
   FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include) 
+  DESTINATION include)
 
 install(
-  PROGRAMS    "Tools/skshaderc"
-  DESTINATION ${CMAKE_INSTALL_BINDIR}) 
+  FILES       "Tools/skshaderc" 
+  DESTINATION bin)
 
 install(
   EXPORT      StereoKitC-targets
