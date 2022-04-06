@@ -39,6 +39,19 @@ set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics bac
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
+set(SK_PHYSICS                      ON  CACHE BOOL "Enable physics.")
+set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
+
+###########################################
+## Pretty colors                         ##
+###########################################
+if(FORCE_COLORED_OUTPUT)
+	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		add_compile_options(-fdiagnostics-color=always)
+	elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		add_compile_options(-fcolor-diagnostics)
+	endif()
+endif()
 
 ###########################################
 ## Dependencies                          ##
@@ -55,18 +68,23 @@ if (UNIX)
 endif()
 
 #### ReactPhysics3D - https://www.reactphysics3d.com/ ####
-CPMAddPackage(
-  NAME reactphysics3d
-  GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-  GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
-  EXCLUDE_FROM_ALL YES
-)
-# Something in reactphysics3d seems to require -fPIC
-set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
-# Disable warnings for reactphysics3d, it's a little horrifying
-target_compile_options(reactphysics3d PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W0>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
+if(SK_PHYSICS)
+  CPMAddPackage(
+    NAME reactphysics3d
+    GITHUB_REPOSITORY DanielChappuis/reactphysics3d
+    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
+    EXCLUDE_FROM_ALL YES
+  )
+  # Something in reactphysics3d seems to require -fPIC
+  set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
+  # Disable warnings for reactphysics3d, it's a little horrifying
+  target_compile_options(reactphysics3d PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/W0>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
+
+  set(PHYSICS_LIB
+    reactphysics3d)
+endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
@@ -139,6 +157,13 @@ elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(NOT SK_PHYSICS)
+  message("-- Building without physics!")
+  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
+else()
+  message("-- Building with physics!")
 endif()
 
 ###########################################
@@ -341,7 +366,7 @@ target_include_directories(StereoKitC
 
 target_link_libraries( StereoKitC
   PRIVATE
-    reactphysics3d
+    ${PHYSICS_LIB}
   PUBLIC
     openxr_loader
     ${LINUX_LIBS}
@@ -403,7 +428,9 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-  target_compile_options(reactphysics3d PRIVATE "/MP")
+  if(SK_PHYSICS)
+    target_compile_options(reactphysics3d PRIVATE "/MP")
+  endif()
   target_compile_options(openxr_loader PRIVATE "/MP")
   target_compile_options(StereoKitC PRIVATE "/MP")
 endif()
@@ -418,18 +445,15 @@ endif()
 install(
   TARGETS StereoKitC 
   EXPORT  StereoKitC-targets
-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 
 install(
   FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include) 
+  DESTINATION include)
 
 install(
-  PROGRAMS    "Tools/skshaderc"
-  DESTINATION ${CMAKE_INSTALL_BINDIR}) 
+  FILES       "Tools/skshaderc" 
+  DESTINATION bin)
 
 install(
   EXPORT      StereoKitC-targets
