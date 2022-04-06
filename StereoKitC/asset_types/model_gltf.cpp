@@ -695,6 +695,9 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 		case cgltf_animation_path_type_rotation:    curve.applies_to = anim_element_rotation;    break;
 		case cgltf_animation_path_type_scale:       curve.applies_to = anim_element_scale;       break;
 		case cgltf_animation_path_type_weights:     curve.applies_to = anim_element_weights;     break;
+		case cgltf_animation_path_type_invalid: {
+			log_errf("Got invalid animation path type");
+		} break;
 		}
 
 		size_t output_size    =          cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
@@ -729,6 +732,9 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					rot[k*skip] = r * rot[k*skip];
 			} break;
+			case anim_element_weights: {
+				log_warnf("Animated weights unsupported");
+			}
 			}
 		}
 

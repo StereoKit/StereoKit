@@ -833,7 +833,7 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	if (tex->width != tex->height || tex->array_count != 6) {
 		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
 		return {};
-	} else if (!(tex->format == tex_format_rgba32 || tex->format == tex_format_rgba32_linear || tex->format == tex_format_rgba128)) {
+	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba128)) {
 		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
 		return {};
 	} else {

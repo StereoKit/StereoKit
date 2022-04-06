@@ -81,6 +81,9 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
 		} break;
+		case sound_type_none: {
+			log_errf("Got a sound_type_none?");
+		} break;
 		}
 		if (frames_read <= 1) break;
 
@@ -182,6 +185,9 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
 			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
 			inst.sound->buffer.cursor += frames_read;
+		} break;
+		case sound_type_none: {
+			log_errf("Got a sound_type_none?");
 		} break;
 		}
 		if (frames_read <= 1) break;

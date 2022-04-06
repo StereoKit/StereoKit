@@ -195,6 +195,8 @@ bool openxr_views_create() {
 	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      sk_info.display_type = display_opaque;      break;
 	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
 	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
+	// Just max_enum
+	default: break;
 	}
 
 	return true;
@@ -243,7 +245,10 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	switch (out_view.blend) {
 	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    blend_mode_str = "Additive";    break;
 	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: blend_mode_str = "Alpha Blend"; break;
-	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      blend_mode_str = "Opaque";      break; }
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      blend_mode_str = "Opaque";      break; 
+	// Just max_enum
+	default: break;
+	}
 	log_diagf("Creating view: <~grn>%s<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr> blend:<~grn>%s<~clr>",
 		openxr_view_name(view_type),
 		render_fmt_name((tex_format_)skg_tex_fmt_from_native(out_view.color_format)),
