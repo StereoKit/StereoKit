@@ -159,6 +159,7 @@ void anim_update_model(model_t model) {
 		case anim_element_translation: model->anim_inst.node_transforms[node].translation = anim_curve_sample_f3(&anim->curves[i], &model->anim_inst.curve_last_keyframe[i], time); break;
 		case anim_element_scale:       model->anim_inst.node_transforms[node].scale       = anim_curve_sample_f3(&anim->curves[i], &model->anim_inst.curve_last_keyframe[i], time); break;
 		case anim_element_rotation:    model->anim_inst.node_transforms[node].rotation    = anim_curve_sample_f4(&anim->curves[i], &model->anim_inst.curve_last_keyframe[i], time); break;
+		case anim_element_weights:     log_errf("anim_update_model doesn't implement anim_element_weights yet!");
 		}
 	}
 	anim_update_transforms(model, model_node_get_root(model), false);

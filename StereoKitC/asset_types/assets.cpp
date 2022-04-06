@@ -268,6 +268,8 @@ void  assets_shutdown_check() {
 			case asset_type_font:     type_name = "font_t";     break;
 			case asset_type_sprite:   type_name = "sprite_t";   break;
 			case asset_type_sound:    type_name = "sound_t";    break;
+			// note: asset_type_solid is unimplemented 
+			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
 		}

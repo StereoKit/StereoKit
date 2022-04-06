@@ -239,22 +239,8 @@ bool openxr_init() {
 	// Check if OpenXR is on this system, if this is null here, the user needs
 	// to install an OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		// openxr_string only works when an xr_instance is present, so we gotta
-		// check the errors manually here. This is only the subset of errors
-		// that xrCreateInstance can throw.
-		const char *err_name = "Unknown";
-		switch (result) {
-			case XR_ERROR_VALIDATION_FAILURE:      err_name = "XR_ERROR_VALIDATION_FAILURE"; break;
-			case XR_ERROR_RUNTIME_FAILURE:         err_name = "XR_ERROR_RUNTIME_FAILURE"; break;
-			case XR_ERROR_OUT_OF_MEMORY:           err_name = "XR_ERROR_OUT_OF_MEMORY"; break;
-			case XR_ERROR_LIMIT_REACHED:           err_name = "XR_ERROR_LIMIT_REACHED"; break;
-			case XR_ERROR_RUNTIME_UNAVAILABLE:     err_name = "XR_ERROR_RUNTIME_UNAVAILABLE"; break;
-			case XR_ERROR_NAME_INVALID:            err_name = "XR_ERROR_NAME_INVALID"; break;
-			case XR_ERROR_INITIALIZATION_FAILED:   err_name = "XR_ERROR_INITIALIZATION_FAILED"; break;
-			case XR_ERROR_EXTENSION_NOT_PRESENT:   err_name = "XR_ERROR_EXTENSION_NOT_PRESENT"; break;
-			case XR_ERROR_API_VERSION_UNSUPPORTED: err_name = "XR_ERROR_API_VERSION_UNSUPPORTED"; break;
-			case XR_ERROR_API_LAYER_NOT_PRESENT:   err_name = "XR_ERROR_API_LAYER_NOT_PRESENT"; break;
-		}
+		const char *err_name = openxr_string(result);
+
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
 		openxr_shutdown();
 		return false;
@@ -640,7 +626,11 @@ void openxr_poll_events() {
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
+			// The runtime should never return this: https://www.khronos.org/registry/OpenXR/specs/1.0/man/html/XrSessionState.html
+			case XR_SESSION_STATE_UNKNOWN: log_errf("Runtime gave us a XR_SESSION_STATE_UNKNOWN! Bad runtime!"); break;
+			case XR_SESSION_STATE_IDLE: break; // Wait till we get XR_SESSION_STATE_READY.
 			case XR_SESSION_STATE_READY: {
+				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = xr_display_types[0];
 
@@ -659,8 +649,11 @@ void openxr_poll_events() {
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
+			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
 			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
+			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			default: break;
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
@@ -670,11 +663,13 @@ void openxr_poll_events() {
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
-		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
+		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+		}
 			break;
+		default: break;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}

@@ -320,7 +320,7 @@ void file_picker_open_folder(const char *folder) {
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?(int32_t)(strlen(fp_filename)+1):0);
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, (int32_t)(strlen(fp_filename)+1));
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;

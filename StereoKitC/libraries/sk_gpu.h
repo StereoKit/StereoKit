@@ -3056,7 +3056,11 @@ bool skg_capability(skg_cap_ capability) {
 #ifdef _SKG_GL_WEB
 		return false;
 #else
+#pragma clang diagnostic push
+// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
+#pragma clang diagnostic ignored "-Wtautological-pointer-compare"
 		return glPolygonMode != nullptr;
+#pragma clang diagnostic pop
 #endif
 	default: return false;
 	}
