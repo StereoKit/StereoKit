@@ -5,6 +5,10 @@ class DocVec : ITest
 	static bool TestDistance()
 	{
 		/// :CodeSample: Vec3.Distance
+		/// ### Distance between two points
+		/// 
+		/// Distance does use a Sqrt call, so only use it if you definitely
+		/// need the actual distance. Otherwise, consider DistanceSq.
 		Vec3  pointA   = new Vec3(3,2,5);
 		Vec3  pointB   = new Vec3(3,2,8);
 		float distance = Vec3.Distance(pointA, pointB);
