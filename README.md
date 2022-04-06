@@ -19,21 +19,36 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 ![Screenshot](/Tools/img/FeatureImage.jpg)
 
-## StereoKit Features:
+## StereoKit Features
 
-- Platforms: HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Monado (Linux), and eventually everywhere OpenXR is!
-- Flat screen MR simulator with input emulation for easy development
-- Builds your application to device in seconds, not minutes
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
-- Model formats: .gltf, .glb, .obj, .stl, ASCII .ply, procedural
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, equirectangular cubemap, procedural
+- Model formats: .gltf, .glb, .obj, .stl, ASCII .ply
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, cubemaps
+- Flexible shader/material system with built-in PBR
+- Performance-by-default instanced render pipeline
+- Skeletal/skinned animation
+- Flat screen MR simulator with input emulation for easy development
+- Builds your application to device in seconds, not minutes
 - Runtime asset loading
 - Physics
-- Performance-by-default instanced render pipeline
-- Flexible shader/material system with built-in PBR
-- Skeletal/skinned animation
 - [Documentation](https://stereokit.net/) generated directly from the source code, including screenshots
+
+## Platform Support
+
+StereoKit supports HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
+
+These are the binaries that currently ship in the NuGet package. StereoKit developers working from C/C++ should be fine to build any architecture from this list of platforms.
+
+| Platform | x86 | x64 | ARM | ARM64 |
+|----------|-----|-----|-----|-------|
+| Windows (Desktop/Win32) |      | X |   |   |
+| Windows (HoloLens/UWP)  |      | X | X | X |
+| Linux                   |      | X |   | X |
+| Android                 |      |   |   | X |
+| Web (WASM)              | Soon |   |   |   |
+
+Architecture support has focused on 64 bit architectures, with exceptions for certain platforms. (If you require an additional architecture in the NuGet, please propose it as an Issue!) Here, UWP's ARM builds much faster than UWP's ARM64, and WASM only comes in 32 bit flavors.
 
 ## Getting started
 
