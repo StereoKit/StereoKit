@@ -377,7 +377,7 @@ hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation) {
+void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// only sim it if it's tracked
@@ -386,9 +386,18 @@ void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_p
 
 	// For mice based hands, we change the hand's location to center the
 	// pointer finger on the mouse
-	vec3 finger_off = center_on_finger 
+	vec3 finger_off = mouse_adjustments
 		? hand_state[handedness].pose_blend[1][4].position
 		: vec3_zero;
+
+	pose_t hand_pose = { hand_pos, orientation };
+	if (mouse_adjustments) {
+		hand_pose.position =
+			(hand.fingers[1][0].position +
+			 hand.fingers[1][1].position +
+			 hand.fingers[4][0].position +
+			 hand.fingers[4][1].position) * 0.25f;
+	}
 
 	// Update the position and orientation of each joint to be at its proper
 	// location in world space
@@ -409,11 +418,11 @@ void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_p
 	} }
 
 	// Update some of the higher level hand poses
-	hand.palm.position    = hand_pos;
+	hand.palm.position    = hand_pose.position;
 	hand.palm.orientation = quat_from_angles(
 		0,
 		handedness == handed_right ?  90.f : -90.f, 
-		handedness == handed_right ? -90.f :  90.f) * orientation;
+		handedness == handed_right ? -90.f :  90.f) * hand_pose.orientation;
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
 	hand.wrist.orientation = hand.palm.orientation;
 }
