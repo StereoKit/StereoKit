@@ -15,7 +15,7 @@ StereoKit is Open Source, so if you have changes or improvements you'd like to a
   - [StereoKit](#stereokit)
   - [StereoKitCTest](#stereokitctest)
   - [StereoKitTest](#stereokittest)
-  - [_UWP Variants](#uwp-variants)
+  - [_UWP Variants](#_uwp-variants)
 - [Coding Guidelines](#coding-guidelines)
   - [General Philosophy](#general-philosophy)
   - [GitHub Usage](#github-usage)
