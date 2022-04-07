@@ -13,7 +13,14 @@ StereoKit is Open Source, so if you have changes or improvements you'd like to a
 - [Project Overview](#project-overview)
   - [StereoKitC](#stereokitc)
   - [StereoKit](#stereokit)
+  - [StereoKitCTest](#stereokitctest)
+  - [StereoKitTest](#stereokittest)
+  - [_UWP Variants](#uwp-variants)
 - [Coding Guidelines](#coding-guidelines)
+  - [General Philosophy](#general-philosophy)
+  - [GitHub Usage](#github-usage)
+  - [Versioning](#versioning)
+  - [Formatting](#formatting)
 
 ## Documentation
 
@@ -101,9 +108,24 @@ The StereoKitTest project does have some tools available in the debug menu behin
 
 ## Project Overview
 
-If you want to work on features or bugfixes, you'll need to know where to look! StereoKit is composed of two major components: [StereoKitC](/StereoKitC), which contains the bulk of StereoKit's functionality written in C styled C++, and [StereoKit](/StereoKit), a C# netstandard2.0 library that provides 1st-class idiomatic C# bindings to the native library, as well as a few high-level features to make developer's lives easier.
+If you want to work on features or bugfixes, you'll need to know where to look! See [the BUILDING guide](/BUILDING.md) for how to compile StereoKit from scratch.
+
+```
+StereoKit Git Repository
+|  StereoKitC
+|  StereoKit
+|
+└--Examples
+   |  StereoKitCTest
+   |  StereoKitTest 
+   | 
+```
+
+StereoKit is composed of two major components: [StereoKitC](/StereoKitC), which contains the bulk of StereoKit's functionality written in C styled C++, and [StereoKit](/StereoKit), a C# netstandard2.0 library that provides 1st-class idiomatic C# bindings to the native library, as well as a few high-level features to make developer's lives easier.
 
 When adding a feature, this often means working in two different languages, adding code to both StereoKitC as well as StereoKit!
+
+In addition to these two core projects, there's also two more projects that can be important to know about! [StereoKitCTest](/Examples/StereoKitCTest), a C++ project used for testing StereoKit's C API, and [StereoKitTest](/Examples/StereoKitTest/), a C# project used for testing, documenting, and demoing!
 
 ### StereoKitC
 
@@ -115,6 +137,106 @@ Most bugs should be fixable just by working with this project. There are occasio
 
 This C# project should mostly be about making the best C# bindings possible to StereoKitC! This can mean a reasonable chunk of code sometimes, and occasionally adding a few things to take advantage of code features that C/C++ can't even dream of. But for the most part, this is just idiomatic wrappers, and extensive commentdocs.
 
-There is a StereoKit.Framework namespace that allows for some room to add high-level functionality to StereoKit's C# layer, but this should generally be kept to a minimum.
+There is a StereoKit.Framework namespace that allows for some room to add high-level functionality to StereoKit's C# layer, but this should generally be kept to a minimum for now.
+
+### StereoKitCTest
+
+This C++ project is just a collection of demos that can be useful for developing and testing new features from the C API before writing the C# layer above it. This is pretty handy if you haven't solidified the public interface, and want to iterate on the design without needing to worry about marshalling.
+
+### StereoKitTest
+
+This project does quite a bit, and is important to be familiar with! It contains all the C# documentation samples, guides and screenshots, provides a number of useful tools for debugging, building complex tests, and sharing promotional materials.
+
+If you are adding a significant feature, it is strongly encouraged to add a demo as well as samples to this project!
+
+Reflection is used here to find all classes that implement the ITest interface. All ITest classes are run during testing (with the `-test` command-line arg), but when run like a normal app, it will present a list of all ITest classes where the name starts with `Demo` for the user to select. Long term, it is planned to upload this project as a showcase WASM build to the StereoKit docs website.
+
+### _UWP Variants
+
+Some projects have a _UWP appended to their name. These are Visual Studio projects that build to the UWP platform, but merely link to the code in the non-_UWP project. You shouldn't need to modify these projects directly, just "Set as Active". If you add or remove files from the non-_UWP project, you may need to unload and reload the project for it to discover the new files.
 
 ## Coding Guidelines
+
+### General Philosophy
+
+Write simple code, and write less of it! StereoKit's core aspires to be as simple, maintainable, and stateless as possible. For this reason, StereoKit uses mostly C-style code with an immediate mode interface.
+
+StereoKit's public facing API should be treated as a UI/UX! You should always consider the context of how the API is surfaced to the developer through the IDE and code. Anything SK developers touch should be readable, documented in-place, and fit on-screen. C# commentdocs are a key component of this, but names are critical too. Names that SK developers need to type (functions/properties) should be a balance of self explanatory, and short enough to fit on-screen. Abbreviations are okay and fine, as long as they're common or easy to learn. I have a vertical line at 80 columns in my IDE, and while I don’t have a strict rule here, I try and rethink anything that regularly goes past that mark. Names that SK developers _don't_ type can be a bit longer, and should communicate relevant information without relying too heavily on the commentdocs, details like units of measure should be included.
+
+Avoid invisible code, or soft-linked code! This is things like override/virtual functions, operator overloads, constructors/deconstructors and function pointers. In C#, this is sometimes unavoidable or inappropriate, and that's ok, just keep it to a minimum and don't surprise anyone.  On the C side, use "Plain Old Data" structs for everything: no constructors, no classes, no default values. When structs are initialized to zero, they should be configured to then generally be in the correct default state.
+
+C++'s STL is out. It's not good. It's hard to read, throws cryptic errors, takes forever to compile, and bloats binary size. StereoKit initially began life using the STL, and it became clear it was a mistake after a month or two of work. It's not worth messing with. It's somewhat acceptable in StereoKitCTest, but should be entirely avoided in the core.
+
+Exceptions for any rule can be appropriate when they make code more readable/maintainable. For example, C++ templates are near unreadable, but there are some cases in the code where they massively reduce painful code duplication.
+
+### GitHub Usage
+
+`/master` - This is always a frozen snapshot of the current full release! Changes should generally not be added directly here, but could potentially include high-priority documentation fixes. (The website is hosted from `/master`)
+
+`/develop` - This is where your PRs should target! This branch should always compile, and code submitted here should be at least partially functional.
+
+`/feature/` - For devs working within the repository, larger in-progress features should be worked on in feature branches.
+
+### Versioning
+
+StereoKit uses [SemVer](https://semver.org/)! Since StereoKit is pre-1.0, this gets a little bit creative, but you can generally think of it as shifting the values to the right by one decimal place.
+
+MAJOR.MINOR.PATCH
+
+MAJOR - This is 0!
+MINOR - If this value increments, this indicates breaking changes
+PATCH - This indicates new features and bugfixes
+
+Postfix - Preview builds look like `-preview.2`, we often ship multiple of these between PATCH releases. These often contain bugfixes, and will contain new features with potentially unstable APIs.
+
+### Formatting
+
+StereoKit uses tabs for indentation, and spaces for alignment. Tabs are an accessibility feature that lets people choose the width of their tabs. Consider mixing the two so code stays aligned when tabs change size.
+
+**For example:**
+```
+ ->  -> function(arg1,
+ ->  -> .........arg2,
+ ->  -> .........arg3);
+```
+
+Avoid deep indentation whenever possible, take advantage of early-outs instead.
+
+**Do this:**
+
+```cpp
+void function() {
+    if (!condition) return;
+    // Do stuff
+}
+```
+
+**NOT this:**
+
+```cpp
+void function() {
+    if (condition) {
+        // Do stuff
+    }
+}
+```
+
+Consider coding in vertical columns when you can, even if it violates the 80 character guideline! When related code is aligned vertically, it's easier to take in at a glance, read quickly, and spot differences. Not everyone likes to do this, so don't sweat it, but don't be surprised if it gets turned into columns later on.
+
+**Do this:**
+
+```cpp
+vec3 column_id       = vec3{ (x  )*width, 0, 0 };
+vec3 column_models   = vec3{ (x+1)*width, 0, 0 };
+vec3 column_progress = vec3{ (x+2)*width, 0, 0 };
+```
+
+**NOT this:**
+
+```cpp
+vec3 column_id = vec3{ x*width, 0, 0 };
+vec3 column_models = vec3{ (x+1)*width, 0, 0 };
+vec3 column_progress = vec3{ (x+2)*width, 0, 0 };
+```
+
+In general, try to make your code look like it blends in with everything else! We're not picky or strict about your formatting, but if your code looks wildly out of place, that'll probably get flagged in review.
