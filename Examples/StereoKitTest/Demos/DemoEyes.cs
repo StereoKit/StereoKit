@@ -1,13 +1,8 @@
-﻿using System;
-using StereoKit;
+﻿using StereoKit;
 using System.Collections.Generic;
 
 class DemoEyes : ITest
 {
-	static long lastEyeTime = -1;
-	static DateTime startTime = default;
-	static double uniqueSamples = 0;
-
 	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
 	string description = "If the hardware supports it, and permissions are granted, eye tracking is as simple as grabbing Input.Eyes!\n\nThis scene is raycasting your eye ray at the indicated plane, and the dot's red/green color indicates eye tracking availability! On flatscreen you can simulate eye tracking with Alt+Mouse.";
 	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
@@ -21,30 +16,6 @@ class DemoEyes : ITest
 
 	public void Update()
 	{
-		var currentSampleTime = Backend.OpenXR.EyesSampleTime;
-
-		if (startTime == default)
-        {
-			startTime = DateTime.UtcNow;
-        }
-		else
-        {
-            if (lastEyeTime != currentSampleTime)
-            {
-                uniqueSamples++;
-            }
-
-            var duration = (DateTime.UtcNow - startTime).TotalSeconds;
-			if (duration > 5)
-			{
-				Log.Info($"Gaze Rate: {(int)(uniqueSamples / duration)}");
-				startTime = default;
-				uniqueSamples = 0;
-			}
-		}
-
-		lastEyeTime = currentSampleTime;
-
 		Plane plane = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
 		Mesh.Quad.Draw(Material.Default, Matrix.TRS(new Vec3(0.54f, 0, -0.468f), Quat.LookDir(plane.normal), 0.5f));
 		if (Input.Eyes.Ray.Intersect(plane, out Vec3 at))
